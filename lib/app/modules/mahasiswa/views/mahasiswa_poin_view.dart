@@ -6,7 +6,8 @@ import '../../../core/values/app_colors.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../data/models/point_history_entity.dart';
 import '../../auth/controllers/auth_controller.dart';
-import '../../riwayat/controllers/riwayat_controller.dart' show pointHistoryProvider;
+import '../../riwayat/controllers/riwayat_controller.dart'
+    show pointHistoryProvider;
 import '../controllers/mahasiswa_controller.dart';
 import '../controllers/riwayat_kkn_controller.dart';
 import '../../../core/utils/input_sanitizer.dart';
@@ -31,7 +32,7 @@ class MahasiswaPoinView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final mhsState = ref.watch(mahasiswaControllerProvider);
     final user = ref.watch(authProvider).user;
-    
+
     final personalPoints = mhsState.dashboard?.contributionPoints ?? 0;
 
     return Scaffold(
@@ -68,7 +69,11 @@ class MahasiswaPoinView extends ConsumerWidget {
                   // ── 4. Judul & List Riwayat Poin ────────────────────
                   const Text(
                     'Riwayat Perolehan Poin KKN',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   if (user != null)
@@ -89,7 +94,10 @@ class MahasiswaPoinView extends ConsumerWidget {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Colors.white, Color(0xFFF8FAFC)], // F8FAFC is typical backgroundCanvas
+          colors: [
+            Colors.white,
+            Color(0xFFF8FAFC),
+          ], // F8FAFC is typical backgroundCanvas
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
@@ -111,7 +119,10 @@ class MahasiswaPoinView extends ConsumerWidget {
                   child: IconButton(
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
-                    icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+                    icon: const Icon(
+                      Icons.arrow_back_rounded,
+                      color: AppColors.textPrimary,
+                    ),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ),
@@ -174,11 +185,11 @@ class MahasiswaPoinView extends ConsumerWidget {
 
   Widget _buildStatsRow(MahasiswaState mhsState, WidgetRef ref) {
     final points = mhsState.dashboard?.contributionPoints ?? 0;
-    
+
     final asyncHistory = ref.watch(pointHistoryProvider);
     int laporanCount = 0;
     int wargaCount = 0;
-    
+
     if (asyncHistory.hasValue && asyncHistory.value != null) {
       for (final ph in asyncHistory.value!) {
         final lowerDesc = ph.description.toLowerCase();
@@ -234,12 +245,21 @@ class MahasiswaPoinView extends ConsumerWidget {
           children: [
             Expanded(
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 12,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: AppColors.border),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: Row(
                   children: [
@@ -249,7 +269,11 @@ class MahasiswaPoinView extends ConsumerWidget {
                         color: AppColors.warningYellow.withValues(alpha: 0.15),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.note_alt_rounded, color: AppColors.warningYellow, size: 18),
+                      child: const Icon(
+                        Icons.note_alt_rounded,
+                        color: AppColors.warningYellow,
+                        size: 18,
+                      ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -258,12 +282,20 @@ class MahasiswaPoinView extends ConsumerWidget {
                         children: [
                           const Text(
                             'IZIN / SAKIT',
-                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             '$izinCount Kali',
-                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.textPrimary,
+                            ),
                           ),
                         ],
                       ),
@@ -275,12 +307,21 @@ class MahasiswaPoinView extends ConsumerWidget {
             const SizedBox(width: 10),
             Expanded(
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 12,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: AppColors.border),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: Row(
                   children: [
@@ -290,7 +331,11 @@ class MahasiswaPoinView extends ConsumerWidget {
                         color: AppColors.primaryGreen.withValues(alpha: 0.15),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.post_add_rounded, color: AppColors.primaryGreen, size: 18),
+                      child: const Icon(
+                        Icons.post_add_rounded,
+                        color: AppColors.primaryGreen,
+                        size: 18,
+                      ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -299,12 +344,20 @@ class MahasiswaPoinView extends ConsumerWidget {
                         children: [
                           const Text(
                             'TOTAL INPUT',
-                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             '$totalInputCount Kali',
-                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.textPrimary,
+                            ),
                           ),
                         ],
                       ),
@@ -325,16 +378,26 @@ class MahasiswaPoinView extends ConsumerWidget {
       decoration: BoxDecoration(
         color: AppColors.primaryGreen.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.2)),
+        border: Border.all(
+          color: AppColors.primaryGreen.withValues(alpha: 0.2),
+        ),
       ),
       child: const Row(
         children: [
-          Icon(Icons.info_outline_rounded, color: AppColors.primaryGreen, size: 20),
+          Icon(
+            Icons.info_outline_rounded,
+            color: AppColors.primaryGreen,
+            size: 20,
+          ),
           SizedBox(width: 10),
           Expanded(
             child: Text(
               'Poin KKN diperoleh dari presensi geofence (+10 PTS), aktivasi tempat sampah warga (+10 PTS), dan laporan pemanfaatan daur ulang.',
-              style: TextStyle(fontSize: 11, color: AppColors.primaryGreen, height: 1.3),
+              style: TextStyle(
+                fontSize: 11,
+                color: AppColors.primaryGreen,
+                height: 1.3,
+              ),
             ),
           ),
         ],
@@ -342,7 +405,9 @@ class MahasiswaPoinView extends ConsumerWidget {
     );
   }
 
-  Widget _buildPoinHistoryList(AsyncValue<List<PointHistoryEntity>> asyncHistory) {
+  Widget _buildPoinHistoryList(
+    AsyncValue<List<PointHistoryEntity>> asyncHistory,
+  ) {
     return asyncHistory.when(
       loading: () => const Padding(
         padding: EdgeInsets.all(32),
@@ -356,16 +421,29 @@ class MahasiswaPoinView extends ConsumerWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppColors.border),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Column(
           children: [
-            const Icon(Icons.error_outline, size: 40, color: AppColors.dangerRed),
+            const Icon(
+              Icons.error_outline,
+              size: 40,
+              color: AppColors.dangerRed,
+            ),
             const SizedBox(height: 8),
             Text(
               'Gagal memuat riwayat poin.\n$err',
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+              ),
             ),
           ],
         ),
@@ -381,15 +459,29 @@ class MahasiswaPoinView extends ConsumerWidget {
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: AppColors.border),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.03),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: const Column(
               children: [
-                Icon(Icons.monetization_on_outlined, size: 40, color: AppColors.textHint),
+                Icon(
+                  Icons.monetization_on_outlined,
+                  size: 40,
+                  color: AppColors.textHint,
+                ),
                 SizedBox(height: 8),
                 Text(
                   'Belum ada riwayat perolehan poin.',
-                  style: TextStyle(fontSize: 13, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ),
@@ -398,17 +490,18 @@ class MahasiswaPoinView extends ConsumerWidget {
 
         return Column(
           children: pointLogs
-              .map((item) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: _PoinHistoryItem(item: item),
-                  ))
+              .map(
+                (item) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _PoinHistoryItem(item: item),
+                ),
+              )
               .toList(),
         );
       },
     );
   }
 }
-
 
 class _StatCard extends StatelessWidget {
   const _StatCard({
@@ -431,7 +524,13 @@ class _StatCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.border),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -479,7 +578,9 @@ class _PoinHistoryItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final formattedDate = DateFormat('dd MMM yyyy, HH:mm').format(item.createdAt.toLocal());
+    final formattedDate = DateFormat(
+      'dd MMM yyyy, HH:mm',
+    ).format(item.createdAt.toLocal());
 
     // Map description to standardized title
     String title = InputSanitizer.cleanSystemMessage(item.description);
@@ -493,7 +594,8 @@ class _PoinHistoryItem extends StatelessWidget {
         title = 'Laporan Pemanfaatan Sampah: $title';
       }
       icon = Icons.recycling_rounded;
-    } else if (title.toLowerCase().contains('geofence') || title.toLowerCase().contains('presensi')) {
+    } else if (title.toLowerCase().contains('geofence') ||
+        title.toLowerCase().contains('presensi')) {
       title = 'Ping Lokasi Posko / Presensi';
       icon = Icons.location_on_rounded;
     } else if (title.toLowerCase().contains('registrasi')) {
@@ -507,7 +609,13 @@ class _PoinHistoryItem extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.border),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -517,11 +625,7 @@ class _PoinHistoryItem extends StatelessWidget {
               color: AppColors.primaryGreen.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              icon,
-              color: AppColors.primaryGreen,
-              size: 20,
-            ),
+            child: Icon(icon, color: AppColors.primaryGreen, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -562,4 +666,3 @@ class _PoinHistoryItem extends StatelessWidget {
     );
   }
 }
-

@@ -4,10 +4,11 @@ import '../../../core/values/app_colors.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../routes/app_routes.dart';
 
-final programKerjaListProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
-  final repo = ref.read(kknRepositoryProvider);
-  return repo.getProgramKerja();
-});
+final programKerjaListProvider =
+    FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+      final repo = ref.read(kknRepositoryProvider);
+      return repo.getProgramKerja();
+    });
 
 class RiwayatProgramKerjaView extends ConsumerWidget {
   const RiwayatProgramKerjaView({super.key});
@@ -16,7 +17,10 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
     String u = (statusUsulan ?? '').toUpperCase();
     final leg = (legacyStatus ?? '').toUpperCase();
     if (u.isEmpty) {
-      if (leg == 'DITERIMA' || leg == 'DISETUJUI' || leg == 'SEDANG_BERJALAN' || leg == 'SELESAI') {
+      if (leg == 'DITERIMA' ||
+          leg == 'DISETUJUI' ||
+          leg == 'SEDANG_BERJALAN' ||
+          leg == 'SELESAI') {
         u = 'DISETUJUI';
       } else if (leg == 'DITOLAK' || leg == 'TIDAK_DISETUJUI') {
         u = 'DITOLAK';
@@ -57,20 +61,30 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
           const SizedBox(width: 4),
           Text(
             label,
-            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color),
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildPelaksanaanBadge(String? statusPelaksanaan, String? legacyStatus, String? waktuPelaksanaan) {
+  Widget _buildPelaksanaanBadge(
+    String? statusPelaksanaan,
+    String? legacyStatus,
+    String? waktuPelaksanaan,
+  ) {
     String p = (statusPelaksanaan ?? '').toUpperCase();
     final leg = (legacyStatus ?? '').toUpperCase();
     if (p.isEmpty) {
       if (leg == 'SELESAI') {
         p = 'SELESAI';
-      } else if (leg == 'SEDANG_BERJALAN' || leg == 'SEDANG_DILAKSANAKAN' || leg == 'BERJALAN') {
+      } else if (leg == 'SEDANG_BERJALAN' ||
+          leg == 'SEDANG_DILAKSANAKAN' ||
+          leg == 'BERJALAN') {
         p = 'SEDANG_BERJALAN';
       } else {
         p = 'BELUM_MULAI';
@@ -85,7 +99,8 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
       if (matches.isNotEmpty) {
         final lastMatch = matches.last.group(0)!;
         final endDate = DateTime.tryParse(lastMatch);
-        if (endDate != null && DateTime.now().isAfter(endDate.add(const Duration(days: 1)))) {
+        if (endDate != null &&
+            DateTime.now().isAfter(endDate.add(const Duration(days: 1)))) {
           isExpired = true;
         }
       }
@@ -104,7 +119,9 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
     } else if (p == 'BERAKHIR') {
       color = AppColors.dangerRed;
       label = 'Berakhir';
-    } else if (p == 'SEDANG_BERJALAN' || p == 'SEDANG_DILAKSANAKAN' || p == 'BERJALAN') {
+    } else if (p == 'SEDANG_BERJALAN' ||
+        p == 'SEDANG_DILAKSANAKAN' ||
+        p == 'BERJALAN') {
       color = AppColors.primaryBlue;
       label = 'Sedang Berlangsung';
     } else {
@@ -121,7 +138,11 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color),
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
       ),
     );
   }
@@ -140,10 +161,14 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
     } else if (raw.contains('pengolahan') || raw.contains('olah')) {
       color = const Color(0xFF7C3AED); // Purple
       label = 'Pengolahan';
-    } else if (raw.contains('pemanfaatan') || raw.contains('manfaat') || raw == 'fisik') {
+    } else if (raw.contains('pemanfaatan') ||
+        raw.contains('manfaat') ||
+        raw == 'fisik') {
       color = const Color(0xFF0D9488); // Teal
       label = 'Pemanfaatan';
-    } else if (raw.contains('edukasi') || raw.contains('sosialisasi') || raw == 'non-fisik') {
+    } else if (raw.contains('edukasi') ||
+        raw.contains('sosialisasi') ||
+        raw == 'non-fisik') {
       color = const Color(0xFFD97706); // Amber
       label = 'Edukasi & Sosialisasi';
     } else {
@@ -160,7 +185,11 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color),
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+          color: color,
+        ),
       ),
     );
   }
@@ -180,7 +209,10 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Program Kerja KKN', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Program Kerja KKN',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.white,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
@@ -191,7 +223,12 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
       ),
       body: prokerState.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(child: Text(err.toString(), style: const TextStyle(color: AppColors.dangerRed))),
+        error: (err, _) => Center(
+          child: Text(
+            err.toString(),
+            style: const TextStyle(color: AppColors.dangerRed),
+          ),
+        ),
         data: (rawList) {
           final list = rawList.where((item) {
             final kat = item['kategori']?.toString().toUpperCase() ?? '';
@@ -199,7 +236,9 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
           }).toList();
 
           if (list.isEmpty) {
-            return const Center(child: Text('Belum ada program kerja yang diajukan.'));
+            return const Center(
+              child: Text('Belum ada program kerja yang diajukan.'),
+            );
           }
           return RefreshIndicator(
             onRefresh: () async => ref.refresh(programKerjaListProvider),
@@ -211,16 +250,25 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
                 final item = list[index];
                 final judulStr = item['judul']?.toString() ?? '-';
                 final deskripsi = item['deskripsi']?.toString() ?? '-';
-                final statusUsulan = item['statusUsulan'] ?? item['status_usulan'];
-                final statusPelaksanaan = item['statusPelaksanaan'] ?? item['status_pelaksanaan'];
+                final statusUsulan =
+                    item['statusUsulan'] ?? item['status_usulan'];
+                final statusPelaksanaan =
+                    item['statusPelaksanaan'] ?? item['status_pelaksanaan'];
                 final legacyStatus = item['status']?.toString();
                 final catatanDpl = item['catatanDpl'] ?? item['catatan_dpl'];
-                final waktuPelaksanaanStr = item['waktuPelaksanaan']?.toString() ?? item['tanggal']?.toString() ?? '-';
-                final createdAtStr = item['createdAt']?.toString() ?? item['dibuat_pada']?.toString();
+                final waktuPelaksanaanStr =
+                    item['waktuPelaksanaan']?.toString() ??
+                    item['tanggal']?.toString() ??
+                    '-';
+                final createdAtStr =
+                    item['createdAt']?.toString() ??
+                    item['dibuat_pada']?.toString();
 
                 return Card(
                   elevation: 1.5,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -233,34 +281,56 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  if (judulStr.isNotEmpty && deskripsi.isNotEmpty && judulStr == deskripsi) ...[
+                                  if (judulStr.isNotEmpty &&
+                                      deskripsi.isNotEmpty &&
+                                      judulStr == deskripsi) ...[
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
                                       margin: const EdgeInsets.only(bottom: 6),
                                       decoration: BoxDecoration(
-                                        color: Colors.blue.withValues(alpha: 0.1),
+                                        color: Colors.blue.withValues(
+                                          alpha: 0.1,
+                                        ),
                                         borderRadius: BorderRadius.circular(4),
-                                        border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+                                        border: Border.all(
+                                          color: Colors.blue.withValues(
+                                            alpha: 0.3,
+                                          ),
+                                        ),
                                       ),
                                       child: const Text(
                                         'Usulan DPL',
-                                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.blue),
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.blue,
+                                        ),
                                       ),
                                     ),
                                   ],
                                   Text(
                                     judulStr,
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                    ),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     deskripsi,
-                                    style: const TextStyle(fontSize: 13, color: Colors.black87),
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.black87,
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
-                            if (statusUsulan == 'BELUM_DISETUJUI' || legacyStatus == 'BELUM_DISETUJUI' ||
+                            if (statusUsulan == 'BELUM_DISETUJUI' ||
+                                legacyStatus == 'BELUM_DISETUJUI' ||
                                 statusUsulan == 'PERLU_REVISI_DPL')
                               IconButton(
                                 icon: Icon(
@@ -278,11 +348,16 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
                                     showDialog(
                                       context: context,
                                       barrierDismissible: false,
-                                      builder: (_) => const Center(child: CircularProgressIndicator()),
+                                      builder: (_) => const Center(
+                                        child: CircularProgressIndicator(),
+                                      ),
                                     );
                                   }
-                                  final detail = await ref.read(kknRepositoryProvider).getProgramKerjaDetail(id);
-                                  if (context.mounted) Navigator.pop(context); // tutup loading
+                                  final detail = await ref
+                                      .read(kknRepositoryProvider)
+                                      .getProgramKerjaDetail(id);
+                                  if (context.mounted)
+                                    Navigator.pop(context); // tutup loading
                                   if (detail != null && context.mounted) {
                                     await Navigator.pushNamed(
                                       context,
@@ -303,23 +378,40 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
                           children: [
                             _buildKategoriBadge(item['kategori']),
                             _buildUsulanBadge(statusUsulan, legacyStatus),
-                            _buildPelaksanaanBadge(statusPelaksanaan, legacyStatus, waktuPelaksanaanStr),
+                            _buildPelaksanaanBadge(
+                              statusPelaksanaan,
+                              legacyStatus,
+                              waktuPelaksanaanStr,
+                            ),
                             if (statusUsulan == 'PERLU_REVISI_DPL')
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 3,
+                                ),
                                 decoration: BoxDecoration(
                                   color: Colors.orange.shade50,
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: Colors.orange.shade300),
+                                  border: Border.all(
+                                    color: Colors.orange.shade300,
+                                  ),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(Icons.rate_review_rounded, size: 12, color: Colors.orange.shade700),
+                                    Icon(
+                                      Icons.rate_review_rounded,
+                                      size: 12,
+                                      color: Colors.orange.shade700,
+                                    ),
                                     const SizedBox(width: 4),
                                     Text(
                                       'Perlu Revisi',
-                                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.orange.shade700),
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.orange.shade700,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -330,11 +422,18 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
                         if (createdAtStr != null)
                           Row(
                             children: [
-                              const Icon(Icons.calendar_today, size: 14, color: AppColors.textSecondary),
+                              const Icon(
+                                Icons.calendar_today,
+                                size: 14,
+                                color: AppColors.textSecondary,
+                              ),
                               const SizedBox(width: 4),
                               Text(
                                 'Diajukan Pada: ${_formatDate(createdAtStr)}',
-                                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.textSecondary,
+                                ),
                               ),
                             ],
                           ),
@@ -344,7 +443,9 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
                               String mulai = waktuPelaksanaanStr;
                               String berakhir = '-';
                               if (waktuPelaksanaanStr.contains(' s/d ')) {
-                                final parts = waktuPelaksanaanStr.split(' s/d ');
+                                final parts = waktuPelaksanaanStr.split(
+                                  ' s/d ',
+                                );
                                 if (parts.length >= 2) {
                                   mulai = _formatDate(parts[0].trim());
                                   berakhir = _formatDate(parts[1].trim());
@@ -363,29 +464,50 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
                                       Container(
                                         padding: const EdgeInsets.only(top: 8),
                                         decoration: BoxDecoration(
-                                          border: Border(top: BorderSide(color: Colors.grey.shade200)),
+                                          border: Border(
+                                            top: BorderSide(
+                                              color: Colors.grey.shade200,
+                                            ),
+                                          ),
                                         ),
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Row(
                                               children: [
-                                                const Icon(Icons.play_circle_outline, size: 14, color: AppColors.primaryGreen),
+                                                const Icon(
+                                                  Icons.play_circle_outline,
+                                                  size: 14,
+                                                  color: AppColors.primaryGreen,
+                                                ),
                                                 const SizedBox(width: 4),
                                                 Text(
                                                   'Mulai: $mulai',
-                                                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                                  style: const TextStyle(
+                                                    fontSize: 12,
+                                                    color:
+                                                        AppColors.textSecondary,
+                                                  ),
                                                 ),
                                               ],
                                             ),
                                             const SizedBox(height: 4),
                                             Row(
                                               children: [
-                                                const Icon(Icons.stop_circle_outlined, size: 14, color: AppColors.maroonRed),
+                                                const Icon(
+                                                  Icons.stop_circle_outlined,
+                                                  size: 14,
+                                                  color: AppColors.maroonRed,
+                                                ),
                                                 const SizedBox(width: 4),
                                                 Text(
                                                   'Berakhir: $berakhir',
-                                                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                                  style: const TextStyle(
+                                                    fontSize: 12,
+                                                    color:
+                                                        AppColors.textSecondary,
+                                                  ),
                                                 ),
                                               ],
                                             ),
@@ -397,7 +519,8 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
                               );
                             },
                           ),
-                        if (catatanDpl != null && catatanDpl.toString().trim().isNotEmpty) ...[
+                        if (catatanDpl != null &&
+                            catatanDpl.toString().trim().isNotEmpty) ...[
                           const SizedBox(height: 10),
                           Container(
                             padding: const EdgeInsets.all(10),
@@ -427,7 +550,8 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         statusUsulan == 'PERLU_REVISI_DPL'
@@ -436,7 +560,8 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
                                         style: TextStyle(
                                           fontSize: 11,
                                           fontWeight: FontWeight.bold,
-                                          color: statusUsulan == 'PERLU_REVISI_DPL'
+                                          color:
+                                              statusUsulan == 'PERLU_REVISI_DPL'
                                               ? Colors.orange.shade700
                                               : AppColors.dangerRed,
                                         ),
@@ -444,7 +569,10 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
                                       const SizedBox(height: 2),
                                       Text(
                                         '$catatanDpl',
-                                        style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: AppColors.textPrimary,
+                                        ),
                                       ),
                                     ],
                                   ),

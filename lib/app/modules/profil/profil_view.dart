@@ -36,7 +36,8 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
 
   void _showAvatarOptions() {
     final user = ref.read(authProvider).user;
-    final hasPhoto = (_profileImage != null) ||
+    final hasPhoto =
+        (_profileImage != null) ||
         (user?.fotoProfil != null && user!.fotoProfil!.isNotEmpty);
 
     showModalBottomSheet(
@@ -51,7 +52,10 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
             child: Wrap(
               children: [
                 ListTile(
-                  leading: const Icon(Icons.photo_camera_rounded, color: AppColors.primaryGreen),
+                  leading: const Icon(
+                    Icons.photo_camera_rounded,
+                    color: AppColors.primaryGreen,
+                  ),
                   title: const Text('Ambil Foto dari Kamera'),
                   onTap: () {
                     Navigator.pop(ctx);
@@ -59,7 +63,10 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.photo_library_rounded, color: AppColors.primaryGreen),
+                  leading: const Icon(
+                    Icons.photo_library_rounded,
+                    color: AppColors.primaryGreen,
+                  ),
                   title: const Text('Pilih dari Galeri'),
                   onTap: () {
                     Navigator.pop(ctx);
@@ -68,8 +75,14 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                 ),
                 if (hasPhoto)
                   ListTile(
-                    leading: const Icon(Icons.delete_outline_rounded, color: AppColors.dangerRed),
-                    title: const Text('Hapus Foto Profil', style: TextStyle(color: AppColors.dangerRed)),
+                    leading: const Icon(
+                      Icons.delete_outline_rounded,
+                      color: AppColors.dangerRed,
+                    ),
+                    title: const Text(
+                      'Hapus Foto Profil',
+                      style: TextStyle(color: AppColors.dangerRed),
+                    ),
                     onTap: () {
                       Navigator.pop(ctx);
                       _confirmDeletePhoto();
@@ -87,10 +100,12 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
     final picked = await _picker.pickImage(source: source);
     if (picked != null) {
       setState(() => _profileImage = File(picked.path));
-      
+
       if (!mounted) return;
-      
-      final success = await ref.read(authProvider.notifier).uploadAvatar(picked.path);
+
+      final success = await ref
+          .read(authProvider.notifier)
+          .uploadAvatar(picked.path);
       if (mounted) {
         if (success) {
           ref.read(authProvider.notifier).fetchProfile();
@@ -102,7 +117,8 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
             ),
           );
         } else {
-          final error = ref.read(authProvider).errorCode ?? 'Gagal mengunggah foto';
+          final error =
+              ref.read(authProvider).errorCode ?? 'Gagal mengunggah foto';
           ScaffoldMessenger.of(context).clearSnackBars();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -120,12 +136,20 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Hapus Foto Profil?', style: TextStyle(fontWeight: FontWeight.bold)),
-        content: const Text('Foto profil Anda akan dihapus dan kembali ke avatar default.'),
+        title: const Text(
+          'Hapus Foto Profil?',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: const Text(
+          'Foto profil Anda akan dihapus dan kembali ke avatar default.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Batal', style: TextStyle(color: AppColors.textSecondary)),
+            child: const Text(
+              'Batal',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -177,11 +201,20 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
       return CachedNetworkImage(
         imageUrl: fotoPath,
         fit: BoxFit.cover,
-        errorWidget: (_, __, ___) => const Icon(Icons.person_rounded, color: AppColors.primaryGreen, size: 48),
+        errorWidget: (_, __, ___) => const Icon(
+          Icons.person_rounded,
+          color: AppColors.primaryGreen,
+          size: 48,
+        ),
       );
     }
-    if (fotoPath.startsWith('/') || fotoPath.startsWith('file://') || fotoPath.contains(':\\') || fotoPath.contains(':/')) {
-      final cleanPath = fotoPath.startsWith('file://') ? fotoPath.replaceFirst('file://', '') : fotoPath;
+    if (fotoPath.startsWith('/') ||
+        fotoPath.startsWith('file://') ||
+        fotoPath.contains(':\\') ||
+        fotoPath.contains(':/')) {
+      final cleanPath = fotoPath.startsWith('file://')
+          ? fotoPath.replaceFirst('file://', '')
+          : fotoPath;
       final file = File(cleanPath);
       if (file.existsSync()) {
         return Image.file(file, fit: BoxFit.cover);
@@ -190,7 +223,11 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
     return CachedNetworkImage(
       imageUrl: AppConfig.getImageUrl(fotoPath),
       fit: BoxFit.cover,
-      errorWidget: (_, __, ___) => const Icon(Icons.person_rounded, color: AppColors.primaryGreen, size: 48),
+      errorWidget: (_, __, ___) => const Icon(
+        Icons.person_rounded,
+        color: AppColors.primaryGreen,
+        size: 48,
+      ),
     );
   }
 
@@ -238,7 +275,9 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                             color: AppColors.backgroundCanvas,
                           ),
                           clipBehavior: Clip.antiAlias,
-                          child: _buildAvatarImage(_profileImage?.path ?? user?.fotoProfil),
+                          child: _buildAvatarImage(
+                            _profileImage?.path ?? user?.fotoProfil,
+                          ),
                         ),
                         Container(
                           width: 34,
@@ -249,10 +288,12 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                             border: Border.all(color: Colors.white, width: 2),
                             boxShadow: [
                               BoxShadow(
-                                color: AppColors.primaryGreen.withValues(alpha: 0.4),
+                                color: AppColors.primaryGreen.withValues(
+                                  alpha: 0.4,
+                                ),
                                 blurRadius: 6,
                                 offset: const Offset(0, 2),
-                              )
+                              ),
                             ],
                           ),
                           child: const Icon(
@@ -283,7 +324,11 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // ─── Data Rumah Tangga ──────────────────────────────
-                  _sectionLabel(user?.role == UserRole.mahasiswaKkn ? 'DATA MAHASISWA KKN' : 'DATA RUMAH TANGGA'),
+                  _sectionLabel(
+                    user?.role == UserRole.mahasiswaKkn
+                        ? 'DATA MAHASISWA KKN'
+                        : 'DATA RUMAH TANGGA',
+                  ),
                   const SizedBox(height: 8),
                   Container(
                     decoration: BoxDecoration(
@@ -311,27 +356,52 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                           _InfoTile(
                             Icons.school_outlined,
                             'NIM',
-                            (ref.watch(mahasiswaControllerProvider).dashboard?.nim.isNotEmpty == true)
-                                ? ref.watch(mahasiswaControllerProvider).dashboard!.nim
-                                : (user?.nim.isNotEmpty == true ? user!.nim : '-'),
+                            (ref
+                                        .watch(mahasiswaControllerProvider)
+                                        .dashboard
+                                        ?.nim
+                                        .isNotEmpty ==
+                                    true)
+                                ? ref
+                                      .watch(mahasiswaControllerProvider)
+                                      .dashboard!
+                                      .nim
+                                : (user?.nim.isNotEmpty == true
+                                      ? user!.nim
+                                      : '-'),
                             bold: true,
                           ),
                           _divider(),
                           _InfoTile(
                             Icons.account_balance_outlined,
                             'Program Studi',
-                            (user?.prodi != null && user!.prodi.isNotEmpty && user.prodi != '-')
+                            (user?.prodi != null &&
+                                    user!.prodi.isNotEmpty &&
+                                    user.prodi != '-')
                                 ? user.prodi
-                                : (ref.watch(mahasiswaControllerProvider).dashboard?.jurusan.isNotEmpty == true
-                                    ? ref.watch(mahasiswaControllerProvider).dashboard!.jurusan
-                                    : '-'),
+                                : (ref
+                                              .watch(
+                                                mahasiswaControllerProvider,
+                                              )
+                                              .dashboard
+                                              ?.jurusan
+                                              .isNotEmpty ==
+                                          true
+                                      ? ref
+                                            .watch(mahasiswaControllerProvider)
+                                            .dashboard!
+                                            .jurusan
+                                      : '-'),
                             bold: true,
                           ),
                           _divider(),
                           _InfoTile(
                             Icons.school_rounded,
                             'Jenjang Studi',
-                            user?.jenjangPendidikan != null && user!.jenjangPendidikan.isNotEmpty ? user.jenjangPendidikan : '-',
+                            user?.jenjangPendidikan != null &&
+                                    user!.jenjangPendidikan.isNotEmpty
+                                ? user.jenjangPendidikan
+                                : '-',
                             bold: true,
                           ),
                           _divider(),
@@ -339,46 +409,78 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                         _InfoTile(
                           Icons.phone_iphone_rounded,
                           'No. Telepon',
-                          user?.phone != null && user!.phone.isNotEmpty ? user.phone : '-',
+                          user?.phone != null && user!.phone.isNotEmpty
+                              ? user.phone
+                              : '-',
                           bold: true,
                         ),
                         _divider(),
                         _InfoTile(
                           Icons.map_rounded,
                           'Provinsi',
-                          user?.provinsi != null && user!.provinsi.isNotEmpty ? user.provinsi : '-',
+                          user?.provinsi != null && user!.provinsi.isNotEmpty
+                              ? user.provinsi
+                              : '-',
                         ),
                         _divider(),
                         _InfoTile(
                           Icons.location_city_rounded,
                           'Kota/Kabupaten',
-                          user?.kota != null && user!.kota.isNotEmpty ? user.kota : '-',
+                          user?.kota != null && user!.kota.isNotEmpty
+                              ? user.kota
+                              : '-',
                         ),
                         _divider(),
                         _InfoTile(
                           Icons.map_rounded,
                           'Kecamatan',
-                          user?.kecamatan != null && user!.kecamatan.isNotEmpty 
-                              ? user.kecamatan.replaceAll(RegExp(r'^(?:Kec\.|Kecamatan)\s+', caseSensitive: false), '').trim()
+                          user?.kecamatan != null && user!.kecamatan.isNotEmpty
+                              ? user.kecamatan
+                                    .replaceAll(
+                                      RegExp(
+                                        r'^(?:Kec\.|Kecamatan)\s+',
+                                        caseSensitive: false,
+                                      ),
+                                      '',
+                                    )
+                                    .trim()
                               : '-',
                         ),
                         _divider(),
                         _InfoTile(
                           Icons.map_outlined,
                           'Kelurahan',
-                          (user?.kelurahan != null && user!.kelurahan.isNotEmpty && user.kelurahan != '-')
-                              ? user.kelurahan.replaceAll(RegExp(r'^(?:Kel\.|Kelurahan|Desa)\s+', caseSensitive: false), '').trim()
+                          (user?.kelurahan != null &&
+                                  user!.kelurahan.isNotEmpty &&
+                                  user.kelurahan != '-')
+                              ? user.kelurahan
+                                    .replaceAll(
+                                      RegExp(
+                                        r'^(?:Kel\.|Kelurahan|Desa)\s+',
+                                        caseSensitive: false,
+                                      ),
+                                      '',
+                                    )
+                                    .trim()
                               : '-',
                         ),
                         _divider(),
                         _InfoTile(
                           Icons.location_city_rounded,
-                          user?.role == UserRole.mahasiswaKkn ? 'RW Dampingan' : 'RW',
-                          (user?.rw != null && user!.rw.isNotEmpty && user.rw != '-')
+                          user?.role == UserRole.mahasiswaKkn
+                              ? 'RW Dampingan'
+                              : 'RW',
+                          (user?.rw != null &&
+                                  user!.rw.isNotEmpty &&
+                                  user.rw != '-')
                               ? () {
-                                  final matches = RegExp(r'\d+').allMatches(user.rw);
+                                  final matches = RegExp(
+                                    r'\d+',
+                                  ).allMatches(user.rw);
                                   if (matches.isNotEmpty) {
-                                    return matches.map((m) => m.group(0)!.padLeft(2, '0')).join(', ');
+                                    return matches
+                                        .map((m) => m.group(0)!.padLeft(2, '0'))
+                                        .join(', ');
                                   }
                                   return user.rw;
                                 }()
@@ -389,7 +491,8 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                           _InfoTile(
                             Icons.school_outlined,
                             'Mahasiswa Pendamping',
-                            user?.pendampingName != null && user!.pendampingName!.isNotEmpty
+                            user?.pendampingName != null &&
+                                    user!.pendampingName!.isNotEmpty
                                 ? user.pendampingName!
                                 : '-',
                           ),
@@ -399,8 +502,16 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                           _InfoTile(
                             Icons.home_outlined,
                             'Alamat Lengkap',
-                            user?.address != null && user!.address.isNotEmpty 
-                                ? user.address.replaceAll(RegExp(r',\s*(?:Kec\.|Kecamatan)\s+.*$', caseSensitive: false), '').trim()
+                            user?.address != null && user!.address.isNotEmpty
+                                ? user.address
+                                      .replaceAll(
+                                        RegExp(
+                                          r',\s*(?:Kec\.|Kecamatan)\s+.*$',
+                                          caseSensitive: false,
+                                        ),
+                                        '',
+                                      )
+                                      .trim()
                                 : '-',
                           ),
                         ],
@@ -414,44 +525,54 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                   if (user?.role != UserRole.mahasiswaKkn) ...[
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _sectionLabel('TEMPAT SAMPAH SAYA'),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  binsAsync.when(skipLoadingOnReload: true, data: (bins) => GestureDetector(
-                      onTap: () => Navigator.of(context).pushNamed(AppRoutes.kelolaBin),
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.delete_outline, color: AppColors.primaryGreen),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                bins.isEmpty ? 'Belum ada tempat sampah terdaftar.' : '${bins.length} Tempat Sampah Terdaftar (Ketuk untuk kelola)',
-                                style: const TextStyle(
-                                  color: AppColors.textPrimary,
-                                  fontWeight: FontWeight.w600,
+                      children: [_sectionLabel('TEMPAT SAMPAH SAYA')],
+                    ),
+                    const SizedBox(height: 8),
+                    binsAsync.when(
+                      skipLoadingOnReload: true,
+                      data: (bins) => GestureDetector(
+                        onTap: () => Navigator.of(
+                          context,
+                        ).pushNamed(AppRoutes.kelolaBin),
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.delete_outline,
+                                color: AppColors.primaryGreen,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  bins.isEmpty
+                                      ? 'Belum ada tempat sampah terdaftar.'
+                                      : '${bins.length} Tempat Sampah Terdaftar (Ketuk untuk kelola)',
+                                  style: const TextStyle(
+                                    color: AppColors.textPrimary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
-                            ),
-                            const Icon(Icons.chevron_right_rounded, color: AppColors.textHint),
-                          ],
+                              const Icon(
+                                Icons.chevron_right_rounded,
+                                color: AppColors.textHint,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
+                      loading: () => const SizedBox(
+                        height: 60,
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+                      error: (_, __) => const SizedBox.shrink(),
                     ),
-                    loading: () => const SizedBox(
-                      height: 60,
-                      child: Center(child: CircularProgressIndicator()),
-                    ),
-                    error: (_, __) => const SizedBox.shrink(),
-                  ),
-                  const SizedBox(height: 28),
+                    const SizedBox(height: 28),
                   ],
 
                   // ─── Menu Actions ───────────────────────────────────
@@ -501,13 +622,22 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                             ),
                             label: 'Kuesioner Evaluasi & Feedback',
                             onTap: () async {
-                              final Uri url = Uri.parse('https://docs.google.com/forms/d/e/1FAIpQLSdj1kGx4TalUlrefeHvU7LGrsfK2hgAGJYBK0mBL69O8_h5lQ/viewform?usp=sharing&ouid=100074849759690894073');
+                              final Uri url = Uri.parse(
+                                'https://docs.google.com/forms/d/e/1FAIpQLSdj1kGx4TalUlrefeHvU7LGrsfK2hgAGJYBK0mBL69O8_h5lQ/viewform?usp=sharing&ouid=100074849759690894073',
+                              );
                               if (await canLaunchUrl(url)) {
-                                await launchUrl(url, mode: LaunchMode.externalApplication);
+                                await launchUrl(
+                                  url,
+                                  mode: LaunchMode.externalApplication,
+                                );
                               } else {
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Tidak dapat membuka tautan kuesioner.')),
+                                    const SnackBar(
+                                      content: Text(
+                                        'Tidak dapat membuka tautan kuesioner.',
+                                      ),
+                                    ),
                                   );
                                 }
                               }
@@ -534,9 +664,13 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                           _MenuTile(
                             icon: Icons.lock_reset_rounded,
                             iconColor: AppColors.primaryGreen,
-                            iconBgColor: AppColors.primaryGreen.withValues(alpha: 0.1),
+                            iconBgColor: AppColors.primaryGreen.withValues(
+                              alpha: 0.1,
+                            ),
                             label: 'Ganti Kata Sandi',
-                            onTap: () => Navigator.of(context).pushNamed(AppRoutes.wargaGantiPassword),
+                            onTap: () => Navigator.of(
+                              context,
+                            ).pushNamed(AppRoutes.wargaGantiPassword),
                           ),
                         ],
                         // Keluar
@@ -580,10 +714,9 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
               Navigator.of(ctx).pop();
               await ref.read(authProvider.notifier).logout();
               if (context.mounted) {
-                Navigator.of(context).pushNamedAndRemoveUntil(
-                  AppRoutes.login,
-                  (route) => false,
-                );
+                Navigator.of(
+                  context,
+                ).pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
               }
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.dangerRed),

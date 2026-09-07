@@ -44,7 +44,14 @@ class _PemilahanMonitoringDashboardViewState
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
-        title: const Text('Dashboard Monitoring Pemilahan Sampah', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18, color: Colors.white)),
+        title: const Text(
+          'Dashboard Monitoring Pemilahan Sampah',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 18,
+            color: Colors.white,
+          ),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
@@ -70,13 +77,16 @@ class _PemilahanMonitoringDashboardViewState
                   borderRadius: BorderRadius.circular(12),
                   side: const BorderSide(color: Color(0xFFE2E8F0)),
                 ),
-                child: logsAsync.when(skipLoadingOnReload: true, data: (logs) {
+                child: logsAsync.when(
+                  skipLoadingOnReload: true,
+                  data: (logs) {
                     final filtered = _applyFilters(logs);
                     final paginated = _applyPagination(filtered);
 
                     if (filtered.isEmpty) {
                       return const EmptyState(
-                        message: 'Data pemilahan tidak ditemukan dengan filter ini.',
+                        message:
+                            'Data pemilahan tidak ditemukan dengan filter ini.',
                         icon: Icons.find_in_page_outlined,
                       );
                     }
@@ -94,57 +104,184 @@ class _PemilahanMonitoringDashboardViewState
                                 ),
                                 columnSpacing: 24,
                                 columns: const [
-                                  DataColumn(label: Text('Timestamp', style: TextStyle(fontWeight: FontWeight.bold))),
-                                  DataColumn(label: Text('Identitas Warga', style: TextStyle(fontWeight: FontWeight.bold))),
-                                  DataColumn(label: Text('Wilayah', style: TextStyle(fontWeight: FontWeight.bold))),
-                                  DataColumn(label: Text('Kategori', style: TextStyle(fontWeight: FontWeight.bold))),
-                                  DataColumn(label: Text('Volume (Kg)', style: TextStyle(fontWeight: FontWeight.bold))),
-                                  DataColumn(label: Text('Foto Bukti', style: TextStyle(fontWeight: FontWeight.bold))),
-                                  DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
+                                  DataColumn(
+                                    label: Text(
+                                      'Timestamp',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  DataColumn(
+                                    label: Text(
+                                      'Identitas Warga',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  DataColumn(
+                                    label: Text(
+                                      'Wilayah',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  DataColumn(
+                                    label: Text(
+                                      'Kategori',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  DataColumn(
+                                    label: Text(
+                                      'Volume (Kg)',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  DataColumn(
+                                    label: Text(
+                                      'Foto Bukti',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  DataColumn(
+                                    label: Text(
+                                      'Status',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
                                 ],
                                 rows: paginated.map((item) {
-                                  final isOrganik = item.wasteType.name.toLowerCase().contains('organ');
-                                  final formattedDate = DateFormat('dd MMM yyyy HH:mm').format(item.date);
+                                  final isOrganik = item.wasteType.name
+                                      .toLowerCase()
+                                      .contains('organ');
+                                  final formattedDate = DateFormat(
+                                    'dd MMM yyyy HH:mm',
+                                  ).format(item.date);
                                   return DataRow(
                                     cells: [
-                                      DataCell(Text(formattedDate, style: const TextStyle(fontSize: 13))),
-                                      DataCell(Text(item.wargaName ?? 'Warga #${item.userId.substring(0, 6)}', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13))),
-                                      DataCell(Text(item.wilayah ?? 'RW 03', style: const TextStyle(fontSize: 13))),
+                                      DataCell(
+                                        Text(
+                                          formattedDate,
+                                          style: const TextStyle(fontSize: 13),
+                                        ),
+                                      ),
+                                      DataCell(
+                                        Text(
+                                          item.wargaName ??
+                                              'Warga #${item.userId.substring(0, 6)}',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ),
+                                      DataCell(
+                                        Text(
+                                          item.wilayah ?? 'RW 03',
+                                          style: const TextStyle(fontSize: 13),
+                                        ),
+                                      ),
                                       DataCell(
                                         Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 4,
+                                          ),
                                           decoration: BoxDecoration(
-                                            color: isOrganik ? const Color(0xFFDCFCE7) : const Color(0xFFE0F2FE),
-                                            borderRadius: BorderRadius.circular(12),
+                                            color: isOrganik
+                                                ? const Color(0xFFDCFCE7)
+                                                : const Color(0xFFE0F2FE),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
                                           ),
                                           child: Text(
                                             isOrganik ? 'Organik' : 'Anorganik',
                                             style: TextStyle(
                                               fontSize: 12,
                                               fontWeight: FontWeight.w600,
-                                              color: isOrganik ? const Color(0xFF166534) : const Color(0xFF075985),
+                                              color: isOrganik
+                                                  ? const Color(0xFF166534)
+                                                  : const Color(0xFF075985),
                                             ),
                                           ),
                                         ),
                                       ),
-                                      DataCell(Text('${item.weightKg.toStringAsFixed(1)} Kg', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13))),
+                                      DataCell(
+                                        Text(
+                                          '${item.weightKg.toStringAsFixed(1)} Kg',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ),
                                       DataCell(
                                         IconButton(
-                                          icon: const Icon(Icons.image_outlined, size: 20, color: AppColors.primaryGreen),
+                                          icon: const Icon(
+                                            Icons.image_outlined,
+                                            size: 20,
+                                            color: AppColors.primaryGreen,
+                                          ),
                                           onPressed: () {
                                             showDialog(
                                               context: context,
                                               builder: (ctx) => AlertDialog(
-                                                title: const Text('Foto Bukti Pemilahan'),
-                                                content: (item.photoUrl == null || item.photoUrl!.isEmpty)
-                                                    ? const SizedBox(height: 150, child: Center(child: Icon(Icons.image_not_supported_rounded, size: 80, color: Colors.grey)))
+                                                title: const Text(
+                                                  'Foto Bukti Pemilahan',
+                                                ),
+                                                content:
+                                                    (item.photoUrl == null ||
+                                                        item.photoUrl!.isEmpty)
+                                                    ? const SizedBox(
+                                                        height: 150,
+                                                        child: Center(
+                                                          child: Icon(
+                                                            Icons
+                                                                .image_not_supported_rounded,
+                                                            size: 80,
+                                                            color: Colors.grey,
+                                                          ),
+                                                        ),
+                                                      )
                                                     : CachedNetworkImage(
-                                                        imageUrl: AppConfig.getImageUrl(item.photoUrl),
-                                                        errorWidget: (_, __, ___) => const SizedBox(height: 150, child: Center(child: Icon(Icons.broken_image_rounded, size: 80, color: Colors.grey))),
+                                                        imageUrl:
+                                                            AppConfig.getImageUrl(
+                                                              item.photoUrl,
+                                                            ),
+                                                        errorWidget:
+                                                            (
+                                                              _,
+                                                              __,
+                                                              ___,
+                                                            ) => const SizedBox(
+                                                              height: 150,
+                                                              child: Center(
+                                                                child: Icon(
+                                                                  Icons
+                                                                      .broken_image_rounded,
+                                                                  size: 80,
+                                                                  color: Colors
+                                                                      .grey,
+                                                                ),
+                                                              ),
+                                                            ),
                                                       ),
                                                 actions: [
                                                   TextButton(
-                                                    onPressed: () => Navigator.pop(ctx),
+                                                    onPressed: () =>
+                                                        Navigator.pop(ctx),
                                                     child: const Text('Tutup'),
                                                   ),
                                                 ],
@@ -155,17 +292,28 @@ class _PemilahanMonitoringDashboardViewState
                                       ),
                                       DataCell(
                                         Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
                                           decoration: BoxDecoration(
-                                            color: item.isValidated ? const Color(0xFFDCFCE7) : const Color(0xFFFEF3C7),
-                                            borderRadius: BorderRadius.circular(8),
+                                            color: item.isValidated
+                                                ? const Color(0xFFDCFCE7)
+                                                : const Color(0xFFFEF3C7),
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
                                           ),
                                           child: Text(
-                                            item.isValidated ? 'Tervalidasi' : 'Menunggu',
+                                            item.isValidated
+                                                ? 'Tervalidasi'
+                                                : 'Menunggu',
                                             style: TextStyle(
                                               fontSize: 11,
                                               fontWeight: FontWeight.bold,
-                                              color: item.isValidated ? const Color(0xFF15803D) : const Color(0xFFB45309),
+                                              color: item.isValidated
+                                                  ? const Color(0xFF15803D)
+                                                  : const Color(0xFFB45309),
                                             ),
                                           ),
                                         ),
@@ -185,7 +333,10 @@ class _PemilahanMonitoringDashboardViewState
                   loading: () => const Center(
                     child: Padding(
                       padding: EdgeInsets.all(30),
-                      child: SkeletonLoading(height: 300, width: double.infinity),
+                      child: SkeletonLoading(
+                        height: 300,
+                        width: double.infinity,
+                      ),
                     ),
                   ),
                   error: (_, __) => const EmptyState(
@@ -219,8 +370,13 @@ class _PemilahanMonitoringDashboardViewState
             decoration: InputDecoration(
               hintText: 'Cari Nama Warga...',
               prefixIcon: const Icon(Icons.search_rounded, size: 20),
-              contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              contentPadding: const EdgeInsets.symmetric(
+                vertical: 0,
+                horizontal: 12,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
           ),
         ),
@@ -257,9 +413,11 @@ class _PemilahanMonitoringDashboardViewState
         // Date Range Picker
         OutlinedButton.icon(
           icon: const Icon(Icons.calendar_today_rounded, size: 18),
-          label: Text(_selectedDateRange == null
-              ? 'Rentang Tanggal'
-              : '${DateFormat('dd/MM').format(_selectedDateRange!.start)} - ${DateFormat('dd/MM').format(_selectedDateRange!.end)}'),
+          label: Text(
+            _selectedDateRange == null
+                ? 'Rentang Tanggal'
+                : '${DateFormat('dd/MM').format(_selectedDateRange!.start)} - ${DateFormat('dd/MM').format(_selectedDateRange!.end)}',
+          ),
           onPressed: () async {
             final picked = await showDateRangePicker(
               context: context,
@@ -299,7 +457,10 @@ class _PemilahanMonitoringDashboardViewState
         children: [
           Text(
             'Menampilkan ${totalItems == 0 ? 0 : (_currentPage - 1) * _pageSize + 1} - ${(_currentPage * _pageSize).clamp(0, totalItems)} dari $totalItems data',
-            style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+            style: const TextStyle(
+              fontSize: 13,
+              color: AppColors.textSecondary,
+            ),
           ),
           Row(
             children: [
@@ -309,7 +470,13 @@ class _PemilahanMonitoringDashboardViewState
                     ? () => setState(() => _currentPage--)
                     : null,
               ),
-              Text('Halaman $_currentPage dari $effectiveMaxPage', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              Text(
+                'Halaman $_currentPage dari $effectiveMaxPage',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+              ),
               IconButton(
                 icon: const Icon(Icons.chevron_right_rounded),
                 onPressed: _currentPage < effectiveMaxPage
@@ -336,13 +503,17 @@ class _PemilahanMonitoringDashboardViewState
 
       if (_selectedKategori != 'Semua') {
         final cat = item.wasteType.name.toLowerCase();
-        if (_selectedKategori == 'Organik' && !cat.contains('organ')) return false;
-        if (_selectedKategori == 'Anorganik' && cat.contains('organ')) return false;
+        if (_selectedKategori == 'Organik' && !cat.contains('organ'))
+          return false;
+        if (_selectedKategori == 'Anorganik' && cat.contains('organ'))
+          return false;
       }
 
       if (_selectedDateRange != null) {
         if (item.date.isBefore(_selectedDateRange!.start) ||
-            item.date.isAfter(_selectedDateRange!.end.add(const Duration(days: 1)))) {
+            item.date.isAfter(
+              _selectedDateRange!.end.add(const Duration(days: 1)),
+            )) {
           return false;
         }
       }

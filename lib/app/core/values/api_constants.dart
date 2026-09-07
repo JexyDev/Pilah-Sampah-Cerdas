@@ -38,7 +38,8 @@ class ApiEndpoints {
   static String binsApproveReset(String id) => '/bins/reset/$id/approve';
   static const String binsResetPetugasStatus = '/bins/reset/petugas-status';
   static const String binsResetPetugasWilayah = '/bins/reset/petugas-wilayah';
-  static const String binsResetSetDefaultPetugas = '/bins/reset/set-default-petugas';
+  static const String binsResetSetDefaultPetugas =
+      '/bins/reset/set-default-petugas';
   static const String aiDetect = '/ai/detect';
   static const String wasteDetect = '/waste/detect';
 
@@ -66,21 +67,24 @@ class ApiEndpoints {
   static const String kknWilayahKelompok = '/kkn/wilayah-kelompok';
   static const String timesheetSummary = '/timesheet/summary';
   static String kknClaimWarga(String wargaId) => '/kkn/warga/$wargaId/claim';
-  
+
   // 3 Pilar KKN
   static const String kknProgramKerja = '/kkn/program-kerja';
   static const String kknPanenHasil = '/kkn/panen-hasil';
   static const String kknPemanfaatanSampah = '/kkn/pemanfaatan-sampah';
-  static const String kknPemanfaatanUnharvested = '/kkn/pemanfaatan-sampah/unharvested';
+  static const String kknPemanfaatanUnharvested =
+      '/kkn/pemanfaatan-sampah/unharvested';
   static const String kknPengajuanIzin = '/kkn/pengajuan-izin';
   static const String kknPoskoRegister = '/kkn/posko/register';
   static const String logbookMahasiswa = '/logbook/mahasiswa';
   static const String kknPoskoMe = '/kkn/posko/me';
-  
+
   // Smart Multi-Zone Geofence
   static const String poskoMeAllZones = '/posko-kkn/me/all-zones';
-  static String poskoKelompokAllZones(String id) => '/posko-kkn/kelompok/$id/all-zones';
-  static String poskoKelompokMulti(String id) => '/posko-kkn/kelompok/$id/multi';
+  static String poskoKelompokAllZones(String id) =>
+      '/posko-kkn/kelompok/$id/all-zones';
+  static String poskoKelompokMulti(String id) =>
+      '/posko-kkn/kelompok/$id/multi';
   static const String poskoMulti = '/posko-kkn/multi';
   static String poskoMultiById(String id) => '/posko-kkn/multi/$id';
 
@@ -96,10 +100,13 @@ class ApiEndpoints {
   static String kknJedaKegiatan(String id) => '/kkn/kegiatan/$id/jeda';
   static String kknLanjutKegiatan(String id) => '/kkn/kegiatan/$id/lanjut';
   static String kknSkipKegiatan(String id) => '/kkn/kegiatan/$id/skip';
+
   /// Legacy alias — tidak dipakai di flow aktif.
   /// Flow selesai kegiatan menggunakan [kknSelesaiKegiatan]. URL backend sudah benar.
-  static String kknCheckOut(String id) => '/kkn-attendance/kegiatan/$id/check-out';
-  static String kknPresensiHistory(String id) => '/kkn/kegiatan/$id/presensi-history';
+  static String kknCheckOut(String id) =>
+      '/kkn-attendance/kegiatan/$id/check-out';
+  static String kknPresensiHistory(String id) =>
+      '/kkn/kegiatan/$id/presensi-history';
 
   // Schedules
   static const String schedules = '/schedules';
@@ -116,14 +123,16 @@ class ApiEndpoints {
   static const String notifications = '/notifications';
   static const String notificationsReadAll = '/notifications/read-all';
   static const String notificationsDeviceToken = '/notifications/device-token';
-  static const String notificationsUnregisterToken = '/notifications/unregister-token';
+  static const String notificationsUnregisterToken =
+      '/notifications/unregister-token';
   static String notificationsRead(String id) => '/notifications/$id/read';
 
   // Pemanfaatan & Evaluasi Warga
   static const String pemanfaatan = '/pemanfaatan';
   static String pemanfaatanDetail(String id) => '/pemanfaatan/$id';
   static const String pemanfaatanFeedback = '/pemanfaatan/feedback';
-  static String pemanfaatanFeedbackTanggapan(String id) => '/pemanfaatan/feedback/$id/tanggapan';
-  static String pemanfaatanFeedbackDelete(String id) => '/pemanfaatan/feedback/$id';
+  static String pemanfaatanFeedbackTanggapan(String id) =>
+      '/pemanfaatan/feedback/$id/tanggapan';
+  static String pemanfaatanFeedbackDelete(String id) =>
+      '/pemanfaatan/feedback/$id';
 }
-

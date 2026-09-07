@@ -10,7 +10,6 @@ import 'package:intl/intl.dart';
 import '../../../routes/app_routes.dart';
 import '../../../core/utils/input_sanitizer.dart';
 
-
 /// Halaman daftar notifikasi Warga.
 class NotifikasiView extends ConsumerStatefulWidget {
   const NotifikasiView({super.key});
@@ -34,7 +33,8 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
     // Listener untuk error marking read
     ref.listen<MarkReadState>(markReadProvider, (previous, next) {
       if (next.errorCode != null && !next.isLoading) {
-        ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.errorMessage ?? 'Gagal menandai notifikasi'),
             backgroundColor: AppColors.dangerRed,
@@ -67,10 +67,18 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
                       context: context,
                       builder: (c) => AlertDialog(
                         title: const Text('Hapus Semua?'),
-                        content: const Text('Apakah Anda yakin ingin menghapus semua notifikasi?'),
+                        content: const Text(
+                          'Apakah Anda yakin ingin menghapus semua notifikasi?',
+                        ),
                         actions: [
-                          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Batal')),
-                          TextButton(onPressed: () => Navigator.pop(c, true), child: const Text('Hapus')),
+                          TextButton(
+                            onPressed: () => Navigator.pop(c, false),
+                            child: const Text('Batal'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(c, true),
+                            child: const Text('Hapus'),
+                          ),
                         ],
                       ),
                     );
@@ -137,7 +145,10 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
             child: RefreshIndicator(
               onRefresh: () async => ref.invalidate(wargaNotificationsProvider),
               color: AppColors.primaryGreen,
-              child: notifAsync.when(skipLoadingOnReload: true, loading: () => const AppLoading(message: 'Memuat notifikasi...'),
+              child: notifAsync.when(
+                skipLoadingOnReload: true,
+                loading: () =>
+                    const AppLoading(message: 'Memuat notifikasi...'),
                 error: (e, _) => Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -154,7 +165,8 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
                       ),
                       const SizedBox(height: 8),
                       TextButton(
-                        onPressed: () => ref.invalidate(wargaNotificationsProvider),
+                        onPressed: () =>
+                            ref.invalidate(wargaNotificationsProvider),
                         child: const Text('Coba Lagi'),
                       ),
                     ],
@@ -167,16 +179,37 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
                     final titleLower = n.title.toLowerCase();
 
                     if (_selectedFilter == 'Setoran & Poin') {
-                      return typeUpper.contains('SETOR') || typeUpper.contains('POIN') || titleLower.contains('setor') || titleLower.contains('poin') || titleLower.contains('sampah');
+                      return typeUpper.contains('SETOR') ||
+                          typeUpper.contains('POIN') ||
+                          titleLower.contains('setor') ||
+                          titleLower.contains('poin') ||
+                          titleLower.contains('sampah');
                     }
                     if (_selectedFilter == 'Kapasitas Tempat Sampah') {
-                      return typeUpper.contains('KAPASITAS') || typeUpper.contains('TONG') || typeUpper.contains('PENUH') || titleLower.contains('kapasitas') || titleLower.contains('tong') || titleLower.contains('penuh');
+                      return typeUpper.contains('KAPASITAS') ||
+                          typeUpper.contains('TONG') ||
+                          typeUpper.contains('PENUH') ||
+                          titleLower.contains('kapasitas') ||
+                          titleLower.contains('tong') ||
+                          titleLower.contains('penuh');
                     }
                     if (_selectedFilter == 'Pengajuan Pengosongan') {
-                      return typeUpper.contains('RESET') || typeUpper.contains('PENGOSONGAN') || typeUpper.contains('PENGAJUAN') || titleLower.contains('pengosongan') || titleLower.contains('reset') || titleLower.contains('pengajuan');
+                      return typeUpper.contains('RESET') ||
+                          typeUpper.contains('PENGOSONGAN') ||
+                          typeUpper.contains('PENGAJUAN') ||
+                          titleLower.contains('pengosongan') ||
+                          titleLower.contains('reset') ||
+                          titleLower.contains('pengajuan');
                     }
                     if (_selectedFilter == 'Pengumuman') {
-                      return typeUpper.contains('INFO') || typeUpper.contains('ANUM') || typeUpper.contains('REMINDER') || titleLower.contains('info') || titleLower.contains('pengumuman') || titleLower.contains('pengingat') || titleLower.contains('jadwal') || titleLower.contains('buang sampah');
+                      return typeUpper.contains('INFO') ||
+                          typeUpper.contains('ANUM') ||
+                          typeUpper.contains('REMINDER') ||
+                          titleLower.contains('info') ||
+                          titleLower.contains('pengumuman') ||
+                          titleLower.contains('pengingat') ||
+                          titleLower.contains('jadwal') ||
+                          titleLower.contains('buang sampah');
                     }
                     return true;
                   }).toList();
@@ -189,16 +222,27 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.notifications_off_rounded, size: 56, color: AppColors.textHint),
+                              Icon(
+                                Icons.notifications_off_rounded,
+                                size: 56,
+                                color: AppColors.textHint,
+                              ),
                               SizedBox(height: 12),
                               Text(
                                 'Belum Ada Notifikasi Warga',
-                                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.textSecondary,
+                                ),
                               ),
                               SizedBox(height: 4),
                               Text(
                                 'Notifikasi setoran, poin, & pengajuan akan muncul di sini',
-                                style: TextStyle(fontSize: 12, color: AppColors.textHint),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.textHint,
+                                ),
                               ),
                             ],
                           ),
@@ -207,7 +251,9 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
                     );
                   }
                   return ListView.separated(
-                    padding: const EdgeInsets.symmetric(vertical: AppDimensions.sm),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppDimensions.sm,
+                    ),
                     itemCount: filteredList.length,
                     separatorBuilder: (_, __) => const Divider(
                       height: 1,
@@ -226,7 +272,9 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
                             ref.invalidate(wargaNotificationsProvider);
                           }
 
-                          if (item.type.toUpperCase() == 'POIN_BERTAMBAH' || item.type.toUpperCase() == 'POIN' || item.type.toUpperCase() == 'PUNISHMENT') {
+                          if (item.type.toUpperCase() == 'POIN_BERTAMBAH' ||
+                              item.type.toUpperCase() == 'POIN' ||
+                              item.type.toUpperCase() == 'PUNISHMENT') {
                             Navigator.pushNamed(context, AppRoutes.poin);
                           } else {
                             Navigator.pushNamed(
@@ -261,21 +309,27 @@ class _NotificationTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final typeUpper = item.type.toUpperCase();
     final titleUpper = item.title.toUpperCase();
-    final isPunishment = typeUpper.contains('PUNISHMENT') || 
-                         typeUpper.contains('PENALTI') || 
-                         titleUpper.contains('PENALTI') || 
-                         titleUpper.contains('TERLEWAT') || 
-                         titleUpper.contains('JADWAL BUANG');
+    final isPunishment =
+        typeUpper.contains('PUNISHMENT') ||
+        typeUpper.contains('PENALTI') ||
+        titleUpper.contains('PENALTI') ||
+        titleUpper.contains('TERLEWAT') ||
+        titleUpper.contains('JADWAL BUANG');
 
-
-    final iconColor = isPunishment ? const Color(0xFFEF4444) : _resolveIconColor(item.type);
-    final iconBg = isPunishment ? const Color(0xFFFEE2E2) : _resolveIconBg(item.type);
+    final iconColor = isPunishment
+        ? const Color(0xFFEF4444)
+        : _resolveIconColor(item.type);
+    final iconBg = isPunishment
+        ? const Color(0xFFFEE2E2)
+        : _resolveIconBg(item.type);
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: Container(
-        color: item.isRead ? Colors.transparent : AppColors.primaryGreen.withValues(alpha: 0.05),
+        color: item.isRead
+            ? Colors.transparent
+            : AppColors.primaryGreen.withValues(alpha: 0.05),
         padding: const EdgeInsets.symmetric(
           horizontal: AppDimensions.md,
           vertical: 14,
@@ -287,10 +341,7 @@ class _NotificationTile extends StatelessWidget {
             Container(
               width: 44,
               height: 44,
-              decoration: BoxDecoration(
-                color: iconBg,
-                shape: BoxShape.circle,
-              ),
+              decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
               child: _buildIconWidget(item.icon, item.type, iconColor),
             ),
             const SizedBox(width: 12),
@@ -310,7 +361,9 @@ class _NotificationTile extends StatelessWidget {
                             fontWeight: item.isRead
                                 ? FontWeight.w500
                                 : FontWeight.w700,
-                            color: isPunishment ? const Color(0xFFEF4444) : AppColors.textPrimary,
+                            color: isPunishment
+                                ? const Color(0xFFEF4444)
+                                : AppColors.textPrimary,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -372,13 +425,18 @@ class _NotificationTile extends StatelessWidget {
     if (typeUpper.contains('PUNISHMENT') || typeUpper.contains('PENALTI')) {
       return Icon(Icons.warning_amber_rounded, color: iconColor, size: 22);
     }
-    if (typeUpper == 'POIN_BERTAMBAH' || typeUpper == 'POIN' || iconName == 'star') {
+    if (typeUpper == 'POIN_BERTAMBAH' ||
+        typeUpper == 'POIN' ||
+        iconName == 'star') {
       return Padding(
         padding: const EdgeInsets.all(10.0),
         child: Image.asset('assets/icons/medal.png', color: iconColor),
       );
     }
-    if (typeUpper.contains('PENGOSONGAN') || typeUpper.contains('PENGAJUAN') || iconName == 'local_shipping' || iconName == 'rule') {
+    if (typeUpper.contains('PENGOSONGAN') ||
+        typeUpper.contains('PENGAJUAN') ||
+        iconName == 'local_shipping' ||
+        iconName == 'rule') {
       return Icon(Icons.delete_sweep_rounded, color: iconColor, size: 22);
     }
     if (typeUpper.contains('DISETUJUI') || iconName == 'check_circle') {
@@ -387,10 +445,14 @@ class _NotificationTile extends StatelessWidget {
     if (typeUpper.contains('DITOLAK') || iconName == 'cancel') {
       return Icon(Icons.cancel_rounded, color: iconColor, size: 22);
     }
-    if (typeUpper.contains('TONG') || typeUpper.contains('PENUH') || typeUpper.contains('KAPASITAS')) {
+    if (typeUpper.contains('TONG') ||
+        typeUpper.contains('PENUH') ||
+        typeUpper.contains('KAPASITAS')) {
       return Icon(Icons.delete_rounded, color: iconColor, size: 22);
     }
-    if (typeUpper.contains('JADWAL') || typeUpper.contains('SCHEDULE') || iconName == 'alarm') {
+    if (typeUpper.contains('JADWAL') ||
+        typeUpper.contains('SCHEDULE') ||
+        iconName == 'alarm') {
       return Icon(Icons.alarm_rounded, color: iconColor, size: 22);
     }
     return Icon(_resolveIcon(iconName), color: iconColor, size: 22);
@@ -415,23 +477,39 @@ class _NotificationTile extends StatelessWidget {
 
   Color _resolveIconColor(String type) {
     final t = type.toUpperCase();
-    if (t.contains('POIN') || t == 'POIN_BERTAMBAH') return const Color(0xFFF59E0B);
-    if (t.contains('PENUH') || t.contains('TONG') || t.contains('KAPASITAS') || t.contains('DITOLAK')) return const Color(0xFFEF4444);
-    if (t.contains('PENGOSONGAN') || t.contains('PENGAJUAN')) return const Color(0xFFF97316);
+    if (t.contains('POIN') || t == 'POIN_BERTAMBAH')
+      return const Color(0xFFF59E0B);
+    if (t.contains('PENUH') ||
+        t.contains('TONG') ||
+        t.contains('KAPASITAS') ||
+        t.contains('DITOLAK'))
+      return const Color(0xFFEF4444);
+    if (t.contains('PENGOSONGAN') || t.contains('PENGAJUAN'))
+      return const Color(0xFFF97316);
     if (t.contains('DISETUJUI')) return const Color(0xFF10B981);
-    if (t.contains('PUNISHMENT') || t.contains('PENALTI')) return const Color(0xFFEF4444);
-    if (t.contains('JADWAL') || t.contains('SCHEDULE')) return const Color(0xFF6366F1);
+    if (t.contains('PUNISHMENT') || t.contains('PENALTI'))
+      return const Color(0xFFEF4444);
+    if (t.contains('JADWAL') || t.contains('SCHEDULE'))
+      return const Color(0xFF6366F1);
     return AppColors.primaryGreen;
   }
 
   Color _resolveIconBg(String type) {
     final t = type.toUpperCase();
-    if (t.contains('POIN') || t == 'POIN_BERTAMBAH') return const Color(0xFFFEF3C7);
-    if (t.contains('PENUH') || t.contains('TONG') || t.contains('KAPASITAS') || t.contains('DITOLAK')) return const Color(0xFFFEE2E2);
-    if (t.contains('PENGOSONGAN') || t.contains('PENGAJUAN')) return const Color(0xFFFFEDD5);
+    if (t.contains('POIN') || t == 'POIN_BERTAMBAH')
+      return const Color(0xFFFEF3C7);
+    if (t.contains('PENUH') ||
+        t.contains('TONG') ||
+        t.contains('KAPASITAS') ||
+        t.contains('DITOLAK'))
+      return const Color(0xFFFEE2E2);
+    if (t.contains('PENGOSONGAN') || t.contains('PENGAJUAN'))
+      return const Color(0xFFFFEDD5);
     if (t.contains('DISETUJUI')) return const Color(0xFFD1FAE5);
-    if (t.contains('PUNISHMENT') || t.contains('PENALTI')) return const Color(0xFFFEE2E2);
-    if (t.contains('JADWAL') || t.contains('SCHEDULE')) return const Color(0xFFEDE9FE);
+    if (t.contains('PUNISHMENT') || t.contains('PENALTI'))
+      return const Color(0xFFFEE2E2);
+    if (t.contains('JADWAL') || t.contains('SCHEDULE'))
+      return const Color(0xFFEDE9FE);
     return AppColors.primaryGreen.withValues(alpha: 0.1);
   }
 }

@@ -58,14 +58,14 @@ class MahasiswaNotifier extends StateNotifier<MahasiswaState> {
   /// Fetch dashboard + warga dampingan secara paralel.
   Future<void> fetchAll() async {
     final repo = _ref.read(kknRepositoryProvider);
-    
+
     // Sinkronisasi data user (misal perubahan status role Ketua) saat refresh
     _ref.read(authProvider.notifier).fetchProfile();
 
     // 1. Tampilkan cache jika ada
     final cachedDashboard = await repo.getCachedDashboard();
     final cachedWarga = await repo.getCachedWargaDampingan();
-    
+
     if (cachedDashboard != null || cachedWarga != null) {
       state = state.copyWith(
         dashboard: cachedDashboard ?? state.dashboard,
@@ -74,7 +74,7 @@ class MahasiswaNotifier extends StateNotifier<MahasiswaState> {
     } else {
       state = state.copyWith(isLoading: true, errorMessage: null);
     }
-    
+
     KknDashboardData? newDashboard;
     List<WargaDampingan>? newWargaList;
     String? lastError;
@@ -103,7 +103,11 @@ class MahasiswaNotifier extends StateNotifier<MahasiswaState> {
         dashboard: newDashboard ?? state.dashboard,
         wargaList: newWargaList ?? state.wargaList,
         timesheetSummary: timesheetSummary,
-        errorMessage: (newDashboard == null && newWargaList == null && cachedDashboard == null && cachedWarga == null)
+        errorMessage:
+            (newDashboard == null &&
+                newWargaList == null &&
+                cachedDashboard == null &&
+                cachedWarga == null)
             ? lastError
             : null,
       );
@@ -132,11 +136,12 @@ class MahasiswaNotifier extends StateNotifier<MahasiswaState> {
 
 final mahasiswaControllerProvider =
     StateNotifierProvider<MahasiswaNotifier, MahasiswaState>((ref) {
-  ref.watch(authProvider.select((s) => s.user?.id));
-  return MahasiswaNotifier(ref);
-});
+      ref.watch(authProvider.select((s) => s.user?.id));
+      return MahasiswaNotifier(ref);
+    });
 
-final activeTimelineProvider = FutureProvider.autoDispose<ActiveTimelineResponse>((ref) async {
-  final repo = ref.read(kknRepositoryProvider);
-  return repo.getActiveTimeline();
-});
+final activeTimelineProvider =
+    FutureProvider.autoDispose<ActiveTimelineResponse>((ref) async {
+      final repo = ref.read(kknRepositoryProvider);
+      return repo.getActiveTimeline();
+    });

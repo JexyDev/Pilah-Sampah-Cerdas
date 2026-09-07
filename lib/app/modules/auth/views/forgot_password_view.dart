@@ -19,12 +19,10 @@ class ForgotPasswordView extends ConsumerStatefulWidget {
   const ForgotPasswordView({super.key});
 
   @override
-  ConsumerState<ForgotPasswordView> createState() =>
-      _ForgotPasswordViewState();
+  ConsumerState<ForgotPasswordView> createState() => _ForgotPasswordViewState();
 }
 
-class _ForgotPasswordViewState
-    extends ConsumerState<ForgotPasswordView> {
+class _ForgotPasswordViewState extends ConsumerState<ForgotPasswordView> {
   final _formKey1 = GlobalKey<FormState>();
   final _formKey3 = GlobalKey<FormState>();
 
@@ -139,7 +137,7 @@ class _ForgotPasswordViewState
 
   Future<void> _onRequestOtp() async {
     if (!_formKey1.currentState!.validate()) return;
-    
+
     final phone = InputSanitizer.sanitize(_phoneController.text);
     final normalizedPhone = _normalizePhone(phone);
     ref.read(authProvider.notifier).clearError();
@@ -151,10 +149,7 @@ class _ForgotPasswordViewState
     if (ok && mounted) {
       setState(() => _currentStep = 2);
       _startResendCountdown();
-      _showToast(
-        'OTP dikirim ke ${_maskPhone(phone)}',
-        isError: false,
-      );
+      _showToast('OTP dikirim ke ${_maskPhone(phone)}', isError: false);
     }
   }
 
@@ -176,7 +171,7 @@ class _ForgotPasswordViewState
       _showToast('Masukkan 6 digit kode OTP terlebih dahulu');
       return;
     }
-    
+
     final phone = _normalizePhone(_phoneController.text.trim());
     final bool ok = await ref
         .read(authProvider.notifier)
@@ -187,7 +182,9 @@ class _ForgotPasswordViewState
     } else if (mounted) {
       final authState = ref.read(authProvider);
       if (authState.errorCode == 'UNAUTHORIZED_ROLE') {
-        _showToast('Akses ditolak. Aplikasi mobile hanya untuk Warga, Petugas Pemilah, dan Mahasiswa.');
+        _showToast(
+          'Akses ditolak. Aplikasi mobile hanya untuk Warga, Petugas Pemilah, dan Mahasiswa.',
+        );
       } else {
         _showToast('Kode OTP salah atau kedaluwarsa');
       }
@@ -199,20 +196,27 @@ class _ForgotPasswordViewState
   Future<void> _onResetPassword() async {
     if (!_formKey3.currentState!.validate()) return;
 
-    final phone = _normalizePhone(InputSanitizer.sanitize(_phoneController.text));
+    final phone = _normalizePhone(
+      InputSanitizer.sanitize(_phoneController.text),
+    );
     final newPassword = _newPasswordController.text;
 
     ref.read(authProvider.notifier).clearError();
 
     // UI-only: Sementara kirim ke resetPassword dengan email = phone
-    final bool ok = await ref.read(authProvider.notifier).resetPassword(
+    final bool ok = await ref
+        .read(authProvider.notifier)
+        .resetPassword(
           phone: phone,
           token: _otpValue,
           newPassword: newPassword,
         );
 
     if (ok && mounted) {
-      _showToast('Kata sandi berhasil diperbarui! Silakan masuk.', isError: false);
+      _showToast(
+        'Kata sandi berhasil diperbarui! Silakan masuk.',
+        isError: false,
+      );
       Future.delayed(const Duration(seconds: 2), () {
         if (mounted) Navigator.of(context).pop();
       });
@@ -243,9 +247,9 @@ class _ForgotPasswordViewState
 
   bool _hasUnsavedChanges() {
     return _phoneController.text.isNotEmpty ||
-           _newPasswordController.text.isNotEmpty ||
-           _confirmPasswordController.text.isNotEmpty ||
-           _otpValue.isNotEmpty;
+        _newPasswordController.text.isNotEmpty ||
+        _confirmPasswordController.text.isNotEmpty ||
+        _otpValue.isNotEmpty;
   }
 
   // ─── Build ────────────────────────────────────────────────────────────────
@@ -258,7 +262,7 @@ class _ForgotPasswordViewState
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
-        
+
         if (!_hasUnsavedChanges()) {
           if (context.mounted) Navigator.of(context).pop();
           return;
@@ -268,13 +272,23 @@ class _ForgotPasswordViewState
           context: context,
           builder: (context) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: const Text('Keluar Halaman?', style: TextStyle(fontWeight: FontWeight.bold)),
-              content: const Text('Perubahan ini akan terhapus jika Anda keluar dari halaman ini.'),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: const Text(
+                'Keluar Halaman?',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              content: const Text(
+                'Perubahan ini akan terhapus jika Anda keluar dari halaman ini.',
+              ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Batal', style: TextStyle(color: AppColors.textSecondary)),
+                  child: const Text(
+                    'Batal',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
@@ -294,209 +308,212 @@ class _ForgotPasswordViewState
         }
       },
       child: Scaffold(
-      resizeToAvoidBottomInset: true,
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Colors.white, Color(0xFFF0F9FF)],
+        resizeToAvoidBottomInset: true,
+        body: Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Colors.white, Color(0xFFF0F9FF)],
+            ),
           ),
-        ),
-        child: Stack(
-          children: [
-            SafeArea(
-              child: Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 24,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Logo & Judul
-                      Column(
-                        children: [
-                          Container(
-                            width: 80,
-                            height: 80,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.06),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 4),
+          child: Stack(
+            children: [
+              SafeArea(
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 24,
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Logo & Judul
+                        Column(
+                          children: [
+                            Container(
+                              width: 80,
+                              height: 80,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.06),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              clipBehavior: Clip.antiAlias,
+                              child: Padding(
+                                padding: const EdgeInsets.all(10.0),
+                                child: Image.asset(
+                                  AppAssets.logo,
+                                  fit: BoxFit.contain,
                                 ),
-                              ],
-                            ),
-                            clipBehavior: Clip.antiAlias,
-                            child: Padding(
-                              padding: const EdgeInsets.all(10.0),
-                              child: Image.asset(
-                                AppAssets.logo,
-                                fit: BoxFit.contain,
                               ),
                             ),
-                          ),
 
-                          const SizedBox(height: 4),
-                          const Text(
-                            'Atur Ulang Kata Sandi',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textSecondary,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Step Indicator
-                      _buildStepIndicator(),
-                      const SizedBox(height: 20),
-
-                      // Card Form
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFFECEEF1)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.04),
-                              blurRadius: 16,
-                              offset: const Offset(0, 8),
+                            const SizedBox(height: 4),
+                            const Text(
+                              'Atur Ulang Kata Sandi',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
                           ],
                         ),
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 300),
-                          transitionBuilder: (child, animation) {
-                            return SlideTransition(
-                              position: Tween<Offset>(
-                                begin: const Offset(0.15, 0),
-                                end: Offset.zero,
-                              ).animate(CurvedAnimation(
-                                parent: animation,
-                                curve: Curves.easeOut,
-                              )),
-                              child: FadeTransition(
-                                opacity: animation,
-                                child: child,
+                        const SizedBox(height: 20),
+
+                        // Step Indicator
+                        _buildStepIndicator(),
+                        const SizedBox(height: 20),
+
+                        // Card Form
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: const Color(0xFFECEEF1)),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.04),
+                                blurRadius: 16,
+                                offset: const Offset(0, 8),
                               ),
-                            );
-                          },
-                          child: _currentStep == 1
-                              ? _buildStep1(authState)
-                              : _currentStep == 2
-                                  ? _buildStep2(authState)
-                                  : _buildStep3(authState),
+                            ],
+                          ),
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 300),
+                            transitionBuilder: (child, animation) {
+                              return SlideTransition(
+                                position:
+                                    Tween<Offset>(
+                                      begin: const Offset(0.15, 0),
+                                      end: Offset.zero,
+                                    ).animate(
+                                      CurvedAnimation(
+                                        parent: animation,
+                                        curve: Curves.easeOut,
+                                      ),
+                                    ),
+                                child: FadeTransition(
+                                  opacity: animation,
+                                  child: child,
+                                ),
+                              );
+                            },
+                            child: _currentStep == 1
+                                ? _buildStep1(authState)
+                                : _currentStep == 2
+                                ? _buildStep2(authState)
+                                : _buildStep3(authState),
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 24),
+                        const SizedBox(height: 24),
 
-                      const Column(
-                        children: [
-                          Text(
-                            '© 2026 Universitas Komputer Indonesia',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            'Versi 1.0.0',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: AppColors.textHint,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            // Toast
-            if (_isToastVisible && _toastMessage != null)
-              SafeArea(
-                child: Align(
-                  alignment: Alignment.topCenter,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFECEEF1)),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.08),
-                            blurRadius: 12,
-                            offset: const Offset(0, 6),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            _isErrorToast
-                                ? Icons.error_outline_rounded
-                                : Icons.check_circle_outline_rounded,
-                            color: _isErrorToast
-                                ? AppColors.dangerRed
-                                : AppColors.primaryGreen,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 10),
-                          Flexible(
-                            child: Text(
-                              _toastMessage!,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textPrimary,
+                        const Column(
+                          children: [
+                            Text(
+                              '© 2026 Universitas Komputer Indonesia',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.textSecondary,
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 10),
-                          GestureDetector(
-                            onTap: () =>
-                                setState(() => _isToastVisible = false),
-                            child: const Icon(
-                              Icons.close_rounded,
-                              size: 16,
-                              color: AppColors.textHint,
+                            SizedBox(height: 4),
+                            Text(
+                              'Versi 1.0.0',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: AppColors.textHint,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ),
-          ],
+
+              // Toast
+              if (_isToastVisible && _toastMessage != null)
+                SafeArea(
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFECEEF1)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.08),
+                              blurRadius: 12,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _isErrorToast
+                                  ? Icons.error_outline_rounded
+                                  : Icons.check_circle_outline_rounded,
+                              color: _isErrorToast
+                                  ? AppColors.dangerRed
+                                  : AppColors.primaryGreen,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 10),
+                            Flexible(
+                              child: Text(
+                                _toastMessage!,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            GestureDetector(
+                              onTap: () =>
+                                  setState(() => _isToastVisible = false),
+                              child: const Icon(
+                                Icons.close_rounded,
+                                size: 16,
+                                color: AppColors.textHint,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
-    ),
     );
   }
 
@@ -520,8 +537,8 @@ class _ForgotPasswordViewState
                 color: isDone
                     ? AppColors.primaryGreen
                     : isActive
-                        ? AppColors.primaryGreen
-                        : const Color(0xFFECEEF1),
+                    ? AppColors.primaryGreen
+                    : const Color(0xFFECEEF1),
                 boxShadow: isActive
                     ? [
                         BoxShadow(
@@ -534,8 +551,11 @@ class _ForgotPasswordViewState
               ),
               child: Center(
                 child: isDone
-                    ? const Icon(Icons.check_rounded,
-                        color: Colors.white, size: 14)
+                    ? const Icon(
+                        Icons.check_rounded,
+                        color: Colors.white,
+                        size: 14,
+                      )
                     : Text(
                         '$step',
                         style: TextStyle(
@@ -614,9 +634,7 @@ class _ForgotPasswordViewState
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 margin: const EdgeInsets.only(right: 8),
                 decoration: const BoxDecoration(
-                  border: Border(
-                    right: BorderSide(color: Color(0xFFE5E7EB)),
-                  ),
+                  border: Border(right: BorderSide(color: Color(0xFFE5E7EB))),
                 ),
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
@@ -632,7 +650,11 @@ class _ForgotPasswordViewState
                       ),
                     ),
                     SizedBox(width: 4),
-                    Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: AppColors.textSecondary),
+                    Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      size: 16,
+                      color: AppColors.textSecondary,
+                    ),
                   ],
                 ),
               ),
@@ -700,8 +722,9 @@ class _ForgotPasswordViewState
   // ─── Step 2: Input OTP ────────────────────────────────────────────────────
 
   Widget _buildStep2(AuthState authState) {
-    final maskedPhone =
-        _maskPhone(_normalizePhone(_phoneController.text.trim()));
+    final maskedPhone = _maskPhone(
+      _normalizePhone(_phoneController.text.trim()),
+    );
 
     return Column(
       key: const ValueKey('step2'),
@@ -736,8 +759,6 @@ class _ForgotPasswordViewState
           ),
         ),
         const SizedBox(height: 16),
-
-
 
         // OTP Input
         Center(
@@ -824,7 +845,9 @@ class _ForgotPasswordViewState
           onPressed: _otpCompleted ? _onVerifyOtp : null,
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primaryGreen,
-            disabledBackgroundColor: AppColors.primaryGreen.withValues(alpha: 0.4),
+            disabledBackgroundColor: AppColors.primaryGreen.withValues(
+              alpha: 0.4,
+            ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),
@@ -840,9 +863,7 @@ class _ForgotPasswordViewState
                 size: 18,
               ),
               const SizedBox(width: 8),
-              Text(
-                _otpCompleted ? 'VERIFIKASI OTP' : 'MASUKKAN 6 DIGIT OTP',
-              ),
+              Text(_otpCompleted ? 'VERIFIKASI OTP' : 'MASUKKAN 6 DIGIT OTP'),
             ],
           ),
         ),

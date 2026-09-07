@@ -24,12 +24,15 @@ class PetugasWhitelistGuardWidget extends StatelessWidget {
         color: isRejected ? AppColors.maroonRed : AppColors.warningYellow,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isRejected ? AppColors.maroonRed.withValues(alpha: 0.3) : AppColors.warningYellow,
+          color: isRejected
+              ? AppColors.maroonRed.withValues(alpha: 0.3)
+              : AppColors.warningYellow,
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: (isRejected ? AppColors.maroonRed : AppColors.warningYellow).withValues(alpha: 0.08),
+            color: (isRejected ? AppColors.maroonRed : AppColors.warningYellow)
+                .withValues(alpha: 0.08),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -52,7 +55,9 @@ class PetugasWhitelistGuardWidget extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            isRejected ? 'Pendaftaran Ditolak' : 'Menunggu Persetujuan RW / Admin DLH',
+            isRejected
+                ? 'Pendaftaran Ditolak'
+                : 'Menunggu Persetujuan RW / Admin DLH',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 17,
@@ -78,7 +83,9 @@ class PetugasWhitelistGuardWidget extends StatelessWidget {
             icon: const Icon(Icons.refresh_rounded, size: 18),
             label: const Text('Cek Status Terbaru'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: isRejected ? AppColors.maroonRed : AppColors.warningYellow,
+              backgroundColor: isRejected
+                  ? AppColors.maroonRed
+                  : AppColors.warningYellow,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -91,4 +98,3 @@ class PetugasWhitelistGuardWidget extends StatelessWidget {
     );
   }
 }
-

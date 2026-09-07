@@ -8,7 +8,9 @@ class LocationService {
   static final LocationService instance = LocationService._();
 
   /// Meminta izin lokasi dengan alert dialog edukasi sebelumnya
-  Future<LocationPermission> checkAndRequestPermission(BuildContext context) async {
+  Future<LocationPermission> checkAndRequestPermission(
+    BuildContext context,
+  ) async {
     bool serviceEnabled;
     LocationPermission permission;
 
@@ -36,7 +38,10 @@ class LocationService {
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('Saya Mengerti', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: const Text(
+                  'Saya Mengerti',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
               ),
             ],
           ),
@@ -54,19 +59,30 @@ class LocationService {
         await showDialog(
           context: context,
           builder: (ctx) => AlertDialog(
-            title: const Text('Izin Lokasi Diblokir', style: TextStyle(fontWeight: FontWeight.bold)),
-            content: const Text('Fitur ini wajib menggunakan GPS. Silakan buka Pengaturan HP Anda dan izinkan akses lokasi.'),
+            title: const Text(
+              'Izin Lokasi Diblokir',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            content: const Text(
+              'Fitur ini wajib menggunakan GPS. Silakan buka Pengaturan HP Anda dan izinkan akses lokasi.',
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('Batal', style: TextStyle(color: Colors.grey)),
+                child: const Text(
+                  'Batal',
+                  style: TextStyle(color: Colors.grey),
+                ),
               ),
               ElevatedButton(
                 onPressed: () {
                   Navigator.of(ctx).pop();
                   Geolocator.openAppSettings();
                 },
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                ),
                 child: const Text('Pengaturan'),
               ),
             ],

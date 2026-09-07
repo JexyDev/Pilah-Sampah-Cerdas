@@ -20,13 +20,13 @@ class GeofenceResult {
   });
 
   Map<String, dynamic> toJson() => {
-        'isInside': isInside,
-        'distanceToTargetMeters': distanceToTargetMeters,
-        'targetLat': targetLat,
-        'targetLng': targetLng,
-        'methodUsed': methodUsed,
-        'evaluatedAt': evaluatedAt.toIso8601String(),
-      };
+    'isInside': isInside,
+    'distanceToTargetMeters': distanceToTargetMeters,
+    'targetLat': targetLat,
+    'targetLng': targetLng,
+    'methodUsed': methodUsed,
+    'evaluatedAt': evaluatedAt.toIso8601String(),
+  };
 }
 
 /// Hasil evaluasi Multi-Geofence Posko (Update KKN 2026)
@@ -57,7 +57,8 @@ class KknTargetRules {
   /// Target minimal jam kegiatan KKN mahasiswa (200 Jam)
   static const int minTargetKknHours = 200;
   static const int minTargetKknMinutes = minTargetKknHours * 60; // 12.000 menit
-  static const int minTargetKknSeconds = minTargetKknMinutes * 60; // 720.000 detik
+  static const int minTargetKknSeconds =
+      minTargetKknMinutes * 60; // 720.000 detik
 
   /// Cek apakah mahasiswa telah memenuhi target minimal 200 jam
   static bool hasMetMinimumTarget(int accumulatedSeconds) {
@@ -84,7 +85,8 @@ class GeofenceZoneEngine {
     final dLat = _degToRad(lat2 - lat1);
     final dLon = _degToRad(lon2 - lon1);
 
-    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+    final a =
+        math.sin(dLat / 2) * math.sin(dLat / 2) +
         math.cos(_degToRad(lat1)) *
             math.cos(_degToRad(lat2)) *
             math.sin(dLon / 2) *
@@ -113,7 +115,8 @@ class GeofenceZoneEngine {
       final xj = polygon[j][0];
       final yj = polygon[j][1];
 
-      final intersect = ((yi > pointLng) != (yj > pointLng)) &&
+      final intersect =
+          ((yi > pointLng) != (yj > pointLng)) &&
           (pointLat < (xj - xi) * (pointLng - yi) / (yj - yi) + xi);
 
       if (intersect) {
@@ -134,10 +137,7 @@ class GeofenceZoneEngine {
       sumLat += p[0];
       sumLng += p[1];
     }
-    return {
-      'lat': sumLat / polygon.length,
-      'lng': sumLng / polygon.length,
-    };
+    return {'lat': sumLat / polygon.length, 'lng': sumLng / polygon.length};
   }
 
   /// Evaluasi lengkap apakah posisi mahasiswa berada dalam zona target yang valid
@@ -173,7 +173,9 @@ class GeofenceZoneEngine {
     }
 
     // 2. Cek Radius Geofence (Fallback jika target koordinat ditentukan)
-    if (targetLat != null && targetLng != null && (targetLat != 0.0 || targetLng != 0.0)) {
+    if (targetLat != null &&
+        targetLng != null &&
+        (targetLat != 0.0 || targetLng != 0.0)) {
       final dist = calculateHaversineDistance(
         userLat,
         userLng,
@@ -279,4 +281,3 @@ class GeofenceZoneEngine {
     );
   }
 }
-

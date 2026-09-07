@@ -24,19 +24,22 @@ class NotificationEngine {
       // Setup timezone ke Asia/Jakarta agar jadwal cron tepat di waktu WIB
       tz.initializeTimeZones();
       tz.setLocalLocation(tz.getLocation('Asia/Jakarta'));
-      
+
       const AndroidInitializationSettings initializationSettingsAndroid =
           AndroidInitializationSettings('@mipmap/ic_launcher');
 
-      const InitializationSettings initializationSettings = InitializationSettings(
-        android: initializationSettingsAndroid,
-      );
+      const InitializationSettings initializationSettings =
+          InitializationSettings(android: initializationSettingsAndroid);
 
       await _flutterLocalNotificationsPlugin.initialize(
         settings: initializationSettings,
         onDidReceiveNotificationResponse: (NotificationResponse response) {
-          debugPrint('[NotificationEngine] Notification tapped, payload: ${response.payload}');
-          if (navigatorKey != null && navigatorKey.currentState != null && response.payload != null) {
+          debugPrint(
+            '[NotificationEngine] Notification tapped, payload: ${response.payload}',
+          );
+          if (navigatorKey != null &&
+              navigatorKey.currentState != null &&
+              response.payload != null) {
             if (response.payload == 'ROUTE_POIN') {
               navigatorKey.currentState!.pushNamed('/poin');
             } else if (response.payload == 'ROUTE_HISTORY') {
@@ -89,52 +92,111 @@ class NotificationEngine {
 
       if (roleName == 'WARGA' || roleName == 'ADMIN') {
         // 1. Pengingat Memilah Sampah Pagi (Jadwal 07:00-08:00 WIB, Notif 06:40 WIB)
-        tz.TZDateTime scheduledPagi = tz.TZDateTime(tz.local, now.year, now.month, now.day, 6, 40);
-        if (scheduledPagi.isBefore(now)) scheduledPagi = scheduledPagi.add(const Duration(days: 1));
-
-        const AndroidNotificationDetails androidPagi = AndroidNotificationDetails(
-          'reminder_pagi_channel', 'Jadwal Buang Sampah Pagi',
-          importance: Importance.max, priority: Priority.high, icon: '@mipmap/ic_launcher', color: Color(0xFF0EA5E9),
+        tz.TZDateTime scheduledPagi = tz.TZDateTime(
+          tz.local,
+          now.year,
+          now.month,
+          now.day,
+          6,
+          40,
         );
+        if (scheduledPagi.isBefore(now))
+          scheduledPagi = scheduledPagi.add(const Duration(days: 1));
+
+        const AndroidNotificationDetails androidPagi =
+            AndroidNotificationDetails(
+              'reminder_pagi_channel',
+              'Jadwal Buang Sampah Pagi',
+              importance: Importance.max,
+              priority: Priority.high,
+              icon: '@mipmap/ic_launcher',
+              color: Color(0xFF0EA5E9),
+            );
 
         await _flutterLocalNotificationsPlugin.zonedSchedule(
-          id: 1, title: 'Jadwal Buang Sampah Pagi! 🌅', body: 'Pengingat: Jadwal buang sampah pagi (07:00-08:00) 20 menit lagi. Jangan lupa scan & buang sampah agar terhindar dari penalti poin!',
-          scheduledDate: scheduledPagi, notificationDetails: const NotificationDetails(android: androidPagi),
-          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle, matchDateTimeComponents: DateTimeComponents.time,
+          id: 1,
+          title: 'Jadwal Buang Sampah Pagi! 🌅',
+          body:
+              'Pengingat: Jadwal buang sampah pagi (07:00-08:00) 20 menit lagi. Jangan lupa scan & buang sampah agar terhindar dari penalti poin!',
+          scheduledDate: scheduledPagi,
+          notificationDetails: const NotificationDetails(android: androidPagi),
+          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+          matchDateTimeComponents: DateTimeComponents.time,
         );
 
         // 2. Pengingat Sore (Jadwal 16:00-17:00 WIB, Notif 15:40 WIB)
-        tz.TZDateTime scheduledSore = tz.TZDateTime(tz.local, now.year, now.month, now.day, 15, 40);
-        if (scheduledSore.isBefore(now)) scheduledSore = scheduledSore.add(const Duration(days: 1));
-
-        const AndroidNotificationDetails androidSore = AndroidNotificationDetails(
-          'reminder_sore_channel', 'Jadwal Buang Sampah Sore',
-          importance: Importance.max, priority: Priority.high, icon: '@mipmap/ic_launcher', color: Color(0xFF0EA5E9),
+        tz.TZDateTime scheduledSore = tz.TZDateTime(
+          tz.local,
+          now.year,
+          now.month,
+          now.day,
+          15,
+          40,
         );
+        if (scheduledSore.isBefore(now))
+          scheduledSore = scheduledSore.add(const Duration(days: 1));
+
+        const AndroidNotificationDetails androidSore =
+            AndroidNotificationDetails(
+              'reminder_sore_channel',
+              'Jadwal Buang Sampah Sore',
+              importance: Importance.max,
+              priority: Priority.high,
+              icon: '@mipmap/ic_launcher',
+              color: Color(0xFF0EA5E9),
+            );
 
         await _flutterLocalNotificationsPlugin.zonedSchedule(
-          id: 2, title: 'Jadwal Buang Sampah Sore! 🌇', body: 'Pengingat: Jadwal buang sampah sore (16:00-17:00) 20 menit lagi. Jangan lupa scan & buang sampah agar terhindar dari penalti poin!',
-          scheduledDate: scheduledSore, notificationDetails: const NotificationDetails(android: androidSore),
-          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle, matchDateTimeComponents: DateTimeComponents.time,
+          id: 2,
+          title: 'Jadwal Buang Sampah Sore! 🌇',
+          body:
+              'Pengingat: Jadwal buang sampah sore (16:00-17:00) 20 menit lagi. Jangan lupa scan & buang sampah agar terhindar dari penalti poin!',
+          scheduledDate: scheduledSore,
+          notificationDetails: const NotificationDetails(android: androidSore),
+          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+          matchDateTimeComponents: DateTimeComponents.time,
         );
-      } else if (roleName == 'PETUGAS_PEMILAHAN' || roleName == 'PETUGAS_RESIDU') {
+      } else if (roleName == 'PETUGAS_PEMILAHAN' ||
+          roleName == 'PETUGAS_RESIDU') {
         // 3. Pengingat Petugas Pemilah (06:00 WIB)
-        tz.TZDateTime scheduledPetugas = tz.TZDateTime(tz.local, now.year, now.month, now.day, 6, 0);
-        if (scheduledPetugas.isBefore(now)) scheduledPetugas = scheduledPetugas.add(const Duration(days: 1));
-
-        const AndroidNotificationDetails androidPetugas = AndroidNotificationDetails(
-          'reminder_petugas_channel', 'Jadwal Cek Antrean & Timbangan',
-          importance: Importance.max, priority: Priority.high, icon: '@mipmap/ic_launcher', color: Color(0xFF4CAF50),
+        tz.TZDateTime scheduledPetugas = tz.TZDateTime(
+          tz.local,
+          now.year,
+          now.month,
+          now.day,
+          6,
+          0,
         );
+        if (scheduledPetugas.isBefore(now))
+          scheduledPetugas = scheduledPetugas.add(const Duration(days: 1));
+
+        const AndroidNotificationDetails androidPetugas =
+            AndroidNotificationDetails(
+              'reminder_petugas_channel',
+              'Jadwal Cek Antrean & Timbangan',
+              importance: Importance.max,
+              priority: Priority.high,
+              icon: '@mipmap/ic_launcher',
+              color: Color(0xFF4CAF50),
+            );
 
         await _flutterLocalNotificationsPlugin.zonedSchedule(
-          id: 3, title: 'Waktunya Bertugas! 🚛', body: 'Pengingat: Cek antrean & input timbangan warga hari ini. Tidak ada input seharian = penalti pengurangan poin.',
-          scheduledDate: scheduledPetugas, notificationDetails: const NotificationDetails(android: androidPetugas),
-          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle, matchDateTimeComponents: DateTimeComponents.time,
+          id: 3,
+          title: 'Waktunya Bertugas! 🚛',
+          body:
+              'Pengingat: Cek antrean & input timbangan warga hari ini. Tidak ada input seharian = penalti pengurangan poin.',
+          scheduledDate: scheduledPetugas,
+          notificationDetails: const NotificationDetails(
+            android: androidPetugas,
+          ),
+          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+          matchDateTimeComponents: DateTimeComponents.time,
         );
       }
 
-      debugPrint('[NotificationEngine] Role-based daily reminders scheduled for role: $roleName');
+      debugPrint(
+        '[NotificationEngine] Role-based daily reminders scheduled for role: $roleName',
+      );
     } catch (e) {
       debugPrint('[NotificationEngine] Schedule error: $e');
     }
@@ -142,21 +204,24 @@ class NotificationEngine {
 
   Future<void> showPointsNotification(int points) async {
     try {
-      const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-        'transaction_channel',
-        'Transaksi Berhasil',
-        channelDescription: 'Notifikasi poin dari setoran sampah',
-        importance: Importance.max,
-        priority: Priority.high,
-        icon: '@mipmap/ic_launcher',
-        color: Color(0xFF4CAF50), // Green color
-      );
+      const AndroidNotificationDetails androidDetails =
+          AndroidNotificationDetails(
+            'transaction_channel',
+            'Transaksi Berhasil',
+            channelDescription: 'Notifikasi poin dari setoran sampah',
+            importance: Importance.max,
+            priority: Priority.high,
+            icon: '@mipmap/ic_launcher',
+            color: Color(0xFF4CAF50), // Green color
+          );
       const NotificationDetails platformDetails = NotificationDetails(
         android: androidDetails,
       );
 
       await _flutterLocalNotificationsPlugin.show(
-        id: DateTime.now().millisecondsSinceEpoch.remainder(100000), // ID unik agar tidak overwrite cronjob
+        id: DateTime.now().millisecondsSinceEpoch.remainder(
+          100000,
+        ), // ID unik agar tidak overwrite cronjob
 
         title: 'Setor Sampah Berhasil! 🎉',
         body: 'Hebat! Anda mendapatkan tambahan +$points poin.',
@@ -169,15 +234,16 @@ class NotificationEngine {
 
   Future<void> showActivationNotification(int points) async {
     try {
-      const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-        'activation_channel',
-        'Aktivasi Berhasil',
-        channelDescription: 'Notifikasi aktivasi tempat sampah',
-        importance: Importance.max,
-        priority: Priority.high,
-        icon: '@mipmap/ic_launcher',
-        color: Color(0xFF4CAF50), // Green color
-      );
+      const AndroidNotificationDetails androidDetails =
+          AndroidNotificationDetails(
+            'activation_channel',
+            'Aktivasi Berhasil',
+            channelDescription: 'Notifikasi aktivasi tempat sampah',
+            importance: Importance.max,
+            priority: Priority.high,
+            icon: '@mipmap/ic_launcher',
+            color: Color(0xFF4CAF50), // Green color
+          );
       const NotificationDetails platformDetails = NotificationDetails(
         android: androidDetails,
       );
@@ -185,25 +251,30 @@ class NotificationEngine {
       await _flutterLocalNotificationsPlugin.show(
         id: 4, // ID untuk notif aktivasi
         title: 'Aktivasi Tempat Sampah Berhasil! 🎉',
-        body: 'Selamat! Tempat Sampah Anda sudah aktif. Anda mendapatkan +$points poin.',
+        body:
+            'Selamat! Tempat Sampah Anda sudah aktif. Anda mendapatkan +$points poin.',
         notificationDetails: platformDetails,
       );
     } catch (e) {
-      debugPrint('[NotificationEngine] Failed to show activation notification: $e');
+      debugPrint(
+        '[NotificationEngine] Failed to show activation notification: $e',
+      );
     }
   }
 
   Future<void> showPunishmentNotification(int points) async {
     try {
-      const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-        'punishment_channel',
-        'Penalti & Pengurangan Poin',
-        channelDescription: 'Notifikasi penalti karena tidak menyetor sampah',
-        importance: Importance.max,
-        priority: Priority.high,
-        icon: '@mipmap/ic_launcher',
-        color: Color(0xFFEF4444), // Red color
-      );
+      const AndroidNotificationDetails androidDetails =
+          AndroidNotificationDetails(
+            'punishment_channel',
+            'Penalti & Pengurangan Poin',
+            channelDescription:
+                'Notifikasi penalti karena tidak menyetor sampah',
+            importance: Importance.max,
+            priority: Priority.high,
+            icon: '@mipmap/ic_launcher',
+            color: Color(0xFFEF4444), // Red color
+          );
       const NotificationDetails platformDetails = NotificationDetails(
         android: androidDetails,
       );
@@ -211,25 +282,30 @@ class NotificationEngine {
       await _flutterLocalNotificationsPlugin.show(
         id: 5, // ID untuk notif penalti/punishment
         title: 'Penalti: Poin Berkurang! âš ï¸',
-        body: 'Anda tidak melakukan setor sampah hari ini. Poin Anda berkurang -$points poin.',
+        body:
+            'Anda tidak melakukan setor sampah hari ini. Poin Anda berkurang -$points poin.',
         notificationDetails: platformDetails,
       );
     } catch (e) {
-      debugPrint('[NotificationEngine] Failed to show punishment notification: $e');
+      debugPrint(
+        '[NotificationEngine] Failed to show punishment notification: $e',
+      );
     }
   }
 
   Future<void> showResetPendingNotification() async {
     try {
-      const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-        'reset_channel',
-        'Pengajuan Pengosongan',
-        channelDescription: 'Notifikasi status pengajuan pengosongan tempat sampah',
-        importance: Importance.max,
-        priority: Priority.high,
-        icon: '@mipmap/ic_launcher',
-        color: Color(0xFFEAB308), // Yellow color
-      );
+      const AndroidNotificationDetails androidDetails =
+          AndroidNotificationDetails(
+            'reset_channel',
+            'Pengajuan Pengosongan',
+            channelDescription:
+                'Notifikasi status pengajuan pengosongan tempat sampah',
+            importance: Importance.max,
+            priority: Priority.high,
+            icon: '@mipmap/ic_launcher',
+            color: Color(0xFFEAB308), // Yellow color
+          );
       const NotificationDetails platformDetails = NotificationDetails(
         android: androidDetails,
       );
@@ -237,7 +313,8 @@ class NotificationEngine {
       await _flutterLocalNotificationsPlugin.show(
         id: 6,
         title: 'Pengajuan Pengosongan Terkirim â³',
-        body: 'Pengajuan pengosongan tempat sampah Anda sedang diproses oleh petugas.',
+        body:
+            'Pengajuan pengosongan tempat sampah Anda sedang diproses oleh petugas.',
         notificationDetails: platformDetails,
       );
     } catch (e) {
@@ -250,15 +327,17 @@ class NotificationEngine {
     required String type,
   }) async {
     try {
-      const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-        'timbangan_channel',
-        'Log Timbangan Pemilahan',
-        channelDescription: 'Notifikasi konfirmasi pengunggahan timbangan pemilahan',
-        importance: Importance.max,
-        priority: Priority.high,
-        icon: '@mipmap/ic_launcher',
-        color: Color(0xFF0D9488), // Teal color
-      );
+      const AndroidNotificationDetails androidDetails =
+          AndroidNotificationDetails(
+            'timbangan_channel',
+            'Log Timbangan Pemilahan',
+            channelDescription:
+                'Notifikasi konfirmasi pengunggahan timbangan pemilahan',
+            importance: Importance.max,
+            priority: Priority.high,
+            icon: '@mipmap/ic_launcher',
+            color: Color(0xFF0D9488), // Teal color
+          );
       const NotificationDetails platformDetails = NotificationDetails(
         android: androidDetails,
       );
@@ -266,11 +345,14 @@ class NotificationEngine {
       await _flutterLocalNotificationsPlugin.show(
         id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
         title: 'Log Timbangan Berhasil Disimpan! âš–ï¸',
-        body: 'Log timbangan $type seberat ${weightKg.toStringAsFixed(1)} kg berhasil diunggah ke server.',
+        body:
+            'Log timbangan $type seberat ${weightKg.toStringAsFixed(1)} kg berhasil diunggah ke server.',
         notificationDetails: platformDetails,
       );
     } catch (e) {
-      debugPrint('[NotificationEngine] Failed to show timbangan notification: $e');
+      debugPrint(
+        '[NotificationEngine] Failed to show timbangan notification: $e',
+      );
     }
   }
 
@@ -282,15 +364,16 @@ class NotificationEngine {
     String? payload,
   }) async {
     try {
-      final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-        'backend_channel',
-        'Notifikasi Sistem Backend',
-        channelDescription: 'Notifikasi resmi dari backend & atasan',
-        importance: Importance.max,
-        priority: Priority.high,
-        icon: '@mipmap/ic_launcher',
-        color: color,
-      );
+      final AndroidNotificationDetails androidDetails =
+          AndroidNotificationDetails(
+            'backend_channel',
+            'Notifikasi Sistem Backend',
+            channelDescription: 'Notifikasi resmi dari backend & atasan',
+            importance: Importance.max,
+            priority: Priority.high,
+            icon: '@mipmap/ic_launcher',
+            color: color,
+          );
       final NotificationDetails platformDetails = NotificationDetails(
         android: androidDetails,
       );
@@ -303,23 +386,27 @@ class NotificationEngine {
         notificationDetails: platformDetails,
       );
     } catch (e) {
-      debugPrint('[NotificationEngine] Failed to show generic notification: $e');
+      debugPrint(
+        '[NotificationEngine] Failed to show generic notification: $e',
+      );
     }
   }
 
   Future<void> showOngoingKKNNotification(String message) async {
     try {
-      const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-        'kkn_location_channel',
-        'Pantauan Lokasi KKN',
-        channelDescription: 'Notifikasi persisten saat pemantauan lokasi aktif',
-        importance: Importance.low,
-        priority: Priority.low,
-        icon: '@mipmap/ic_launcher',
-        ongoing: true, // Tidak bisa di-swipe (harus di-cancel oleh sistem)
-        autoCancel: false,
-        color: Color(0xFF2196F3), // Blue
-      );
+      const AndroidNotificationDetails androidDetails =
+          AndroidNotificationDetails(
+            'kkn_location_channel',
+            'Pantauan Lokasi KKN',
+            channelDescription:
+                'Notifikasi persisten saat pemantauan lokasi aktif',
+            importance: Importance.low,
+            priority: Priority.low,
+            icon: '@mipmap/ic_launcher',
+            ongoing: true, // Tidak bisa di-swipe (harus di-cancel oleh sistem)
+            autoCancel: false,
+            color: Color(0xFF2196F3), // Blue
+          );
       const NotificationDetails platformDetails = NotificationDetails(
         android: androidDetails,
       );
@@ -331,7 +418,9 @@ class NotificationEngine {
         notificationDetails: platformDetails,
       );
     } catch (e) {
-      debugPrint('[NotificationEngine] Failed to show ongoing notification: $e');
+      debugPrint(
+        '[NotificationEngine] Failed to show ongoing notification: $e',
+      );
     }
   }
 
@@ -339,7 +428,9 @@ class NotificationEngine {
     try {
       await _flutterLocalNotificationsPlugin.cancel(id: 999);
     } catch (e) {
-      debugPrint('[NotificationEngine] Failed to cancel ongoing notification: $e');
+      debugPrint(
+        '[NotificationEngine] Failed to cancel ongoing notification: $e',
+      );
     }
   }
 
@@ -362,17 +453,19 @@ class NotificationEngine {
           ? 'Di dalam zona • $timeStr / $targetMinutes menit'
           : 'Kembali ke zona untuk melanjutkan • $timeStr / $targetMinutes menit';
 
-      const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-        'kkn_location_channel',
-        'Pantauan Lokasi KKN',
-        channelDescription: 'Notifikasi persisten saat pemantauan lokasi aktif',
-        importance: Importance.low,
-        priority: Priority.low,
-        icon: '@mipmap/ic_launcher',
-        ongoing: true,
-        autoCancel: false,
-        color: Color(0xFF2196F3),
-      );
+      const AndroidNotificationDetails androidDetails =
+          AndroidNotificationDetails(
+            'kkn_location_channel',
+            'Pantauan Lokasi KKN',
+            channelDescription:
+                'Notifikasi persisten saat pemantauan lokasi aktif',
+            importance: Importance.low,
+            priority: Priority.low,
+            icon: '@mipmap/ic_launcher',
+            ongoing: true,
+            autoCancel: false,
+            color: Color(0xFF2196F3),
+          );
       await _flutterLocalNotificationsPlugin.show(
         id: 999,
         title: title,
@@ -380,7 +473,9 @@ class NotificationEngine {
         notificationDetails: const NotificationDetails(android: androidDetails),
       );
     } catch (e) {
-      debugPrint('[NotificationEngine] Failed to update ongoing notification: $e');
+      debugPrint(
+        '[NotificationEngine] Failed to update ongoing notification: $e',
+      );
     }
   }
 
@@ -397,22 +492,25 @@ class NotificationEngine {
       final secs = accumulatedSeconds % 60;
       final timeStr = '$mins:${secs.toString().padLeft(2, '0')}';
 
-      const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-        'kkn_location_channel',
-        'Pantauan Lokasi KKN',
-        channelDescription: 'Notifikasi persisten saat pemantauan lokasi aktif',
-        importance: Importance.defaultImportance,
-        priority: Priority.defaultPriority,
-        icon: '@mipmap/ic_launcher',
-        ongoing: true,  // Tetap muncul, tidak bisa di-swipe
-        autoCancel: false,
-        color: Color(0xFFFFA000), // Amber — menandakan status jeda
-      );
+      const AndroidNotificationDetails androidDetails =
+          AndroidNotificationDetails(
+            'kkn_location_channel',
+            'Pantauan Lokasi KKN',
+            channelDescription:
+                'Notifikasi persisten saat pemantauan lokasi aktif',
+            importance: Importance.defaultImportance,
+            priority: Priority.defaultPriority,
+            icon: '@mipmap/ic_launcher',
+            ongoing: true, // Tetap muncul, tidak bisa di-swipe
+            autoCancel: false,
+            color: Color(0xFFFFA000), // Amber — menandakan status jeda
+          );
 
       await _flutterLocalNotificationsPlugin.show(
         id: 999,
         title: '⏸ Presensi KKN Dijeda',
-        body: 'Durasi tercatat: $timeStr / $targetMinutes menit. Buka aplikasi untuk melanjutkan.',
+        body:
+            'Durasi tercatat: $timeStr / $targetMinutes menit. Buka aplikasi untuk melanjutkan.',
         notificationDetails: const NotificationDetails(android: androidDetails),
       );
     } catch (e) {
@@ -424,7 +522,8 @@ class NotificationEngine {
   Future<void> cancelAll() async {
     try {
       await _flutterLocalNotificationsPlugin.cancelAll();
-    } catch (e) { debugPrint('Silenced error: $e'); }
+    } catch (e) {
+      debugPrint('Silenced error: $e');
+    }
   }
 }
-

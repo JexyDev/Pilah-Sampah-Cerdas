@@ -24,25 +24,31 @@ class KelompokKknView extends ConsumerWidget {
     final rw = user?.rw.isNotEmpty == true ? user!.rw : '-';
     final kelDisplay = kel.toLowerCase().startsWith('kel') ? kel : 'Kel. $kel';
 
-    final KelompokKknData kelompokData = state.kelompok ?? KelompokKknData(
-      groupId: user?.id ?? '',
-      groupName: kel != '-' ? 'Kelompok KKN $kel RW $rw' : 'Kelompok KKN',
-      poskoLocation: kel != '-' ? 'Posko KKN RW $rw, $kelDisplay' : '-',
-      dosenPembimbing: '-',
-      totalGroupPoints: 0,
-      // Fallback hanya menampilkan user sendiri, tanpa menjadikannya Ketua
-      // isLeader=false agar tidak misleading ketika data backend belum dimuat
-      members: user != null ? [
-        KelompokMemberData(
-          userId: user.id,
-          nim: user.nim.isNotEmpty ? user.nim : '-',
-          name: user.name.isNotEmpty ? user.name : '-',
-          jurusan: user.prodi.isNotEmpty ? user.prodi : (user.jurusan.isNotEmpty ? user.jurusan : '-'),
-          individualPoints: 0,
-          isLeader: false,
-        ),
-      ] : [],
-    );
+    final KelompokKknData kelompokData =
+        state.kelompok ??
+        KelompokKknData(
+          groupId: user?.id ?? '',
+          groupName: kel != '-' ? 'Kelompok KKN $kel RW $rw' : 'Kelompok KKN',
+          poskoLocation: kel != '-' ? 'Posko KKN RW $rw, $kelDisplay' : '-',
+          dosenPembimbing: '-',
+          totalGroupPoints: 0,
+          // Fallback hanya menampilkan user sendiri, tanpa menjadikannya Ketua
+          // isLeader=false agar tidak misleading ketika data backend belum dimuat
+          members: user != null
+              ? [
+                  KelompokMemberData(
+                    userId: user.id,
+                    nim: user.nim.isNotEmpty ? user.nim : '-',
+                    name: user.name.isNotEmpty ? user.name : '-',
+                    jurusan: user.prodi.isNotEmpty
+                        ? user.prodi
+                        : (user.jurusan.isNotEmpty ? user.jurusan : '-'),
+                    individualPoints: 0,
+                    isLeader: false,
+                  ),
+                ]
+              : [],
+        );
 
     // Deduplicate members by userId (bukan name) agar anggota dengan nama mirip tidak di-merge
     final uniqueMembers = <String, KelompokMemberData>{};
@@ -75,27 +81,39 @@ class KelompokKknView extends ConsumerWidget {
       return 0;
     });
 
-    final isCurrentUserLeader = user != null && membersToDisplay.any((m) => m.userId == user.id && m.isLeader);
+    final isCurrentUserLeader =
+        user != null &&
+        membersToDisplay.any((m) => m.userId == user.id && m.isLeader);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
         title: const Text(
           'Kelompok KKN',
-          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18, color: AppColors.textPrimary),
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 18,
+            color: AppColors.textPrimary,
+          ),
         ),
         backgroundColor: Colors.white,
-        
+
         shadowColor: Colors.black12,
         surfaceTintColor: Colors.transparent,
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+          icon: const Icon(
+            Icons.arrow_back_rounded,
+            color: AppColors.textPrimary,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: AppColors.textPrimary),
+            icon: const Icon(
+              Icons.refresh_rounded,
+              color: AppColors.textPrimary,
+            ),
             onPressed: () => notifier.fetchKelompok(),
           ),
         ],
@@ -112,7 +130,9 @@ class KelompokKknView extends ConsumerWidget {
               if (state.isLoading) ...[
                 const SizedBox(height: 100),
                 const Center(
-                  child: CircularProgressIndicator(color: AppColors.primaryGreen),
+                  child: CircularProgressIndicator(
+                    color: AppColors.primaryGreen,
+                  ),
                 ),
               ] else ...[
                 if (state.error != null)
@@ -131,7 +151,10 @@ class KelompokKknView extends ConsumerWidget {
                         Expanded(
                           child: Text(
                             state.error!,
-                            style: const TextStyle(color: Colors.red, fontSize: 13),
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 13,
+                            ),
                           ),
                         ),
                       ],
@@ -140,7 +163,9 @@ class KelompokKknView extends ConsumerWidget {
                 // Header Kelompok & Dosen Pembimbing
                 Card(
                   elevation: 3,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   child: Container(
                     padding: const EdgeInsets.all(18.0),
                     decoration: BoxDecoration(
@@ -162,7 +187,11 @@ class KelompokKknView extends ConsumerWidget {
                                 color: Colors.white.withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: const Icon(Icons.groups_rounded, color: Colors.white, size: 28),
+                              child: const Icon(
+                                Icons.groups_rounded,
+                                color: Colors.white,
+                                size: 28,
+                              ),
                             ),
                             const SizedBox(width: 14),
                             Expanded(
@@ -180,12 +209,19 @@ class KelompokKknView extends ConsumerWidget {
                                   const SizedBox(height: 2),
                                   Row(
                                     children: [
-                                      const Icon(Icons.location_on_outlined, color: Colors.white70, size: 14),
+                                      const Icon(
+                                        Icons.location_on_outlined,
+                                        color: Colors.white70,
+                                        size: 14,
+                                      ),
                                       const SizedBox(width: 4),
                                       Expanded(
                                         child: Text(
                                           kelompokData.poskoLocation,
-                                          style: const TextStyle(fontSize: 12, color: Colors.white70),
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.white70,
+                                          ),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                         ),
@@ -210,7 +246,11 @@ class KelompokKknView extends ConsumerWidget {
                                 color: Colors.white.withValues(alpha: 0.15),
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(Icons.school_rounded, color: Colors.white, size: 24),
+                              child: const Icon(
+                                Icons.school_rounded,
+                                color: Colors.white,
+                                size: 24,
+                              ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -219,19 +259,29 @@ class KelompokKknView extends ConsumerWidget {
                                 children: [
                                   const Text(
                                     'Dosen Pembimbing Lapangan (DPL):',
-                                    style: TextStyle(fontSize: 11, color: Colors.white70),
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.white70,
+                                    ),
                                   ),
                                   Text(
                                     kelompokData.dosenPembimbing,
-                                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                   if (kelompokData.dplNip != '-') ...[
                                     const SizedBox(height: 2),
                                     Text(
                                       'NIP: ${kelompokData.dplNip}',
-                                      style: const TextStyle(fontSize: 12, color: Colors.white70),
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.white70,
+                                      ),
                                     ),
-                                  ]
+                                  ],
                                 ],
                               ),
                             ),
@@ -239,26 +289,49 @@ class KelompokKknView extends ConsumerWidget {
                               InkWell(
                                 onTap: () async {
                                   final rawPhone = kelompokData.dplPhone;
-                                  final cleanPhone = rawPhone.replaceAll(RegExp(r'[^0-9]'), '').replaceFirst(RegExp(r'^0'), '62');
-                                  final waUrl = Uri.parse('https://wa.me/$cleanPhone');
+                                  final cleanPhone = rawPhone
+                                      .replaceAll(RegExp(r'[^0-9]'), '')
+                                      .replaceFirst(RegExp(r'^0'), '62');
+                                  final waUrl = Uri.parse(
+                                    'https://wa.me/$cleanPhone',
+                                  );
                                   if (await canLaunchUrl(waUrl)) {
-                                    await launchUrl(waUrl, mode: LaunchMode.externalApplication);
+                                    await launchUrl(
+                                      waUrl,
+                                      mode: LaunchMode.externalApplication,
+                                    );
                                   }
                                 },
                                 borderRadius: BorderRadius.circular(30),
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: Colors.white,
                                     borderRadius: BorderRadius.circular(30),
                                   ),
                                   child: Row(
                                     children: [
-                                      Image.asset('assets/icons/ic_whatsapp.png', width: 16, height: 16, errorBuilder: (c, e, s) => const Icon(Icons.chat, size: 16, color: Colors.green)),
+                                      Image.asset(
+                                        'assets/icons/ic_whatsapp.png',
+                                        width: 16,
+                                        height: 16,
+                                        errorBuilder: (c, e, s) => const Icon(
+                                          Icons.chat,
+                                          size: 16,
+                                          color: Colors.green,
+                                        ),
+                                      ),
                                       const SizedBox(width: 6),
                                       const Text(
                                         'Hubungi DPL',
-                                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.primaryGreen,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -286,7 +359,9 @@ class KelompokKknView extends ConsumerWidget {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.3)),
+                    border: Border.all(
+                      color: AppColors.primaryGreen.withValues(alpha: 0.3),
+                    ),
                     boxShadow: [
                       BoxShadow(
                         color: AppColors.primaryGreen.withValues(alpha: 0.08),
@@ -303,7 +378,11 @@ class KelompokKknView extends ConsumerWidget {
                           color: AppColors.primaryGreen.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.stars_rounded, color: AppColors.primaryGreen, size: 36),
+                        child: const Icon(
+                          Icons.stars_rounded,
+                          color: AppColors.primaryGreen,
+                          size: 36,
+                        ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -312,7 +391,11 @@ class KelompokKknView extends ConsumerWidget {
                           children: [
                             const Text(
                               'Poin Akumulasi Kelompok',
-                              style: TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                             const SizedBox(height: 4),
                             Text(
@@ -327,7 +410,10 @@ class KelompokKknView extends ConsumerWidget {
                             const SizedBox(height: 2),
                             Text(
                               'Penjumlahan poin individu ${membersToDisplay.length} anggota kelompok',
-                              style: const TextStyle(fontSize: 11, color: Colors.black45),
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Colors.black45,
+                              ),
                             ),
                           ],
                         ),
@@ -346,17 +432,28 @@ class KelompokKknView extends ConsumerWidget {
                   children: [
                     const Text(
                       'Anggota Kelompok KKN',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.primaryGreen.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         '${membersToDisplay.length} Orang',
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primaryGreen,
+                        ),
                       ),
                     ),
                   ],
@@ -371,19 +468,33 @@ class KelompokKknView extends ConsumerWidget {
                   separatorBuilder: (_, __) => const SizedBox(height: 10),
                   itemBuilder: (context, index) {
                     final member = membersToDisplay[index];
-                    final isCurrentUser = user != null && (member.name.toLowerCase().trim() == user.name.toLowerCase().trim());
+                    final isCurrentUser =
+                        user != null &&
+                        (member.name.toLowerCase().trim() ==
+                            user.name.toLowerCase().trim());
                     return Card(
                       elevation: 1,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 6,
+                        ),
                         leading: CircleAvatar(
                           backgroundColor: member.isLeader
                               ? AppColors.primaryGreen
-                              : AppColors.primaryBlueDark.withValues(alpha: 0.1),
-                          foregroundColor: member.isLeader ? Colors.white : AppColors.primaryBlueDark,
+                              : AppColors.primaryBlueDark.withValues(
+                                  alpha: 0.1,
+                                ),
+                          foregroundColor: member.isLeader
+                              ? Colors.white
+                              : AppColors.primaryBlueDark,
                           child: Text(
-                            member.name.isNotEmpty ? member.name[0].toUpperCase() : 'M',
+                            member.name.isNotEmpty
+                                ? member.name[0].toUpperCase()
+                                : 'M',
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ),
@@ -392,15 +503,23 @@ class KelompokKknView extends ConsumerWidget {
                             Expanded(
                               child: Text(
                                 member.name,
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
                               ),
                             ),
                             if (member.isLeader)
                               Container(
                                 margin: const EdgeInsets.only(left: 6),
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primaryGreen.withValues(alpha: 0.15),
+                                  color: AppColors.primaryGreen.withValues(
+                                    alpha: 0.15,
+                                  ),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: const Text(
@@ -415,11 +534,20 @@ class KelompokKknView extends ConsumerWidget {
                             if (isCurrentUser)
                               Container(
                                 margin: const EdgeInsets.only(left: 6),
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primaryBlue.withValues(alpha: 0.15),
+                                  color: AppColors.primaryBlue.withValues(
+                                    alpha: 0.15,
+                                  ),
                                   borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: AppColors.primaryBlue.withValues(alpha: 0.3)),
+                                  border: Border.all(
+                                    color: AppColors.primaryBlue.withValues(
+                                      alpha: 0.3,
+                                    ),
+                                  ),
                                 ),
                                 child: const Text(
                                   'ANDA',
@@ -437,12 +565,19 @@ class KelompokKknView extends ConsumerWidget {
                           children: [
                             Text(
                               member.nim.isNotEmpty ? member.nim : '-',
-                              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                             if (member.statusPenugasanRw != '-')
                               Text(
                                 'Penugasan: RW ${member.statusPenugasanRw}',
-                                style: const TextStyle(fontSize: 11, color: AppColors.primaryBlue),
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.primaryBlue,
+                                ),
                               ),
                           ],
                         ),
@@ -460,7 +595,10 @@ class KelompokKknView extends ConsumerWidget {
                             ),
                             const Text(
                               'Individu',
-                              style: TextStyle(fontSize: 10, color: AppColors.textSecondary),
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: AppColors.textSecondary,
+                              ),
                             ),
                           ],
                         ),
@@ -476,16 +614,25 @@ class KelompokKknView extends ConsumerWidget {
                   decoration: BoxDecoration(
                     color: AppColors.primaryBlue.withValues(alpha: 0.06),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.primaryBlue.withValues(alpha: 0.2)),
+                    border: Border.all(
+                      color: AppColors.primaryBlue.withValues(alpha: 0.2),
+                    ),
                   ),
                   child: const Row(
                     children: [
-                      Icon(Icons.info_outline_rounded, color: AppColors.primaryBlueDark, size: 20),
+                      Icon(
+                        Icons.info_outline_rounded,
+                        color: AppColors.primaryBlueDark,
+                        size: 20,
+                      ),
                       SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           'Keanggotaan & DPL kelompok KKN dikelola oleh Admin DLH. Aplikasi mobile bersifat read-only.',
-                          style: TextStyle(fontSize: 11, color: AppColors.primaryBlueDark),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.primaryBlueDark,
+                          ),
                         ),
                       ),
                     ],
@@ -499,6 +646,7 @@ class KelompokKknView extends ConsumerWidget {
       ),
     );
   }
+
   Widget _buildStikerQrCard(BuildContext context) {
     return InkWell(
       onTap: () {
@@ -527,7 +675,10 @@ class KelompokKknView extends ConsumerWidget {
                 color: AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.qr_code_scanner, color: AppColors.primary),
+              child: const Icon(
+                Icons.qr_code_scanner,
+                color: AppColors.primary,
+              ),
             ),
             const SizedBox(width: 16),
             const Expanded(
@@ -560,13 +711,20 @@ class KelompokKknView extends ConsumerWidget {
     );
   }
 
-  Widget _buildPoskoCard(BuildContext context, WidgetRef ref, bool isCurrentUserLeader) {
+  Widget _buildPoskoCard(
+    BuildContext context,
+    WidgetRef ref,
+    bool isCurrentUserLeader,
+  ) {
     final poskoState = ref.watch(poskoKknProvider);
     final posko = poskoState.poskoResponse?.posko;
-    final isLeader = poskoState.poskoResponse?.isUserLeader ?? isCurrentUserLeader;
+    final isLeader =
+        poskoState.poskoResponse?.isUserLeader ?? isCurrentUserLeader;
 
     if (poskoState.isLoading && posko == null) {
-      return const Center(child: CircularProgressIndicator(color: AppColors.primaryGreen));
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.primaryGreen),
+      );
     }
 
     return Container(
@@ -574,7 +732,9 @@ class KelompokKknView extends ConsumerWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.3)),
+        border: Border.all(
+          color: AppColors.primaryGreen.withValues(alpha: 0.3),
+        ),
         boxShadow: [
           BoxShadow(
             color: AppColors.primaryGreen.withValues(alpha: 0.08),
@@ -603,7 +763,10 @@ class KelompokKknView extends ConsumerWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.primaryGreen.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
@@ -664,16 +827,20 @@ class KelompokKknView extends ConsumerWidget {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.location_on_rounded, size: 16, color: AppColors.textSecondary),
+                    const Icon(
+                      Icons.location_on_rounded,
+                      size: 16,
+                      color: AppColors.textSecondary,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        posko?.alamat.isNotEmpty == true 
-                            ? posko!.alamat 
+                        posko?.alamat.isNotEmpty == true
+                            ? posko!.alamat
                             : 'Alamat tidak tersedia. Silakan daftarkan lokasi posko KKN Anda.',
                         style: const TextStyle(
-                          fontSize: 13, 
-                          color: AppColors.textSecondary, 
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
                           height: 1.4,
                         ),
                       ),
@@ -691,7 +858,10 @@ class KelompokKknView extends ConsumerWidget {
                         children: [
                           FlutterMap(
                             options: MapOptions(
-                              initialCenter: LatLng(posko.latitude, posko.longitude),
+                              initialCenter: LatLng(
+                                posko.latitude,
+                                posko.longitude,
+                              ),
                               initialZoom: 15.0,
                               interactionOptions: const InteractionOptions(
                                 flags: InteractiveFlag.none,
@@ -699,13 +869,17 @@ class KelompokKknView extends ConsumerWidget {
                             ),
                             children: [
                               TileLayer(
-                                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                urlTemplate:
+                                    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                                 userAgentPackageName: 'com.makerindo.berseka',
                               ),
                               MarkerLayer(
                                 markers: [
                                   Marker(
-                                    point: LatLng(posko.latitude, posko.longitude),
+                                    point: LatLng(
+                                      posko.latitude,
+                                      posko.longitude,
+                                    ),
                                     width: 40,
                                     height: 40,
                                     child: const Icon(
@@ -723,32 +897,62 @@ class KelompokKknView extends ConsumerWidget {
                             left: 8,
                             right: 8,
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.white.withValues(alpha: 0.9),
                                 borderRadius: BorderRadius.circular(8),
                                 boxShadow: const [
-                                  BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
+                                  BoxShadow(
+                                    color: Colors.black12,
+                                    blurRadius: 4,
+                                    offset: Offset(0, 2),
+                                  ),
                                 ],
                               ),
                               child: Row(
                                 children: [
-                                  const Icon(Icons.pin_drop_rounded, size: 14, color: AppColors.primaryGreen),
+                                  const Icon(
+                                    Icons.pin_drop_rounded,
+                                    size: 14,
+                                    color: AppColors.primaryGreen,
+                                  ),
                                   const SizedBox(width: 6),
                                   Expanded(
                                     child: Text(
                                       '${posko.latitude.toStringAsFixed(5)}, ${posko.longitude.toStringAsFixed(5)}',
-                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.textPrimary,
+                                      ),
                                     ),
                                   ),
                                   InkWell(
                                     onTap: () {
-                                      Clipboard.setData(ClipboardData(text: '${posko.latitude},${posko.longitude}'));
-                                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Koordinat disalin!')));
+                                      Clipboard.setData(
+                                        ClipboardData(
+                                          text:
+                                              '${posko.latitude},${posko.longitude}',
+                                        ),
+                                      );
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Koordinat disalin!'),
+                                        ),
+                                      );
                                     },
                                     child: const Padding(
                                       padding: EdgeInsets.all(4.0),
-                                      child: Icon(Icons.copy_rounded, size: 14, color: AppColors.primaryGreen),
+                                      child: Icon(
+                                        Icons.copy_rounded,
+                                        size: 14,
+                                        color: AppColors.primaryGreen,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -766,10 +970,18 @@ class KelompokKknView extends ConsumerWidget {
                         Expanded(
                           child: OutlinedButton.icon(
                             icon: const Icon(Icons.map_rounded, size: 16),
-                            label: const Text('Buka Map', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                            label: const Text(
+                              'Buka Map',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: AppColors.primaryBlue,
-                              side: const BorderSide(color: AppColors.primaryBlue),
+                              side: const BorderSide(
+                                color: AppColors.primaryBlue,
+                              ),
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -780,7 +992,10 @@ class KelompokKknView extends ConsumerWidget {
                                 'https://www.google.com/maps/search/?api=1&query=${posko.latitude},${posko.longitude}',
                               );
                               if (await canLaunchUrl(url)) {
-                                await launchUrl(url, mode: LaunchMode.externalApplication);
+                                await launchUrl(
+                                  url,
+                                  mode: LaunchMode.externalApplication,
+                                );
                               }
                             },
                           ),
@@ -788,13 +1003,29 @@ class KelompokKknView extends ConsumerWidget {
                         const SizedBox(width: 8),
                         Expanded(
                           child: OutlinedButton.icon(
-                            onPressed: () => Navigator.pushNamed(context, AppRoutes.registerPosko),
-                            icon: const Icon(Icons.edit_location_alt_rounded, size: 16),
-                            label: const Text('Perbarui Lokasi', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                            onPressed: () => Navigator.pushNamed(
+                              context,
+                              AppRoutes.registerPosko,
+                            ),
+                            icon: const Icon(
+                              Icons.edit_location_alt_rounded,
+                              size: 16,
+                            ),
+                            label: const Text(
+                              'Perbarui Lokasi',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: AppColors.primaryGreen,
-                              side: const BorderSide(color: AppColors.primaryGreen),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              side: const BorderSide(
+                                color: AppColors.primaryGreen,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                               padding: const EdgeInsets.symmetric(vertical: 12),
                             ),
                           ),
@@ -806,7 +1037,10 @@ class KelompokKknView extends ConsumerWidget {
                       width: double.infinity,
                       child: OutlinedButton.icon(
                         icon: const Icon(Icons.map_rounded, size: 16),
-                        label: const Text('Buka di Google Maps', style: TextStyle(fontSize: 13)),
+                        label: const Text(
+                          'Buka di Google Maps',
+                          style: TextStyle(fontSize: 13),
+                        ),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.primaryBlue,
                           side: const BorderSide(color: AppColors.primaryBlue),
@@ -832,13 +1066,19 @@ class KelompokKknView extends ConsumerWidget {
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
-                      onPressed: () => Navigator.pushNamed(context, AppRoutes.registerPosko),
-                      icon: const Icon(Icons.edit_location_alt_rounded, size: 18),
+                      onPressed: () =>
+                          Navigator.pushNamed(context, AppRoutes.registerPosko),
+                      icon: const Icon(
+                        Icons.edit_location_alt_rounded,
+                        size: 18,
+                      ),
                       label: const Text('Daftarkan Posko'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.primaryGreen,
                         side: const BorderSide(color: AppColors.primaryGreen),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
                     ),
@@ -889,7 +1129,9 @@ class KelompokKknView extends ConsumerWidget {
                 ),
                 child: Icon(
                   Icons.folder_shared_rounded,
-                  color: hasUrl ? const Color(0xFF1A73E8) : AppColors.textSecondary,
+                  color: hasUrl
+                      ? const Color(0xFF1A73E8)
+                      : AppColors.textSecondary,
                   size: 26,
                 ),
               ),
@@ -909,11 +1151,15 @@ class KelompokKknView extends ConsumerWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      hasUrl ? 'Folder Portofolio & Laporan KKN' : 'Belum ada link drive',
+                      hasUrl
+                          ? 'Folder Portofolio & Laporan KKN'
+                          : 'Belum ada link drive',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
-                        color: hasUrl ? AppColors.textPrimary : AppColors.textSecondary,
+                        color: hasUrl
+                            ? AppColors.textPrimary
+                            : AppColors.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -934,12 +1180,17 @@ class KelompokKknView extends ConsumerWidget {
                   ? () async {
                       final uri = Uri.parse(driveUrl);
                       if (await canLaunchUrl(uri)) {
-                        await launchUrl(uri, mode: LaunchMode.externalApplication);
+                        await launchUrl(
+                          uri,
+                          mode: LaunchMode.externalApplication,
+                        );
                       } else {
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('Tidak dapat membuka tautan Google Drive.'),
+                              content: Text(
+                                'Tidak dapat membuka tautan Google Drive.',
+                              ),
                               behavior: SnackBarBehavior.floating,
                             ),
                           );
@@ -950,7 +1201,10 @@ class KelompokKknView extends ConsumerWidget {
               icon: const Icon(Icons.open_in_new_rounded, size: 16),
               label: Text(
                 hasUrl ? 'Buka Google Drive' : 'Link Belum Disiapkan Admin',
-                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                ),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF1A73E8),

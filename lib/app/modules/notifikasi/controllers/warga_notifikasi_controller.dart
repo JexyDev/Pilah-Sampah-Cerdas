@@ -10,7 +10,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 final Set<String> _wargaShownNotifIds = {};
 
 /// Provider khusus daftar notifikasi Role Warga
-final wargaNotificationsProvider = FutureProvider<List<NotificationEntity>>((ref) async {
+final wargaNotificationsProvider = FutureProvider<List<NotificationEntity>>((
+  ref,
+) async {
   final repo = ref.watch(notificationRepositoryProvider);
   final user = ref.watch(authProvider).user;
   if (user == null) return [];
@@ -26,7 +28,7 @@ final wargaNotificationsProvider = FutureProvider<List<NotificationEntity>>((ref
 
   final List<NotificationEntity> result = [];
 
-    final prefs = await SharedPreferences.getInstance();
+  final prefs = await SharedPreferences.getInstance();
   final readList = prefs.getStringList('read_notifs_${userId}_$role') ?? [];
   final readSet = readList.toSet();
   final markAllTimestamp = prefs.getInt('mark_all_notifs_${userId}_$role') ?? 0;
@@ -34,26 +36,44 @@ final wargaNotificationsProvider = FutureProvider<List<NotificationEntity>>((ref
   try {
     final pointRepo = ref.read(wasteLogRepositoryProvider);
     final pointHistory = await pointRepo.getPointHistoryByUser(userId);
-    
-          for (final ph in pointHistory) {
-        if (ph.points != 0) {
-          final notifId = 'point_${ph.id}';
-        final isRead = readSet.contains(notifId) || 
+
+    for (final ph in pointHistory) {
+      if (ph.points != 0) {
+        final notifId = 'point_${ph.id}';
+        final isRead =
+            readSet.contains(notifId) ||
             ph.createdAt.millisecondsSinceEpoch <= markAllTimestamp ||
-            LocalNotificationCacheService().isRead(userId, role, notifId, ph.createdAt);
-            
+            LocalNotificationCacheService().isRead(
+              userId,
+              role,
+              notifId,
+              ph.createdAt,
+            );
+
         final isPunishment = ph.points < 0;
-            
-        result.add(NotificationEntity(
-          id: notifId,
-          type: isPunishment ? 'PUNISHMENT' : 'POIN_BERTAMBAH',
-          title: isPunishment ? 'Penalti Pengurangan Poin' : 'Poin Bertambah!',
-          desc: ph.description.isNotEmpty ? ph.description : (isPunishment ? 'Poin Anda dikurangi ${ph.points}.' : 'Anda mendapatkan tambahan +${ph.points} poin.'),
-          isRead: isRead,
-          time: ph.createdAt.toLocal().toIso8601String().substring(0, 16).replaceAll('T', ' '),
-          icon: isPunishment ? 'warning' : 'star',
-          createdAt: ph.createdAt,
-        ));
+
+        result.add(
+          NotificationEntity(
+            id: notifId,
+            type: isPunishment ? 'PUNISHMENT' : 'POIN_BERTAMBAH',
+            title: isPunishment
+                ? 'Penalti Pengurangan Poin'
+                : 'Poin Bertambah!',
+            desc: ph.description.isNotEmpty
+                ? ph.description
+                : (isPunishment
+                      ? 'Poin Anda dikurangi ${ph.points}.'
+                      : 'Anda mendapatkan tambahan +${ph.points} poin.'),
+            isRead: isRead,
+            time: ph.createdAt
+                .toLocal()
+                .toIso8601String()
+                .substring(0, 16)
+                .replaceAll('T', ' '),
+            icon: isPunishment ? 'warning' : 'star',
+            createdAt: ph.createdAt,
+          ),
+        );
       }
     }
   } catch (_) {}
@@ -63,8 +83,12 @@ final wargaNotificationsProvider = FutureProvider<List<NotificationEntity>>((ref
     final title = notif.title.toUpperCase();
     final desc = notif.desc.toUpperCase();
 
-    final isWargaReminder = title.contains('BUANG SAMPAH') || title.contains('PENGINGAT') || type.contains('REMINDER');
-    final isForbidden = type.contains('JEMPUT') ||
+    final isWargaReminder =
+        title.contains('BUANG SAMPAH') ||
+        title.contains('PENGINGAT') ||
+        type.contains('REMINDER');
+    final isForbidden =
+        type.contains('JEMPUT') ||
         type.contains('PENGANGKUTAN') ||
         type.contains('KKN') ||
         type.contains('DPL') ||
@@ -94,7 +118,14 @@ final wargaNotificationsProvider = FutureProvider<List<NotificationEntity>>((ref
     if (notif.id == 'seed-notif-1' || desc.contains('ORG004520')) continue;
 
     // Deduplikasi
-    if (result.any((n) => n.id == notif.id || (n.title == notif.title && n.desc == notif.desc && n.type == notif.type))) continue;
+    if (result.any(
+      (n) =>
+          n.id == notif.id ||
+          (n.title == notif.title &&
+              n.desc == notif.desc &&
+              n.type == notif.type),
+    ))
+      continue;
 
     result.add(notif);
 
@@ -106,51 +137,74 @@ final wargaNotificationsProvider = FutureProvider<List<NotificationEntity>>((ref
 
   // Ambil notifikasi dari Firebase local storage (untuk notifikasi background/cronjob)
   try {
-    final firebaseNotifs = await FirebaseNotificationService().getNotifications(userId, role);
+    final firebaseNotifs = await FirebaseNotificationService().getNotifications(
+      userId,
+      role,
+    );
     for (final fn in firebaseNotifs) {
-      if (result.any((n) => n.id == fn.id || (n.title == fn.title && n.desc == fn.desc && n.type == fn.type))) {
+      if (result.any(
+        (n) =>
+            n.id == fn.id ||
+            (n.title == fn.title && n.desc == fn.desc && n.type == fn.type),
+      )) {
         continue;
       }
-      
+
       // Filter role untuk background notif
       final type = fn.type.toUpperCase();
       final title = fn.title.toUpperCase();
 
-      final isWargaReminder = title.contains('BUANG SAMPAH') || title.contains('PENGINGAT') || type.contains('REMINDER');
-      final isForbidden = type.contains('JEMPUT') || type.contains('PENGANGKUTAN') || type.contains('KKN') || type.contains('DPL') || type.contains('IZIN') || type.contains('PRESENSI') || type.contains('PEMANFAATAN') || type.contains('TIMBANGAN_PEMILAHAN') || type.contains('VIOLATION') || type.contains('PELANGGARAN') || type.contains('WHITELIST');
-      
+      final isWargaReminder =
+          title.contains('BUANG SAMPAH') ||
+          title.contains('PENGINGAT') ||
+          type.contains('REMINDER');
+      final isForbidden =
+          type.contains('JEMPUT') ||
+          type.contains('PENGANGKUTAN') ||
+          type.contains('KKN') ||
+          type.contains('DPL') ||
+          type.contains('IZIN') ||
+          type.contains('PRESENSI') ||
+          type.contains('PEMANFAATAN') ||
+          type.contains('TIMBANGAN_PEMILAHAN') ||
+          type.contains('VIOLATION') ||
+          type.contains('PELANGGARAN') ||
+          type.contains('WHITELIST');
+
       if (!isWargaReminder && isForbidden) continue;
 
       result.add(fn);
     }
   } catch (_) {}
 
-    // FORCE override isRead based on persistent local cache
+  // FORCE override isRead based on persistent local cache
   // AND hapus notifikasi yang lebih lama dari deleteAllTimestamp
-  final deleteAllTimestamp = prefs.getInt('delete_all_notifs_${userId}_$role') ?? 0;
-  
+  final deleteAllTimestamp =
+      prefs.getInt('delete_all_notifs_${userId}_$role') ?? 0;
+
   final List<NotificationEntity> finalResult = [];
   for (int i = 0; i < result.length; i++) {
     final dt = DateTime.tryParse(result[i].time) ?? DateTime(2000);
-    
+
     // Skip if deleted
     if (dt.millisecondsSinceEpoch <= deleteAllTimestamp) {
       continue;
     }
-    
+
     var item = result[i];
-    final isReadLocally = readSet.contains(item.id) || 
-        dt.millisecondsSinceEpoch <= markAllTimestamp || 
+    final isReadLocally =
+        readSet.contains(item.id) ||
+        dt.millisecondsSinceEpoch <= markAllTimestamp ||
         LocalNotificationCacheService().isRead(userId, role, item.id, dt);
-        
+
     if (isReadLocally && !item.isRead) {
       item = item.copyWith(isRead: true);
     }
     finalResult.add(item);
   }
 
-    // Urutkan: terbaru di atas
-    finalResult.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  // Urutkan: terbaru di atas
+  finalResult.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
   return finalResult;
 });
@@ -158,12 +212,10 @@ final wargaNotificationsProvider = FutureProvider<List<NotificationEntity>>((ref
 /// Provider jumlah notifikasi belum dibaca untuk Warga
 final wargaUnreadNotificationCountProvider = Provider<int>((ref) {
   final notifAsync = ref.watch(wargaNotificationsProvider);
-  return notifAsync.when(skipLoadingOnReload: true, data: (list) => list.where((n) => !n.isRead).length,
+  return notifAsync.when(
+    skipLoadingOnReload: true,
+    data: (list) => list.where((n) => !n.isRead).length,
     loading: () => 0,
     error: (_, __) => 0,
   );
 });
-
-
-
-

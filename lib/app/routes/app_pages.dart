@@ -85,7 +85,10 @@ class AppPages {
         return _buildRoute(const DashboardView(), settings);
       case AppRoutes.pengajuanProgramKerja:
         final args = settings.arguments as Map<String, dynamic>?;
-        return _buildRoute(PengajuanProgramKerjaView(initialData: args), settings);
+        return _buildRoute(
+          PengajuanProgramKerjaView(initialData: args),
+          settings,
+        );
       case AppRoutes.riwayatProgramKerja:
         return _buildRoute(const RiwayatProgramKerjaView(), settings);
       case AppRoutes.riwayatPemanfaatan:
@@ -127,7 +130,10 @@ class AppPages {
       case AppRoutes.kknAttendanceHistory:
         final args = settings.arguments as Map<String, dynamic>?;
         final scheduleId = args?['scheduleId'] as String? ?? '';
-        return _buildRoute(KknAttendanceHistoryView(scheduleId: scheduleId), settings);
+        return _buildRoute(
+          KknAttendanceHistoryView(scheduleId: scheduleId),
+          settings,
+        );
       case AppRoutes.monitoringWarga:
         return _buildRoute(const MonitoringWargaView(), settings);
       case AppRoutes.mahasiswa:
@@ -202,14 +208,20 @@ class AppPages {
 
       case AppRoutes.editLogbookKkn:
         final args = settings.arguments as Map<String, dynamic>;
-        return _buildRoute(EditLogbookKknView(logbookId: args['id'] as String), settings);
+        return _buildRoute(
+          EditLogbookKknView(logbookId: args['id'] as String),
+          settings,
+        );
 
       case AppRoutes.dataProker:
         return _buildRoute(const DataProkerView(), settings);
 
       case AppRoutes.editProgramKerja:
         final editArgs = settings.arguments as Map<String, dynamic>;
-        return _buildRoute(EditProgramKerjaView(prokerId: editArgs['id'] as String), settings);
+        return _buildRoute(
+          EditProgramKerjaView(prokerId: editArgs['id'] as String),
+          settings,
+        );
 
       case AppRoutes.prokerDetail:
         final detailArgs = settings.arguments as Map<String, dynamic>;
@@ -223,14 +235,8 @@ class AppPages {
     }
   }
 
-  static Route<dynamic> _buildRoute(
-    Widget page,
-    RouteSettings settings,
-  ) {
-    return MaterialPageRoute(
-      settings: settings,
-      builder: (_) => page,
-    );
+  static Route<dynamic> _buildRoute(Widget page, RouteSettings settings) {
+    return MaterialPageRoute(settings: settings, builder: (_) => page);
   }
 }
 
@@ -249,4 +255,3 @@ class _NotFoundScreen extends StatelessWidget {
     );
   }
 }
-

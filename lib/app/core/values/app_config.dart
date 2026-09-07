@@ -33,13 +33,14 @@ class AppConfig {
     if (path.startsWith('http://') || path.startsWith('https://')) return path;
     if (path.startsWith('file://')) {
       final relativePath = path.replaceFirst(RegExp(r'^file:\/*'), '');
-      final cleanPath = relativePath.startsWith('/') ? relativePath.substring(1) : relativePath;
+      final cleanPath = relativePath.startsWith('/')
+          ? relativePath.substring(1)
+          : relativePath;
       return '$baseUrl/$cleanPath';
     }
     final cleanPath = path.startsWith('/') ? path.substring(1) : path;
     return '$baseUrl/$cleanPath';
   }
-
 
   // --- Geofencing (FR-02) ---
   static const int geofenceRadiusMeters = 10;

@@ -10,8 +10,8 @@ import 'package:geolocator/geolocator.dart';
 class SpeedAnalyzer {
   const SpeedAnalyzer._();
 
-  static const double _maxNormalSpeed = 2.0;   // m/s → skor penuh
-  static const double _anomalySpeed = 40.0;    // m/s → skor nol (144 km/jam)
+  static const double _maxNormalSpeed = 2.0; // m/s → skor penuh
+  static const double _anomalySpeed = 40.0; // m/s → skor nol (144 km/jam)
 
   /// Menghitung skor kecepatan dari daftar sampel GPS.
   /// Mengembalikan nilai 0.0 – 100.0.
@@ -39,8 +39,8 @@ class SpeedAnalyzer {
         samples[i].latitude,
         samples[i].longitude,
       );
-      final deltaSeconds = samples[i]
-              .timestamp
+      final deltaSeconds =
+          samples[i].timestamp
               .difference(samples[i - 1].timestamp)
               .inMilliseconds /
           1000.0;

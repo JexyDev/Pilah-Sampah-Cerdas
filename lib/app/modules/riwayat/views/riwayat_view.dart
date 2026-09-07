@@ -32,8 +32,10 @@ class RiwayatView extends ConsumerStatefulWidget {
 }
 
 class _RiwayatViewState extends ConsumerState<RiwayatView> {
-  int _categoryFilterIndex = 0; // 0=Semua, 1=Organik, 2=Anorganik, 3=Pengajuan, 4=Info
-  int _timeFilterIndex = 0; // 0=Semua Waktu, 1=Hari Ini, 2=Minggu Ini, 3=Bulan Ini
+  int _categoryFilterIndex =
+      0; // 0=Semua, 1=Organik, 2=Anorganik, 3=Pengajuan, 4=Info
+  int _timeFilterIndex =
+      0; // 0=Semua Waktu, 1=Hari Ini, 2=Minggu Ini, 3=Bulan Ini
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +53,9 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
     if (logsAsync.value != null && notifsAsync.value != null) {
       combinedData = [];
       for (var l in logsAsync.value!) {
-        combinedData.add(RiwayatItemData(date: l.createdAt.toLocal(), wasteLog: l));
+        combinedData.add(
+          RiwayatItemData(date: l.createdAt.toLocal(), wasteLog: l),
+        );
       }
       for (var n in notifsAsync.value!) {
         final type = n.type.toUpperCase();
@@ -73,7 +77,14 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
-        title: const Text('Riwayat Pemilahan', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18, color: AppColors.textPrimary)),
+        title: const Text(
+          'Riwayat Pemilahan',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 18,
+            color: AppColors.textPrimary,
+          ),
+        ),
       ),
       body: Column(
         children: [
@@ -114,7 +125,10 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.backgroundCanvas,
                         borderRadius: BorderRadius.circular(12),
@@ -124,16 +138,34 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
                         child: DropdownButton<int>(
                           value: _timeFilterIndex,
                           isDense: true,
-                          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.primaryGreen, size: 20),
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                          icon: const Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                            color: AppColors.primaryGreen,
+                            size: 20,
+                          ),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
                           items: const [
-                            DropdownMenuItem(value: 0, child: Text('Semua Waktu')),
+                            DropdownMenuItem(
+                              value: 0,
+                              child: Text('Semua Waktu'),
+                            ),
                             DropdownMenuItem(value: 1, child: Text('Hari Ini')),
-                            DropdownMenuItem(value: 2, child: Text('Minggu Ini')),
-                            DropdownMenuItem(value: 3, child: Text('Bulan Ini')),
+                            DropdownMenuItem(
+                              value: 2,
+                              child: Text('Minggu Ini'),
+                            ),
+                            DropdownMenuItem(
+                              value: 3,
+                              child: Text('Bulan Ini'),
+                            ),
                           ],
                           onChanged: (val) {
-                            if (val != null) setState(() => _timeFilterIndex = val);
+                            if (val != null)
+                              setState(() => _timeFilterIndex = val);
                           },
                         ),
                       ),
@@ -150,7 +182,8 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
               onRefresh: () async {
                 final isOnline = ref.read(isOnlineProvider);
                 if (!isOnline) {
-                  ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
+                  ScaffoldMessenger.of(context).clearSnackBars();
+                  ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Anda sedang offline'),
                       backgroundColor: AppColors.dangerRed,
@@ -175,24 +208,24 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
                       },
                     )
                   : isLoading || combinedData == null
-                      ? ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: 4,
-                          itemBuilder: (_, __) => const Padding(
-                            padding: EdgeInsets.only(bottom: 12),
-                            child: SkeletonLoading(
-                              height: 80,
-                              width: double.infinity,
-                              borderRadius: BorderRadius.all(Radius.circular(12)),
-                            ),
-                          ),
-                        )
-                      : (() {
-                          final filtered = _applyFilter(combinedData!);
-                          return filtered.isEmpty
-                              ? _buildEmpty()
-                              : _buildContent(filtered);
-                        })(),
+                  ? ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: 4,
+                      itemBuilder: (_, __) => const Padding(
+                        padding: EdgeInsets.only(bottom: 12),
+                        child: SkeletonLoading(
+                          height: 80,
+                          width: double.infinity,
+                          borderRadius: BorderRadius.all(Radius.circular(12)),
+                        ),
+                      ),
+                    )
+                  : (() {
+                      final filtered = _applyFilter(combinedData!);
+                      return filtered.isEmpty
+                          ? _buildEmpty()
+                          : _buildContent(filtered);
+                    })(),
             ),
           ),
         ],
@@ -204,23 +237,47 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
     List<RiwayatItemData> result = List.from(items);
 
     // 1. Filter Kategori
-    if (_categoryFilterIndex == 1) { // Organik
-      result = result.where((l) => l.wasteLog != null && l.wasteLog!.wasteType == WasteType.organic).toList();
-    } else if (_categoryFilterIndex == 2) { // Anorganik
-      result = result.where((l) => l.wasteLog != null && l.wasteLog!.wasteType == WasteType.nonOrganic).toList();
-    } else if (_categoryFilterIndex == 3) { // Pengajuan
+    if (_categoryFilterIndex == 1) {
+      // Organik
+      result = result
+          .where(
+            (l) =>
+                l.wasteLog != null &&
+                l.wasteLog!.wasteType == WasteType.organic,
+          )
+          .toList();
+    } else if (_categoryFilterIndex == 2) {
+      // Anorganik
+      result = result
+          .where(
+            (l) =>
+                l.wasteLog != null &&
+                l.wasteLog!.wasteType == WasteType.nonOrganic,
+          )
+          .toList();
+    } else if (_categoryFilterIndex == 3) {
+      // Pengajuan
       result = result.where((l) {
         if (l.notif == null) return false;
         final typeUpper = l.notif!.type.toUpperCase();
         final titleLower = l.notif!.title.toLowerCase();
-        return typeUpper.contains('PENGAJUAN') || typeUpper.contains('PENGOSONGAN') || typeUpper.contains('RESET') || titleLower.contains('pengajuan') || titleLower.contains('pengosongan');
+        return typeUpper.contains('PENGAJUAN') ||
+            typeUpper.contains('PENGOSONGAN') ||
+            typeUpper.contains('RESET') ||
+            titleLower.contains('pengajuan') ||
+            titleLower.contains('pengosongan');
       }).toList();
-    } else if (_categoryFilterIndex == 4) { // Info / Lainnya
+    } else if (_categoryFilterIndex == 4) {
+      // Info / Lainnya
       result = result.where((l) {
         if (l.notif == null) return false;
         final typeUpper = l.notif!.type.toUpperCase();
         final titleLower = l.notif!.title.toLowerCase();
-        return !(typeUpper.contains('PENGAJUAN') || typeUpper.contains('PENGOSONGAN') || typeUpper.contains('RESET') || titleLower.contains('pengajuan') || titleLower.contains('pengosongan'));
+        return !(typeUpper.contains('PENGAJUAN') ||
+            typeUpper.contains('PENGOSONGAN') ||
+            typeUpper.contains('RESET') ||
+            titleLower.contains('pengajuan') ||
+            titleLower.contains('pengosongan'));
       }).toList();
     }
 
@@ -230,7 +287,9 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
     if (_timeFilterIndex == 1) {
       // Hari Ini
       result = result.where((l) {
-        return l.date.year == now.year && l.date.month == now.month && l.date.day == now.day;
+        return l.date.year == now.year &&
+            l.date.month == now.month &&
+            l.date.day == now.day;
       }).toList();
     } else if (_timeFilterIndex == 2) {
       // Minggu Ini
@@ -306,12 +365,7 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
         final item = flatList[index];
 
         if (item == 'SUMMARY') {
-          return const Column(
-            children: [
-              _SummaryCard(),
-              SizedBox(height: 16),
-            ],
-          );
+          return const Column(children: [_SummaryCard(), SizedBox(height: 16)]);
         } else if (item is String) {
           return Padding(
             padding: const EdgeInsets.only(bottom: 8, top: 4),
@@ -333,7 +387,7 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
         } else if (item is RiwayatItemData) {
           return Padding(
             padding: const EdgeInsets.only(bottom: 8),
-            child: item.wasteLog != null 
+            child: item.wasteLog != null
                 ? _RiwayatItem(log: item.wasteLog!)
                 : _NotificationHistoryItem(notif: item.notif!),
           );
@@ -403,17 +457,25 @@ class _SummaryCard extends StatelessWidget {
                     color: Colors.black.withValues(alpha: 0.04),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
-                  )
+                  ),
                 ],
               ),
               child: Row(
                 children: [
                   Expanded(
-                    child: _buildSummaryItem('Organik', org, AppColors.organicColor),
+                    child: _buildSummaryItem(
+                      'Organik',
+                      org,
+                      AppColors.organicColor,
+                    ),
                   ),
                   Container(width: 1, height: 40, color: AppColors.border),
                   Expanded(
-                    child: _buildSummaryItem('Anorganik', anorg, AppColors.nonOrganicColor),
+                    child: _buildSummaryItem(
+                      'Anorganik',
+                      anorg,
+                      AppColors.nonOrganicColor,
+                    ),
                   ),
                 ],
               ),
@@ -421,7 +483,11 @@ class _SummaryCard extends StatelessWidget {
           },
           loading: () => const Padding(
             padding: EdgeInsets.all(16.0),
-            child: SkeletonLoading(height: 80, width: double.infinity, borderRadius: BorderRadius.all(Radius.circular(16))),
+            child: SkeletonLoading(
+              height: 80,
+              width: double.infinity,
+              borderRadius: BorderRadius.all(Radius.circular(16)),
+            ),
           ),
           error: (_, __) => const SizedBox.shrink(),
         );
@@ -443,15 +509,22 @@ class _SummaryCard extends StatelessWidget {
           children: [
             Text(
               weight.toStringAsFixed(1),
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color),
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
             ),
             const SizedBox(width: 4),
             const Padding(
               padding: EdgeInsets.only(bottom: 3),
-              child: Text('kg', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+              child: Text(
+                'kg',
+                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              ),
             ),
           ],
-        )
+        ),
       ],
     );
   }
@@ -492,7 +565,12 @@ class _RiwayatItem extends ConsumerWidget {
               color: color.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Image.asset('assets/icons/recycle-bin.png', color: color, width: 24, height: 24),
+            child: Image.asset(
+              'assets/icons/recycle-bin.png',
+              color: color,
+              width: 24,
+              height: 24,
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -511,11 +589,18 @@ class _RiwayatItem extends ConsumerWidget {
                   children: [
                     Text(
                       '${log.wasteType.displayName} • ',
-                      style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                     WeightText(
                       log.weightKg,
-                      style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
@@ -529,7 +614,10 @@ class _RiwayatItem extends ConsumerWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      DateFormat('HH:mm', 'id_ID').format(log.createdAt.toLocal()),
+                      DateFormat(
+                        'HH:mm',
+                        'id_ID',
+                      ).format(log.createdAt.toLocal()),
                       style: const TextStyle(
                         fontSize: 12,
                         color: AppColors.textHint,
@@ -553,9 +641,13 @@ class _NotificationHistoryItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isPengajuan = notif.type.toUpperCase().contains('PENGAJUAN') || notif.type.toUpperCase().contains('RESET');
+    final isPengajuan =
+        notif.type.toUpperCase().contains('PENGAJUAN') ||
+        notif.type.toUpperCase().contains('RESET');
     final color = isPengajuan ? AppColors.primaryBlue : AppColors.textSecondary;
-    final icon = isPengajuan ? Icons.mark_email_unread_rounded : Icons.info_rounded;
+    final icon = isPengajuan
+        ? Icons.mark_email_unread_rounded
+        : Icons.info_rounded;
     DateTime dt = notif.createdAt.toLocal();
 
     return Container(
@@ -601,7 +693,11 @@ class _NotificationHistoryItem extends StatelessWidget {
                   notif.desc,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                    height: 1.4,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Row(

@@ -17,12 +17,17 @@ class PhoneFormatter {
     // 1. Bersihkan semua karakter selain digit dan +
     String phone = raw.trim().replaceAll(RegExp(r'[^\d\+]'), '');
     if (phone.isEmpty) return phone;
-    
+
     // Check if it's likely a NIM. NIMs are 8-16 digits and usually don't start with 08.
     String digitsOnly = phone.replaceAll('+', '');
     bool isNimLength = digitsOnly.length >= 8 && digitsOnly.length <= 16;
-    bool isPhoneNumberPrefix = digitsOnly.startsWith('08') || digitsOnly.startsWith('628') || (digitsOnly.startsWith('8') && digitsOnly.length >= 9 && digitsOnly.length <= 14);
-    
+    bool isPhoneNumberPrefix =
+        digitsOnly.startsWith('08') ||
+        digitsOnly.startsWith('628') ||
+        (digitsOnly.startsWith('8') &&
+            digitsOnly.length >= 9 &&
+            digitsOnly.length <= 14);
+
     if (isNimLength && !isPhoneNumberPrefix) {
       return phone; // Return NIM as-is
     }
@@ -49,13 +54,13 @@ class PhoneFormatter {
   static String convertToLocalFormat(String raw) {
     if (raw.isEmpty) return raw;
     String phone = raw.trim().replaceAll(RegExp(r'[^\d\+]'), '');
-    
+
     if (phone.startsWith('+62')) {
       return '0${phone.substring(3)}';
     } else if (phone.startsWith('62')) {
       return '0${phone.substring(2)}';
     }
-    
+
     return phone;
   }
 }
@@ -64,13 +69,16 @@ class PhoneFormatter {
 /// karena UI sudah memiliki prefix '+62' permanen.
 class PhonePrefixFormatter extends TextInputFormatter {
   @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
     String text = newValue.text;
-    
+
     // Gunakan regex untuk menghapus kombinasi awalan '0' dan '62' berulang kali.
     // Contoh: '0812', '62812', '0062812', '620812' semuanya akan jadi '812'.
     String newText = text.replaceFirst(RegExp(r'^(0|62)+'), '');
-    
+
     if (newText != newValue.text) {
       return TextEditingValue(
         text: newText,

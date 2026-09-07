@@ -77,14 +77,19 @@ class FirebaseNotificationService {
       }
 
       await prefs.setStringList(storeKey, rawList);
-      debugPrint('[FirebaseNotifService] Saved notification for $role ($userId): $title');
+      debugPrint(
+        '[FirebaseNotifService] Saved notification for $role ($userId): $title',
+      );
     } catch (e) {
       debugPrint('[FirebaseNotifService] Error saving notification: $e');
     }
   }
 
   /// Ambil seluruh riwayat notifikasi tersimpan dari SharedPreferences
-  Future<List<NotificationEntity>> getNotifications(String userId, String role) async {
+  Future<List<NotificationEntity>> getNotifications(
+    String userId,
+    String role,
+  ) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final storeKey = _getStoreKey(userId, role);
@@ -94,22 +99,32 @@ class FirebaseNotificationService {
       for (final item in rawList) {
         try {
           final map = jsonDecode(item) as Map<String, dynamic>;
-          final rawTime = map['time']?.toString() ?? DateTime.now().toUtc().toIso8601String();
-          result.add(NotificationEntity(
-            id: map['id']?.toString() ?? '',
-            type: map['type']?.toString() ?? 'INFO',
-            title: map['title']?.toString() ?? 'Notifikasi',
-            desc: map['desc']?.toString() ?? '',
-            isRead: map['isRead'] as bool? ?? false,
-            time: rawTime,
-            icon: map['icon']?.toString() ?? 'info',
-            createdAt: DateTime.tryParse(map['createdAt']?.toString() ?? rawTime) ?? DateTime.now(),
-          ));
-        } catch (e) { debugPrint('Silenced error: $e'); }
+          final rawTime =
+              map['time']?.toString() ??
+              DateTime.now().toUtc().toIso8601String();
+          result.add(
+            NotificationEntity(
+              id: map['id']?.toString() ?? '',
+              type: map['type']?.toString() ?? 'INFO',
+              title: map['title']?.toString() ?? 'Notifikasi',
+              desc: map['desc']?.toString() ?? '',
+              isRead: map['isRead'] as bool? ?? false,
+              time: rawTime,
+              icon: map['icon']?.toString() ?? 'info',
+              createdAt:
+                  DateTime.tryParse(map['createdAt']?.toString() ?? rawTime) ??
+                  DateTime.now(),
+            ),
+          );
+        } catch (e) {
+          debugPrint('Silenced error: $e');
+        }
       }
       return result;
     } catch (e) {
-      debugPrint('[FirebaseNotifService] Error fetching stored notifications: $e');
+      debugPrint(
+        '[FirebaseNotifService] Error fetching stored notifications: $e',
+      );
       return [];
     }
   }
@@ -128,7 +143,9 @@ class FirebaseNotificationService {
             map['isRead'] = true;
             return jsonEncode(map);
           }
-        } catch (e) { debugPrint('Silenced error: $e'); }
+        } catch (e) {
+          debugPrint('Silenced error: $e');
+        }
         return item;
       }).toList();
 
@@ -172,4 +189,3 @@ class FirebaseNotificationService {
     return 'info';
   }
 }
-

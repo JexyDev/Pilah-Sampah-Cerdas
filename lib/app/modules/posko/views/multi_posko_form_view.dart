@@ -19,14 +19,14 @@ class MultiPoskoFormView extends ConsumerStatefulWidget {
 
 class _MultiPoskoFormViewState extends ConsumerState<MultiPoskoFormView> {
   final _formKey = GlobalKey<FormState>();
-  
+
   late TextEditingController _namaController;
   late TextEditingController _alamatController;
   late TextEditingController _latitudeController;
   late TextEditingController _longitudeController;
   late TextEditingController _radiusController;
   late TextEditingController _keteranganController;
-  
+
   late MapController _mapController;
   LatLng? _selectedLocation;
   bool _isGettingLocation = false;
@@ -38,17 +38,28 @@ class _MultiPoskoFormViewState extends ConsumerState<MultiPoskoFormView> {
     super.initState();
     _namaController = TextEditingController(text: widget.posko?.nama ?? '');
     _alamatController = TextEditingController(text: widget.posko?.alamat ?? '');
-    _latitudeController = TextEditingController(text: widget.posko?.latitude.toString() ?? '');
-    _longitudeController = TextEditingController(text: widget.posko?.longitude.toString() ?? '');
-    _radiusController = TextEditingController(text: widget.posko?.radius.toString() ?? '100');
-    _keteranganController = TextEditingController(text: widget.posko?.keterangan ?? '');
-    
+    _latitudeController = TextEditingController(
+      text: widget.posko?.latitude.toString() ?? '',
+    );
+    _longitudeController = TextEditingController(
+      text: widget.posko?.longitude.toString() ?? '',
+    );
+    _radiusController = TextEditingController(
+      text: widget.posko?.radius.toString() ?? '100',
+    );
+    _keteranganController = TextEditingController(
+      text: widget.posko?.keterangan ?? '',
+    );
+
     _mapController = MapController();
-    
+
     if (widget.posko != null) {
-      _selectedLocation = LatLng(widget.posko!.latitude, widget.posko!.longitude);
+      _selectedLocation = LatLng(
+        widget.posko!.latitude,
+        widget.posko!.longitude,
+      );
     }
-    
+
     _latitudeController.addListener(_onCoordinateTextChanged);
     _longitudeController.addListener(_onCoordinateTextChanged);
   }
@@ -57,7 +68,7 @@ class _MultiPoskoFormViewState extends ConsumerState<MultiPoskoFormView> {
   void dispose() {
     _latitudeController.removeListener(_onCoordinateTextChanged);
     _longitudeController.removeListener(_onCoordinateTextChanged);
-    
+
     _namaController.dispose();
     _alamatController.dispose();
     _latitudeController.dispose();
@@ -98,7 +109,7 @@ class _MultiPoskoFormViewState extends ConsumerState<MultiPoskoFormView> {
     setState(() {
       _selectedLocation = point;
     });
-    
+
     _isUpdatingFromMap = true;
     _latitudeController.text = point.latitude.toStringAsFixed(6);
     _longitudeController.text = point.longitude.toStringAsFixed(6);
@@ -110,15 +121,18 @@ class _MultiPoskoFormViewState extends ConsumerState<MultiPoskoFormView> {
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) throw Exception('Layanan lokasi tidak aktif.');
-      
+
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) throw Exception('Izin lokasi ditolak.');
+        if (permission == LocationPermission.denied)
+          throw Exception('Izin lokasi ditolak.');
       }
       if (permission == LocationPermission.deniedForever) {
         await Geolocator.openAppSettings();
-        throw Exception('Akses GPS ditolak permanen. Silakan nyalakan di Pengaturan lalu coba lagi.');
+        throw Exception(
+          'Akses GPS ditolak permanen. Silakan nyalakan di Pengaturan lalu coba lagi.',
+        );
       }
 
       final position = await Geolocator.getCurrentPosition(
@@ -130,15 +144,17 @@ class _MultiPoskoFormViewState extends ConsumerState<MultiPoskoFormView> {
 
       final newLoc = LatLng(position.latitude, position.longitude);
       _updateControllersFromMap(newLoc);
-      
+
       try {
         _mapController.move(newLoc, 16.0);
       } catch (_) {}
-      
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: AppColors.dangerRed),
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            backgroundColor: AppColors.dangerRed,
+          ),
         );
       }
     } finally {
@@ -150,7 +166,10 @@ class _MultiPoskoFormViewState extends ConsumerState<MultiPoskoFormView> {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedLocation == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Silakan tentukan titik lokasi pada peta'), backgroundColor: AppColors.dangerRed),
+        const SnackBar(
+          content: Text('Silakan tentukan titik lokasi pada peta'),
+          backgroundColor: AppColors.dangerRed,
+        ),
       );
       return;
     }
@@ -160,7 +179,9 @@ class _MultiPoskoFormViewState extends ConsumerState<MultiPoskoFormView> {
     try {
       final repo = ref.read(kknRepositoryProvider);
       final mapState = ref.read(kknMapProvider);
-      final kelompokId = mapState.wilayahKelompok?.kelompokId ?? mapState.groupZone?.kelompokId;
+      final kelompokId =
+          mapState.wilayahKelompok?.kelompokId ??
+          mapState.groupZone?.kelompokId;
 
       final payload = {
         if (kelompokId != null) 'kelompokId': kelompokId,
@@ -176,25 +197,34 @@ class _MultiPoskoFormViewState extends ConsumerState<MultiPoskoFormView> {
         await repo.addMultiPosko(payload);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Posko berhasil ditambahkan'), backgroundColor: AppColors.primaryGreen),
+            const SnackBar(
+              content: Text('Posko berhasil ditambahkan'),
+              backgroundColor: AppColors.primaryGreen,
+            ),
           );
         }
       } else {
         await repo.updateMultiPosko(widget.posko!.id, payload);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Posko berhasil diupdate'), backgroundColor: AppColors.primaryGreen),
+            const SnackBar(
+              content: Text('Posko berhasil diupdate'),
+              backgroundColor: AppColors.primaryGreen,
+            ),
           );
         }
       }
-      
+
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Gagal Menyimpan Posko', style: TextStyle(color: AppColors.dangerRed)),
+            title: const Text(
+              'Gagal Menyimpan Posko',
+              style: TextStyle(color: AppColors.dangerRed),
+            ),
             content: Text(e.toString().replaceAll('Exception: ', '')),
             actions: [
               TextButton(
@@ -217,14 +247,18 @@ class _MultiPoskoFormViewState extends ConsumerState<MultiPoskoFormView> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text(isEdit ? 'Edit Posko Tambahan' : 'Tambah Posko',
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        title: Text(
+          isEdit ? 'Edit Posko Tambahan' : 'Tambah Posko',
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.white,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.primaryGreen))
+          ? const Center(
+              child: CircularProgressIndicator(color: AppColors.primaryGreen),
+            )
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Form(
@@ -240,12 +274,19 @@ class _MultiPoskoFormViewState extends ConsumerState<MultiPoskoFormView> {
                       ),
                       child: const Row(
                         children: [
-                          Icon(Icons.info_outline, color: Colors.blue, size: 20),
+                          Icon(
+                            Icons.info_outline,
+                            color: Colors.blue,
+                            size: 20,
+                          ),
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               'Posko yang ditambahkan di sini akan masuk ke dalam zona kehadiran Smart Zone untuk seluruh anggota kelompok.',
-                              style: TextStyle(color: Colors.blue, fontSize: 12),
+                              style: TextStyle(
+                                color: Colors.blue,
+                                fontSize: 12,
+                              ),
                             ),
                           ),
                         ],
@@ -271,13 +312,19 @@ class _MultiPoskoFormViewState extends ConsumerState<MultiPoskoFormView> {
                       validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // --- MAP COMPONENT ---
-                    const Text('Lokasi pada Peta', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text(
+                      'Lokasi pada Peta',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 4),
                     const Text(
                       'Tentukan lokasi dengan menekan pada peta, koordinat otomatis terisi.',
-                      style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Container(
@@ -294,14 +341,19 @@ class _MultiPoskoFormViewState extends ConsumerState<MultiPoskoFormView> {
                           FlutterMap(
                             mapController: _mapController,
                             options: MapOptions(
-                              initialCenter: _selectedLocation ?? const LatLng(-6.914744, 107.609810),
+                              initialCenter:
+                                  _selectedLocation ??
+                                  const LatLng(-6.914744, 107.609810),
                               initialZoom: 15.0,
-                              onTap: (tapPosition, point) => _updateControllersFromMap(point),
+                              onTap: (tapPosition, point) =>
+                                  _updateControllersFromMap(point),
                             ),
                             children: [
                               TileLayer(
-                                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                                userAgentPackageName: 'com.makerindo.pilahsampah',
+                                urlTemplate:
+                                    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                userAgentPackageName:
+                                    'com.makerindo.pilahsampah',
                               ),
                               if (_selectedLocation != null)
                                 MarkerLayer(
@@ -310,7 +362,11 @@ class _MultiPoskoFormViewState extends ConsumerState<MultiPoskoFormView> {
                                       point: _selectedLocation!,
                                       width: 36,
                                       height: 36,
-                                      child: const Icon(Icons.home_work_rounded, size: 28, color: AppColors.primaryGreen),
+                                      child: const Icon(
+                                        Icons.home_work_rounded,
+                                        size: 28,
+                                        color: AppColors.primaryGreen,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -328,15 +384,36 @@ class _MultiPoskoFormViewState extends ConsumerState<MultiPoskoFormView> {
                                 onTap: _isGettingLocation ? null : _getLocation,
                                 borderRadius: BorderRadius.circular(8),
                                 child: Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       _isGettingLocation
-                                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryGreen))
-                                          : const Icon(Icons.my_location_rounded, size: 18, color: AppColors.primaryGreen),
+                                          ? const SizedBox(
+                                              width: 16,
+                                              height: 16,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: AppColors.primaryGreen,
+                                              ),
+                                            )
+                                          : const Icon(
+                                              Icons.my_location_rounded,
+                                              size: 18,
+                                              color: AppColors.primaryGreen,
+                                            ),
                                       const SizedBox(width: 6),
-                                      const Text('Lokasi Saya', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                                      const Text(
+                                        'Lokasi Saya',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.textPrimary,
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -353,7 +430,10 @@ class _MultiPoskoFormViewState extends ConsumerState<MultiPoskoFormView> {
                         Expanded(
                           child: TextFormField(
                             controller: _latitudeController,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                              signed: true,
+                            ),
                             decoration: const InputDecoration(
                               labelText: 'Latitude',
                               border: OutlineInputBorder(),
@@ -365,7 +445,10 @@ class _MultiPoskoFormViewState extends ConsumerState<MultiPoskoFormView> {
                         Expanded(
                           child: TextFormField(
                             controller: _longitudeController,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                              signed: true,
+                            ),
                             decoration: const InputDecoration(
                               labelText: 'Longitude',
                               border: OutlineInputBorder(),
@@ -401,14 +484,30 @@ class _MultiPoskoFormViewState extends ConsumerState<MultiPoskoFormView> {
                         children: [
                           Expanded(
                             child: OutlinedButton.icon(
-                              onPressed: () => _confirmDelete(context, ref, widget.posko!),
-                              icon: const Icon(Icons.delete_outline_rounded, size: 18),
-                              label: const Text('Hapus Posko', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                              onPressed: () =>
+                                  _confirmDelete(context, ref, widget.posko!),
+                              icon: const Icon(
+                                Icons.delete_outline_rounded,
+                                size: 18,
+                              ),
+                              label: const Text(
+                                'Hapus Posko',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                              ),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: AppColors.dangerRed,
-                                side: const BorderSide(color: AppColors.dangerRed),
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                side: const BorderSide(
+                                  color: AppColors.dangerRed,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                               ),
                             ),
                           ),
@@ -418,13 +517,21 @@ class _MultiPoskoFormViewState extends ConsumerState<MultiPoskoFormView> {
                               onPressed: _submit,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.primaryGreen,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                               ),
                               child: const Text(
                                 'Simpan Perubahan',
                                 textAlign: TextAlign.center,
-                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
                           ),
@@ -436,11 +543,17 @@ class _MultiPoskoFormViewState extends ConsumerState<MultiPoskoFormView> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryGreen,
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
                         child: const Text(
                           'Tambah Posko',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                   ],
@@ -469,19 +582,28 @@ class _MultiPoskoFormViewState extends ConsumerState<MultiPoskoFormView> {
                 await repo.deleteMultiPosko(posko.id);
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Posko berhasil dihapus'), backgroundColor: AppColors.primaryGreen),
+                    const SnackBar(
+                      content: Text('Posko berhasil dihapus'),
+                      backgroundColor: AppColors.primaryGreen,
+                    ),
                   );
                   Navigator.pop(context, true); // Pop the form view
                 }
               } catch (e) {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(e.toString()), backgroundColor: AppColors.dangerRed),
+                    SnackBar(
+                      content: Text(e.toString()),
+                      backgroundColor: AppColors.dangerRed,
+                    ),
                   );
                 }
               }
             },
-            child: const Text('Hapus', style: TextStyle(color: AppColors.dangerRed)),
+            child: const Text(
+              'Hapus',
+              style: TextStyle(color: AppColors.dangerRed),
+            ),
           ),
         ],
       ),

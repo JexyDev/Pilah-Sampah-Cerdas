@@ -31,18 +31,27 @@ class KelolaBinView extends ConsumerWidget {
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+          icon: const Icon(
+            Icons.arrow_back_rounded,
+            color: AppColors.textPrimary,
+          ),
           onPressed: () => Navigator.maybePop(context),
         ),
       ),
       backgroundColor: AppColors.backgroundCanvas,
-      body: binsAsync.when(skipLoadingOnReload: true, data: (bins) {
+      body: binsAsync.when(
+        skipLoadingOnReload: true,
+        data: (bins) {
           if (bins.isEmpty) {
             return const Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.delete_rounded, size: 64, color: AppColors.textHint),
+                  Icon(
+                    Icons.delete_rounded,
+                    size: 64,
+                    color: AppColors.textHint,
+                  ),
                   SizedBox(height: 16),
                   Text(
                     'Belum ada tempat sampah terdaftar.',
@@ -71,7 +80,8 @@ class KelolaBinView extends ConsumerWidget {
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: ElevatedButton(
-            onPressed: () => Navigator.of(context).pushNamed(AppRoutes.ukurKapasitas),
+            onPressed: () =>
+                Navigator.of(context).pushNamed(AppRoutes.ukurKapasitas),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryGreen,
               foregroundColor: Colors.white,
@@ -100,7 +110,9 @@ class _BinCardLarge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isOrganic = bin.binType == WasteType.organic;
-    final color = isOrganic ? AppColors.organicColor : AppColors.nonOrganicColor;
+    final color = isOrganic
+        ? AppColors.organicColor
+        : AppColors.nonOrganicColor;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -121,7 +133,9 @@ class _BinCardLarge extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isOrganic ? 'Tempat Sampah Organik' : 'Tempat Sampah Anorganik',
+                      isOrganic
+                          ? 'Tempat Sampah Organik'
+                          : 'Tempat Sampah Anorganik',
                       style: TextStyle(
                         color: color,
                         fontWeight: FontWeight.w700,
@@ -165,19 +179,27 @@ class _BinCardLarge extends StatelessWidget {
                         Text(
                           !bin.isActive
                               ? 'NON AKTIF (Dinonaktifkan di Web)'
-                              : bin.isResetPending 
-                                  ? 'DIAJUKAN PENGOSONGAN' 
-                                  : (bin.backendStatus.isNotEmpty 
-                                      ? bin.backendStatus.replaceAll('_', ' ').toUpperCase() 
-                                      : 'AKTIF'),
+                              : bin.isResetPending
+                              ? 'DIAJUKAN PENGOSONGAN'
+                              : (bin.backendStatus.isNotEmpty
+                                    ? bin.backendStatus
+                                          .replaceAll('_', ' ')
+                                          .toUpperCase()
+                                    : 'AKTIF'),
                           style: TextStyle(
-                            color: !bin.isActive 
+                            color: !bin.isActive
                                 ? AppColors.dangerRed
-                                : bin.isResetPending 
-                                    ? AppColors.warningYellow 
-                                    : ((bin.backendStatus.toUpperCase() == 'ACTIVE_BOUND' || bin.backendStatus.toUpperCase() == 'AKTIF' || bin.backendStatus.toUpperCase() == 'NORMAL' || bin.backendStatus.isEmpty) 
-                                        ? AppColors.primaryGreen 
-                                        : AppColors.dangerRed),
+                                : bin.isResetPending
+                                ? AppColors.warningYellow
+                                : ((bin.backendStatus.toUpperCase() ==
+                                              'ACTIVE_BOUND' ||
+                                          bin.backendStatus.toUpperCase() ==
+                                              'AKTIF' ||
+                                          bin.backendStatus.toUpperCase() ==
+                                              'NORMAL' ||
+                                          bin.backendStatus.isEmpty)
+                                      ? AppColors.primaryGreen
+                                      : AppColors.dangerRed),
                             fontWeight: FontWeight.w700,
                             fontSize: 12,
                           ),
@@ -195,8 +217,12 @@ class _BinCardLarge extends StatelessWidget {
             child: LinearProgressIndicator(
               value: bin.isActive ? bin.capacityPercent.clamp(0.0, 1.0) : 0.0,
               minHeight: 8,
-              backgroundColor: bin.isActive ? AppColors.border : Colors.grey.shade300,
-              valueColor: AlwaysStoppedAnimation<Color>(bin.isActive ? color : Colors.grey),
+              backgroundColor: bin.isActive
+                  ? AppColors.border
+                  : Colors.grey.shade300,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                bin.isActive ? color : Colors.grey,
+              ),
             ),
           ),
           const SizedBox(height: 4),

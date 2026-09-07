@@ -84,7 +84,10 @@ class SopKerjaPetugasWidget extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close_rounded, color: AppColors.textSecondary),
+                  icon: const Icon(
+                    Icons.close_rounded,
+                    color: AppColors.textSecondary,
+                  ),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
@@ -105,7 +108,8 @@ class SopKerjaPetugasWidget extends StatelessWidget {
                     color: AppColors.primaryGreen,
                     description:
                         'Tekan menu "Input Timbangan", scan QR Code pada tempat sampah/pilih ID Tempat Sampah, lalu ketik angka bobot (Kg) hasil timbangan fisik secara jujur & presisi.',
-                    tips: 'Tips: Pastikan jarum timbangan berada di posisi nol sebelum menimbang.',
+                    tips:
+                        'Tips: Pastikan jarum timbangan berada di posisi nol sebelum menimbang.',
                   ),
                   const SizedBox(height: 14),
                   _buildStepCard(
@@ -115,7 +119,8 @@ class SopKerjaPetugasWidget extends StatelessWidget {
                     color: AppColors.maroonRed,
                     description:
                         'Jika menemukan sampah berbahaya (B3/Belum Terpilah) di dalam tempat sampah pemilahan, tekan opsi "Catat Pelanggaran" dan sertakan foto bukti.',
-                    tips: 'Tips: Laporan ini membantu edukasi warga oleh Ketua RW.',
+                    tips:
+                        'Tips: Laporan ini membantu edukasi warga oleh Ketua RW.',
                   ),
                   const SizedBox(height: 14),
                   _buildStepCard(
@@ -125,7 +130,8 @@ class SopKerjaPetugasWidget extends StatelessWidget {
                     color: AppColors.warningOrange,
                     description:
                         'Buka menu "Riwayat Bulan Ini" untuk memastikan setoran timbangan terdata. Nilai KPI Anda akan otomatis meningkat setiap kali setoran terakumulasi.',
-                    tips: 'Tips: Pertahankan KPI di atas 90 untuk menjaga predikat Kinerja Baik.',
+                    tips:
+                        'Tips: Pertahankan KPI di atas 90 untuk menjaga predikat Kinerja Baik.',
                   ),
                   const SizedBox(height: 20),
                 ],
@@ -153,10 +159,7 @@ class SopKerjaPetugasWidget extends StatelessWidget {
                   onPressed: () => Navigator.pop(context),
                   child: const Text(
                     'Saya Mengerti & Siap Bertugas',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -190,10 +193,7 @@ class SopKerjaPetugasWidget extends StatelessWidget {
               Container(
                 width: 28,
                 height: 28,
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                ),
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
                 child: Center(
                   child: Text(
                     stepNumber,
@@ -257,4 +257,3 @@ class SopKerjaPetugasWidget extends StatelessWidget {
     );
   }
 }
-

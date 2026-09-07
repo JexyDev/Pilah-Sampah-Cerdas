@@ -45,7 +45,8 @@ class KelompokMahasiswaLeaderboardEntity extends Equatable {
 
 /// Helper function untuk kalkulasi dan pemeringkatan Leaderboard Kelompok
 List<KelompokMahasiswaLeaderboardEntity> sortGroupLeaderboard(
-    List<KelompokMahasiswaLeaderboardEntity> groups) {
+  List<KelompokMahasiswaLeaderboardEntity> groups,
+) {
   final list = List<KelompokMahasiswaLeaderboardEntity>.from(groups);
   list.sort((a, b) => b.totalPoinKelompok.compareTo(a.totalPoinKelompok));
   return list;

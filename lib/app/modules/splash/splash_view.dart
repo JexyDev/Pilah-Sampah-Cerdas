@@ -4,8 +4,6 @@ import 'package:url_launcher/url_launcher_string.dart';
 import '../../core/values/api_constants.dart';
 import '../../data/providers/repository_providers.dart';
 
-
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/values/app_colors.dart';
@@ -86,56 +84,78 @@ class _SplashViewState extends ConsumerState<SplashView>
     await Future.delayed(const Duration(milliseconds: 1600));
     if (!mounted) return;
 
-
     // Version check
     try {
       final apiClient = ref.read(apiClientProvider);
-      final res = await apiClient.dio.get(ApiEndpoints.appVersion).timeout(const Duration(seconds: 3));
+      final res = await apiClient.dio
+          .get(ApiEndpoints.appVersion)
+          .timeout(const Duration(seconds: 3));
       if (res.statusCode == 200 && res.data['min_required_version'] != null) {
-          final minVer = res.data['min_required_version'].toString();
-          final latestVer = res.data['latest_version']?.toString() ?? minVer;
-          final updateUrl = res.data['update_url']?.toString() ?? 'https://play.google.com/store/apps/details?id=com.berseka.app';
-          final packageInfo = await PackageInfo.fromPlatform();
-          final currentVer = packageInfo.version;
-          
-          if (_isVersionLower(currentVer, minVer)) {
-            if (mounted) {
-              setState(() {
-                _isOutdated = true;
-                _updateUrl = updateUrl;
-              });
-            }
-            return; // Halt flow completely
-          } else if (_isVersionLower(currentVer, latestVer)) {
-            // Optional Update Dialog
-            if (mounted) {
-              await showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (ctx) => AlertDialog(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  title: const Text('Update Tersedia', style: TextStyle(fontWeight: FontWeight.bold)),
-                  content: const Text('Versi terbaru BERSEKA telah tersedia. Apakah Anda ingin memperbaruinya sekarang?'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      child: const Text('Nanti Saja', style: TextStyle(color: Colors.grey)),
-                    ),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryGreen, elevation: 0),
-                      onPressed: () {
-                        launchUrlString(updateUrl, mode: LaunchMode.externalApplication);
-                        Navigator.pop(ctx);
-                      },
-                      child: const Text('Update', style: TextStyle(color: Colors.white)),
-                    ),
-                  ],
+        final minVer = res.data['min_required_version'].toString();
+        final latestVer = res.data['latest_version']?.toString() ?? minVer;
+        final updateUrl =
+            res.data['update_url']?.toString() ??
+            'https://play.google.com/store/apps/details?id=com.berseka.app';
+        final packageInfo = await PackageInfo.fromPlatform();
+        final currentVer = packageInfo.version;
+
+        if (_isVersionLower(currentVer, minVer)) {
+          if (mounted) {
+            setState(() {
+              _isOutdated = true;
+              _updateUrl = updateUrl;
+            });
+          }
+          return; // Halt flow completely
+        } else if (_isVersionLower(currentVer, latestVer)) {
+          // Optional Update Dialog
+          if (mounted) {
+            await showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (ctx) => AlertDialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
                 ),
-              );
-            }
+                title: const Text(
+                  'Update Tersedia',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                content: const Text(
+                  'Versi terbaru BERSEKA telah tersedia. Apakah Anda ingin memperbaruinya sekarang?',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text(
+                      'Nanti Saja',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryGreen,
+                      elevation: 0,
+                    ),
+                    onPressed: () {
+                      launchUrlString(
+                        updateUrl,
+                        mode: LaunchMode.externalApplication,
+                      );
+                      Navigator.pop(ctx);
+                    },
+                    child: const Text(
+                      'Update',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+            );
           }
         }
-      } catch (_) {}
+      }
+    } catch (_) {}
 
     // Fix bug splash stuck: tambahkan timeout 3 detik sebagai fallback
 
@@ -182,21 +202,43 @@ class _SplashViewState extends ConsumerState<SplashView>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.system_update_rounded, size: 80, color: Colors.orange),
+                const Icon(
+                  Icons.system_update_rounded,
+                  size: 80,
+                  color: Colors.orange,
+                ),
                 const SizedBox(height: 16),
-                const Text('Versi Kedaluwarsa', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                const Text(
+                  'Versi Kedaluwarsa',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 8),
-                const Text('Versi aplikasi Anda sudah terlalu lama. Silakan perbarui aplikasi BERSEKA untuk melanjutkan.', textAlign: TextAlign.center, style: TextStyle(color: Colors.black54)),
+                const Text(
+                  'Versi aplikasi Anda sudah terlalu lama. Silakan perbarui aplikasi BERSEKA untuk melanjutkan.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.black54),
+                ),
                 const SizedBox(height: 32),
                 ElevatedButton(
-                  onPressed: () => launchUrlString(_updateUrl, mode: LaunchMode.externalApplication),
+                  onPressed: () => launchUrlString(
+                    _updateUrl,
+                    mode: LaunchMode.externalApplication,
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryGreen,
                     minimumSize: const Size(double.infinity, 50),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
-                  child: const Text('Update Sekarang', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                )
+                  child: const Text(
+                    'Update Sekarang',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -248,7 +290,9 @@ class _SplashViewState extends ConsumerState<SplashView>
                   height: 32,
                   child: CircularProgressIndicator(
                     strokeWidth: 3,
-                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryGreen),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      AppColors.primaryGreen,
+                    ),
                   ),
                 ),
               ),
@@ -259,5 +303,3 @@ class _SplashViewState extends ConsumerState<SplashView>
     );
   }
 }
-
-

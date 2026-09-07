@@ -5,11 +5,7 @@ class KelompokQrResponse {
   final String message;
   final KelompokQrData? data;
 
-  KelompokQrResponse({
-    required this.success,
-    required this.message,
-    this.data,
-  });
+  KelompokQrResponse({required this.success, required this.message, this.data});
 
   factory KelompokQrResponse.fromJson(Map<String, dynamic> json) {
     return KelompokQrResponse(
@@ -39,9 +35,17 @@ class KelompokQrData {
     return KelompokQrData(
       kelompok: KelompokInfoData.fromJson(json['kelompok'] ?? {}),
       kuota: KuotaQrData.fromJson(json['kuota'] ?? {}),
-      exportEndpoints: ExportEndpointsData.fromJson(json['exportEndpoints'] ?? {}),
-      petunjukUntukPercetakan: PetunjukPercetakanData.fromJson(json['petunjukUntukPercetakan'] ?? {}),
-      items: (json['items'] as List?)?.map((e) => StikerQrItem.fromJson(e)).toList() ?? [],
+      exportEndpoints: ExportEndpointsData.fromJson(
+        json['exportEndpoints'] ?? {},
+      ),
+      petunjukUntukPercetakan: PetunjukPercetakanData.fromJson(
+        json['petunjukUntukPercetakan'] ?? {},
+      ),
+      items:
+          (json['items'] as List?)
+              ?.map((e) => StikerQrItem.fromJson(e))
+              .toList() ??
+          [],
     );
   }
 }
@@ -68,7 +72,8 @@ class KelompokInfoData {
       id: json['id'] ?? '',
       nama: json['nama'] ?? '',
       kelurahan: json['kelurahan'] ?? '',
-      cakupanRw: (json['cakupanRw'] as List?)?.map((e) => e.toString()).toList() ?? [],
+      cakupanRw:
+          (json['cakupanRw'] as List?)?.map((e) => e.toString()).toList() ?? [],
       dpl: json['dpl'] ?? '',
       dplPhone: json['dplPhone'] ?? '',
     );
@@ -113,9 +118,7 @@ class ExportEndpointsData {
   ExportEndpointsData({required this.exportPrintHtml});
 
   factory ExportEndpointsData.fromJson(Map<String, dynamic> json) {
-    return ExportEndpointsData(
-      exportPrintHtml: json['exportPrintHtml'] ?? '',
-    );
+    return ExportEndpointsData(exportPrintHtml: json['exportPrintHtml'] ?? '');
   }
 }
 
@@ -181,9 +184,13 @@ class StikerQrItem {
       hexColor: json['hexColor'] ?? '',
       status: json['status'] ?? '',
       isAvailable: json['isAvailable'] ?? false,
-      terikatWarga: json['terikatWarga'] != null ? WargaTerikatData.fromJson(json['terikatWarga']) : null,
+      terikatWarga: json['terikatWarga'] != null
+          ? WargaTerikatData.fromJson(json['terikatWarga'])
+          : null,
       tanggalAktivasi: json['tanggalAktivasi'],
-      spesifikasiStiker: SpesifikasiStikerData.fromJson(json['spesifikasiStiker'] ?? {}),
+      spesifikasiStiker: SpesifikasiStikerData.fromJson(
+        json['spesifikasiStiker'] ?? {},
+      ),
       asetUrl: AsetUrlData.fromJson(json['asetUrl'] ?? {}),
     );
   }
@@ -242,10 +249,7 @@ class AsetUrlData {
   final String qrCodeSvg;
   final String templateBackgroundUrl;
 
-  AsetUrlData({
-    required this.qrCodeSvg,
-    required this.templateBackgroundUrl,
-  });
+  AsetUrlData({required this.qrCodeSvg, required this.templateBackgroundUrl});
 
   factory AsetUrlData.fromJson(Map<String, dynamic> json) {
     return AsetUrlData(

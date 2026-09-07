@@ -3,7 +3,6 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../core/values/app_colors.dart';
 
-
 class TentangAplikasiView extends StatefulWidget {
   const TentangAplikasiView({super.key});
 

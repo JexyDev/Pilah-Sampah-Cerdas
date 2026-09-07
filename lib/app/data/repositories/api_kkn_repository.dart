@@ -17,7 +17,10 @@ String? _extractError(dynamic data, String? fallback) {
     final msg = data['message']?.toString() ?? data['error']?.toString();
     if (msg != null && msg.isNotEmpty) return msg;
   } else if (data is String && data.isNotEmpty) {
-    if (data.contains('<!DOCTYPE') || data.contains('<html') || data.length > 100) return fallback;
+    if (data.contains('<!DOCTYPE') ||
+        data.contains('<html') ||
+        data.length > 100)
+      return fallback;
     return data;
   }
   return fallback;
@@ -41,7 +44,9 @@ class ApiKknRepository implements KknRepository {
       try {
         final data = jsonDecode(cachedStr) as Map<String, dynamic>;
         return KknDashboardData.fromJson(data);
-      } catch (e) { debugPrint('Silenced error: $e'); }
+      } catch (e) {
+        debugPrint('Silenced error: $e');
+      }
     }
     return null;
   }
@@ -56,7 +61,9 @@ class ApiKknRepository implements KknRepository {
         await prefs.setString(_cacheKeyDashboard, jsonEncode(data));
         return KknDashboardData.fromJson(data);
       }
-      throw Exception('Respon dari server tidak valid. Silakan coba beberapa saat lagi.');
+      throw Exception(
+        'Respon dari server tidak valid. Silakan coba beberapa saat lagi.',
+      );
     } catch (e) {
       final prefs = await SharedPreferences.getInstance();
       final cachedStr = prefs.getString(_cacheKeyDashboard);
@@ -64,7 +71,9 @@ class ApiKknRepository implements KknRepository {
         try {
           final data = jsonDecode(cachedStr) as Map<String, dynamic>;
           return KknDashboardData.fromJson(data);
-        } catch (e) { debugPrint('Silenced error: $e'); }
+        } catch (e) {
+          debugPrint('Silenced error: $e');
+        }
       }
       throw Exception('Gagal memuat data dashboard KKN');
     }
@@ -75,12 +84,17 @@ class ApiKknRepository implements KknRepository {
     try {
       final response = await apiClient.dio.get(ApiEndpoints.kknActiveTimeline);
       if (response.statusCode == 200) {
-        return ActiveTimelineResponse.fromJson(response.data as Map<String, dynamic>);
+        return ActiveTimelineResponse.fromJson(
+          response.data as Map<String, dynamic>,
+        );
       }
       throw Exception('Status ${response.statusCode}: ${response.data}');
     } catch (e) {
       if (e is DioException) {
-        final msg = _extractError(e.response?.data, 'Dio Error [${e.response?.statusCode}]: ${e.message}');
+        final msg = _extractError(
+          e.response?.data,
+          'Dio Error [${e.response?.statusCode}]: ${e.message}',
+        );
         throw Exception(msg);
       }
       throw Exception('Error tak terduga: $e');
@@ -94,8 +108,12 @@ class ApiKknRepository implements KknRepository {
     if (cachedStr != null && cachedStr.isNotEmpty) {
       try {
         final list = jsonDecode(cachedStr) as List<dynamic>;
-        return list.map((e) => WargaDampingan.fromJson(e as Map<String, dynamic>)).toList();
-      } catch (e) { debugPrint('Silenced error: $e'); }
+        return list
+            .map((e) => WargaDampingan.fromJson(e as Map<String, dynamic>))
+            .toList();
+      } catch (e) {
+        debugPrint('Silenced error: $e');
+      }
     }
     return null;
   }
@@ -107,7 +125,10 @@ class ApiKknRepository implements KknRepository {
       final response = await apiClient.dio.get(ApiEndpoints.kknWarga);
       if (response.statusCode == 200) {
         if (response.data is Map<String, dynamic>) {
-          rawList = (response.data as Map<String, dynamic>)['data'] as List<dynamic>? ?? [];
+          rawList =
+              (response.data as Map<String, dynamic>)['data']
+                  as List<dynamic>? ??
+              [];
         } else if (response.data is List) {
           rawList = response.data as List<dynamic>;
         }
@@ -119,23 +140,27 @@ class ApiKknRepository implements KknRepository {
     // Fallback removed: Jika endpoint warga-dampingan kosong, itu berarti mahasiswa belum memiliki warga dampingan.
     // Mengambil seluruh warga yang aktif dari /kkn/warga akan menyebabkan mahasiswa mengklaim warga milik mahasiswa lain.
     if (rawList.isNotEmpty) {
-       final prefs = await SharedPreferences.getInstance();
-       await prefs.setString(_cacheKeyWarga, jsonEncode(rawList));
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_cacheKeyWarga, jsonEncode(rawList));
     } else {
-       final prefs = await SharedPreferences.getInstance();
-       final cachedStr = prefs.getString(_cacheKeyWarga);
-       if (cachedStr != null && cachedStr.isNotEmpty) {
-         try {
-           final list = jsonDecode(cachedStr) as List<dynamic>;
-           return list.map((e) => WargaDampingan.fromJson(e as Map<String, dynamic>)).toList();
-         } catch (e) { debugPrint('Silenced error: $e'); }
-       }
+      final prefs = await SharedPreferences.getInstance();
+      final cachedStr = prefs.getString(_cacheKeyWarga);
+      if (cachedStr != null && cachedStr.isNotEmpty) {
+        try {
+          final list = jsonDecode(cachedStr) as List<dynamic>;
+          return list
+              .map((e) => WargaDampingan.fromJson(e as Map<String, dynamic>))
+              .toList();
+        } catch (e) {
+          debugPrint('Silenced error: $e');
+        }
+      }
     }
 
-    return rawList.map((e) => WargaDampingan.fromJson(e as Map<String, dynamic>)).toList();
+    return rawList
+        .map((e) => WargaDampingan.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
-
-
 
   @override
   Future<List<dynamic>?> getCachedActivityLog() async {
@@ -145,7 +170,9 @@ class ApiKknRepository implements KknRepository {
       try {
         final list = jsonDecode(cachedStr) as List<dynamic>;
         return list;
-      } catch (e) { debugPrint('Silenced error: $e'); }
+      } catch (e) {
+        debugPrint('Silenced error: $e');
+      }
     }
     return null;
   }
@@ -160,7 +187,9 @@ class ApiKknRepository implements KknRepository {
         await prefs.setString(_cacheKeyActivityLog, jsonEncode(list));
         return list;
       }
-      throw Exception('Respon dari server tidak valid. Silakan coba beberapa saat lagi.');
+      throw Exception(
+        'Respon dari server tidak valid. Silakan coba beberapa saat lagi.',
+      );
     } catch (e) {
       final prefs = await SharedPreferences.getInstance();
       final cachedStr = prefs.getString(_cacheKeyActivityLog);
@@ -168,14 +197,20 @@ class ApiKknRepository implements KknRepository {
         try {
           final list = jsonDecode(cachedStr) as List<dynamic>;
           return list;
-        } catch (e) { debugPrint('Silenced error: $e'); }
+        } catch (e) {
+          debugPrint('Silenced error: $e');
+        }
       }
       throw Exception('Gagal memuat log aktivitas KKN');
     }
   }
 
   @override
-  Future<Map<String, dynamic>> sendLocationPing(double latitude, double longitude, {int? inZoneSeconds}) async {
+  Future<Map<String, dynamic>> sendLocationPing(
+    double latitude,
+    double longitude, {
+    int? inZoneSeconds,
+  }) async {
     try {
       final Map<String, dynamic> body = {
         'latitude': latitude,
@@ -214,7 +249,9 @@ class ApiKknRepository implements KknRepository {
 
   @override
   Future<Map<String, dynamic>> getTargetLocation(String scheduleId) async {
-    final response = await apiClient.dio.get(ApiEndpoints.kegiatanLokasi(scheduleId));
+    final response = await apiClient.dio.get(
+      ApiEndpoints.kegiatanLokasi(scheduleId),
+    );
     if (response.statusCode == 200 && response.data['success'] == true) {
       return response.data['data'] as Map<String, dynamic>? ?? {};
     }
@@ -222,7 +259,10 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> getActiveZone({double? latitude, double? longitude}) async {
+  Future<Map<String, dynamic>> getActiveZone({
+    double? latitude,
+    double? longitude,
+  }) async {
     try {
       final response = await apiClient.dio.get(
         ApiEndpoints.kknActiveZone,
@@ -269,7 +309,8 @@ class ApiKknRepository implements KknRepository {
     String? namaMahasiswa,
     String? kodeZona,
     String? rw,
-    String? kecamatan, String? kelurahan,
+    String? kecamatan,
+    String? kelurahan,
     int? durationMinutes,
     int? accumulatedSeconds,
     String? timestamp,
@@ -295,18 +336,29 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<List<dynamic>> getWargaForAktivasi({String? kecamatan, String? kelurahan, String? rw, String? search}) async {
+  Future<List<dynamic>> getWargaForAktivasi({
+    String? kecamatan,
+    String? kelurahan,
+    String? rw,
+    String? search,
+  }) async {
     try {
       final Map<String, dynamic> queryParams = {};
-      if (kelurahan != null && kelurahan.isNotEmpty) queryParams['kelurahan'] = kelurahan;
+      if (kelurahan != null && kelurahan.isNotEmpty)
+        queryParams['kelurahan'] = kelurahan;
       if (rw != null && rw.isNotEmpty) queryParams['rw'] = rw;
       if (search != null && search.isNotEmpty) queryParams['search'] = search;
 
-      final response = await apiClient.dio.get(ApiEndpoints.kknWarga, queryParameters: queryParams);
-      
+      final response = await apiClient.dio.get(
+        ApiEndpoints.kknWarga,
+        queryParameters: queryParams,
+      );
+
       if (response.statusCode == 200) {
         if (response.data is Map<String, dynamic>) {
-          return (response.data as Map<String, dynamic>)['data'] as List<dynamic>? ?? [];
+          return (response.data as Map<String, dynamic>)['data']
+                  as List<dynamic>? ??
+              [];
         } else if (response.data is List) {
           return response.data as List<dynamic>;
         }
@@ -318,7 +370,12 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<bool> activateWargaByScan(String wargaId, String qrCode, double latitude, double longitude) async {
+  Future<bool> activateWargaByScan(
+    String wargaId,
+    String qrCode,
+    double latitude,
+    double longitude,
+  ) async {
     final response = await apiClient.dio.post(
       ApiEndpoints.kknActivateByScan,
       data: {
@@ -338,7 +395,9 @@ class ApiKknRepository implements KknRepository {
         return msg.toString();
       }
     } else if (data is String && data.trim().isNotEmpty) {
-      if (data.contains('<!DOCTYPE') || data.contains('<html') || data.length > 120) {
+      if (data.contains('<!DOCTYPE') ||
+          data.contains('<html') ||
+          data.length > 120) {
         return 'Format respons server tidak valid (Cek Endpoint Backend)';
       }
       return data;
@@ -349,7 +408,9 @@ class ApiKknRepository implements KknRepository {
   @override
   Future<bool> claimWargaMandiri(String wargaId) async {
     try {
-      final response = await apiClient.dio.post(ApiEndpoints.kknClaimWarga(wargaId));
+      final response = await apiClient.dio.post(
+        ApiEndpoints.kknClaimWarga(wargaId),
+      );
       return response.statusCode == 200 || response.statusCode == 201;
     } on DioException catch (e) {
       final statusCode = e.response?.statusCode;
@@ -365,7 +426,13 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<bool> activateBin(String wargaId, String binOrganikId, String binAnorganikId, {double? lat, double? lng}) async {
+  Future<bool> activateBin(
+    String wargaId,
+    String binOrganikId,
+    String binAnorganikId, {
+    double? lat,
+    double? lng,
+  }) async {
     final response = await apiClient.dio.post(
       ApiEndpoints.kknActivateBin,
       data: {
@@ -385,7 +452,9 @@ class ApiKknRepository implements KknRepository {
       final response = await apiClient.dio.get(ApiEndpoints.kknHistory);
       if (response.statusCode == 200) {
         if (response.data is Map<String, dynamic>) {
-          return (response.data as Map<String, dynamic>)['data'] as List<dynamic>? ?? [];
+          return (response.data as Map<String, dynamic>)['data']
+                  as List<dynamic>? ??
+              [];
         }
         if (response.data is List) {
           return response.data as List<dynamic>;
@@ -415,7 +484,9 @@ class ApiKknRepository implements KknRepository {
     } on DioException catch (e) {
       debugPrint('[KKN] getLogbookList error: $e');
       if (e.response?.statusCode == 404) return [];
-      throw Exception(_extractError(e.response?.data, 'Gagal memuat daftar logbook'));
+      throw Exception(
+        _extractError(e.response?.data, 'Gagal memuat daftar logbook'),
+      );
     }
   }
 
@@ -443,16 +514,23 @@ class ApiKknRepository implements KknRepository {
   @override
   Future<KelompokQrResponse> getKelompokQrCodes() async {
     try {
-      final response = await apiClient.dio.get(ApiEndpoints.kknMyKelompokQrCodes);
+      final response = await apiClient.dio.get(
+        ApiEndpoints.kknMyKelompokQrCodes,
+      );
       if (response.statusCode == 200 && response.data != null) {
-        return KelompokQrResponse.fromJson(response.data as Map<String, dynamic>);
+        return KelompokQrResponse.fromJson(
+          response.data as Map<String, dynamic>,
+        );
       }
       throw Exception('Format respon tidak valid.');
     } on DioException catch (e) {
       final statusCode = e.response?.statusCode;
-      final msg = _extractSafeErrorMessage(e.response?.data, 'Gagal memuat QR Code Kelompok');
+      final msg = _extractSafeErrorMessage(
+        e.response?.data,
+        'Gagal memuat QR Code Kelompok',
+      );
       if (statusCode == 404) {
-         throw Exception('KELOMPOK_NOT_ASSIGNED');
+        throw Exception('KELOMPOK_NOT_ASSIGNED');
       }
       throw Exception(msg);
     } catch (e) {
@@ -463,7 +541,7 @@ class ApiKknRepository implements KknRepository {
   @override
   Future<bool> submitPemanfaatanSampah(PemanfaatanSampahRequest request) async {
     final Map<String, dynamic> data = request.toJson();
-    
+
     if (request.fotoPath != null && request.fotoPath!.isNotEmpty) {
       final fileExt = request.fotoPath!.split('.').last.toLowerCase();
       String mimeType = 'image/jpeg';
@@ -546,9 +624,12 @@ class ApiKknRepository implements KknRepository {
       } catch (_) {
         response = await apiClient.dio.get('/kkn/dampak-kelurahan');
       }
-      if (response != null && response.statusCode == 200 && response.data != null) {
+      if (response != null &&
+          response.statusCode == 200 &&
+          response.data != null) {
         final Map<String, dynamic> data = response.data is Map<String, dynamic>
-            ? (response.data['data'] as Map<String, dynamic>? ?? response.data as Map<String, dynamic>)
+            ? (response.data['data'] as Map<String, dynamic>? ??
+                  response.data as Map<String, dynamic>)
             : {};
         return DampakKelurahanData.fromJson(data);
       }
@@ -557,18 +638,29 @@ class ApiKknRepository implements KknRepository {
       throw Exception('Gagal memuat data statistik dampak RW.');
     }
   }
+
   @override
-  Future<Map<String, dynamic>> registerPosko(Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths}) async {
+  Future<Map<String, dynamic>> registerPosko(
+    Map<String, dynamic> data, {
+    String? imagePath,
+    List<String>? imagePaths,
+  }) async {
     try {
       if (imagePath != null) {
         final formData = FormData.fromMap({
           ...data,
           'foto': await MultipartFile.fromFile(imagePath),
         });
-        final response = await apiClient.dio.post(ApiEndpoints.kknPoskoRegister, data: formData);
+        final response = await apiClient.dio.post(
+          ApiEndpoints.kknPoskoRegister,
+          data: formData,
+        );
         return response.data as Map<String, dynamic>;
       } else {
-        final response = await apiClient.dio.post(ApiEndpoints.kknPoskoRegister, data: data);
+        final response = await apiClient.dio.post(
+          ApiEndpoints.kknPoskoRegister,
+          data: data,
+        );
         return response.data as Map<String, dynamic>;
       }
     } catch (e) {
@@ -577,17 +669,27 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> updatePosko(Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths}) async {
+  Future<Map<String, dynamic>> updatePosko(
+    Map<String, dynamic> data, {
+    String? imagePath,
+    List<String>? imagePaths,
+  }) async {
     try {
       if (imagePath != null) {
         final formData = FormData.fromMap({
           ...data,
           'foto': await MultipartFile.fromFile(imagePath),
         });
-        final response = await apiClient.dio.put(ApiEndpoints.kknPoskoMe, data: formData);
+        final response = await apiClient.dio.put(
+          ApiEndpoints.kknPoskoMe,
+          data: formData,
+        );
         return response.data as Map<String, dynamic>;
       } else {
-        final response = await apiClient.dio.put(ApiEndpoints.kknPoskoMe, data: data);
+        final response = await apiClient.dio.put(
+          ApiEndpoints.kknPoskoMe,
+          data: data,
+        );
         return response.data as Map<String, dynamic>;
       }
     } catch (e) {
@@ -654,17 +756,27 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> registerFasilitas(Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths}) async {
+  Future<Map<String, dynamic>> registerFasilitas(
+    Map<String, dynamic> data, {
+    String? imagePath,
+    List<String>? imagePaths,
+  }) async {
     try {
       if (imagePath != null) {
         final formData = FormData.fromMap({
           ...data,
           'foto': await MultipartFile.fromFile(imagePath),
         });
-        final response = await apiClient.dio.post(ApiEndpoints.kknFasilitasBantuInput, data: formData);
+        final response = await apiClient.dio.post(
+          ApiEndpoints.kknFasilitasBantuInput,
+          data: formData,
+        );
         return response.data as Map<String, dynamic>;
       } else {
-        final response = await apiClient.dio.post(ApiEndpoints.kknFasilitasBantuInput, data: data);
+        final response = await apiClient.dio.post(
+          ApiEndpoints.kknFasilitasBantuInput,
+          data: data,
+        );
         return response.data as Map<String, dynamic>;
       }
     } on DioException catch (e) {
@@ -681,7 +793,10 @@ class ApiKknRepository implements KknRepository {
   @override
   Future<Map<String, dynamic>> submitHandover(Map<String, dynamic> data) async {
     try {
-      final response = await apiClient.dio.post(ApiEndpoints.kknHandover, data: data);
+      final response = await apiClient.dio.post(
+        ApiEndpoints.kknHandover,
+        data: data,
+      );
       if (response.statusCode == 200 || response.statusCode == 201) {
         return response.data as Map<String, dynamic>? ?? {'success': true};
       }
@@ -713,7 +828,12 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> mulaiKegiatan(String id, double latitude, double longitude, {String? deviceInfo, String? poskoId}) async {
+  Future<Map<String, dynamic>> mulaiKegiatan(
+    String id,
+    double latitude,
+    double longitude, {
+    String? deviceInfo,
+  }) async {
     try {
       final response = await apiClient.dio.post(
         ApiEndpoints.kknMulaiKegiatan(id),
@@ -721,18 +841,20 @@ class ApiKknRepository implements KknRepository {
           'latitude': latitude,
           'longitude': longitude,
           if (deviceInfo != null) 'deviceInfo': deviceInfo,
-          if (poskoId != null) 'poskoId': poskoId,
         },
       );
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return response.data['data'] as Map<String, dynamic>? ?? response.data as Map<String, dynamic>;
+        return response.data['data'] as Map<String, dynamic>? ??
+            response.data as Map<String, dynamic>;
       }
       throw Exception('Gagal memulai kegiatan');
     } on DioException catch (e) {
       final statusCode = e.response?.statusCode;
       final msg = _extractError(e.response?.data, '');
       if (statusCode == 409) {
-        throw Exception('CONFLICT:${msg ?? 'Anda masih memiliki kegiatan aktif lain'}');
+        throw Exception(
+          'CONFLICT:${msg ?? 'Anda masih memiliki kegiatan aktif lain'}',
+        );
       }
       throw Exception(msg ?? 'Gagal memulai kegiatan ($statusCode)');
     }
@@ -743,21 +865,26 @@ class ApiKknRepository implements KknRepository {
     try {
       final response = await apiClient.dio.post(
         ApiEndpoints.kknSkipKegiatan(id),
-        data: {
-          'alasan': alasan ?? 'Tidak ada kegiatan pada hari ini',
-        },
+        data: {'alasan': alasan ?? 'Tidak ada kegiatan pada hari ini'},
       );
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return response.data['data'] as Map<String, dynamic>? ?? (response.data is Map<String, dynamic> ? response.data as Map<String, dynamic> : {});
+        return response.data['data'] as Map<String, dynamic>? ??
+            (response.data is Map<String, dynamic>
+                ? response.data as Map<String, dynamic>
+                : {});
       }
       throw Exception('Gagal menandai tidak ada kegiatan');
     } on DioException catch (e) {
       final statusCode = e.response?.statusCode;
       final msg = _extractError(e.response?.data, '');
       if (statusCode == 403) {
-        throw Exception('FORBIDDEN:${msg ?? 'Hanya DPL atau Ketua Kelompok yang dapat melewati kegiatan.'}');
+        throw Exception(
+          'FORBIDDEN:${msg ?? 'Hanya DPL atau Ketua Kelompok yang dapat melewati kegiatan.'}',
+        );
       } else if (statusCode == 409) {
-        throw Exception('CONFLICT:${msg ?? 'Tidak dapat melewati kegiatan yang sudah dimulai atau selesai.'}');
+        throw Exception(
+          'CONFLICT:${msg ?? 'Tidak dapat melewati kegiatan yang sudah dimulai atau selesai.'}',
+        );
       }
       throw Exception(msg ?? 'Gagal menandai tidak ada kegiatan ($statusCode)');
     } catch (e) {
@@ -766,7 +893,17 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> selesaiKegiatan(String id, {required String sessionId, required int totalDurasiDalamZonaMenit, int? accumulatedSeconds, required String alasan, String? deskripsiKegiatan, String? fotoPath, double? latitude, double? longitude}) async {
+  Future<Map<String, dynamic>> selesaiKegiatan(
+    String id, {
+    required String sessionId,
+    required int totalDurasiDalamZonaMenit,
+    int? accumulatedSeconds,
+    required String alasan,
+    String? deskripsiKegiatan,
+    String? fotoPath,
+    double? latitude,
+    double? longitude,
+  }) async {
     try {
       if (fotoPath != null && fotoPath.isNotEmpty) {
         final fileExt = fotoPath.split('.').last.toLowerCase();
@@ -777,7 +914,8 @@ class ApiKknRepository implements KknRepository {
         final formData = FormData.fromMap({
           'sessionId': sessionId,
           'totalDurasiDalamZonaMenit': totalDurasiDalamZonaMenit,
-          if (accumulatedSeconds != null) 'accumulatedDuration': accumulatedSeconds,
+          if (accumulatedSeconds != null)
+            'accumulatedDuration': accumulatedSeconds,
           'alasan': alasan,
           if (deskripsiKegiatan != null && deskripsiKegiatan.isNotEmpty)
             'deskripsiKegiatan': deskripsiKegiatan,
@@ -785,7 +923,8 @@ class ApiKknRepository implements KknRepository {
           if (longitude != null) 'longitude': longitude,
           'foto': await MultipartFile.fromFile(
             fotoPath,
-            filename: 'dokumentasi_${DateTime.now().millisecondsSinceEpoch}.$fileExt',
+            filename:
+                'dokumentasi_${DateTime.now().millisecondsSinceEpoch}.$fileExt',
             contentType: MediaType.parse(mimeType),
           ),
         });
@@ -810,9 +949,11 @@ class ApiKknRepository implements KknRepository {
         data: {
           'sessionId': sessionId,
           'totalDurasiDalamZonaMenit': totalDurasiDalamZonaMenit,
-          if (accumulatedSeconds != null) 'accumulatedDuration': accumulatedSeconds,
+          if (accumulatedSeconds != null)
+            'accumulatedDuration': accumulatedSeconds,
           'alasan': alasan,
-          if (deskripsiKegiatan != null && deskripsiKegiatan.isNotEmpty) 'deskripsiKegiatan': deskripsiKegiatan,
+          if (deskripsiKegiatan != null && deskripsiKegiatan.isNotEmpty)
+            'deskripsiKegiatan': deskripsiKegiatan,
           if (latitude != null) 'latitude': latitude,
           if (longitude != null) 'longitude': longitude,
         },
@@ -831,13 +972,14 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> jedaKegiatan(String id, {required String alasan}) async {
+  Future<Map<String, dynamic>> jedaKegiatan(
+    String id, {
+    required String alasan,
+  }) async {
     try {
       final response = await apiClient.dio.post(
         ApiEndpoints.kknJedaKegiatan(id),
-        data: {
-          'alasan': alasan,
-        },
+        data: {'alasan': alasan},
       );
       if (response.statusCode == 200 || response.statusCode == 201) {
         return response.data as Map<String, dynamic>? ?? {'success': true};
@@ -853,14 +995,15 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> lanjutKegiatan(String id, {required double latitude, required double longitude}) async {
+  Future<Map<String, dynamic>> lanjutKegiatan(
+    String id, {
+    required double latitude,
+    required double longitude,
+  }) async {
     try {
       final response = await apiClient.dio.post(
         ApiEndpoints.kknLanjutKegiatan(id),
-        data: {
-          'latitude': latitude,
-          'longitude': longitude,
-        },
+        data: {'latitude': latitude, 'longitude': longitude},
       );
       if (response.statusCode == 200 || response.statusCode == 201) {
         return response.data as Map<String, dynamic>? ?? {'success': true};
@@ -915,10 +1058,12 @@ class ApiKknRepository implements KknRepository {
       dynamic requestData = data;
       if (data.containsKey('filePdfPath') && data['filePdfPath'] != null) {
         final formData = FormData.fromMap(data);
-        formData.files.add(MapEntry(
-          'filePdf',
-          await MultipartFile.fromFile(data['filePdfPath']),
-        ));
+        formData.files.add(
+          MapEntry(
+            'filePdf',
+            await MultipartFile.fromFile(data['filePdfPath']),
+          ),
+        );
         formData.fields.removeWhere((e) => e.key == 'filePdfPath');
         requestData = formData;
       }
@@ -930,7 +1075,9 @@ class ApiKknRepository implements KknRepository {
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
       if (e is DioException) {
-        throw Exception(_extractError(e.response?.data, 'Gagal mengajukan program kerja'));
+        throw Exception(
+          _extractError(e.response?.data, 'Gagal mengajukan program kerja'),
+        );
       }
       rethrow;
     }
@@ -942,10 +1089,12 @@ class ApiKknRepository implements KknRepository {
       dynamic requestData = data;
       if (data.containsKey('filePdfPath') && data['filePdfPath'] != null) {
         final formData = FormData.fromMap(data);
-        formData.files.add(MapEntry(
-          'filePdf',
-          await MultipartFile.fromFile(data['filePdfPath']),
-        ));
+        formData.files.add(
+          MapEntry(
+            'filePdf',
+            await MultipartFile.fromFile(data['filePdfPath']),
+          ),
+        );
         formData.fields.removeWhere((e) => e.key == 'filePdfPath');
         requestData = formData;
       }
@@ -957,14 +1106,19 @@ class ApiKknRepository implements KknRepository {
       return response.statusCode == 200;
     } catch (e) {
       if (e is DioException) {
-        throw Exception(_extractError(e.response?.data, 'Gagal mengedit program kerja'));
+        throw Exception(
+          _extractError(e.response?.data, 'Gagal mengedit program kerja'),
+        );
       }
       rethrow;
     }
   }
 
   @override
-  Future<bool> updateStatusPelaksanaan(String id, String statusPelaksanaan) async {
+  Future<bool> updateStatusPelaksanaan(
+    String id,
+    String statusPelaksanaan,
+  ) async {
     try {
       final response = await apiClient.dio.patch(
         '${ApiEndpoints.kknProgramKerja}/$id',
@@ -973,7 +1127,12 @@ class ApiKknRepository implements KknRepository {
       return response.statusCode == 200;
     } catch (e) {
       if (e is DioException) {
-        throw Exception(_extractError(e.response?.data, 'Gagal memperbarui status program kerja'));
+        throw Exception(
+          _extractError(
+            e.response?.data,
+            'Gagal memperbarui status program kerja',
+          ),
+        );
       }
       rethrow;
     }
@@ -999,7 +1158,9 @@ class ApiKknRepository implements KknRepository {
   @override
   Future<Map<String, dynamic>?> getProgramKerjaDetail(String id) async {
     try {
-      final response = await apiClient.dio.get('${ApiEndpoints.kknProgramKerja}/$id');
+      final response = await apiClient.dio.get(
+        '${ApiEndpoints.kknProgramKerja}/$id',
+      );
       if (response.statusCode == 200) {
         return response.data['data'] as Map<String, dynamic>?;
       }
@@ -1007,22 +1168,32 @@ class ApiKknRepository implements KknRepository {
     } on DioException catch (e) {
       debugPrint('[KKN] getProgramKerjaDetail error: $e');
       if (e.response?.statusCode == 404) return null;
-      throw Exception(_extractError(e.response?.data, 'Gagal mengambil detail program kerja'));
+      throw Exception(
+        _extractError(e.response?.data, 'Gagal mengambil detail program kerja'),
+      );
     }
   }
 
   @override
   Future<bool> deleteProgramKerja(String id) async {
     try {
-      final response = await apiClient.dio.delete('${ApiEndpoints.kknProgramKerja}/$id');
+      final response = await apiClient.dio.delete(
+        '${ApiEndpoints.kknProgramKerja}/$id',
+      );
       return response.statusCode == 200 || response.statusCode == 204;
     } on DioException catch (e) {
-      throw Exception(_extractError(e.response?.data, 'Gagal menghapus program kerja'));
+      throw Exception(
+        _extractError(e.response?.data, 'Gagal menghapus program kerja'),
+      );
     }
   }
 
   @override
-  Future<bool> submitLogbookPemanfaatan(Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths}) async {
+  Future<bool> submitLogbookPemanfaatan(
+    Map<String, dynamic> data, {
+    String? imagePath,
+    List<String>? imagePaths,
+  }) async {
     try {
       dynamic requestData;
       final allImagePaths = <String>[
@@ -1041,11 +1212,14 @@ class ApiKknRepository implements KknRepository {
           if (fileExt == 'webp') mimeType = 'image/webp';
           if (fileExt == 'pdf') mimeType = 'application/pdf';
 
-          files.add(await MultipartFile.fromFile(
-            p,
-            filename: 'logbook_pemanfaatan_${DateTime.now().millisecondsSinceEpoch}_$i.$fileExt',
-            contentType: MediaType.parse(mimeType),
-          ));
+          files.add(
+            await MultipartFile.fromFile(
+              p,
+              filename:
+                  'logbook_pemanfaatan_${DateTime.now().millisecondsSinceEpoch}_$i.$fileExt',
+              contentType: MediaType.parse(mimeType),
+            ),
+          );
         }
         formMap['fotoDokumentasi'] = files.length == 1 ? files.first : files;
         requestData = FormData.fromMap(formMap);
@@ -1060,14 +1234,23 @@ class ApiKknRepository implements KknRepository {
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
       if (e is DioException) {
-        throw Exception(_extractError(e.response?.data, 'Gagal menyimpan logbook pemanfaatan'));
+        throw Exception(
+          _extractError(
+            e.response?.data,
+            'Gagal menyimpan logbook pemanfaatan',
+          ),
+        );
       }
       rethrow;
     }
   }
 
   @override
-  Future<bool> editLogbookPemanfaatan(String id, Map<String, dynamic> data, {String? imagePath}) async {
+  Future<bool> editLogbookPemanfaatan(
+    String id,
+    Map<String, dynamic> data, {
+    String? imagePath,
+  }) async {
     try {
       dynamic requestData;
       if (imagePath != null && imagePath.trim().isNotEmpty) {
@@ -1076,10 +1259,11 @@ class ApiKknRepository implements KknRepository {
         String mimeType = 'image/jpeg';
         if (fileExt == 'png') mimeType = 'image/png';
         if (fileExt == 'webp') mimeType = 'image/webp';
-        
+
         formMap['fotoDokumentasi'] = await MultipartFile.fromFile(
           imagePath,
-          filename: 'logbook_pemanfaatan_edit_${DateTime.now().millisecondsSinceEpoch}.$fileExt',
+          filename:
+              'logbook_pemanfaatan_edit_${DateTime.now().millisecondsSinceEpoch}.$fileExt',
           contentType: MediaType.parse(mimeType),
         );
         requestData = FormData.fromMap(formMap);
@@ -1094,14 +1278,20 @@ class ApiKknRepository implements KknRepository {
       return response.statusCode == 200;
     } catch (e) {
       if (e is DioException) {
-        throw Exception(_extractError(e.response?.data, 'Gagal mengedit logbook pemanfaatan'));
+        throw Exception(
+          _extractError(e.response?.data, 'Gagal mengedit logbook pemanfaatan'),
+        );
       }
       rethrow;
     }
   }
 
   @override
-  Future<bool> submitLogbookHarian(Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths}) async {
+  Future<bool> submitLogbookHarian(
+    Map<String, dynamic> data, {
+    String? imagePath,
+    List<String>? imagePaths,
+  }) async {
     try {
       dynamic requestData;
       final allImagePaths = <String>[
@@ -1120,11 +1310,14 @@ class ApiKknRepository implements KknRepository {
           if (fileExt == 'webp') mimeType = 'image/webp';
           if (fileExt == 'pdf') mimeType = 'application/pdf';
 
-          files.add(await MultipartFile.fromFile(
-            p,
-            filename: 'logbook_harian_${DateTime.now().millisecondsSinceEpoch}_$i.$fileExt',
-            contentType: MediaType.parse(mimeType),
-          ));
+          files.add(
+            await MultipartFile.fromFile(
+              p,
+              filename:
+                  'logbook_harian_${DateTime.now().millisecondsSinceEpoch}_$i.$fileExt',
+              contentType: MediaType.parse(mimeType),
+            ),
+          );
         }
         formMap['fotoDokumentasi'] = files.length == 1 ? files.first : files;
         requestData = FormData.fromMap(formMap);
@@ -1140,8 +1333,13 @@ class ApiKknRepository implements KknRepository {
     } catch (e) {
       if (e is DioException) {
         final rawData = e.response?.data?.toString() ?? 'null';
-        final snippet = rawData.length > 50 ? rawData.substring(0, 50) : rawData;
-        final msg = _extractError(e.response?.data, 'HTTP ${e.response?.statusCode}: $snippet');
+        final snippet = rawData.length > 50
+            ? rawData.substring(0, 50)
+            : rawData;
+        final msg = _extractError(
+          e.response?.data,
+          'HTTP ${e.response?.statusCode}: $snippet',
+        );
         throw Exception(msg);
       }
       rethrow;
@@ -1149,7 +1347,12 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<bool> editLogbookHarian(String id, Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths}) async {
+  Future<bool> editLogbookHarian(
+    String id,
+    Map<String, dynamic> data, {
+    String? imagePath,
+    List<String>? imagePaths,
+  }) async {
     try {
       dynamic requestData;
       final allImagePaths = <String>[
@@ -1168,11 +1371,14 @@ class ApiKknRepository implements KknRepository {
           if (fileExt == 'webp') mimeType = 'image/webp';
           if (fileExt == 'pdf') mimeType = 'application/pdf';
 
-          files.add(await MultipartFile.fromFile(
-            p,
-            filename: 'logbook_harian_edit_${DateTime.now().millisecondsSinceEpoch}_$i.$fileExt',
-            contentType: MediaType.parse(mimeType),
-          ));
+          files.add(
+            await MultipartFile.fromFile(
+              p,
+              filename:
+                  'logbook_harian_edit_${DateTime.now().millisecondsSinceEpoch}_$i.$fileExt',
+              contentType: MediaType.parse(mimeType),
+            ),
+          );
         }
         formMap['fotoDokumentasi'] = files.length == 1 ? files.first : files;
         requestData = FormData.fromMap(formMap);
@@ -1188,8 +1394,13 @@ class ApiKknRepository implements KknRepository {
     } catch (e) {
       if (e is DioException) {
         final rawData = e.response?.data?.toString() ?? 'null';
-        final snippet = rawData.length > 50 ? rawData.substring(0, 50) : rawData;
-        final msg = _extractError(e.response?.data, 'HTTP ${e.response?.statusCode}: $snippet');
+        final snippet = rawData.length > 50
+            ? rawData.substring(0, 50)
+            : rawData;
+        final msg = _extractError(
+          e.response?.data,
+          'HTTP ${e.response?.statusCode}: $snippet',
+        );
         throw Exception(msg);
       }
       rethrow;
@@ -1199,7 +1410,9 @@ class ApiKknRepository implements KknRepository {
   @override
   Future<Map<String, dynamic>?> getLogbookDetail(String id) async {
     try {
-      final response = await apiClient.dio.get('${ApiEndpoints.logbookMahasiswa}/$id');
+      final response = await apiClient.dio.get(
+        '${ApiEndpoints.logbookMahasiswa}/$id',
+      );
       if (response.statusCode == 200) {
         return response.data['data'] as Map<String, dynamic>?;
       }
@@ -1207,38 +1420,55 @@ class ApiKknRepository implements KknRepository {
     } on DioException catch (e) {
       debugPrint('[KKN] getLogbookDetail error: $e');
       if (e.response?.statusCode == 404) return null;
-      throw Exception(_extractError(e.response?.data, 'Gagal mengambil detail logbook'));
+      throw Exception(
+        _extractError(e.response?.data, 'Gagal mengambil detail logbook'),
+      );
     }
   }
 
   @override
   Future<bool> deleteLogbook(String id) async {
     try {
-      final response = await apiClient.dio.delete('${ApiEndpoints.logbookMahasiswa}/$id');
+      final response = await apiClient.dio.delete(
+        '${ApiEndpoints.logbookMahasiswa}/$id',
+      );
       return response.statusCode == 200 || response.statusCode == 204;
     } on DioException catch (e) {
-      throw Exception(_extractError(e.response?.data, 'Gagal menghapus logbook'));
+      throw Exception(
+        _extractError(e.response?.data, 'Gagal menghapus logbook'),
+      );
     }
   }
 
   @override
   Future<List<dynamic>> getUnharvestedLogbooks() async {
     try {
-      final response = await apiClient.dio.get(ApiEndpoints.kknPemanfaatanUnharvested);
+      final response = await apiClient.dio.get(
+        ApiEndpoints.kknPemanfaatanUnharvested,
+      );
       if (response.statusCode == 200 && response.data['success'] == true) {
         return response.data['data'] ?? [];
       }
       return [];
     } catch (e) {
       if (e is DioException) {
-        throw Exception(_extractError(e.response?.data, 'Gagal mengambil logbook unharvested'));
+        throw Exception(
+          _extractError(
+            e.response?.data,
+            'Gagal mengambil logbook unharvested',
+          ),
+        );
       }
       rethrow;
     }
   }
 
   @override
-  Future<bool> submitPanenHasil(Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths}) async {
+  Future<bool> submitPanenHasil(
+    Map<String, dynamic> data, {
+    String? imagePath,
+    List<String>? imagePaths,
+  }) async {
     try {
       dynamic requestData;
       final allImagePaths = <String>[
@@ -1257,11 +1487,14 @@ class ApiKknRepository implements KknRepository {
           if (fileExt == 'webp') mimeType = 'image/webp';
           if (fileExt == 'pdf') mimeType = 'application/pdf';
 
-          files.add(await MultipartFile.fromFile(
-            p,
-            filename: 'panen_${DateTime.now().millisecondsSinceEpoch}_$i.$fileExt',
-            contentType: MediaType.parse(mimeType),
-          ));
+          files.add(
+            await MultipartFile.fromFile(
+              p,
+              filename:
+                  'panen_${DateTime.now().millisecondsSinceEpoch}_$i.$fileExt',
+              contentType: MediaType.parse(mimeType),
+            ),
+          );
         }
         formMap['fotoDokumentasi'] = files.length == 1 ? files.first : files;
         requestData = FormData.fromMap(formMap);
@@ -1276,7 +1509,9 @@ class ApiKknRepository implements KknRepository {
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
       if (e is DioException) {
-        throw Exception(_extractError(e.response?.data, 'Gagal menyimpan panen hasil'));
+        throw Exception(
+          _extractError(e.response?.data, 'Gagal menyimpan panen hasil'),
+        );
       }
       rethrow;
     }
@@ -1292,14 +1527,21 @@ class ApiKknRepository implements KknRepository {
       throw Exception('Gagal memuat riwayat pemanfaatan');
     } catch (e) {
       if (e is DioException) {
-        throw Exception(_extractError(e.response?.data, 'Gagal memuat riwayat pemanfaatan'));
+        throw Exception(
+          _extractError(e.response?.data, 'Gagal memuat riwayat pemanfaatan'),
+        );
       }
       rethrow;
     }
   }
 
   @override
-  Future<bool> updateLogbookPemanfaatan(String id, Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths}) async {
+  Future<bool> updateLogbookPemanfaatan(
+    String id,
+    Map<String, dynamic> data, {
+    String? imagePath,
+    List<String>? imagePaths,
+  }) async {
     try {
       dynamic requestData;
       final allImagePaths = <String>[
@@ -1318,7 +1560,14 @@ class ApiKknRepository implements KknRepository {
           if (fileExt == 'webp') mimeType = 'image/webp';
           if (fileExt == 'pdf') mimeType = 'application/pdf';
 
-          files.add(await MultipartFile.fromFile(p, filename: 'update_pemanfaatan_${DateTime.now().millisecondsSinceEpoch}_$i.$fileExt', contentType: MediaType.parse(mimeType)));
+          files.add(
+            await MultipartFile.fromFile(
+              p,
+              filename:
+                  'update_pemanfaatan_${DateTime.now().millisecondsSinceEpoch}_$i.$fileExt',
+              contentType: MediaType.parse(mimeType),
+            ),
+          );
         }
         formMap['fotoDokumentasi'] = files.length == 1 ? files.first : files;
         requestData = FormData.fromMap(formMap);
@@ -1326,10 +1575,16 @@ class ApiKknRepository implements KknRepository {
         requestData = data;
       }
 
-      final response = await apiClient.dio.put('${ApiEndpoints.kknPemanfaatanSampah}/$id', data: requestData);
+      final response = await apiClient.dio.put(
+        '${ApiEndpoints.kknPemanfaatanSampah}/$id',
+        data: requestData,
+      );
       return response.statusCode == 200;
     } catch (e) {
-      if (e is DioException) throw Exception(_extractError(e.response?.data, 'Gagal update pemanfaatan'));
+      if (e is DioException)
+        throw Exception(
+          _extractError(e.response?.data, 'Gagal update pemanfaatan'),
+        );
       rethrow;
     }
   }
@@ -1337,16 +1592,26 @@ class ApiKknRepository implements KknRepository {
   @override
   Future<bool> deleteLogbookPemanfaatan(String id) async {
     try {
-      final response = await apiClient.dio.delete('${ApiEndpoints.kknPemanfaatanSampah}/$id');
+      final response = await apiClient.dio.delete(
+        '${ApiEndpoints.kknPemanfaatanSampah}/$id',
+      );
       return response.statusCode == 200;
     } catch (e) {
-      if (e is DioException) throw Exception(_extractError(e.response?.data, 'Gagal hapus pemanfaatan'));
+      if (e is DioException)
+        throw Exception(
+          _extractError(e.response?.data, 'Gagal hapus pemanfaatan'),
+        );
       rethrow;
     }
   }
 
   @override
-  Future<bool> updatePanenHasil(String id, Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths}) async {
+  Future<bool> updatePanenHasil(
+    String id,
+    Map<String, dynamic> data, {
+    String? imagePath,
+    List<String>? imagePaths,
+  }) async {
     try {
       dynamic requestData;
       final allImagePaths = <String>[
@@ -1365,7 +1630,14 @@ class ApiKknRepository implements KknRepository {
           if (fileExt == 'webp') mimeType = 'image/webp';
           if (fileExt == 'pdf') mimeType = 'application/pdf';
 
-          files.add(await MultipartFile.fromFile(p, filename: 'update_panen_${DateTime.now().millisecondsSinceEpoch}_$i.$fileExt', contentType: MediaType.parse(mimeType)));
+          files.add(
+            await MultipartFile.fromFile(
+              p,
+              filename:
+                  'update_panen_${DateTime.now().millisecondsSinceEpoch}_$i.$fileExt',
+              contentType: MediaType.parse(mimeType),
+            ),
+          );
         }
         formMap['fotoDokumentasi'] = files.length == 1 ? files.first : files;
         requestData = FormData.fromMap(formMap);
@@ -1373,10 +1645,14 @@ class ApiKknRepository implements KknRepository {
         requestData = data;
       }
 
-      final response = await apiClient.dio.put('${ApiEndpoints.kknPanenHasil}/$id', data: requestData);
+      final response = await apiClient.dio.put(
+        '${ApiEndpoints.kknPanenHasil}/$id',
+        data: requestData,
+      );
       return response.statusCode == 200;
     } catch (e) {
-      if (e is DioException) throw Exception(_extractError(e.response?.data, 'Gagal update panen'));
+      if (e is DioException)
+        throw Exception(_extractError(e.response?.data, 'Gagal update panen'));
       rethrow;
     }
   }
@@ -1384,10 +1660,13 @@ class ApiKknRepository implements KknRepository {
   @override
   Future<bool> deletePanenHasil(String id) async {
     try {
-      final response = await apiClient.dio.delete('${ApiEndpoints.kknPanenHasil}/$id');
+      final response = await apiClient.dio.delete(
+        '${ApiEndpoints.kknPanenHasil}/$id',
+      );
       return response.statusCode == 200;
     } catch (e) {
-      if (e is DioException) throw Exception(_extractError(e.response?.data, 'Gagal hapus panen'));
+      if (e is DioException)
+        throw Exception(_extractError(e.response?.data, 'Gagal hapus panen'));
       rethrow;
     }
   }
@@ -1406,7 +1685,9 @@ class ApiKknRepository implements KknRepository {
       throw Exception('Gagal sinkronisasi zona kelompok');
     } catch (e) {
       if (e is DioException) {
-        throw Exception(_extractError(e.response?.data, 'Gagal sinkronisasi zona kelompok'));
+        throw Exception(
+          _extractError(e.response?.data, 'Gagal sinkronisasi zona kelompok'),
+        );
       }
       rethrow;
     }
@@ -1415,24 +1696,37 @@ class ApiKknRepository implements KknRepository {
   @override
   Future<bool> addMultiPosko(Map<String, dynamic> data) async {
     try {
-      final response = await apiClient.dio.post(ApiEndpoints.poskoMulti, data: data);
+      final response = await apiClient.dio.post(
+        ApiEndpoints.poskoMulti,
+        data: data,
+      );
       return response.statusCode == 201 || response.statusCode == 200;
     } catch (e) {
       if (e is DioException) {
-        throw Exception(_extractError(e.response?.data, 'Gagal menambahkan posko tambahan'));
+        throw Exception(
+          _extractError(e.response?.data, 'Gagal menambahkan posko tambahan'),
+        );
       }
       rethrow;
     }
   }
 
   @override
-  Future<bool> updateMultiPosko(String poskoId, Map<String, dynamic> data) async {
+  Future<bool> updateMultiPosko(
+    String poskoId,
+    Map<String, dynamic> data,
+  ) async {
     try {
-      final response = await apiClient.dio.put(ApiEndpoints.poskoMultiById(poskoId), data: data);
+      final response = await apiClient.dio.put(
+        ApiEndpoints.poskoMultiById(poskoId),
+        data: data,
+      );
       return response.statusCode == 200;
     } catch (e) {
       if (e is DioException) {
-        throw Exception(_extractError(e.response?.data, 'Gagal mengupdate posko tambahan'));
+        throw Exception(
+          _extractError(e.response?.data, 'Gagal mengupdate posko tambahan'),
+        );
       }
       rethrow;
     }
@@ -1441,15 +1735,17 @@ class ApiKknRepository implements KknRepository {
   @override
   Future<bool> deleteMultiPosko(String poskoId) async {
     try {
-      final response = await apiClient.dio.delete(ApiEndpoints.poskoMultiById(poskoId));
+      final response = await apiClient.dio.delete(
+        ApiEndpoints.poskoMultiById(poskoId),
+      );
       return response.statusCode == 200;
     } catch (e) {
       if (e is DioException) {
-        throw Exception(_extractError(e.response?.data, 'Gagal menghapus posko tambahan'));
+        throw Exception(
+          _extractError(e.response?.data, 'Gagal menghapus posko tambahan'),
+        );
       }
       rethrow;
     }
   }
 }
-
-

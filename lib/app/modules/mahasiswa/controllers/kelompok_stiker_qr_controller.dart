@@ -41,7 +41,9 @@ class KelompokStikerQrState {
     if (qrData == null) return [];
     final items = qrData!.items;
     if (selectedFilter == 'ALL') return items;
-    return items.where((item) => item.jenis.toUpperCase() == selectedFilter).toList();
+    return items
+        .where((item) => item.jenis.toUpperCase() == selectedFilter)
+        .toList();
   }
 }
 
@@ -57,11 +59,8 @@ class KelompokStikerQrController extends StateNotifier<KelompokStikerQrState> {
     try {
       final repository = ref.read(kknRepositoryProvider);
       final response = await repository.getKelompokQrCodes();
-      
-      state = state.copyWith(
-        isLoading: false,
-        qrData: response.data,
-      );
+
+      state = state.copyWith(isLoading: false, qrData: response.data);
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -77,7 +76,9 @@ class KelompokStikerQrController extends StateNotifier<KelompokStikerQrState> {
   Future<void> exportData() async {
     final itemsToExport = state.qrData?.items ?? [];
     if (itemsToExport.isEmpty) {
-      state = state.copyWith(errorMessage: 'Tidak ada data QR Code untuk dicetak.');
+      state = state.copyWith(
+        errorMessage: 'Tidak ada data QR Code untuk dicetak.',
+      );
       return;
     }
 
@@ -86,10 +87,14 @@ class KelompokStikerQrController extends StateNotifier<KelompokStikerQrState> {
       final pdf = pw.Document();
       const pageFormat = PdfPageFormat(1182, 1772, marginAll: 0);
 
-      final ByteData organicData = await rootBundle.load('assets/images/qr_template_organik.png');
+      final ByteData organicData = await rootBundle.load(
+        'assets/images/qr_template_organik.png',
+      );
       final organicImage = pw.MemoryImage(organicData.buffer.asUint8List());
 
-      final ByteData anorganicData = await rootBundle.load('assets/images/qr_template_anorganik.png');
+      final ByteData anorganicData = await rootBundle.load(
+        'assets/images/qr_template_anorganik.png',
+      );
       final anorganicImage = pw.MemoryImage(anorganicData.buffer.asUint8List());
 
       for (final item in itemsToExport) {
@@ -170,15 +175,22 @@ class KelompokStikerQrController extends StateNotifier<KelompokStikerQrState> {
       }
 
       final output = await getTemporaryDirectory();
-      final kelompokName = state.qrData?.kelompok.nama.replaceAll(RegExp(r'[^\w\s]+'), '').replaceAll(' ', '_') ?? 'Kelompok';
-      final file = File('${output.path}/Stiker_BERSEKA_10x15cm_$kelompokName.pdf');
+      final kelompokName =
+          state.qrData?.kelompok.nama
+              .replaceAll(RegExp(r'[^\w\s]+'), '')
+              .replaceAll(' ', '_') ??
+          'Kelompok';
+      final file = File(
+        '${output.path}/Stiker_BERSEKA_10x15cm_$kelompokName.pdf',
+      );
       await file.writeAsBytes(await pdf.save());
 
       state = state.copyWith(isLoading: false);
 
       await Share.shareXFiles(
         [XFile(file.path)],
-        text: 'File Cetak Stiker QR Code (10x15cm) - ${state.qrData?.kelompok.nama}',
+        text:
+            'File Cetak Stiker QR Code (10x15cm) - ${state.qrData?.kelompok.nama}',
       );
     } catch (e) {
       state = state.copyWith(
@@ -189,6 +201,9 @@ class KelompokStikerQrController extends StateNotifier<KelompokStikerQrState> {
   }
 }
 
-final kelompokStikerQrProvider = StateNotifierProvider<KelompokStikerQrController, KelompokStikerQrState>((ref) {
-  return KelompokStikerQrController(ref);
-});
+final kelompokStikerQrProvider =
+    StateNotifierProvider<KelompokStikerQrController, KelompokStikerQrState>((
+      ref,
+    ) {
+      return KelompokStikerQrController(ref);
+    });

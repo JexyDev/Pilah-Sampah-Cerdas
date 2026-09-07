@@ -26,7 +26,9 @@ class MapControls extends StatelessWidget {
             builder: (context, snapshot) {
               double rotation = 0.0;
               try {
-                 rotation = snapshot.data?.camera.rotation ?? mapController.camera.rotation;
+                rotation =
+                    snapshot.data?.camera.rotation ??
+                    mapController.camera.rotation;
               } catch (_) {}
               return CompassButton(
                 bearing: rotation,
@@ -45,7 +47,11 @@ class MapControls extends StatelessWidget {
 class CompassButton extends StatelessWidget {
   final double bearing;
   final VoidCallback onPressed;
-  const CompassButton({super.key, required this.bearing, required this.onPressed});
+  const CompassButton({
+    super.key,
+    required this.bearing,
+    required this.onPressed,
+  });
   @override
   Widget build(BuildContext context) => const SizedBox();
 }

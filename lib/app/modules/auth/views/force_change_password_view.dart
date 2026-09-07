@@ -123,8 +123,8 @@ class _ForceChangePasswordViewState
 
   bool _hasUnsavedChanges() {
     return _oldPasswordController.text.isNotEmpty ||
-           _newPasswordController.text.isNotEmpty ||
-           _confirmPasswordController.text.isNotEmpty;
+        _newPasswordController.text.isNotEmpty ||
+        _confirmPasswordController.text.isNotEmpty;
   }
 
   @override
@@ -135,10 +135,11 @@ class _ForceChangePasswordViewState
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
-        
+
         if (!_hasUnsavedChanges()) {
           ref.read(authProvider.notifier).logout();
-          if (context.mounted) Navigator.of(context).pushReplacementNamed(AppRoutes.login);
+          if (context.mounted)
+            Navigator.of(context).pushReplacementNamed(AppRoutes.login);
           return;
         }
 
@@ -146,13 +147,23 @@ class _ForceChangePasswordViewState
           context: context,
           builder: (context) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: const Text('Keluar Halaman?', style: TextStyle(fontWeight: FontWeight.bold)),
-              content: const Text('Perubahan ini akan terhapus jika Anda keluar dari halaman ini.'),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: const Text(
+                'Keluar Halaman?',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              content: const Text(
+                'Perubahan ini akan terhapus jika Anda keluar dari halaman ini.',
+              ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Batal', style: TextStyle(color: AppColors.textSecondary)),
+                  child: const Text(
+                    'Batal',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
@@ -173,300 +184,300 @@ class _ForceChangePasswordViewState
         }
       },
       child: Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text(
-          'Ganti Sandi Paksa',
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          title: const Text(
+            'Ganti Sandi Paksa',
+            style: TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          backgroundColor: Colors.white,
+          elevation: 0,
+          centerTitle: true,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+            onPressed: () async {
+              final navigator = Navigator.of(context);
+              if (await navigator.maybePop()) return;
+            },
           ),
         ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: () async {
-            final navigator = Navigator.of(context);
-            if (await navigator.maybePop()) return;
-          },
-        ),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Text(
-                  'Keamanan Akun',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text(
+                    'Keamanan Akun',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Anda menggunakan sandi default (NIM). Silakan buat sandi baru yang lebih aman untuk melanjutkan.',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textSecondary,
-                    height: 1.5,
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Anda menggunakan sandi default (NIM). Silakan buat sandi baru yang lebih aman untuk melanjutkan.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textSecondary,
+                      height: 1.5,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 32),
+                  const SizedBox(height: 32),
 
-                // Sandi Lama
-                const Text(
-                  'Sandi Lama',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                  // Sandi Lama
+                  const Text(
+                    'Sandi Lama',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _oldPasswordController,
-                  obscureText: _isObscureOld,
-                  decoration: InputDecoration(
-                    hintText: 'Masukkan sandi lama (NIM)',
-                    filled: true,
-                    fillColor: Colors.grey.shade50,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
-                    ),
-                    prefixIcon: const Icon(
-                      Icons.lock_outline,
-                      color: Colors.grey,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade200),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade200),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: AppColors.primaryGreen,
-                        width: 1.5,
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _oldPasswordController,
+                    obscureText: _isObscureOld,
+                    decoration: InputDecoration(
+                      hintText: 'Masukkan sandi lama (NIM)',
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
                       ),
-                    ),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _isObscureOld
-                            ? Icons.visibility_off_outlined
-                            : Icons.visibility_outlined,
+                      prefixIcon: const Icon(
+                        Icons.lock_outline,
                         color: Colors.grey,
                       ),
-                      onPressed: () {
-                        setState(() {
-                          _isObscureOld = !_isObscureOld;
-                        });
-                      },
-                    ),
-                  ),
-                  validator: (value) => value == null || value.isEmpty
-                      ? 'Sandi lama wajib diisi'
-                      : null,
-                ),
-                const SizedBox(height: 20),
-
-                // Sandi Baru
-                const Text(
-                  'Sandi Baru',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _newPasswordController,
-                  obscureText: _isObscureNew,
-                  onChanged: _checkPassword,
-                  decoration: InputDecoration(
-                    hintText: 'Masukkan sandi baru',
-                    filled: true,
-                    fillColor: Colors.grey.shade50,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
-                    ),
-                    prefixIcon: const Icon(
-                      Icons.lock_outline,
-                      color: Colors.grey,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade200),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade200),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: AppColors.primaryGreen,
-                        width: 1.5,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey.shade200),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey.shade200),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: AppColors.primaryGreen,
+                          width: 1.5,
+                        ),
+                      ),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _isObscureOld
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          color: Colors.grey,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _isObscureOld = !_isObscureOld;
+                          });
+                        },
                       ),
                     ),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _isObscureNew
-                            ? Icons.visibility_off_outlined
-                            : Icons.visibility_outlined,
+                    validator: (value) => value == null || value.isEmpty
+                        ? 'Sandi lama wajib diisi'
+                        : null,
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Sandi Baru
+                  const Text(
+                    'Sandi Baru',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _newPasswordController,
+                    obscureText: _isObscureNew,
+                    onChanged: _checkPassword,
+                    decoration: InputDecoration(
+                      hintText: 'Masukkan sandi baru',
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
+                      prefixIcon: const Icon(
+                        Icons.lock_outline,
                         color: Colors.grey,
                       ),
-                      onPressed: () {
-                        setState(() {
-                          _isObscureNew = !_isObscureNew;
-                        });
-                      },
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey.shade200),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey.shade200),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: AppColors.primaryGreen,
+                          width: 1.5,
+                        ),
+                      ),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _isObscureNew
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          color: Colors.grey,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _isObscureNew = !_isObscureNew;
+                          });
+                        },
+                      ),
                     ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Sandi baru wajib diisi';
+                      }
+                      return null;
+                    },
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Sandi baru wajib diisi';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 12),
-                _buildPasswordStrength(),
-                const SizedBox(height: 20),
+                  const SizedBox(height: 12),
+                  _buildPasswordStrength(),
+                  const SizedBox(height: 20),
 
-                // Konfirmasi Sandi Baru
-                const Text(
-                  'Konfirmasi Sandi Baru',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                  // Konfirmasi Sandi Baru
+                  const Text(
+                    'Konfirmasi Sandi Baru',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _confirmPasswordController,
-                  obscureText: _isObscureConfirm,
-                  textInputAction: TextInputAction.done,
-                  onFieldSubmitted: (_) => _onSubmit(),
-                  decoration: InputDecoration(
-                    hintText: 'Konfirmasi sandi baru',
-                    filled: true,
-                    fillColor: Colors.grey.shade50,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
-                    ),
-                    prefixIcon: const Icon(
-                      Icons.lock_outline,
-                      color: Colors.grey,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade200),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade200),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: AppColors.primaryGreen,
-                        width: 1.5,
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _confirmPasswordController,
+                    obscureText: _isObscureConfirm,
+                    textInputAction: TextInputAction.done,
+                    onFieldSubmitted: (_) => _onSubmit(),
+                    decoration: InputDecoration(
+                      hintText: 'Konfirmasi sandi baru',
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
                       ),
-                    ),
-                    errorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: Colors.red,
-                        width: 1.5,
-                      ),
-                    ),
-                    focusedErrorBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: Colors.red,
-                        width: 1.5,
-                      ),
-                    ),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _isObscureConfirm
-                            ? Icons.visibility_off_outlined
-                            : Icons.visibility_outlined,
+                      prefixIcon: const Icon(
+                        Icons.lock_outline,
                         color: Colors.grey,
                       ),
-                      onPressed: () {
-                        setState(() {
-                          _isObscureConfirm = !_isObscureConfirm;
-                        });
-                      },
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey.shade200),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey.shade200),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: AppColors.primaryGreen,
+                          width: 1.5,
+                        ),
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: Colors.red,
+                          width: 1.5,
+                        ),
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: Colors.red,
+                          width: 1.5,
+                        ),
+                      ),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _isObscureConfirm
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          color: Colors.grey,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _isObscureConfirm = !_isObscureConfirm;
+                          });
+                        },
+                      ),
                     ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Konfirmasi sandi wajib diisi';
+                      }
+                      if (value != _newPasswordController.text) {
+                        return 'Kata sandi tidak cocok';
+                      }
+                      return null;
+                    },
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Konfirmasi sandi wajib diisi';
-                    }
-                    if (value != _newPasswordController.text) {
-                      return 'Kata sandi tidak cocok';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 40),
+                  const SizedBox(height: 40),
 
-                // Submit Button
-                ElevatedButton(
-                  onPressed: isLoading ? null : _onSubmit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryGreen,
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: Colors.grey.shade300,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                  // Submit Button
+                  ElevatedButton(
+                    onPressed: isLoading ? null : _onSubmit,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryGreen,
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: Colors.grey.shade300,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
                     ),
-                    elevation: 0,
-                  ),
-                  child: isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
+                    child: isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          )
+                        : const Text(
+                            'Simpan & Lanjutkan',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                        )
-                      : const Text(
-                          'Simpan & Lanjutkan',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
       ),
-    ),
     );
   }
 

@@ -52,7 +52,9 @@ class LocalNotificationCacheService {
     // Cek agar tidak terduplikasi berdasarkan ID
     if (!currentList.any((n) => n.id == newNotif.id)) {
       _cache[key] = [newNotif, ...currentList];
-      debugPrint('[LocalNotifCache] Notifikasi ditambahkan ke role $role: $title');
+      debugPrint(
+        '[LocalNotifCache] Notifikasi ditambahkan ke role $role: $title',
+      );
     }
   }
 
@@ -68,7 +70,7 @@ class LocalNotificationCacheService {
   void markAllAsRead(String userId, String role) {
     final key = _getCacheKey(userId, role);
     final list = _cache[key];
-    
+
     // Simpan penanda "semua dibaca pada waktu X" atau tandai per item
     if (list != null) {
       _cache[key] = list.map((n) {
@@ -76,18 +78,25 @@ class LocalNotificationCacheService {
         return n.copyWith(isRead: true);
       }).toList();
     }
-    
+
     // Spesial flag untuk mark all read global
-    _readStatusCache.putIfAbsent(key, () => {}).add('ALL_READ_TIMESTAMP_${DateTime.now().millisecondsSinceEpoch}');
+    _readStatusCache
+        .putIfAbsent(key, () => {})
+        .add('ALL_READ_TIMESTAMP_${DateTime.now().millisecondsSinceEpoch}');
   }
 
   /// Cek apakah suatu ID notifikasi (seperti point_xxx) sudah ditandai dibaca
-  bool isRead(String userId, String role, String notifId, [DateTime? notifTime]) {
+  bool isRead(
+    String userId,
+    String role,
+    String notifId, [
+    DateTime? notifTime,
+  ]) {
     final key = _getCacheKey(userId, role);
     final readSet = _readStatusCache[key];
     if (readSet != null) {
       if (readSet.contains(notifId)) return true;
-      
+
       if (notifTime != null) {
         for (final r in readSet) {
           if (r.startsWith('ALL_READ_TIMESTAMP_')) {
@@ -99,11 +108,23 @@ class LocalNotificationCacheService {
         }
       }
     }
-    
+
     // Cek juga list utamanya jika ada
     final list = _cache[key];
     if (list != null) {
-      final item = list.firstWhere((n) => n.id == notifId, orElse: () => NotificationEntity(id: '', type: '', title: '', desc: '', time: '', isRead: false, icon: '', createdAt: DateTime(2000)));
+      final item = list.firstWhere(
+        (n) => n.id == notifId,
+        orElse: () => NotificationEntity(
+          id: '',
+          type: '',
+          title: '',
+          desc: '',
+          time: '',
+          isRead: false,
+          icon: '',
+          createdAt: DateTime(2000),
+        ),
+      );
       if (item.id.isNotEmpty && item.isRead) return true;
     }
     return false;
@@ -112,7 +133,7 @@ class LocalNotificationCacheService {
   /// Tandai notifikasi lokal sebagai dibaca
   void markAsRead(String userId, String role, String notifId) {
     final key = _getCacheKey(userId, role);
-    
+
     // Simpan ke set read status (untuk notif dinamis seperti point_xxx)
     _readStatusCache.putIfAbsent(key, () => {}).add(notifId);
 
@@ -136,12 +157,15 @@ class LocalNotificationCacheService {
   String _resolveDefaultIcon(String type) {
     final typeUpper = type.toUpperCase();
     if (typeUpper.contains('POIN')) return 'star';
-    if (typeUpper.contains('TONG') || typeUpper.contains('KRITIS')) return 'warning';
-    if (typeUpper.contains('TIMBANGAN') || typeUpper.contains('PEMILAHAN')) return 'scale';
-    if (typeUpper.contains('IZIN') || typeUpper.contains('DPL')) return 'assignment_turned_in';
+    if (typeUpper.contains('TONG') || typeUpper.contains('KRITIS'))
+      return 'warning';
+    if (typeUpper.contains('TIMBANGAN') || typeUpper.contains('PEMILAHAN'))
+      return 'scale';
+    if (typeUpper.contains('IZIN') || typeUpper.contains('DPL'))
+      return 'assignment_turned_in';
     if (typeUpper.contains('PRESENSI')) return 'location_on';
-    if (typeUpper.contains('AKTIVASI') || typeUpper.contains('BIN')) return 'qr_code_scanner';
+    if (typeUpper.contains('AKTIVASI') || typeUpper.contains('BIN'))
+      return 'qr_code_scanner';
     return 'info';
   }
 }
-

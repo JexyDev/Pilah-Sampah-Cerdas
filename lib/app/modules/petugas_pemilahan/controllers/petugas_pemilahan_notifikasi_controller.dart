@@ -14,9 +14,10 @@ bool _isPetugasPemilahanNotification(NotificationEntity notif) {
   final type = notif.type.toUpperCase();
   final title = notif.title.toUpperCase();
   final desc = notif.desc.toUpperCase();
-  
+
   // Dilarang total untuk Petugas Pemilahan (Notifikasi Warga / Mahasiswa KKN / Penjemputan)
-  final isForbidden = type.contains('JEMPUT') ||
+  final isForbidden =
+      type.contains('JEMPUT') ||
       type.contains('KKN') ||
       type.contains('DPL') ||
       type.contains('IZIN') ||
@@ -36,7 +37,8 @@ bool _isPetugasPemilahanNotification(NotificationEntity notif) {
   // 2. Poin perolehan dari input timbangan
   // 3. Verifikasi Whitelist Akun Petugas
   // 4. Penalti, KPI, Kinerja, Jadwal Pengangkutan
-  final isPetugasTopic = type.contains('TIMBANGAN') ||
+  final isPetugasTopic =
+      type.contains('TIMBANGAN') ||
       type.contains('PEMILAHAN') ||
       type == 'POIN_PETUGAS' ||
       type == 'POIN_BERTAMBAH' ||
@@ -72,115 +74,140 @@ bool _isPetugasPemilahanNotification(NotificationEntity notif) {
 }
 
 /// Provider khusus daftar notifikasi Petugas Pemilahan Hilir
-final petugasPemilahanNotificationsProvider = FutureProvider<List<NotificationEntity>>((ref) async {
-  final repo = ref.watch(notificationRepositoryProvider);
-  final user = ref.watch(authProvider).user;
-  if (user == null) return [];
+final petugasPemilahanNotificationsProvider =
+    FutureProvider<List<NotificationEntity>>((ref) async {
+      final repo = ref.watch(notificationRepositoryProvider);
+      final user = ref.watch(authProvider).user;
+      if (user == null) return [];
 
-  final userId = user.id;
-  final role = user.role.name;
-  List<NotificationEntity> list = [];
-  try {
-    list = await repo.getNotifications();
-  } catch (_) {
-    list = [];
-  }
-
-  // Tambahkan riwayat poin (PointHistory) agar tampil di Notification Page sesuai instruksi user
-    final prefs = await SharedPreferences.getInstance();
-  final readList = prefs.getStringList('read_notifs_${userId}_$role') ?? [];
-  final readSet = readList.toSet();
-  final markAllTimestamp = prefs.getInt('mark_all_notifs_${userId}_$role') ?? 0;
-
-  try {
-    final pointRepo = ref.read(wasteLogRepositoryProvider);
-    final pointHistory = await pointRepo.getPointHistoryByUser(userId);
-    
-          for (final ph in pointHistory) {
-        if (ph.points != 0) {
-          final notifId = 'point_${ph.id}';
-        final isRead = readSet.contains(notifId) || 
-            ph.createdAt.millisecondsSinceEpoch <= markAllTimestamp ||
-            LocalNotificationCacheService().isRead(userId, role, notifId, ph.createdAt);
-            
-        final isPunishment = ph.points < 0;
-            
-        list.add(NotificationEntity(
-          id: notifId,
-          type: isPunishment ? 'PUNISHMENT' : 'POIN_BERTAMBAH',
-          title: isPunishment ? 'Penalti Pengurangan Poin' : 'Poin Insentif Bertambah!',
-          desc: ph.description.isNotEmpty ? ph.description : (isPunishment ? 'Anda mendapatkan penalti ${ph.points} poin.' : 'Anda mendapatkan tambahan +${ph.points} poin.'),
-          isRead: isRead,
-          time: ph.createdAt.toLocal().toIso8601String().substring(0, 16).replaceAll('T', ' '),
-          icon: isPunishment ? 'warning' : 'star',
-          createdAt: ph.createdAt,
-        ));
+      final userId = user.id;
+      final role = user.role.name;
+      List<NotificationEntity> list = [];
+      try {
+        list = await repo.getNotifications();
+      } catch (_) {
+        list = [];
       }
-    }
-  } catch (_) {}
 
-  final List<NotificationEntity> result = [];
+      // Tambahkan riwayat poin (PointHistory) agar tampil di Notification Page sesuai instruksi user
+      final prefs = await SharedPreferences.getInstance();
+      final readList = prefs.getStringList('read_notifs_${userId}_$role') ?? [];
+      final readSet = readList.toSet();
+      final markAllTimestamp =
+          prefs.getInt('mark_all_notifs_${userId}_$role') ?? 0;
 
-  for (final notif in list) {
-    if (!_isPetugasPemilahanNotification(notif)) continue;
-    result.add(notif);
+      try {
+        final pointRepo = ref.read(wasteLogRepositoryProvider);
+        final pointHistory = await pointRepo.getPointHistoryByUser(userId);
 
-    final notifKey = 'petugas_${userId}_${notif.id}';
-    if (!notif.isRead && !_petugasShownNotifIds.contains(notifKey)) {
-      _petugasShownNotifIds.add(notifKey);
-    }
-  }
+        for (final ph in pointHistory) {
+          if (ph.points != 0) {
+            final notifId = 'point_${ph.id}';
+            final isRead =
+                readSet.contains(notifId) ||
+                ph.createdAt.millisecondsSinceEpoch <= markAllTimestamp ||
+                LocalNotificationCacheService().isRead(
+                  userId,
+                  role,
+                  notifId,
+                  ph.createdAt,
+                );
 
-  // Ambil notifikasi dari Firebase local storage
-  try {
-    final firebaseNotifs = await FirebaseNotificationService().getNotifications(userId, role);
-    for (final fn in firebaseNotifs) {
-      if (result.any((n) => n.id == fn.id || (n.title == fn.title && n.desc == fn.desc && n.type == fn.type))) {
-        continue;
+            final isPunishment = ph.points < 0;
+
+            list.add(
+              NotificationEntity(
+                id: notifId,
+                type: isPunishment ? 'PUNISHMENT' : 'POIN_BERTAMBAH',
+                title: isPunishment
+                    ? 'Penalti Pengurangan Poin'
+                    : 'Poin Insentif Bertambah!',
+                desc: ph.description.isNotEmpty
+                    ? ph.description
+                    : (isPunishment
+                          ? 'Anda mendapatkan penalti ${ph.points} poin.'
+                          : 'Anda mendapatkan tambahan +${ph.points} poin.'),
+                isRead: isRead,
+                time: ph.createdAt
+                    .toLocal()
+                    .toIso8601String()
+                    .substring(0, 16)
+                    .replaceAll('T', ' '),
+                icon: isPunishment ? 'warning' : 'star',
+                createdAt: ph.createdAt,
+              ),
+            );
+          }
+        }
+      } catch (_) {}
+
+      final List<NotificationEntity> result = [];
+
+      for (final notif in list) {
+        if (!_isPetugasPemilahanNotification(notif)) continue;
+        result.add(notif);
+
+        final notifKey = 'petugas_${userId}_${notif.id}';
+        if (!notif.isRead && !_petugasShownNotifIds.contains(notifKey)) {
+          _petugasShownNotifIds.add(notifKey);
+        }
       }
-      if (!_isPetugasPemilahanNotification(fn)) continue;
-      
-      result.add(fn);
-    }
-  } catch (_) {}
 
-    final deleteAllTimestamp = prefs.getInt('delete_all_notifs_${userId}_$role') ?? 0;
-  
-  final List<NotificationEntity> finalResult = [];
-  for (int i = 0; i < result.length; i++) {
-    final dt = result[i].createdAt.toLocal();
-    
-    // Skip if deleted
-    if (dt.millisecondsSinceEpoch <= deleteAllTimestamp) {
-      continue;
-    }
-    
-    var item = result[i];
-    final isReadLocally = readSet.contains(item.id) || 
-        dt.millisecondsSinceEpoch <= markAllTimestamp || 
-        LocalNotificationCacheService().isRead(userId, role, item.id, dt);
-    
-    if (isReadLocally && !item.isRead) {
-      item = item.copyWith(isRead: true);
-    }
-    finalResult.add(item);
-  }
+      // Ambil notifikasi dari Firebase local storage
+      try {
+        final firebaseNotifs = await FirebaseNotificationService()
+            .getNotifications(userId, role);
+        for (final fn in firebaseNotifs) {
+          if (result.any(
+            (n) =>
+                n.id == fn.id ||
+                (n.title == fn.title && n.desc == fn.desc && n.type == fn.type),
+          )) {
+            continue;
+          }
+          if (!_isPetugasPemilahanNotification(fn)) continue;
 
-    // Urutkan: terbaru di atas
-    finalResult.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          result.add(fn);
+        }
+      } catch (_) {}
 
-  return finalResult;
-});
+      final deleteAllTimestamp =
+          prefs.getInt('delete_all_notifs_${userId}_$role') ?? 0;
+
+      final List<NotificationEntity> finalResult = [];
+      for (int i = 0; i < result.length; i++) {
+        final dt = result[i].createdAt.toLocal();
+
+        // Skip if deleted
+        if (dt.millisecondsSinceEpoch <= deleteAllTimestamp) {
+          continue;
+        }
+
+        var item = result[i];
+        final isReadLocally =
+            readSet.contains(item.id) ||
+            dt.millisecondsSinceEpoch <= markAllTimestamp ||
+            LocalNotificationCacheService().isRead(userId, role, item.id, dt);
+
+        if (isReadLocally && !item.isRead) {
+          item = item.copyWith(isRead: true);
+        }
+        finalResult.add(item);
+      }
+
+      // Urutkan: terbaru di atas
+      finalResult.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+      return finalResult;
+    });
 
 /// Provider jumlah notifikasi belum dibaca untuk Petugas Pemilahan Hilir
 final petugasUnreadNotificationCountProvider = Provider<int>((ref) {
   final notifAsync = ref.watch(petugasPemilahanNotificationsProvider);
-  return notifAsync.when(skipLoadingOnReload: true, data: (list) => list.where((n) => !n.isRead).length,
+  return notifAsync.when(
+    skipLoadingOnReload: true,
+    data: (list) => list.where((n) => !n.isRead).length,
     loading: () => 0,
     error: (_, __) => 0,
   );
 });
-
-
-
-

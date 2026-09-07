@@ -61,7 +61,8 @@ class AppStrings {
 
   static const String binOverflow =
       'Tempat Sampah sudah penuh! Ajukan pengosongan tempat sampah.';
-  static const String binTypeMismatch = 'Jenis sampah tidak sesuai tempat sampah ini.';
+  static const String binTypeMismatch =
+      'Jenis sampah tidak sesuai tempat sampah ini.';
   static const String locationOutOfRange =
       'Anda terlalu jauh dari tempat sampah (> 500m).';
   static const String binNotCritical =

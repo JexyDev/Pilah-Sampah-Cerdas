@@ -63,26 +63,29 @@ class PetugasPemilahanState {
 class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
   PetugasPemilahanNotifier(this._ref) : super(const PetugasPemilahanState()) {
     refreshAll();
-    
+
     // Inisialisasi notifikasi latar belakang khusus role Petugas Pemilahan
     _ref.read(petugasPemilahanFcmServiceProvider).registerFcmToken();
   }
 
   final Ref _ref;
 
-
   Future<void> refreshAll() async {
     final repo = _ref.read(petugasPemilahanRepositoryProvider);
-    
+
     // 1. Load from cache first
     final cachedDash = await repo.getCachedDashboard();
     final cachedJadwal = await repo.getCachedJadwalHarian();
     final cachedHistoryRaw = await repo.getCachedHistory();
-    
-    final cachedHistory = cachedHistoryRaw != null 
-        ? _filterLocally(cachedHistoryRaw, state.selectedDateRange, state.selectedTypeFilter) 
+
+    final cachedHistory = cachedHistoryRaw != null
+        ? _filterLocally(
+            cachedHistoryRaw,
+            state.selectedDateRange,
+            state.selectedTypeFilter,
+          )
         : null;
-    
+
     if (cachedDash != null || cachedJadwal != null || cachedHistory != null) {
       state = state.copyWith(
         dashboard: cachedDash ?? state.dashboard,
@@ -92,26 +95,40 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
     } else {
       state = state.copyWith(isLoading: true, clearError: true);
     }
-    
-    // 2. Fetch fresh from network progressively
-    repo.getDashboard().then((dash) {
-      if (mounted) state = state.copyWith(dashboard: dash, isLoading: false);
-    }).catchError((_) {
-      if (mounted && cachedDash == null) state = state.copyWith(isLoading: false);
-    });
 
-    repo.getJadwalHarian().then((jadwal) {
-      if (mounted) state = state.copyWith(jadwalList: jadwal, isLoading: false);
-    }).catchError((_) {
-      if (mounted && cachedJadwal == null) state = state.copyWith(isLoading: false);
-    });
+    // 2. Fetch fresh from network progressively
+    repo
+        .getDashboard()
+        .then((dash) {
+          if (mounted)
+            state = state.copyWith(dashboard: dash, isLoading: false);
+        })
+        .catchError((_) {
+          if (mounted && cachedDash == null)
+            state = state.copyWith(isLoading: false);
+        });
+
+    repo
+        .getJadwalHarian()
+        .then((jadwal) {
+          if (mounted)
+            state = state.copyWith(jadwalList: jadwal, isLoading: false);
+        })
+        .catchError((_) {
+          if (mounted && cachedJadwal == null)
+            state = state.copyWith(isLoading: false);
+        });
 
     // Fetch Daftar Pengajuan Warga
-    repo.getDaftarPengajuanWarga().then((pengajuan) {
-      if (mounted) state = state.copyWith(pengajuanList: pengajuan, isLoading: false);
-    }).catchError((_) {
-      if (mounted) state = state.copyWith(isLoading: false);
-    });
+    repo
+        .getDaftarPengajuanWarga()
+        .then((pengajuan) {
+          if (mounted)
+            state = state.copyWith(pengajuanList: pengajuan, isLoading: false);
+        })
+        .catchError((_) {
+          if (mounted) state = state.copyWith(isLoading: false);
+        });
 
     _fetchHistoryFresh(repo);
   }
@@ -121,12 +138,17 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
       final history = await repo.getHistory();
       if (mounted) {
         state = state.copyWith(
-          historyList: _filterLocally(history, state.selectedDateRange, state.selectedTypeFilter), 
-          isLoading: false
+          historyList: _filterLocally(
+            history,
+            state.selectedDateRange,
+            state.selectedTypeFilter,
+          ),
+          isLoading: false,
         );
       }
     } catch (_) {
-      if (mounted && state.historyList.isEmpty) state = state.copyWith(isLoading: false);
+      if (mounted && state.historyList.isEmpty)
+        state = state.copyWith(isLoading: false);
     }
   }
 
@@ -136,7 +158,9 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
       final list = await repo.getJadwalHarian(kelurahan: kelurahan, rw: rw);
       state = state.copyWith(jadwalList: list);
     } catch (e) {
-      state = state.copyWith(errorMessage: NetworkExceptionHelper.getErrorMessage(e));
+      state = state.copyWith(
+        errorMessage: NetworkExceptionHelper.getErrorMessage(e),
+      );
     }
   }
 
@@ -161,10 +185,11 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
       );
 
       // Baca poin dari response backend (tidak kalkulasi lokal)
-      final poinFromBackend = (result['pointsEarned'] as num?)?.toInt()
-          ?? (result['points'] as num?)?.toInt()
-          ?? (result['poin'] as num?)?.toInt()
-          ?? 0;
+      final poinFromBackend =
+          (result['pointsEarned'] as num?)?.toInt() ??
+          (result['points'] as num?)?.toInt() ??
+          (result['poin'] as num?)?.toInt() ??
+          0;
 
       // Tampilkan notifikasi sistem (snackbar / push) dengan poin dari backend
       final user = _ref.read(authProvider).user;
@@ -173,7 +198,8 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
           userId: user.id,
           role: 'PETUGAS_PEMILAHAN',
           title: 'Input Timbangan Berhasil',
-          desc: '${actualWeightKg.toStringAsFixed(1)} kg $classification tercatat. '
+          desc:
+              '${actualWeightKg.toStringAsFixed(1)} kg $classification tercatat. '
               'Poin: +$poinFromBackend pts.',
           type: 'TIMBANGAN_PEMILAHAN',
           id: 'timbangan_${DateTime.now().millisecondsSinceEpoch}',
@@ -184,15 +210,25 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
       await refreshAll();
       return true;
     } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: NetworkExceptionHelper.getErrorMessage(e));
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: NetworkExceptionHelper.getErrorMessage(e),
+      );
       return false;
     }
   }
 
-  List<Map<String, dynamic>> _filterLocally(List<Map<String, dynamic>> rawList, String dateRange, String type) {
+  List<Map<String, dynamic>> _filterLocally(
+    List<Map<String, dynamic>> rawList,
+    String dateRange,
+    String type,
+  ) {
     return rawList.where((item) {
       // 1. Filter Date Range
-      final rawDate = item['timestamp']?.toString() ?? item['submittedAt']?.toString() ?? item['createdAt']?.toString();
+      final rawDate =
+          item['timestamp']?.toString() ??
+          item['submittedAt']?.toString() ??
+          item['createdAt']?.toString();
       if (rawDate == null || rawDate.isEmpty) return false;
       DateTime dt;
       try {
@@ -203,12 +239,17 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
 
       final now = DateTime.now();
       if (dateRange == 'HARI_INI') {
-        if (dt.year != now.year || dt.month != now.month || dt.day != now.day) return false;
+        if (dt.year != now.year || dt.month != now.month || dt.day != now.day)
+          return false;
       } else if (dateRange == 'MINGGU_INI') {
         final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
         final endOfWeek = startOfWeek.add(const Duration(days: 6));
         final dtDate = DateTime(dt.year, dt.month, dt.day);
-        final start = DateTime(startOfWeek.year, startOfWeek.month, startOfWeek.day);
+        final start = DateTime(
+          startOfWeek.year,
+          startOfWeek.month,
+          startOfWeek.day,
+        );
         final end = DateTime(endOfWeek.year, endOfWeek.month, endOfWeek.day);
         if (dtDate.isBefore(start) || dtDate.isAfter(end)) return false;
       } else if (dateRange == 'BULAN_INI') {
@@ -229,7 +270,7 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
   Future<void> setHistoryFilters({String? dateRange, String? type}) async {
     final newDateRange = dateRange ?? state.selectedDateRange;
     final newTypeFilter = type ?? state.selectedTypeFilter;
-    
+
     final repo = _ref.read(petugasPemilahanRepositoryProvider);
     final cachedList = await repo.getCachedHistory();
     if (cachedList != null && cachedList.isNotEmpty) {
@@ -245,15 +286,18 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
         isLoading: true,
       );
     }
-    
+
     try {
       final list = await repo.getHistory();
       state = state.copyWith(
-        isLoading: false, 
+        isLoading: false,
         historyList: _filterLocally(list, newDateRange, newTypeFilter),
       );
     } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: NetworkExceptionHelper.getErrorMessage(e));
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: NetworkExceptionHelper.getErrorMessage(e),
+      );
     }
   }
 
@@ -290,14 +334,18 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
       state = state.copyWith(isLoading: false);
       return ok;
     } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: NetworkExceptionHelper.getErrorMessage(e));
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: NetworkExceptionHelper.getErrorMessage(e),
+      );
       return false;
     }
   }
 }
 
 final petugasPemilahanControllerProvider =
-    StateNotifierProvider<PetugasPemilahanNotifier, PetugasPemilahanState>((ref) {
-  return PetugasPemilahanNotifier(ref);
-});
-
+    StateNotifierProvider<PetugasPemilahanNotifier, PetugasPemilahanState>((
+      ref,
+    ) {
+      return PetugasPemilahanNotifier(ref);
+    });

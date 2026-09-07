@@ -133,7 +133,10 @@ class _FeatureRatingDialogState extends State<FeatureRatingDialog> {
                     bottom: 0,
                     right: 0,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.primaryGreen,
                         borderRadius: BorderRadius.circular(10),
@@ -241,9 +244,13 @@ class _FeatureRatingDialogState extends State<FeatureRatingDialog> {
               child: TextField(
                 controller: _feedbackController,
                 maxLines: 3,
-                style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textPrimary,
+                ),
                 decoration: const InputDecoration(
-                  hintText: 'Bagikan pengalaman atau saran perbaikan (opsional)',
+                  hintText:
+                      'Bagikan pengalaman atau saran perbaikan (opsional)',
                   hintStyle: TextStyle(fontSize: 12, color: AppColors.textHint),
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.all(14),
@@ -266,7 +273,13 @@ class _FeatureRatingDialogState extends State<FeatureRatingDialog> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text('Nanti Saja', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                    child: const Text(
+                      'Nanti Saja',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -281,7 +294,9 @@ class _FeatureRatingDialogState extends State<FeatureRatingDialog> {
                               SnackBar(
                                 content: Text(
                                   'Terima kasih atas penilaian $_selectedRating bintang Anda! ⭐',
-                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                                 backgroundColor: AppColors.primaryGreen,
                                 duration: const Duration(seconds: 3),
@@ -301,7 +316,13 @@ class _FeatureRatingDialogState extends State<FeatureRatingDialog> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text('Kirim Nilai', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                    child: const Text(
+                      'Kirim Nilai',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ),
               ],

@@ -6,16 +6,15 @@ import '../../../data/providers/repository_providers.dart';
 class KknAttendanceHistoryView extends ConsumerStatefulWidget {
   final String scheduleId;
 
-  const KknAttendanceHistoryView({
-    super.key,
-    required this.scheduleId,
-  });
+  const KknAttendanceHistoryView({super.key, required this.scheduleId});
 
   @override
-  ConsumerState<KknAttendanceHistoryView> createState() => _KknAttendanceHistoryViewState();
+  ConsumerState<KknAttendanceHistoryView> createState() =>
+      _KknAttendanceHistoryViewState();
 }
 
-class _KknAttendanceHistoryViewState extends ConsumerState<KknAttendanceHistoryView>
+class _KknAttendanceHistoryViewState
+    extends ConsumerState<KknAttendanceHistoryView>
     with SingleTickerProviderStateMixin {
   bool _isLoading = true;
   Map<String, dynamic>? _historyData;
@@ -174,10 +173,28 @@ class _KknAttendanceHistoryViewState extends ConsumerState<KknAttendanceHistoryV
     if (isoString == null) return '-';
     try {
       final dt = DateTime.parse(isoString).toLocal();
-      const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+      const days = [
+        'Senin',
+        'Selasa',
+        'Rabu',
+        'Kamis',
+        'Jumat',
+        'Sabtu',
+        'Minggu',
+      ];
       const months = [
-        'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+        'Januari',
+        'Februari',
+        'Maret',
+        'April',
+        'Mei',
+        'Juni',
+        'Juli',
+        'Agustus',
+        'September',
+        'Oktober',
+        'November',
+        'Desember',
       ];
       final dayName = days[dt.weekday - 1];
       final monthName = months[dt.month - 1];
@@ -218,10 +235,12 @@ class _KknAttendanceHistoryViewState extends ConsumerState<KknAttendanceHistoryV
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.primaryGreen))
+          ? const Center(
+              child: CircularProgressIndicator(color: AppColors.primaryGreen),
+            )
           : _historyData == null
-              ? _buildEmpty()
-              : _buildContent(),
+          ? _buildEmpty()
+          : _buildContent(),
     );
   }
 
@@ -278,7 +297,9 @@ class _KknAttendanceHistoryViewState extends ConsumerState<KknAttendanceHistoryV
             padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.08),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20),
+              ),
             ),
             child: Column(
               children: [
@@ -302,7 +323,10 @@ class _KknAttendanceHistoryViewState extends ConsumerState<KknAttendanceHistoryV
                 ),
                 const SizedBox(height: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: color,
                     borderRadius: BorderRadius.circular(20),
@@ -325,19 +349,33 @@ class _KknAttendanceHistoryViewState extends ConsumerState<KknAttendanceHistoryV
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.calendar_today_rounded, size: 14, color: AppColors.textHint),
+                const Icon(
+                  Icons.calendar_today_rounded,
+                  size: 14,
+                  color: AppColors.textHint,
+                ),
                 const SizedBox(width: 6),
                 Text(
                   _formatDate(jamMasuk),
-                  style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
                 if (method != null) ...[
                   const SizedBox(width: 16),
-                  const Icon(Icons.gps_fixed_rounded, size: 14, color: AppColors.textHint),
+                  const Icon(
+                    Icons.gps_fixed_rounded,
+                    size: 14,
+                    color: AppColors.textHint,
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     _formatMethod(method),
-                    style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ],
               ],
@@ -356,21 +394,44 @@ class _KknAttendanceHistoryViewState extends ConsumerState<KknAttendanceHistoryV
 
     return Row(
       children: [
-        Expanded(child: _buildWaktuCard('Jam Masuk', jamMasuk, Icons.login_rounded, const Color(0xFF3B82F6))),
+        Expanded(
+          child: _buildWaktuCard(
+            'Jam Masuk',
+            jamMasuk,
+            Icons.login_rounded,
+            const Color(0xFF3B82F6),
+          ),
+        ),
         const SizedBox(width: 12),
-        Expanded(child: _buildWaktuCard('Jam Keluar', jamPulang, Icons.logout_rounded, Colors.orange.shade700)),
+        Expanded(
+          child: _buildWaktuCard(
+            'Jam Keluar',
+            jamPulang,
+            Icons.logout_rounded,
+            Colors.orange.shade700,
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildWaktuCard(String label, String time, IconData icon, Color color) {
+  Widget _buildWaktuCard(
+    String label,
+    String time,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Column(
@@ -387,15 +448,32 @@ class _KknAttendanceHistoryViewState extends ConsumerState<KknAttendanceHistoryV
                 child: Icon(icon, size: 16, color: color),
               ),
               const SizedBox(width: 8),
-              Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w500)),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 10),
           Text(
             time,
-            style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: time == '-' ? AppColors.textHint : AppColors.textPrimary),
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: time == '-' ? AppColors.textHint : AppColors.textPrimary,
+            ),
           ),
-          Text('WIB', style: TextStyle(fontSize: 11, color: time == '-' ? AppColors.textHint : AppColors.textHint)),
+          Text(
+            'WIB',
+            style: TextStyle(
+              fontSize: 11,
+              color: time == '-' ? AppColors.textHint : AppColors.textHint,
+            ),
+          ),
         ],
       ),
     );
@@ -407,9 +485,15 @@ class _KknAttendanceHistoryViewState extends ConsumerState<KknAttendanceHistoryV
     final aktualMenit = (history['durasiAktualMenit'] ?? 0) as num;
     final targetMenit = (history['durasiTargetMenit'] ?? 120) as num;
     final isMemenuhiDurasi = history['isMemenuhiDurasi'] == true;
-    final ratio = targetMenit > 0 ? (aktualMenit / targetMenit).clamp(0.0, 1.0).toDouble() : 0.0;
-    final persen = targetMenit > 0 ? ((aktualMenit / targetMenit) * 100).round() : 0;
-    final progressColor = isMemenuhiDurasi ? AppColors.primaryGreen : Colors.orange.shade700;
+    final ratio = targetMenit > 0
+        ? (aktualMenit / targetMenit).clamp(0.0, 1.0).toDouble()
+        : 0.0;
+    final persen = targetMenit > 0
+        ? ((aktualMenit / targetMenit) * 100).round()
+        : 0;
+    final progressColor = isMemenuhiDurasi
+        ? AppColors.primaryGreen
+        : Colors.orange.shade700;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -417,7 +501,11 @@ class _KknAttendanceHistoryViewState extends ConsumerState<KknAttendanceHistoryV
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Column(
@@ -425,19 +513,37 @@ class _KknAttendanceHistoryViewState extends ConsumerState<KknAttendanceHistoryV
         children: [
           Row(
             children: [
-              const Icon(Icons.timer_rounded, size: 18, color: AppColors.textSecondary),
+              const Icon(
+                Icons.timer_rounded,
+                size: 18,
+                color: AppColors.textSecondary,
+              ),
               const SizedBox(width: 8),
-              const Text('Capaian Durasi', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary)),
+              const Text(
+                'Capaian Durasi',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: AppColors.textPrimary,
+                ),
+              ),
               const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: progressColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   '$persen%',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: progressColor),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    color: progressColor,
+                  ),
                 ),
               ),
             ],
@@ -468,19 +574,28 @@ class _KknAttendanceHistoryViewState extends ConsumerState<KknAttendanceHistoryV
             children: [
               Text(
                 '$aktualMenit menit dari $targetMenit menit target',
-                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                ),
               ),
               Row(
                 children: [
                   Icon(
-                    isMemenuhiDurasi ? Icons.check_circle_rounded : Icons.warning_amber_rounded,
+                    isMemenuhiDurasi
+                        ? Icons.check_circle_rounded
+                        : Icons.warning_amber_rounded,
                     size: 15,
                     color: progressColor,
                   ),
                   const SizedBox(width: 4),
                   Text(
                     isMemenuhiDurasi ? 'Terpenuhi' : 'Belum Memenuhi',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: progressColor),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: progressColor,
+                    ),
                   ),
                 ],
               ),
@@ -497,16 +612,24 @@ class _KknAttendanceHistoryViewState extends ConsumerState<KknAttendanceHistoryV
     final aktualMenit = (history['durasiAktualMenit'] ?? 0) as num;
     final targetMenit = (history['durasiTargetMenit'] ?? 120) as num;
     final method = _formatMethod(history['method'] as String?);
-    final persen = targetMenit > 0 ? ((aktualMenit / targetMenit) * 100).round() : 0;
+    final persen = targetMenit > 0
+        ? ((aktualMenit / targetMenit) * 100).round()
+        : 0;
     final attendanceId = history['attendanceId'] as String? ?? '-';
-    final shortId = attendanceId.length > 8 ? attendanceId.substring(0, 8).toUpperCase() : attendanceId.toUpperCase();
+    final shortId = attendanceId.length > 8
+        ? attendanceId.substring(0, 8).toUpperCase()
+        : attendanceId.toUpperCase();
 
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Column(
@@ -516,9 +639,20 @@ class _KknAttendanceHistoryViewState extends ConsumerState<KknAttendanceHistoryV
             padding: EdgeInsets.fromLTRB(20, 16, 20, 0),
             child: Row(
               children: [
-                Icon(Icons.bar_chart_rounded, size: 18, color: AppColors.textSecondary),
+                Icon(
+                  Icons.bar_chart_rounded,
+                  size: 18,
+                  color: AppColors.textSecondary,
+                ),
                 SizedBox(width: 8),
-                Text('Statistik Kegiatan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary)),
+                Text(
+                  'Statistik Kegiatan',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
               ],
             ),
           ),
@@ -531,17 +665,45 @@ class _KknAttendanceHistoryViewState extends ConsumerState<KknAttendanceHistoryV
               children: [
                 Row(
                   children: [
-                    Expanded(child: _buildStatItem('Target Durasi', '$targetMenit menit', Icons.flag_rounded, AppColors.primaryBlue)),
+                    Expanded(
+                      child: _buildStatItem(
+                        'Target Durasi',
+                        '$targetMenit menit',
+                        Icons.flag_rounded,
+                        AppColors.primaryBlue,
+                      ),
+                    ),
                     const SizedBox(width: 12),
-                    Expanded(child: _buildStatItem('Aktual Durasi', '$aktualMenit menit', Icons.timer_outlined, AppColors.primaryGreen)),
+                    Expanded(
+                      child: _buildStatItem(
+                        'Aktual Durasi',
+                        '$aktualMenit menit',
+                        Icons.timer_outlined,
+                        AppColors.primaryGreen,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Expanded(child: _buildStatItem('Metode Absen', method, Icons.gps_fixed_rounded, Colors.purple.shade400)),
+                    Expanded(
+                      child: _buildStatItem(
+                        'Metode Absen',
+                        method,
+                        Icons.gps_fixed_rounded,
+                        Colors.purple.shade400,
+                      ),
+                    ),
                     const SizedBox(width: 12),
-                    Expanded(child: _buildStatItem('Capaian', '$persen%', Icons.percent_rounded, Colors.orange.shade600)),
+                    Expanded(
+                      child: _buildStatItem(
+                        'Capaian',
+                        '$persen%',
+                        Icons.percent_rounded,
+                        Colors.orange.shade600,
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -557,9 +719,19 @@ class _KknAttendanceHistoryViewState extends ConsumerState<KknAttendanceHistoryV
             ),
             child: Row(
               children: [
-                const Icon(Icons.tag_rounded, size: 13, color: AppColors.textHint),
+                const Icon(
+                  Icons.tag_rounded,
+                  size: 13,
+                  color: AppColors.textHint,
+                ),
                 const SizedBox(width: 4),
-                Text('ID Presensi: $shortId...', style: const TextStyle(fontSize: 11, color: AppColors.textHint)),
+                Text(
+                  'ID Presensi: $shortId...',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textHint,
+                  ),
+                ),
               ],
             ),
           ),
@@ -568,7 +740,12 @@ class _KknAttendanceHistoryViewState extends ConsumerState<KknAttendanceHistoryV
     );
   }
 
-  Widget _buildStatItem(String label, String value, IconData icon, Color color) {
+  Widget _buildStatItem(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -581,9 +758,22 @@ class _KknAttendanceHistoryViewState extends ConsumerState<KknAttendanceHistoryV
         children: [
           Icon(icon, size: 16, color: color),
           const SizedBox(height: 6),
-          Text(value, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: color)),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
           const SizedBox(height: 2),
-          Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              color: AppColors.textSecondary,
+            ),
+          ),
         ],
       ),
     );
@@ -620,9 +810,23 @@ class _KknAttendanceHistoryViewState extends ConsumerState<KknAttendanceHistoryV
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Keterangan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textSecondary)),
+                const Text(
+                  'Keterangan',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text(keterangan, style: const TextStyle(fontSize: 13, color: AppColors.textPrimary, height: 1.5)),
+                Text(
+                  keterangan,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textPrimary,
+                    height: 1.5,
+                  ),
+                ),
               ],
             ),
           ),
@@ -644,12 +848,26 @@ class _KknAttendanceHistoryViewState extends ConsumerState<KknAttendanceHistoryV
               color: AppColors.border.withValues(alpha: 0.5),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.assignment_late_outlined, size: 48, color: AppColors.textHint),
+            child: const Icon(
+              Icons.assignment_late_outlined,
+              size: 48,
+              color: AppColors.textHint,
+            ),
           ),
           const SizedBox(height: 16),
-          const Text('Data Presensi Tidak Ditemukan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textSecondary)),
+          const Text(
+            'Data Presensi Tidak Ditemukan',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textSecondary,
+            ),
+          ),
           const SizedBox(height: 8),
-          const Text('Belum ada riwayat presensi untuk kegiatan ini.', style: TextStyle(fontSize: 13, color: AppColors.textHint)),
+          const Text(
+            'Belum ada riwayat presensi untuk kegiatan ini.',
+            style: TextStyle(fontSize: 13, color: AppColors.textHint),
+          ),
         ],
       ),
     );

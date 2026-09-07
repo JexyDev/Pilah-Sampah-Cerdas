@@ -23,11 +23,15 @@ class ApiPemanfaatanRepository implements PemanfaatanRepository {
   final ApiClient apiClient;
 
   @override
-  Future<List<PemanfaatanProgramEntity>> getPrograms({String? search, String? kategori}) async {
+  Future<List<PemanfaatanProgramEntity>> getPrograms({
+    String? search,
+    String? kategori,
+  }) async {
     try {
       final Map<String, dynamic> queryParams = {};
       if (search != null && search.isNotEmpty) queryParams['search'] = search;
-      if (kategori != null && kategori.isNotEmpty) queryParams['kategori'] = kategori;
+      if (kategori != null && kategori.isNotEmpty)
+        queryParams['kategori'] = kategori;
 
       final response = await apiClient.dio.get(
         ApiEndpoints.pemanfaatan,
@@ -37,11 +41,19 @@ class ApiPemanfaatanRepository implements PemanfaatanRepository {
       if (response.statusCode == 200) {
         List<dynamic> list = [];
         if (response.data is Map<String, dynamic>) {
-          list = (response.data as Map<String, dynamic>)['data'] as List<dynamic>? ?? [];
+          list =
+              (response.data as Map<String, dynamic>)['data']
+                  as List<dynamic>? ??
+              [];
         } else if (response.data is List) {
           list = response.data as List<dynamic>;
         }
-        return list.map((e) => PemanfaatanProgramEntity.fromJson(e as Map<String, dynamic>)).toList();
+        return list
+            .map(
+              (e) =>
+                  PemanfaatanProgramEntity.fromJson(e as Map<String, dynamic>),
+            )
+            .toList();
       }
       return [];
     } catch (e) {
@@ -53,10 +65,13 @@ class ApiPemanfaatanRepository implements PemanfaatanRepository {
   @override
   Future<PemanfaatanProgramEntity?> getProgramById(String id) async {
     try {
-      final response = await apiClient.dio.get(ApiEndpoints.pemanfaatanDetail(id));
+      final response = await apiClient.dio.get(
+        ApiEndpoints.pemanfaatanDetail(id),
+      );
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data is Map<String, dynamic>
-            ? (response.data['data'] as Map<String, dynamic>? ?? response.data as Map<String, dynamic>)
+            ? (response.data['data'] as Map<String, dynamic>? ??
+                  response.data as Map<String, dynamic>)
             : <String, dynamic>{};
         return PemanfaatanProgramEntity.fromJson(data);
       }
@@ -75,8 +90,10 @@ class ApiPemanfaatanRepository implements PemanfaatanRepository {
   }) async {
     try {
       final Map<String, dynamic> queryParams = {};
-      if (status != null && status.isNotEmpty && status != 'ALL') queryParams['status'] = status;
-      if (kategori != null && kategori.isNotEmpty && kategori != 'ALL') queryParams['kategori'] = kategori;
+      if (status != null && status.isNotEmpty && status != 'ALL')
+        queryParams['status'] = status;
+      if (kategori != null && kategori.isNotEmpty && kategori != 'ALL')
+        queryParams['kategori'] = kategori;
       if (search != null && search.isNotEmpty) queryParams['search'] = search;
 
       final response = await apiClient.dio.get(
@@ -87,11 +104,19 @@ class ApiPemanfaatanRepository implements PemanfaatanRepository {
       if (response.statusCode == 200) {
         List<dynamic> list = [];
         if (response.data is Map<String, dynamic>) {
-          list = (response.data as Map<String, dynamic>)['data'] as List<dynamic>? ?? [];
+          list =
+              (response.data as Map<String, dynamic>)['data']
+                  as List<dynamic>? ??
+              [];
         } else if (response.data is List) {
           list = response.data as List<dynamic>;
         }
-        return list.map((e) => FeedbackPemanfaatanEntity.fromJson(e as Map<String, dynamic>)).toList();
+        return list
+            .map(
+              (e) =>
+                  FeedbackPemanfaatanEntity.fromJson(e as Map<String, dynamic>),
+            )
+            .toList();
       }
       return [];
     } catch (e) {
@@ -110,9 +135,12 @@ class ApiPemanfaatanRepository implements PemanfaatanRepository {
     int? rwId,
   }) async {
     try {
-      final isLocalFile = fotoBuktiUrl != null && fotoBuktiUrl.isNotEmpty && !fotoBuktiUrl.startsWith('http');
+      final isLocalFile =
+          fotoBuktiUrl != null &&
+          fotoBuktiUrl.isNotEmpty &&
+          !fotoBuktiUrl.startsWith('http');
       dynamic payload;
-      
+
       if (isLocalFile) {
         final MultipartFile file = await MultipartFile.fromFile(fotoBuktiUrl);
         payload = FormData.fromMap({
@@ -129,7 +157,8 @@ class ApiPemanfaatanRepository implements PemanfaatanRepository {
           'isiKritikSaran': isiKritikSaran,
           if (kategori != null) 'kategori': kategori,
           if (rating != null) 'rating': rating,
-          if (fotoBuktiUrl != null && fotoBuktiUrl.isNotEmpty) 'fotoBuktiUrl': fotoBuktiUrl,
+          if (fotoBuktiUrl != null && fotoBuktiUrl.isNotEmpty)
+            'fotoBuktiUrl': fotoBuktiUrl,
           if (rwId != null) 'rwId': rwId,
         };
       }
@@ -141,14 +170,18 @@ class ApiPemanfaatanRepository implements PemanfaatanRepository {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data is Map<String, dynamic>
-            ? (response.data['data'] as Map<String, dynamic>? ?? response.data as Map<String, dynamic>)
+            ? (response.data['data'] as Map<String, dynamic>? ??
+                  response.data as Map<String, dynamic>)
             : <String, dynamic>{};
         return FeedbackPemanfaatanEntity.fromJson(data);
       }
       throw Exception('Gagal mengirim kritik & saran');
     } catch (e) {
       if (e is DioException) {
-        final msg = _extractErrorMessage(e.response?.data, 'Gagal mengirim kritik & saran');
+        final msg = _extractErrorMessage(
+          e.response?.data,
+          'Gagal mengirim kritik & saran',
+        );
         throw Exception(msg);
       }
       rethrow;
@@ -164,22 +197,23 @@ class ApiPemanfaatanRepository implements PemanfaatanRepository {
     try {
       final response = await apiClient.dio.put(
         ApiEndpoints.pemanfaatanFeedbackTanggapan(id),
-        data: {
-          'tanggapan': tanggapan,
-          if (status != null) 'status': status,
-        },
+        data: {'tanggapan': tanggapan, if (status != null) 'status': status},
       );
 
       if (response.statusCode == 200) {
         final data = response.data is Map<String, dynamic>
-            ? (response.data['data'] as Map<String, dynamic>? ?? response.data as Map<String, dynamic>)
+            ? (response.data['data'] as Map<String, dynamic>? ??
+                  response.data as Map<String, dynamic>)
             : <String, dynamic>{};
         return FeedbackPemanfaatanEntity.fromJson(data);
       }
       throw Exception('Gagal memberikan tanggapan');
     } catch (e) {
       if (e is DioException) {
-        final msg = _extractErrorMessage(e.response?.data, 'Gagal memberikan tanggapan');
+        final msg = _extractErrorMessage(
+          e.response?.data,
+          'Gagal memberikan tanggapan',
+        );
         throw Exception(msg);
       }
       rethrow;
@@ -189,11 +223,16 @@ class ApiPemanfaatanRepository implements PemanfaatanRepository {
   @override
   Future<bool> deleteFeedback(String id) async {
     try {
-      final response = await apiClient.dio.delete(ApiEndpoints.pemanfaatanFeedbackDelete(id));
+      final response = await apiClient.dio.delete(
+        ApiEndpoints.pemanfaatanFeedbackDelete(id),
+      );
       return response.statusCode == 200;
     } catch (e) {
       if (e is DioException) {
-        final msg = _extractErrorMessage(e.response?.data, 'Gagal menghapus kritik & saran');
+        final msg = _extractErrorMessage(
+          e.response?.data,
+          'Gagal menghapus kritik & saran',
+        );
         throw Exception(msg);
       }
       return false;

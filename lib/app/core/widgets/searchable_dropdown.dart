@@ -8,11 +8,7 @@ class DropdownItem<T> {
   final String label;
   final String? subtitle;
 
-  const DropdownItem({
-    required this.value,
-    required this.label,
-    this.subtitle,
-  });
+  const DropdownItem({required this.value, required this.label, this.subtitle});
 
   @override
   bool operator ==(Object other) =>
@@ -57,7 +53,6 @@ class SearchableDropdownField<T> extends StatefulWidget {
 
 class _SearchableDropdownFieldState<T>
     extends State<SearchableDropdownField<T>> {
-
   DropdownItem<T>? get _selectedItem {
     if (widget.value == null) return null;
     try {
@@ -109,12 +104,18 @@ class _SearchableDropdownFieldState<T>
                   hintText: widget.hintText,
                   errorText: state.errorText,
                   enabled: widget.enabled,
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                  prefixIconConstraints:
-                      const BoxConstraints(minWidth: 48, minHeight: 48),
-                  suffixIconConstraints:
-                      const BoxConstraints(minWidth: 40, minHeight: 40),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
+                  prefixIconConstraints: const BoxConstraints(
+                    minWidth: 48,
+                    minHeight: 48,
+                  ),
+                  suffixIconConstraints: const BoxConstraints(
+                    minWidth: 40,
+                    minHeight: 40,
+                  ),
                   prefixIcon: Icon(
                     widget.prefixIcon,
                     color: widget.enabled
@@ -137,8 +138,9 @@ class _SearchableDropdownFieldState<T>
                     color: selected != null
                         ? AppColors.textPrimary
                         : AppColors.textHint,
-                    fontWeight:
-                        selected != null ? FontWeight.w500 : FontWeight.normal,
+                    fontWeight: selected != null
+                        ? FontWeight.w500
+                        : FontWeight.normal,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -169,8 +171,7 @@ class _SearchablePickerSheet<T> extends StatefulWidget {
       _SearchablePickerSheetState<T>();
 }
 
-class _SearchablePickerSheetState<T>
-    extends State<_SearchablePickerSheet<T>> {
+class _SearchablePickerSheetState<T> extends State<_SearchablePickerSheet<T>> {
   final _searchController = TextEditingController();
   List<DropdownItem<T>> _filteredItems = [];
   Timer? _debounceTimer;
@@ -279,8 +280,10 @@ class _SearchablePickerSheetState<T>
                           },
                         )
                       : null,
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                 ),
               ),
             ),
@@ -293,66 +296,67 @@ class _SearchablePickerSheetState<T>
                       child: CircularProgressIndicator(strokeWidth: 2.5),
                     )
                   : _filteredItems.isEmpty
-                      ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: Text(
-                              'Tidak ada data "${_searchController.text}"',
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: AppColors.textSecondary,
-                              ),
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Text(
+                          'Tidak ada data "${_searchController.text}"',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ),
+                    )
+                  : ListView.separated(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      itemCount: _filteredItems.length,
+                      separatorBuilder: (_, __) =>
+                          const Divider(height: 1, indent: 16, endIndent: 16),
+                      itemBuilder: (ctx, idx) {
+                        final item = _filteredItems[idx];
+                        final isSelected = item.value == widget.selectedValue;
+
+                        return ListTile(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          selected: isSelected,
+                          selectedTileColor: AppColors.primaryGreen.withValues(
+                            alpha: 0.08,
+                          ),
+                          title: Text(
+                            item.label,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: isSelected
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                              color: isSelected
+                                  ? AppColors.primaryGreen
+                                  : AppColors.textPrimary,
                             ),
                           ),
-                        )
-                      : ListView.separated(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          itemCount: _filteredItems.length,
-                          separatorBuilder: (_, __) =>
-                              const Divider(height: 1, indent: 16, endIndent: 16),
-                          itemBuilder: (ctx, idx) {
-                            final item = _filteredItems[idx];
-                            final isSelected = item.value == widget.selectedValue;
-
-                            return ListTile(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              selected: isSelected,
-                              selectedTileColor:
-                                  AppColors.primaryGreen.withValues(alpha: 0.08),
-                              title: Text(
-                                item.label,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: isSelected
-                                      ? FontWeight.w700
-                                      : FontWeight.w500,
-                                  color: isSelected
-                                      ? AppColors.primaryGreen
-                                      : AppColors.textPrimary,
-                                ),
-                              ),
-                              subtitle: item.subtitle != null
-                                  ? Text(
-                                      item.subtitle!,
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: AppColors.textSecondary,
-                                      ),
-                                    )
-                                  : null,
-                              trailing: isSelected
-                                  ? const Icon(
-                                      Icons.check_circle_rounded,
-                                      color: AppColors.primaryGreen,
-                                      size: 20,
-                                    )
-                                  : null,
-                              onTap: () => Navigator.of(context).pop(item.value),
-                            );
-                          },
-                        ),
+                          subtitle: item.subtitle != null
+                              ? Text(
+                                  item.subtitle!,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                )
+                              : null,
+                          trailing: isSelected
+                              ? const Icon(
+                                  Icons.check_circle_rounded,
+                                  color: AppColors.primaryGreen,
+                                  size: 20,
+                                )
+                              : null,
+                          onTap: () => Navigator.of(context).pop(item.value),
+                        );
+                      },
+                    ),
             ),
           ],
         ),

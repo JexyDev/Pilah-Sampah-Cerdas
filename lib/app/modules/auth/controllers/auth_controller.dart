@@ -11,7 +11,12 @@ import '../../mahasiswa/controllers/kkn_location_controller.dart';
 
 /// State autentikasi.
 class AuthState {
-  const AuthState({this.user, this.isLoading = false, this.errorCode, this.errorMessage});
+  const AuthState({
+    this.user,
+    this.isLoading = false,
+    this.errorCode,
+    this.errorMessage,
+  });
 
   final UserEntity? user;
   final bool isLoading;
@@ -41,7 +46,7 @@ class AuthState {
 /// Login menggunakan phone + password sesuai backend contract.
 class AuthNotifier extends StateNotifier<AuthState> {
   AuthNotifier(this._authRepository, this._notificationRepository, this._ref)
-      : super(const AuthState()) {
+    : super(const AuthState()) {
     _initFuture = _init();
   }
 
@@ -62,7 +67,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       _registerFcmToken();
       _restoreNotificationSyncState(user);
       NotificationEngine().scheduleRoleBasedNotifications(user.role.apiValue);
-      
+
       // Sinkronisasi data terbaru di background agar state & cache lokal selalu update
       // tanpa pengguna harus manual pull-to-refresh.
       fetchProfile();
@@ -84,13 +89,19 @@ class AuthNotifier extends StateNotifier<AuthState> {
         final readIds = readIdsDyn.map((e) => e.toString()).toList();
         await prefs.setStringList('read_notifs_${userId}_$role', readIds);
       }
-      
+
       if (syncState['markAllTimestamp'] != null) {
-        await prefs.setInt('mark_all_notifs_${userId}_$role', syncState['markAllTimestamp'] as int);
+        await prefs.setInt(
+          'mark_all_notifs_${userId}_$role',
+          syncState['markAllTimestamp'] as int,
+        );
       }
 
       if (syncState['deleteAllTimestamp'] != null) {
-        await prefs.setInt('delete_all_notifs_${userId}_$role', syncState['deleteAllTimestamp'] as int);
+        await prefs.setInt(
+          'delete_all_notifs_${userId}_$role',
+          syncState['deleteAllTimestamp'] as int,
+        );
       }
     } catch (_) {
       // Ignore if failed
@@ -135,13 +146,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
         password: password,
       );
 
-      if (user.role != UserRole.warga && 
-          user.role != UserRole.mahasiswaKkn && 
+      if (user.role != UserRole.warga &&
+          user.role != UserRole.mahasiswaKkn &&
           user.role != UserRole.petugasPemilahan) {
         await _authRepository.logout();
         throw const AuthException(
-          'UNAUTHORIZED_ROLE', 
-          'Akses ditolak. Aplikasi mobile hanya untuk Warga, Petugas Pemilah, dan Mahasiswa.'
+          'UNAUTHORIZED_ROLE',
+          'Akses ditolak. Aplikasi mobile hanya untuk Warga, Petugas Pemilah, dan Mahasiswa.',
         );
       }
 
@@ -178,10 +189,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final user = await _authRepository.register(
-        role: role,
-        data: data,
-      );
+      final user = await _authRepository.register(role: role, data: data);
       await _restoreNotificationSyncState(user);
 
       state = state.copyWith(user: user, isLoading: false);
@@ -229,13 +237,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final user = await _authRepository.verifyOtp(phone: phone, otp: otp);
 
-      if (user.role != UserRole.warga && 
-          user.role != UserRole.mahasiswaKkn && 
+      if (user.role != UserRole.warga &&
+          user.role != UserRole.mahasiswaKkn &&
           user.role != UserRole.petugasPemilahan) {
         await _authRepository.logout();
         throw const AuthException(
-          'UNAUTHORIZED_ROLE', 
-          'Akses ditolak. Aplikasi mobile hanya untuk Warga, Petugas Pemilah, dan Mahasiswa.'
+          'UNAUTHORIZED_ROLE',
+          'Akses ditolak. Aplikasi mobile hanya untuk Warga, Petugas Pemilah, dan Mahasiswa.',
         );
       }
 
@@ -245,10 +253,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
       _registerFcmToken();
       return true;
     } on AuthException catch (e) {
-      state = state.copyWith(isLoading: false, errorCode: e.code, clearUser: true);
+      state = state.copyWith(
+        isLoading: false,
+        errorCode: e.code,
+        clearUser: true,
+      );
       return false;
     } catch (_) {
-      state = state.copyWith(isLoading: false, errorCode: 'UNKNOWN_ERROR', clearUser: true);
+      state = state.copyWith(
+        isLoading: false,
+        errorCode: 'UNKNOWN_ERROR',
+        clearUser: true,
+      );
       return false;
     }
   }
@@ -260,8 +276,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final kknState = _ref.read(kknLocationProvider);
       final kknNotifier = _ref.read(kknLocationProvider.notifier);
       final activeAct = kknState.activeActivity;
-      final statusUpper = (activeAct?['statusKehadiran'] ?? activeAct?['attendanceStatus'] ?? activeAct?['status'] ?? '').toString().toUpperCase();
-      final isBerlangsung = kknState.isTracking ||
+      final statusUpper =
+          (activeAct?['statusKehadiran'] ??
+                  activeAct?['attendanceStatus'] ??
+                  activeAct?['status'] ??
+                  '')
+              .toString()
+              .toUpperCase();
+      final isBerlangsung =
+          kknState.isTracking ||
           statusUpper == 'BERLANGSUNG' ||
           statusUpper == 'DI_ZONA' ||
           statusUpper == 'DALAM_RADIUS' ||
@@ -286,7 +309,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final kknNotifier = _ref.read(kknLocationProvider.notifier);
       final kknState = _ref.read(kknLocationProvider);
-      if (kknState.isTracking && kknState.activeActivity != null && !kknState.isSuccessAttendance) {
+      if (kknState.isTracking &&
+          kknState.activeActivity != null &&
+          !kknState.isSuccessAttendance) {
         await kknNotifier.jedaKegiatan('LOGOUT');
       }
     } catch (_) {}
@@ -301,14 +326,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
     // 3. Hentikan notifikasi & bersihkan cache notifikasi
     await NotificationEngine().cancelAll();
     clearNotificationCache();
-    
+
     // 4. Clear user-specific SharedPreferences caches (notif read state, dll)
     try {
       final prefs = await SharedPreferences.getInstance();
       final keys = prefs.getKeys();
       for (final key in keys) {
-        if (key.startsWith('read_notifs_') || 
-            key.startsWith('fcm_notifs_') || 
+        if (key.startsWith('read_notifs_') ||
+            key.startsWith('fcm_notifs_') ||
             key.startsWith('mark_all_notifs_')) {
           await prefs.remove(key);
         }
@@ -329,10 +354,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   /// Update kelurahan & rw mahasiswa KKN langsung di state.
   /// Data ini disimpan permanen di local storage oleh AuthRepository.
-  void setMahasiswaRegion({required String kelurahan, required String rw, String kecamatan = ''}) {
+  void setMahasiswaRegion({
+    required String kelurahan,
+    required String rw,
+    String kecamatan = '',
+  }) {
     if (state.user == null) return;
     state = state.copyWith(
-      user: state.user!.copyWith(kecamatan: kecamatan, kelurahan: kelurahan, rw: rw),
+      user: state.user!.copyWith(
+        kecamatan: kecamatan,
+        kelurahan: kelurahan,
+        rw: rw,
+      ),
     );
   }
 
@@ -407,10 +440,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(isLoading: false);
       return token;
     } on AuthException catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        errorCode: e.code,
-      );
+      state = state.copyWith(isLoading: false, errorCode: e.code);
       return null;
     } catch (_) {
       state = state.copyWith(
@@ -437,10 +467,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(isLoading: false);
       return true;
     } on AuthException catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        errorCode: e.code,
-      );
+      state = state.copyWith(isLoading: false, errorCode: e.code);
       return false;
     } catch (_) {
       state = state.copyWith(
@@ -513,7 +540,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(isLoading: false, errorCode: e.code);
       return false;
     } catch (_) {
-      state = state.copyWith(isLoading: false, errorCode: 'CHANGE_PASSWORD_FAILED');
+      state = state.copyWith(
+        isLoading: false,
+        errorCode: 'CHANGE_PASSWORD_FAILED',
+      );
       return false;
     }
   }
@@ -530,19 +560,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
         oldPassword: oldPassword,
         newPassword: newPassword,
       );
-      
+
       if (success) {
         state = state.copyWith(isLoading: false);
         return true;
       }
-      
+
       state = state.copyWith(isLoading: false);
       return false;
     } on AuthException catch (e) {
       state = state.copyWith(isLoading: false, errorCode: e.code);
       return false;
     } catch (_) {
-      state = state.copyWith(isLoading: false, errorCode: 'CHANGE_PASSWORD_FAILED');
+      state = state.copyWith(
+        isLoading: false,
+        errorCode: 'CHANGE_PASSWORD_FAILED',
+      );
       return false;
     }
   }

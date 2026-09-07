@@ -28,7 +28,8 @@ class StabilityScorer {
     required double noJumpScore,
     required double speedScore,
   }) {
-    final score = (accuracyScore * _weightAccuracy) +
+    final score =
+        (accuracyScore * _weightAccuracy) +
         (consistencyScore * _weightConsistency) +
         (noJumpScore * _weightNoJump) +
         (speedScore * _weightSpeed);

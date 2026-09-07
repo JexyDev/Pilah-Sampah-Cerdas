@@ -32,10 +32,7 @@ class GpsCalibrationPanel extends ConsumerWidget {
             offset: const Offset(0, 4),
           ),
         ],
-        border: Border.all(
-          color: _borderColor(calibState.status),
-          width: 1.5,
-        ),
+        border: Border.all(color: _borderColor(calibState.status), width: 1.5),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -264,8 +261,9 @@ class _SamplingBody extends StatelessWidget {
             value: progress,
             minHeight: 8,
             backgroundColor: Colors.grey.shade200,
-            valueColor:
-                const AlwaysStoppedAnimation<Color>(AppColors.primaryGreen),
+            valueColor: const AlwaysStoppedAnimation<Color>(
+              AppColors.primaryGreen,
+            ),
           ),
         ),
         const SizedBox(height: 6),
@@ -320,25 +318,25 @@ class _ReadyBody extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (accuracy != null)
-                  _InfoChip(
-                    icon: Icons.radar,
-                    label: 'Akurasi: ±${accuracy.toStringAsFixed(0)} m',
-                  ),
-                const SizedBox(height: 4),
-                if (state.jumpCount > 0)
-                  _InfoChip(
-                    icon: Icons.warning_amber_rounded,
-                    label: '${state.jumpCount} GPS jump terdeteksi',
-                    color: Colors.orange,
-                  )
-                else
-                  const _InfoChip(
-                    icon: Icons.check_circle_outline,
-                    label: 'Tidak ada GPS jump',
-                    color: AppColors.primaryGreen,
-                  ),
-              ],
-            ),
+                    _InfoChip(
+                      icon: Icons.radar,
+                      label: 'Akurasi: ±${accuracy.toStringAsFixed(0)} m',
+                    ),
+                  const SizedBox(height: 4),
+                  if (state.jumpCount > 0)
+                    _InfoChip(
+                      icon: Icons.warning_amber_rounded,
+                      label: '${state.jumpCount} GPS jump terdeteksi',
+                      color: Colors.orange,
+                    )
+                  else
+                    const _InfoChip(
+                      icon: Icons.check_circle_outline,
+                      label: 'Tidak ada GPS jump',
+                      color: AppColors.primaryGreen,
+                    ),
+                ],
+              ),
             ),
           ],
         ),
@@ -370,7 +368,8 @@ class _GuideBody extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  state.errorMessage ?? 'Sinyal GPS di lokasi ini kurang stabil.',
+                  state.errorMessage ??
+                      'Sinyal GPS di lokasi ini kurang stabil.',
                   style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
                 ),
               ),

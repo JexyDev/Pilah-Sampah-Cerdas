@@ -46,13 +46,14 @@ class JumpDetector {
           samples[i].latitude,
           samples[i].longitude,
         );
-        final deltaSeconds = samples[i]
-                .timestamp
+        final deltaSeconds =
+            samples[i].timestamp
                 .difference(samples[i - 1].timestamp)
                 .inMilliseconds /
             1000.0;
-        final implicitSpeed =
-            deltaSeconds > 0 ? distFromPrev / deltaSeconds : 999.0;
+        final implicitSpeed = deltaSeconds > 0
+            ? distFromPrev / deltaSeconds
+            : 999.0;
 
         if (implicitSpeed >= jumpSpeedThreshold) {
           jumpIndices.add(i);

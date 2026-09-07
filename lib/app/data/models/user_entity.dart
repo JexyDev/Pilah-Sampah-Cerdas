@@ -55,8 +55,6 @@ class UserEntity extends Equatable {
   final String dplName;
   final int familySize;
 
-
-
   UserEntity copyWith({
     String? id,
     String? name,
@@ -112,11 +110,37 @@ class UserEntity extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, phone, address, role, nim, jurusan, prodi, fakultas, jenjangPendidikan, kecamatan, kelurahan, rw, pendampingName, kelompokName, dplName];
+  List<Object?> get props => [
+    id,
+    phone,
+    address,
+    role,
+    nim,
+    jurusan,
+    prodi,
+    fakultas,
+    jenjangPendidikan,
+    kecamatan,
+    kelurahan,
+    rw,
+    pendampingName,
+    kelompokName,
+    dplName,
+  ];
 }
 
 /// 5 role RBAC sesuai backend tabel `roles`.
-enum UserRole { admin, petugasKelurahan, petugasRw, petugasRt, warga, mahasiswaKkn, petugasPemilahan, dpl, unknown }
+enum UserRole {
+  admin,
+  petugasKelurahan,
+  petugasRw,
+  petugasRt,
+  warga,
+  mahasiswaKkn,
+  petugasPemilahan,
+  dpl,
+  unknown,
+}
 
 extension UserRoleExtension on UserRole {
   String get displayName {
@@ -205,7 +229,10 @@ extension UserRoleExtension on UserRole {
         if (v.contains('RESIDU') || v.contains('PEMILAHAN')) {
           return UserRole.petugasPemilahan;
         }
-        if (v.contains('PETUGAS') && !(v.contains('KELURAHAN') || v.contains('RW') || v.contains('RT'))) {
+        if (v.contains('PETUGAS') &&
+            !(v.contains('KELURAHAN') ||
+                v.contains('RW') ||
+                v.contains('RT'))) {
           return UserRole.petugasPemilahan;
         }
         if (v.contains('MAHASISWA') || v.contains('KKN')) {
@@ -222,4 +249,3 @@ extension UserRoleExtension on UserRole {
     }
   }
 }
-

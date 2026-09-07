@@ -18,8 +18,12 @@ class KetersediaanQrView extends ConsumerWidget {
 
     final rwText = user?.rw.isNotEmpty == true
         ? user!.rw
-        : (kelompok?.poskoLocation.isNotEmpty == true ? kelompok!.poskoLocation : '');
-    final kelompokText = kelompok?.groupName.isNotEmpty == true ? kelompok!.groupName : '';
+        : (kelompok?.poskoLocation.isNotEmpty == true
+              ? kelompok!.poskoLocation
+              : '');
+    final kelompokText = kelompok?.groupName.isNotEmpty == true
+        ? kelompok!.groupName
+        : '';
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -43,7 +47,10 @@ class KetersediaanQrView extends ConsumerWidget {
             if (rwText.isNotEmpty || kelompokText.isNotEmpty)
               Container(
                 margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.green.shade50,
                   borderRadius: BorderRadius.circular(10),
@@ -51,7 +58,11 @@ class KetersediaanQrView extends ConsumerWidget {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.location_on_rounded, size: 16, color: AppColors.primaryGreen),
+                    const Icon(
+                      Icons.location_on_rounded,
+                      size: 16,
+                      color: AppColors.primaryGreen,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -80,7 +91,10 @@ class KetersediaanQrView extends ConsumerWidget {
                   prefixIcon: const Icon(Icons.search, color: Colors.grey),
                   filled: true,
                   fillColor: Colors.grey.shade50,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 0,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(color: Colors.grey.shade200),
@@ -91,82 +105,108 @@ class KetersediaanQrView extends ConsumerWidget {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.primaryGreen, width: 1.5),
+                    borderSide: const BorderSide(
+                      color: AppColors.primaryGreen,
+                      width: 1.5,
+                    ),
                   ),
                 ),
               ),
             ),
             _buildFilters(context, state, controller),
             const SizedBox(height: 16),
-            Expanded(
-              child: _buildContent(state, controller),
-            ),
+            Expanded(child: _buildContent(state, controller)),
           ],
         ),
       ),
       floatingActionButton: state.items.isNotEmpty
           ? FloatingActionButton.extended(
-              onPressed: state.isLoading ? null : () {
-                showModalBottomSheet(
-                  context: context,
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                  ),
-                  builder: (context) => SafeArea(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: Text(
-                            'Pilih Format Cetak',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              onPressed: state.isLoading
+                  ? null
+                  : () {
+                      showModalBottomSheet(
+                        context: context,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(16),
                           ),
                         ),
-                        ListTile(
-                          leading: const Icon(Icons.picture_as_pdf, color: Colors.red),
-                          title: const Text('Export sebagai PDF'),
-                          onTap: () {
-                            Navigator.pop(context);
-                            controller.exportData(asImage: false);
-                          },
+                        builder: (context) => SafeArea(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: Text(
+                                  'Pilih Format Cetak',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              ListTile(
+                                leading: const Icon(
+                                  Icons.picture_as_pdf,
+                                  color: Colors.red,
+                                ),
+                                title: const Text('Export sebagai PDF'),
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  controller.exportData(asImage: false);
+                                },
+                              ),
+                              ListTile(
+                                leading: const Icon(
+                                  Icons.image,
+                                  color: Colors.blue,
+                                ),
+                                title: const Text(
+                                  'Export sebagai Gambar (PNG)',
+                                ),
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  controller.exportData(asImage: true);
+                                },
+                              ),
+                            ],
+                          ),
                         ),
-                        ListTile(
-                          leading: const Icon(Icons.image, color: Colors.blue),
-                          title: const Text('Export sebagai Gambar (PNG)'),
-                          onTap: () {
-                            Navigator.pop(context);
-                            controller.exportData(asImage: true);
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
+                      );
+                    },
               backgroundColor: AppColors.primaryGreen,
               icon: state.isLoading
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
                     )
                   : const Icon(Icons.print, color: Colors.white),
               label: Text(
-                state.selectedItems.isNotEmpty 
-                  ? 'Cetak QR (${state.selectedItems.length})'
-                  : 'Cetak Semua QR',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                state.selectedItems.isNotEmpty
+                    ? 'Cetak QR (${state.selectedItems.length})'
+                    : 'Cetak Semua QR',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             )
           : null,
     );
   }
 
-  Widget _buildFilters(BuildContext context, KetersediaanQrState state, KetersediaanQrController controller) {
+  Widget _buildFilters(
+    BuildContext context,
+    KetersediaanQrState state,
+    KetersediaanQrController controller,
+  ) {
     final categories = ['Semua', 'Organik', 'Anorganik'];
     final statuses = ['Semua Status', 'Tersedia', 'Digunakan'];
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -185,7 +225,9 @@ class KetersediaanQrView extends ConsumerWidget {
                   selectedColor: AppColors.primaryGreen,
                   labelStyle: TextStyle(
                     color: isSelected ? Colors.white : AppColors.textPrimary,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    fontWeight: isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
                   ),
                 ),
               );
@@ -196,7 +238,8 @@ class KetersediaanQrView extends ConsumerWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: InkWell(
-            onTap: () => _showStatusDropdown(context, state, controller, statuses),
+            onTap: () =>
+                _showStatusDropdown(context, state, controller, statuses),
             borderRadius: BorderRadius.circular(12),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -226,7 +269,12 @@ class KetersediaanQrView extends ConsumerWidget {
     );
   }
 
-  void _showStatusDropdown(BuildContext context, KetersediaanQrState state, KetersediaanQrController controller, List<String> statuses) {
+  void _showStatusDropdown(
+    BuildContext context,
+    KetersediaanQrState state,
+    KetersediaanQrController controller,
+    List<String> statuses,
+  ) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -311,11 +359,11 @@ class KetersediaanQrView extends ConsumerWidget {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Icon(
-                                status == 'Tersedia' 
-                                  ? Icons.check_circle_outline 
-                                  : status == 'Digunakan' 
-                                      ? Icons.block 
-                                      : Icons.all_inclusive,
+                                status == 'Tersedia'
+                                    ? Icons.check_circle_outline
+                                    : status == 'Digunakan'
+                                    ? Icons.block
+                                    : Icons.all_inclusive,
                                 size: 20,
                                 color: isSelected
                                     ? AppColors.primaryGreen
@@ -340,11 +388,11 @@ class KetersediaanQrView extends ConsumerWidget {
                                     ),
                                   ),
                                   Text(
-                                    status == 'Tersedia' 
-                                      ? 'QR Code belum terikat dengan fasilitas' 
-                                      : status == 'Digunakan'
-                                          ? 'QR Code sudah terikat dengan fasilitas'
-                                          : 'Tampilkan semua status QR Code',
+                                    status == 'Tersedia'
+                                        ? 'QR Code belum terikat dengan fasilitas'
+                                        : status == 'Digunakan'
+                                        ? 'QR Code sudah terikat dengan fasilitas'
+                                        : 'Tampilkan semua status QR Code',
                                     style: const TextStyle(
                                       fontSize: 12,
                                       color: AppColors.textSecondary,
@@ -381,9 +429,14 @@ class KetersediaanQrView extends ConsumerWidget {
     );
   }
 
-  Widget _buildContent(KetersediaanQrState state, KetersediaanQrController controller) {
+  Widget _buildContent(
+    KetersediaanQrState state,
+    KetersediaanQrController controller,
+  ) {
     if (state.isLoading && state.items.isEmpty) {
-      return const Center(child: CircularProgressIndicator(color: AppColors.primaryGreen));
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.primaryGreen),
+      );
     }
 
     if (state.errorMessage != null && state.items.isEmpty) {
@@ -433,16 +486,26 @@ class KetersediaanQrView extends ConsumerWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.qr_code_2_rounded, size: 64, color: Colors.grey.shade300),
+                    Icon(
+                      Icons.qr_code_2_rounded,
+                      size: 64,
+                      color: Colors.grey.shade300,
+                    ),
                     const SizedBox(height: 12),
                     const Text(
                       'Tidak ada QR Code yang tersedia',
-                      style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       'Tarik ke bawah untuk menyegarkan data',
-                      style: TextStyle(color: Colors.grey.shade400, fontSize: 12),
+                      style: TextStyle(
+                        color: Colors.grey.shade400,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
@@ -458,7 +521,9 @@ class KetersediaanQrView extends ConsumerWidget {
       color: AppColors.primaryGreen,
       child: GridView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16).copyWith(bottom: 80), // padding bottom for FAB
+        padding: const EdgeInsets.all(
+          16,
+        ).copyWith(bottom: 80), // padding bottom for FAB
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
           crossAxisSpacing: 16,
@@ -468,17 +533,29 @@ class KetersediaanQrView extends ConsumerWidget {
         itemCount: state.items.length,
         itemBuilder: (context, index) {
           final item = state.items[index];
-          final rawQr = (item['qrCode']?.toString() ?? item['kode']?.toString() ?? '').trim();
+          final rawQr =
+              (item['qrCode']?.toString() ?? item['kode']?.toString() ?? '')
+                  .trim();
           final qrCodeStr = rawQr.isNotEmpty ? rawQr : 'BSK-OGN-250826-0001';
-          final rawCat = (item['category']?['name']?.toString() ?? item['jenis']?.toString() ?? '').toUpperCase();
-          final categoryName = rawCat.contains('ANORGANIK') || rawCat.contains('NON')
+          final rawCat =
+              (item['category']?['name']?.toString() ??
+                      item['jenis']?.toString() ??
+                      '')
+                  .toUpperCase();
+          final categoryName =
+              rawCat.contains('ANORGANIK') || rawCat.contains('NON')
               ? 'Anorganik'
-              : (rawCat.contains('RESIDU') || rawCat.contains('RSD') ? 'Residu' : 'Organik');
+              : (rawCat.contains('RESIDU') || rawCat.contains('RSD')
+                    ? 'Residu'
+                    : 'Organik');
           final isOrganik = categoryName == 'Organik';
-          final statusBin = item['status']?.toString().toUpperCase() ?? 'PRINTED';
+          final statusBin =
+              item['status']?.toString().toUpperCase() ?? 'PRINTED';
           final isUsed = statusBin != 'PRINTED' && statusBin != 'TERSEDIA';
           final isSelected = state.selectedItems.contains(qrCodeStr);
-          final rwName = (item['rw']?.toString() ?? item['kelurahan']?.toString() ?? '').trim();
+          final rwName =
+              (item['rw']?.toString() ?? item['kelurahan']?.toString() ?? '')
+                  .trim();
 
           return GestureDetector(
             onTap: () => controller.toggleSelection(qrCodeStr),
@@ -527,7 +604,9 @@ class KetersediaanQrView extends ConsumerWidget {
                         width: 8,
                         height: 8,
                         decoration: BoxDecoration(
-                          color: isOrganik ? Colors.green : Colors.yellow.shade700,
+                          color: isOrganik
+                              ? Colors.green
+                              : Colors.yellow.shade700,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -544,11 +623,17 @@ class KetersediaanQrView extends ConsumerWidget {
                   if (rwName.isNotEmpty) ...[
                     const SizedBox(height: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.blue.shade50,
                         borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: Colors.blue.shade100, width: 0.5),
+                        border: Border.all(
+                          color: Colors.blue.shade100,
+                          width: 0.5,
+                        ),
                       ),
                       child: Text(
                         rwName,
@@ -564,9 +649,14 @@ class KetersediaanQrView extends ConsumerWidget {
                   ],
                   const SizedBox(height: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                      color: isUsed ? Colors.orange.shade50 : Colors.green.shade50,
+                      color: isUsed
+                          ? Colors.orange.shade50
+                          : Colors.green.shade50,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -574,7 +664,9 @@ class KetersediaanQrView extends ConsumerWidget {
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
-                        color: isUsed ? Colors.orange.shade700 : Colors.green.shade700,
+                        color: isUsed
+                            ? Colors.orange.shade700
+                            : Colors.green.shade700,
                       ),
                     ),
                   ),
@@ -587,8 +679,3 @@ class KetersediaanQrView extends ConsumerWidget {
     );
   }
 }
-
-
-
-
-

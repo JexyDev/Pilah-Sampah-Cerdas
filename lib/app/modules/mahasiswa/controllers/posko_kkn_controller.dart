@@ -7,11 +7,7 @@ class PoskoKknState {
   final String? error;
   final PoskoKknResponse? poskoResponse;
 
-  PoskoKknState({
-    this.isLoading = false,
-    this.error,
-    this.poskoResponse,
-  });
+  PoskoKknState({this.isLoading = false, this.error, this.poskoResponse});
 
   PoskoKknState copyWith({
     bool? isLoading,
@@ -59,12 +55,12 @@ class PoskoKknController extends StateNotifier<PoskoKknState> {
         'latitude': latitude,
         'longitude': longitude,
       };
-      
+
       if (nama.isNotEmpty) payload['nama'] = nama;
       if (alamat.isNotEmpty) payload['alamat'] = alamat;
 
       await repository.registerPosko(payload, imagePath: imagePath);
-      
+
       state = state.copyWith(isLoading: false);
       // Refresh data
       await fetchPosko();
@@ -89,12 +85,12 @@ class PoskoKknController extends StateNotifier<PoskoKknState> {
         'latitude': latitude,
         'longitude': longitude,
       };
-      
+
       if (nama.isNotEmpty) payload['nama'] = nama;
       if (alamat.isNotEmpty) payload['alamat'] = alamat;
 
       await repository.updatePosko(payload, imagePath: imagePath);
-      
+
       state = state.copyWith(isLoading: false);
       // Refresh data
       await fetchPosko();
@@ -106,6 +102,7 @@ class PoskoKknController extends StateNotifier<PoskoKknState> {
   }
 }
 
-final poskoKknProvider = StateNotifierProvider<PoskoKknController, PoskoKknState>((ref) {
-  return PoskoKknController(ref);
-});
+final poskoKknProvider =
+    StateNotifierProvider<PoskoKknController, PoskoKknState>((ref) {
+      return PoskoKknController(ref);
+    });

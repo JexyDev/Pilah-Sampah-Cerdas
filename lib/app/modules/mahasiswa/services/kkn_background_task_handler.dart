@@ -10,10 +10,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// ═══════════════════════════════════════════════════════════════════════════
 /// KKN Background GPS Task Handler
 /// ═══════════════════════════════════════════════════════════════════════════
-/// 
+///
 /// Menjalankan GPS tracking di Android Foreground Service / iOS background mode.
 /// Service ini TIDAK akan di-kill oleh OS saat layar mati atau user pindah app.
-/// 
+///
 /// Fitur:
 /// - Polling GPS setiap 30 detik (hemat baterai)
 /// - Kalkulasi geofence (radius & polygon)
@@ -30,7 +30,7 @@ class KknBgPrefKeys {
   static const accumulatedDate = 'kkn_accumulated_date';
   static const accumulatedTarget = 'kkn_accumulated_target';
   static const zoneEntryTime = 'kkn_zone_entry_time';
-  
+
   // Data target lokasi (dikirim dari UI saat start)
   static const targetLat = 'kkn_bg_target_lat';
   static const targetLng = 'kkn_bg_target_lng';
@@ -43,7 +43,7 @@ class KknBgPrefKeys {
   static const scheduleId = 'kkn_bg_schedule_id';
   static const serviceActive = 'kkn_bg_service_active';
   static const serviceStartTime = 'kkn_bg_service_start_time';
-  
+
   // API config
   static const apiBaseUrl = 'kkn_bg_api_base_url';
   static const authToken = 'kkn_bg_auth_token';
@@ -80,7 +80,7 @@ class KknBackgroundTaskHandler extends TaskHandler {
   bool _isInsideRadius = false;
   bool _isStopped = false;
   DateTime? _serviceStartTime;
-  
+
   // Target location data
   double _targetLat = 0.0;
   double _targetLng = 0.0;
@@ -91,21 +91,21 @@ class KknBackgroundTaskHandler extends TaskHandler {
   List<List<double>>? _polygon;
   DateTime? _targetEndTime;
   String? _scheduleId; // ignore: unused_field
-  
+
   // API config
   String? _apiBaseUrl;
   String? _authToken;
-  
+
   // Last known position (to skip duplicate pings)
   double _lastPingLat = 0.0; // ignore: unused_field
   double _lastPingLng = 0.0; // ignore: unused_field
-  
+
   // Max service duration: 4 jam
   static const int _maxServiceDurationHours = 4;
-  
+
   // Ignore counter for now, used for future notification throttling
   int _notifUpdateCounter = 0; // ignore: unused_field
-  
+
   // Out-of-zone violation tracking
   int _outOfZoneSeconds = 0;
   bool _outOfZoneViolationSent = false;
@@ -113,23 +113,36 @@ class KknBackgroundTaskHandler extends TaskHandler {
   @override
   Future<void> onStart(DateTime timestamp, TaskStarter starter) async {
     debugPrint('[KKN-BG] Service started at $timestamp by $starter');
-    
+
     _serviceStartTime = DateTime.now();
-    
+
     // Load semua data dari SharedPreferences
     final prefs = await SharedPreferences.getInstance();
-    
+
     // Load accumulated seconds (persisten harian dengan isolasi per akun)
     final userId = prefs.getString(KknBgPrefKeys.userId);
-    final userKeyAccum = (userId != null && userId.isNotEmpty) ? '${KknBgPrefKeys.accumulatedSeconds}_$userId' : KknBgPrefKeys.accumulatedSeconds;
-    final userKeyDate = (userId != null && userId.isNotEmpty) ? '${KknBgPrefKeys.accumulatedDate}_$userId' : KknBgPrefKeys.accumulatedDate;
-    final userKeyEntry = (userId != null && userId.isNotEmpty) ? '${KknBgPrefKeys.zoneEntryTime}_$userId' : KknBgPrefKeys.zoneEntryTime;
+    final userKeyAccum = (userId != null && userId.isNotEmpty)
+        ? '${KknBgPrefKeys.accumulatedSeconds}_$userId'
+        : KknBgPrefKeys.accumulatedSeconds;
+    final userKeyDate = (userId != null && userId.isNotEmpty)
+        ? '${KknBgPrefKeys.accumulatedDate}_$userId'
+        : KknBgPrefKeys.accumulatedDate;
+    final userKeyEntry = (userId != null && userId.isNotEmpty)
+        ? '${KknBgPrefKeys.zoneEntryTime}_$userId'
+        : KknBgPrefKeys.zoneEntryTime;
 
-    final savedDate = prefs.getString(userKeyDate) ?? prefs.getString(KknBgPrefKeys.accumulatedDate);
+    final savedDate =
+        prefs.getString(userKeyDate) ??
+        prefs.getString(KknBgPrefKeys.accumulatedDate);
     final today = DateTime.now().toLocal().toString().substring(0, 10);
     if (savedDate == today) {
-      _accumulatedSeconds = prefs.getInt(userKeyAccum) ?? prefs.getInt(KknBgPrefKeys.accumulatedSeconds) ?? 0;
-      final savedEntry = prefs.getString(userKeyEntry) ?? prefs.getString(KknBgPrefKeys.zoneEntryTime);
+      _accumulatedSeconds =
+          prefs.getInt(userKeyAccum) ??
+          prefs.getInt(KknBgPrefKeys.accumulatedSeconds) ??
+          0;
+      final savedEntry =
+          prefs.getString(userKeyEntry) ??
+          prefs.getString(KknBgPrefKeys.zoneEntryTime);
       if (savedEntry != null && savedEntry.isNotEmpty) {
         _zoneEntryTime = DateTime.tryParse(savedEntry);
       }
@@ -137,50 +150,61 @@ class KknBackgroundTaskHandler extends TaskHandler {
       _accumulatedSeconds = 0;
       _zoneEntryTime = null;
     }
-    
+
     // Load target location
     _targetLat = prefs.getDouble(KknBgPrefKeys.targetLat) ?? 0.0;
     _targetLng = prefs.getDouble(KknBgPrefKeys.targetLng) ?? 0.0;
     _radius = prefs.getDouble(KknBgPrefKeys.targetRadius) ?? 150.0;
-    _geofenceBufferMeters = prefs.getDouble(KknBgPrefKeys.geofenceBufferMeters) ?? 15.0;
-    _invalidationHours = prefs.getDouble(KknBgPrefKeys.invalidationHours) ?? 2.0;
+    _geofenceBufferMeters =
+        prefs.getDouble(KknBgPrefKeys.geofenceBufferMeters) ?? 15.0;
+    _invalidationHours =
+        prefs.getDouble(KknBgPrefKeys.invalidationHours) ?? 2.0;
     _targetDurationMinutes = prefs.getInt(KknBgPrefKeys.targetDuration) ?? 2;
     _scheduleId = prefs.getString(KknBgPrefKeys.scheduleId);
-    
+
     // Load polygon jika ada
     final polygonJson = prefs.getString(KknBgPrefKeys.targetPolygon);
     if (polygonJson != null && polygonJson.isNotEmpty) {
       try {
         final decoded = jsonDecode(polygonJson) as List;
-        _polygon = decoded.map<List<double>>((p) => 
-          (p as List).map<double>((v) => (v as num).toDouble()).toList()
-        ).toList();
+        _polygon = decoded
+            .map<List<double>>(
+              (p) => (p as List)
+                  .map<double>((v) => (v as num).toDouble())
+                  .toList(),
+            )
+            .toList();
       } catch (_) {
         _polygon = null;
       }
     }
-    
+
     // Load target end time
     final endTimeStr = prefs.getString(KknBgPrefKeys.targetEndTime);
     if (endTimeStr != null && endTimeStr.isNotEmpty) {
       _targetEndTime = DateTime.tryParse(endTimeStr);
     }
-    
+
     // Load API config
     _apiBaseUrl = prefs.getString(KknBgPrefKeys.apiBaseUrl);
     _authToken = prefs.getString(KknBgPrefKeys.authToken);
-    
+
     // Load service start time
     final startStr = prefs.getString(KknBgPrefKeys.serviceStartTime);
     if (startStr != null) {
       _serviceStartTime = DateTime.tryParse(startStr) ?? DateTime.now();
     }
-    
+
     // Mark service as active
     await prefs.setBool(KknBgPrefKeys.serviceActive, true);
-    await prefs.setString(KknBgPrefKeys.serviceStartTime, _serviceStartTime!.toIso8601String());
-    
-    debugPrint('[KKN-BG] Loaded target: ($_targetLat, $_targetLng) radius=$_radius duration=$_targetDurationMinutes min');
+    await prefs.setString(
+      KknBgPrefKeys.serviceStartTime,
+      _serviceStartTime!.toIso8601String(),
+    );
+
+    debugPrint(
+      '[KKN-BG] Loaded target: ($_targetLat, $_targetLng) radius=$_radius duration=$_targetDurationMinutes min',
+    );
     debugPrint('[KKN-BG] Accumulated: $_accumulatedSeconds seconds');
   }
 
@@ -190,41 +214,52 @@ class KknBackgroundTaskHandler extends TaskHandler {
 
     // CHECK 0: Cek apakah user sudah logout atau service deactivated
     final prefs = await SharedPreferences.getInstance();
-    await prefs.reload(); // Wajib di background service agar mendeteksi perubahan dari UI isolate
+    await prefs
+        .reload(); // Wajib di background service agar mendeteksi perubahan dari UI isolate
     final isActive = prefs.getBool(KknBgPrefKeys.serviceActive) ?? false;
     final authToken = prefs.getString(KknBgPrefKeys.authToken);
     if (!isActive || authToken == null || authToken.isEmpty) {
-      debugPrint('[KKN-BG] Pengguna telah logout. Menghentikan background service.');
+      debugPrint(
+        '[KKN-BG] Pengguna telah logout. Menghentikan background service.',
+      );
       await _autoStop('Pengguna telah keluar (logout). Tracking dihentikan.');
       return;
     }
-    
+
     // [BUGFIX] Sync API configuration from SharedPreferences after reload
     // to ensure background isolate uses the latest values written by UI isolate
     _authToken = authToken;
     _apiBaseUrl = prefs.getString(KknBgPrefKeys.apiBaseUrl) ?? _apiBaseUrl;
     _scheduleId = prefs.getString(KknBgPrefKeys.scheduleId) ?? _scheduleId;
-    
+
     // [BUGFIX] Sync target location as well to avoid race conditions
     _targetLat = prefs.getDouble(KknBgPrefKeys.targetLat) ?? _targetLat;
     _targetLng = prefs.getDouble(KknBgPrefKeys.targetLng) ?? _targetLng;
     _radius = prefs.getDouble(KknBgPrefKeys.targetRadius) ?? _radius;
-    _geofenceBufferMeters = prefs.getDouble(KknBgPrefKeys.geofenceBufferMeters) ?? _geofenceBufferMeters;
-    _invalidationHours = prefs.getDouble(KknBgPrefKeys.invalidationHours) ?? _invalidationHours;
-    _targetDurationMinutes = prefs.getInt(KknBgPrefKeys.targetDuration) ?? _targetDurationMinutes;
-    
+    _geofenceBufferMeters =
+        prefs.getDouble(KknBgPrefKeys.geofenceBufferMeters) ??
+        _geofenceBufferMeters;
+    _invalidationHours =
+        prefs.getDouble(KknBgPrefKeys.invalidationHours) ?? _invalidationHours;
+    _targetDurationMinutes =
+        prefs.getInt(KknBgPrefKeys.targetDuration) ?? _targetDurationMinutes;
+
     // ═════════════════════════════════════════════════════════
     // CHECK 1: Batas waktu maksimal service (4 jam)
     // ═════════════════════════════════════════════════════════
     if (_serviceStartTime != null) {
       final elapsed = DateTime.now().difference(_serviceStartTime!);
       if (elapsed.inHours >= _maxServiceDurationHours) {
-        debugPrint('[KKN-BG] Max duration reached (${_maxServiceDurationHours}h). Auto-stopping.');
-        await _autoStop('Batas waktu tracking $_maxServiceDurationHours jam tercapai.');
+        debugPrint(
+          '[KKN-BG] Max duration reached (${_maxServiceDurationHours}h). Auto-stopping.',
+        );
+        await _autoStop(
+          'Batas waktu tracking $_maxServiceDurationHours jam tercapai.',
+        );
         return;
       }
     }
-    
+
     // ═════════════════════════════════════════════════════════
     // CHECK 2: Jadwal KKN sudah berakhir
     // ═════════════════════════════════════════════════════════
@@ -233,7 +268,7 @@ class KknBackgroundTaskHandler extends TaskHandler {
       await _autoStop('Jadwal kegiatan KKN telah berakhir.');
       return;
     }
-    
+
     // ═════════════════════════════════════════════════════════
     // STEP 1: Ambil lokasi GPS
     // ═════════════════════════════════════════════════════════
@@ -241,8 +276,9 @@ class KknBackgroundTaskHandler extends TaskHandler {
     try {
       pos = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high, // Akurasi tinggi agar posisi tidak melompat-lompat
-          distanceFilter: 0, // Set ke 0 agar update lebih presisi 
+          accuracy: LocationAccuracy
+              .high, // Akurasi tinggi agar posisi tidak melompat-lompat
+          distanceFilter: 0, // Set ke 0 agar update lebih presisi
         ),
       ).timeout(const Duration(seconds: 15));
     } catch (_) {
@@ -251,7 +287,7 @@ class KknBackgroundTaskHandler extends TaskHandler {
         pos = await Geolocator.getLastKnownPosition();
       } catch (_) {}
     }
-    
+
     if (pos == null) {
       _sendToUI({
         'type': KknBgMessageType.error,
@@ -259,7 +295,7 @@ class KknBackgroundTaskHandler extends TaskHandler {
       });
       return;
     }
-    
+
     // Anti Fake GPS
     if (pos.isMocked) {
       _sendToUI({
@@ -268,13 +304,13 @@ class KknBackgroundTaskHandler extends TaskHandler {
       });
       return;
     }
-    
+
     // ═════════════════════════════════════════════════════════
     // STEP 2: Geofence check
     // ═════════════════════════════════════════════════════════
     bool nowInside = false;
     double distance = 999999.0;
-    
+
     if (_targetLat == 0.0 && _targetLng == 0.0) {
       // Belum ada target, skip geofence
       _sendToUI({
@@ -286,14 +322,23 @@ class KknBackgroundTaskHandler extends TaskHandler {
       });
       return;
     }
-    
+
     final effectiveRadius = _radius + _geofenceBufferMeters;
-    final distToTarget = Geolocator.distanceBetween(pos.latitude, pos.longitude, _targetLat, _targetLng);
+    final distToTarget = Geolocator.distanceBetween(
+      pos.latitude,
+      pos.longitude,
+      _targetLat,
+      _targetLng,
+    );
 
     // Polygon check (Ray Casting)
     if (_polygon != null && _polygon!.length >= 3) {
       try {
-        final insidePoly = _isPointInPolygon(pos.latitude, pos.longitude, _polygon!);
+        final insidePoly = _isPointInPolygon(
+          pos.latitude,
+          pos.longitude,
+          _polygon!,
+        );
         nowInside = insidePoly || (distToTarget <= effectiveRadius);
         distance = distToTarget;
       } catch (_) {
@@ -314,12 +359,12 @@ class KknBackgroundTaskHandler extends TaskHandler {
         nowInside = true;
       }
     }
-    
+
     // ═════════════════════════════════════════════════════════
     // STEP 3: Update durasi zona
     // ═════════════════════════════════════════════════════════
     final now = DateTime.now();
-    
+
     if (nowInside) {
       if (_zoneEntryTime == null) {
         _zoneEntryTime = now;
@@ -327,7 +372,7 @@ class KknBackgroundTaskHandler extends TaskHandler {
       }
       final sessionSeconds = now.difference(_zoneEntryTime!).inSeconds;
       final totalSeconds = _accumulatedSeconds + sessionSeconds;
-      
+
       // Kirim update ke UI
       _sendToUI({
         'type': KknBgMessageType.durationUpdate,
@@ -339,7 +384,7 @@ class KknBackgroundTaskHandler extends TaskHandler {
         'lat': pos.latitude,
         'lng': pos.longitude,
       });
-      
+
       // Update notifikasi persisten (setiap cycle)
       _notifUpdateCounter++;
       final mins = totalSeconds ~/ 60;
@@ -350,7 +395,7 @@ class KknBackgroundTaskHandler extends TaskHandler {
         notificationTitle: '⏱ Presensi KKN Aktif',
         notificationText: 'Di dalam zona • $timeStr / $targetMins menit',
       );
-      
+
       if (!_isInsideRadius) {
         // Baru masuk zona
         _isInsideRadius = true;
@@ -370,7 +415,7 @@ class KknBackgroundTaskHandler extends TaskHandler {
         _zoneEntryTime = null;
         await _saveDuration(_accumulatedSeconds, entryTime: null);
       }
-      
+
       if (_isInsideRadius) {
         _isInsideRadius = false;
         _sendToUI({
@@ -379,26 +424,28 @@ class KknBackgroundTaskHandler extends TaskHandler {
           'message': 'Anda keluar dari zona KKN. Waktu dihentikan sementara.',
         });
       }
-      
+
       // Out-of-zone violation tracking (per 30 detik cycle)
       _outOfZoneSeconds += 30;
       final outMinutes = _outOfZoneSeconds / 60;
       final maxOutMinutes = _invalidationHours * 60;
-      
+
       if (outMinutes >= (maxOutMinutes * 0.8) && !_outOfZoneViolationSent) {
         _outOfZoneViolationSent = true;
         _sendToUI({
           'type': KknBgMessageType.outOfZoneViolation,
           'outOfZoneSeconds': _outOfZoneSeconds,
-          'message': 'Anda di luar area kegiatan selama ${outMinutes.round()} menit. Kembali ke zona sebelum kehadiran digagalkan.',
+          'message':
+              'Anda di luar area kegiatan selama ${outMinutes.round()} menit. Kembali ke zona sebelum kehadiran digagalkan.',
         });
-        
+
         FlutterForegroundTask.updateService(
           notificationTitle: 'Peringatan Zona Kegiatan ⚠️',
-          notificationText: 'Anda di luar area selama ${outMinutes.round()} menit. Segera kembali ke zona.',
+          notificationText:
+              'Anda di luar area selama ${outMinutes.round()} menit. Segera kembali ke zona.',
         );
       }
-      
+
       _sendToUI({
         'type': KknBgMessageType.locationUpdate,
         'lat': pos.latitude,
@@ -408,13 +455,14 @@ class KknBackgroundTaskHandler extends TaskHandler {
         'totalSeconds': _accumulatedSeconds,
         'isEligible': _accumulatedSeconds >= (_targetDurationMinutes * 60),
       });
-      
+
       FlutterForegroundTask.updateService(
         notificationTitle: '⏸ Waktu Dihentikan — Di Luar Zona',
-        notificationText: 'Kembali ke zona untuk melanjutkan • ${_accumulatedSeconds ~/ 60}:${(_accumulatedSeconds % 60).toString().padLeft(2, '0')} / $_targetDurationMinutes menit',
+        notificationText:
+            'Kembali ke zona untuk melanjutkan • ${_accumulatedSeconds ~/ 60}:${(_accumulatedSeconds % 60).toString().padLeft(2, '0')} / $_targetDurationMinutes menit',
       );
     }
-    
+
     // ═════════════════════════════════════════════════════════
     // STEP 4: Ping lokasi ke backend (selalu ping per cycle 30 detik)
     // ═════════════════════════════════════════════════════════
@@ -433,7 +481,11 @@ class KknBackgroundTaskHandler extends TaskHandler {
           ? _accumulatedSeconds + now.difference(_zoneEntryTime!).inSeconds
           : _accumulatedSeconds;
       // Ping backend secara fire-and-forget (jangan blocking)
-      _pingBackend(pos.latitude, pos.longitude, accumulatedSeconds: currentTotalSeconds);
+      _pingBackend(
+        pos.latitude,
+        pos.longitude,
+        accumulatedSeconds: currentTotalSeconds,
+      );
     }
   }
 
@@ -442,7 +494,7 @@ class KknBackgroundTaskHandler extends TaskHandler {
     // Menerima pesan dari UI
     if (data is Map) {
       final type = data['type']?.toString();
-      
+
       switch (type) {
         case 'STOP':
           _handleStop();
@@ -468,16 +520,23 @@ class KknBackgroundTaskHandler extends TaskHandler {
             final delta = DateTime.now().difference(_zoneEntryTime!).inSeconds;
             if (delta > 0) {
               _accumulatedSeconds += delta;
-              debugPrint('[KKN-BG] SYNC_DURATION: commit delta $delta dtk dulu → lokal=$_accumulatedSeconds');
+              debugPrint(
+                '[KKN-BG] SYNC_DURATION: commit delta $delta dtk dulu → lokal=$_accumulatedSeconds',
+              );
             }
             // Reset entry time ke sekarang agar akumulasi berikutnya tidak double-count
             _zoneEntryTime = DateTime.now();
           }
           // Pakai yang terbesar antara lokal (sudah termasuk delta) dan server
           // agar tidak mundur jika lokal sudah lebih maju (belum ter-sync ke server)
-          _accumulatedSeconds = math.max(_accumulatedSeconds, math.max(0, seconds));
+          _accumulatedSeconds = math.max(
+            _accumulatedSeconds,
+            math.max(0, seconds),
+          );
           _saveDuration(_accumulatedSeconds, entryTime: _zoneEntryTime);
-          debugPrint('[KKN-BG] SYNC_DURATION selesai: _accumulated=$_accumulatedSeconds serverValue=$seconds');
+          debugPrint(
+            '[KKN-BG] SYNC_DURATION selesai: _accumulated=$_accumulatedSeconds serverValue=$seconds',
+          );
           break;
       }
     }
@@ -486,14 +545,16 @@ class KknBackgroundTaskHandler extends TaskHandler {
   @override
   Future<void> onDestroy(DateTime timestamp) async {
     debugPrint('[KKN-BG] Service destroyed at $timestamp');
-    
+
     // Simpan durasi terakhir
     if (_zoneEntryTime != null) {
-      _accumulatedSeconds += DateTime.now().difference(_zoneEntryTime!).inSeconds;
+      _accumulatedSeconds += DateTime.now()
+          .difference(_zoneEntryTime!)
+          .inSeconds;
       _zoneEntryTime = null;
     }
     await _saveDuration(_accumulatedSeconds);
-    
+
     // Mark service as inactive
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(KknBgPrefKeys.serviceActive, false);
@@ -510,18 +571,30 @@ class KknBackgroundTaskHandler extends TaskHandler {
   Future<void> _saveDuration(int accumSeconds, {DateTime? entryTime}) async {
     final prefs = await SharedPreferences.getInstance();
     final today = DateTime.now().toLocal().toString().substring(0, 10);
-    final targetKey = (_scheduleId != null && _scheduleId!.isNotEmpty && _scheduleId != 'SCH-TODAY')
+    final targetKey =
+        (_scheduleId != null &&
+            _scheduleId!.isNotEmpty &&
+            _scheduleId != 'SCH-TODAY')
         ? '_$_scheduleId'
         : '';
     final userId = prefs.getString(KknBgPrefKeys.userId);
-    final userKeyAccum = (userId != null && userId.isNotEmpty) ? '${KknBgPrefKeys.accumulatedSeconds}_$userId' : null;
-    final userKeyDate = (userId != null && userId.isNotEmpty) ? '${KknBgPrefKeys.accumulatedDate}_$userId' : null;
-    final userKeyEntry = (userId != null && userId.isNotEmpty) ? '${KknBgPrefKeys.zoneEntryTime}_$userId' : null;
+    final userKeyAccum = (userId != null && userId.isNotEmpty)
+        ? '${KknBgPrefKeys.accumulatedSeconds}_$userId'
+        : null;
+    final userKeyDate = (userId != null && userId.isNotEmpty)
+        ? '${KknBgPrefKeys.accumulatedDate}_$userId'
+        : null;
+    final userKeyEntry = (userId != null && userId.isNotEmpty)
+        ? '${KknBgPrefKeys.zoneEntryTime}_$userId'
+        : null;
 
     await prefs.setString(KknBgPrefKeys.accumulatedDate, today);
     await prefs.setInt(KknBgPrefKeys.accumulatedSeconds, accumSeconds);
     if (entryTime != null) {
-      await prefs.setString(KknBgPrefKeys.zoneEntryTime, entryTime.toIso8601String());
+      await prefs.setString(
+        KknBgPrefKeys.zoneEntryTime,
+        entryTime.toIso8601String(),
+      );
     } else {
       await prefs.remove(KknBgPrefKeys.zoneEntryTime);
     }
@@ -537,9 +610,15 @@ class KknBackgroundTaskHandler extends TaskHandler {
     }
 
     await prefs.setString('${KknBgPrefKeys.accumulatedDate}$targetKey', today);
-    await prefs.setInt('${KknBgPrefKeys.accumulatedSeconds}$targetKey', accumSeconds);
+    await prefs.setInt(
+      '${KknBgPrefKeys.accumulatedSeconds}$targetKey',
+      accumSeconds,
+    );
     if (entryTime != null) {
-      await prefs.setString('${KknBgPrefKeys.zoneEntryTime}$targetKey', entryTime.toIso8601String());
+      await prefs.setString(
+        '${KknBgPrefKeys.zoneEntryTime}$targetKey',
+        entryTime.toIso8601String(),
+      );
     } else {
       await prefs.remove('${KknBgPrefKeys.zoneEntryTime}$targetKey');
     }
@@ -547,27 +626,29 @@ class KknBackgroundTaskHandler extends TaskHandler {
 
   Future<void> _autoStop(String reason) async {
     _isStopped = true;
-    
+
     // Simpan state terakhir
     if (_zoneEntryTime != null) {
-      _accumulatedSeconds += DateTime.now().difference(_zoneEntryTime!).inSeconds;
+      _accumulatedSeconds += DateTime.now()
+          .difference(_zoneEntryTime!)
+          .inSeconds;
       _zoneEntryTime = null;
     }
     await _saveDuration(_accumulatedSeconds);
-    
+
     // Kirim notifikasi ke UI
     _sendToUI({
       'type': KknBgMessageType.autoStop,
       'reason': reason,
       'totalSeconds': _accumulatedSeconds,
     });
-    
+
     // Update notifikasi
     FlutterForegroundTask.updateService(
       notificationTitle: 'Pemantauan GPS Selesai ✅',
       notificationText: reason,
     );
-    
+
     // Stop service
     await FlutterForegroundTask.stopService();
   }
@@ -586,40 +667,55 @@ class KknBackgroundTaskHandler extends TaskHandler {
     _targetLat = (data['lat'] as num?)?.toDouble() ?? _targetLat;
     _targetLng = (data['lng'] as num?)?.toDouble() ?? _targetLng;
     _radius = (data['radius'] as num?)?.toDouble() ?? _radius;
-    _targetDurationMinutes = (data['duration'] as int?) ?? _targetDurationMinutes;
-    
+    _targetDurationMinutes =
+        (data['duration'] as int?) ?? _targetDurationMinutes;
+
     if (data['endTime'] != null) {
       _targetEndTime = DateTime.tryParse(data['endTime'].toString());
     }
     if (data['polygon'] != null) {
       try {
-        _polygon = (data['polygon'] as List).map<List<double>>((p) => 
-          (p as List).map<double>((v) => (v as num).toDouble()).toList()
-        ).toList();
+        _polygon = (data['polygon'] as List)
+            .map<List<double>>(
+              (p) => (p as List)
+                  .map<double>((v) => (v as num).toDouble())
+                  .toList(),
+            )
+            .toList();
       } catch (_) {}
     }
-    
-    debugPrint('[KKN-BG] Target updated: ($_targetLat, $_targetLng) radius=$_radius');
+
+    debugPrint(
+      '[KKN-BG] Target updated: ($_targetLat, $_targetLng) radius=$_radius',
+    );
   }
 
   /// Ping backend — HTTP POST to update location in database & trigger WebSocket broadcast
-  Future<void> _pingBackend(double lat, double lng, {int? accumulatedSeconds}) async {
-    if (_apiBaseUrl == null || _authToken == null || _apiBaseUrl!.isEmpty || _authToken!.isEmpty) return;
+  Future<void> _pingBackend(
+    double lat,
+    double lng, {
+    int? accumulatedSeconds,
+  }) async {
+    if (_apiBaseUrl == null ||
+        _authToken == null ||
+        _apiBaseUrl!.isEmpty ||
+        _authToken!.isEmpty)
+      return;
 
     try {
       final client = HttpClient();
       client.connectionTimeout = const Duration(seconds: 10);
-      
+
       final cleanBaseUrl = _apiBaseUrl!.endsWith('/')
           ? _apiBaseUrl!.substring(0, _apiBaseUrl!.length - 1)
           : _apiBaseUrl!;
       final url = Uri.parse('$cleanBaseUrl/kkn-attendance/location-ping');
       final request = await client.postUrl(url);
-      
+
       request.headers.set('content-type', 'application/json');
       request.headers.set('authorization', 'Bearer $_authToken');
       request.headers.set('bypass-tunnel-reminder', 'true');
-      
+
       final payload = jsonEncode({
         'latitude': lat,
         'longitude': lng,
@@ -630,40 +726,53 @@ class KknBackgroundTaskHandler extends TaskHandler {
         // inZoneSeconds) untuk nilai yang sama — membingungkan dan memboroskan payload.
         if (accumulatedSeconds != null) 'inZoneSeconds': accumulatedSeconds,
       });
-      
+
       request.write(payload);
       final response = await request.close();
-      
+
       if (response.statusCode == 200) {
         final responseBody = await response.transform(utf8.decoder).join();
         try {
           final jsonResponse = jsonDecode(responseBody);
           final data = jsonResponse['data'] as Map<String, dynamic>?;
-          
+
           final activeScheduleId = data?['activeScheduleId'];
-          
+
           // [FIX 1] Sebelumnya: auto-stop setiap kali activeScheduleId null,
           // termasuk saat backend tidak menyertakan field itu di response
           // (misal format beda, sesi di-jeda dari web, atau error parsing).
           // Sekarang: cek juga attendanceStatus dari response. Hanya stop jika
           // status memang final dan bukan karena field tidak ada di response.
           if (activeScheduleId == null && _scheduleId != null) {
-            final status = (data?['attendanceStatus']?.toString() ??
-                            data?['statusKehadiran']?.toString() ??
-                            '').toLowerCase();
+            final status =
+                (data?['attendanceStatus']?.toString() ??
+                        data?['statusKehadiran']?.toString() ??
+                        '')
+                    .toLowerCase();
             // Stop hanya jika backend secara eksplisit bilang status final
             // (hadir, alpa, selesai, dll). Jika status kosong (field tidak ada),
             // jangan stop — biarkan ping berikutnya mencoba lagi.
             const finalStatuses = {
-              'hadir', 'hadir_memenuhi', 'hadir_tidak_memenuhi',
-              'alpa', 'tanpa_keterangan', 'selesai', 'selesai_telat',
-              'lepas_radius', 'izin', 'sakit',
+              'hadir',
+              'hadir_memenuhi',
+              'hadir_tidak_memenuhi',
+              'alpa',
+              'tanpa_keterangan',
+              'selesai',
+              'selesai_telat',
+              'lepas_radius',
+              'izin',
+              'sakit',
             };
             if (status.isNotEmpty && finalStatuses.contains(status)) {
-              debugPrint('[KKN-BG] Jadwal selesai di backend (status: $status). Menghentikan GPS.');
+              debugPrint(
+                '[KKN-BG] Jadwal selesai di backend (status: $status). Menghentikan GPS.',
+              );
               _autoStop('Waktu kegiatan telah habis (status: $status).');
             } else if (status.isEmpty) {
-              debugPrint('[KKN-BG] activeScheduleId null tapi status kosong — skip auto-stop, tunggu ping berikutnya.');
+              debugPrint(
+                '[KKN-BG] activeScheduleId null tapi status kosong — skip auto-stop, tunggu ping berikutnya.',
+              );
             }
             // Jika status BERLANGSUNG/TERJEDA tapi activeScheduleId null → inkonsistensi data backend
             // → jangan stop, biarkan tracking lanjut
@@ -681,7 +790,7 @@ class KknBackgroundTaskHandler extends TaskHandler {
       } else {
         await response.drain();
       }
-      
+
       client.close();
       debugPrint('[KKN-BG] Ping sent successfully to $url ($lat, $lng)');
     } catch (e) {
@@ -690,7 +799,11 @@ class KknBackgroundTaskHandler extends TaskHandler {
   }
 
   /// Ray Casting algorithm untuk Point-in-Polygon (dengan Smart Coordinate Detector)
-  bool _isPointInPolygon(double lat, double lng, List<List<double>> rawPolygon) {
+  bool _isPointInPolygon(
+    double lat,
+    double lng,
+    List<List<double>> rawPolygon,
+  ) {
     if (rawPolygon.length < 3) return false;
 
     final List<({double lat, double lng})> polygon = rawPolygon.map((p) {
@@ -725,14 +838,15 @@ class KknBackgroundTaskHandler extends TaskHandler {
 // HELPER: Inisialisasi FlutterForegroundTask
 // ═══════════════════════════════════════════════════════════════════════════
 
-/// Inisialisasi konfigurasi Foreground Task. 
+/// Inisialisasi konfigurasi Foreground Task.
 /// Dipanggil sekali di main.dart atau sebelum startService.
 void initKknForegroundTask() {
   FlutterForegroundTask.init(
     androidNotificationOptions: AndroidNotificationOptions(
       channelId: 'kkn_location_channel',
       channelName: 'Pantauan Lokasi KKN',
-      channelDescription: 'Notifikasi persisten saat pemantauan lokasi KKN aktif',
+      channelDescription:
+          'Notifikasi persisten saat pemantauan lokasi KKN aktif',
       channelImportance: NotificationChannelImportance.DEFAULT,
       priority: NotificationPriority.HIGH,
     ),
@@ -763,68 +877,118 @@ Future<ServiceRequestResult> startKknForegroundService({
   // Simpan data target ke SharedPreferences agar bisa diakses di background isolate
   final prefs = await SharedPreferences.getInstance();
   final today = DateTime.now().toLocal().toString().substring(0, 10);
-  
+
   if (userId != null && userId.isNotEmpty) {
     await prefs.setString(KknBgPrefKeys.userId, userId);
   }
 
   if (initialAccumulatedSeconds != null) {
     await prefs.setString(KknBgPrefKeys.accumulatedDate, today);
-    await prefs.setInt(KknBgPrefKeys.accumulatedSeconds, initialAccumulatedSeconds);
+    await prefs.setInt(
+      KknBgPrefKeys.accumulatedSeconds,
+      initialAccumulatedSeconds,
+    );
     if (userId != null && userId.isNotEmpty) {
       await prefs.setString('${KknBgPrefKeys.accumulatedDate}_$userId', today);
-      await prefs.setInt('${KknBgPrefKeys.accumulatedSeconds}_$userId', initialAccumulatedSeconds);
+      await prefs.setInt(
+        '${KknBgPrefKeys.accumulatedSeconds}_$userId',
+        initialAccumulatedSeconds,
+      );
     }
   }
 
   if (zoneEntryTime != null) {
-    await prefs.setString(KknBgPrefKeys.zoneEntryTime, zoneEntryTime.toIso8601String());
+    await prefs.setString(
+      KknBgPrefKeys.zoneEntryTime,
+      zoneEntryTime.toIso8601String(),
+    );
     if (userId != null && userId.isNotEmpty) {
-      await prefs.setString('${KknBgPrefKeys.zoneEntryTime}_$userId', zoneEntryTime.toIso8601String());
+      await prefs.setString(
+        '${KknBgPrefKeys.zoneEntryTime}_$userId',
+        zoneEntryTime.toIso8601String(),
+      );
     }
   }
-  
-  await prefs.setDouble(KknBgPrefKeys.targetLat, 
-    double.tryParse(targetData['latitude']?.toString() ?? targetData['lat']?.toString() ?? '0') ?? 0.0);
-  await prefs.setDouble(KknBgPrefKeys.targetLng, 
-    double.tryParse(targetData['longitude']?.toString() ?? targetData['lng']?.toString() ?? '0') ?? 0.0);
-  await prefs.setDouble(KknBgPrefKeys.targetRadius, 
-    double.tryParse(targetData['radius']?.toString() ?? '150') ?? 150.0);
-  await prefs.setDouble(KknBgPrefKeys.geofenceBufferMeters, 
-    double.tryParse(targetData['geofenceBufferMeters']?.toString() ?? '15') ?? 15.0);
-  await prefs.setDouble(KknBgPrefKeys.invalidationHours, 
-    double.tryParse(targetData['invalidationHours']?.toString() ?? '2') ?? 2.0);
-  final double rawDurationMins = double.tryParse(targetData['targetDurationMinutes']?.toString() ?? '') ?? 2.0;
+
+  await prefs.setDouble(
+    KknBgPrefKeys.targetLat,
+    double.tryParse(
+          targetData['latitude']?.toString() ??
+              targetData['lat']?.toString() ??
+              '0',
+        ) ??
+        0.0,
+  );
+  await prefs.setDouble(
+    KknBgPrefKeys.targetLng,
+    double.tryParse(
+          targetData['longitude']?.toString() ??
+              targetData['lng']?.toString() ??
+              '0',
+        ) ??
+        0.0,
+  );
+  await prefs.setDouble(
+    KknBgPrefKeys.targetRadius,
+    double.tryParse(targetData['radius']?.toString() ?? '150') ?? 150.0,
+  );
+  await prefs.setDouble(
+    KknBgPrefKeys.geofenceBufferMeters,
+    double.tryParse(targetData['geofenceBufferMeters']?.toString() ?? '15') ??
+        15.0,
+  );
+  await prefs.setDouble(
+    KknBgPrefKeys.invalidationHours,
+    double.tryParse(targetData['invalidationHours']?.toString() ?? '2') ?? 2.0,
+  );
+  final double rawDurationMins =
+      double.tryParse(targetData['targetDurationMinutes']?.toString() ?? '') ??
+      2.0;
   int durationMins = rawDurationMins.ceil();
   if (rawDurationMins > 0 && rawDurationMins < 1.0) {
     durationMins = (rawDurationMins * 60).ceil();
   }
   if (durationMins <= 0) durationMins = 1;
   await prefs.setInt(KknBgPrefKeys.targetDuration, durationMins);
-  
+
   if (targetData['scheduleId'] != null || targetData['id'] != null) {
-    await prefs.setString(KknBgPrefKeys.scheduleId, 
-      targetData['scheduleId']?.toString() ?? targetData['id']?.toString() ?? '');
+    await prefs.setString(
+      KknBgPrefKeys.scheduleId,
+      targetData['scheduleId']?.toString() ??
+          targetData['id']?.toString() ??
+          '',
+    );
   }
-  
+
   // Simpan polygon jika ada
   if (targetData['polygon'] != null) {
-    await prefs.setString(KknBgPrefKeys.targetPolygon, jsonEncode(targetData['polygon']));
+    await prefs.setString(
+      KknBgPrefKeys.targetPolygon,
+      jsonEncode(targetData['polygon']),
+    );
   }
-  
+
   // Simpan end time jika ada
-  final endTimeStr = targetData['batasWaktuAbsen'] ?? targetData['endTime'] ?? targetData['end_time'];
+  final endTimeStr =
+      targetData['batasWaktuAbsen'] ??
+      targetData['endTime'] ??
+      targetData['end_time'];
   if (endTimeStr != null) {
     await prefs.setString(KknBgPrefKeys.targetEndTime, endTimeStr.toString());
   }
-  
+
   // Simpan API config
-  if (apiBaseUrl != null) await prefs.setString(KknBgPrefKeys.apiBaseUrl, apiBaseUrl);
-  if (authToken != null) await prefs.setString(KknBgPrefKeys.authToken, authToken);
-  
+  if (apiBaseUrl != null)
+    await prefs.setString(KknBgPrefKeys.apiBaseUrl, apiBaseUrl);
+  if (authToken != null)
+    await prefs.setString(KknBgPrefKeys.authToken, authToken);
+
   // Simpan waktu mulai service
-  await prefs.setString(KknBgPrefKeys.serviceStartTime, DateTime.now().toIso8601String());
-  
+  await prefs.setString(
+    KknBgPrefKeys.serviceStartTime,
+    DateTime.now().toIso8601String(),
+  );
+
   // Start service
   return await FlutterForegroundTask.startService(
     serviceId: 256,

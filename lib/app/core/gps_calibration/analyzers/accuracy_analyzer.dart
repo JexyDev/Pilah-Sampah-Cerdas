@@ -18,8 +18,8 @@ class AccuracyAnalyzer {
   static double score(List<Position> samples) {
     if (samples.isEmpty) return 0.0;
 
-    final avg = samples.map((s) => s.accuracy).reduce((a, b) => a + b) /
-        samples.length;
+    final avg =
+        samples.map((s) => s.accuracy).reduce((a, b) => a + b) / samples.length;
 
     return _accuracyToScore(avg);
   }

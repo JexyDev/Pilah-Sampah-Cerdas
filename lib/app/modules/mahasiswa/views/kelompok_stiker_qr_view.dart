@@ -33,62 +33,74 @@ class KelompokStikerQrView extends ConsumerWidget {
       body: state.isLoading
           ? const Center(child: CircularProgressIndicator())
           : state.errorMessage != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                        const SizedBox(height: 16),
-                        Text(
-                          state.errorMessage!,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(fontSize: 14),
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () => controller.loadData(),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: const Text('Coba Lagi', style: TextStyle(color: Colors.white)),
-                        ),
-                      ],
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      size: 48,
+                      color: Colors.red,
                     ),
-                  ),
-                )
-              : state.qrData == null
-                  ? const Center(child: Text('Data tidak tersedia'))
-                  : RefreshIndicator(
-                      onRefresh: controller.loadData,
-                      color: AppColors.primary,
-                      child: Column(
-                        children: [
-                          _buildHeader(state.qrData!),
-                          _buildFilterTabs(state, controller),
-                          Expanded(
-                            child: ListView.builder(
-                              padding: const EdgeInsets.all(16),
-                              itemCount: state.filteredItems.length,
-                              itemBuilder: (context, index) {
-                                final item = state.filteredItems[index];
-                                return _buildCardItem(item);
-                              },
-                            ),
-                          ),
-                        ],
+                    const SizedBox(height: 16),
+                    Text(
+                      state.errorMessage!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => controller.loadData(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        'Coba Lagi',
+                        style: TextStyle(color: Colors.white),
                       ),
                     ),
-      bottomNavigationBar: (state.qrData != null && !state.isLoading && state.errorMessage == null)
+                  ],
+                ),
+              ),
+            )
+          : state.qrData == null
+          ? const Center(child: Text('Data tidak tersedia'))
+          : RefreshIndicator(
+              onRefresh: controller.loadData,
+              color: AppColors.primary,
+              child: Column(
+                children: [
+                  _buildHeader(state.qrData!),
+                  _buildFilterTabs(state, controller),
+                  Expanded(
+                    child: ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: state.filteredItems.length,
+                      itemBuilder: (context, index) {
+                        final item = state.filteredItems[index];
+                        return _buildCardItem(item);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+      bottomNavigationBar:
+          (state.qrData != null &&
+              !state.isLoading &&
+              state.errorMessage == null)
           ? SafeArea(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: ElevatedButton.icon(
-                  onPressed: state.isLoading ? null : () => controller.exportData(),
+                  onPressed: state.isLoading
+                      ? null
+                      : () => controller.exportData(),
                   icon: const Icon(Icons.print, color: Colors.white),
                   label: const Text(
                     'Kirim ke Percetakan (PDF)',
@@ -132,7 +144,11 @@ class KelompokStikerQrView extends ConsumerWidget {
           const SizedBox(height: 4),
           Row(
             children: [
-              const Icon(Icons.person, size: 14, color: AppColors.textSecondary),
+              const Icon(
+                Icons.person,
+                size: 14,
+                color: AppColors.textSecondary,
+              ),
               const SizedBox(width: 4),
               Text(
                 'DPL: ${data.kelompok.dpl}',
@@ -149,15 +165,28 @@ class KelompokStikerQrView extends ConsumerWidget {
             decoration: BoxDecoration(
               color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.3),
+              ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildStatItem('${data.kuota.tersediaBelumTerpakai}', 'Tersedia'),
-                Container(width: 1, height: 30, color: AppColors.primary.withValues(alpha: 0.3)),
+                _buildStatItem(
+                  '${data.kuota.tersediaBelumTerpakai}',
+                  'Tersedia',
+                ),
+                Container(
+                  width: 1,
+                  height: 30,
+                  color: AppColors.primary.withValues(alpha: 0.3),
+                ),
                 _buildStatItem('${data.kuota.sudahTerikatWarga}', 'Terpasang'),
-                Container(width: 1, height: 30, color: AppColors.primary.withValues(alpha: 0.3)),
+                Container(
+                  width: 1,
+                  height: 30,
+                  color: AppColors.primary.withValues(alpha: 0.3),
+                ),
                 _buildStatItem('${data.kuota.targetTotal}', 'Total Stiker'),
               ],
             ),
@@ -180,22 +209,26 @@ class KelompokStikerQrView extends ConsumerWidget {
         ),
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: AppColors.textSecondary,
-          ),
+          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
         ),
       ],
     );
   }
 
-  Widget _buildFilterTabs(KelompokStikerQrState state, KelompokStikerQrController controller) {
+  Widget _buildFilterTabs(
+    KelompokStikerQrState state,
+    KelompokStikerQrController controller,
+  ) {
     final qrData = state.qrData;
     if (qrData == null) return const SizedBox.shrink();
 
     final allCount = qrData.items.length;
-    final organikCount = qrData.items.where((e) => e.jenis.toUpperCase() == 'ORGANIK').length;
-    final anorganikCount = qrData.items.where((e) => e.jenis.toUpperCase() == 'ANORGANIK').length;
+    final organikCount = qrData.items
+        .where((e) => e.jenis.toUpperCase() == 'ORGANIK')
+        .length;
+    final anorganikCount = qrData.items
+        .where((e) => e.jenis.toUpperCase() == 'ANORGANIK')
+        .length;
 
     return Container(
       color: Colors.white,
@@ -204,18 +237,38 @@ class KelompokStikerQrView extends ConsumerWidget {
         scrollDirection: Axis.horizontal,
         child: Row(
           children: [
-            _buildFilterChip('ALL', 'Semua ($allCount)', state.selectedFilter, controller),
+            _buildFilterChip(
+              'ALL',
+              'Semua ($allCount)',
+              state.selectedFilter,
+              controller,
+            ),
             const SizedBox(width: 8),
-            _buildFilterChip('ORGANIK', 'Organik ($organikCount)', state.selectedFilter, controller),
+            _buildFilterChip(
+              'ORGANIK',
+              'Organik ($organikCount)',
+              state.selectedFilter,
+              controller,
+            ),
             const SizedBox(width: 8),
-            _buildFilterChip('ANORGANIK', 'Anorganik ($anorganikCount)', state.selectedFilter, controller),
+            _buildFilterChip(
+              'ANORGANIK',
+              'Anorganik ($anorganikCount)',
+              state.selectedFilter,
+              controller,
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildFilterChip(String value, String label, String selected, KelompokStikerQrController controller) {
+  Widget _buildFilterChip(
+    String value,
+    String label,
+    String selected,
+    KelompokStikerQrController controller,
+  ) {
     final isSelected = selected == value;
     return InkWell(
       onTap: () => controller.setFilter(value),
@@ -251,7 +304,10 @@ class KelompokStikerQrView extends ConsumerWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: borderColor.withValues(alpha: 0.5), width: 1.5),
+        border: Border.all(
+          color: borderColor.withValues(alpha: 0.5),
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -296,7 +352,10 @@ class KelompokStikerQrView extends ConsumerWidget {
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: borderColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4),
@@ -312,9 +371,14 @@ class KelompokStikerQrView extends ConsumerWidget {
                       ),
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
-                          color: isBound ? Colors.blue.withValues(alpha: 0.1) : Colors.green.withValues(alpha: 0.1),
+                          color: isBound
+                              ? Colors.blue.withValues(alpha: 0.1)
+                              : Colors.green.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -322,7 +386,9 @@ class KelompokStikerQrView extends ConsumerWidget {
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
-                            color: isBound ? Colors.blue[700] : Colors.green[700],
+                            color: isBound
+                                ? Colors.blue[700]
+                                : Colors.green[700],
                           ),
                         ),
                       ),
@@ -341,7 +407,11 @@ class KelompokStikerQrView extends ConsumerWidget {
                         children: [
                           Row(
                             children: [
-                              const Icon(Icons.person, size: 12, color: AppColors.textSecondary),
+                              const Icon(
+                                Icons.person,
+                                size: 12,
+                                color: AppColors.textSecondary,
+                              ),
                               const SizedBox(width: 4),
                               Expanded(
                                 child: Text(
@@ -358,7 +428,11 @@ class KelompokStikerQrView extends ConsumerWidget {
                           const SizedBox(height: 2),
                           Row(
                             children: [
-                              const Icon(Icons.location_on, size: 12, color: AppColors.textSecondary),
+                              const Icon(
+                                Icons.location_on,
+                                size: 12,
+                                color: AppColors.textSecondary,
+                              ),
                               const SizedBox(width: 4),
                               Expanded(
                                 child: Text(

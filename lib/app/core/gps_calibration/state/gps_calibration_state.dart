@@ -117,16 +117,16 @@ class GpsCalibrationState extends Equatable {
 
   @override
   List<Object?> get props => [
-        status,
-        currentSample,
-        totalSamples,
-        stabilityScore,
-        finalPosition,
-        avgAccuracyMeters,
-        jumpCount,
-        isPreciseLocation,
-        guideActions,
-        retryCount,
-        errorMessage,
-      ];
+    status,
+    currentSample,
+    totalSamples,
+    stabilityScore,
+    finalPosition,
+    avgAccuracyMeters,
+    jumpCount,
+    isPreciseLocation,
+    guideActions,
+    retryCount,
+    errorMessage,
+  ];
 }

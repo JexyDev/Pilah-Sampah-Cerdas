@@ -4,16 +4,23 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class OfflineCacheInterceptor extends Interceptor {
   @override
-  Future<void> onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
+  Future<void> onRequest(
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) async {
     // We don't block the request here because we want fresh data if online.
     // If we wanted aggressive caching, we could return cache here.
     return handler.next(options);
   }
 
   @override
-  Future<void> onResponse(Response response, ResponseInterceptorHandler handler) async {
+  Future<void> onResponse(
+    Response response,
+    ResponseInterceptorHandler handler,
+  ) async {
     // Jika request adalah GET dan berhasil, simpan responsenya
-    if (response.requestOptions.method.toUpperCase() == 'GET' && response.statusCode == 200) {
+    if (response.requestOptions.method.toUpperCase() == 'GET' &&
+        response.statusCode == 200) {
       try {
         final prefs = await SharedPreferences.getInstance();
         final key = _getCacheKey(response.requestOptions);
@@ -27,9 +34,13 @@ class OfflineCacheInterceptor extends Interceptor {
   }
 
   @override
-  Future<void> onError(DioException err, ErrorInterceptorHandler handler) async {
+  Future<void> onError(
+    DioException err,
+    ErrorInterceptorHandler handler,
+  ) async {
     // Jika error terjadi karena masalah koneksi/jaringan (Offline)
-    if (_isNetworkError(err) && err.requestOptions.method.toUpperCase() == 'GET') {
+    if (_isNetworkError(err) &&
+        err.requestOptions.method.toUpperCase() == 'GET') {
       try {
         final prefs = await SharedPreferences.getInstance();
         final key = _getCacheKey(err.requestOptions);

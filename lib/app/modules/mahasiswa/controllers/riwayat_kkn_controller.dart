@@ -40,10 +40,10 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
 
   Future<void> fetchHistory() async {
     state = state.copyWith(isLoading: true, errorMessage: null);
-    
+
     try {
       final kknRepo = ref.read(kknRepositoryProvider);
-      
+
       final List<KknHistoryLog> parsedLogs = [];
 
       // 1. Ambil data Izin
@@ -52,8 +52,10 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
         for (final izin in izinList) {
           final kategori = izin['kategori']?.toString() ?? 'Izin';
           final status = izin['status']?.toString().toUpperCase();
-          final timestampStr = izin['createdAt']?.toString() ?? DateTime.now().toIso8601String();
-          final timestamp = (DateTime.tryParse(timestampStr) ?? DateTime.now()).toLocal();
+          final timestampStr =
+              izin['createdAt']?.toString() ?? DateTime.now().toIso8601String();
+          final timestamp = (DateTime.tryParse(timestampStr) ?? DateTime.now())
+              .toLocal();
 
           String title = 'Pengajuan Izin';
           String subtitle = 'Mengajukan $kategori';
@@ -73,14 +75,16 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
             isGpsActive = null;
           }
 
-          parsedLogs.add(KknHistoryLog(
-            title: title,
-            subtitle: subtitle,
-            timestamp: timestamp,
-            type: KknHistoryType.izin,
-            points: null,
-            isGpsActive: isGpsActive,
-          ));
+          parsedLogs.add(
+            KknHistoryLog(
+              title: title,
+              subtitle: subtitle,
+              timestamp: timestamp,
+              type: KknHistoryType.izin,
+              points: null,
+              isGpsActive: isGpsActive,
+            ),
+          );
         }
       } catch (_) {}
 
@@ -89,7 +93,7 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
         final rawData = await kknRepo.getActivityLog();
         for (final e in rawData) {
           final Map<String, dynamic> data = e as Map<String, dynamic>;
-          
+
           final typeStr = data['type']?.toString().toLowerCase() ?? '';
           KknHistoryType type;
           if (typeStr == 'gps' || typeStr == 'location') {
@@ -99,23 +103,34 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
           } else {
             type = KknHistoryType.aktivasi;
           }
-          
-          parsedLogs.add(KknHistoryLog(
-            title: data['title']?.toString() ?? 'Riwayat Aktivitas',
-            subtitle: data['subtitle']?.toString() ?? '',
-            timestamp: (DateTime.tryParse(data['timestamp']?.toString() ?? '') ?? DateTime.now()).toLocal(),
-            type: type,
-            points: null,
-            isGpsActive: data['isGpsActive'] as bool?,
-            statusKehadiran: data['statusKehadiran']?.toString() ?? data['status']?.toString(),
-            durationFormatted: data['durationFormatted']?.toString() ?? data['durasiFormatted']?.toString(),
-            scheduleId: data['scheduleId']?.toString() ?? data['kegiatanId']?.toString(),
-            isMemenuhiDurasi: data['isMemenuhiDurasi'] as bool?,
-            statusDisplay: data['statusDisplay']?.toString(),
-            durasiAktualMenit: data['durasiAktualMenit'] as int?,
-            durasiTargetMenit: data['durasiTargetMenit'] as int?,
-            rawData: data,
-          ));
+
+          parsedLogs.add(
+            KknHistoryLog(
+              title: data['title']?.toString() ?? 'Riwayat Aktivitas',
+              subtitle: data['subtitle']?.toString() ?? '',
+              timestamp:
+                  (DateTime.tryParse(data['timestamp']?.toString() ?? '') ??
+                          DateTime.now())
+                      .toLocal(),
+              type: type,
+              points: null,
+              isGpsActive: data['isGpsActive'] as bool?,
+              statusKehadiran:
+                  data['statusKehadiran']?.toString() ??
+                  data['status']?.toString(),
+              durationFormatted:
+                  data['durationFormatted']?.toString() ??
+                  data['durasiFormatted']?.toString(),
+              scheduleId:
+                  data['scheduleId']?.toString() ??
+                  data['kegiatanId']?.toString(),
+              isMemenuhiDurasi: data['isMemenuhiDurasi'] as bool?,
+              statusDisplay: data['statusDisplay']?.toString(),
+              durasiAktualMenit: data['durasiAktualMenit'] as int?,
+              durasiTargetMenit: data['durasiTargetMenit'] as int?,
+              rawData: data,
+            ),
+          );
         }
       } catch (_) {}
 
@@ -124,31 +139,52 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
         final historyData = await kknRepo.getKknHistory();
         for (final e in historyData) {
           final Map<String, dynamic> data = e as Map<String, dynamic>;
-          
+
           final typeStr = data['type']?.toString().toLowerCase() ?? '';
-          final type = (typeStr == 'aktivasi') ? KknHistoryType.aktivasi : KknHistoryType.gps;
-          
+          final type = (typeStr == 'aktivasi')
+              ? KknHistoryType.aktivasi
+              : KknHistoryType.gps;
+
           String title = data['title']?.toString() ?? 'Riwayat Kegiatan';
           if (data['kegiatan'] != null && data['kegiatan'] is Map) {
-              title = data['kegiatan']['name']?.toString() ?? title;
+            title = data['kegiatan']['name']?.toString() ?? title;
           }
-          
-          parsedLogs.add(KknHistoryLog(
-            title: title,
-            subtitle: data['subtitle']?.toString() ?? data['statusKehadiran']?.toString() ?? 'Presensi KKN',
-            timestamp: (DateTime.tryParse(data['timestamp']?.toString() ?? data['createdAt']?.toString() ?? '') ?? DateTime.now()).toLocal(),
-            type: type,
-            points: data['points'] as int?,
-            isGpsActive: data['isGpsActive'] as bool?,
-            statusKehadiran: data['statusKehadiran']?.toString() ?? data['status']?.toString(),
-            durationFormatted: data['durationFormatted']?.toString() ?? data['durasiFormatted']?.toString(),
-            scheduleId: data['scheduleId']?.toString() ?? data['kegiatanId']?.toString() ?? data['id']?.toString(),
-            isMemenuhiDurasi: data['isMemenuhiDurasi'] as bool?,
-            statusDisplay: data['statusDisplay']?.toString(),
-            durasiAktualMenit: data['durasiAktualMenit'] as int?,
-            durasiTargetMenit: data['durasiTargetMenit'] as int?,
-            rawData: data,
-          ));
+
+          parsedLogs.add(
+            KknHistoryLog(
+              title: title,
+              subtitle:
+                  data['subtitle']?.toString() ??
+                  data['statusKehadiran']?.toString() ??
+                  'Presensi KKN',
+              timestamp:
+                  (DateTime.tryParse(
+                            data['timestamp']?.toString() ??
+                                data['createdAt']?.toString() ??
+                                '',
+                          ) ??
+                          DateTime.now())
+                      .toLocal(),
+              type: type,
+              points: data['points'] as int?,
+              isGpsActive: data['isGpsActive'] as bool?,
+              statusKehadiran:
+                  data['statusKehadiran']?.toString() ??
+                  data['status']?.toString(),
+              durationFormatted:
+                  data['durationFormatted']?.toString() ??
+                  data['durasiFormatted']?.toString(),
+              scheduleId:
+                  data['scheduleId']?.toString() ??
+                  data['kegiatanId']?.toString() ??
+                  data['id']?.toString(),
+              isMemenuhiDurasi: data['isMemenuhiDurasi'] as bool?,
+              statusDisplay: data['statusDisplay']?.toString(),
+              durasiAktualMenit: data['durasiAktualMenit'] as int?,
+              durasiTargetMenit: data['durasiTargetMenit'] as int?,
+              rawData: data,
+            ),
+          );
         }
       } catch (e) {
         // Abaikan jika error / endpoint belum siap
@@ -158,38 +194,58 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
       try {
         final kegiatanAktif = await kknRepo.getKegiatanAktif();
         for (final data in kegiatanAktif) {
-          if (data['status'] == 'SELESAI' || data['attendanceStatus'] == 'HADIR' || data['attendanceStatus'] == 'SELESAI') {
-            final title = data['nama']?.toString() ?? data['namaKegiatan']?.toString() ?? 'Riwayat Kegiatan';
-            var dateStr = data['tanggal']?.toString() ?? data['tanggalKegiatan']?.toString() ?? '';
-            var timeStr = data['time']?.toString() ?? data['jamKegiatan']?.toString() ?? '';
-            
+          if (data['status'] == 'SELESAI' ||
+              data['attendanceStatus'] == 'HADIR' ||
+              data['attendanceStatus'] == 'SELESAI') {
+            final title =
+                data['nama']?.toString() ??
+                data['namaKegiatan']?.toString() ??
+                'Riwayat Kegiatan';
+            var dateStr =
+                data['tanggal']?.toString() ??
+                data['tanggalKegiatan']?.toString() ??
+                '';
+            var timeStr =
+                data['time']?.toString() ??
+                data['jamKegiatan']?.toString() ??
+                '';
+
             DateTime parsedDate = DateTime.tryParse(dateStr) ?? DateTime.now();
             if (timeStr.isNotEmpty) {
-               var startTime = timeStr.split('-').first.trim();
-               var parts = startTime.split(':');
-               if (parts.length == 2) {
-                 var h = int.tryParse(parts[0]) ?? 0;
-                 var m = int.tryParse(parts[1]) ?? 0;
-                 parsedDate = DateTime(parsedDate.year, parsedDate.month, parsedDate.day, h, m);
-               }
+              var startTime = timeStr.split('-').first.trim();
+              var parts = startTime.split(':');
+              if (parts.length == 2) {
+                var h = int.tryParse(parts[0]) ?? 0;
+                var m = int.tryParse(parts[1]) ?? 0;
+                parsedDate = DateTime(
+                  parsedDate.year,
+                  parsedDate.month,
+                  parsedDate.day,
+                  h,
+                  m,
+                );
+              }
             }
             final timestamp = parsedDate.toLocal();
 
-            parsedLogs.add(KknHistoryLog(
-              title: title,
-              subtitle: 'Kegiatan Selesai',
-              timestamp: timestamp,
-              type: KknHistoryType.gps,
-              points: null,
-              isGpsActive: true,
-              statusKehadiran: data['attendanceStatus']?.toString(),
-              durationFormatted: null,
-              scheduleId: data['id']?.toString() ?? data['scheduleId']?.toString(),
-              isMemenuhiDurasi: data['isMemenuhiDurasi'] as bool?,
-              statusDisplay: data['statusDisplay']?.toString(),
-              durasiAktualMenit: data['durasiAktualMenit'] as int?,
-              durasiTargetMenit: data['durasiTargetMenit'] as int?,
-            ));
+            parsedLogs.add(
+              KknHistoryLog(
+                title: title,
+                subtitle: 'Kegiatan Selesai',
+                timestamp: timestamp,
+                type: KknHistoryType.gps,
+                points: null,
+                isGpsActive: true,
+                statusKehadiran: data['attendanceStatus']?.toString(),
+                durationFormatted: null,
+                scheduleId:
+                    data['id']?.toString() ?? data['scheduleId']?.toString(),
+                isMemenuhiDurasi: data['isMemenuhiDurasi'] as bool?,
+                statusDisplay: data['statusDisplay']?.toString(),
+                durasiAktualMenit: data['durasiAktualMenit'] as int?,
+                durasiTargetMenit: data['durasiTargetMenit'] as int?,
+              ),
+            );
           }
         }
       } catch (e) {
@@ -202,17 +258,26 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
         for (final program in programList) {
           final title = 'Program: ${program['judul']?.toString() ?? 'Kerja'}';
           final status = program['status']?.toString().toUpperCase();
-          final isGpsActive = status == 'APPROVED' ? true : (status == 'REJECTED' ? false : null);
-          final subtitle = status == 'APPROVED' ? 'Disetujui DPL' : (status == 'REJECTED' ? 'Ditolak DPL' : 'Menunggu Review');
-          parsedLogs.add(KknHistoryLog(
-            title: title,
-            subtitle: subtitle,
-            timestamp: (DateTime.tryParse(program['createdAt']?.toString() ?? '') ?? DateTime.now()).toLocal(),
-            type: KknHistoryType.izin,
-            points: null,
-            isGpsActive: isGpsActive,
-            statusKehadiran: status,
-          ));
+          final isGpsActive = status == 'APPROVED'
+              ? true
+              : (status == 'REJECTED' ? false : null);
+          final subtitle = status == 'APPROVED'
+              ? 'Disetujui DPL'
+              : (status == 'REJECTED' ? 'Ditolak DPL' : 'Menunggu Review');
+          parsedLogs.add(
+            KknHistoryLog(
+              title: title,
+              subtitle: subtitle,
+              timestamp:
+                  (DateTime.tryParse(program['createdAt']?.toString() ?? '') ??
+                          DateTime.now())
+                      .toLocal(),
+              type: KknHistoryType.izin,
+              points: null,
+              isGpsActive: isGpsActive,
+              statusKehadiran: status,
+            ),
+          );
         }
       } catch (_) {}
 
@@ -223,7 +288,8 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
       final List<KknHistoryLog> uniqueLogs = [];
       final Set<String> seen = {};
       for (final log in parsedLogs) {
-        final key = '${log.type}_${log.scheduleId}_${log.title}_${log.timestamp.toIso8601String()}';
+        final key =
+            '${log.type}_${log.scheduleId}_${log.title}_${log.timestamp.toIso8601String()}';
         if (!seen.contains(key)) {
           seen.add(key);
           uniqueLogs.add(log);
@@ -235,7 +301,11 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
         summaryData = await kknRepo.getTimesheetSummary();
       } catch (_) {}
 
-      state = state.copyWith(isLoading: false, logs: uniqueLogs, timesheetSummary: summaryData);
+      state = state.copyWith(
+        isLoading: false,
+        logs: uniqueLogs,
+        timesheetSummary: summaryData,
+      );
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -247,6 +317,7 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
   Future<void> refresh() => fetchHistory();
 }
 
-final riwayatKknControllerProvider = StateNotifierProvider<RiwayatKknNotifier, RiwayatKknState>((ref) {
-  return RiwayatKknNotifier(ref);
-});
+final riwayatKknControllerProvider =
+    StateNotifierProvider<RiwayatKknNotifier, RiwayatKknState>((ref) {
+      return RiwayatKknNotifier(ref);
+    });

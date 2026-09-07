@@ -28,11 +28,13 @@ class MapControls extends StatelessWidget {
             builder: (context, snapshot) {
               double rotation = 0.0;
               try {
-                rotation = snapshot.data?.camera.rotation ?? mapController.camera.rotation;
+                rotation =
+                    snapshot.data?.camera.rotation ??
+                    mapController.camera.rotation;
               } catch (_) {
                 // Ignore if camera is not ready yet
               }
-              
+
               return _CompassButton(
                 bearing: rotation,
                 onPressed: () {
@@ -42,10 +44,7 @@ class MapControls extends StatelessWidget {
             },
           ),
           const SizedBox(height: 12),
-          _MyLocationButton(
-            onPressed: onRecenter,
-            isGpsBad: isGpsBad,
-          ),
+          _MyLocationButton(onPressed: onRecenter, isGpsBad: isGpsBad),
         ],
       ),
     );
@@ -56,10 +55,7 @@ class _CompassButton extends StatelessWidget {
   final double bearing;
   final VoidCallback onPressed;
 
-  const _CompassButton({
-    required this.bearing,
-    required this.onPressed,
-  });
+  const _CompassButton({required this.bearing, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
@@ -94,10 +90,7 @@ class _MyLocationButton extends StatelessWidget {
   final VoidCallback onPressed;
   final bool isGpsBad;
 
-  const _MyLocationButton({
-    required this.onPressed,
-    required this.isGpsBad,
-  });
+  const _MyLocationButton({required this.onPressed, required this.isGpsBad});
 
   @override
   Widget build(BuildContext context) {
