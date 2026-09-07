@@ -9,6 +9,7 @@ import '../../auth/controllers/auth_controller.dart';
 import '../../riwayat/controllers/riwayat_controller.dart' show pointHistoryProvider;
 import '../controllers/mahasiswa_controller.dart';
 import '../controllers/riwayat_kkn_controller.dart';
+import '../../../core/utils/input_sanitizer.dart';
 
 final pengajuanIzinCountProvider = FutureProvider.autoDispose<int>((ref) async {
   try {
@@ -481,7 +482,7 @@ class _PoinHistoryItem extends StatelessWidget {
     final formattedDate = DateFormat('dd MMM yyyy, HH:mm').format(item.createdAt.toLocal());
 
     // Map description to standardized title
-    String title = item.description;
+    String title = InputSanitizer.cleanSystemMessage(item.description);
     IconData icon = Icons.check_circle_outline_rounded;
 
     if (title.toLowerCase().contains('aktivasi')) {

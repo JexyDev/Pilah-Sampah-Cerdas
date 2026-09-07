@@ -276,6 +276,10 @@ class KelompokKknView extends ConsumerWidget {
                 _buildGoogleDriveCard(context, kelompokData.linkGoogleDrive),
                 const SizedBox(height: 16),
 
+                // Card Stiker QR Kelompok
+                _buildStikerQrCard(context),
+                const SizedBox(height: 16),
+
                 // Card Total Poin Kelompok (Akumulasi)
                 Container(
                   padding: const EdgeInsets.all(20),
@@ -495,6 +499,67 @@ class KelompokKknView extends ConsumerWidget {
       ),
     );
   }
+  Widget _buildStikerQrCard(BuildContext context) {
+    return InkWell(
+      onTap: () {
+        Navigator.pushNamed(context, AppRoutes.kelompokStikerQr);
+      },
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.qr_code_scanner, color: AppColors.primary),
+            ),
+            const SizedBox(width: 16),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Stiker QR Kelompok (10x15cm)',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Lihat kuota & print stiker QR fisik',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildPoskoCard(BuildContext context, WidgetRef ref, bool isCurrentUserLeader) {
     final poskoState = ref.watch(poskoKknProvider);
     final posko = poskoState.poskoResponse?.posko;

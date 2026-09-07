@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
 import '../../../data/models/notification_entity.dart';
+import '../../../core/utils/input_sanitizer.dart';
 
 class DetailNotifikasiView extends StatelessWidget {
   const DetailNotifikasiView({super.key});
@@ -130,7 +131,7 @@ class DetailNotifikasiView extends StatelessWidget {
             ),
             const SizedBox(height: AppDimensions.xl),
             Text(
-              item.title,
+              InputSanitizer.cleanSystemMessage(item.title),
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 20,
@@ -156,7 +157,7 @@ class DetailNotifikasiView extends StatelessWidget {
                 border: Border.all(color: AppColors.border),
               ),
               child: Text(
-                item.desc,
+                InputSanitizer.cleanSystemMessage(item.desc),
                 style: const TextStyle(
                   fontSize: 15,
                   height: 1.5,

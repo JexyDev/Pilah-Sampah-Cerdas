@@ -126,21 +126,26 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
               child: CustomScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
-                  _buildAppBar(state),
+                  SliverToBoxAdapter(
+                    child: _buildHeader(state),
+                  ),
                   SliverPadding(
-                    padding: const EdgeInsets.all(AppDimensions.md),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     sliver: SliverList(
                       delegate: SliverChildListDelegate([
                         _buildTargetKegiatan(state, locationState, kknLocationState),
-                        const SizedBox(height: AppDimensions.md),
+                        const SizedBox(height: 8),
                         _buildActiveTimelineCard(),
-                        const SizedBox(height: AppDimensions.md),
+                        const SizedBox(height: 8),
                         _buildSummaryCards(state),
-                        const SizedBox(height: AppDimensions.lg),
+                        const SizedBox(height: 8),
                         _buildQuickActions(kknLocationState),
-                        const SizedBox(height: AppDimensions.lg),
+                        const SizedBox(height: 8),
                         _buildWargaSection(state),
-                        const SizedBox(height: 80),
+                        const SizedBox(height: 40),
                       ]),
                     ),
                   ),
@@ -222,11 +227,13 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
     );
   }
 
-  SliverAppBar _buildAppBar(MahasiswaState state) {
+  Widget _buildHeader(MahasiswaState state) {
     final dashboard = state.dashboard;
     final user = ref.watch(authProvider).user;
     final unreadCount = ref.watch(mahasiswaUnreadNotificationCountProvider);
     final isOnline = ref.watch(isOnlineProvider);
+    final kknLocationState = ref.watch(kknLocationProvider);
+    final locationPingState = ref.watch(locationPingControllerProvider);
 
     final name = (user?.name != null && user!.name.trim().isNotEmpty)
         ? user.name
@@ -257,295 +264,322 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
     final jurusan = jurusanRaw;
     final fotoUrl = user?.fotoProfil;
 
-    return SliverAppBar(
-      expandedHeight: 270,
-      pinned: true,
-      backgroundColor: Colors.white,
-      foregroundColor: AppColors.textPrimary,
-      elevation: 0.5,
-      actions: [
-        // Online Indicator
-        Center(
-          child: Container(
-            margin: const EdgeInsets.only(right: 12),
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: isOnline
-                  ? AppColors.primaryGreen.withValues(alpha: 0.1)
-                  : AppColors.dangerRed.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isOnline
-                    ? AppColors.primaryGreen.withValues(alpha: 0.3)
-                    : AppColors.dangerRed.withValues(alpha: 0.3),
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 8,
-                  height: 8,
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          bottom: BorderSide(color: AppColors.border, width: 0.5),
+        ),
+      ),
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 8,
+        left: 16,
+        right: 16,
+        bottom: 10,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Baris 1: Avatar + Info Mahasiswa + Trailing Actions (Online & Notifikasi)
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              GestureDetector(
+                onTap: () => Navigator.pushNamed(
+                  context,
+                  AppRoutes.editProfilMahasiswa,
+                ),
+                behavior: HitTestBehavior.opaque,
+                child: Container(
+                  width: 44,
+                  height: 44,
                   decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isOnline
-                        ? AppColors.primaryGreen
-                        : AppColors.dangerRed,
-                    boxShadow: [
-                      if (isOnline)
-                        BoxShadow(
-                          color: AppColors.primaryGreen.withValues(alpha: 0.4),
-                          blurRadius: 4,
-                          spreadRadius: 1,
+                    color: AppColors.backgroundCanvas,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: _buildHeaderAvatar(fotoUrl, name),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    AppRoutes.editProfilMahasiswa,
+                  ),
+                  behavior: HitTestBehavior.opaque,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Sapaan + Badge MAHASISWA (Diposisikan di baris sapaan agar tidak mepet/nabrak status Online)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _getGreeting(),
+                            style: const TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 11,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 5,
+                              vertical: 1.5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.warningYellow,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text(
+                              'MAHASISWA',
+                              style: TextStyle(
+                                fontSize: 8,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      // Nama Mahasiswa memiliki baris horizontal penuh
+                      Text(
+                        name,
+                        style: const TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '$nim • $jenjang - $jurusan',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textSecondary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  isOnline ? 'Online' : 'Offline',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: isOnline
-                        ? AppColors.primaryGreen
-                        : AppColors.dangerRed,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        IconButton(
-          onPressed: () =>
-              Navigator.pushNamed(context, AppRoutes.mahasiswaNotifikasi),
-          icon: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Image.asset(
-                'assets/icons/notification.png',
-                color: AppColors.primaryGreen,
-                width: 24,
-                height: 24,
               ),
-              if (unreadCount > 0)
-                Positioned(
-                  top: -2,
-                  right: -2,
-                  child: Container(
-                    padding: const EdgeInsets.all(2),
-                    constraints: const BoxConstraints(
-                      minWidth: 16,
-                      minHeight: 16,
-                    ),
-                    decoration: const BoxDecoration(
-                      color: AppColors.dangerRed,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Text(
-                      unreadCount > 99 ? '99+' : '$unreadCount',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
+              const SizedBox(width: 8),
+              // Status Online terpisah dengan margin rapi
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isOnline
+                      ? AppColors.primaryGreen.withValues(alpha: 0.1)
+                      : AppColors.dangerRed.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isOnline
+                        ? AppColors.primaryGreen.withValues(alpha: 0.3)
+                        : AppColors.dangerRed.withValues(alpha: 0.3),
                   ),
                 ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 7,
+                      height: 7,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isOnline
+                            ? AppColors.primaryGreen
+                            : AppColors.dangerRed,
+                        boxShadow: [
+                          if (isOnline)
+                            BoxShadow(
+                              color: AppColors.primaryGreen.withValues(alpha: 0.4),
+                              blurRadius: 4,
+                              spreadRadius: 1,
+                            ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      isOnline ? 'Online' : 'Offline',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: isOnline
+                            ? AppColors.primaryGreen
+                            : AppColors.dangerRed,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              // Notifikasi
+              IconButton(
+                padding: const EdgeInsets.all(6),
+                constraints: const BoxConstraints(),
+                onPressed: () =>
+                    Navigator.pushNamed(context, AppRoutes.mahasiswaNotifikasi),
+                icon: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Image.asset(
+                      'assets/icons/notification.png',
+                      color: AppColors.primaryGreen,
+                      width: 22,
+                      height: 22,
+                    ),
+                    if (unreadCount > 0)
+                      Positioned(
+                        top: -2,
+                        right: -2,
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          constraints: const BoxConstraints(
+                            minWidth: 14,
+                            minHeight: 14,
+                          ),
+                          decoration: const BoxDecoration(
+                            color: AppColors.dangerRed,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(
+                            unreadCount > 99 ? '99+' : '$unreadCount',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 8,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ],
           ),
-        ),
-        const SizedBox(width: 8),
-      ],
-      flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          color: Colors.white,
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pushNamed(
-                      context,
-                      AppRoutes.editProfilMahasiswa,
+          const SizedBox(height: 8),
+          // Baris 2: Lokasi Penugasan & GPS Card Terstruktur (2 Tier agar alamat tidak terpotong)
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 10,
+              vertical: 7,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.primaryGreen.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: AppColors.primaryGreen.withValues(alpha: 0.16),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Tier 1: Kelurahan, RW, & Tombol Perbarui Alamat
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.location_on,
+                      size: 13,
+                      color: AppColors.primaryGreen,
                     ),
-                    behavior: HitTestBehavior.opaque,
-                    child: Row(
-                      children: [
-                        // Avatar profil gaya halaman Warga (Klik untuk Edit Profil / Lihat Foto)
-                        Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: AppColors.backgroundCanvas,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppColors.border),
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child: _buildHeaderAvatar(fotoUrl, name),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        '$kelurahan • RW $rw',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primaryGreen,
                         ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (!kknLocationState.isFetchingAddress &&
+                        (kknLocationState.currentPosition != null ||
+                            locationPingState.lastLatitude != null))
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () {
+                          final lat = kknLocationState.currentPosition?.latitude ??
+                              locationPingState.lastLatitude!;
+                          final lng = kknLocationState.currentPosition?.longitude ??
+                              locationPingState.lastLongitude!;
+                          ref.read(kknLocationProvider.notifier).fetchAddress(lat, lng);
+                        },
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 2),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
+                              Icon(Icons.refresh_rounded, size: 13, color: AppColors.primaryBlue),
+                              SizedBox(width: 3),
                               Text(
-                                _getGreeting(),
-                                style: const TextStyle(
-                                  color: AppColors.textSecondary,
-                                  fontSize: 12,
+                                'Perbarui',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.primaryBlue,
                                 ),
-                              ),
-                              const SizedBox(height: 3),
-                              Row(
-                                children: [
-                                  Flexible(
-                                    child: Text(
-                                      name,
-                                      style: const TextStyle(
-                                        color: AppColors.textPrimary,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.warningYellow,
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: const Text(
-                                      'MAHASISWA',
-                                      style: TextStyle(
-                                        fontSize: 9,
-                                        fontWeight: FontWeight.w700,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '$nim • $jenjang - $jurusan',
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
-                                  color: AppColors.textSecondary,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  const Icon(Icons.location_on, size: 12, color: AppColors.dangerRed),
-                                  const SizedBox(width: 4),
-                                  Expanded(
-                                    child: Row(
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            ref.watch(kknLocationProvider).isFetchingAddress
-                                                ? 'Mencari alamat...'
-                                                : (ref.watch(kknLocationProvider).currentAddress ??
-                                                    ((ref.watch(kknLocationProvider).currentPosition != null ||
-                                                            ref.watch(locationPingControllerProvider).lastLatitude != null)
-                                                        ? '${(ref.watch(kknLocationProvider).currentPosition?.latitude ?? ref.watch(locationPingControllerProvider).lastLatitude!).toStringAsFixed(5)}, ${(ref.watch(kknLocationProvider).currentPosition?.longitude ?? ref.watch(locationPingControllerProvider).lastLongitude!).toStringAsFixed(5)}'
-                                                        : 'Menunggu GPS...')),
-                                            style: const TextStyle(
-                                              fontSize: 10,
-                                                color: AppColors.textSecondary,
-                                              ),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                        ),
-                                        if (!ref.watch(kknLocationProvider).isFetchingAddress &&
-                                            (ref.watch(kknLocationProvider).currentPosition != null ||
-                                                ref.watch(locationPingControllerProvider).lastLatitude != null))
-                                          GestureDetector(
-                                            behavior: HitTestBehavior.opaque,
-                                            onTap: () {
-                                              final lat = ref.read(kknLocationProvider).currentPosition?.latitude ??
-                                                  ref.read(locationPingControllerProvider).lastLatitude!;
-                                              final lng = ref.read(kknLocationProvider).currentPosition?.longitude ??
-                                                  ref.read(locationPingControllerProvider).lastLongitude!;
-                                              ref.read(kknLocationProvider.notifier).fetchAddress(lat, lng);
-                                            },
-                                            child: const Padding(
-                                              padding: EdgeInsets.only(left: 20, right: 8, top: 8, bottom: 8),
-                                              child: Icon(Icons.refresh_rounded, size: 18, color: AppColors.primaryBlue),
-                                            ),
-                                          ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
                               ),
                             ],
                           ),
                         ),
-                        const Icon(
-                          Icons.chevron_right_rounded,
-                          color: AppColors.textHint,
-                          size: 22,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  // Sub-info NIM, Jurusan & Lokasi
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 7,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryGreen.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: AppColors.primaryGreen.withValues(alpha: 0.2),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                // Tier 2: Alamat Lengkap GPS (Multiline 2 Baris agar tidak terpotong)
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.only(top: 1),
+                      child: Icon(
+                        Icons.my_location_rounded,
+                        size: 11,
+                        color: AppColors.textSecondary,
                       ),
                     ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.location_on_outlined,
-                          size: 14,
-                          color: AppColors.primaryGreen,
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        kknLocationState.isFetchingAddress
+                            ? 'Mencari alamat...'
+                            : (kknLocationState.currentAddress ??
+                                ((kknLocationState.currentPosition != null ||
+                                        locationPingState.lastLatitude != null)
+                                    ? '${(kknLocationState.currentPosition?.latitude ?? locationPingState.lastLatitude!).toStringAsFixed(4)}, ${(kknLocationState.currentPosition?.longitude ?? locationPingState.lastLongitude!).toStringAsFixed(4)}'
+                                    : 'Menunggu GPS...')),
+                        style: const TextStyle(
+                          fontSize: 10.5,
+                          color: AppColors.textSecondary,
+                          height: 1.25,
                         ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            '$kelurahan • RW $rw',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.primaryGreen,
-                            ),
-                          ),
-                        ),
-                      ],
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
+              ],
             ),
           ),
-        ),
+        ],
       ),
-      title: const Text('Dashboard KKN'),
     );
   }
 
@@ -571,7 +605,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
     final targetTotalPekan = targetRules?['targetTotalPekan'] as int? ?? 10;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -583,19 +617,19 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(6),
+                padding: const EdgeInsets.all(5),
                 decoration: BoxDecoration(
                   color: AppColors.primaryGreen.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Icon(Icons.track_changes_rounded, color: AppColors.primaryGreen, size: 20),
+                child: const Icon(Icons.track_changes_rounded, color: AppColors.primaryGreen, size: 18),
               ),
               const SizedBox(width: 8),
               const Expanded(
                 child: Text(
                   'Target Kegiatan Lapangan',
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 13,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textPrimary,
                   ),
@@ -603,7 +637,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
           Row(
             children: [
               Expanded(
@@ -614,7 +648,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                   label: 'Periode Kegiatan',
                 ),
               ),
-              Container(width: 1, height: 40, color: Colors.grey.shade200),
+              Container(width: 1, height: 32, color: Colors.grey.shade200),
               Expanded(
                 child: _buildTargetItem(
                   icon: Icons.check_circle_outline_rounded,
@@ -623,25 +657,25 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                   label: 'Total Hari Kegiatan',
                 ),
               ),
-              Container(width: 1, height: 40, color: Colors.grey.shade200),
+              Container(width: 1, height: 32, color: Colors.grey.shade200),
               Expanded(
                 child: _buildTargetItem(
                   icon: Icons.access_time_rounded,
-                  value: '$targetTotalHours Jam',
-                  unit: 'Target',
-                  label: 'Minimal Jam Kumulatif',
+                  value: '$targetTotalHours',
+                  unit: 'Jam Target',
+                  label: 'Minimal Kumulatif',
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 'Tercapai: $totalFormatted',
                 style: const TextStyle(
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textSecondary,
                 ),
@@ -649,24 +683,24 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
               Text(
                 '${progressPercentage.toStringAsFixed(1)}%',
                 style: const TextStyle(
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: FontWeight.w800,
                   color: AppColors.primaryGreen,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: (progressPercentage / 100).clamp(0.0, 1.0),
-              minHeight: 8,
+              minHeight: 6,
               backgroundColor: Colors.grey.shade200,
               valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryGreen),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
           _buildLocationStatus(locationState, kknLocationState),
         ],
       ),
@@ -676,12 +710,12 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
   Widget _buildTargetItem({required IconData icon, required String value, required String unit, required String label}) {
     return Column(
       children: [
-        Icon(icon, size: 20, color: AppColors.primaryGreen),
-        const SizedBox(height: 4),
+        Icon(icon, size: 18, color: AppColors.primaryGreen),
+        const SizedBox(height: 2),
         Text(
           value,
           style: const TextStyle(
-            fontSize: 16,
+            fontSize: 15,
             fontWeight: FontWeight.bold,
             color: AppColors.textPrimary,
           ),
@@ -689,7 +723,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
         Text(
           unit,
           style: const TextStyle(
-            fontSize: 11,
+            fontSize: 10,
             fontWeight: FontWeight.w600,
             color: AppColors.primaryGreen,
           ),
@@ -698,7 +732,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
           label,
           textAlign: TextAlign.center,
           style: const TextStyle(
-            fontSize: 10,
+            fontSize: 9,
             color: AppColors.textHint,
           ),
         ),
@@ -710,14 +744,18 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
     final d = state.dashboard;
 
     final user = ref.watch(authProvider).user;
-    final cleanUserRw = user?.rw.trim().replaceFirst(RegExp(r'^0+'), '') ?? '';
+    final userRwSet = (user?.rw ?? '')
+        .split(',')
+        .map((s) => s.replaceAll(RegExp(r'[^\d]'), '').replaceFirst(RegExp(r'^0+'), ''))
+        .where((s) => s.isNotEmpty)
+        .toSet();
 
     // Total Warga Dampingan Mahasiswa ini (dari endpoint kknWarga)
     final myWargaList = state.wargaList.where((w) {
       if (w.role.isNotEmpty && w.role.toUpperCase() != 'WARGA') return false;
 
-      final cleanWargaRw = w.rw.trim().replaceFirst(RegExp(r'^0+'), '');
-      final isMyRw = cleanUserRw.isNotEmpty && cleanWargaRw == cleanUserRw;
+      final cleanWargaRw = w.rw.trim().replaceAll(RegExp(r'[^\d]'), '').replaceFirst(RegExp(r'^0+'), '');
+      final isMyRw = userRwSet.isNotEmpty && userRwSet.contains(cleanWargaRw);
 
       // Jika backend mengirim mahasiswaId, cocokkan. Jika tidak, minimal harus satu RW dengan mahasiswa
       final isMyId = w.mahasiswaId.isNotEmpty && w.mahasiswaId == user?.id;
@@ -837,8 +875,8 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
 
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.md,
-        vertical: 16,
+        horizontal: 10,
+        vertical: 8,
       ),
       decoration: BoxDecoration(
         color: boxColor,
@@ -847,8 +885,8 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
       ),
       child: Row(
         children: [
-          Icon(iconData, color: textColor, size: 28),
-          const SizedBox(width: AppDimensions.sm),
+          Icon(iconData, color: textColor, size: 22),
+          const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -856,22 +894,22 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                 Text(
                   statusTitle,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 12,
                     fontWeight: FontWeight.bold,
                     color: textColor,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 1),
                 Text(
                   statusDesc,
-                  style: TextStyle(fontSize: 11, color: textColor),
+                  style: TextStyle(fontSize: 10, color: textColor),
                 ),
                 if (lastPing != null) ...[
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 1),
                   Text(
                     'Terakhir terdeteksi: ${DateFormat('HH:mm').format(lastPing)}',
                     style: TextStyle(
-                      fontSize: 10,
+                      fontSize: 9,
                       color: isOn
                           ? AppColors.successDark.withValues(alpha: 0.7)
                           : AppColors.dangerRed.withValues(alpha: 0.7),
@@ -898,12 +936,12 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
         const Text(
           'Menu Utama KKN',
           style: TextStyle(
-            fontSize: 16,
+            fontSize: 15,
             fontWeight: FontWeight.bold,
             color: AppColors.textPrimary,
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         Row(
           children: [
             Expanded(
@@ -920,7 +958,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                     Navigator.pushNamed(context, AppRoutes.kelompokKkn),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 8),
             Expanded(
               child: _MenuTileCard(
                 icon: Icons.location_on_rounded,
@@ -938,7 +976,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         Row(
           children: [
             Expanded(
@@ -954,7 +992,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                 onTap: () => Navigator.pushNamed(context, AppRoutes.dataProker),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 8),
             Expanded(
               child: _MenuTileCard(
                 icon: Icons.rule_rounded,
@@ -971,7 +1009,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         Row(
           children: [
             Expanded(
@@ -991,7 +1029,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                 ),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 8),
             Expanded(
               child: _MenuTileCard(
                 icon: Icons.add_business_rounded,
@@ -1008,36 +1046,36 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 10),
         // Logbook & Laporan Akhir Row
         Row(
           children: [
             Expanded(
               child: ElevatedButton.icon(
                 onPressed: () => Navigator.pushNamed(context, AppRoutes.dataLogbookHarian),
-                icon: const Icon(Icons.edit_document),
-                label: const Text('Input Logbook', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                icon: const Icon(Icons.edit_document, size: 18),
+                label: const Text('Input Logbook', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryGreen,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  padding: const EdgeInsets.symmetric(vertical: 11),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  elevation: 2,
+                  elevation: 1.5,
                 ),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 8),
             Expanded(
               child: ElevatedButton.icon(
                 onPressed: () => Navigator.pushNamed(context, AppRoutes.inputLaporanAkhir),
-                icon: const Icon(Icons.menu_book_rounded),
-                label: const Text('Laporan Akhir', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                icon: const Icon(Icons.menu_book_rounded, size: 18),
+                label: const Text('Laporan Akhir', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryGreen,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  padding: const EdgeInsets.symmetric(vertical: 11),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  elevation: 2,
+                  elevation: 1.5,
                 ),
               ),
             ),
@@ -1249,18 +1287,18 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: AppColors.border),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.02),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
                   )
                 ],
               ),
@@ -1275,22 +1313,22 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                         child: Text(
                           '${data.tahapMinggu} • ${data.fase}',
                           style: const TextStyle(
-                            fontSize: 14,
+                            fontSize: 13,
                             fontWeight: FontWeight.w700,
                             color: AppColors.primaryGreen,
                           ),
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                         decoration: BoxDecoration(
                           color: AppColors.primaryGreen.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(6),
+                          borderRadius: BorderRadius.circular(5),
                         ),
                         child: const Text(
                           'Berlangsung',
                           style: TextStyle(
-                            fontSize: 10,
+                            fontSize: 9,
                             fontWeight: FontWeight.w600,
                             color: AppColors.primaryGreen,
                           ),
@@ -1298,15 +1336,15 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(
                     data.tanggal,
                     style: const TextStyle(
-                      fontSize: 12,
+                      fontSize: 11,
                       color: AppColors.textHint,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
                   
                   // Progress Bar Fase
                   if (response.activeFaseSummary != null) ...[
@@ -1315,54 +1353,54 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                       children: [
                         const Text(
                           'Progress Fase',
-                          style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                          style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
                         ),
                         Text(
                           '${response.activeFaseSummary!.progressPercentage}%',
                           style: const TextStyle(
-                            fontSize: 12,
+                            fontSize: 11,
                             fontWeight: FontWeight.bold,
                             color: AppColors.primaryGreen,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 4),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(4),
                       child: LinearProgressIndicator(
                         value: response.activeFaseSummary!.progressPercentage / 100,
                         backgroundColor: AppColors.border,
                         color: AppColors.primaryGreen,
-                        minHeight: 6,
+                        minHeight: 5,
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10),
                   ],
 
                   // Kegiatan Utama
                   const Text(
                     'Kegiatan Utama',
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 11,
                       fontWeight: FontWeight.w600,
                       color: AppColors.textSecondary,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(
                     data.kegiatanUtama,
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: 13,
                       color: AppColors.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 10),
 
                   // Rekomendasi Aksi
                   if (data.rekomendasiAksi.isNotEmpty) ...[
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
                         color: AppColors.primaryGreen.withValues(alpha: 0.04),
                         borderRadius: BorderRadius.circular(8),
@@ -1373,30 +1411,30 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                         children: [
                           const Row(
                             children: [
-                              Icon(Icons.lightbulb_outline, size: 16, color: AppColors.primaryGreen),
-                              SizedBox(width: 6),
+                              Icon(Icons.lightbulb_outline, size: 15, color: AppColors.primaryGreen),
+                              SizedBox(width: 5),
                               Text(
                                 'Rekomendasi Aksi',
                                 style: TextStyle(
-                                  fontSize: 12,
+                                  fontSize: 11,
                                   fontWeight: FontWeight.w700,
                                   color: AppColors.primaryGreen,
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 6),
                           ...data.rekomendasiAksi.map((aksi) => Padding(
-                                padding: const EdgeInsets.only(bottom: 4),
+                                padding: const EdgeInsets.only(bottom: 2),
                                 child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     const Text('•', style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.bold)),
-                                    const SizedBox(width: 6),
+                                    const SizedBox(width: 5),
                                     Expanded(
                                       child: Text(
                                         aksi,
-                                        style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
+                                        style: const TextStyle(fontSize: 11, color: AppColors.textPrimary),
                                       ),
                                     ),
                                   ],
@@ -1457,7 +1495,7 @@ class _SummaryCard extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
+            blurRadius: 6,
             offset: const Offset(0, 2),
           ),
         ],
@@ -1467,45 +1505,48 @@ class _SummaryCard extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
           child: Padding(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
             child: Column(
               children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+                  ),
+                  child: iconAsset != null
+                      ? Image.asset(iconAsset!, width: 18, height: 18, color: color)
+                      : Icon(icon, color: color, size: 18),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    color: color,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
-            child: iconAsset != null
-                ? Image.asset(iconAsset!, width: 22, height: 22, color: color)
-                : Icon(icon, color: color, size: 22),
           ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              color: color,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 11,
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w500,
-            ),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
+        ),
       ),
-    ))));
+    );
   }
 }
 
@@ -1533,24 +1574,24 @@ class _MenuTileCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.border),
         boxShadow: [
           BoxShadow(
-            color: primaryColor.withValues(alpha: 0.08),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: primaryColor.withValues(alpha: 0.07),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           child: Padding(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -1558,45 +1599,45 @@ class _MenuTileCard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Container(
-                      width: 40,
-                      height: 40,
+                      width: 34,
+                      height: 34,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: gradientColors,
                         ),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(9),
                         boxShadow: [
                           BoxShadow(
-                            color: primaryColor.withValues(alpha: 0.3),
-                            blurRadius: 6,
+                            color: primaryColor.withValues(alpha: 0.25),
+                            blurRadius: 5,
                             offset: const Offset(0, 2),
                           ),
                         ],
                       ),
                       child: iconAsset != null
                           ? Padding(
-                              padding: const EdgeInsets.all(8.0),
+                              padding: const EdgeInsets.all(6.0),
                               child: Image.asset(
                                 iconAsset!,
                                 color: Colors.white,
                               ),
                             )
-                          : Icon(icon, color: Colors.white, size: 22),
+                          : Icon(icon, color: Colors.white, size: 18),
                     ),
                     const Icon(
                       Icons.arrow_forward_ios_rounded,
-                      size: 12,
+                      size: 11,
                       color: AppColors.textHint,
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 Text(
                   title,
                   style: const TextStyle(
-                    fontSize: 13,
+                    fontSize: 12,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textPrimary,
                   ),
@@ -1639,7 +1680,7 @@ class _WargaCard extends StatelessWidget {
     final lastLog = warga.recentLogs.isNotEmpty ? warga.recentLogs.first : null;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppDimensions.sm),
+      padding: const EdgeInsets.only(bottom: 6),
       child: Material(
         color: Colors.white,
         borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
@@ -1647,13 +1688,13 @@ class _WargaCard extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
           child: Padding(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
               children: [
                 // Avatar
                 Container(
-                  width: 42,
-                  height: 42,
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(
                     color: warga.needsReeducation
                         ? AppColors.warningYellow.withValues(alpha: 0.15)
@@ -1666,7 +1707,7 @@ class _WargaCard extends StatelessWidget {
                           ? warga.wargaName[0].toUpperCase()
                           : '?',
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.w700,
                         color: warga.needsReeducation
                             ? AppColors.warningOrange
@@ -1675,7 +1716,7 @@ class _WargaCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
 
                 // Info
                 Expanded(
@@ -1689,7 +1730,7 @@ class _WargaCard extends StatelessWidget {
                               warga.wargaName,
                               style: const TextStyle(
                                 fontWeight: FontWeight.w600,
-                                fontSize: 14,
+                                fontSize: 13,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -1798,7 +1839,7 @@ class _WargaCard extends StatelessWidget {
                 const Icon(
                   Icons.chevron_right_rounded,
                   color: AppColors.textHint,
-                  size: 22,
+                  size: 18,
                 ),
               ],
             ),

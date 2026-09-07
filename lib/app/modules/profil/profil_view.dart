@@ -375,7 +375,13 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                           Icons.location_city_rounded,
                           user?.role == UserRole.mahasiswaKkn ? 'RW Dampingan' : 'RW',
                           (user?.rw != null && user!.rw.isNotEmpty && user.rw != '-')
-                              ? (RegExp(r'\d+').firstMatch(user.rw)?.group(0)?.padLeft(2, '0') ?? user.rw)
+                              ? () {
+                                  final matches = RegExp(r'\d+').allMatches(user.rw);
+                                  if (matches.isNotEmpty) {
+                                    return matches.map((m) => m.group(0)!.padLeft(2, '0')).join(', ');
+                                  }
+                                  return user.rw;
+                                }()
                               : '-',
                         ),
                         _divider(),

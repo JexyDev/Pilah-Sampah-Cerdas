@@ -32,12 +32,18 @@ class NotificationEntity extends Equatable {
   /// Raw sortable timestamp.
   final DateTime createdAt;
 
-  NotificationEntity copyWith({bool? isRead, String? time, DateTime? createdAt}) {
+  NotificationEntity copyWith({
+    String? title,
+    String? desc,
+    bool? isRead,
+    String? time,
+    DateTime? createdAt,
+  }) {
     return NotificationEntity(
       id: id,
       type: type,
-      title: title,
-      desc: desc,
+      title: title ?? this.title,
+      desc: desc ?? this.desc,
       isRead: isRead ?? this.isRead,
       time: time ?? this.time,
       icon: icon,

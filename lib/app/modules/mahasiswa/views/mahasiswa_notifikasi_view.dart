@@ -6,6 +6,7 @@ import '../../notifikasi/controllers/notifikasi_controller.dart';
 import '../controllers/mahasiswa_notifikasi_controller.dart';
 import 'mahasiswa_poin_view.dart';
 import 'package:intl/intl.dart';
+import '../../../core/utils/input_sanitizer.dart';
 
 /// Halaman Notifikasi Khusus Mahasiswa KKN.
 /// Terpisah sepenuhnya dari Halaman Notifikasi Warga & Petugas.
@@ -318,7 +319,7 @@ class _MahasiswaNotificationCard extends StatelessWidget {
                         children: [
                           Expanded(
                             child: Text(
-                              item.title,
+                              InputSanitizer.cleanSystemMessage(item.title),
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: item.isRead ? FontWeight.w600 : FontWeight.bold,
@@ -339,7 +340,7 @@ class _MahasiswaNotificationCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        item.desc,
+                        InputSanitizer.cleanSystemMessage(item.desc),
                         style: const TextStyle(
                           fontSize: 12,
                           color: AppColors.textSecondary,

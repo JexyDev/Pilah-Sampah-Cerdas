@@ -82,7 +82,11 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
         .trim();
 
     final targetKelClean = cleanKel(userKel);
-    final targetRwClean = userRw.replaceAll(RegExp(r'[^\d]'), '').replaceFirst(RegExp(r'^0+'), '');
+    final targetRwSet = userRw
+        .split(',')
+        .map((s) => s.replaceAll(RegExp(r'[^\d]'), '').replaceFirst(RegExp(r'^0+'), ''))
+        .where((s) => s.isNotEmpty)
+        .toSet();
 
     return allWarga.where((w) {
       if (w.role.isNotEmpty && w.role != 'WARGA') return false;
@@ -91,7 +95,9 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
       final wKelClean = cleanKel(w.kelurahan);
       final wAddr = w.address.toLowerCase();
 
-      final rwMatches = targetRwClean.isEmpty || wRwClean == targetRwClean || wAddr.contains('rw $targetRwClean') || wAddr.contains('rw 0$targetRwClean');
+      final rwMatches = targetRwSet.isEmpty ||
+          targetRwSet.contains(wRwClean) ||
+          targetRwSet.any((r) => wAddr.contains('rw $r') || wAddr.contains('rw 0$r'));
       final kelMatches = targetKelClean.isEmpty || wKelClean.contains(targetKelClean) || targetKelClean.contains(wKelClean) || wAddr.contains(targetKelClean);
 
       if (!rwMatches || !kelMatches) return false;
@@ -126,8 +132,8 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
           if (cleaned.endsWith(',')) cleaned = cleaned.substring(0, cleaned.length - 1).trim();
           formattedAddr = '$cleaned, RW $targetRw, $kelDisplay, Kec. $targetKec';
         } else if (!formattedAddr.toLowerCase().contains('rw') && !formattedAddr.toLowerCase().contains('kel')) {
-          final numStr = w.binId.length >= 2 ? w.binId.substring(w.binId.length - 2) : '04';
-          formattedAddr = '$formattedAddr No. $numStr, RW $targetRw, $kelDisplay, Kec. $targetKec';
+          final numStr = w.binId.length >= 2 ? w.binId.substring(w.binId.length - 2) : '';
+          formattedAddr = '$formattedAddr${numStr.isNotEmpty ? " No. $numStr" : ""}, RW $targetRw, $kelDisplay, Kec. $targetKec';
         }
 
         return WargaDampingan(
@@ -364,7 +370,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                           isDense: true,
                         ),
                         child: Text(
-                          userRw.isNotEmpty ? (userRw.startsWith('RW') ? userRw : 'RW $userRw') : 'RW 02',
+                          userRw.isNotEmpty ? (userRw.startsWith('RW') ? userRw : 'RW $userRw') : '-',
                           style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -514,7 +520,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                             builder: (_) {
                               final rtStr = warga.rw.isNotEmpty 
                                   ? (warga.rw.startsWith('RW') ? warga.rw : 'RW ${warga.rw}') 
-                                  : (userRw.startsWith('RW') ? userRw : 'RW $userRw');
+                                  : (userRw.isNotEmpty ? (userRw.startsWith('RW') ? userRw : 'RW $userRw') : '-');
                               final kelStr = warga.kelurahan.isNotEmpty 
                                   ? (warga.kelurahan.toLowerCase().startsWith('kel') ? warga.kelurahan : 'Kel. ${warga.kelurahan}') 
                                   : (userKel.toLowerCase().startsWith('kel') ? userKel : 'Kel. $userKel');
