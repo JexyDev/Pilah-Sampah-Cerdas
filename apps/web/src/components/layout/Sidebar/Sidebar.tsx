@@ -14,7 +14,6 @@ import {
   User as UserIcon,
   MapPin,
   FileText,
-  LogOut,
   Database,
   Briefcase,
   ChevronDown,
@@ -35,7 +34,7 @@ import {
   GraduationCap,
 } from "lucide-react";
 
-import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import { useAuthStore } from "../../../store/useAuthStore";
 import type { UserRole } from "../../../store/useAuthStore";
 import showToast from "../../../utils/showToast";
@@ -688,8 +687,7 @@ const SectionHeader: React.FC<{ label: string }> = ({ label }) => (
 );
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false }) => {
-  const { user, logout, can } = useAuthStore();
-  const navigate = useNavigate();
+  const { user, can } = useAuthStore();
   const rawRole = ((user?.peran || (user as any)?.role || "WARGA") as string).toUpperCase();
   const userRole = (["PEMIMPIN", "PIMPINAN", "Pemimpin", "Pimpinan"].includes(rawRole) ? "PIMPINAN" : rawRole) as UserRole;
   const isDpl = userRole === "DPL" || userRole === "DOSEN_PEMBIMBING";
@@ -1650,21 +1648,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 );
               })}
             </nav>
-
-            {/* Bottom Actions for Collapsed Mode */}
-            <div className="flex flex-col items-center pt-2 border-t border-slate-100 dark:border-slate-800 w-full px-2 shrink-0">
-              <button
-                type="button"
-                onClick={() => {
-                  logout();
-                  navigate("/login");
-                }}
-                className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 hover:bg-rose-100 flex items-center justify-center transition cursor-pointer"
-                title="Keluar (Logout)"
-              >
-                <LogOut size={16} />
-              </button>
-            </div>
           </div>
         ) : (
           /* Render Full Sidebar */
@@ -1752,21 +1735,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 );
               })}
             </nav>
-
-            {/* Bottom Footer Section: Logout */}
-            <div className="p-3.5 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
-              <button
-                type="button"
-                onClick={() => {
-                  logout();
-                  navigate("/login");
-                }}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50/50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-xs font-bold transition cursor-pointer"
-              >
-                <LogOut size={14} />
-                <span>Keluar (Logout)</span>
-              </button>
-            </div>
           </div>
         )}
       </aside>

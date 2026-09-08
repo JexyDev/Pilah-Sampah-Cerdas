@@ -163,20 +163,23 @@ export const DashboardEksekutifKkn: React.FC = () => {
     fetchMasterRw();
   }, []);
 
-  // Filter RW dinamis berdasarkan kelurahan yang dipilih dengan standardisasi label ISO
+  // Filter RW dinamis: Hanya tampilkan opsi RW jika kelurahan spesifik telah dipilih
+  const isKelurahanSelected = Boolean(
+    selectedKelurahan &&
+    selectedKelurahan !== "Semua Kelurahan" &&
+    selectedKelurahan !== "ALL"
+  );
+
   const rwOptions = useMemo(() => {
-    if (!masterRwList || masterRwList.length === 0) {
+    if (!isKelurahanSelected || !masterRwList || masterRwList.length === 0) {
       return ["Semua RW"];
     }
 
-    let filtered = masterRwList;
-    if (selectedKelurahan && selectedKelurahan !== "Semua Kelurahan" && selectedKelurahan !== "ALL") {
-      const targetKel = selectedKelurahan.toLowerCase().replace(/\s+/g, "");
-      filtered = masterRwList.filter((r) => {
-        const kName = (r.kelurahanName || "").toLowerCase().replace(/\s+/g, "");
-        return kName.includes(targetKel) || targetKel.includes(kName);
-      });
-    }
+    const targetKel = selectedKelurahan.toLowerCase().replace(/\s+/g, "");
+    const filtered = masterRwList.filter((r) => {
+      const kName = (r.kelurahanName || "").toLowerCase().replace(/\s+/g, "");
+      return kName.includes(targetKel) || targetKel.includes(kName);
+    });
 
     // Ekstrak nomor RW, filter data dummy/test (seperti 99), dan standardisasi jadi "RW XX" yang seragam
     const rwMap = new Map<number, string>();
@@ -194,7 +197,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
       .map(([, label]) => label);
 
     return ["Semua RW", ...sortedRw];
-  }, [masterRwList, selectedKelurahan]);
+  }, [masterRwList, selectedKelurahan, isKelurahanSelected]);
 
   // Reset selectedRw jika RW terpilih tidak valid untuk kelurahan baru, atau jika kembali ke "Semua Kelurahan"
   useEffect(() => {
@@ -388,21 +391,36 @@ export const DashboardEksekutifKkn: React.FC = () => {
               </div>
             </div>
 
-            {/* RW Dropdown */}
+            {/* RW Dropdown (Hanya aktif jika kelurahan spesifik dipilih) */}
             <div className="relative">
-              <div className="flex items-center gap-2 bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-2xs">
-                <Layers size={14} className="text-blue-500 shrink-0" />
+              <div
+                className={`flex items-center gap-2 border px-3 py-2 rounded-xl text-xs font-semibold shadow-2xs transition-all ${
+                  isKelurahanSelected
+                    ? "bg-white dark:bg-slate-850 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200"
+                    : "bg-slate-100/80 dark:bg-slate-800/50 border-slate-200/60 dark:border-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed"
+                }`}
+              >
+                <Layers
+                  size={14}
+                  className={`shrink-0 ${isKelurahanSelected ? "text-blue-500" : "text-slate-400 dark:text-slate-600"}`}
+                />
                 <select
                   value={selectedRw}
                   onChange={(e) => setSelectedRw(e.target.value)}
+                  disabled={!isKelurahanSelected}
                   aria-label="Filter Rukun Warga"
-                  className="bg-transparent outline-none cursor-pointer pr-2 text-xs font-bold text-slate-700 dark:text-slate-200"
+                  title={!isKelurahanSelected ? "Pilih kelurahan terlebih dahulu untuk memfilter RW" : "Pilih RW"}
+                  className="bg-transparent outline-none pr-2 text-xs font-bold disabled:cursor-not-allowed"
                 >
-                  {rwOptions.map((rw) => (
-                    <option key={rw} value={rw}>
-                      {rw}
-                    </option>
-                  ))}
+                  {!isKelurahanSelected ? (
+                    <option value="Semua RW">Semua RW (Pilih Kelurahan Dulu)</option>
+                  ) : (
+                    rwOptions.map((rw) => (
+                      <option key={rw} value={rw}>
+                        {rw}
+                      </option>
+                    ))
+                  )}
                 </select>
               </div>
             </div>
