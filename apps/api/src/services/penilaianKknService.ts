@@ -1,5 +1,6 @@
 import { prisma } from "../lib/prisma.js";
 import { configService } from "./configService.js";
+import { notificationIntegrationService } from "./notificationIntegrationService.js";
 /**
  * Project: BERSEKA
  * Developed by: PT Makerindo
@@ -1249,6 +1250,48 @@ export const penilaianKknService = {
         });
       })
     );
+
+    try {
+      if (studentUserIds.length > 0) {
+        const isApproved = statusTelaah === "DISETUJUI";
+        const isRevisi = statusTelaah === "PERLU_REVISI";
+        if (isApproved) {
+          await notificationIntegrationService.sendToUsers({
+            userIds: studentUserIds,
+            title: "Laporan Akhir Kelompok Disetujui! 🎓",
+            message: `Laporan akhir kelompok ${kelompok.name} telah ditelaah dan disetujui resmi oleh DPL (Nilai: ${finalScore}).`,
+            triggerType: "LAPORAN_AKHIR_APPROVED",
+            dataPayload: {
+              event: "REFRESH_PROKER_MAHASISWA",
+              type: "PROKER_DISETUJUI",
+              entityId: primaryProker?.id || kelompokId,
+              kelompokId,
+              status: "DISETUJUI",
+              finalScore: String(finalScore),
+              click_action: "FLUTTER_NOTIFICATION_CLICK",
+            },
+          });
+        } else if (isRevisi) {
+          await notificationIntegrationService.sendToUsers({
+            userIds: studentUserIds,
+            title: "Laporan Akhir Perlu Perbaikan ⚠️",
+            message: `Laporan akhir kelompok ${kelompok.name} memerlukan revisi: ${catatanUmum || "Periksa catatan evaluasi DPL."}`,
+            triggerType: "LAPORAN_AKHIR_REVISI",
+            dataPayload: {
+              event: "REFRESH_PROKER_MAHASISWA",
+              type: "KEGIATAN_REVISI",
+              entityId: primaryProker?.id || kelompokId,
+              kelompokId,
+              status: "PERLU_REVISI",
+              catatan: catatanUmum || "",
+              click_action: "FLUTTER_NOTIFICATION_CLICK",
+            },
+          });
+        }
+      }
+    } catch (err: any) {
+      console.warn("[penilaianKknService.saveLaporanAkhirKelompokScore] Push notification error:", err?.message);
+    }
 
     return {
       kelompokId,

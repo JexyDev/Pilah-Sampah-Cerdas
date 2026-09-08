@@ -42,6 +42,7 @@ import {
   type ProgramKerjaItem,
 } from "../../services/dplService";
 import { resolveImageUrl } from "../../utils/imageUrl";
+import { getPortalLoadingText, getPortalDisplayName } from "../../utils/portalLoading";
 
 // ─── Sub-Component: Posko & Fasilitas Gabungan (Tabbed) ──────────────────────
 type FasilitasItem = { id?: string; nama: string; jenis: string; alamat?: string | null; statusApproval: string; latitude?: number | null; longitude?: number | null };
@@ -204,6 +205,7 @@ export const DplDashboardPage: React.FC = () => {
 
   // Detail Kelompok Modal State (Mendukung hingga 44+ mahasiswa dengan pencarian & paginasi)
   const [selectedGroupForDetail, setSelectedGroupForDetail] = useState<GroupSummary | null>(null);
+  const [loadingGroupStudents, setLoadingGroupStudents] = useState(false);
   const [groupStudentSearchQuery, setGroupStudentSearchQuery] = useState("");
   const [groupStudentPage, setGroupStudentPage] = useState(1);
   const MODAL_STUDENTS_PER_PAGE = 8;
@@ -221,26 +223,68 @@ export const DplDashboardPage: React.FC = () => {
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      const [groupsData, studentsData, alertsData, historyData, prokersData] = await Promise.all([
+      // 1. Muat metrik utama ringkasan kelompok, alert, history, dan proker secara bersamaan
+      const [groupsData, alertsData, historyData, prokersData] = await Promise.all([
         dplService.getGroupSummary(),
-        dplService.getStudents(),
         dplService.getAlerts(),
         dplService.getApprovalHistory(),
         dplService.getProgramKerja(),
       ]);
 
       setGroups(groupsData || []);
-      setStudents(studentsData || []);
       setAlerts(alertsData || null);
       setApprovalHistory(historyData || []);
       setProkers(prokersData || []);
+      setLoading(false);
+
+      // 2. Muat data mahasiswa secara non-blocking di latar belakang
+      dplService
+        .getStudents()
+        .then((studentsData) => {
+          if (studentsData && studentsData.length > 0) {
+            setStudents(studentsData);
+          }
+        })
+        .catch((err) => {
+          console.warn("Background students load notice:", err);
+        });
     } catch (err: any) {
-      console.error("Failed loading DPL dashboard data:", err);
-      toast.error("Gagal memuat data Dashboard DPL");
-    } finally {
+      console.error("Failed loading dashboard data:", err);
+      toast.error(
+        isPimpinan
+          ? "Gagal memuat data Dashboard Pimpinan"
+          : "Gagal memuat data Dashboard DPL"
+      );
       setLoading(false);
     }
   };
+
+  // Muat data anggota kelompok secara instan dan on-demand jika belum ada di state
+  useEffect(() => {
+    if (selectedGroupForDetail) {
+      const hasStudents = students.some((s) => s.kelompokId === selectedGroupForDetail.id);
+      if (!hasStudents) {
+        setLoadingGroupStudents(true);
+        dplService
+          .getStudents(selectedGroupForDetail.id)
+          .then((res) => {
+            if (res && res.length > 0) {
+              setStudents((prev) => {
+                const existingIds = new Set(prev.map((p) => p.id));
+                const filtered = res.filter((r) => !existingIds.has(r.id));
+                return [...prev, ...filtered];
+              });
+            }
+          })
+          .catch((err) => {
+            console.error("Failed loading group students:", err);
+          })
+          .finally(() => {
+            setLoadingGroupStudents(false);
+          });
+      }
+    }
+  }, [selectedGroupForDetail]);
 
   const effectiveProkers = useMemo(() => {
     if (prokers && prokers.length > 0) return prokers;
@@ -989,7 +1033,12 @@ export const DplDashboardPage: React.FC = () => {
                 </div>
 
                 {/* Tabel Mahasiswa Kelompok */}
-                {filteredModalGroupStudents.length === 0 ? (
+                {loadingGroupStudents ? (
+                  <div className="p-8 flex flex-col items-center justify-center gap-3 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs text-slate-500">
+                    <div className="w-6 h-6 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+                    <span>Memuat data anggota kelompok...</span>
+                  </div>
+                ) : filteredModalGroupStudents.length === 0 ? (
                   <div className="p-8 text-center text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 text-xs">
                     {groupStudentSearchQuery
                       ? `Tidak ada mahasiswa di kelompok ini yang cocok dengan kata kunci "${groupStudentSearchQuery}".`
@@ -1107,7 +1156,7 @@ export const DplDashboardPage: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
         <div className="w-10 h-10 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">Memuat Data Portal DPL...</p>
+        <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">{getPortalLoadingText(userRole)}</p>
       </div>
     );
   }
@@ -1123,7 +1172,7 @@ export const DplDashboardPage: React.FC = () => {
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 dark:text-emerald-400">
               <GraduationCap size={16} />
-              <span>Portal DPL</span>
+              <span>{isPimpinan ? "Portal Pimpinan & Eksekutif KKN" : getPortalDisplayName(userRole)}</span>
               <span className="text-slate-300 dark:text-slate-600">•</span>
               <span className="text-slate-500 dark:text-slate-400 font-normal">{user?.wilayah || "Wilayah Dampingan"}</span>
             </div>
@@ -1451,7 +1500,7 @@ export const DplDashboardPage: React.FC = () => {
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 dark:text-emerald-400">
             <GraduationCap size={16} />
-            <span>{isPimpinan ? "Portal Pimpinan & Eksekutif KKN" : "Portal DPL"}</span>
+            <span>{isPimpinan ? "Portal Pimpinan & Eksekutif KKN" : getPortalDisplayName(userRole)}</span>
             <span className="text-slate-300 dark:text-slate-600">•</span>
             <span className="text-slate-500 dark:text-slate-400 font-normal">
               {dplKelurahanList.length > 0

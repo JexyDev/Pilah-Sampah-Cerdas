@@ -16,9 +16,18 @@ export interface LeaderboardUser {
   wilayah?: string;
 }
 
+export interface LeaderboardRegion {
+  kelurahanId: string;
+  kelurahanName: string;
+  kecamatanName?: string;
+  totalRw?: number;
+  totalPoints: number;
+  totalKg?: number;
+}
+
 interface LeaderboardState {
   users: LeaderboardUser[];
-  regions: any[];
+  regions: LeaderboardRegion[];
   rtRw: any[];
   mahasiswa: any[];
   pengangkut: any[];

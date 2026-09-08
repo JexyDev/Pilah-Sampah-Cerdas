@@ -85,6 +85,8 @@ export interface LaporanItem {
   fotoUrl: string | null;
   latitude: number | null;
   longitude: number | null;
+  isPoskoUnikom?: boolean;
+  poskoName?: string;
   method: string;
   jedaLogs?: any[];
 }
@@ -1580,8 +1582,15 @@ export const LaporanPresensiPage: React.FC = () => {
 
                         {/* Kelompok & DPL */}
                         <td className="py-3.5 px-4">
-                          <div className="font-semibold text-slate-800 dark:text-slate-200">
-                            {item.kelompok?.name ?? "Tanpa Kelompok"}
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-semibold text-slate-800 dark:text-slate-200">
+                              {item.kelompok?.name ?? "Tanpa Kelompok"}
+                            </span>
+                            {item.isPoskoUnikom && (
+                              <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/70 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 shrink-0">
+                                Posko UNIKOM
+                              </span>
+                            )}
                           </div>
                           <p className="text-[11px] text-slate-400">
                             Kel. {item.kelompok?.kelurahan ?? "-"} • DPL: {item.kelompok?.dplName ?? "-"}

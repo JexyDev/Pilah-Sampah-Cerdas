@@ -19,7 +19,7 @@ import {
   useMapEvents
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { ThemeTileLayer } from "../../components/common/ThemeTileLayer";
+import { ThemeTileLayer, GOOGLE_SATELLITE_URL } from "../../components/common/ThemeTileLayer";
 import {
   CoblongGeo,
   KELURAHAN_GEODATA,
@@ -701,7 +701,7 @@ export const RwFacilityInput: React.FC = () => {
                   className="h-full w-full"
                   scrollWheelZoom={true}
                 >
-                  <ThemeTileLayer />
+                  <ThemeTileLayer lightUrl={GOOGLE_SATELLITE_URL} darkUrl={GOOGLE_SATELLITE_URL} />
                   <MapFlyTo center={mapCenter} zoom={mapZoom} />
 
                   {/* Kelurahan Boundary Polygon for Context */}
@@ -1581,7 +1581,7 @@ export const RwFacilityInput: React.FC = () => {
                     zoom={15}
                     className="h-full w-full"
                   >
-                    <ThemeTileLayer />
+                    <ThemeTileLayer lightUrl={GOOGLE_SATELLITE_URL} darkUrl={GOOGLE_SATELLITE_URL} />
                     <LocationPicker
                       position={[newFacilityForm.latitude, newFacilityForm.longitude]}
                       onPositionChange={([lat, lng]) => {

@@ -37,7 +37,7 @@ import * as XLSX from "xlsx";
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
 import { MapContainer, Marker, useMapEvents, useMap, Polygon, Polyline, Circle } from "react-leaflet";
-import { ThemeTileLayer } from "../../components/common/ThemeTileLayer";
+import { ThemeTileLayer, GOOGLE_SATELLITE_URL } from "../../components/common/ThemeTileLayer";
 import L from "leaflet";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { sortKelompokList } from "../../utils/sortUtils";
@@ -2041,7 +2041,7 @@ const JadwalKegiatan: React.FC = () => {
                         zoom={15}
                         style={{ height: "100%", width: "100%" }}
                       >
-                        <ThemeTileLayer />
+                        <ThemeTileLayer lightUrl={GOOGLE_SATELLITE_URL} darkUrl={GOOGLE_SATELLITE_URL} />
                         <DualGeofencePickerMap
                           mode={geofenceMode}
                           points={formData.polygon || []}

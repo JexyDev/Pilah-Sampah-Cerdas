@@ -23,6 +23,7 @@ import KknDashboard from "../KknDashboard/KknDashboard";
 import ResiduDashboard from "../ResiduDashboard/ResiduDashboard";
 import DplDashboardPage from "../dpl/DplDashboardPage";
 import TaskforceDashboardPage from "../taskforce/TaskforceDashboardPage";
+import { getPortalLoadingText } from "../../utils/portalLoading";
 import LeaderboardWidget from "../../components/LeaderboardWidget";
 import { CustomSelect, type SelectOption } from "../../components/common/CustomSelect";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
@@ -1801,33 +1802,6 @@ const Dashboard: React.FC = () => {
     return () => clearInterval(interval);
   }, [user, weeks, timeFilter, selectedWilayah]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center gap-4">
-          <span
-            className="material-symbols-outlined text-emerald-600 text-[48px] animate-spin"
-            style={{ fontVariationSettings: "'FILL' 1" }}
-          >
-            autorenew
-          </span>
-          <p className="text-slate-400 font-medium text-xs tracking-wider uppercase">Memuat data cyber dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="bg-rose-50 text-rose-700 p-6 rounded-2xl border border-rose-200 flex flex-col items-center gap-2">
-          <AlertCircle size={32} />
-          <p className="font-medium text-xs">{error}</p>
-        </div>
-      </div>
-    );
-  }
-
   if (user?.peran === "WARGA") return <WargaDashboard />;
   if (user?.peran === "RW") return <RwDashboard />;
   if (user?.peran === "MAHASISWA_KKN") return <KknDashboard />;
@@ -1843,6 +1817,35 @@ const Dashboard: React.FC = () => {
 
   if (user?.peran === "PANITIA_TASKFORCE") {
     return <TaskforceDashboardPage />;
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-4">
+          <span
+            className="material-symbols-outlined text-emerald-600 text-[48px] animate-spin"
+            style={{ fontVariationSettings: "'FILL' 1" }}
+          >
+            autorenew
+          </span>
+          <p className="text-slate-400 font-medium text-xs tracking-wider uppercase">
+            {getPortalLoadingText(user?.peran)}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="bg-rose-50 text-rose-700 p-6 rounded-2xl border border-rose-200 flex flex-col items-center gap-2">
+          <AlertCircle size={32} />
+          <p className="font-medium text-xs">{error}</p>
+        </div>
+      </div>
+    );
   }
 
   // Scaling factors for Trend SVG

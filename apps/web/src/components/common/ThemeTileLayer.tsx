@@ -17,12 +17,15 @@ interface ThemeTileLayerProps extends Omit<TileLayerProps, "url"> {
   url?: string;
 }
 
+export const GOOGLE_SATELLITE_URL = "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}";
+export const GOOGLE_VECTOR_URL = "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}";
+export const CARTO_VOYAGER_URL = "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
 export const CARTO_DARK_MATTER_URL = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
 export const OSM_LIGHT_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 
 export const ThemeTileLayer: React.FC<ThemeTileLayerProps> = ({
-  lightUrl = OSM_LIGHT_URL,
-  darkUrl = CARTO_DARK_MATTER_URL,
+  lightUrl,
+  darkUrl,
   url,
   attribution,
   ...props
@@ -58,16 +61,18 @@ export const ThemeTileLayer: React.FC<ThemeTileLayerProps> = ({
     };
   }, [map]);
 
-  const activeUrl = isDark ? darkUrl : (url || lightUrl);
+  const effectiveLightUrl = lightUrl || OSM_LIGHT_URL;
+  const effectiveDarkUrl = darkUrl || (lightUrl ? lightUrl : CARTO_DARK_MATTER_URL);
+  const activeUrl = url || (isDark ? effectiveDarkUrl : effectiveLightUrl);
   const activeAttribution = attribution || (
-    isDark
+    isDark && !lightUrl
       ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
       : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   );
 
   return (
     <TileLayer
-      key={isDark ? "dark-tile" : "light-tile"}
+      key={isDark && !lightUrl ? "dark-tile" : activeUrl}
       url={activeUrl}
       attribution={activeAttribution}
       maxZoom={20}

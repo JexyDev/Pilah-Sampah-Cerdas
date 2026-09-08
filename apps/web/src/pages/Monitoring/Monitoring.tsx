@@ -13,7 +13,13 @@
 
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import { MapContainer, Marker, Popup, Circle, Polygon, Tooltip, useMap, useMapEvents } from "react-leaflet";
-import { ThemeTileLayer } from "../../components/common/ThemeTileLayer";
+import {
+  ThemeTileLayer,
+  GOOGLE_SATELLITE_URL,
+  GOOGLE_VECTOR_URL,
+  CARTO_VOYAGER_URL,
+  OSM_LIGHT_URL,
+} from "../../components/common/ThemeTileLayer";
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useMonitoringStore } from "../../store/useMonitoringStore";
@@ -130,7 +136,6 @@ const Monitoring: React.FC = () => {
   const [tableSearchInput, setTableSearchInput] = useState<string>("");
   const [isMapFullscreen, setIsMapFullscreen] = useState<boolean>(false);
   const [showKelurahanBoundaries, setShowKelurahanBoundaries] = useState<boolean>(true);
-  const isMapSU = user?.peran === "SUPER_USER" || user?.peran === "DEVELOPER" || (user as any)?.role === "SUPER_USER" || (user as any)?.role === "DEVELOPER";
   // QC-17b: Default basemap Satelit untuk semua role (termasuk Pimpinan, Taskforce, dll.)
   const [mapTileProvider, setMapTileProvider] = useState<"google_vector" | "google_satellite" | "cartodb" | "osm">(() => {
     return "google_satellite"; // Default Satelit untuk semua role
@@ -138,9 +143,8 @@ const Monitoring: React.FC = () => {
   const [isLegendOpen, setIsLegendOpen] = useState<boolean>(true);
   const [activeLegendTab, setActiveLegendTab] = useState<"sampah" | "fasilitas_wilayah">("sampah");
 
-  // QC-17b: Sync default satellite untuk semua role saat user load
+  // QC-17b: Sync default satellite untuk semua role (termasuk Pimpinan) saat user load
   useEffect(() => {
-    // Semua role default ke satellite; SU/Developer dijamin tetap satellite
     setMapTileProvider("google_satellite");
   }, [user?.peran]);
 
@@ -1150,12 +1154,17 @@ const Monitoring: React.FC = () => {
               <ThemeTileLayer
                 lightUrl={
                   mapTileProvider === "google_vector"
-                    ? "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
+                    ? GOOGLE_VECTOR_URL
                     : mapTileProvider === "google_satellite"
-                    ? "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
+                    ? GOOGLE_SATELLITE_URL
                     : mapTileProvider === "cartodb"
-                    ? "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-                    : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    ? CARTO_VOYAGER_URL
+                    : OSM_LIGHT_URL
+                }
+                darkUrl={
+                  mapTileProvider === "google_satellite"
+                    ? GOOGLE_SATELLITE_URL
+                    : undefined
                 }
               />
 

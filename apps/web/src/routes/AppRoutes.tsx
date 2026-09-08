@@ -13,6 +13,7 @@ import { useAuthStore, WEB_DISABLED_ROLES } from "../store/useAuthStore";
 import type { UserRole } from "../store/useAuthStore";
 import { IOSSafariGate } from "../components/common/IOSSafariGate";
 import { checkIsIOSSafari } from "../utils/deviceValidation";
+import { getPortalLoadingText } from "../utils/portalLoading";
 
 // Lazy Loaded Pages for Optimal Code-Splitting & Minimal Initial Bundle Size
 const Dashboard = React.lazy(() => import("../pages/Dashboard/Dashboard"));
@@ -110,29 +111,9 @@ const LogbookKknRouteHandler: React.FC = () => {
 };
 
 // Branded Minimalist Loading Spinner for Lazy Chunk Transitions — Dynamic Role Text
-const PORTAL_LOADING_TEXT: Record<string, string> = {
-  DEVELOPER:        "Memuat Portal Developer",
-  SUPER_USER:       "Memuat Portal Super Admin",
-  ADMIN_DLH:        "Memuat Portal Admin DLH",
-  PIMPINAN:         "Memuat Portal Pimpinan",
-  PEMIMPIN:         "Memuat Portal Pimpinan",
-  DPL:              "Memuat Portal DPL",
-  DOSEN_PEMBIMBING: "Memuat Portal DPL",
-  PANITIA_TASKFORCE:"Memuat Portal Taskforce",
-  TASK_FORCE:       "Memuat Portal Taskforce",
-  MAHASISWA_KKN:    "Memuat Portal Mahasiswa",
-  CAMAT:            "Memuat Portal Camat",
-  LURAH:            "Memuat Portal Lurah",
-  RW:               "Memuat Portal RW",
-  WARGA:            "Memuat Portal Warga",
-  PETUGAS_RESIDU:   "Memuat Portal Petugas",
-  MPL:              "Memuat Portal MPL",
-};
-
 const PageLoadingFallback: React.FC = () => {
   const { user } = useAuthStore();
-  const role = user?.peran ?? "";
-  const loadingText = PORTAL_LOADING_TEXT[role] ?? "Memuat halaman...";
+  const loadingText = getPortalLoadingText(user?.peran, "");
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] w-full gap-3 py-16 animate-fade-in">
       <div className="w-10 h-10 border-3 border-emerald-600/20 border-t-emerald-600 rounded-full animate-spin" />

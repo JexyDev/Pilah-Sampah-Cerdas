@@ -4449,6 +4449,36 @@ export class KknService {
       data: updateData,
     });
 
+    if (statusUsulan === "DISETUJUI" && proker.statusUsulan !== "DISETUJUI") {
+      try {
+        const kelompok = await prisma.kelompokKkn.findUnique({
+          where: { id: proker.kelompokId },
+          include: { students: { select: { userId: true } } },
+        });
+        const studentUserIds = (kelompok?.students || []).map((s) => s.userId).filter(Boolean);
+        if (studentUserIds.length > 0) {
+          const parsedJudul = parseProkerDeskripsi(proker.deskripsi).judul;
+          await notificationIntegrationService.sendToUsers({
+            userIds: studentUserIds,
+            title: "Program Kerja Disetujui! 🎯",
+            message: `Program kerja "${parsedJudul}" untuk kelompok ${kelompok?.name || ""} telah disetujui.`,
+            triggerType: "PROKER_APPROVED",
+            dataPayload: {
+              event: "REFRESH_PROKER_MAHASISWA",
+              type: "PROKER_DISETUJUI",
+              entityId: id,
+              prokerId: id,
+              kelompokId: proker.kelompokId,
+              status: "DISETUJUI",
+              click_action: "FLUTTER_NOTIFICATION_CLICK",
+            },
+          });
+        }
+      } catch (err: any) {
+        console.warn("[kknService.updateProgramKerja] Push notification error:", err?.message);
+      }
+    }
+
     return await this.getProgramKerjaById(userId, id);
   }
 

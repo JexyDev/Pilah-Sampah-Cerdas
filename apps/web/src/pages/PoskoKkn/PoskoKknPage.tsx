@@ -54,7 +54,7 @@ import { useAuthStore } from "../../store/useAuthStore";
 import { Pagination } from "../../components/common/Pagination";
 import PageHeader from "../../components/common/PageHeader";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
-import { ThemeTileLayer } from "../../components/common/ThemeTileLayer";
+import { ThemeTileLayer, GOOGLE_SATELLITE_URL } from "../../components/common/ThemeTileLayer";
 import { KELURAHAN_GEODATA, CoblongGeo, createFacilityIcon } from "../../constants/coblongGeoData";
 import { resolveImageUrl, handlePoskoImageError, getPoskoFallbackImage } from "../../utils/imageUrl";
 import { sortKelompokList } from "../../utils/sortUtils";
@@ -918,7 +918,7 @@ export const PoskoKknPage: React.FC = () => {
                             style={{ height: "100%", width: "100%" }}
                             className="z-0"
                           >
-                            <ThemeTileLayer />
+                            <ThemeTileLayer lightUrl={GOOGLE_SATELLITE_URL} darkUrl={GOOGLE_SATELLITE_URL} />
                             <MapFlyToController center={mapTargetCenter || mapCenter} zoom={mapTargetZoom} />
 
                             {kelurahanGeo?.bounds && (
@@ -1461,7 +1461,7 @@ export const PoskoKknPage: React.FC = () => {
                             style={{ height: "100%", width: "100%" }}
                             className="z-0"
                           >
-                            <ThemeTileLayer />
+                            <ThemeTileLayer lightUrl={GOOGLE_SATELLITE_URL} darkUrl={GOOGLE_SATELLITE_URL} />
                             <MapFlyToController center={mapTargetCenter || defaultCenter} zoom={mapTargetZoom} />
 
                             {/* Batas Poligon Kelurahan */}
@@ -1881,7 +1881,7 @@ export const PoskoKknPage: React.FC = () => {
               style={{ height: '100%', width: '100%' }}
               className="z-0"
             >
-              <ThemeTileLayer />
+              <ThemeTileLayer lightUrl={GOOGLE_SATELLITE_URL} darkUrl={GOOGLE_SATELLITE_URL} />
               <MapFlyToController center={mapTargetCenter} zoom={mapTargetZoom} />
 
               {/* Poligon Batas 6 Kelurahan Coblong */}

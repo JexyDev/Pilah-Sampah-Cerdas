@@ -15,7 +15,8 @@ import { notificationIntegrationService } from "./notificationIntegrationService
 import { isOrganikBin, isAnorganikBin } from "./kknService.js";
 import { auditTrailService } from "./auditTrailService.js";
 // SMART ZONE: Multi-Posko adaptive geofence engine
-import { smartZoneService, type ZoneCheckResult } from "./smartZoneService.js";
+import { smartZoneService, UNIKOM_CENTRAL_ZONE, type ZoneCheckResult } from "./smartZoneService.js";
+export { UNIKOM_CENTRAL_ZONE };
 import { evaluateSortingStatus } from "../utils/sortingEvaluation.js";
 
 /**
@@ -92,9 +93,9 @@ async function buildGeofence(
   const configRadiusStr = await configService.getConfig("default_activity_radius");
 
   // Koordinat default: Kampus UNIKOM, Jl. Dipati Ukur No.112–116, Bandung
-  const defaultLat = configLatStr ? parseFloat(configLatStr) : -6.8681;
-  const defaultLng = configLngStr ? parseFloat(configLngStr) : 107.5886;
-  const defaultRadius = configRadiusStr ? parseInt(configRadiusStr, 10) : 200; // 200m radius kampus Unikom
+  const defaultLat = configLatStr ? parseFloat(configLatStr) : UNIKOM_CENTRAL_ZONE.lat;
+  const defaultLng = configLngStr ? parseFloat(configLngStr) : UNIKOM_CENTRAL_ZONE.lng;
+  const defaultRadius = configRadiusStr ? parseInt(configRadiusStr, 10) : UNIKOM_CENTRAL_ZONE.radius;
 
   return {
     latitude: defaultLat,
@@ -218,6 +219,26 @@ export async function getGroupPoskoList(kelompokId: string): Promise<
         }
       }
     }
+  }
+
+  // Inklusi PRESENSI POSKO UNIKOM sebagai fallback area kerja seluruh mahasiswa/kelompok
+  const unikomAlreadyInList = list.some(
+    (existing) =>
+      existing.id === UNIKOM_CENTRAL_ZONE.id ||
+      calculateDistance(existing.latitude, existing.longitude, UNIKOM_CENTRAL_ZONE.lat, UNIKOM_CENTRAL_ZONE.lng) < 25
+  );
+  if (!unikomAlreadyInList) {
+    list.push({
+      id: UNIKOM_CENTRAL_ZONE.id,
+      nama: UNIKOM_CENTRAL_ZONE.nama,
+      alamat: UNIKOM_CENTRAL_ZONE.alamat,
+      latitude: UNIKOM_CENTRAL_ZONE.lat,
+      longitude: UNIKOM_CENTRAL_ZONE.lng,
+      radius: UNIKOM_CENTRAL_ZONE.radius,
+      isUtama: false,
+      type: "POSKO_MULTI",
+      fotoUrl: null,
+    });
   }
 
   return list;
@@ -2185,6 +2206,51 @@ export class KknAttendanceService {
       })
       .catch((err) => console.warn("[Audit] Presensi pulang log error:", err));
 
+    // Notifikasi khusus ke Web DPL jika mahasiswa presensi pulang di PRESENSI POSKO UNIKOM (Strict by DPL ID)
+    const checkOutLat = updated.latitude ? Number(updated.latitude) : latitude;
+    const checkOutLng = updated.longitude ? Number(updated.longitude) : longitude;
+    const isCheckoutAtUnikom =
+      checkOutLat !== undefined && checkOutLng !== undefined
+        ? calculateDistance(checkOutLat, checkOutLng, UNIKOM_CENTRAL_ZONE.lat, UNIKOM_CENTRAL_ZONE.lng) <=
+          UNIKOM_CENTRAL_ZONE.radius + 100
+        : false;
+
+    if (isCheckoutAtUnikom) {
+      const studentProfileWithKelompok = await prisma.studentKkn.findUnique({
+        where: { userId: studentId },
+        include: { kelompok: true, user: true },
+      });
+      const dplId = studentProfileWithKelompok?.kelompok?.dplId;
+      if (dplId) {
+        const studentName = updated.student?.name || studentProfileWithKelompok?.user?.name || "Mahasiswa";
+        const studentNim = updated.student?.studentProfile?.nim || studentProfileWithKelompok?.nim || "-";
+        const groupName = studentProfileWithKelompok?.kelompok?.name || "Kelompok KKN";
+        const nowTimeStr = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(11, 16);
+
+        await prisma.notification
+          .create({
+            data: {
+              userId: dplId,
+              title: "Presensi Pulang di Posko UNIKOM",
+              message: `Mahasiswa ${studentName} (${studentNim}) dari ${groupName} telah menyelesaikan presensi pulang di PRESENSI POSKO UNIKOM pada pukul ${nowTimeStr} WIB (${durationMinutes} menit).`,
+              isRead: false,
+            },
+          })
+          .catch((err) => console.warn("[DPL Notif] Presensi UNIKOM checkout error:", err));
+
+        websocketService.broadcastPetugasNotification(dplId, {
+          title: "Presensi Pulang di Posko UNIKOM",
+          message: `Mahasiswa ${studentName} (${studentNim}) dari ${groupName} telah menyelesaikan presensi pulang di PRESENSI POSKO UNIKOM pada pukul ${nowTimeStr} WIB.`,
+          type: "PRESENSI_UNIKOM_PULANG",
+          studentId,
+          studentName,
+          nim: studentNim,
+          groupName,
+          timestamp: new Date().toISOString(),
+        });
+      }
+    }
+
     return {
       success: true,
       message: `Check-out presensi berhasil dicatat (${statusDisplay}). GPS dinonaktifkan.`,
@@ -4026,6 +4092,44 @@ export class KknAttendanceService {
         .catch((err) => console.warn("[Audit] Presensi masuk log error:", err));
     }
 
+    // Notifikasi khusus ke Web DPL jika mahasiswa presensi di PRESENSI POSKO UNIKOM (Strict by DPL ID)
+    const isUnikomPresensi =
+      matchedPosko?.nama === "PRESENSI POSKO UNIKOM" ||
+      calculateDistance(latitude, longitude, UNIKOM_CENTRAL_ZONE.lat, UNIKOM_CENTRAL_ZONE.lng) <=
+        UNIKOM_CENTRAL_ZONE.radius + bufferMeters;
+
+    if (isUnikomPresensi) {
+      const dplId = student.kelompok?.dplId;
+      if (dplId) {
+        const studentName = student.user?.name || "Mahasiswa";
+        const studentNim = student.nim || "-";
+        const groupName = student.kelompok?.name || "Kelompok KKN";
+        const nowTimeStr = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(11, 16);
+
+        await prisma.notification
+          .create({
+            data: {
+              userId: dplId,
+              title: "Presensi Mahasiswa di Posko UNIKOM",
+              message: `Mahasiswa ${studentName} (${studentNim}) dari ${groupName} telah memulai presensi di PRESENSI POSKO UNIKOM pada pukul ${nowTimeStr} WIB.`,
+              isRead: false,
+            },
+          })
+          .catch((err) => console.warn("[DPL Notif] Presensi UNIKOM start error:", err));
+
+        websocketService.broadcastPetugasNotification(dplId, {
+          title: "Presensi Mahasiswa di Posko UNIKOM",
+          message: `Mahasiswa ${studentName} (${studentNim}) dari ${groupName} telah memulai presensi di PRESENSI POSKO UNIKOM pada pukul ${nowTimeStr} WIB.`,
+          type: "PRESENSI_UNIKOM_MASUK",
+          studentId: studentUserId,
+          studentName,
+          nim: studentNim,
+          groupName,
+          timestamp: new Date().toISOString(),
+        });
+      }
+    }
+
     const durasiWajibMenit =
       ruleConfigs.attendanceMinDurationHours * 60 +
         ruleConfigs.attendanceMinDurationMinutes +
@@ -5066,6 +5170,14 @@ export class KknAttendanceService {
 
       const kknGroup = att.student?.studentProfile?.kelompok || att.schedule?.kelompok;
 
+      const attLat = att.latitude ? Number(att.latitude) : null;
+      const attLng = att.longitude ? Number(att.longitude) : null;
+      const isPoskoUnikom =
+        attLat !== null && attLng !== null
+          ? calculateDistance(attLat, attLng, UNIKOM_CENTRAL_ZONE.lat, UNIKOM_CENTRAL_ZONE.lng) <=
+            UNIKOM_CENTRAL_ZONE.radius + 100
+          : false;
+
       return {
         id: att.id,
         studentId: att.studentId,
@@ -5109,8 +5221,10 @@ export class KknAttendanceService {
         isMemenuhiDurasi: isMemenuhi,
         deskripsiKegiatan: (att as any).deskripsiKegiatan ?? null,
         fotoUrl: (att as any).fotoUrl ?? null,
-        latitude: att.latitude ? Number(att.latitude) : null,
-        longitude: att.longitude ? Number(att.longitude) : null,
+        latitude: attLat,
+        longitude: attLng,
+        isPoskoUnikom,
+        poskoName: isPoskoUnikom ? "PRESENSI POSKO UNIKOM" : (att.schedule?.title || "Posko Kelompok"),
         method: att.method,
         jedaLogs: jedaLogsArr,
       };

@@ -44,7 +44,37 @@ const mapNotification = (n: any) => {
   const titleUpper = n.title.toUpperCase();
   const messageUpper = n.message.toUpperCase();
 
-  if (titleUpper.includes("POIN") || messageUpper.includes("POIN")) {
+  if (
+    titleUpper.includes("REVISI") ||
+    messageUpper.includes("REVISI") ||
+    titleUpper.includes("PERBAIKAN") ||
+    messageUpper.includes("PERBAIKAN") ||
+    titleUpper.includes("DITOLAK") ||
+    messageUpper.includes("DITOLAK")
+  ) {
+    type = "KEGIATAN_REVISI";
+    icon = "edit_note";
+    iconBg = "bg-amber-100";
+    iconColor = "text-amber-600";
+  } else if (
+    titleUpper.includes("PROGRAM KERJA") ||
+    titleUpper.includes("PROKER") ||
+    messageUpper.includes("PROGRAM KERJA") ||
+    messageUpper.includes("PROKER")
+  ) {
+    type = "PROKER_DISETUJUI";
+    icon = "assignment_turned_in";
+    iconBg = "bg-indigo-100";
+    iconColor = "text-indigo-600";
+  } else if (
+    (titleUpper.includes("LOGBOOK") || titleUpper.includes("KEGIATAN")) &&
+    (titleUpper.includes("SETUJU") || messageUpper.includes("SETUJU"))
+  ) {
+    type = "KEGIATAN_DISETUJUI";
+    icon = "task_alt";
+    iconBg = "bg-emerald-100";
+    iconColor = "text-emerald-600";
+  } else if (titleUpper.includes("POIN") || messageUpper.includes("POIN")) {
     type = "POIN_BERTAMBAH";
     icon = "star";
     iconBg = "bg-yellow-100";
