@@ -380,7 +380,7 @@ router.get("/", authMiddleware, async (req, res) => {
             );
             return {
               id: `crit-bin-${b.id}`,
-              type: "TONG_PENUH",
+              type: "TEMPAT_SAMPAH_PENUH",
               title: "Kapasitas Tempat Sampah Kritis",
               desc: `Tempat Sampah ${b.category?.name || ""} (${b.qrCode}) di ${b.rw?.name || "Wilayah"} telah mencapai ${pct}%!`,
               isRead: false,

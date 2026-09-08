@@ -1483,6 +1483,20 @@ export class BinService {
       })
       .catch(() => {});
 
+    // Notifikasi ke petugas pemilah yang bertugas di RW tersebut
+    if (resolvedPetugasId) {
+      const wargaName = request.user?.name || "Warga";
+      await prisma.notification
+        .create({
+          data: {
+            userId: resolvedPetugasId,
+            title: "Pengajuan Pengosongan Baru",
+            message: `Warga (${wargaName}) mengajukan pengosongan Tempat Sampah ${binQr} di wilayah RW Anda.`,
+          },
+        })
+        .catch(() => {});
+    }
+
     return request;
   }
 

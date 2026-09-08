@@ -9,6 +9,7 @@ import { prisma } from "../lib/prisma.js";
 import { configService } from "./configService.js";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
 import { websocketService } from "./websocketService.js";
+import { binRepository } from "../repositories/binRepository.js";
 
 export class ResiduService {
   /**
@@ -340,6 +341,8 @@ export class ResiduService {
       totalWeightKg: Number(todayWeightKg.toFixed(2)),
       ketepatanWaktuScore: Number(petugas.kpiScore) || 95,
       akurasiScore: 90,
+      whitelistStatus: petugas.whitelistStatus || "APPROVED",
+      accountStatus: user.status || "ACTIVE",
 
       // Additional & legacy metadata for compatibility
       rw: rtRwStr,
@@ -454,9 +457,9 @@ export class ResiduService {
           return {
             id: s.id,
             logId: s.id,
-            title: "Setoran Manual Residu",
-            classification: s.kategori || "Residu",
-            kategori: s.kategori || "Residu",
+            title: "Timbangan Pemilahan",
+            classification: s.kategori || "Pemilahan",
+            kategori: s.kategori || "Pemilahan",
             binId: "GLOBAL_BIN",
             binCode: "Bin Global RT/RW",
             wargaName: "Global",
@@ -741,12 +744,23 @@ export class ResiduService {
       },
     });
 
+    if (data.binId && data.binId !== "GLOBAL_BIN_RT_RW") {
+      const targetBin = await prisma.bin.findFirst({
+        where: {
+          OR: [{ id: data.binId }, { qrCode: data.binId }],
+        },
+      });
+      if (targetBin) {
+        await binRepository.updateVolume(targetBin.id, 0.0).catch(() => {});
+      }
+    }
+
     if (pointsEarned > 0) {
       await prisma.pointHistory.create({
         data: {
           userId: petugasUserId,
           points: pointsEarned,
-          description: `Setoran timbangan residu global: ${weightKg} kg`,
+          description: `Setoran timbangan pemilahan: ${weightKg} kg (${data.classification || "Pemilahan"})`,
           kategori: "SUBMIT_RESIDU",
         },
       });
@@ -757,7 +771,7 @@ export class ResiduService {
       data: {
         userId: petugasUserId,
         title: "Log Timbangan Berhasil Disimpan",
-        message: `Log timbangan seberat ${weightKg} kg (${data.classification || "Residu"}) berhasil dicatat. Poin diperoleh: +${pointsEarned}.`,
+        message: `Log timbangan seberat ${weightKg} kg (${data.classification || "Pemilahan"}) berhasil dicatat. Poin diperoleh: +${pointsEarned}.`,
       },
     });
 
