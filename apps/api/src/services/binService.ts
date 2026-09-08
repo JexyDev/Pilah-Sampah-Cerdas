@@ -144,6 +144,12 @@ export class BinService {
         const searchCondition = [
           { qrCode: { contains: filters.search, mode: "insensitive" } },
           { id: { contains: filters.search, mode: "insensitive" } },
+          { binType: { contains: filters.search, mode: "insensitive" } },
+          { user: { name: { contains: filters.search, mode: "insensitive" } } },
+          { user: { address: { contains: filters.search, mode: "insensitive" } } },
+          { rw: { name: { contains: filters.search, mode: "insensitive" } } },
+          { kelurahan: { name: { contains: filters.search, mode: "insensitive" } } },
+          { category: { name: { contains: filters.search, mode: "insensitive" } } },
         ];
         if (whereClause.OR || whereClause.AND) {
           whereClause = {

@@ -73,6 +73,13 @@ router.get(
     "RW",
     "PETUGAS_RESIDU",
     "MAHASISWA_KKN",
+    "PIMPINAN",
+    "PEMIMPIN",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "CAMAT",
+    "LURAH",
+    "PANITIA_TASKFORCE",
   ]),
   pemanfaatanController.getAll
 );
@@ -86,6 +93,13 @@ router.get(
     "RW",
     "PETUGAS_RESIDU",
     "MAHASISWA_KKN",
+    "PIMPINAN",
+    "PEMIMPIN",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "CAMAT",
+    "LURAH",
+    "PANITIA_TASKFORCE",
   ]),
   pemanfaatanController.getById
 );

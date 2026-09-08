@@ -207,23 +207,53 @@ const checkRouteActive = (
     return false;
   }
 
-  // Jika target memiliki query parameter (contoh: ?tab=mahasiswa, ?role=dpl)
+  // Jika target memiliki query parameter (contoh: ?tab=mahasiswa, ?role=dpl, ?kategori=ORGANIK)
   if (targetQuery) {
     const targetParams = new URLSearchParams(targetQuery);
     const currentParams = new URLSearchParams(search);
 
-    // Tab parameter handling
+    // Tab parameter handling with alias normalization (e.g. citizens/warga, pengangkut/petugas)
     if (targetParams.has("tab")) {
       const targetTab = (targetParams.get("tab") || "").toLowerCase();
       let currentTab = (currentParams.get("tab") || "").toLowerCase();
       if (!currentTab) {
         if (["/log-aktivitas-dpl", "/dpl/log-aktivitas", "/catat-kegiatan-dpl", "/dpl/catat-kegiatan"].includes(pathname)) {
           currentTab = "dpl";
-        } else {
+        } else if (["/log-aktivitas/mahasiswa", "/logbook-kkn", "/dpl/logbook", "/logbook"].includes(pathname)) {
           currentTab = "mahasiswa";
         }
       }
+
+      const normalizeLeaderboardTab = (t: string) => {
+        if (["warga", "citizens"].includes(t)) return "citizens";
+        if (["petugas", "pengangkut"].includes(t)) return "pengangkut";
+        if (["rw", "rtrw"].includes(t)) return "rtrw";
+        if (["kelurahan"].includes(t)) return "kelurahan";
+        return t;
+      };
+
+      const normTarget = normalizeLeaderboardTab(targetTab);
+      const normCurrent = normalizeLeaderboardTab(currentTab);
+      if (normTarget && normCurrent) {
+        return normTarget === normCurrent;
+      }
       return targetTab === currentTab;
+    }
+
+    // Kategori parameter handling (e.g. ?kategori=ORGANIK)
+    if (targetParams.has("kategori")) {
+      return (
+        (targetParams.get("kategori") || "").toUpperCase() ===
+        (currentParams.get("kategori") || "").toUpperCase()
+      );
+    }
+
+    // Jenis parameter handling (e.g. ?jenis=bank_sampah)
+    if (targetParams.has("jenis")) {
+      return (
+        (targetParams.get("jenis") || "").toLowerCase() ===
+        (currentParams.get("jenis") || "").toLowerCase()
+      );
     }
 
     // Role parameter handling
@@ -249,7 +279,12 @@ const checkRouteActive = (
   // Target tidak memiliki query parameter
   if (!search) return true;
   const currentParams = new URLSearchParams(search);
-  if (currentParams.has("tab") || currentParams.has("role")) {
+  if (
+    currentParams.has("tab") ||
+    currentParams.has("role") ||
+    currentParams.has("kategori") ||
+    currentParams.has("jenis")
+  ) {
     return false;
   }
   return true;
@@ -340,7 +375,7 @@ const NavItemCollapsed: React.FC<NavItemProps> = ({ to, icon: Icon, label }) => 
 const NavGroupCollapsed: React.FC<{
   icon: LucideIcon;
   label: string;
-  items: Array<{ to: string; label: string }>;
+  items: any[];
 }> = ({ icon: Icon, label, items }) => {
   const location = useLocation();
   const [isHovered, setIsHovered] = React.useState(false);
@@ -354,7 +389,12 @@ const NavGroupCollapsed: React.FC<{
   };
 
   const isAnySubActive = useMemo(() => {
-    return items.some((item, idx) => isSubActive(item.to, idx));
+    return items.some((item, idx) => {
+      if (item.children && Array.isArray(item.children)) {
+        return item.children.some((c: any, cIdx: number) => isSubActive(c.to, cIdx));
+      }
+      return isSubActive(item.to, idx);
+    });
   }, [items, location.pathname, location.search]);
 
   const updateCoordinates = () => {
@@ -433,12 +473,46 @@ const NavGroupCollapsed: React.FC<{
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={handleMouseLeave}
             style={{ top: `${coords.top}px`, left: `${coords.left}px` }}
-            className="fixed bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl py-2 px-1.5 min-w-[210px] z-[999999] flex flex-col animate-in fade-in slide-in-from-left-2 duration-150 text-left pointer-events-auto"
+            className="fixed bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl py-2 px-1.5 min-w-[220px] max-h-[85vh] overflow-y-auto z-[999999] flex flex-col animate-in fade-in slide-in-from-left-2 duration-150 text-left pointer-events-auto"
           >
             <div className="px-3 py-1.5 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 mb-1">
               {label}
             </div>
             {items.map((sub, idx) => {
+              if (sub.children && Array.isArray(sub.children) && sub.children.length > 0) {
+                return (
+                  <div key={sub.label} className="my-1 border-t border-slate-100 dark:border-slate-800/80 pt-1">
+                    <div className="px-3 py-1 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                      {sub.label}
+                    </div>
+                    {sub.children.map((child: any, cIdx: number) => {
+                      const isChildActive = isSubActive(child.to, cIdx);
+                      return (
+                        <Link
+                          key={child.to}
+                          to={child.to}
+                          onClick={handleSubItemClick}
+                          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[11.5px] font-medium transition-all ${
+                            isChildActive
+                              ? "bg-[#f2f8f4] dark:bg-emerald-950/70 text-[#035941] dark:text-emerald-400 font-bold"
+                              : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-[#035941] dark:hover:text-emerald-400"
+                          }`}
+                        >
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                              isChildActive
+                                ? "bg-[#58A621] dark:bg-emerald-400"
+                                : "bg-slate-300 dark:bg-slate-600"
+                            }`}
+                          />
+                          <span className="truncate">{child.label}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                );
+              }
+
               const isActive = isSubActive(sub.to, idx);
               return (
                 <Link
@@ -472,7 +546,7 @@ const NavGroupCollapsed: React.FC<{
 const NavGroup: React.FC<{
   icon: LucideIcon;
   label: string;
-  items: Array<{ to: string; label: string }>;
+  items: any[];
   onItemClick?: () => void;
 }> = ({ icon: Icon, label, items, onItemClick }) => {
   const location = useLocation();
@@ -482,7 +556,12 @@ const NavGroup: React.FC<{
   };
 
   const isAnySubActive = useMemo(() => {
-    return items.some((item, idx) => isSubActive(item.to, idx));
+    return items.some((item, idx) => {
+      if (item.children && Array.isArray(item.children)) {
+        return item.children.some((c: any, cIdx: number) => isSubActive(c.to, cIdx));
+      }
+      return isSubActive(item.to, idx);
+    });
   }, [items, location.pathname, location.search]);
 
   const [isOpen, setIsOpen] = React.useState(isAnySubActive);
@@ -515,8 +594,63 @@ const NavGroup: React.FC<{
         />
       </button>
       {isOpen && (
-        <div className="ml-4 pl-3 border-l-2 border-slate-200/80 dark:border-slate-800 my-1 space-y-0.5 transition-all">
-          {items.map((sub, idx) => {
+        <div className="ml-4 pl-3.5 border-l-2 border-slate-200/80 dark:border-slate-800 my-1 space-y-0.5 transition-all">
+          {items.map((sub: any, idx) => {
+            if (sub.children && Array.isArray(sub.children) && sub.children.length > 0) {
+              const isSubGroupActive = sub.children.some((child: any, cIdx: number) =>
+                isSubActive(child.to, cIdx)
+              );
+              return (
+                <div key={sub.label} className="space-y-0.5 pt-0.5">
+                  <div
+                    className={`flex items-center gap-2.5 px-3 py-1.5 text-[12px] font-semibold transition-all ${
+                      isSubGroupActive
+                        ? "text-[#035941] dark:text-emerald-400 font-bold"
+                        : "text-slate-700 dark:text-slate-300"
+                    }`}
+                  >
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full shrink-0 transition-all ${
+                        isSubGroupActive
+                          ? "bg-[#58A621] dark:bg-emerald-400 scale-125 ring-3 ring-[#58A621]/30 dark:ring-emerald-800"
+                          : "bg-slate-300 dark:bg-slate-600"
+                      }`}
+                    />
+                    <span className="truncate tracking-tight">{sub.label}</span>
+                  </div>
+
+                  {/* Level 3 Indented Sub-Tree with Guide Line */}
+                  <div className="ml-3.5 pl-3 border-l-2 border-slate-200/80 dark:border-slate-800 my-0.5 space-y-0.5 transition-all">
+                    {sub.children.map((child: any, cIdx: number) => {
+                      const isChildActive = isSubActive(child.to, cIdx);
+                      return (
+                        <NavLink
+                          key={child.to}
+                          to={child.to}
+                          title={child.label}
+                          onClick={onItemClick}
+                          className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[11.5px] transition-all duration-200 group ${
+                            isChildActive
+                              ? "bg-[#f2f8f4] dark:bg-emerald-950/70 text-[#035941] dark:text-emerald-400 font-bold border border-[#c8e6b2]/60 shadow-2xs"
+                              : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-[#035941] dark:hover:text-emerald-400 hover:translate-x-1 font-medium active:scale-[0.98]"
+                          }`}
+                        >
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full shrink-0 transition-all ${
+                              isChildActive
+                                ? "bg-[#58A621] dark:bg-emerald-400 scale-125 ring-3 ring-[#58A621]/30 dark:ring-emerald-800"
+                                : "bg-slate-300 dark:bg-slate-600 group-hover:bg-[#58A621] dark:group-hover:bg-emerald-400"
+                            }`}
+                          />
+                          <span className="truncate">{child.label}</span>
+                        </NavLink>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            }
+
             const isActive = isSubActive(sub.to, idx);
             return (
               <NavLink
@@ -607,7 +741,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
 
   const getFilteredGroupChildren = (
     groupLabel: string,
-    items: Array<{ to: string; label: string; allowed?: UserRole[]; resource?: string }>
+    items: any[]
   ) => {
     if (groupLabel === "Wilayah" || groupLabel === "Data Wilayah") {
       if (isPimpinan) return [];
@@ -622,7 +756,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
       return [];
     }
 
-    return items.filter((c) => hasAccess(c.allowed, c.resource));
+    return (items || [])
+      .filter((c: any) => hasAccess(c.allowed, c.resource))
+      .map((c: any) => {
+        if (c.children && Array.isArray(c.children)) {
+          return {
+            ...c,
+            children: c.children.filter((sub: any) => hasAccess(sub.allowed, sub.resource)),
+          };
+        }
+        return c;
+      });
   };
 
   const menuSections = [
@@ -982,7 +1126,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
         },
         {
           type: "group",
-          label: "Monitoring Pengelolaan",
+          label: "Infrastruktur & Fasilitas",
           icon: Trash2,
           allowed: [
             "DEVELOPER",
@@ -1036,7 +1180,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
         },
         {
           type: "group",
-          label: "Monitoring Pemilahan",
+          label: "Operasional",
           icon: Truck,
           allowed: [
             "DEVELOPER",
@@ -1054,7 +1198,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           children: [
             {
               to: "/monitoring-pemilahan/penyetoran-sampah",
-              label: "Penyetoran Sampah",
+              label: "Pemilahan",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
@@ -1071,7 +1215,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             },
             {
               to: "/monitoring-pemilahan/rekapitulasi-setoran",
-              label: "Rekapitulasi Setoran",
+              label: "Rekapitulasi Pemilahan",
               resource: "laporan_analitik",
               allowed: [
                 "DEVELOPER",
@@ -1087,7 +1231,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             },
             {
               to: "/monitoring-pemilahan/pengangkutan-sampah",
-              label: "Pengangkutan Sampah",
+              label: "Pengangkutan",
               resource: "pengangkutan",
               allowed: [
                 "DEVELOPER",
@@ -1102,8 +1246,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               ] as UserRole[],
             },
             {
+              type: "subgroup",
+              label: "Point & Peringkat",
               to: "/monitoring-pemilahan/peringkat-warga",
-              label: "Papan Peringkat",
               resource: "poin_warga",
               allowed: [
                 "DEVELOPER",
@@ -1118,13 +1263,75 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "PIMPINAN",
                 "WARGA",
               ] as UserRole[],
+              children: [
+                {
+                  to: "/monitoring-pemilahan/peringkat-warga?system=system1&tab=citizens",
+                  label: "Warga",
+                  allowed: [
+                    "DEVELOPER",
+                    "SUPER_USER",
+                    "ADMIN_DLH",
+                    "CAMAT",
+                    "LURAH",
+                    "RW",
+                    "PETUGAS_RESIDU",
+                    "MAHASISWA_KKN",
+                    "PANITIA_TASKFORCE",
+                    "PIMPINAN",
+                    "WARGA",
+                  ] as UserRole[],
+                },
+                {
+                  to: "/monitoring-pemilahan/peringkat-warga?system=system1&tab=pengangkut",
+                  label: "Petugas",
+                  allowed: [
+                    "DEVELOPER",
+                    "SUPER_USER",
+                    "ADMIN_DLH",
+                    "CAMAT",
+                    "LURAH",
+                    "RW",
+                    "PETUGAS_RESIDU",
+                    "MAHASISWA_KKN",
+                    "PANITIA_TASKFORCE",
+                    "PIMPINAN",
+                  ] as UserRole[],
+                },
+                {
+                  to: "/monitoring-pemilahan/peringkat-warga?system=system1&tab=rtrw",
+                  label: "RW",
+                  allowed: [
+                    "DEVELOPER",
+                    "SUPER_USER",
+                    "ADMIN_DLH",
+                    "CAMAT",
+                    "LURAH",
+                    "RW",
+                    "PANITIA_TASKFORCE",
+                    "PIMPINAN",
+                  ] as UserRole[],
+                },
+                {
+                  to: "/monitoring-pemilahan/peringkat-warga?system=system1&tab=kelurahan",
+                  label: "Kelurahan",
+                  allowed: [
+                    "DEVELOPER",
+                    "SUPER_USER",
+                    "ADMIN_DLH",
+                    "CAMAT",
+                    "LURAH",
+                    "PANITIA_TASKFORCE",
+                    "PIMPINAN",
+                  ] as UserRole[],
+                },
+              ],
             },
           ],
         },
         {
-          to: "/monitoring-pemanfaatan",
+          type: "group",
+          label: "Pemanfaatan & Dampak",
           icon: Recycle,
-          label: "Monitoring Pemanfaatan",
           resource: "hasil_pemanfaatan",
           allowed: [
             "DEVELOPER",
@@ -1139,6 +1346,87 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             "PANITIA_TASKFORCE",
             "MAHASISWA_KKN",
           ] as UserRole[],
+          children: [
+            {
+              to: "/monitoring-pemanfaatan?kategori=ORGANIK",
+              label: "Organik",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "PETUGAS_RESIDU",
+                "WARGA",
+                "PIMPINAN",
+                "PANITIA_TASKFORCE",
+                "MAHASISWA_KKN",
+              ] as UserRole[],
+            },
+            {
+              to: "/monitoring-pemanfaatan?kategori=ANORGANIK",
+              label: "Anorganik",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "PETUGAS_RESIDU",
+                "WARGA",
+                "PIMPINAN",
+                "PANITIA_TASKFORCE",
+                "MAHASISWA_KKN",
+              ] as UserRole[],
+            },
+            {
+              to: "/pengangkutan-residu",
+              label: "Residu",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "PETUGAS_RESIDU",
+                "PIMPINAN",
+                "PANITIA_TASKFORCE",
+              ] as UserRole[],
+            },
+            {
+              to: "/monitoring-pengelolaan/fasilitas?jenis=bank_sampah",
+              label: "Bank Sampah",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "PETUGAS_RESIDU",
+                "WARGA",
+                "PIMPINAN",
+                "PANITIA_TASKFORCE",
+                "MAHASISWA_KKN",
+              ] as UserRole[],
+            },
+            {
+              to: "/evaluasi-dampak-kkn",
+              label: "Dampak & Nilai Ekonomis",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "PIMPINAN",
+                "PANITIA_TASKFORCE",
+              ] as UserRole[],
+            },
+          ],
         },
       ],
     },

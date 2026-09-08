@@ -1,87 +1,86 @@
+/**
+ * Project: BERSEKA
+ * Developed by: PT Makerindo
+ * Copyright (c) 2026 PT Makerindo. All rights reserved.
+ * 
+ * Page: Monitoring Pemanfaatan & Hasil Olahan
+ * Sesuai Notulensi Review Sistem BERSEKA 8 September 2026:
+ * - Fitur Aspirasi dihapus (fokus murni pada monitoring hasil pemanfaatan & luaran).
+ * - Filter bertingkat: Wilayah (Kelurahan) -> RW -> Produk Luaran.
+ * - Data produk luaran mengacu pada Data Master Luaran.
+ * - Mendukung sinkronisasi query parameter kategori (ORGANIK, ANORGANIK, RESIDU) dan jenis (bank_sampah).
+ */
+
 import React, { useEffect, useState, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
-  MessageSquare,
   Sparkles,
   Search,
   Filter,
   Loader2,
-  Plus,
-  Star,
-  CheckCircle2,
-  Clock,
-  AlertCircle,
-  XCircle,
-  X,
-  MessageCircle,
-  Trash2,
   Building2,
-  PackageCheck,
   Leaf,
   Boxes,
   TrendingUp,
   MapPin,
-  ExternalLink,
-  Eye,
-  Image as ImageIcon,
+  RotateCcw,
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+  XCircle,
+  Tag,
 } from "lucide-react";
-import pemanfaatanApiService, { type FeedbackItem, type PemanfaatanProgram } from "../../services/pemanfaatanService";
-import showToast from "../../utils/showToast";
+import pemanfaatanApiService, { type PemanfaatanProgram } from "../../services/pemanfaatanService";
 import { useAuthStore } from "../../store/useAuthStore";
 import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
-import { ConfirmModal } from "../../components/common/ConfirmModal";
 import PageHeader from "../../components/common/PageHeader";
-import { resolveImageUrl } from "../../utils/imageUrl";
+
+const COBLONG_KELURAHANS = [
+  "Cipaganti",
+  "Dago",
+  "Lebak Gede",
+  "Lebak Siliwangi",
+  "Sadang Serang",
+  "Sekeloa",
+];
 
 export const HasilPemanfaatan: React.FC = () => {
   const { user } = useAuthStore();
-  const [activeSectionTab] = useState<"HASIL">("HASIL");
-
-  // Feedback State
-  const [items, setItems] = useState<FeedbackItem[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Program / Product Outputs State
   const [programs, setPrograms] = useState<PemanfaatanProgram[]>([]);
-  const [masterLuaranList, setMasterLuaranList] = useState<Array<{ id: number; nama: string; kategori: string }>>([]);
+  const [loading, setLoading] = useState(true);
+  const [masterLuaranList, setMasterLuaranList] = useState<
+    Array<{ id: number; nama: string; kategori: string; deskripsi?: string; satuanDefault?: string; hargaEstimasiPerSatuan?: number }>
+  >([]);
 
-  // Search & Filter states
+  // Search & Dynamic Tiered Filters
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("ALL");
-  const [kategoriFilter, setKategoriFilter] = useState<string>("ALL");
+  const [filterKelurahan, setFilterKelurahan] = useState<string>("ALL");
+  const [filterRw, setFilterRw] = useState<string>("ALL");
+  const [filterLuaran, setFilterLuaran] = useState<string>("ALL");
+  const [filterKategori, setFilterKategori] = useState<string>(() => {
+    const qKategori = searchParams.get("kategori");
+    if (qKategori) return qKategori.toUpperCase();
+    return "ALL";
+  });
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  // Modals
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showRespondModal, setShowRespondModal] = useState(false);
-  const [selectedItemForRespond, setSelectedItemForRespond] = useState<FeedbackItem | null>(null);
-  const [previewPhotoUrl, setPreviewPhotoUrl] = useState<string | null>(null);
-
-  // Form states - Add Feedback
-  const [formJudul, setFormJudul] = useState("");
-  const [formKategori, setFormKategori] = useState("UMUM");
-  const [formIsi, setFormIsi] = useState("");
-  const [formRating, setFormRating] = useState(5);
-  const [formFotoUrl, setFormFotoUrl] = useState("");
-  const [submittingAdd, setSubmittingAdd] = useState(false);
-
-  // Form states - Respond Feedback
-  const [respondTanggapan, setRespondTanggapan] = useState("");
-  const [respondStatus, setRespondStatus] = useState<string>("SELESAI");
-  const [submittingRespond, setSubmittingRespond] = useState(false);
-  const [deleteFeedbackId, setDeleteFeedbackId] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-
   const fetchProgramList = async () => {
     try {
+      setLoading(true);
       const data = await pemanfaatanApiService.getPrograms();
-      setPrograms(data);
+      setPrograms(Array.isArray(data) ? data : []);
     } catch (e: any) {
       console.warn("[HasilPemanfaatan] Gagal memuat program:", e?.message || e);
       setPrograms([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -94,208 +93,156 @@ export const HasilPemanfaatan: React.FC = () => {
     });
   }, []);
 
+  // Sync with URL Query Parameters (from sidebar navigation e.g. ?kategori=ORGANIK)
+  useEffect(() => {
+    const urlKat = searchParams.get("kategori");
+    const urlJenis = searchParams.get("jenis");
 
-  // Filtered feedback calculation
-  const filteredItems = useMemo(() => {
-    return items.filter((item) => {
-      const q = (searchQuery || "").toLowerCase().trim();
-      const rwName = item?.rw?.name || (item?.rwId ? `RW ${item.rwId}` : "");
-      const kelName = item?.rw?.kelurahan?.name || "";
+    if (urlKat) {
+      setFilterKategori(urlKat.toUpperCase());
+    }
+    if (urlJenis && urlJenis.toLowerCase().includes("bank")) {
+      setFilterLuaran("Bank Sampah");
+    }
+  }, [searchParams]);
 
-      const matchesSearch =
-        !q ||
-        (item?.wargaNama || "").toLowerCase().includes(q) ||
-        (item?.judul || "").toLowerCase().includes(q) ||
-        (item?.isiKritikSaran || "").toLowerCase().includes(q) ||
-        (item?.kategori || "").toLowerCase().includes(q) ||
-        rwName.toLowerCase().includes(q) ||
-        kelName.toLowerCase().includes(q);
-
-      const matchesStatus =
-        statusFilter === "ALL" ? true : item?.status === statusFilter;
-
-      const matchesKategori =
-        kategoriFilter === "ALL"
-          ? true
-          : (item?.kategori || "").toLowerCase().includes((kategoriFilter || "").toLowerCase());
-
-      // ponytail: client-side DPL/RW filter removed — backend rbacScoping handles scoping
-      return matchesSearch && matchesStatus && matchesKategori;
+  // Dynamic available Kelurahans from dataset merged with official Coblong list
+  const availableKelurahans = useMemo(() => {
+    const set = new Set<string>(COBLONG_KELURAHANS);
+    programs.forEach((p) => {
+      const k = p.rw?.kelurahan?.name;
+      if (k) set.add(k);
     });
-  }, [items, searchQuery, statusFilter, kategoriFilter]);
+    return Array.from(set).sort();
+  }, [programs]);
 
+  // Dynamic available RWs based on selected Kelurahan
+  const availableRws = useMemo(() => {
+    const rwMap = new Map<string, string>();
+    programs.forEach((p) => {
+      const kelName = p.rw?.kelurahan?.name || "";
+      if (filterKelurahan === "ALL" || kelName.toLowerCase() === filterKelurahan.toLowerCase()) {
+        const rwName = p.rw?.name || (p.rwId ? `RW ${p.rwId}` : "");
+        if (rwName) {
+          rwMap.set(rwName, rwName);
+        }
+      }
+    });
+    return Array.from(rwMap.values()).sort();
+  }, [programs, filterKelurahan]);
 
-  // Filtered programs calculation
+  // Reset RW filter if chosen Kelurahan changes and current RW is not part of it
+  useEffect(() => {
+    if (filterKelurahan !== "ALL" && filterRw !== "ALL") {
+      const exists = availableRws.includes(filterRw);
+      if (!exists) setFilterRw("ALL");
+    }
+  }, [filterKelurahan, availableRws, filterRw]);
+
+  // Filtered Programs Calculation
   const filteredPrograms = useMemo(() => {
     return programs.filter((p) => {
       const q = (searchQuery || "").toLowerCase().trim();
       const rwName = p?.rw?.name || (p?.rwId ? `RW ${p.rwId}` : "");
       const kelName = p?.rw?.kelurahan?.name || "";
+      const jenisOlahan = p?.jenisProgram || "";
+      const kategoriBahan = p?.kategoriBahan || "";
+
+      // 1. Text Search Query
       const matchesSearch =
         !q ||
         (p?.namaProgram || "").toLowerCase().includes(q) ||
-        (p?.jenisProgram || "").toLowerCase().includes(q) ||
+        jenisOlahan.toLowerCase().includes(q) ||
         (p?.lokasiFasilitas || "").toLowerCase().includes(q) ||
         (p?.targetPenerimaManfaat || "").toLowerCase().includes(q) ||
         rwName.toLowerCase().includes(q) ||
         kelName.toLowerCase().includes(q);
 
-      const matchesKategori =
-        kategoriFilter === "ALL" ? true : (p?.jenisProgram || "").toLowerCase().includes((kategoriFilter || "").toLowerCase());
+      if (!matchesSearch) return false;
 
-      // ponytail: client-side DPL/RW filter removed — backend rbacScoping handles scoping
-      return matchesSearch && matchesKategori;
+      // 2. Filter Wilayah / Kelurahan
+      if (filterKelurahan !== "ALL") {
+        if (!kelName || !kelName.toLowerCase().includes(filterKelurahan.toLowerCase())) {
+          return false;
+        }
+      }
+
+      // 3. Filter RW
+      if (filterRw !== "ALL") {
+        if (!rwName || !rwName.toLowerCase().includes(filterRw.toLowerCase())) {
+          return false;
+        }
+      }
+
+      // 4. Filter Kategori Bahan (ORGANIK, ANORGANIK, RESIDU)
+      if (filterKategori !== "ALL") {
+        const isOrgFilter = filterKategori === "ORGANIK" || filterKategori === "ORGANIC";
+        const isAnorgFilter = filterKategori === "ANORGANIK" || filterKategori === "NON_ORGANIC";
+        const isResFilter = filterKategori === "RESIDU";
+
+        const itemIsAnorg =
+          kategoriBahan.toUpperCase().includes("ANORGANIK") ||
+          jenisOlahan.toLowerCase().includes("bank") ||
+          jenisOlahan.toLowerCase().includes("plastik");
+
+        const itemIsRes =
+          kategoriBahan.toUpperCase().includes("RESIDU") ||
+          jenisOlahan.toLowerCase().includes("residu");
+
+        const itemIsOrg = !itemIsAnorg && !itemIsRes;
+
+        if (isOrgFilter && !itemIsOrg) return false;
+        if (isAnorgFilter && !itemIsAnorg) return false;
+        if (isResFilter && !itemIsRes) return false;
+      }
+
+      // 5. Filter Produk Luaran (Master Luaran / Jenis)
+      if (filterLuaran !== "ALL") {
+        const target = filterLuaran.toLowerCase();
+        if (!jenisOlahan.toLowerCase().includes(target)) {
+          return false;
+        }
+      }
+
+      return true;
     });
-  }, [programs, searchQuery, kategoriFilter]);
-
+  }, [programs, searchQuery, filterKelurahan, filterRw, filterKategori, filterLuaran]);
 
   // Reset pagination when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, statusFilter, kategoriFilter, itemsPerPage, activeSectionTab]);
-
-  const activeDatasetLength = activeSectionTab === "HASIL" ? filteredPrograms.length : filteredItems.length;
+  }, [searchQuery, filterKelurahan, filterRw, filterKategori, filterLuaran, itemsPerPage]);
 
   const totalPages = useMemo(() => {
-    return Math.max(1, Math.ceil(activeDatasetLength / itemsPerPage));
-  }, [activeDatasetLength, itemsPerPage]);
-
-  const paginatedItems = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return filteredItems.slice(start, start + itemsPerPage);
-  }, [filteredItems, currentPage, itemsPerPage]);
+    return Math.max(1, Math.ceil(filteredPrograms.length / itemsPerPage));
+  }, [filteredPrograms.length, itemsPerPage]);
 
   const paginatedPrograms = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
     return filteredPrograms.slice(start, start + itemsPerPage);
   }, [filteredPrograms, currentPage, itemsPerPage]);
 
-  // Metrics summary - Feedback
-  const totalCount = items.length;
-  const pendingCount = items.filter((i) => i.status === "MENUNGGU").length;
-  const inProgressCount = items.filter((i) => i.status === "DALAM_PROSES").length;
-  const resolvedCount = items.filter((i) => i.status === "SELESAI").length;
-  const avgRating = useMemo(() => {
-    if (items.length === 0) return "5.00";
-    const sum = items.reduce((acc, curr) => acc + (curr.rating || 5), 0);
-    return (sum / items.length).toFixed(2);
-  }, [items]);
-
-  // Metrics summary - Products
+  // Metrics Summary
   const totalPanenKg = useMemo(() => {
-    return programs.reduce((acc, curr) => acc + (curr.jumlahHasilKg || 0), 0);
-  }, [programs]);
+    return filteredPrograms.reduce((acc, curr) => acc + (curr.jumlahHasilKg || 0), 0);
+  }, [filteredPrograms]);
 
   const totalNilaiEkonomi = useMemo(() => {
-    return programs.reduce((acc, curr) => acc + (curr.nilaiEkonomiRp || 0), 0);
-  }, [programs]);
+    return filteredPrograms.reduce((acc, curr) => acc + (curr.nilaiEkonomiRp || 0), 0);
+  }, [filteredPrograms]);
 
   const totalBahanMasukKg = useMemo(() => {
-    return programs.reduce((acc, curr) => acc + (curr.jumlahBahanMasukKg || 0), 0);
-  }, [programs]);
+    return filteredPrograms.reduce((acc, curr) => acc + (curr.jumlahBahanMasukKg || 0), 0);
+  }, [filteredPrograms]);
 
-  // Handlers - Submit New Feedback
-  const handleAddSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formJudul.trim() || !formIsi.trim()) {
-      showToast.error("Judul dan isi kritik/saran wajib diisi");
-      return;
-    }
-
-    try {
-      setSubmittingAdd(true);
-      const res = await pemanfaatanApiService.createFeedback({
-        judul: formJudul,
-        kategori: formKategori,
-        isiKritikSaran: formIsi,
-        rating: formRating,
-        fotoBuktiUrl: formFotoUrl || null,
-      });
-
-      if (res && (res.success || res.id)) {
-        showToast.success("Kritik & saran berhasil disampaikan");
-        setShowAddModal(false);
-        setFormJudul("");
-        setFormIsi("");
-        setFormRating(5);
-        setFormFotoUrl("");
-        fetchFeedbackList();
-      }
-    } catch (e: any) {
-      showToast.error(e.response?.data?.message || "Gagal mengirim kritik & saran");
-    } finally {
-      setSubmittingAdd(false);
-    }
+  const resetAllFilters = () => {
+    setSearchQuery("");
+    setFilterKelurahan("ALL");
+    setFilterRw("ALL");
+    setFilterLuaran("ALL");
+    setFilterKategori("ALL");
+    setSearchParams({});
   };
-
-  // Handlers - Respond Feedback
-  const openRespondModal = (item: FeedbackItem) => {
-    setSelectedItemForRespond(item);
-    setRespondTanggapan(item.tanggapan || "");
-    setRespondStatus(item.status === "MENUNGGU" ? "SELESAI" : item.status);
-    setShowRespondModal(true);
-  };
-
-  const handleRespondSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedItemForRespond) return;
-    if (!respondTanggapan.trim()) {
-      showToast.error("Tanggapan resmi tidak boleh kosong");
-      return;
-    }
-
-    try {
-      setSubmittingRespond(true);
-      const res = await pemanfaatanApiService.respondFeedback(selectedItemForRespond.id, {
-        tanggapan: respondTanggapan,
-        status: respondStatus,
-      });
-
-      if (res && res.success) {
-        showToast.success("Tanggapan resmi berhasil disimpan");
-        setShowRespondModal(false);
-        setSelectedItemForRespond(null);
-        setRespondTanggapan("");
-        fetchFeedbackList();
-      }
-    } catch (e: any) {
-      showToast.error(e.response?.data?.message || "Gagal menyimpan tanggapan");
-    } finally {
-      setSubmittingRespond(false);
-    }
-  };
-
-  // Handlers - Delete Feedback
-  const handleDelete = (id: string) => {
-    setDeleteFeedbackId(id);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!deleteFeedbackId) return;
-    try {
-      setIsDeleting(true);
-      const res = await pemanfaatanApiService.deleteFeedback(deleteFeedbackId);
-      if (res && res.success) {
-        showToast.success("Kritik & saran berhasil dihapus");
-        setDeleteFeedbackId(null);
-        fetchFeedbackList();
-      }
-    } catch (e: any) {
-      showToast.error(e.response?.data?.message || "Gagal menghapus kritik & saran");
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  const isManagementRole = [
-    "DEVELOPER",
-    "SUPER_USER",
-    "ADMIN_DLH",
-    "PEMIMPIN",
-    "PIMPINAN",
-    "RW",
-    "PANITIA_TASKFORCE",
-  ].includes(user?.peran || "");
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -304,26 +251,26 @@ export const HasilPemanfaatan: React.FC = () => {
       case "PANEN":
         return (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/50">
-            <CheckCircle2 size={13} /> {status === "DISTRIBUSI" ? "Telah Didistribusikan" : status === "PANEN" ? "Siap Panen/Terkonversi" : "Selesai Ditindaklanjuti"}
+            <CheckCircle2 size={13} /> {status === "DISTRIBUSI" ? "Didistribusikan" : "Siap Panen / Terkonversi"}
           </span>
         );
       case "DALAM_PROSES":
       case "PROSES":
         return (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-700/50">
-            <Clock size={13} /> {status === "PROSES" ? "Dalam Pengolahan" : "Dalam Proses"}
+            <Clock size={13} /> Dalam Pengolahan
           </span>
         );
       case "DITOLAK":
         return (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-700/50">
-            <XCircle size={13} /> Ditolak
+            <XCircle size={13} /> Dibatalkan
           </span>
         );
       default:
         return (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700/50">
-            <AlertCircle size={13} /> {status === "TERENCANA" ? "Terjadwal" : "Menunggu Tanggapan"}
+            <AlertCircle size={13} /> Terencana
           </span>
         );
     }
@@ -373,27 +320,12 @@ export const HasilPemanfaatan: React.FC = () => {
     );
   };
 
-  const renderStars = (rating: number) => {
-    return (
-      <div className="flex items-center gap-1 text-amber-400">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <Star
-            key={star}
-            size={14}
-            className={star <= rating ? "fill-amber-400 text-amber-400" : "text-slate-300 dark:text-slate-600"}
-          />
-        ))}
-        <span className="text-xs font-black text-slate-700 dark:text-slate-300 ml-1">{rating}.0</span>
-      </div>
-    );
-  };
-
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 text-slate-800 dark:text-slate-100 font-sans">
-      {/* Clean Enterprise Page Header */}
+      {/* Page Header */}
       <PageHeader
         icon={Sparkles}
-        category="Hasil Olahan & Evaluasi"
+        category="Tata Kelola Sampah • Pemanfaatan"
         scope={
           user?.peran === "DPL" || user?.peran === "DOSEN_PEMBIMBING"
             ? user?.wilayah || (user?.kelurahan ? `Kel. ${user.kelurahan}` : "Wilayah Dampingan KKN")
@@ -401,775 +333,308 @@ export const HasilPemanfaatan: React.FC = () => {
             ? `RW ${user?.rw || user?.rtRwId || ""}`
             : user?.peran === "LURAH"
             ? `Kelurahan ${user?.kelurahan || ""}`
-            : user?.wilayah || "Wilayah Operasional"
+            : "Kecamatan Coblong"
         }
-        title="Pemanfaatan & Hasil"
-        description="Pusat pemantauan konversi produk hasil daur ulang (Kompos, Maggot BSF, Pupuk POC, Saldo Bank Sampah) berbasis Master Luaran Sampah."
+        title="Monitoring Pemanfaatan & Dampak"
+        description="Pusat pemantauan konversi pengolahan sampah terpilah menjadi produk bernilai guna (Kompos, Maggot BSF, Pupuk Organik Cair, dan Bank Sampah) berbasis Master Luaran."
       />
 
-      {/* VIEW: REKAPITULASI PRODUK & HASIL OLAHAN */}
-      <div className="space-y-4">
-        {/* KPI Metric Summary Cards - Hasil Produk */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          <div className="bg-white dark:bg-slate-900 p-4 sm:p-4.5 rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5 min-w-0">
-            <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded-xl shrink-0 border border-emerald-100 dark:border-emerald-700/50">
-              <Leaf className="w-5 h-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider truncate">Hasil Panen Olahan</p>
-              <p className="text-base sm:text-lg font-black text-emerald-700 dark:text-emerald-400 mt-0.5 truncate">{totalPanenKg.toLocaleString("id-ID")} <span className="text-xs font-semibold text-slate-400">Kg/L</span></p>
-            </div>
+      {/* KPI Metric Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="bg-white dark:bg-slate-900 p-4 sm:p-4.5 rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5 min-w-0">
+          <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded-xl shrink-0 border border-emerald-100 dark:border-emerald-700/50">
+            <Leaf className="w-5 h-5" />
           </div>
-
-          <div className="bg-white dark:bg-slate-900 p-4 sm:p-4.5 rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5 min-w-0">
-            <div className="p-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl shrink-0 border border-slate-200 dark:border-slate-700">
-              <TrendingUp className="w-5 h-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider truncate">Nilai Ekonomi Daur</p>
-              <p className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5 truncate" title={`Rp ${totalNilaiEkonomi.toLocaleString("id-ID")}`}>
-                Rp {totalNilaiEkonomi.toLocaleString("id-ID")}
-              </p>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-slate-900 p-4 sm:p-4.5 rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5 min-w-0">
-            <div className="p-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl shrink-0 border border-slate-200 dark:border-slate-700">
-              <Boxes className="w-5 h-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider truncate">Total Bahan Terolah</p>
-              <p className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5 truncate">{totalBahanMasukKg.toLocaleString("id-ID")} <span className="text-xs font-semibold text-slate-400">Kg</span></p>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-slate-900 p-4 sm:p-4.5 rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5 min-w-0">
-            <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded-xl shrink-0 border border-emerald-100 dark:border-emerald-700/50">
-              <Building2 className="w-5 h-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider truncate">Program &amp; Fasilitas</p>
-              <p className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5 truncate">{programs.length} <span className="text-xs font-semibold text-slate-400">Titik Olahan</span></p>
-            </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider truncate">
+              Hasil Panen Olahan
+            </p>
+            <p className="text-base sm:text-lg font-black text-emerald-700 dark:text-emerald-400 mt-0.5 truncate">
+              {totalPanenKg.toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}{" "}
+              <span className="text-xs font-semibold text-slate-400">Kg / L</span>
+            </p>
           </div>
         </div>
 
-        {/* Search & Filter Bar - Hasil Produk */}
-        <div className="bg-white dark:bg-slate-900 p-4.5 sm:p-5 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-4">
-          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-              <input
-                type="text"
-                placeholder="Cari nama program, jenis olahan, lokasi fasilitas, atau penerima manfaat..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 pl-10 pr-4 py-2.5 rounded-2xl text-xs font-bold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-[#009966] focus:bg-white dark:focus:bg-slate-800 transition-all"
-              />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <select
-                value={kategoriFilter}
-                onChange={(e) => setKategoriFilter(e.target.value)}
-                className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 px-3 py-2.5 rounded-2xl text-xs font-bold outline-none focus:border-[#009966] transition-all cursor-pointer"
-              >
-                <option value="ALL">Semua Jenis Pengolahan (Master Data)</option>
-                {masterLuaranList.length > 0 ? (
-                  masterLuaranList.map((m) => (
-                    <option key={m.id} value={m.nama}>{m.nama} ({m.kategori})</option>
-                  ))
-                ) : (
-                  <>
-                    <option value="Kompos">Kompos Organik (Buruan Sae)</option>
-                    <option value="Maggot">Maggot BSF</option>
-                    <option value="POC">Pupuk Organik Cair (POC)</option>
-                    <option value="Bank Sampah">Bank Sampah Anorganik</option>
-                    <option value="Loseda">Loseda (Lorong Sisa Dapur)</option>
-                    <option value="Bata Terawang">Bata Terawang</option>
-                  </>
-                )}
-              </select>
-            </div>
+        <div className="bg-white dark:bg-slate-900 p-4 sm:p-4.5 rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5 min-w-0">
+          <div className="p-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl shrink-0 border border-slate-200 dark:border-slate-700">
+            <TrendingUp className="w-5 h-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider truncate">
+              Nilai Ekonomi Daur
+            </p>
+            <p className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5 truncate" title={`Rp ${totalNilaiEkonomi.toLocaleString("id-ID")}`}>
+              Rp {totalNilaiEkonomi.toLocaleString("id-ID")}
+            </p>
           </div>
         </div>
 
-          {/* Table Hasil Olahan & Distribusi */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs whitespace-nowrap">
-                <thead className="bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 font-extrabold border-b border-slate-200/80 dark:border-slate-800 uppercase tracking-wider text-[10.5px]">
-                  <tr>
-                    <th className="px-4 py-3.5 text-center w-12">No</th>
-                    <th className="px-4 py-3.5">Nama Program & Fasilitas</th>
-                    <th className="px-4 py-3.5">Jenis Olahan</th>
-                    <th className="px-4 py-3.5">Wilayah RW</th>
-                    <th className="px-4 py-3.5 text-center">Bahan Masuk</th>
-                    <th className="px-4 py-3.5 text-center">Hasil Panen</th>
-                    <th className="px-4 py-3.5 text-center">Nilai Ekonomi</th>
-                    <th className="px-4 py-3.5">Penerima Manfaat</th>
-                    <th className="px-4 py-3.5 text-center">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {paginatedPrograms.map((p, idx) => (
-                    <tr key={p.id} className="hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/50 transition">
-                      <td className="px-4 py-3.5 text-center font-bold text-slate-400">
-                        {(currentPage - 1) * itemsPerPage + idx + 1}
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <span className="font-extrabold text-slate-900 dark:text-slate-100 block text-sm">
-                          {(() => {
-                            const raw = p.namaProgram || "Program Pengolahan Mandiri";
-                            const noMarkdown = raw.replace(/\*\*/g, "").replace(/\*/g, "").trim();
-                            let clean = noMarkdown.split("\n")[0].trim();
-                            if (clean.includes(" - ")) clean = clean.split(" - ")[0].trim();
-                            else if (clean.includes(" : ")) clean = clean.split(" : ")[0].trim();
-                            else if (clean.includes(" – ")) clean = clean.split(" – ")[0].trim();
-                            return clean;
-                          })()}
-                        </span>
-                        <span className="text-[11px] text-slate-400 dark:text-slate-500 flex items-center gap-1 mt-0.5 font-medium">
-                          <MapPin size={12} /> {p.lokasiFasilitas || "Fasilitas Komunal RW"}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3.5">
-                        {getCategoryBadge(p.jenisProgram)}
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <span className="font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-700/50 px-2.5 py-0.5 rounded-md text-[11px] inline-block">
-                          {(() => {
-                            const rwText = p.rw?.name || (p.rwId ? `RW ${p.rwId}` : "RW 01");
-                            const kelText = p.rw?.kelurahan?.name;
-                            if (kelText && !rwText.toLowerCase().includes(kelText.toLowerCase())) {
-                              return `${rwText} (${kelText})`;
-                            }
-                            return rwText;
-                          })()}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3.5 text-center font-bold text-slate-700 dark:text-slate-300">
-                        {Number(p.jumlahBahanMasukKg || 0).toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 2 })} Kg
-                      </td>
-                      <td className="px-4 py-3.5 text-center font-extrabold text-emerald-700 dark:text-emerald-400">
-                        {Number(p.jumlahHasilKg || 0).toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 2 })} {p.unitHasil || "Kg"}
-                      </td>
-                      <td className="px-4 py-3.5 text-center font-extrabold text-amber-600 dark:text-amber-400">
-                        {p.nilaiEkonomiRp ? `Rp ${Number(p.nilaiEkonomiRp).toLocaleString("id-ID")}` : "-"}
-                      </td>
-                      <td className="px-4 py-3.5 font-medium text-slate-600 dark:text-slate-300">
-                        {p.targetPenerimaManfaat || "Warga Sekitar RW"}
-                      </td>
-                      <td className="px-4 py-3.5 text-center">
-                        {getStatusBadge(p.status)}
-                      </td>
-                    </tr>
-                  ))}
-
-                  {paginatedPrograms.length === 0 && (
-                    <EmptyTableState
-                      colSpan={9}
-                      entityName="Produk Hasil Pemanfaatan"
-                      isSearch={false}
-                    />
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {totalPages > 1 && (
-              <div className="p-4 border-t border-slate-100 dark:border-slate-800">
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={setCurrentPage}
-                  itemsPerPage={itemsPerPage}
-                  onItemsPerPageChange={setItemsPerPage}
-                  totalItems={activeDatasetLength}
-                />
-              </div>
-            )}
+        <div className="bg-white dark:bg-slate-900 p-4 sm:p-4.5 rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5 min-w-0">
+          <div className="p-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl shrink-0 border border-slate-200 dark:border-slate-700">
+            <Boxes className="w-5 h-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider truncate">
+              Bahan Terolah
+            </p>
+            <p className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5 truncate">
+              {totalBahanMasukKg.toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}{" "}
+              <span className="text-xs font-semibold text-slate-400">Kg</span>
+            </p>
           </div>
         </div>
 
-      {/* VIEW TAB 2: ASPIRASI & EVALUASI WARGA */}
-      {activeSectionTab === "FEEDBACK" && (
-        <>
-          {/* KPI Metric Summary Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 sm:gap-4">
-            <div className="bg-white dark:bg-slate-900 p-4.5 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5">
-              <div className="p-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-2xl shrink-0">
-                <MessageSquare className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider">Total Aspirasi</p>
-                <p className="text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5">{totalCount}</p>
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-slate-900 p-4.5 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5">
-              <div className="p-3 bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 rounded-2xl shrink-0 border border-amber-100 dark:border-amber-700/50">
-                <AlertCircle className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider">Menunggu</p>
-                <p className="text-lg font-black text-amber-600 dark:text-amber-400 mt-0.5">{pendingCount}</p>
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-slate-900 p-4.5 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5">
-              <div className="p-3 bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 rounded-2xl shrink-0 border border-sky-100 dark:border-sky-700/50">
-                <Clock className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider">Dalam Proses</p>
-                <p className="text-lg font-black text-sky-600 dark:text-sky-400 mt-0.5">{inProgressCount}</p>
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-slate-900 p-4.5 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5">
-              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-2xl shrink-0 border border-emerald-100 dark:border-emerald-700/50">
-                <CheckCircle2 className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider">Ditindaklanjuti</p>
-                <p className="text-lg font-black text-emerald-700 dark:text-emerald-400 mt-0.5">{resolvedCount}</p>
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-slate-900 p-4.5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5 col-span-2 lg:col-span-1">
-              <div className="p-3 bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 rounded-xl shrink-0 border border-amber-100 dark:border-amber-700/50">
-                <Star className="w-5 h-5 fill-amber-400 text-amber-500" />
-              </div>
-              <div>
-                <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider">Kepuasan Warga</p>
-                <p className="text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5">{avgRating} <span className="text-xs font-semibold text-slate-400">/ 5.0</span></p>
-              </div>
-            </div>
+        <div className="bg-white dark:bg-slate-900 p-4 sm:p-4.5 rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5 min-w-0">
+          <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded-xl shrink-0 border border-emerald-100 dark:border-emerald-700/50">
+            <Building2 className="w-5 h-5" />
           </div>
-
-          {/* Interactive Controls & Filters Bar */}
-          <div className="bg-white dark:bg-slate-900 p-4.5 sm:p-5 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-4">
-            {/* Top Controls Row */}
-            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-              {/* Search Input */}
-              <div className="relative flex-1">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                <input
-                  type="text"
-                  placeholder="Cari berdasarkan nama warga, judul, isi kritik, atau wilayah RW..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 pl-10 pr-4 py-2.5 rounded-2xl text-xs font-bold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-[#009966] focus:bg-white dark:focus:bg-slate-800 transition-all"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-                  >
-                    <X size={14} />
-                  </button>
-                )}
-              </div>
-
-              {/* Kategori Dropdown Filter */}
-              <div className="flex items-center gap-2">
-                <div className="relative w-full sm:w-56">
-                  <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
-                  <select
-                    value={kategoriFilter}
-                    onChange={(e) => setKategoriFilter(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 pl-9 pr-3 py-2.5 rounded-2xl text-xs font-bold outline-none focus:border-[#009966] transition-all cursor-pointer"
-                  >
-                    <option value="ALL">Semua Kategori</option>
-                    <option value="UMUM">UMUM</option>
-                    <option value="Fasilitas">Fasilitas</option>
-                    <option value="Pelayanan">Pelayanan</option>
-                    <option value="Lainnya">Lainnya</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Filter Status Tabs */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none border-t border-slate-100 dark:border-slate-800 pt-3">
-              {[
-                { id: "ALL", label: "Semua Status" },
-                { id: "MENUNGGU", label: "Menunggu Tanggapan" },
-                { id: "DALAM_PROSES", label: "Dalam Proses" },
-                { id: "SELESAI", label: "Selesai Ditindaklanjuti" },
-                { id: "DITOLAK", label: "Ditolak" },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setStatusFilter(tab.id)}
-                  className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
-                    statusFilter === tab.id
-                      ? "bg-[#009966] text-white shadow-xs"
-                      : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider truncate">
+              Titik Program &amp; Fasilitas
+            </p>
+            <p className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5 truncate">
+              {filteredPrograms.length}{" "}
+              <span className="text-xs font-semibold text-slate-400">Program</span>
+            </p>
           </div>
+        </div>
+      </div>
 
-          {/* Main Feedback List Section */}
-          {loading ? (
-            <div className="bg-white dark:bg-slate-900 p-12 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs text-center flex flex-col items-center justify-center gap-3">
-              <Loader2 size={28} className="animate-spin text-[#009966] dark:text-emerald-400" />
-              <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Memuat data kritik &amp; saran dari database...</p>
-            </div>
-          ) : paginatedItems.length === 0 ? (
-            <EmptyTableState
-              entityName="Aspirasi & Evaluasi Warga"
-              isSearch={!!(searchQuery || statusFilter !== "ALL" || kategoriFilter !== "ALL")}
-              searchQuery={searchQuery}
-              onResetSearch={() => {
-                setSearchQuery("");
-                setStatusFilter("ALL");
-                setKategoriFilter("ALL");
-              }}
+      {/* Tiered Search & Filters Bar (Wilayah -> RW -> Produk Luaran) */}
+      <div className="bg-white dark:bg-slate-900 p-4.5 sm:p-5 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-3.5">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+          {/* Search Box */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            <input
+              type="text"
+              placeholder="Cari nama program, jenis olahan, lokasi fasilitas, atau penerima manfaat..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 pl-10 pr-4 py-2.5 rounded-2xl text-xs font-bold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-[#009966] focus:bg-white dark:focus:bg-slate-800 transition-all"
             />
-          ) : (
-            <div className="space-y-4">
-              {paginatedItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs hover:border-slate-300 dark:hover:border-slate-700 transition-all space-y-4"
-                >
-                  {/* Header: Citizen Info & Status Badge */}
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 font-extrabold flex items-center justify-center border border-emerald-100 dark:border-emerald-700/50 text-sm">
-                        {(item.wargaNama || "W").charAt(0).toUpperCase()}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-extrabold text-slate-900 dark:text-slate-100 text-sm">{item.wargaNama || "Warga"}</h4>
-                          <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-700/50 px-2 py-0.5 rounded-md">
-                            {item.rw?.name || (item.rwId ? `RW ${item.rwId}` : "Warga Binaan")}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium mt-0.5">
-                          {item.createdAt ? new Date(item.createdAt).toLocaleDateString("id-ID", {
-                            day: "numeric",
-                            month: "long",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          }) : "-"}
-                        </p>
-                      </div>
-                    </div>
+          </div>
 
-                    <div className="flex items-center gap-3">
-                      {renderStars(item.rating)}
-                      {getStatusBadge(item.status)}
-                    </div>
-                  </div>
-
-                  {/* Body: Title & Content */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10.5px] font-black text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 rounded-md border border-slate-200 dark:border-slate-700 uppercase tracking-wider">
-                        {item.kategori}
-                      </span>
-                      <h3 className="font-extrabold text-slate-900 dark:text-slate-100 text-base">{item.judul}</h3>
-                    </div>
-                    <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-medium whitespace-pre-line">
-                      {item.isiKritikSaran}
-                    </p>
-
-                    {item.fotoBuktiUrl && (
-                      <div className="pt-2 flex flex-wrap items-center gap-3">
-                        <button
-                          type="button"
-                          onClick={() => setPreviewPhotoUrl(item.fotoBuktiUrl || null)}
-                          className="group relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 w-36 h-24 bg-slate-100 dark:bg-slate-800 block cursor-pointer shrink-0"
-                        >
-                          <img
-                            src={resolveImageUrl(item.fotoBuktiUrl)}
-                            alt="Bukti Lampiran"
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                            onError={(e) => {
-                              const target = e.currentTarget;
-                              target.style.display = "none";
-                              const fallback = target.parentElement?.querySelector(".img-card-fallback");
-                              if (fallback) (fallback as HTMLElement).style.display = "flex";
-                            }}
-                          />
-                          <div className="img-card-fallback hidden w-full h-full flex-col items-center justify-center text-slate-400 gap-1 p-2 text-center">
-                            <ImageIcon size={18} />
-                            <span className="text-[10px] font-bold">Foto Bukti</span>
-                          </div>
-                          <span className="absolute inset-0 bg-black/40 text-white text-[10px] font-bold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-1">
-                            <Eye size={12} /> Lihat Foto
-                          </span>
-                        </button>
-
-                        <a
-                          href={resolveImageUrl(item.fotoBuktiUrl)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:underline flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100/70 px-3 py-1.5 rounded-xl border border-emerald-200/80 dark:border-emerald-800/50 transition cursor-pointer"
-                        >
-                          <ExternalLink size={12} />
-                          <span>Buka Lampiran</span>
-                        </a>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Official Response Section (If Available) */}
-                  {item.tanggapan ? (
-                    <div className="p-4 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/50 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 text-xs font-black">
-                          <MessageCircle size={14} />
-                          <span>Tanggapan Resmi Pengelola / RW:</span>
-                        </div>
-                        {item.ditanggapiPada && (
-                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
-                            {new Date(item.ditanggapiPada).toLocaleDateString("id-ID", {
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric",
-                            })}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-slate-700 dark:text-slate-300 font-medium leading-relaxed whitespace-pre-line">
-                        {item.tanggapan}
-                      </p>
-                      {item.ditanggapiOleh && (
-                        <p className="text-[10.5px] text-emerald-700 dark:text-emerald-400 font-bold italic">
-                          Oleh: {item.ditanggapiOleh}
-                        </p>
-                      )}
-                    </div>
-                  ) : null}
-
-                  {/* Action Buttons for Management Roles */}
-                  {isManagementRole && (
-                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                      <button
-                        onClick={() => openRespondModal(item)}
-                        className="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-[#009966] dark:text-emerald-400 text-xs font-bold rounded-xl border border-emerald-200 dark:border-emerald-700/50 transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                      >
-                        <MessageCircle size={13} />
-                        <span>{item.tanggapan ? "Perbarui Tanggapan" : "Beri Tanggapan Resmi"}</span>
-                      </button>
-
-                      {["DEVELOPER", "SUPER_USER"].includes(user?.peran || "") && (
-                        <button
-                          onClick={() => handleDelete(item.id)}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/60 rounded-xl transition cursor-pointer"
-                          title="Hapus Kritik/Saran"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
-
-              {totalPages > 1 && (
-                <div className="p-4 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs">
-                  <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={setCurrentPage}
-                    itemsPerPage={itemsPerPage}
-                    onItemsPerPageChange={setItemsPerPage}
-                    totalItems={activeDatasetLength}
-                  />
-                </div>
-              )}
-            </div>
+          {/* Reset Filters */}
+          {(searchQuery || filterKelurahan !== "ALL" || filterRw !== "ALL" || filterLuaran !== "ALL" || filterKategori !== "ALL") && (
+            <button
+              onClick={resetAllFilters}
+              className="px-3.5 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-2xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+            >
+              <RotateCcw size={13} /> Reset Filter
+            </button>
           )}
-        </>
-      )}
+        </div>
 
-      {/* Modal 1: Form Sampaikan Kritik & Saran Baru */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col p-6 space-y-4 border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-400 flex items-center justify-center font-bold">
-                  <Plus size={18} />
-                </div>
-                <div>
-                  <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">Sampaikan Kritik &amp; Saran</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Suara Anda membangun lingkungan yang lebih bersih</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowAddModal(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg cursor-pointer"
-              >
-                <X size={18} />
-              </button>
-            </div>
+        {/* Tiered Select Filters Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 pt-1 border-t border-slate-100 dark:border-slate-800">
+          {/* 1. Filter Wilayah (Kelurahan) */}
+          <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-2xl border border-slate-200 dark:border-slate-700">
+            <MapPin size={14} className="text-[#009966] shrink-0" />
+            <select
+              value={filterKelurahan}
+              onChange={(e) => setFilterKelurahan(e.target.value)}
+              className="bg-transparent text-xs font-bold text-slate-700 dark:text-slate-200 w-full outline-none cursor-pointer"
+            >
+              <option value="ALL">Semua Kelurahan</option>
+              {availableKelurahans.map((k) => (
+                <option key={k} value={k}>
+                  Kel. {k}
+                </option>
+              ))}
+            </select>
+          </div>
 
-            <form onSubmit={handleAddSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-black text-slate-700 dark:text-slate-300 mb-1">
-                  Kategori Pemanfaatan <span className="text-rose-500">*</span>
-                </label>
-                <select
-                  value={formKategori}
-                  onChange={(e) => setFormKategori(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 outline-none focus:border-[#009966] transition cursor-pointer"
-                >
-                  <option value="UMUM">UMUM</option>
-                  <option value="Fasilitas">Fasilitas</option>
-                  <option value="Pelayanan">Pelayanan</option>
-                  <option value="Lainnya">Lainnya</option>
-                </select>
-              </div>
+          {/* 2. Filter RW (Bertingkat setelah Kelurahan) */}
+          <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-2xl border border-slate-200 dark:border-slate-700">
+            <Building2 size={14} className="text-[#009966] shrink-0" />
+            <select
+              value={filterRw}
+              onChange={(e) => setFilterRw(e.target.value)}
+              className="bg-transparent text-xs font-bold text-slate-700 dark:text-slate-200 w-full outline-none cursor-pointer"
+            >
+              <option value="ALL">Semua Rukun Warga</option>
+              {availableRws.map((rw) => (
+                <option key={rw} value={rw}>
+                  {rw}
+                </option>
+              ))}
+            </select>
+          </div>
 
-              <div>
-                <label className="block text-xs font-black text-slate-700 dark:text-slate-300 mb-1">
-                  Judul Aspirasi / Topik <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="Contoh: Usulan Penambahan Komposter di RW 03"
-                  value={formJudul}
-                  onChange={(e) => setFormJudul(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-[#009966] transition"
-                  required
-                />
-              </div>
+          {/* 3. Filter Kategori Sampah / Bahan */}
+          <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-2xl border border-slate-200 dark:border-slate-700">
+            <Tag size={14} className="text-[#009966] shrink-0" />
+            <select
+              value={filterKategori}
+              onChange={(e) => {
+                const val = e.target.value;
+                setFilterKategori(val);
+                if (val !== "ALL") {
+                  setSearchParams({ kategori: val });
+                } else {
+                  setSearchParams({});
+                }
+              }}
+              className="bg-transparent text-xs font-bold text-slate-700 dark:text-slate-200 w-full outline-none cursor-pointer"
+            >
+              <option value="ALL">Semua Aliran Sampah</option>
+              <option value="ORGANIK">Organik</option>
+              <option value="ANORGANIK">Anorganik</option>
+              <option value="RESIDU">Residu</option>
+            </select>
+          </div>
 
-              <div>
-                <label className="block text-xs font-black text-slate-700 dark:text-slate-300 mb-1">
-                  Rating Kepuasan Daur Ulang <span className="text-rose-500">*</span>
-                </label>
-                <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => setFormRating(star)}
-                      className="cursor-pointer transition-transform hover:scale-110"
-                    >
-                      <Star
-                        size={22}
-                        className={star <= formRating ? "fill-amber-400 text-amber-400" : "text-slate-300 dark:text-slate-600"}
-                      />
-                    </button>
-                  ))}
-                  <span className="text-xs font-black text-slate-700 dark:text-slate-300 ml-2">{formRating}.0 Dari 5.0</span>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-black text-slate-700 dark:text-slate-300 mb-1">
-                  Isi Kritik &amp; Saran <span className="text-rose-500">*</span>
-                </label>
-                <textarea
-                  rows={4}
-                  placeholder="Tuliskan masukan, kendala, atau saran konstruktif mengenai pemanfaatan sampah di lingkungan Anda..."
-                  value={formIsi}
-                  onChange={(e) => setFormIsi(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-[#009966] transition"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-black text-slate-700 dark:text-slate-300 mb-1">
-                  URL Foto Lampiran Bukti (Opsional)
-                </label>
-                <input
-                  type="url"
-                  placeholder="https://..."
-                  value={formFotoUrl}
-                  onChange={(e) => setFormFotoUrl(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-[#009966] transition"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2.5 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  disabled={submittingAdd}
-                  className="px-5 py-2.5 bg-[#009966] hover:bg-[#008855] text-white text-xs font-black rounded-xl transition flex items-center gap-1.5 shadow-xs disabled:opacity-50 cursor-pointer"
-                >
-                  {submittingAdd ? "Mengirim..." : "Kirim Aspirasi"}
-                </button>
-              </div>
-            </form>
+          {/* 4. Filter Produk Luaran (Master Data Luaran Lookup) */}
+          <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-2xl border border-slate-200 dark:border-slate-700">
+            <Filter size={14} className="text-[#009966] shrink-0" />
+            <select
+              value={filterLuaran}
+              onChange={(e) => setFilterLuaran(e.target.value)}
+              className="bg-transparent text-xs font-bold text-slate-700 dark:text-slate-200 w-full outline-none cursor-pointer"
+            >
+              <option value="ALL">Semua Produk Luaran (Master)</option>
+              {masterLuaranList.length > 0 ? (
+                masterLuaranList.map((m) => (
+                  <option key={m.id} value={m.nama}>
+                    {m.nama} ({m.kategori})
+                  </option>
+                ))
+              ) : (
+                <>
+                  <option value="Kompos">Kompos Organik (Buruan Sae)</option>
+                  <option value="Maggot">Maggot BSF</option>
+                  <option value="POC">Pupuk Organik Cair (POC)</option>
+                  <option value="Bank Sampah">Bank Sampah Anorganik</option>
+                  <option value="Loseda">Loseda</option>
+                  <option value="Bata Terawang">Bata Terawang</option>
+                </>
+              )}
+            </select>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Modal 2: Form Beri Tanggapan Resmi (Admin / RW / DLH) */}
-      {showRespondModal && selectedItemForRespond && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col p-6 space-y-4 border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-sky-100 dark:bg-sky-950/60 text-sky-800 dark:text-sky-300 flex items-center justify-center font-bold">
-                  <MessageCircle size={18} />
-                </div>
-                <div>
-                  <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">Beri Tanggapan Resmi</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Tanggapi aspirasi dari {selectedItemForRespond.wargaNama}</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowRespondModal(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg cursor-pointer"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* Aspirasi Summary */}
-            <div className="bg-slate-50 dark:bg-slate-800 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 space-y-1">
-              <p className="text-[11px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider">{selectedItemForRespond.kategori}</p>
-              <h4 className="font-extrabold text-xs text-slate-900 dark:text-slate-100">{selectedItemForRespond.judul}</h4>
-              <p className="text-xs text-slate-600 dark:text-slate-300 font-medium italic">"{selectedItemForRespond.isiKritikSaran}"</p>
-            </div>
-
-            <form onSubmit={handleRespondSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-black text-slate-700 dark:text-slate-300 mb-1">
-                  Status Tindak Lanjut <span className="text-rose-500">*</span>
-                </label>
-                <select
-                  value={respondStatus}
-                  onChange={(e) => setRespondStatus(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 outline-none focus:border-[#009966] transition cursor-pointer"
-                >
-                  <option value="DALAM_PROSES">Dalam Proses</option>
-                  <option value="SELESAI">Selesai Ditindaklanjuti</option>
-                  <option value="DITOLAK">Ditolak</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-black text-slate-700 dark:text-slate-300 mb-1">
-                  Pesan Tanggapan Resmi <span className="text-rose-500">*</span>
-                </label>
-                <textarea
-                  rows={4}
-                  placeholder="Tuliskan jawaban resmi, langkah penanganan, atau tindak lanjut dari pengelola wilayah..."
-                  value={respondTanggapan}
-                  onChange={(e) => setRespondTanggapan(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-[#009966] transition"
-                  required
+      {/* Table Hasil Olahan & Distribusi */}
+      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs whitespace-nowrap">
+            <thead className="bg-slate-50/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 font-extrabold border-b border-slate-200/80 dark:border-slate-800 uppercase tracking-wider text-[10.5px]">
+              <tr>
+                <th className="px-4 py-3.5 text-center w-12">No</th>
+                <th className="px-4 py-3.5">Nama Program &amp; Fasilitas</th>
+                <th className="px-4 py-3.5">Jenis Olahan (Master)</th>
+                <th className="px-4 py-3.5">Wilayah RW &amp; Kelurahan</th>
+                <th className="px-4 py-3.5 text-center">Bahan Masuk</th>
+                <th className="px-4 py-3.5 text-center">Hasil Panen</th>
+                <th className="px-4 py-3.5 text-center">Nilai Ekonomi</th>
+                <th className="px-4 py-3.5">Penerima Manfaat</th>
+                <th className="px-4 py-3.5 text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              {loading ? (
+                <tr>
+                  <td colSpan={9} className="px-6 py-16 text-center">
+                    <div className="flex flex-col items-center justify-center gap-3">
+                      <div className="w-12 h-12 rounded-2xl bg-[#009966]/10 text-[#009966] dark:text-emerald-400 flex items-center justify-center border border-[#009966]/20 shadow-xs">
+                        <Loader2 className="animate-spin text-[#009966]" size={24} />
+                      </div>
+                      <p className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                        Memuat data monitoring pemanfaatan...
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              ) : paginatedPrograms.length > 0 ? (
+                paginatedPrograms.map((p, idx) => (
+                  <tr key={p.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition">
+                    <td className="px-4 py-3.5 text-center font-bold text-slate-400">
+                      {(currentPage - 1) * itemsPerPage + idx + 1}
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <span className="font-extrabold text-slate-900 dark:text-slate-100 block text-sm">
+                        {(() => {
+                          const raw = p.namaProgram || "Program Pengolahan Mandiri";
+                          const noMarkdown = raw.replace(/\*\*/g, "").replace(/\*/g, "").trim();
+                          let clean = noMarkdown.split("\n")[0].trim();
+                          if (clean.includes(" - ")) clean = clean.split(" - ")[0].trim();
+                          else if (clean.includes(" : ")) clean = clean.split(" : ")[0].trim();
+                          else if (clean.includes(" – ")) clean = clean.split(" – ")[0].trim();
+                          return clean;
+                        })()}
+                      </span>
+                      <span className="text-[11px] text-slate-400 dark:text-slate-500 flex items-center gap-1 mt-0.5 font-medium">
+                        <MapPin size={12} /> {p.lokasiFasilitas || "Fasilitas Komunal RW"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3.5">
+                      {getCategoryBadge(p.jenisProgram)}
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <span className="font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-700/50 px-2.5 py-0.5 rounded-md text-[11px] inline-block">
+                        {(() => {
+                          const rwText = p.rw?.name || (p.rwId ? `RW ${p.rwId}` : "RW 01");
+                          const kelText = p.rw?.kelurahan?.name;
+                          if (kelText && !rwText.toLowerCase().includes(kelText.toLowerCase())) {
+                            return `${rwText} (${kelText})`;
+                          }
+                          return rwText;
+                        })()}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3.5 text-center font-bold text-slate-700 dark:text-slate-300">
+                      {Number(p.jumlahBahanMasukKg || 0).toLocaleString("id-ID", {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 2,
+                      })}{" "}
+                      Kg
+                    </td>
+                    <td className="px-4 py-3.5 text-center font-extrabold text-emerald-700 dark:text-emerald-400">
+                      {Number(p.jumlahHasilKg || 0).toLocaleString("id-ID", {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 2,
+                      })}{" "}
+                      {p.unitHasil || "Kg"}
+                    </td>
+                    <td className="px-4 py-3.5 text-center font-extrabold text-amber-600 dark:text-amber-400">
+                      {p.nilaiEkonomiRp ? `Rp ${Number(p.nilaiEkonomiRp).toLocaleString("id-ID")}` : "-"}
+                    </td>
+                    <td className="px-4 py-3.5 font-medium text-slate-600 dark:text-slate-300">
+                      {p.targetPenerimaManfaat || "Warga Sekitar RW"}
+                    </td>
+                    <td className="px-4 py-3.5 text-center">
+                      {getStatusBadge(p.status)}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <EmptyTableState
+                  colSpan={9}
+                  entityName="Produk Hasil Pemanfaatan"
+                  isSearch={Boolean(searchQuery || filterKelurahan !== "ALL" || filterRw !== "ALL" || filterLuaran !== "ALL")}
                 />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setShowRespondModal(false)}
-                  className="px-4 py-2.5 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  disabled={submittingRespond}
-                  className="px-5 py-2.5 bg-[#009966] hover:bg-[#008855] text-white text-xs font-black rounded-xl transition flex items-center gap-1.5 shadow-xs disabled:opacity-50 cursor-pointer"
-                >
-                  {submittingRespond ? "Simpan..." : "Simpan Tanggapan"}
-                </button>
-              </div>
-            </form>
-          </div>
+              )}
+            </tbody>
+          </table>
         </div>
-      )}
 
-      {/* Lightbox Photo Preview Modal */}
-      {previewPhotoUrl && (
-        <div
-          className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-xs animate-in fade-in"
-          onClick={() => setPreviewPhotoUrl(null)}
-        >
-          <div
-            className="relative max-w-3xl w-full bg-white dark:bg-slate-900 p-4 rounded-3xl shadow-2xl border border-slate-700 overflow-hidden space-y-3"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between px-1 border-b border-slate-100 dark:border-slate-800 pb-2.5">
-              <span className="text-xs font-black text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
-                <ImageIcon size={15} className="text-[#009966] dark:text-emerald-400" /> Dokumentasi Foto Kegiatan
-              </span>
-              <div className="flex items-center gap-2">
-                <a
-                  href={resolveImageUrl(previewPhotoUrl)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 hover:bg-emerald-100 rounded-xl text-xs font-bold transition flex items-center gap-1 border border-emerald-200 dark:border-emerald-800 cursor-pointer"
-                >
-                  <ExternalLink size={13} /> Buka di Tab Baru
-                </a>
-                <button
-                  type="button"
-                  onClick={() => setPreviewPhotoUrl(null)}
-                  className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 p-1.5 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer transition"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-            </div>
-            <div className="flex items-center justify-center bg-slate-950/90 rounded-2xl overflow-hidden min-h-[220px] p-2">
-              <img
-                src={resolveImageUrl(previewPhotoUrl)}
-                alt="Dokumentasi Foto Kegiatan"
-                className="w-full h-auto max-h-[75vh] object-contain rounded-xl"
-                onError={(e) => {
-                  (e.currentTarget as HTMLElement).style.display = "none";
-                  const fallback = e.currentTarget.parentElement?.querySelector(".modal-img-fallback");
-                  if (fallback) (fallback as HTMLElement).style.display = "flex";
-                }}
-              />
-              <div className="modal-img-fallback hidden w-full py-12 flex-col items-center justify-center text-slate-400 gap-2.5 text-center">
-                <ImageIcon size={36} className="text-slate-500" />
-                <p className="text-xs font-bold text-slate-300">Gambar tidak dapat dimuat langsung di browser.</p>
-                <a
-                  href={resolveImageUrl(previewPhotoUrl)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-1 px-4 py-2 bg-[#009966] hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs"
-                >
-                  <ExternalLink size={14} /> Buka Tautan Lampiran
-                </a>
-              </div>
-            </div>
+        {totalPages > 1 && (
+          <div className="p-4 border-t border-slate-100 dark:border-slate-800">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              itemsPerPage={itemsPerPage}
+              onItemsPerPageChange={setItemsPerPage}
+              totalItems={filteredPrograms.length}
+            />
           </div>
-        </div>
-      )}
-
-      {/* Confirmation Modal Delete Feedback */}
-      <ConfirmModal
-        isOpen={Boolean(deleteFeedbackId)}
-        onClose={() => setDeleteFeedbackId(null)}
-        onConfirm={handleConfirmDelete}
-        isLoading={isDeleting}
-        title="Hapus Kritik & Saran"
-        message="Apakah Anda yakin ingin menghapus kritik & saran warga ini? Data yang dihapus tidak dapat dipulihkan."
-        confirmText="Ya, Hapus"
-        type="danger"
-      />
+        )}
+      </div>
     </div>
   );
 };
 
 export default HasilPemanfaatan;
-

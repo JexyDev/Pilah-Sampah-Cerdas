@@ -326,15 +326,8 @@ export default function SetorSampah() {
     );
   };
 
-  const renderStatusTag = (status?: string) => {
+  const renderStatusTag = (status?: string, confidence?: number | null) => {
     const s = (status || "").toUpperCase();
-    if (s === "ACCEPTED" || s === "SELESAI") {
-      return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-black rounded-xl bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-800">
-          <CheckCircle2 size={12} /> Diterima
-        </span>
-      );
-    }
     if (s === "REJECTED" || s === "DITOLAK") {
       return (
         <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-black rounded-xl bg-red-100 text-red-800 border border-red-200 dark:bg-red-900/40 dark:text-red-300 dark:border-red-800">
@@ -342,9 +335,23 @@ export default function SetorSampah() {
         </span>
       );
     }
+    if (confidence !== null && confidence !== undefined && confidence > 0) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-black rounded-xl bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-800">
+          <CheckCircle2 size={12} /> Terverifikasi AI
+        </span>
+      );
+    }
+    if (s === "ACCEPTED" || s === "SELESAI") {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-black rounded-xl bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-800">
+          <CheckCircle2 size={12} /> Terverifikasi
+        </span>
+      );
+    }
     return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-black rounded-xl bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-800">
-        <Clock size={12} /> Pending
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-black rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
+        <Bot size={12} /> Otomatis AI
       </span>
     );
   };
@@ -360,14 +367,14 @@ export default function SetorSampah() {
             </span>
             <span className="text-slate-300 dark:text-slate-700">•</span>
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-              Monitoring Penyetoran
+              Monitoring Pemilahan
             </span>
           </div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-            Log Aktivitas Penyetoran Sampah
+            Monitoring Pemilahan Sampah
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Pencatatan real-time transaksi setoran warga, inferensi AI, dan penimbangan residu lapangan.
+            Pencatatan real-time hasil pemilahan sampah warga dari hulu, inferensi akurasi model AI, dan penimbangan lapangan.
           </p>
         </div>
 
@@ -662,7 +669,7 @@ export default function SetorSampah() {
                       </td>
 
                       {/* Status */}
-                      <td className="py-3 px-3 text-center">{renderStatusTag(log.status)}</td>
+                      <td className="py-3 px-3 text-center">{renderStatusTag(log.status, log.confidence)}</td>
 
                       {/* Time */}
                       <td className="py-3 px-3 text-slate-600 dark:text-slate-400 whitespace-nowrap text-[11px]">
@@ -739,7 +746,7 @@ export default function SetorSampah() {
                 </div>
                 <div>
                   <h3 className="text-base font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                    Inspeksi Detail Penyetoran Sampah
+                    Inspeksi Detail Pemilahan Sampah
                   </h3>
                   <p className="text-[11px] font-semibold text-slate-400">
                     ID Transaksi: <span className="font-mono text-emerald-700 dark:text-emerald-400">{selectedLog.id}</span>
@@ -816,7 +823,7 @@ export default function SetorSampah() {
                   <div className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1">
                     <CheckCircle2 size={12} className="text-[#009966]" /> Status Audit
                   </div>
-                  <div className="pt-0.5">{renderStatusTag(selectedLog.status)}</div>
+                  <div className="pt-0.5">{renderStatusTag(selectedLog.status, selectedLog.confidence)}</div>
                 </div>
 
                 <div className="p-3 bg-slate-50 dark:bg-slate-800/70 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-1">

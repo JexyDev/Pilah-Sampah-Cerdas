@@ -355,7 +355,7 @@ const Monitoring: React.FC = () => {
         const isRusak = b.status === "Rusak" || (b as any).realStatus === "BROKEN";
         const isPenuh = b.status === "Penuh" || pct >= 90;
         const isSedang = b.status === "Sedang" || (pct >= 70 && pct < 90);
-        const isAman = b.status === "Normal" || pct < 70;
+        const isAman = b.status === "Aman" || b.status === "Normal" || pct < 70;
 
         if (mapStatusFilter === "Rusak" && !isRusak) return false;
         if (mapStatusFilter === "Penuh" && !isPenuh) return false;
@@ -1585,11 +1585,11 @@ const Monitoring: React.FC = () => {
                             <span className={`w-1.5 h-1.5 rounded-full ${
                               isRusak ? "bg-rose-600" : isPenuh ? "bg-rose-500 animate-pulse" : isSedang ? "bg-amber-500" : "bg-emerald-500"
                             }`} />
-                            {isRusak ? "Rusak" : isPenuh ? "Penuh" : isSedang ? "Sedang" : "Normal"}
+                            {isRusak ? "Rusak" : isPenuh ? "Penuh" : isSedang ? "Sedang" : "Aman"}
                           </span>
                         </td>
 
-                        {/* 7. DIVERIFIKASI */}
+                        {/* 7. WAKTU AKTIVASI */}
                         <td className="py-3 px-4 whitespace-nowrap text-slate-600 dark:text-slate-400 text-[11px]">
                           {(bin as any).verifiedAt || "Sistem Real-Time"}
                         </td>
@@ -1757,7 +1757,7 @@ const Monitoring: React.FC = () => {
                   <div className="flex justify-between">
                     <span className="text-slate-400 font-semibold">Status Fisik:</span>
                     <span className="font-black text-emerald-700 dark:text-emerald-400">
-                      {selectedBinDetail.status || "Normal (Aktif Terverifikasi)"}
+                      {selectedBinDetail.status === "Normal" ? "Aman (Aktif Terverifikasi)" : selectedBinDetail.status || "Aman (Aktif Terverifikasi)"}
                     </span>
                   </div>
                   <div className="flex justify-between">
