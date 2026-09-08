@@ -1583,6 +1583,102 @@ export const MahasiswaPresensiMobile: React.FC = () => {
           </div>
         </div>
       )}
+      {/* 7. Modal Konfirmasi Check-Out / Selesai Sesi */}
+      {showCheckOutModal && (
+        <div className="fixed inset-0 z-[100] bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-sm w-full p-5 shadow-2xl space-y-4 animate-scale-in">
+            {(() => {
+              const targetMins = primaryKegiatan?.durasiWajibMenit || 240;
+              const currentMins =
+                primaryKegiatan?.actualInZoneMinutes ||
+                (typeof liveInZoneSecs === "number" && liveInZoneSecs > 0
+                  ? Math.floor(liveInZoneSecs / 60)
+                  : 0);
+              const isTargetMet = currentMins >= targetMins;
+
+              return (
+                <>
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
+                        isTargetMet
+                          ? "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400"
+                          : "bg-amber-100 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400"
+                      }`}
+                    >
+                      {isTargetMet ? <CheckCircle2 size={22} /> : <AlertTriangle size={22} />}
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className="text-sm font-black text-slate-900 dark:text-white">
+                        {isTargetMet ? "Konfirmasi Selesai Presensi" : "Perhatian: Target Belum Memenuhi!"}
+                      </h4>
+                      <p className="text-[10px] text-slate-500 font-mono truncate">
+                        {primaryKegiatan?.namaKegiatan || "Kegiatan Posko KKN"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 space-y-2 text-xs">
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500">Durasi Saat Ini:</span>
+                      <span className={`font-black ${isTargetMet ? "text-emerald-600" : "text-amber-600"}`}>
+                        {currentMins} Menit
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center pt-1.5 border-t border-slate-200/60 dark:border-slate-700/60">
+                      <span className="text-slate-500">Target Minimal:</span>
+                      <span className="font-bold text-slate-700 dark:text-slate-300">
+                        {targetMins} Menit ({(targetMins / 60).toFixed(1).replace(/\.0$/, "")} Jam)
+                      </span>
+                    </div>
+                  </div>
+
+                  {!isTargetMet ? (
+                    <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-2xl text-[11px] text-amber-800 dark:text-amber-300 space-y-1">
+                      <p className="font-bold">⚠️ Peringatan Konsekuensi Status:</p>
+                      <p className="leading-relaxed">
+                        Jika Anda mengakhiri sesi sekarang, sistem akan mencatat status kehadiran Anda sebagai{" "}
+                        <span className="font-black underline">HADIR &amp; TIDAK MEMENUHI</span> karena durasi belum mencukupi target wajib.
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                      Target durasi wajib Anda telah tercapai. Tekan tombol di bawah untuk mengunci waktu checkout dan menyimpan presensi resmi Anda hari ini.
+                    </p>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setShowCheckOutModal(false)}
+                      disabled={isSubmitting}
+                      className="py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition cursor-pointer"
+                    >
+                      Lanjut Bertugas
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleCheckOut}
+                      disabled={isSubmitting}
+                      className="py-2.5 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black uppercase tracking-wider transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 size={13} className="animate-spin" />
+                          <span>Menyimpan...</span>
+                        </>
+                      ) : (
+                        <span>{isTargetMet ? "Ya, Selesai" : "Tetap Selesai"}</span>
+                      )}
+                    </button>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
