@@ -900,6 +900,16 @@ if (isPrimaryWorker) {
         "dibuat_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "diperbarui_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
       );`,
+      `CREATE TABLE IF NOT EXISTS "master_luaran_sampah" (
+        "id" SERIAL PRIMARY KEY,
+        "nama" TEXT UNIQUE NOT NULL,
+        "kategori" TEXT NOT NULL DEFAULT 'ORGANIK',
+        "satuan_default" TEXT NOT NULL DEFAULT 'Kg',
+        "deskripsi" TEXT,
+        "is_active" BOOLEAN NOT NULL DEFAULT true,
+        "dibuat_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "diperbarui_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );`,
       'CREATE INDEX IF NOT EXISTS "logbook_dpl_id_dpl_pekan_idx" ON "logbook_dpl"("id_dpl", "pekan_ke");',
       'CREATE INDEX IF NOT EXISTS "lokasi_mahasiswa_id_mahasiswa_direkam_pada_idx" ON "lokasi_mahasiswa"("id_mahasiswa", "direkam_pada" DESC);',
     ];
