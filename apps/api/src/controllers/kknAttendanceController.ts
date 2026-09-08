@@ -337,10 +337,30 @@ export const kknAttendanceController = {
       res.status(200).json(result);
     } catch (error: any) {
       console.error("[KknAttendanceController] checkOutAttendance error:", error);
+      const isEarlyCheckout =
+        error.code === "EARLY_CHECKOUT_RESTRICTED" ||
+        (error.message && error.message.includes("EARLY_CHECKOUT_RESTRICTED"));
+      const isOutOfGeofence = error.message && error.message.includes("OUT_OF_GEOFENCE");
       const isNotFound = error.message && error.message.includes("ATTENDANCE_NOT_FOUND");
-      res.status(isNotFound ? 404 : 500).json({
+
+      if (isEarlyCheckout) {
+        res.status(422).json({
+          success: false,
+          error: "EARLY_CHECKOUT_RESTRICTED",
+          message: error.message || "Presensi pulang belum dapat dilakukan",
+          data: error.details || null,
+        });
+        return;
+      }
+
+      const status = isNotFound ? 404 : isOutOfGeofence ? 400 : 500;
+      res.status(status).json({
         success: false,
-        error: isNotFound ? "NOT_FOUND" : "INTERNAL_SERVER_ERROR",
+        error: isNotFound
+          ? "NOT_FOUND"
+          : isOutOfGeofence
+            ? "OUT_OF_GEOFENCE"
+            : "INTERNAL_SERVER_ERROR",
         message: error.message || "Gagal melakukan check-out absensi kegiatan",
       });
     }
@@ -651,9 +671,30 @@ export const kknAttendanceController = {
       });
     } catch (error: any) {
       console.error("[KknAttendanceController] selesaiKegiatan error:", error);
-      res.status(500).json({
+      const isEarlyCheckout =
+        error.code === "EARLY_CHECKOUT_RESTRICTED" ||
+        (error.message && error.message.includes("EARLY_CHECKOUT_RESTRICTED"));
+      const isOutOfGeofence = error.message && error.message.includes("OUT_OF_GEOFENCE");
+      const isNotFound = error.message && error.message.includes("ATTENDANCE_NOT_FOUND");
+
+      if (isEarlyCheckout) {
+        res.status(422).json({
+          success: false,
+          error: "EARLY_CHECKOUT_RESTRICTED",
+          message: error.message || "Presensi pulang belum dapat dilakukan",
+          data: error.details || null,
+        });
+        return;
+      }
+
+      const status = isNotFound ? 404 : isOutOfGeofence ? 400 : 500;
+      res.status(status).json({
         success: false,
-        error: "INTERNAL_SERVER_ERROR",
+        error: isNotFound
+          ? "NOT_FOUND"
+          : isOutOfGeofence
+            ? "OUT_OF_GEOFENCE"
+            : "INTERNAL_SERVER_ERROR",
         message: error.message || "Gagal mengakhiri kegiatan KKN",
       });
     }

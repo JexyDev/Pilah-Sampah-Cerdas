@@ -587,8 +587,6 @@ const Leaderboard: React.FC = () => {
       {/* 3. CONTENT AREA */}
       {system === "system1" && s1Tab === "overview" ? (
         <AnalyticsOverviewBoard />
-      ) : system === "system1" && s1Tab === "kelurahan" ? (
-        <BarChartRace />
       ) : (
         <>
           {/* Stats Cards */}
@@ -598,8 +596,12 @@ const Leaderboard: React.FC = () => {
                 <Trophy size={20} />
               </div>
               <div>
-                <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider">Total Peserta</p>
-                <p className="text-xl font-black text-slate-800 dark:text-slate-100">{stats.total} <span className="text-xs text-slate-400 font-bold">orang</span></p>
+                <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider">
+                  Total {s1Tab === "kelurahan" ? "Kelurahan" : s1Tab === "rtrw" ? "Rukun Warga" : "Peserta"}
+                </p>
+                <p className="text-xl font-black text-slate-800 dark:text-slate-100">
+                  {stats.total} <span className="text-xs text-slate-400 font-bold">{participantUnit}</span>
+                </p>
               </div>
             </div>
 
@@ -839,7 +841,7 @@ const Leaderboard: React.FC = () => {
                     />
                   </div>
                   <div className="text-xs text-slate-500 font-semibold">
-                    Total <strong className="text-slate-800 dark:text-slate-100 font-black">{currentData.length}</strong> data peserta
+                    Total <strong className="text-slate-800 dark:text-slate-100 font-black">{currentData.length}</strong> {participantUnit}
                   </div>
                 </div>
 
