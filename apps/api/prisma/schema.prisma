@@ -738,7 +738,7 @@ model SetoranOtomatis {
   ratingWarga        Int?     @default(5) @map("rating_warga")
   kategoriAktual     String?  @map("kategori_aktual")
   statusDataset      String   @default("Siap Retrain") @map("status_dataset")
-  status             String   @default("PENDING") @map("status")
+  status             String   @default("ACCEPTED") @map("status")
   catatanPenolakan   String?  @map("catatan_penolakan")
   createdAt          DateTime @default(now()) @map("created_at")
   bin                Bin      @relation(fields: [qrTempatSampahId], references: [id], onDelete: Cascade)
@@ -823,6 +823,19 @@ model KritikSaranPemanfaatan {
   programKerja   ProgramKerjaKkn? @relation(fields: [programKerjaId], references: [id], onDelete: SetNull)
 
   @@map("kritik_saran_pemanfaatan")
+}
+
+model MasterLuaranSampah {
+  id            Int      @id @default(autoincrement())
+  nama          String   @unique @map("nama")
+  kategori      String   @default("ORGANIK") @map("kategori")
+  satuanDefault String   @default("Kg") @map("satuan_default")
+  deskripsi     String?  @map("deskripsi")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("dibuat_pada")
+  updatedAt     DateTime @updatedAt @map("diperbarui_pada")
+
+  @@map("master_luaran_sampah")
 }
 
 // ─────────────────────────────────────────────

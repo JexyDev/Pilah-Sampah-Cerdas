@@ -36,12 +36,13 @@ export async function getScopingFilters(user: {
     if (["DLH", "DLH_ADMIN", "Admin DLH"].includes(r)) return "ADMIN_DLH";
     if (["ADMIN_KECAMATAN", "Camat", "CAMAT_ADMIN"].includes(r)) return "CAMAT";
     if (["ADMIN_KELURAH", "Lurah", "LURAH_ADMIN"].includes(r)) return "LURAH";
+    if (["PIMPINAN", "Pimpinan", "PEMIMPIN", "Pemimpin"].includes(r)) return "PEMIMPIN";
     return r;
   };
   const role = normalizeRole(user.role);
 
-  // 1. DEVELOPER, SUPER_USER, ADMIN_DLH, PEMIMPIN, and PANITIA_TASKFORCE see all data
-  if (["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE"].includes(role)) {
+  // 1. DEVELOPER, SUPER_USER, ADMIN_DLH, PEMIMPIN/PIMPINAN, and PANITIA_TASKFORCE see all data
+  if (["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PIMPINAN", "PANITIA_TASKFORCE"].includes(role)) {
     return {};
   }
 

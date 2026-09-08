@@ -268,6 +268,7 @@ async function main() {
     "RT",
     "MAHASISWA_KKN",
     "DPL",
+    "MPL",
     "PEMIMPIN",
     "PANITIA_TASKFORCE",
     "PETUGAS_RESIDU",
@@ -351,6 +352,10 @@ async function main() {
     DPL: {
       dashboard_utama: [true, false, false, false],
     },
+    MPL: {
+      dashboard_utama: [false, false, false, false],
+      dashboard_kkn: [true, false, false, false],
+    },
     PEMIMPIN: {
       dashboard_utama: [true, false, false, false],
       dashboard_kkn: [true, false, false, false],
@@ -407,6 +412,12 @@ async function main() {
     { roleName: "LURAH", phone: "+628111111125", pass: "password123", name: "Tirta Gumelar, S.STP." },
     { roleName: "PANITIA_TASKFORCE", phone: "+628111111127", pass: "password123", name: "Task Force" },
     { roleName: "DPL", phone: "+628111111128", pass: "password123", name: "Dosen Pendamping Lapangan" },
+    { roleName: "MPL", phone: "+628111111131", pass: "Password123!", name: "MPL Sadang Serang", address: "Kelurahan Sadang Serang" },
+    { roleName: "MPL", phone: "+628111111132", pass: "Password123!", name: "MPL Cipaganti", address: "Kelurahan Cipaganti" },
+    { roleName: "MPL", phone: "+628111111133", pass: "Password123!", name: "MPL Dago", address: "Kelurahan Dago" },
+    { roleName: "MPL", phone: "+628111111134", pass: "Password123!", name: "MPL Sekeloa", address: "Kelurahan Sekeloa" },
+    { roleName: "MPL", phone: "+628111111135", pass: "Password123!", name: "MPL Lebak Gede", address: "Kelurahan Lebak Gede" },
+    { roleName: "MPL", phone: "+628111111136", pass: "Password123!", name: "MPL Lebak Siliwangi", address: "Kelurahan Lebak Siliwangi" },
     { roleName: "RW", phone: "+628111111115", pass: "password123", name: "Ketua RW 06 Dago" },
     { roleName: "PETUGAS_RESIDU", phone: "+628111111117", pass: "password123", name: "Petugas Residu" },
     { roleName: "WARGA", phone: "+62812001001", pass: "password123", name: "Warga" },
@@ -441,7 +452,7 @@ async function main() {
   console.log("✅ Test user accounts for all roles created!");
 
   // ─────────────────────────────────────────────
-  // 9b. AREA ASSIGNMENT UNTUK CAMAT & LURAH (wilayah scoping)
+  // 9b. AREA ASSIGNMENT UNTUK CAMAT, LURAH & MPL (wilayah scoping)
   // User tidak punya field kelurahanId/kecamatanId langsung di schema —
   // area mereka ditautkan lewat rwId (User → Rw → Kelurahan → Kecamatan),
   // pola yang sama dipakai RW/RT. RW pertama di kelurahan terkait dipakai
@@ -455,6 +466,12 @@ async function main() {
     { phone: "+628111111123", kelurahan: "Lebak Siliwangi" }, // LURAH Lebak Siliwangi
     { phone: "+628111111124", kelurahan: "Sadang Serang" }, // LURAH Sadang Serang
     { phone: "+628111111125", kelurahan: "Sekeloa" }, // LURAH Sekeloa
+    { phone: "+628111111131", kelurahan: "Sadang Serang" }, // MPL Sadang Serang
+    { phone: "+628111111132", kelurahan: "Cipaganti" }, // MPL Cipaganti
+    { phone: "+628111111133", kelurahan: "Dago" }, // MPL Dago
+    { phone: "+628111111134", kelurahan: "Sekeloa" }, // MPL Sekeloa
+    { phone: "+628111111135", kelurahan: "Lebak Gede" }, // MPL Lebak Gede
+    { phone: "+628111111136", kelurahan: "Lebak Siliwangi" }, // MPL Lebak Siliwangi
   ];
 
   let totalAreaAssigned = 0;
@@ -570,7 +587,29 @@ async function main() {
   console.log(`✅ Waste categories: ${categories.map((c) => c.name).join(", ")}`);
 
   // ─────────────────────────────────────────────
-  // 11. SYSTEM CONFIGS
+  // 12. MASTER LUARAN SAMPAH
+  // ─────────────────────────────────────────────
+  const masterLuaran = [
+    { nama: "Kompos Organik (Buruan Sae)", kategori: "ORGANIK", satuanDefault: "Kg", deskripsi: "Pupuk kompos padat hasil pengomposan mandiri & komposter warga" },
+    { nama: "Pupuk Organik Cair (POC)", kategori: "ORGANIK", satuanDefault: "Liter", deskripsi: "Pupuk cair fermentasi dari sisa sayur dan buah warga" },
+    { nama: "Maggot BSF", kategori: "ORGANIK", satuanDefault: "Kg", deskripsi: "Larva Black Soldier Fly biokonversi sampah organik" },
+    { nama: "Kasgot (Bekas Maggot)", kategori: "ORGANIK", satuanDefault: "Kg", deskripsi: "Residu pupuk organik kaya hara dari media budidaya maggot" },
+    { nama: "Bank Sampah Anorganik", kategori: "ANORGANIK", satuanDefault: "Kg", deskripsi: "Pencacahan botol plastik, kardus, dan daur ulang bernilai ekonomi" },
+    { nama: "Loseda (Lorong Sisa Dapur)", kategori: "ORGANIK", satuanDefault: "Kg", deskripsi: "Pengolahan sisa makanan basah rumah tangga via pipa paralon" },
+    { nama: "Bata Terawang", kategori: "ORGANIK", satuanDefault: "Kg", deskripsi: "Komposter bata porus untuk resapan dedaunan dan sisa kebun" },
+  ];
+
+  for (const luaran of masterLuaran) {
+    await prisma.masterLuaranSampah.upsert({
+      where: { nama: luaran.nama },
+      update: { kategori: luaran.kategori, satuanDefault: luaran.satuanDefault, deskripsi: luaran.deskripsi },
+      create: luaran,
+    });
+  }
+  console.log(`✅ Master Luaran Sampah: ${masterLuaran.length} komoditas luaran di-seed`);
+
+  // ─────────────────────────────────────────────
+  // 13. SYSTEM CONFIGS
   // ─────────────────────────────────────────────
   const configs = [
     { key: "BIN_ACTIVE_DURATION_DAYS", value: "30", tipe: "number", deskripsi: "Durasi aktif tempat sampah dalam hari" },

@@ -149,12 +149,16 @@ export const gamificationService = {
     // 2. Region-Based Leaderboard (Kelurahan)
     const kelurahans = await prisma.kelurahan.findMany({
       include: {
+        kecamatan: { select: { name: true } },
         rws: {
           include: {
             users: {
               include: {
                 setoranOtomatis: {
                   select: { berat: true },
+                },
+                pointHistory: {
+                  select: { points: true },
                 },
               },
             },
@@ -166,10 +170,15 @@ export const gamificationService = {
     const kelurahanLeaderboard = kelurahans
       .map((k: any) => {
         let totalKg = 0;
+        let totalPoints = 0;
         k.rws.forEach((area: any) => {
           area.users.forEach((u: any) => {
-            totalKg += u.setoranOtomatis.reduce(
+            totalKg += (u.setoranOtomatis || []).reduce(
               (acc: number, cur: any) => acc + Number(cur.berat || 0),
+              0
+            );
+            totalPoints += (u.pointHistory || []).reduce(
+              (acc: number, cur: any) => acc + Number(cur.points || 0),
               0
             );
           });
@@ -177,7 +186,10 @@ export const gamificationService = {
         return {
           kelurahanId: k.id,
           kelurahanName: k.name,
-          totalPoints: totalKg, // Keeping totalPoints key for API compatibility, but it represents Kg now
+          kecamatanName: k.kecamatan?.name || "Coblong",
+          totalRw: k.rws.length,
+          totalPoints: totalPoints > 0 ? totalPoints : Math.round(totalKg * 10),
+          totalKg: parseFloat(totalKg.toFixed(2)),
         };
       })
       .sort((a, b) => b.totalPoints - a.totalPoints)

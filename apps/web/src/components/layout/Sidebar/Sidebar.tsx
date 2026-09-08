@@ -32,6 +32,7 @@ import {
   X,
   Shield,
   Sliders,
+  GraduationCap,
 } from "lucide-react";
 
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
@@ -96,7 +97,7 @@ const checkRouteActive = (
     const pengangkutanAliases = ["/monitoring-pemilahan/pengangkutan-sampah", "/pengangkutan-residu", "/residu", "/manajemen-pengangkutan"];
     if (pengangkutanAliases.includes(tPath) && pengangkutanAliases.includes(cPath)) return true;
 
-    const peringkatAliases = ["/monitoring-pemilahan/peringkat-warga", "/peringkat", "/leaderboard", "/poin-warga"];
+    const peringkatAliases = ["/monitoring-pemilahan/peringkat-warga", "/monitoring-pemilahan/papan-peringkat", "/peringkat", "/leaderboard", "/poin-warga"];
     if (peringkatAliases.includes(tPath) && peringkatAliases.includes(cPath)) return true;
 
     const rekapSetoranAliases = [
@@ -206,23 +207,53 @@ const checkRouteActive = (
     return false;
   }
 
-  // Jika target memiliki query parameter (contoh: ?tab=mahasiswa, ?role=dpl)
+  // Jika target memiliki query parameter (contoh: ?tab=mahasiswa, ?role=dpl, ?kategori=ORGANIK)
   if (targetQuery) {
     const targetParams = new URLSearchParams(targetQuery);
     const currentParams = new URLSearchParams(search);
 
-    // Tab parameter handling
+    // Tab parameter handling with alias normalization (e.g. citizens/warga, pengangkut/petugas)
     if (targetParams.has("tab")) {
       const targetTab = (targetParams.get("tab") || "").toLowerCase();
       let currentTab = (currentParams.get("tab") || "").toLowerCase();
       if (!currentTab) {
         if (["/log-aktivitas-dpl", "/dpl/log-aktivitas", "/catat-kegiatan-dpl", "/dpl/catat-kegiatan"].includes(pathname)) {
           currentTab = "dpl";
-        } else {
+        } else if (["/log-aktivitas/mahasiswa", "/logbook-kkn", "/dpl/logbook", "/logbook"].includes(pathname)) {
           currentTab = "mahasiswa";
         }
       }
+
+      const normalizeLeaderboardTab = (t: string) => {
+        if (["warga", "citizens"].includes(t)) return "citizens";
+        if (["petugas", "pengangkut"].includes(t)) return "pengangkut";
+        if (["rw", "rtrw"].includes(t)) return "rtrw";
+        if (["kelurahan"].includes(t)) return "kelurahan";
+        return t;
+      };
+
+      const normTarget = normalizeLeaderboardTab(targetTab);
+      const normCurrent = normalizeLeaderboardTab(currentTab);
+      if (normTarget && normCurrent) {
+        return normTarget === normCurrent;
+      }
       return targetTab === currentTab;
+    }
+
+    // Kategori parameter handling (e.g. ?kategori=ORGANIK)
+    if (targetParams.has("kategori")) {
+      return (
+        (targetParams.get("kategori") || "").toUpperCase() ===
+        (currentParams.get("kategori") || "").toUpperCase()
+      );
+    }
+
+    // Jenis parameter handling (e.g. ?jenis=bank_sampah)
+    if (targetParams.has("jenis")) {
+      return (
+        (targetParams.get("jenis") || "").toLowerCase() ===
+        (currentParams.get("jenis") || "").toLowerCase()
+      );
     }
 
     // Role parameter handling
@@ -248,7 +279,12 @@ const checkRouteActive = (
   // Target tidak memiliki query parameter
   if (!search) return true;
   const currentParams = new URLSearchParams(search);
-  if (currentParams.has("tab") || currentParams.has("role")) {
+  if (
+    currentParams.has("tab") ||
+    currentParams.has("role") ||
+    currentParams.has("kategori") ||
+    currentParams.has("jenis")
+  ) {
     return false;
   }
   return true;
@@ -335,46 +371,11 @@ const NavItemCollapsed: React.FC<NavItemProps> = ({ to, icon: Icon, label }) => 
   );
 };
 
-const CollapsedClockButton: React.FC<{ dateStr: string; timeStr: string }> = ({ dateStr, timeStr }) => {
-  const [isHovered, setIsHovered] = React.useState(false);
-  const [coords, setCoords] = React.useState<{ top: number; left: number }>({ top: 0, left: 0 });
-  const containerRef = React.useRef<HTMLDivElement>(null);
-
-  const handleMouseEnter = () => {
-    if (containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      setCoords({ top: rect.top + (rect.height - 30) / 2, left: rect.right + 12 });
-    }
-    setIsHovered(true);
-  };
-
-  return (
-    <div
-      ref={containerRef}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={() => setIsHovered(false)}
-      className="w-10 h-10 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-slate-600 dark:text-slate-300 flex items-center justify-center relative group cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/80 transition-all shrink-0"
-    >
-      <Clock size={17} className="text-[#035941] dark:text-emerald-400" />
-      {isHovered && (
-        <Portal>
-          <div
-            style={{ top: `${coords.top}px`, left: `${coords.left}px` }}
-            className="fixed bg-slate-900 dark:bg-slate-800 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-xl whitespace-nowrap z-[999999] border border-slate-700/60 pointer-events-none animate-in fade-in slide-in-from-left-2 duration-150"
-          >
-            {dateStr ? `${dateStr} â€¢ ${timeStr}` : timeStr || "Jam Sistem"}
-          </div>
-        </Portal>
-      )}
-    </div>
-  );
-};
-
 
 const NavGroupCollapsed: React.FC<{
   icon: LucideIcon;
   label: string;
-  items: Array<{ to: string; label: string }>;
+  items: any[];
 }> = ({ icon: Icon, label, items }) => {
   const location = useLocation();
   const [isHovered, setIsHovered] = React.useState(false);
@@ -388,7 +389,12 @@ const NavGroupCollapsed: React.FC<{
   };
 
   const isAnySubActive = useMemo(() => {
-    return items.some((item, idx) => isSubActive(item.to, idx));
+    return items.some((item, idx) => {
+      if (item.children && Array.isArray(item.children)) {
+        return item.children.some((c: any, cIdx: number) => isSubActive(c.to, cIdx));
+      }
+      return isSubActive(item.to, idx);
+    });
   }, [items, location.pathname, location.search]);
 
   const updateCoordinates = () => {
@@ -467,12 +473,46 @@ const NavGroupCollapsed: React.FC<{
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={handleMouseLeave}
             style={{ top: `${coords.top}px`, left: `${coords.left}px` }}
-            className="fixed bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl py-2 px-1.5 min-w-[210px] z-[999999] flex flex-col animate-in fade-in slide-in-from-left-2 duration-150 text-left pointer-events-auto"
+            className="fixed bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl py-2 px-1.5 min-w-[220px] max-h-[85vh] overflow-y-auto z-[999999] flex flex-col animate-in fade-in slide-in-from-left-2 duration-150 text-left pointer-events-auto"
           >
             <div className="px-3 py-1.5 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 mb-1">
               {label}
             </div>
             {items.map((sub, idx) => {
+              if (sub.children && Array.isArray(sub.children) && sub.children.length > 0) {
+                return (
+                  <div key={sub.label} className="my-1 border-t border-slate-100 dark:border-slate-800/80 pt-1">
+                    <div className="px-3 py-1 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                      {sub.label}
+                    </div>
+                    {sub.children.map((child: any, cIdx: number) => {
+                      const isChildActive = isSubActive(child.to, cIdx);
+                      return (
+                        <Link
+                          key={child.to}
+                          to={child.to}
+                          onClick={handleSubItemClick}
+                          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[11.5px] font-medium transition-all ${
+                            isChildActive
+                              ? "bg-[#f2f8f4] dark:bg-emerald-950/70 text-[#035941] dark:text-emerald-400 font-bold"
+                              : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-[#035941] dark:hover:text-emerald-400"
+                          }`}
+                        >
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                              isChildActive
+                                ? "bg-[#58A621] dark:bg-emerald-400"
+                                : "bg-slate-300 dark:bg-slate-600"
+                            }`}
+                          />
+                          <span className="truncate">{child.label}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                );
+              }
+
               const isActive = isSubActive(sub.to, idx);
               return (
                 <Link
@@ -506,7 +546,7 @@ const NavGroupCollapsed: React.FC<{
 const NavGroup: React.FC<{
   icon: LucideIcon;
   label: string;
-  items: Array<{ to: string; label: string }>;
+  items: any[];
   onItemClick?: () => void;
 }> = ({ icon: Icon, label, items, onItemClick }) => {
   const location = useLocation();
@@ -516,7 +556,12 @@ const NavGroup: React.FC<{
   };
 
   const isAnySubActive = useMemo(() => {
-    return items.some((item, idx) => isSubActive(item.to, idx));
+    return items.some((item, idx) => {
+      if (item.children && Array.isArray(item.children)) {
+        return item.children.some((c: any, cIdx: number) => isSubActive(c.to, cIdx));
+      }
+      return isSubActive(item.to, idx);
+    });
   }, [items, location.pathname, location.search]);
 
   const [isOpen, setIsOpen] = React.useState(isAnySubActive);
@@ -549,8 +594,63 @@ const NavGroup: React.FC<{
         />
       </button>
       {isOpen && (
-        <div className="ml-4 pl-3 border-l-2 border-slate-200/80 dark:border-slate-800 my-1 space-y-0.5 transition-all">
-          {items.map((sub, idx) => {
+        <div className="ml-4 pl-3.5 border-l-2 border-slate-200/80 dark:border-slate-800 my-1 space-y-0.5 transition-all">
+          {items.map((sub: any, idx) => {
+            if (sub.children && Array.isArray(sub.children) && sub.children.length > 0) {
+              const isSubGroupActive = sub.children.some((child: any, cIdx: number) =>
+                isSubActive(child.to, cIdx)
+              );
+              return (
+                <div key={sub.label} className="space-y-0.5 pt-0.5">
+                  <div
+                    className={`flex items-center gap-2.5 px-3 py-1.5 text-[12px] font-semibold transition-all ${
+                      isSubGroupActive
+                        ? "text-[#035941] dark:text-emerald-400 font-bold"
+                        : "text-slate-700 dark:text-slate-300"
+                    }`}
+                  >
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full shrink-0 transition-all ${
+                        isSubGroupActive
+                          ? "bg-[#58A621] dark:bg-emerald-400 scale-125 ring-3 ring-[#58A621]/30 dark:ring-emerald-800"
+                          : "bg-slate-300 dark:bg-slate-600"
+                      }`}
+                    />
+                    <span className="truncate tracking-tight">{sub.label}</span>
+                  </div>
+
+                  {/* Level 3 Indented Sub-Tree with Guide Line */}
+                  <div className="ml-3.5 pl-3 border-l-2 border-slate-200/80 dark:border-slate-800 my-0.5 space-y-0.5 transition-all">
+                    {sub.children.map((child: any, cIdx: number) => {
+                      const isChildActive = isSubActive(child.to, cIdx);
+                      return (
+                        <NavLink
+                          key={child.to}
+                          to={child.to}
+                          title={child.label}
+                          onClick={onItemClick}
+                          className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[11.5px] transition-all duration-200 group ${
+                            isChildActive
+                              ? "bg-[#f2f8f4] dark:bg-emerald-950/70 text-[#035941] dark:text-emerald-400 font-bold border border-[#c8e6b2]/60 shadow-2xs"
+                              : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-[#035941] dark:hover:text-emerald-400 hover:translate-x-1 font-medium active:scale-[0.98]"
+                          }`}
+                        >
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full shrink-0 transition-all ${
+                              isChildActive
+                                ? "bg-[#58A621] dark:bg-emerald-400 scale-125 ring-3 ring-[#58A621]/30 dark:ring-emerald-800"
+                                : "bg-slate-300 dark:bg-slate-600 group-hover:bg-[#58A621] dark:group-hover:bg-emerald-400"
+                            }`}
+                          />
+                          <span className="truncate">{child.label}</span>
+                        </NavLink>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            }
+
             const isActive = isSubActive(sub.to, idx);
             return (
               <NavLink
@@ -588,40 +688,14 @@ const SectionHeader: React.FC<{ label: string }> = ({ label }) => (
 );
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false }) => {
-  const { user, logout } = useAuthStore();
+  const { user, logout, can } = useAuthStore();
   const navigate = useNavigate();
   const rawRole = ((user?.peran || (user as any)?.role || "WARGA") as string).toUpperCase();
   const userRole = (["PEMIMPIN", "PIMPINAN", "Pemimpin", "Pimpinan"].includes(rawRole) ? "PIMPINAN" : rawRole) as UserRole;
   const isDpl = userRole === "DPL" || userRole === "DOSEN_PEMBIMBING";
+  const isMpl = userRole === "MPL" || rawRole === "MITRA_PENDAMPING_LAPANGAN";
+  const isPimpinan = userRole === "PIMPINAN";
 
-  // Live real-time clock state
-  const [timeStr, setTimeStr] = React.useState("");
-  const [dateStr, setDateStr] = React.useState("");
-
-  React.useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      setTimeStr(
-        now.toLocaleTimeString("id-ID", {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-        }).replace(/:/g, ".")
-      );
-      setDateStr(
-        now.toLocaleDateString("id-ID", {
-          weekday: "long",
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        })
-      );
-    };
-
-    updateTime();
-    const interval = setInterval(updateTime, 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   const handleMobileItemClick = () => {
     if (typeof window !== "undefined" && window.innerWidth < 1024) {
@@ -649,9 +723,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     "WARGA",
   ];
 
-  const hasAccess = (allowed?: UserRole[]) => {
+  const hasAccess = (allowed?: UserRole[], resource?: string) => {
+    if (userRole === "DEVELOPER" || userRole === "SUPER_USER") return true;
+
+    // 1. Dynamic RBAC check jika resource didefinisikan
+    if (resource) {
+      return can(resource, "canView");
+    }
+
+    // 2. Fallback static allowed role check
     if (!allowed) return true;
-    if (userRole === "DEVELOPER") return true;
     if (userRole === "PIMPINAN" || (userRole as string) === "PEMIMPIN") {
       return allowed.includes("PIMPINAN") || (allowed as any).includes("PEMIMPIN");
     }
@@ -660,26 +741,32 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
 
   const getFilteredGroupChildren = (
     groupLabel: string,
-    items: Array<{ to: string; label: string; allowed?: UserRole[] }>
+    items: any[]
   ) => {
     if (groupLabel === "Wilayah" || groupLabel === "Data Wilayah") {
+      if (isPimpinan) return [];
       if (
         userRole === "DEVELOPER" ||
         userRole === "SUPER_USER" ||
         userRole === "ADMIN_DLH" ||
-        userRole === "PIMPINAN" ||
-        (userRole as string) === "PEMIMPIN"
+        can("master_data_wilayah", "canView")
       ) {
         return items;
       }
       return [];
     }
 
-    if (groupLabel === "Dataset") {
-      return items.filter((c) => !c.allowed || hasAccess(c.allowed));
-    }
-
-    return items.filter((c) => !c.allowed || hasAccess(c.allowed));
+    return (items || [])
+      .filter((c: any) => hasAccess(c.allowed, c.resource))
+      .map((c: any) => {
+        if (c.children && Array.isArray(c.children)) {
+          return {
+            ...c,
+            children: c.children.filter((sub: any) => hasAccess(sub.allowed, sub.resource)),
+          };
+        }
+        return c;
+      });
   };
 
   const menuSections = [
@@ -697,6 +784,19 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     {
       header: "PROGRAM KKN",
       items: [
+        {
+          to: "/dasbor?tab=kkn",
+          icon: GraduationCap,
+          label: "Dasbor Eksekutif KKN",
+          allowed: [
+            "DEVELOPER",
+            "SUPER_USER",
+            "ADMIN_DLH",
+            "PANITIA_TASKFORCE",
+            "PIMPINAN",
+            "PEMIMPIN",
+          ] as UserRole[],
+        },
         {
           type: "group",
           label: "Pelaksanaan",
@@ -1011,6 +1111,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           to: "/monitoring-wilayah",
           icon: MapPin,
           label: "Monitoring Wilayah",
+          resource: "monitoring_sampah",
           allowed: [
             "DEVELOPER",
             "SUPER_USER",
@@ -1025,7 +1126,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
         },
         {
           type: "group",
-          label: "Monitoring Pengelolaan",
+          label: "Infrastruktur & Fasilitas",
           icon: Trash2,
           allowed: [
             "DEVELOPER",
@@ -1044,6 +1145,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             {
               to: "/monitoring-pengelolaan/tempat-sampah",
               label: "Tempat Sampah",
+              resource: "manajemen_tempat_sampah",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
@@ -1052,7 +1154,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "LURAH",
                 "RW",
                 "PETUGAS_RESIDU",
-                "PIMPINAN",
                 "PANITIA_TASKFORCE",
                 "MAHASISWA_KKN",
               ] as UserRole[],
@@ -1060,6 +1161,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             {
               to: "/monitoring-pengelolaan/fasilitas",
               label: "Fasilitas",
+              resource: "pemanfaatan",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
@@ -1078,7 +1180,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
         },
         {
           type: "group",
-          label: "Monitoring Pemilahan",
+          label: "Operasional",
           icon: Truck,
           allowed: [
             "DEVELOPER",
@@ -1096,7 +1198,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           children: [
             {
               to: "/monitoring-pemilahan/penyetoran-sampah",
-              label: "Penyetoran Sampah",
+              label: "Pemilahan",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
@@ -1113,7 +1215,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             },
             {
               to: "/monitoring-pemilahan/rekapitulasi-setoran",
-              label: "Rekapitulasi Setoran",
+              label: "Rekapitulasi Pemilahan",
+              resource: "laporan_analitik",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
@@ -1128,7 +1231,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             },
             {
               to: "/monitoring-pemilahan/pengangkutan-sampah",
-              label: "Pengangkutan Sampah",
+              label: "Pengangkutan",
+              resource: "pengangkutan",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
@@ -1142,8 +1246,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               ] as UserRole[],
             },
             {
+              type: "subgroup",
+              label: "Point & Peringkat",
               to: "/monitoring-pemilahan/peringkat-warga",
-              label: "Peringkat Warga",
+              resource: "poin_warga",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
@@ -1157,13 +1263,76 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "PIMPINAN",
                 "WARGA",
               ] as UserRole[],
+              children: [
+                {
+                  to: "/monitoring-pemilahan/peringkat-warga?system=system1&tab=citizens",
+                  label: "Warga",
+                  allowed: [
+                    "DEVELOPER",
+                    "SUPER_USER",
+                    "ADMIN_DLH",
+                    "CAMAT",
+                    "LURAH",
+                    "RW",
+                    "PETUGAS_RESIDU",
+                    "MAHASISWA_KKN",
+                    "PANITIA_TASKFORCE",
+                    "PIMPINAN",
+                    "WARGA",
+                  ] as UserRole[],
+                },
+                {
+                  to: "/monitoring-pemilahan/peringkat-warga?system=system1&tab=pengangkut",
+                  label: "Petugas",
+                  allowed: [
+                    "DEVELOPER",
+                    "SUPER_USER",
+                    "ADMIN_DLH",
+                    "CAMAT",
+                    "LURAH",
+                    "RW",
+                    "PETUGAS_RESIDU",
+                    "MAHASISWA_KKN",
+                    "PANITIA_TASKFORCE",
+                    "PIMPINAN",
+                  ] as UserRole[],
+                },
+                {
+                  to: "/monitoring-pemilahan/peringkat-warga?system=system1&tab=rtrw",
+                  label: "RW",
+                  allowed: [
+                    "DEVELOPER",
+                    "SUPER_USER",
+                    "ADMIN_DLH",
+                    "CAMAT",
+                    "LURAH",
+                    "RW",
+                    "PANITIA_TASKFORCE",
+                    "PIMPINAN",
+                  ] as UserRole[],
+                },
+                {
+                  to: "/monitoring-pemilahan/peringkat-warga?system=system1&tab=kelurahan",
+                  label: "Kelurahan",
+                  allowed: [
+                    "DEVELOPER",
+                    "SUPER_USER",
+                    "ADMIN_DLH",
+                    "CAMAT",
+                    "LURAH",
+                    "PANITIA_TASKFORCE",
+                    "PIMPINAN",
+                  ] as UserRole[],
+                },
+              ],
             },
           ],
         },
         {
-          to: "/monitoring-pemanfaatan",
+          type: "group",
+          label: "Pemanfaatan & Dampak",
           icon: Recycle,
-          label: "Monitoring Pemanfaatan",
+          resource: "hasil_pemanfaatan",
           allowed: [
             "DEVELOPER",
             "SUPER_USER",
@@ -1177,16 +1346,98 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             "PANITIA_TASKFORCE",
             "MAHASISWA_KKN",
           ] as UserRole[],
+          children: [
+            {
+              to: "/monitoring-pemanfaatan?kategori=ORGANIK",
+              label: "Organik",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "PETUGAS_RESIDU",
+                "WARGA",
+                "PIMPINAN",
+                "PANITIA_TASKFORCE",
+                "MAHASISWA_KKN",
+              ] as UserRole[],
+            },
+            {
+              to: "/monitoring-pemanfaatan?kategori=ANORGANIK",
+              label: "Anorganik",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "PETUGAS_RESIDU",
+                "WARGA",
+                "PIMPINAN",
+                "PANITIA_TASKFORCE",
+                "MAHASISWA_KKN",
+              ] as UserRole[],
+            },
+            {
+              to: "/pengangkutan-residu",
+              label: "Residu",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "PETUGAS_RESIDU",
+                "PIMPINAN",
+                "PANITIA_TASKFORCE",
+              ] as UserRole[],
+            },
+            {
+              to: "/monitoring-pengelolaan/fasilitas?jenis=bank_sampah",
+              label: "Bank Sampah",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "PETUGAS_RESIDU",
+                "WARGA",
+                "PIMPINAN",
+                "PANITIA_TASKFORCE",
+                "MAHASISWA_KKN",
+              ] as UserRole[],
+            },
+            {
+              to: "/evaluasi-dampak-kkn",
+              label: "Dampak & Nilai Ekonomis",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "PIMPINAN",
+                "PANITIA_TASKFORCE",
+              ] as UserRole[],
+            },
+          ],
         },
       ],
     },
     {
       header: "MASTER DATA",
-      items: [
+      items: isPimpinan ? [] : [
         {
           type: "group",
           label: "Pengguna",
           icon: Users,
+          resource: "manajemen_pengguna",
           allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PIMPINAN", "RW"] as UserRole[],
           children: [
             { to: "/pengguna?role=developer", label: "Developer", allowed: ["DEVELOPER"] as UserRole[] },
@@ -1204,6 +1455,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           type: "group",
           label: "Wilayah",
           icon: MapPin,
+          resource: "master_data_wilayah",
           allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PIMPINAN", "PEMIMPIN"] as UserRole[],
           children: [
             { to: "/wilayah/provinsi", label: "Provinsi" },
@@ -1261,12 +1513,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           to: "/konfigurasi-sistem",
           icon: Sliders,
           label: "Konfigurasi Sistem",
+          resource: "konfigurasi_sistem",
           allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[],
         },
         {
           to: "/histori-sistem",
           icon: FileText,
           label: "Histori Sistem (Audit)",
+          resource: "audit_trail",
           allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[],
         },
         {
@@ -1290,18 +1544,40 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           to: "/panduan",
           icon: BookOpen,
           label: "Panduan",
-          allowed: ALL_ROLES.filter(r => r !== "DPL" && r !== "DOSEN_PEMBIMBING"),
+          allowed: ALL_ROLES.filter(role => role !== "DPL" && role !== "DOSEN_PEMBIMBING" && role !== "PIMPINAN" && role !== "PEMIMPIN"),
         },
         {
           to: "/informasi",
           icon: Sparkles,
           label: "Tentang Aplikasi",
-          allowed: ALL_ROLES.filter(r => r !== "DPL" && r !== "DOSEN_PEMBIMBING"),
+          allowed: ALL_ROLES.filter(role => role !== "DPL" && role !== "DOSEN_PEMBIMBING"),
         },
       ],
     },
 
   ];
+
+  const effectiveSections = isMpl
+    ? [
+        {
+          header: "PENILAIAN",
+          items: [
+            {
+              to: "/penilaian/mahasiswa",
+              icon: Award,
+              label: "Form Penilaian Mahasiswa",
+              allowed: ["MPL"] as UserRole[],
+            },
+            {
+              to: "/penilaian/rekapitulasi-nilai-akhir",
+              icon: ClipboardList,
+              label: "Rekap Nilai Akhir",
+              allowed: ["MPL"] as UserRole[],
+            },
+          ],
+        },
+      ]
+    : menuSections;
 
   return (
     <>
@@ -1331,7 +1607,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 className="w-12 h-12 rounded-2xl bg-[#f2f8f4] dark:bg-emerald-950/60 border border-[#035941]/20 dark:border-emerald-700/30 flex items-center justify-center p-1.5 shadow-sm hover:scale-105 transition-all cursor-pointer"
               >
                 <img
-                  src="/logos/berseka/berseka-logo-bg-transparent.png"
+                  src="/app-logo.png"
                   alt="BERSEKA Logo"
                   className="w-full h-full object-contain"
                 />
@@ -1340,9 +1616,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
 
             {/* Centered Icons Navigation List */}
             <nav className="flex-1 overflow-y-auto w-full px-2 py-2 space-y-1 flex flex-col items-center scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
-              {menuSections.map((sec, idx) => {
+              {effectiveSections.map((sec, idx) => {
                 const visibleItems = sec.items.filter((item) => {
-                  if (!hasAccess(item.allowed)) return false;
+                  if (!hasAccess(item.allowed, (item as any).resource)) return false;
                   if (item.type === "group") {
                     const kids = getFilteredGroupChildren(item.label, (item as any).children);
                     return kids.length > 0;
@@ -1376,8 +1652,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             </nav>
 
             {/* Bottom Actions for Collapsed Mode */}
-            <div className="flex flex-col items-center pt-2 border-t border-slate-100 dark:border-slate-800 w-full px-2 shrink-0 gap-2">
-              <CollapsedClockButton dateStr={dateStr} timeStr={timeStr} />
+            <div className="flex flex-col items-center pt-2 border-t border-slate-100 dark:border-slate-800 w-full px-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  logout();
+                  navigate("/login");
+                }}
+                className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 hover:bg-rose-100 flex items-center justify-center transition cursor-pointer"
+                title="Keluar (Logout)"
+              >
+                <LogOut size={16} />
+              </button>
             </div>
           </div>
         ) : (
@@ -1393,7 +1679,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 className="flex items-center gap-3 group cursor-pointer relative z-10 px-1 text-left min-w-0 flex-1"
               >
                 <img
-                  src="/logos/berseka/berseka-logo-full.png"
+                  src="/app-logo.png"
                   alt="BERSEKA Logo"
                   className="h-10 sm:h-11 w-auto object-contain transition-all duration-300 group-hover:scale-105 shrink-0"
                 />
@@ -1411,9 +1697,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
 
             {/* Scrollable Navigation Sections */}
             <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-1 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
-              {menuSections.map((sec) => {
+              {effectiveSections.map((sec) => {
                 const visibleItems = sec.items.filter((item) => {
-                  if (!hasAccess(item.allowed)) return false;
+                  if (!hasAccess(item.allowed, (item as any).resource)) return false;
                   if (item.type === "group") {
                     const kids = getFilteredGroupChildren(item.label, (item as any).children);
                     return kids.length > 0;
@@ -1467,20 +1753,19 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               })}
             </nav>
 
-            {/* Bottom Footer Section: Real-time System Clock Card */}
+            {/* Bottom Footer Section: Logout */}
             <div className="p-3.5 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
-              {/* Real-time System Clock Card */}
-              <div className="w-full bg-[#f2f8f4]/90 dark:bg-slate-800/90 hover:bg-[#ebf7ee] dark:hover:bg-slate-700/90 p-2.5 rounded-2xl border border-[#c8e6b2]/80 dark:border-slate-700/80 shadow-xs text-center space-y-0.5 transition-all duration-300 relative z-10 hover:scale-[1.02] backdrop-blur-xs">
-                <div className="flex items-center justify-center gap-1.5 text-slate-500 dark:text-slate-400 mb-0.5">
-                  <Clock size={13} className="text-[#035941] dark:text-emerald-400" />
-                  <p className="text-[10.5px] font-black text-slate-600 dark:text-slate-300 truncate">
-                    {dateStr || "Kamis, 20 Agustus 2026"}
-                  </p>
-                </div>
-                <p className="text-sm font-black text-[#035941] dark:text-emerald-400">
-                  {timeStr || "09.55.12"}
-                </p>
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  logout();
+                  navigate("/login");
+                }}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50/50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-xs font-bold transition cursor-pointer"
+              >
+                <LogOut size={14} />
+                <span>Keluar (Logout)</span>
+              </button>
             </div>
           </div>
         )}

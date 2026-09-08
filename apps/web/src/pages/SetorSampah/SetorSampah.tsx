@@ -78,6 +78,8 @@ export default function SetorSampah() {
   const [filterRw, setFilterRw] = useState<string>("ALL");
   const [filterCategory, setFilterCategory] = useState<string>("ALL");
   const [filterPeriode, setFilterPeriode] = useState<string>("ALL");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
 
   // Pagination
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -238,8 +240,20 @@ export default function SetorSampah() {
         if (filterCategory === "RESIDU" && !catUpper.includes("RESIDU")) return false;
       }
 
-      // 5. Periode
-      if (filterPeriode !== "ALL") {
+      // 5. Periode & Dynamic Date Range
+      if (startDate || endDate) {
+        const depositDate = new Date(log.waktu);
+        if (startDate) {
+          const start = new Date(startDate);
+          start.setHours(0, 0, 0, 0);
+          if (depositDate < start) return false;
+        }
+        if (endDate) {
+          const end = new Date(endDate);
+          end.setHours(23, 59, 59, 999);
+          if (depositDate > end) return false;
+        }
+      } else if (filterPeriode !== "ALL") {
         const depositDate = new Date(log.waktu);
         const limitDate = new Date();
         if (filterPeriode === "7d") limitDate.setDate(limitDate.getDate() - 7);
@@ -250,12 +264,12 @@ export default function SetorSampah() {
 
       return true;
     });
-  }, [logs, searchQuery, filterKelurahan, filterRw, filterCategory, filterPeriode, isLurah, userKelurahan]);
+  }, [logs, searchQuery, filterKelurahan, filterRw, filterCategory, filterPeriode, startDate, endDate, isLurah, userKelurahan]);
 
   // Reset pagination on filter change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, filterKelurahan, filterRw, filterCategory, filterPeriode, itemsPerPage]);
+  }, [searchQuery, filterKelurahan, filterRw, filterCategory, filterPeriode, startDate, endDate, itemsPerPage]);
 
   const totalItems = filteredLogs.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
@@ -285,6 +299,8 @@ export default function SetorSampah() {
     setFilterRw("ALL");
     setFilterCategory("ALL");
     setFilterPeriode("ALL");
+    setStartDate("");
+    setEndDate("");
   };
 
   const renderCategoryTag = (jenis?: string) => {
@@ -310,15 +326,8 @@ export default function SetorSampah() {
     );
   };
 
-  const renderStatusTag = (status?: string) => {
+  const renderStatusTag = (status?: string, confidence?: number | null) => {
     const s = (status || "").toUpperCase();
-    if (s === "ACCEPTED" || s === "SELESAI") {
-      return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-black rounded-xl bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-800">
-          <CheckCircle2 size={12} /> Diterima
-        </span>
-      );
-    }
     if (s === "REJECTED" || s === "DITOLAK") {
       return (
         <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-black rounded-xl bg-red-100 text-red-800 border border-red-200 dark:bg-red-900/40 dark:text-red-300 dark:border-red-800">
@@ -326,9 +335,23 @@ export default function SetorSampah() {
         </span>
       );
     }
+    if (confidence !== null && confidence !== undefined && confidence > 0) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-black rounded-xl bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-800">
+          <CheckCircle2 size={12} /> Terverifikasi AI
+        </span>
+      );
+    }
+    if (s === "ACCEPTED" || s === "SELESAI") {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-black rounded-xl bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-800">
+          <CheckCircle2 size={12} /> Terverifikasi
+        </span>
+      );
+    }
     return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-black rounded-xl bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-800">
-        <Clock size={12} /> Pending
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-black rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
+        <Bot size={12} /> Otomatis AI
       </span>
     );
   };
@@ -344,14 +367,14 @@ export default function SetorSampah() {
             </span>
             <span className="text-slate-300 dark:text-slate-700">•</span>
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-              Monitoring Penyetoran
+              Monitoring Pemilahan
             </span>
           </div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-            Log Aktivitas Penyetoran Sampah
+            Monitoring Pemilahan Sampah
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Pencatatan real-time transaksi setoran warga, inferensi AI, dan penimbangan residu lapangan.
+            Pencatatan real-time hasil pemilahan sampah warga dari hulu, inferensi akurasi model AI, dan penimbangan lapangan.
           </p>
         </div>
 
@@ -499,7 +522,11 @@ export default function SetorSampah() {
           {/* Periode */}
           <select
             value={filterPeriode}
-            onChange={(e) => setFilterPeriode(e.target.value)}
+            onChange={(e) => {
+              setFilterPeriode(e.target.value);
+              setStartDate("");
+              setEndDate("");
+            }}
             className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 outline-none"
           >
             <option value="ALL">Semua Periode</option>
@@ -508,7 +535,33 @@ export default function SetorSampah() {
             <option value="90d">90 Hari Terakhir</option>
           </select>
 
-          {(searchQuery || filterKelurahan !== (isLurah ? userKelurahan : "ALL") || filterRw !== "ALL" || filterCategory !== "ALL" || filterPeriode !== "ALL") && (
+          {/* Rentang Tanggal Dinamis */}
+          <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5">
+            <span className="text-[10px] text-slate-400 font-bold uppercase">Rentang:</span>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => {
+                setStartDate(e.target.value);
+                setFilterPeriode("ALL");
+              }}
+              className="bg-transparent text-xs text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
+              title="Tanggal Mulai"
+            />
+            <span className="text-slate-400 text-xs">-</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => {
+                setEndDate(e.target.value);
+                setFilterPeriode("ALL");
+              }}
+              className="bg-transparent text-xs text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
+              title="Tanggal Selesai"
+            />
+          </div>
+
+          {(searchQuery || filterKelurahan !== (isLurah ? userKelurahan : "ALL") || filterRw !== "ALL" || filterCategory !== "ALL" || filterPeriode !== "ALL" || startDate || endDate) && (
             <button
               onClick={resetFilters}
               className="px-3 py-2 text-xs font-medium bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg transition"
@@ -541,7 +594,7 @@ export default function SetorSampah() {
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-semibold uppercase text-[11px] tracking-wide">
                   <th className="py-3 px-3">ID Transaksi</th>
-                  <th className="py-3 px-3">Nama Penyetor</th>
+                  <th className="py-3 px-3">Nama Pemilah</th>
                   <th className="py-3 px-3">Wilayah</th>
                   <th className="py-3 px-3">Kategori</th>
                   <th className="py-3 px-3 text-right">Berat (Kg)</th>
@@ -616,7 +669,7 @@ export default function SetorSampah() {
                       </td>
 
                       {/* Status */}
-                      <td className="py-3 px-3 text-center">{renderStatusTag(log.status)}</td>
+                      <td className="py-3 px-3 text-center">{renderStatusTag(log.status, log.confidence)}</td>
 
                       {/* Time */}
                       <td className="py-3 px-3 text-slate-600 dark:text-slate-400 whitespace-nowrap text-[11px]">
@@ -693,7 +746,7 @@ export default function SetorSampah() {
                 </div>
                 <div>
                   <h3 className="text-base font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                    Inspeksi Detail Penyetoran Sampah
+                    Inspeksi Detail Pemilahan Sampah
                   </h3>
                   <p className="text-[11px] font-semibold text-slate-400">
                     ID Transaksi: <span className="font-mono text-emerald-700 dark:text-emerald-400">{selectedLog.id}</span>
@@ -735,7 +788,7 @@ export default function SetorSampah() {
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="p-3 bg-slate-50 dark:bg-slate-800/70 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-1">
                   <div className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1">
-                    <User size={12} className="text-[#009966]" /> Penyetor / Warga
+                    <User size={12} className="text-[#009966]" /> Pemilah / Warga
                   </div>
                   <div className="font-extrabold text-slate-800 dark:text-slate-100">
                     {cleanWargaName(selectedLog.warga)}
@@ -770,7 +823,7 @@ export default function SetorSampah() {
                   <div className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1">
                     <CheckCircle2 size={12} className="text-[#009966]" /> Status Audit
                   </div>
-                  <div className="pt-0.5">{renderStatusTag(selectedLog.status)}</div>
+                  <div className="pt-0.5">{renderStatusTag(selectedLog.status, selectedLog.confidence)}</div>
                 </div>
 
                 <div className="p-3 bg-slate-50 dark:bg-slate-800/70 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-1">

@@ -677,7 +677,7 @@ export const LandingPage: React.FC = () => {
                         alt={slide.title}
                         loading={idx === 0 ? "eager" : "lazy"}
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = "/image/kkn-hero-sorting.webp";
+                          (e.target as HTMLImageElement).src = "/image/kkn-hero-pemilahan.webp";
                         }}
                       />
                     </figure>

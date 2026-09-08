@@ -13,7 +13,13 @@
 
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import { MapContainer, Marker, Popup, Circle, Polygon, Tooltip, useMap, useMapEvents } from "react-leaflet";
-import { ThemeTileLayer } from "../../components/common/ThemeTileLayer";
+import {
+  ThemeTileLayer,
+  GOOGLE_SATELLITE_URL,
+  GOOGLE_VECTOR_URL,
+  CARTO_VOYAGER_URL,
+  OSM_LIGHT_URL,
+} from "../../components/common/ThemeTileLayer";
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useMonitoringStore } from "../../store/useMonitoringStore";
@@ -130,7 +136,6 @@ const Monitoring: React.FC = () => {
   const [tableSearchInput, setTableSearchInput] = useState<string>("");
   const [isMapFullscreen, setIsMapFullscreen] = useState<boolean>(false);
   const [showKelurahanBoundaries, setShowKelurahanBoundaries] = useState<boolean>(true);
-  const isMapSU = user?.peran === "SUPER_USER" || user?.peran === "DEVELOPER" || (user as any)?.role === "SUPER_USER" || (user as any)?.role === "DEVELOPER";
   // QC-17b: Default basemap Satelit untuk semua role (termasuk Pimpinan, Taskforce, dll.)
   const [mapTileProvider, setMapTileProvider] = useState<"google_vector" | "google_satellite" | "cartodb" | "osm">(() => {
     return "google_satellite"; // Default Satelit untuk semua role
@@ -138,9 +143,8 @@ const Monitoring: React.FC = () => {
   const [isLegendOpen, setIsLegendOpen] = useState<boolean>(true);
   const [activeLegendTab, setActiveLegendTab] = useState<"sampah" | "fasilitas_wilayah">("sampah");
 
-  // QC-17b: Sync default satellite untuk semua role saat user load
+  // QC-17b: Sync default satellite untuk semua role (termasuk Pimpinan) saat user load
   useEffect(() => {
-    // Semua role default ke satellite; SU/Developer dijamin tetap satellite
     setMapTileProvider("google_satellite");
   }, [user?.peran]);
 
@@ -351,7 +355,7 @@ const Monitoring: React.FC = () => {
         const isRusak = b.status === "Rusak" || (b as any).realStatus === "BROKEN";
         const isPenuh = b.status === "Penuh" || pct >= 90;
         const isSedang = b.status === "Sedang" || (pct >= 70 && pct < 90);
-        const isAman = b.status === "Normal" || pct < 70;
+        const isAman = b.status === "Aman" || b.status === "Normal" || pct < 70;
 
         if (mapStatusFilter === "Rusak" && !isRusak) return false;
         if (mapStatusFilter === "Penuh" && !isPenuh) return false;
@@ -869,18 +873,7 @@ const Monitoring: React.FC = () => {
                         : "text-slate-600 hover:text-slate-900"
                     }`}
                   >
-                    Satelit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMapTileProvider("cartodb")}
-                    className={`px-3 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
-                      mapTileProvider === "cartodb"
-                        ? "bg-[#009966] text-white shadow-2xs"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
-                  >
-                    CartoDB
+                    Google Satelit
                   </button>
                 </div>
               </div>
@@ -897,7 +890,7 @@ const Monitoring: React.FC = () => {
                   <Search size={15} className="text-[#009966] dark:text-emerald-400 shrink-0 mr-2.5" />
                   <input
                     type="text"
-                    placeholder="Cari kode tempat sampah..."
+                    placeholder="Cari tempat sampah / nama pemilik..."
                     value={mapSearchInput}
                     onChange={(e) => setMapSearchInput(e.target.value)}
                     className="w-full bg-transparent text-xs font-bold text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none"
@@ -1150,12 +1143,17 @@ const Monitoring: React.FC = () => {
               <ThemeTileLayer
                 lightUrl={
                   mapTileProvider === "google_vector"
-                    ? "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
+                    ? GOOGLE_VECTOR_URL
                     : mapTileProvider === "google_satellite"
-                    ? "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
+                    ? GOOGLE_SATELLITE_URL
                     : mapTileProvider === "cartodb"
-                    ? "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-                    : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    ? CARTO_VOYAGER_URL
+                    : OSM_LIGHT_URL
+                }
+                darkUrl={
+                  mapTileProvider === "google_satellite"
+                    ? GOOGLE_SATELLITE_URL
+                    : undefined
                 }
               />
 
@@ -1468,10 +1466,10 @@ const Monitoring: React.FC = () => {
                   <th className="py-3.5 px-4 text-center">QR Code</th>
                   <th className="py-3.5 px-4">Kode Tempat Sampah</th>
                   <th className="py-3.5 px-4">Kategori</th>
-                  <th className="py-3.5 px-4">Dimiliki Oleh</th>
-                  <th className="py-3.5 px-4">Kapasitas &amp; Volume</th>
+                  <th className="py-3.5 px-4">Pemilik</th>
+                  <th className="py-3.5 px-4">Kapasitas &amp; Rasio Keterisian</th>
                   <th className="py-3.5 px-4 text-center">Status</th>
-                  <th className="py-3.5 px-4">Diverifikasi Pada</th>
+                  <th className="py-3.5 px-4">Waktu Aktivasi</th>
                   <th className="py-3.5 px-4">GPS / Koordinat</th>
                   <th className="py-3.5 px-4 text-center">Aksi</th>
                 </tr>
@@ -1587,11 +1585,11 @@ const Monitoring: React.FC = () => {
                             <span className={`w-1.5 h-1.5 rounded-full ${
                               isRusak ? "bg-rose-600" : isPenuh ? "bg-rose-500 animate-pulse" : isSedang ? "bg-amber-500" : "bg-emerald-500"
                             }`} />
-                            {isRusak ? "Rusak" : isPenuh ? "Penuh" : isSedang ? "Sedang" : "Normal"}
+                            {isRusak ? "Rusak" : isPenuh ? "Penuh" : isSedang ? "Sedang" : "Aman"}
                           </span>
                         </td>
 
-                        {/* 7. DIVERIFIKASI */}
+                        {/* 7. WAKTU AKTIVASI */}
                         <td className="py-3 px-4 whitespace-nowrap text-slate-600 dark:text-slate-400 text-[11px]">
                           {(bin as any).verifiedAt || "Sistem Real-Time"}
                         </td>
@@ -1759,7 +1757,7 @@ const Monitoring: React.FC = () => {
                   <div className="flex justify-between">
                     <span className="text-slate-400 font-semibold">Status Fisik:</span>
                     <span className="font-black text-emerald-700 dark:text-emerald-400">
-                      {selectedBinDetail.status || "Normal (Aktif Terverifikasi)"}
+                      {selectedBinDetail.status === "Normal" ? "Aman (Aktif Terverifikasi)" : selectedBinDetail.status || "Aman (Aktif Terverifikasi)"}
                     </span>
                   </div>
                   <div className="flex justify-between">

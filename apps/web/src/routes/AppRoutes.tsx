@@ -13,6 +13,7 @@ import { useAuthStore, WEB_DISABLED_ROLES } from "../store/useAuthStore";
 import type { UserRole } from "../store/useAuthStore";
 import { IOSSafariGate } from "../components/common/IOSSafariGate";
 import { checkIsIOSSafari } from "../utils/deviceValidation";
+import { getPortalLoadingText } from "../utils/portalLoading";
 
 // Lazy Loaded Pages for Optimal Code-Splitting & Minimal Initial Bundle Size
 const Dashboard = React.lazy(() => import("../pages/Dashboard/Dashboard"));
@@ -83,41 +84,36 @@ const KelolaPoinPengguna = React.lazy(() => import("../pages/KelolaPoinPengguna/
 const ZonaInspectorPage = React.lazy(() => import("../pages/Developer/ZonaInspectorPage"));
 const KelolaLogbookPage = React.lazy(() => import("../pages/Developer/KelolaLogbookPage"));
 
-// Scroll Restoration Helper Component
+// Scroll Restoration Helper Component (Safari WebKit & Cross-Browser Safe)
 export const ScrollToTop: React.FC = () => {
   const { pathname } = useLocation();
 
   React.useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    try {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    } catch {
+      window.scrollTo(0, 0);
+    }
   }, [pathname]);
 
   return null;
 };
 
-// Branded Minimalist Loading Spinner for Lazy Chunk Transitions — Dynamic Role Text
-const PORTAL_LOADING_TEXT: Record<string, string> = {
-  DEVELOPER:        "Memuat Portal Developer",
-  SUPER_USER:       "Memuat Portal Super Admin",
-  ADMIN_DLH:        "Memuat Portal Admin DLH",
-  PIMPINAN:         "Memuat Portal Pimpinan",
-  PEMIMPIN:         "Memuat Portal Pimpinan",
-  DPL:              "Memuat Portal DPL",
-  DOSEN_PEMBIMBING: "Memuat Portal DPL",
-  PANITIA_TASKFORCE:"Memuat Portal Taskforce",
-  TASK_FORCE:       "Memuat Portal Taskforce",
-  MAHASISWA_KKN:    "Memuat Portal Mahasiswa",
-  CAMAT:            "Memuat Portal Camat",
-  LURAH:            "Memuat Portal Lurah",
-  RW:               "Memuat Portal RW",
-  WARGA:            "Memuat Portal Warga",
-  PETUGAS_RESIDU:   "Memuat Portal Petugas",
-  MPL:              "Memuat Portal MPL",
+// Route Handler cerdas untuk Logbook KKN:
+// Jika MAHASISWA_KKN, alihkan langsung ke portal mobile tab logbook (/dasbor?tab=logbook)
+// Jika DPL / Super User / Admin, tampilkan halaman tabel pengawasan (LogbookKknPage)
+const LogbookKknRouteHandler: React.FC = () => {
+  const { user } = useAuthStore();
+  if (user?.peran === "MAHASISWA_KKN") {
+    return <Navigate to="/dasbor?tab=logbook" replace />;
+  }
+  return <LogbookKknPage />;
 };
 
+// Branded Minimalist Loading Spinner for Lazy Chunk Transitions — Dynamic Role Text
 const PageLoadingFallback: React.FC = () => {
   const { user } = useAuthStore();
-  const role = user?.peran ?? "";
-  const loadingText = PORTAL_LOADING_TEXT[role] ?? "Memuat halaman...";
+  const loadingText = getPortalLoadingText(user?.peran, "");
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] w-full gap-3 py-16 animate-fade-in">
       <div className="w-10 h-10 border-3 border-emerald-600/20 border-t-emerald-600 rounded-full animate-spin" />
@@ -126,12 +122,14 @@ const PageLoadingFallback: React.FC = () => {
   );
 };
 
-// Protected Route Wrapper
-const ProtectedRoute: React.FC<{ children: React.ReactElement; allowedRoles?: UserRole[] }> = ({
-  children,
-  allowedRoles,
-}) => {
-  const { isAuthenticated, user, logout } = useAuthStore();
+// Protected Route Wrapper with Dynamic RBAC
+const ProtectedRoute: React.FC<{
+  children: React.ReactElement;
+  allowedRoles?: UserRole[];
+  resource?: string;
+  action?: "canView" | "canCreate" | "canEdit" | "canDelete";
+}> = ({ children, allowedRoles, resource, action = "canView" }) => {
+  const { isAuthenticated, user, logout, can } = useAuthStore();
 
   if (!isAuthenticated || !user) {
     return <Navigate to="/login" replace />;
@@ -142,6 +140,11 @@ const ProtectedRoute: React.FC<{ children: React.ReactElement; allowedRoles?: Us
     return <Navigate to="/login" replace />;
   }
 
+  // Developer & Super User always master bypass
+  if (user.peran === "DEVELOPER" || user.peran === "SUPER_USER") {
+    return children;
+  }
+
   // Strict iOS Safari Enforcer for MAHASISWA_KKN across all protected routes
   if (user.peran === "MAHASISWA_KKN") {
     const devCheck = checkIsIOSSafari();
@@ -150,9 +153,32 @@ const ProtectedRoute: React.FC<{ children: React.ReactElement; allowedRoles?: Us
     }
   }
 
+  // 1. Dynamic RBAC resource check
+  if (resource) {
+    const hasPermission = can(resource, action);
+    if (!hasPermission) {
+      // If resource check fails, check if fallback allowedRoles allows it
+      const fallbackAllowed =
+        allowedRoles &&
+        (allowedRoles.includes(user.peran) ||
+          ((user.peran === "PEMIMPIN" || user.peran === "PIMPINAN") &&
+            (allowedRoles.includes("PIMPINAN") || (allowedRoles as any).includes("PEMIMPIN"))) ||
+          ((user.peran === "DOSEN_PEMBIMBING" || user.peran === "DPL") &&
+            (allowedRoles.includes("DPL") || (allowedRoles as any).includes("DOSEN_PEMBIMBING"))) ||
+          ((user.peran === "PANITIA_TASKFORCE" || user.peran === "TASK_FORCE") &&
+            (allowedRoles.includes("TASK_FORCE") || (allowedRoles as any).includes("PANITIA_TASKFORCE"))));
+
+      if (!fallbackAllowed) {
+        return <Navigate to="/dasbor" replace />;
+      }
+    } else {
+      return children;
+    }
+  }
+
+  // 2. Standard static role check fallback
   if (
     allowedRoles &&
-    user.peran !== "DEVELOPER" &&
     !allowedRoles.includes(user.peran) &&
     !(
       (user.peran === "PEMIMPIN" || user.peran === "PIMPINAN") &&
@@ -212,12 +238,14 @@ const AppRoutes: React.FC = () => {
       >
         <Route path="/dasbor" element={<Dashboard />} />
         <Route path="/dashboard" element={<Navigate to="/dasbor" replace />} />
+        <Route path="/dasbor-kkn-eksekutif" element={<Navigate to="/dasbor?tab=kkn" replace />} />
+        <Route path="/dashboard-eksekutif-kkn" element={<Navigate to="/dasbor?tab=kkn" replace />} />
         <Route path="/manajemen-lokasi" element={<Navigate to="/master-data/rukun-warga" replace />} />
         <Route path="/setor" element={<Navigate to="/penyetoran-sampah" replace />} />
         <Route
           path="/monitoring"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "PIMPINAN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING", "MAHASISWA_KKN", "WARGA", "DEVELOPER"]}>
+            <ProtectedRoute resource="monitoring_sampah" allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "PIMPINAN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING", "MAHASISWA_KKN", "WARGA", "DEVELOPER"]}>
               <Monitoring />
             </ProtectedRoute>
           }
@@ -225,7 +253,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/monitoring-wilayah"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "PIMPINAN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING", "MAHASISWA_KKN", "WARGA", "DEVELOPER"]}>
+            <ProtectedRoute resource="monitoring_sampah" allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "PIMPINAN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING", "MAHASISWA_KKN", "WARGA", "DEVELOPER"]}>
               <Monitoring />
             </ProtectedRoute>
           }
@@ -282,6 +310,7 @@ const AppRoutes: React.FC = () => {
           path="/monitoring-pemilahan/pengangkutan-sampah"
           element={
             <ProtectedRoute
+              resource="pengangkutan"
               allowedRoles={[
                 "SUPER_USER",
                 "ADMIN_DLH",
@@ -392,10 +421,11 @@ const AppRoutes: React.FC = () => {
           }
         />
         <Route path="/leaderboard" element={<Navigate to="/monitoring-pemilahan/peringkat-warga" replace />} />
+        <Route path="/monitoring-pemilahan/papan-peringkat" element={<Navigate to="/monitoring-pemilahan/peringkat-warga" replace />} />
         <Route
           path="/pengguna"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "PIMPINAN", "PANITIA_TASKFORCE", "RW", "DEVELOPER"]}>
+            <ProtectedRoute resource="manajemen_pengguna" allowedRoles={["SUPER_USER", "ADMIN_DLH", "PIMPINAN", "PANITIA_TASKFORCE", "RW", "DEVELOPER"]}>
               <ManajemenPengguna />
             </ProtectedRoute>
           }
@@ -478,6 +508,7 @@ const AppRoutes: React.FC = () => {
           path="/monitoring-pengelolaan/tempat-sampah"
           element={
             <ProtectedRoute
+              resource="manajemen_tempat_sampah"
               allowedRoles={[
                 "SUPER_USER",
                 "ADMIN_DLH",
@@ -699,7 +730,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/penilaian-kkn/individu"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "DPL", "DOSEN_PEMBIMBING", "ADMIN_DLH", "LURAH", "CAMAT", "RW", "PANITIA_TASKFORCE", "PIMPINAN"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "DPL", "DOSEN_PEMBIMBING", "MPL", "ADMIN_DLH", "LURAH", "CAMAT", "RW", "PANITIA_TASKFORCE", "PIMPINAN"]}>
               <PenilaianKknMahasiswaPage />
             </ProtectedRoute>
           }
@@ -707,7 +738,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/penilaian/mahasiswa"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "DPL", "DOSEN_PEMBIMBING", "ADMIN_DLH", "LURAH", "CAMAT", "RW", "PANITIA_TASKFORCE", "PIMPINAN"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "DPL", "DOSEN_PEMBIMBING", "MPL", "ADMIN_DLH", "LURAH", "CAMAT", "RW", "PANITIA_TASKFORCE", "PIMPINAN"]}>
               <PenilaianKknMahasiswaPage />
             </ProtectedRoute>
           }
@@ -751,7 +782,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/penilaian-kkn/rekap"
           element={
-            <ProtectedRoute allowedRoles={["DEVELOPER", "DPL", "DOSEN_PEMBIMBING", "ADMIN_DLH", "LURAH", "CAMAT", "RW", "SUPER_USER", "PANITIA_TASKFORCE", "PIMPINAN"]}>
+            <ProtectedRoute allowedRoles={["DEVELOPER", "DPL", "DOSEN_PEMBIMBING", "MPL", "ADMIN_DLH", "LURAH", "CAMAT", "RW", "SUPER_USER", "PANITIA_TASKFORCE", "PIMPINAN"]}>
               <RekapNilaiKknPage />
             </ProtectedRoute>
           }
@@ -759,7 +790,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/penilaian/rekapitulasi-nilai-akhir"
           element={
-            <ProtectedRoute allowedRoles={["DEVELOPER", "DPL", "DOSEN_PEMBIMBING", "ADMIN_DLH", "LURAH", "CAMAT", "RW", "SUPER_USER", "PANITIA_TASKFORCE", "PIMPINAN"]}>
+            <ProtectedRoute allowedRoles={["DEVELOPER", "DPL", "DOSEN_PEMBIMBING", "MPL", "ADMIN_DLH", "LURAH", "CAMAT", "RW", "SUPER_USER", "PANITIA_TASKFORCE", "PIMPINAN"]}>
               <RekapNilaiKknPage />
             </ProtectedRoute>
           }
@@ -800,7 +831,7 @@ const AppRoutes: React.FC = () => {
           path="/dpl/logbook"
           element={
             <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PIMPINAN", "PANITIA_TASKFORCE", "DEVELOPER", "MAHASISWA_KKN", "LURAH", "CAMAT", "RW"]}>
-              <LogbookKknPage />
+              <LogbookKknRouteHandler />
             </ProtectedRoute>
           }
         />
@@ -808,7 +839,7 @@ const AppRoutes: React.FC = () => {
           path="/logbook-kkn"
           element={
             <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PIMPINAN", "PANITIA_TASKFORCE", "DEVELOPER", "MAHASISWA_KKN", "LURAH", "CAMAT", "RW"]}>
-              <LogbookKknPage />
+              <LogbookKknRouteHandler />
             </ProtectedRoute>
           }
         />
@@ -816,7 +847,7 @@ const AppRoutes: React.FC = () => {
           path="/log-aktivitas/mahasiswa"
           element={
             <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PIMPINAN", "PANITIA_TASKFORCE", "DEVELOPER", "MAHASISWA_KKN", "LURAH", "CAMAT", "RW"]}>
-              <LogbookKknPage />
+              <LogbookKknRouteHandler />
             </ProtectedRoute>
           }
         />
@@ -880,7 +911,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/pengelolaan-sampah"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PIMPINAN", "PANITIA_TASKFORCE", "DEVELOPER", "MAHASISWA_KKN", "WARGA", "PETUGAS_RESIDU"]}>
+            <ProtectedRoute resource="pemanfaatan" allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PIMPINAN", "PANITIA_TASKFORCE", "DEVELOPER", "MAHASISWA_KKN", "WARGA", "PETUGAS_RESIDU"]}>
               <PemanfaatanSampah />
             </ProtectedRoute>
           }
@@ -888,7 +919,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/monitoring-pengelolaan/fasilitas"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PIMPINAN", "PANITIA_TASKFORCE", "DEVELOPER", "MAHASISWA_KKN", "WARGA", "PETUGAS_RESIDU"]}>
+            <ProtectedRoute resource="pemanfaatan" allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PIMPINAN", "PANITIA_TASKFORCE", "DEVELOPER", "MAHASISWA_KKN", "WARGA", "PETUGAS_RESIDU"]}>
               <PemanfaatanSampah />
             </ProtectedRoute>
           }
@@ -916,7 +947,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/monitoring-pemanfaatan"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PIMPINAN", "PANITIA_TASKFORCE", "DEVELOPER", "MAHASISWA_KKN", "WARGA", "PETUGAS_RESIDU"]}>
+            <ProtectedRoute resource="hasil_pemanfaatan" allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PIMPINAN", "PANITIA_TASKFORCE", "DEVELOPER", "MAHASISWA_KKN", "WARGA", "PETUGAS_RESIDU"]}>
               <HasilPemanfaatan />
             </ProtectedRoute>
           }
@@ -924,7 +955,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/hasil-pemanfaatan"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PIMPINAN", "PANITIA_TASKFORCE", "DEVELOPER", "MAHASISWA_KKN", "WARGA", "PETUGAS_RESIDU"]}>
+            <ProtectedRoute resource="hasil_pemanfaatan" allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PIMPINAN", "PANITIA_TASKFORCE", "DEVELOPER", "MAHASISWA_KKN", "WARGA", "PETUGAS_RESIDU"]}>
               <HasilPemanfaatan />
             </ProtectedRoute>
           }
@@ -1105,6 +1136,8 @@ const AppRoutes: React.FC = () => {
         />
         <Route path="/setor-sampah" element={<Navigate to="/monitoring-pemilahan/penyetoran-sampah" replace />} />
         <Route path="/setor" element={<Navigate to="/monitoring-pemilahan/penyetoran-sampah" replace />} />
+        <Route path="/pemilahan" element={<Navigate to="/monitoring-pemilahan/penyetoran-sampah" replace />} />
+        <Route path="/monitoring-pemilahan" element={<Navigate to="/monitoring-pemilahan/penyetoran-sampah" replace />} />
         <Route
           path="/kkn-portal"
           element={

@@ -39,7 +39,6 @@ import {
 } from "recharts";
 import { useLeaderboardStore } from "../../store/useLeaderboardStore";
 import { useAuthStore } from "../../store/useAuthStore";
-import { BarChartRace } from "../../components/BarChartRace";
 import { AnalyticsOverviewBoard } from "../../components/analytics/AnalyticsOverviewBoard";
 import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
@@ -83,6 +82,7 @@ const getInitials = (name: string) => {
 const Leaderboard: React.FC = () => {
   const {
     users,
+    regions,
     rtRw,
     pengangkut,
     kknStudents,
@@ -194,6 +194,19 @@ const Leaderboard: React.FC = () => {
           subtitle: p.wilayah,
           points: p.totalPoints,
         }));
+      } else if (s1Tab === "kelurahan") {
+        raw = (regions || []).map((k: any, i: number) => {
+          const rawName = k.kelurahanName || k.name || `Kelurahan ${i + 1}`;
+          const formattedName = rawName.toLowerCase().startsWith("kel") ? rawName : `Kel. ${rawName}`;
+          return {
+            id: k.kelurahanId || k.id || `kel-${i}`,
+            rank: i + 1,
+            name: formattedName,
+            subtitle: k.kecamatanName ? (k.kecamatanName.toLowerCase().startsWith("kec") ? k.kecamatanName : `Kec. ${k.kecamatanName}`) : "Kec. Coblong",
+            extraInfo: k.totalRw ? `${k.totalRw} RW Terdaftar` : (k.totalKg ? `Total Tonase: ${k.totalKg} Kg` : undefined),
+            points: Number(k.totalPoints ?? k.totalKg ?? 0),
+          };
+        });
       }
     } else {
       if (s2Tab === "students") {
@@ -259,7 +272,7 @@ const Leaderboard: React.FC = () => {
 
       return sortOrder === "asc" ? comparison : -comparison;
     });
-  }, [system, s1Tab, s2Tab, users, rtRw, pengangkut, kknStudents, kknGroups, kknDpl, searchTerm, sortBy, sortOrder, isLurah, userKelurahan]);
+  }, [system, s1Tab, s2Tab, users, regions, rtRw, pengangkut, kknStudents, kknGroups, kknDpl, searchTerm, sortBy, sortOrder, isLurah, userKelurahan]);
 
   const totalPages = useMemo(() => {
     return Math.ceil(currentData.length / itemsPerPage);
@@ -303,6 +316,13 @@ const Leaderboard: React.FC = () => {
       nameHeader = "Nama Petugas";
       subtitleHeader = "Wilayah";
       pointsLabel = "Skor Komposit";
+    } else if (s1Tab === "kelurahan") {
+      pageTitle = "Peringkat Kelurahan";
+      pageSubtitle = "Akumulasi kepatuhan pemilahan sampah dan performa partisipasi tingkat kelurahan";
+      nameHeader = "Nama Kelurahan";
+      subtitleHeader = "Kecamatan";
+      extraInfoHeader = "Cakupan Wilayah";
+      pointsLabel = "Total Poin";
     }
   } else {
     if (s2Tab === "students") {
@@ -327,6 +347,20 @@ const Leaderboard: React.FC = () => {
       pointsLabel = "Rerata Poin";
     }
   }
+
+  const participantUnit = useMemo(() => {
+    if (system === "system1") {
+      if (s1Tab === "citizens") return "orang";
+      if (s1Tab === "rtrw") return "RW";
+      if (s1Tab === "pengangkut") return "petugas";
+      if (s1Tab === "kelurahan") return "kelurahan";
+    } else {
+      if (s2Tab === "students") return "mahasiswa";
+      if (s2Tab === "groups") return "kelompok";
+      if (s2Tab === "dpl") return "dosen";
+    }
+    return "peserta";
+  }, [system, s1Tab, s2Tab]);
 
   const toggleSort = (field: "rank" | "name" | "points" | "subtitle") => {
     if (sortBy === field) {
@@ -401,10 +435,10 @@ const Leaderboard: React.FC = () => {
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">
-              Peringkat Warga
+              Papan Peringkat
             </h1>
             <p className="text-xs text-slate-500 font-semibold mt-0.5">
-              Pemeringkatan berdasarkan tingkat <strong className="text-slate-600 dark:text-slate-400">kepatuhan pemilahan sampah</strong> di seluruh wilayah binaan.
+              Papan klasemen &amp; apresiasi kinerja pemilahan sampah di seluruh wilayah binaan dan program KKN.
             </p>
           </div>
         </div>
@@ -444,7 +478,7 @@ const Leaderboard: React.FC = () => {
           </div>
 
           {/* View Mode Toggle (Visual Chart vs Table vs Both) */}
-          {system === "system1" && !["kelurahan", "overview"].includes(s1Tab) && (
+          {system === "system1" && s1Tab !== "overview" && (
             <div className="flex items-center bg-slate-100/80 dark:bg-slate-800/80 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-700 self-start sm:self-auto">
               <button
                 onClick={() => setViewDisplayMode("BOTH")}
@@ -491,10 +525,10 @@ const Leaderboard: React.FC = () => {
           {system === "system1" ? (
             <>
               {[
-                { id: "citizens" as System1Tab, label: "Warga", icon: Users },
-                { id: "rtrw" as System1Tab, label: "Rukun Warga", icon: MapPin },
-                { id: "pengangkut" as System1Tab, label: "Petugas Pemilah", icon: TrendingUp },
-                { id: "kelurahan" as System1Tab, label: "Kelurahan", icon: BarChart2 },
+                { id: "citizens" as System1Tab, label: "Peringkat Warga", icon: Users },
+                { id: "pengangkut" as System1Tab, label: "Peringkat Petugas", icon: TrendingUp },
+                { id: "rtrw" as System1Tab, label: "Peringkat RW", icon: MapPin },
+                { id: "kelurahan" as System1Tab, label: "Peringkat Kelurahan", icon: BarChart2 },
                 { id: "overview" as System1Tab, label: "Rekap Wilayah", icon: Activity },
               ].map((tab) => {
                 const TabIcon = tab.icon;
@@ -553,8 +587,6 @@ const Leaderboard: React.FC = () => {
       {/* 3. CONTENT AREA */}
       {system === "system1" && s1Tab === "overview" ? (
         <AnalyticsOverviewBoard />
-      ) : system === "system1" && s1Tab === "kelurahan" ? (
-        <BarChartRace />
       ) : (
         <>
           {/* Stats Cards */}
@@ -564,8 +596,12 @@ const Leaderboard: React.FC = () => {
                 <Trophy size={20} />
               </div>
               <div>
-                <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider">Total Peserta</p>
-                <p className="text-xl font-black text-slate-800 dark:text-slate-100">{stats.total} <span className="text-xs text-slate-400 font-bold">orang</span></p>
+                <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider">
+                  Total {s1Tab === "kelurahan" ? "Kelurahan" : s1Tab === "rtrw" ? "Rukun Warga" : "Peserta"}
+                </p>
+                <p className="text-xl font-black text-slate-800 dark:text-slate-100">
+                  {stats.total} <span className="text-xs text-slate-400 font-bold">{participantUnit}</span>
+                </p>
               </div>
             </div>
 
@@ -805,7 +841,7 @@ const Leaderboard: React.FC = () => {
                     />
                   </div>
                   <div className="text-xs text-slate-500 font-semibold">
-                    Total <strong className="text-slate-800 dark:text-slate-100 font-black">{currentData.length}</strong> data peserta
+                    Total <strong className="text-slate-800 dark:text-slate-100 font-black">{currentData.length}</strong> {participantUnit}
                   </div>
                 </div>
 

@@ -46,7 +46,7 @@ import {
   Polygon,
   useMap,
 } from "react-leaflet";
-import { ThemeTileLayer } from "../../components/common/ThemeTileLayer";
+import { ThemeTileLayer, GOOGLE_SATELLITE_URL } from "../../components/common/ThemeTileLayer";
 import L from "leaflet";
 import {
   CoblongGeo,
@@ -1032,7 +1032,7 @@ const KknDashboardContent: React.FC = () => {
             className="w-full h-full z-0"
           >
             <MapFlyToController center={mapCenter} zoom={mapZoom} />
-            <ThemeTileLayer />
+            <ThemeTileLayer lightUrl={GOOGLE_SATELLITE_URL} darkUrl={GOOGLE_SATELLITE_URL} />
 
             {/* 1. KELURAHAN BOUNDARY POLYGONS */}
             {showPolygons &&

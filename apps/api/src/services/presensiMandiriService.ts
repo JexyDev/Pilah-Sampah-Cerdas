@@ -215,9 +215,24 @@ export class PresensiMandiriService {
     if (record.status === "SELESAI") throw new Error("ALREADY_CHECKED_OUT");
 
     const checkOutAt = new Date();
-    const durasiMenit = Math.max(1, Math.floor((checkOutAt.getTime() - record.checkInAt.getTime()) / 60000));
+    const durasiMenit = Math.max(0, Math.floor((checkOutAt.getTime() - record.checkInAt.getTime()) / 60000));
 
-    const updateData: any = { status: "SELESAI", checkOutAt, durasiMenit };
+    if (durasiMenit < 30) {
+      const minutesRemaining = 30 - durasiMenit;
+      const err: any = new Error(
+        `MINIMUM_DURATION_NOT_MET: Presensi pulang mandiri minimal dapat dilakukan 30 menit setelah jam masuk (check-in). Anda baru berkegiatan selama ${durasiMenit} menit. Sisa waktu: ${minutesRemaining} menit lagi.`
+      );
+      err.code = "MINIMUM_DURATION_NOT_MET";
+      err.statusCode = 422;
+      err.details = {
+        minutesRemaining,
+        durasiMenit,
+        minimumRequiredMinutes: 30,
+      };
+      throw err;
+    }
+
+    const updateData: any = { status: "SELESAI", checkOutAt, durasiMenit: Math.max(1, durasiMenit) };
     if (deskripsiKegiatan && deskripsiKegiatan.trim().length > 0) {
       if (deskripsiKegiatan.trim().length > MAX_DESKRIPSI_LENGTH) {
         throw new Error(`DESKRIPSI_TOO_LONG: Maksimal ${MAX_DESKRIPSI_LENGTH} karakter`);
@@ -347,43 +362,148 @@ export class PresensiMandiriService {
     const limit = Math.min(50, Math.max(1, params.limit ?? 10));
     const skip = (page - 1) * limit;
     const db = prisma as any;
-    const [total, items] = await Promise.all([
-      db.presensiMandiri.count({ where: { studentId } }),
-      db.presensiMandiri.findMany({
+
+    const [mandiriItems, activityItems] = await Promise.all([
+      db.presensiMandiri
+        ? db.presensiMandiri.findMany({
+            where: { studentId },
+            include: {
+              kelompok: { select: { id: true, name: true } },
+            },
+          })
+        : Promise.resolve([]),
+      prisma.activityAttendance.findMany({
         where: { studentId },
-        orderBy: { checkInAt: "desc" },
-        skip,
-        take: limit,
-        select: {
-          id: true,
-          latitude: true,
-          longitude: true,
-          deskripsiKegiatan: true,
-          fotoUrl: true,
-          status: true,
-          checkInAt: true,
-          checkOutAt: true,
-          durasiMenit: true,
-          kelompok: { select: { id: true, name: true } },
+        include: {
+          schedule: {
+            select: {
+              id: true,
+              title: true,
+              date: true,
+              kelompok: { select: { id: true, name: true } },
+            },
+          },
         },
       }),
     ]);
+
+    const mappedActivities = activityItems.map((a: any) => {
+      const checkInDate = new Date(a.attendedAt);
+      const wibDate = new Date(checkInDate.getTime() + 7 * 60 * 60 * 1000);
+      const dateKey = wibDate.toISOString().slice(0, 10);
+
+      let durasi = a.actualInZoneMinutes ?? 0;
+      if (!durasi && a.checkOutAt) {
+        durasi = Math.max(
+          1,
+          Math.floor((new Date(a.checkOutAt).getTime() - checkInDate.getTime()) / 60000)
+        );
+      }
+
+      return {
+        id: a.id,
+        presensiId: a.id,
+        latitude: Number(a.latitude),
+        longitude: Number(a.longitude),
+        deskripsiKegiatan: a.deskripsiKegiatan || a.schedule?.title || "Kegiatan Harian KKN",
+        fotoUrl: a.fotoUrl || null,
+        status: a.status,
+        statusPresensi: a.status,
+        checkInAt: checkInDate.toISOString(),
+        waktuCheckin: checkInDate.toISOString(),
+        checkOutAt: a.checkOutAt ? new Date(a.checkOutAt).toISOString() : null,
+        waktuCheckout: a.checkOutAt ? new Date(a.checkOutAt).toISOString() : null,
+        durasiMenit: durasi,
+        kelompok: a.schedule?.kelompok
+          ? { id: a.schedule.kelompok.id, nama: a.schedule.kelompok.name }
+          : null,
+        source: "KEGIATAN_RESMI",
+        dateKey,
+        rawTimestamp: checkInDate.getTime(),
+      };
+    });
+
+    const mappedMandiri = mandiriItems.map((p: any) => {
+      const checkInDate = new Date(p.checkInAt);
+      const wibDate = new Date(checkInDate.getTime() + 7 * 60 * 60 * 1000);
+      const dateKey = wibDate.toISOString().slice(0, 10);
+
+      return {
+        id: p.id,
+        presensiId: p.id,
+        latitude: Number(p.latitude),
+        longitude: Number(p.longitude),
+        deskripsiKegiatan: p.deskripsiKegiatan,
+        fotoUrl: p.fotoUrl || null,
+        status: p.status,
+        statusPresensi: p.status,
+        checkInAt: checkInDate.toISOString(),
+        waktuCheckin: checkInDate.toISOString(),
+        checkOutAt: p.checkOutAt ? new Date(p.checkOutAt).toISOString() : null,
+        waktuCheckout: p.checkOutAt ? new Date(p.checkOutAt).toISOString() : null,
+        durasiMenit: p.durasiMenit ?? 0,
+        kelompok: p.kelompok ? { id: p.kelompok.id, nama: p.kelompok.name } : null,
+        source: "MANDIRI",
+        dateKey,
+        rawTimestamp: checkInDate.getTime(),
+      };
+    });
+
+    // Deduplikasi cerdas berdasarkan tanggal (WIB)
+    // Jika pada tanggal yang sama ada kegiatan resmi dan mandiri, prioritaskan data kegiatan resmi
+    const mergedMap = new Map<string, any>();
+
+    for (const act of mappedActivities) {
+      mergedMap.set(act.dateKey, act);
+    }
+
+    for (const man of mappedMandiri) {
+      if (!mergedMap.has(man.dateKey)) {
+        mergedMap.set(man.dateKey, man);
+      } else {
+        // Jika ada keduanya, lengkapi deskripsi atau foto jika kegiatan resmi kosong
+        const existing = mergedMap.get(man.dateKey);
+        if (!existing.fotoUrl && man.fotoUrl) {
+          existing.fotoUrl = man.fotoUrl;
+        }
+        if (
+          (!existing.deskripsiKegiatan ||
+            existing.deskripsiKegiatan === "Kegiatan Harian KKN" ||
+            existing.deskripsiKegiatan.startsWith("Kegiatan Harian")) &&
+          man.deskripsiKegiatan
+        ) {
+          existing.deskripsiKegiatan = man.deskripsiKegiatan;
+        }
+      }
+    }
+
+    const mergedList = Array.from(mergedMap.values());
+    mergedList.sort((a, b) => b.rawTimestamp - a.rawTimestamp);
+
+    const total = mergedList.length;
+    const paginated = mergedList.slice(skip, skip + limit);
+
     return {
       total,
       page,
       limit,
       totalPages: Math.ceil(total / limit),
-      items: items.map((p: any) => ({
-        presensiId: p.id,
-        latitude: Number(p.latitude),
-        longitude: Number(p.longitude),
+      items: paginated.map((p) => ({
+        presensiId: p.presensiId || p.id,
+        id: p.id,
+        latitude: p.latitude,
+        longitude: p.longitude,
         deskripsiKegiatan: p.deskripsiKegiatan,
         fotoUrl: p.fotoUrl,
         status: p.status,
-        checkInAt: p.checkInAt.toISOString(),
-        checkOutAt: p.checkOutAt?.toISOString() ?? null,
+        statusPresensi: p.statusPresensi,
+        checkInAt: p.checkInAt,
+        waktuCheckin: p.waktuCheckin,
+        checkOutAt: p.checkOutAt,
+        waktuCheckout: p.waktuCheckout,
         durasiMenit: p.durasiMenit,
-        kelompok: p.kelompok ? { id: p.kelompok.id, nama: p.kelompok.name } : null,
+        kelompok: p.kelompok,
+        source: p.source,
       })),
     };
   }

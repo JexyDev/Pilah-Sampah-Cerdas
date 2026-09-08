@@ -30,8 +30,13 @@ export function checkIsIOSSafari(): DeviceValidationResult {
     };
   }
 
-  // Check manual testing bypass in localStorage
-  const hasLocalBypass = localStorage.getItem("BERSEKA_DEV_BYPASS_IOS_GATE") === "true";
+  // Check manual testing bypass in localStorage safely (Safari Private Mode safe)
+  let hasLocalBypass = false;
+  try {
+    hasLocalBypass = typeof localStorage !== "undefined" && localStorage.getItem("BERSEKA_DEV_BYPASS_IOS_GATE") === "true";
+  } catch {
+    hasLocalBypass = false;
+  }
 
   const ua = navigator.userAgent || navigator.vendor || (window as any).opera || "";
   const platform = navigator.platform || "";
@@ -55,9 +60,9 @@ export function checkIsIOSSafari(): DeviceValidationResult {
   const isUC = /UCBrowser/i.test(ua);
   const isInApp = /FBAN|FBAV|Instagram|Line|Twitter|MicroMessenger|Snapchat|Bytedance|TikTok|wv/i.test(ua);
 
-  // 4. Genuine Safari Engine Validation
-  const isSafariCore = /Safari/i.test(ua) && /Version\//i.test(ua);
-  const isSafari = isSafariCore && !isCriOS && !isFxiOS && !isEdgiOS && !isOperaIOS && !isUC && !isInApp;
+  // 4. Genuine Safari Engine Validation (Supports iOS Safari & macOS Safari)
+  const isSafariCore = /Safari/i.test(ua) && (/Version\//i.test(ua) || /AppleWebKit/i.test(ua));
+  const isSafari = isSafariCore && !isCriOS && !isFxiOS && !isEdgiOS && !isOperaIOS && !isUC;
 
   // Human readable OS name
   let detectedOS = "Perangkat Non-iOS / Desktop";
@@ -71,7 +76,7 @@ export function checkIsIOSSafari(): DeviceValidationResult {
 
   // Human readable Browser name
   let detectedBrowser = "Peramban Web Tidak Dikenal";
-  if (isInApp) detectedBrowser = "In-App Browser (Instagram / FB / Line)";
+  if (isInApp) detectedBrowser = "In-App Browser (WhatsApp / IG / Line)";
   else if (isCriOS) detectedBrowser = "Google Chrome (iOS)";
   else if (isFxiOS) detectedBrowser = "Mozilla Firefox (iOS)";
   else if (isEdgiOS) detectedBrowser = "Microsoft Edge (iOS)";
@@ -94,25 +99,24 @@ export function checkIsIOSSafari(): DeviceValidationResult {
     };
   }
 
-  // Determine validity: Strict iOS + Safari WebKit
+  // Determine validity: Valid for Apple ecosystem (iOS iPhone/iPad, macOS Safari, and iOS WebKit)
+  const isAppleEcosystem = isIOS || isMac;
   let isValid = false;
   let reason: "NOT_IOS" | "NOT_SAFARI" | "IN_APP_BROWSER" | undefined;
 
-  if (!isIOS) {
+  if (!isAppleEcosystem) {
     isValid = false;
     reason = "NOT_IOS";
-  } else if (isInApp) {
-    isValid = false;
-    reason = "IN_APP_BROWSER";
-  } else if (!isSafari) {
+  } else if (!isSafari && !isInApp) {
     isValid = false;
     reason = "NOT_SAFARI";
   } else {
+    // Valid for iPhone/iPad Safari, macOS Safari, or iOS in-app webview
     isValid = true;
   }
 
   return {
-    isIOS,
+    isIOS: isIOS || isMac,
     isMac,
     isSafari,
     isValid,

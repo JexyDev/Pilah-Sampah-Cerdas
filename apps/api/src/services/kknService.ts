@@ -17,7 +17,7 @@ import {
   kknAttendanceService,
 } from "./kknAttendanceService.js";
 import { parseProkerDeskripsi } from "./dplService.js";
-import { calculateNilaiEkonomi, normalizeJenisOlahan } from "./pemanfaatanService.js";
+import { calculateNilaiEkonomi } from "./pemanfaatanService.js";
 import { logbookService } from "./logbookService.js";
 import { evaluateSortingStatus } from "../utils/sortingEvaluation.js";
 
@@ -41,10 +41,19 @@ export function normalizeProkerKategori(kategori?: string | null): string {
 }
 
 export function isAnorganikBin(
-  bin?: { category?: { name?: string | null; type?: string | null } | null; binType?: string | null; qrCode?: string | null } | null
+  bin?: {
+    category?: { name?: string | null; type?: string | null } | null;
+    binType?: string | null;
+    qrCode?: string | null;
+  } | null
 ): boolean {
   if (!bin) return false;
-  const cat = (bin.category?.name || bin.category?.type || (bin as any).binType || "").toUpperCase();
+  const cat = (
+    bin.category?.name ||
+    bin.category?.type ||
+    (bin as any).binType ||
+    ""
+  ).toUpperCase();
   if (
     cat.includes("NON_ORGANIC") ||
     cat.includes("ANORGANIK") ||
@@ -68,15 +77,21 @@ export function isAnorganikBin(
 }
 
 export function isOrganikBin(
-  bin?: { category?: { name?: string | null; type?: string | null } | null; binType?: string | null; qrCode?: string | null } | null
+  bin?: {
+    category?: { name?: string | null; type?: string | null } | null;
+    binType?: string | null;
+    qrCode?: string | null;
+  } | null
 ): boolean {
   if (!bin) return false;
   if (isAnorganikBin(bin)) return false;
-  const cat = (bin.category?.name || bin.category?.type || (bin as any).binType || "").toUpperCase();
-  if (
-    cat.includes("ORGANIC") ||
-    cat.includes("ORGANIK")
-  ) {
+  const cat = (
+    bin.category?.name ||
+    bin.category?.type ||
+    (bin as any).binType ||
+    ""
+  ).toUpperCase();
+  if (cat.includes("ORGANIC") || cat.includes("ORGANIK")) {
     return true;
   }
   const qr = (bin.qrCode || "").toLowerCase();
@@ -229,7 +244,8 @@ export class KknService {
       // Backward compatibility aliases
       nim: student?.nim || (isSuperOrAdmin ? "ADMIN" : "10123000"),
       jurusan: student?.jurusan || (isSuperOrAdmin ? "Monitoring Wilayah" : "Teknik Informatika"),
-      programStudi: student?.jurusan || (isSuperOrAdmin ? "Monitoring Wilayah" : "Teknik Informatika"),
+      programStudi:
+        student?.jurusan || (isSuperOrAdmin ? "Monitoring Wilayah" : "Teknik Informatika"),
       poskoKkn: areaName,
       poskoName: areaName,
       wilayahKkn: areaName,
@@ -463,10 +479,12 @@ export class KknService {
         benarCount: correctCount,
         incorrectCount,
         salahCount: incorrectCount,
-        correctPercentage: totalActivities > 0 ? Math.round((correctCount / totalActivities) * 1000) / 10 : 0,
-        errorPercentage: totalActivities > 0 ? Math.round((incorrectCount / totalActivities) * 1000) / 10 : 0,
+        correctPercentage:
+          totalActivities > 0 ? Math.round((correctCount / totalActivities) * 1000) / 10 : 0,
+        errorPercentage:
+          totalActivities > 0 ? Math.round((incorrectCount / totalActivities) * 1000) / 10 : 0,
         isActivated: true,
-        needsReeducation: totalActivities > 0 && (correctCount / totalActivities) < 0.8,
+        needsReeducation: totalActivities > 0 && correctCount / totalActivities < 0.8,
         bins: userBins.map((b: any) => ({
           id: b.id,
           qrCode: b.qrCode,
@@ -571,8 +589,9 @@ export class KknService {
       });
 
       if (student) {
-        const groupStudentUserIds =
-          student.kelompok?.students?.map((s: any) => s.userId) || [kknUserId];
+        const groupStudentUserIds = student.kelompok?.students?.map((s: any) => s.userId) || [
+          kknUserId,
+        ];
 
         // 1. Direct registration / ownership by student or fellow group member
         const isRegisteredByGroup =
@@ -580,18 +599,14 @@ export class KknService {
             const regId = bo.bin?.registeredByStudentId;
             const picId = bo.bin?.qrBatch?.assignedPicUserId;
             return (
-              regId === kknUserId ||
-              groupStudentUserIds.includes(regId) ||
-              picId === kknUserId
+              regId === kknUserId || groupStudentUserIds.includes(regId) || picId === kknUserId
             );
           }) ||
           warga.bins?.some((b: any) => {
             const regId = b.registeredByStudentId;
             const picId = b.qrBatch?.assignedPicUserId;
             return (
-              regId === kknUserId ||
-              groupStudentUserIds.includes(regId) ||
-              picId === kknUserId
+              regId === kknUserId || groupStudentUserIds.includes(regId) || picId === kknUserId
             );
           });
 
@@ -623,8 +638,7 @@ export class KknService {
             return !isNaN(num) && num === studentRwId;
           });
 
-        const isRwMatch =
-          (studentRwId != null && wargaRwIds.includes(studentRwId)) || isRwNumMatch;
+        const isRwMatch = (studentRwId != null && wargaRwIds.includes(studentRwId)) || isRwNumMatch;
 
         // 3. Kelurahan match
         const studentKelurahanName =
@@ -645,9 +659,10 @@ export class KknService {
 
         if (studentKelurahanName) {
           const normStudentKel = studentKelurahanName.toLowerCase().trim();
-          isKelurahanMatch = wargaKelurahans.some((k) =>
-            k.toLowerCase().trim().includes(normStudentKel) ||
-            normStudentKel.includes(k.toLowerCase().trim())
+          isKelurahanMatch = wargaKelurahans.some(
+            (k) =>
+              k.toLowerCase().trim().includes(normStudentKel) ||
+              normStudentKel.includes(k.toLowerCase().trim())
           );
         }
 
@@ -668,9 +683,7 @@ export class KknService {
                 .map((n: string) => parseInt(n.replace(/\D/g, ""), 10))
                 .filter((n: number) => !isNaN(n));
 
-              isCakupanRwMatch = wargaRwNumbers.some((num: number) =>
-                cakupanNumbers.includes(num)
-              );
+              isCakupanRwMatch = wargaRwNumbers.some((num: number) => cakupanNumbers.includes(num));
             }
           } catch {}
         }
@@ -835,9 +848,11 @@ export class KknService {
       benarCount: correctCount,
       incorrectCount,
       salahCount: incorrectCount,
-      correctPercentage: totalActivities > 0 ? Math.round((correctCount / totalActivities) * 1000) / 10 : 0,
-      errorPercentage: totalActivities > 0 ? Math.round((incorrectCount / totalActivities) * 1000) / 10 : 0,
-      needsReeducation: totalActivities > 0 && (correctCount / totalActivities) < 0.8,
+      correctPercentage:
+        totalActivities > 0 ? Math.round((correctCount / totalActivities) * 1000) / 10 : 0,
+      errorPercentage:
+        totalActivities > 0 ? Math.round((incorrectCount / totalActivities) * 1000) / 10 : 0,
+      needsReeducation: totalActivities > 0 && correctCount / totalActivities < 0.8,
       binOrganikId: binOrganik?.qrCode || null,
       binAnorganikId: binAnorganik?.qrCode || null,
       binId: primaryBin?.qrCode || "",
@@ -857,9 +872,8 @@ export class KknService {
       })),
       binOwnerships: warga.binOwnerships || [],
       isActivated:
-        allBins.some(
-          (b: any) => b.status === "ACTIVE_BOUND" || b.status === "PENDING_APPROVAL"
-        ) || allBins.length > 0,
+        allBins.some((b: any) => b.status === "ACTIVE_BOUND" || b.status === "PENDING_APPROVAL") ||
+        allBins.length > 0,
       pendampingName: registeredStudent,
       registeredByStudent: registeredStudent,
       registeredByStudentName: registeredStudent,
@@ -927,8 +941,7 @@ export class KknService {
         studentAssignedRwId = student.assignedRwId || student.user?.rwId;
         studentKelompokKelurahan =
           student.assignedRw?.kelurahan?.name || student.kelompok?.kelurahan;
-        studentGroupUserIds =
-          student.kelompok?.students?.map((s: any) => s.userId) || [kknUserId];
+        studentGroupUserIds = student.kelompok?.students?.map((s: any) => s.userId) || [kknUserId];
 
         // Resolve all RW IDs in group's cakupanRw dynamically
         if (!targetRwId && student.kelompok?.cakupanRw) {
@@ -960,7 +973,7 @@ export class KknService {
                 targetRwIds = matchedRws.map((r) => r.id);
               }
             }
-          } catch (_) {}
+          } catch {}
         }
 
         // Default scoping if not explicitly filtered
@@ -1160,9 +1173,8 @@ export class KknService {
         "";
 
       const isActivated =
-        allBins.some(
-          (b: any) => b.status === "ACTIVE_BOUND" || b.status === "PENDING_APPROVAL"
-        ) || allBins.length > 0;
+        allBins.some((b: any) => b.status === "ACTIVE_BOUND" || b.status === "PENDING_APPROVAL") ||
+        allBins.length > 0;
 
       const lat = household?.latitude
         ? Number(household.latitude)
@@ -2761,9 +2773,7 @@ export class KknService {
     const nowWib = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
     const startWib = new Date(startDate.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
     if (startWib < nowWib) {
-      throw new Error(
-        "Anda tidak dapat mengajukan izin untuk tanggal yang sudah lewat."
-      );
+      throw new Error("Anda tidak dapat mengajukan izin untuk tanggal yang sudah lewat.");
     }
 
     // VALIDASI ANTI-TUMPUK (1 Hari/Pertemuan = 1 Status Pengajuan)
@@ -3220,17 +3230,48 @@ export class KknService {
     });
     const completedScheduleIds = new Set(completedAttendances.map((a) => a.scheduleId));
 
+    // Cek apakah mahasiswa sudah memiliki sesi presensi yang SUDAH SELESAI / HADIR hari ini
+    const todayCompletedAttendance = await prisma.activityAttendance.findFirst({
+      where: {
+        studentId: { in: studentUserIds },
+        attendedAt: { gte: todayStart, lte: todayEnd },
+        OR: [
+          { checkOutAt: { not: null } },
+          {
+            status: {
+              in: ["HADIR", "HADIR_MEMENUHI", "HADIR_TIDAK_MEMENUHI", "SELESAI", "SELESAI_TELAT"],
+            },
+          },
+        ],
+      },
+      include: {
+        schedule: true,
+      },
+      orderBy: { attendedAt: "desc" },
+    });
+
     // 🎯 Filter jadwal aktif (spesifik kelompok KKN atau jadwal bersama/global tanpa kelompokId)
+    // Utamakan jadwal hari ini (todayStart s/d todayEnd)
     let activeSchedules: any[] = [];
     if (student?.kelompokId) {
       activeSchedules = await prisma.schedule.findMany({
         where: {
           OR: [{ kelompokId: student.kelompokId }, { kelompokId: null }],
-          date: { gte: yesterdayStart, lte: todayEnd },
+          date: { gte: todayStart, lte: todayEnd },
           isActive: true,
         },
         orderBy: { date: "asc" },
       });
+      if (activeSchedules.length === 0) {
+        activeSchedules = await prisma.schedule.findMany({
+          where: {
+            OR: [{ kelompokId: student.kelompokId }, { kelompokId: null }],
+            date: { gte: yesterdayStart, lte: todayEnd },
+            isActive: true,
+          },
+          orderBy: { date: "asc" },
+        });
+      }
     }
 
     // Fallback 1: Jika tidak ada jadwal spesifik kelompok, cari jadwal umum tanpa kelompokId
@@ -3238,22 +3279,41 @@ export class KknService {
       activeSchedules = await prisma.schedule.findMany({
         where: {
           kelompokId: null,
-          date: { gte: yesterdayStart, lte: todayEnd },
+          date: { gte: todayStart, lte: todayEnd },
           isActive: true,
         },
         orderBy: { date: "asc" },
       });
+      if (activeSchedules.length === 0) {
+        activeSchedules = await prisma.schedule.findMany({
+          where: {
+            kelompokId: null,
+            date: { gte: yesterdayStart, lte: todayEnd },
+            isActive: true,
+          },
+          orderBy: { date: "asc" },
+        });
+      }
     }
 
     // Fallback 2: Jika masih belum ada, cari seluruh jadwal aktif dalam rentang tanggal ini
     if (activeSchedules.length === 0) {
       activeSchedules = await prisma.schedule.findMany({
         where: {
-          date: { gte: yesterdayStart, lte: todayEnd },
+          date: { gte: todayStart, lte: todayEnd },
           isActive: true,
         },
         orderBy: { date: "asc" },
       });
+      if (activeSchedules.length === 0) {
+        activeSchedules = await prisma.schedule.findMany({
+          where: {
+            date: { gte: yesterdayStart, lte: todayEnd },
+            isActive: true,
+          },
+          orderBy: { date: "asc" },
+        });
+      }
     }
 
     // Filter out schedules that student has already completed/checked out
@@ -3271,7 +3331,17 @@ export class KknService {
 
     let activeSchedule: any = null;
     if (runningSession) {
-      activeSchedule = targetScheduleList.find((sch) => sch.id === runningSession.scheduleId);
+      activeSchedule =
+        targetScheduleList.find((sch) => sch.id === runningSession.scheduleId) ||
+        activeSchedules.find((sch) => sch.id === runningSession.scheduleId) ||
+        (await prisma.schedule.findUnique({ where: { id: runningSession.scheduleId } }));
+    } else if (todayCompletedAttendance) {
+      // 🎯 FIX CRITICAL: Jika mahasiswa sudah selesai checkout / hadir hari ini dan tidak ada sesi berjalan lain,
+      // PRIORITASKAN jadwal dan data kehadiran hari ini! Jangan jatuh ke jadwal kemarin atau jadwal lain yang ALPA!
+      activeSchedule =
+        todayCompletedAttendance.schedule ||
+        activeSchedules.find((sch) => sch.id === todayCompletedAttendance.scheduleId) ||
+        (await prisma.schedule.findUnique({ where: { id: todayCompletedAttendance.scheduleId } }));
     }
 
     const now = new Date();
@@ -3323,7 +3393,9 @@ export class KknService {
           const effectiveStartMins = Math.min(5 * 60, startMins);
           const effectiveEndMins = Math.max(20 * 60, endMins);
           isTimeMatch =
-            isSchedDateToday && currentWibMinutes >= effectiveStartMins && currentWibMinutes <= effectiveEndMins;
+            isSchedDateToday &&
+            currentWibMinutes >= effectiveStartMins &&
+            currentWibMinutes <= effectiveEndMins;
         } else {
           // Overnight schedule (e.g. 11:00 - 08:02)
           if (isSchedDateToday) {
@@ -3401,14 +3473,21 @@ export class KknService {
     }
 
     // Fetch attendance specific to activeSchedule
-    const attendanceForActiveSchedule = activeSchedule
-      ? await prisma.activityAttendance.findFirst({
-          where: {
-            studentId: { in: studentUserIds },
-            scheduleId: activeSchedule.id,
-          },
-        })
-      : null;
+    let attendanceForActiveSchedule =
+      runningSession ||
+      (todayCompletedAttendance && activeSchedule?.id === todayCompletedAttendance.scheduleId
+        ? todayCompletedAttendance
+        : null);
+
+    if (!attendanceForActiveSchedule && activeSchedule) {
+      attendanceForActiveSchedule = await prisma.activityAttendance.findFirst({
+        where: {
+          studentId: { in: studentUserIds },
+          scheduleId: activeSchedule.id,
+        },
+        orderBy: { attendedAt: "desc" },
+      });
+    }
 
     let attendanceStatus = "belum_absen";
     let isMemenuhiDurasi = false;
@@ -3475,19 +3554,6 @@ export class KknService {
       };
     }
 
-    let isOvernight = false;
-    if (activeSchedule?.time && activeSchedule.time.includes("-")) {
-      const parts = activeSchedule.time.split("-");
-      const startParts = parts[0].trim().replace(".", ":").split(":");
-      const endParts = parts[1].trim().replace(".", ":").split(":");
-      if (startParts.length >= 2 && endParts.length >= 2) {
-        const startMins = parseInt(startParts[0], 10) * 60 + parseInt(startParts[1], 10);
-        const endMins = parseInt(endParts[0], 10) * 60 + parseInt(endParts[1], 10);
-        if (endMins <= startMins) {
-          isOvernight = true;
-        }
-      }
-    }
     const finalTargetDurationMinutes = targetDurationMinutes;
 
     // Kebijakan Fleksibilitas Lapangan & Batas Maksimal 20:00 WIB:
@@ -3596,8 +3662,8 @@ export class KknService {
         kelurahan: activeArea?.kelurahan?.name || "Coblong",
         latitude: schedLat,
         longitude: schedLng,
-        radiusMeter: activeSchedule.radius || 100,
-        radius: activeSchedule.radius || 100,
+        radiusMeter: activeSchedule.radius || 1500,
+        radius: activeSchedule.radius || 1500,
         targetDurationMinutes: finalTargetDurationMinutes,
         actualInZoneMinutes,
         actualInZoneSeconds,
@@ -4216,10 +4282,7 @@ export class KknService {
 
     // Query seluruh data Logbook Pemanfaatan terkait proker ini
     const pemanfaatanWhere: any = {
-      OR: [
-        { programKerjaId: id },
-        ...(proker.deskripsi ? [{ program: proker.deskripsi }] : []),
-      ],
+      OR: [{ programKerjaId: id }, ...(proker.deskripsi ? [{ program: proker.deskripsi }] : [])],
     };
 
     const pemanfaatanLogs = await prisma.pemanfaatan.findMany({
@@ -4456,6 +4519,36 @@ export class KknService {
       where: { id },
       data: updateData,
     });
+
+    if (statusUsulan === "DISETUJUI" && proker.statusUsulan !== "DISETUJUI") {
+      try {
+        const kelompok = await prisma.kelompokKkn.findUnique({
+          where: { id: proker.kelompokId },
+          include: { students: { select: { userId: true } } },
+        });
+        const studentUserIds = (kelompok?.students || []).map((s) => s.userId).filter(Boolean);
+        if (studentUserIds.length > 0) {
+          const parsedJudul = parseProkerDeskripsi(proker.deskripsi).judul;
+          await notificationIntegrationService.sendToUsers({
+            userIds: studentUserIds,
+            title: "Program Kerja Disetujui! 🎯",
+            message: `Program kerja "${parsedJudul}" untuk kelompok ${kelompok?.name || ""} telah disetujui.`,
+            triggerType: "PROKER_APPROVED",
+            dataPayload: {
+              event: "REFRESH_PROKER_MAHASISWA",
+              type: "PROKER_DISETUJUI",
+              entityId: id,
+              prokerId: id,
+              kelompokId: proker.kelompokId,
+              status: "DISETUJUI",
+              click_action: "FLUTTER_NOTIFICATION_CLICK",
+            },
+          });
+        }
+      } catch (err: any) {
+        console.warn("[kknService.updateProgramKerja] Push notification error:", err?.message);
+      }
+    }
 
     return await this.getProgramKerjaById(userId, id);
   }

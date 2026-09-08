@@ -8,6 +8,7 @@ import { prisma } from "../lib/prisma.js";
 
 import { Request, Response } from "express";
 import { dashboardService } from "../services/dashboardService.js";
+import { kknExecutiveService } from "../services/kknExecutiveService.js";
 
 export const dashboardController = {
   getKpi: async (req: Request, res: Response) => {
@@ -249,6 +250,53 @@ export const dashboardController = {
     } catch (error) {
       console.error("[DashboardController] exportDataset error:", error);
       res.status(500).json({ success: false, message: "Internal server error" });
+    }
+  },
+
+  getKknExecutiveDashboard: async (req: Request, res: Response) => {
+    try {
+      const { kelurahan, rw, periode } = req.query;
+      const data = await kknExecutiveService.getExecutiveDashboard({
+        kelurahan: kelurahan as string,
+        rw: rw as string,
+        periode: periode as string,
+      });
+      res.status(200).json({
+        success: true,
+        data,
+      });
+    } catch (error: any) {
+      console.error("[DashboardController] getKknExecutiveDashboard error:", error);
+      res.status(500).json({
+        success: false,
+        message: error.message || "Internal server error memuat data dashboard eksekutif KKN",
+      });
+    }
+  },
+
+  exportKknExecutiveReport: async (req: Request, res: Response) => {
+    try {
+      const { kelurahan, rw, periode } = req.query;
+      const buffer = await kknExecutiveService.exportExecutiveReport({
+        kelurahan: kelurahan as string,
+        rw: rw as string,
+        periode: periode as string,
+      });
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      );
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename=Laporan_Eksekutif_KKN_Pimpinan_${Date.now()}.xlsx`
+      );
+      res.status(200).send(buffer);
+    } catch (error: any) {
+      console.error("[DashboardController] exportKknExecutiveReport error:", error);
+      res.status(500).json({
+        success: false,
+        message: error.message || "Gagal mengunduh laporan eksekutif KKN",
+      });
     }
   },
 };

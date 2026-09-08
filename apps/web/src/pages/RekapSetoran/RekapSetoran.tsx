@@ -238,6 +238,39 @@ export default function RekapSetoran() {
     showToast.success(`Berhasil mengekspor ${exportData.length} data setoran ke XLSX!`);
   };
 
+  const setQuickDatePreset = (preset: "ALL" | "TODAY" | "7D" | "30D" | "THIS_MONTH") => {
+    const today = new Date();
+    const fmt = (d: Date) => d.toISOString().split("T")[0];
+
+    if (preset === "ALL") {
+      setStartDate("");
+      setEndDate("");
+      setFilterPeriode("ALL");
+    } else if (preset === "TODAY") {
+      const todayStr = fmt(today);
+      setStartDate(todayStr);
+      setEndDate(todayStr);
+      setFilterPeriode("ALL");
+    } else if (preset === "7D") {
+      const past = new Date();
+      past.setDate(past.getDate() - 7);
+      setStartDate(fmt(past));
+      setEndDate(fmt(today));
+      setFilterPeriode("ALL");
+    } else if (preset === "30D") {
+      const past = new Date();
+      past.setDate(past.getDate() - 30);
+      setStartDate(fmt(past));
+      setEndDate(fmt(today));
+      setFilterPeriode("ALL");
+    } else if (preset === "THIS_MONTH") {
+      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      setStartDate(fmt(startOfMonth));
+      setEndDate(fmt(today));
+      setFilterPeriode("ALL");
+    }
+  };
+
   const resetFilters = () => {
     setFilterRw("");
     setFilterKategori("ALL");
@@ -294,10 +327,10 @@ export default function RekapSetoran() {
       {/* Clean Enterprise Page Header */}
       <PageHeader
         icon={Receipt}
-        category="Audit Transaksi Pemilahan"
-        scope={user?.wilayah || "Semua Wilayah"}
-        title="Pemantauan & Rekapitulasi"
-        description="Laporan pemantauan dan rekapitulasi transaksi penyetoran sampah terpilah warga di tingkat Rukun Warga secara terpadu dan akuntabel."
+        category="Tata Kelola Sampah • Operasional"
+        scope={user?.wilayah || "Kecamatan Coblong"}
+        title="Rekapitulasi Pemilahan"
+        description="Laporan pemantauan dan rekapitulasi transaksi pemilahan sampah terpilah warga di tingkat Rukun Warga berbasis rentang waktu kalender dinamis dan verifikasi model AI."
       />
 
       {/* KPI Metric Summary Cards */}
@@ -403,6 +436,49 @@ export default function RekapSetoran() {
               onChange={(e) => setEndDate(e.target.value)}
               className="bg-transparent text-xs font-semibold text-slate-800 dark:text-slate-100 outline-none cursor-pointer"
             />
+          </div>
+
+          {/* Preset Rentang Waktu Chips */}
+          <div className="flex items-center gap-1 overflow-x-auto">
+            <button
+              type="button"
+              onClick={() => setQuickDatePreset("ALL")}
+              className={`px-2.5 py-1.5 rounded-xl text-[11px] font-bold transition cursor-pointer ${
+                !startDate && !endDate
+                  ? "bg-[#009966] text-white shadow-2xs"
+                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+              }`}
+            >
+              Semua
+            </button>
+            <button
+              type="button"
+              onClick={() => setQuickDatePreset("TODAY")}
+              className="px-2.5 py-1.5 rounded-xl text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer"
+            >
+              Hari Ini
+            </button>
+            <button
+              type="button"
+              onClick={() => setQuickDatePreset("7D")}
+              className="px-2.5 py-1.5 rounded-xl text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer"
+            >
+              7 Hari
+            </button>
+            <button
+              type="button"
+              onClick={() => setQuickDatePreset("30D")}
+              className="px-2.5 py-1.5 rounded-xl text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer"
+            >
+              30 Hari
+            </button>
+            <button
+              type="button"
+              onClick={() => setQuickDatePreset("THIS_MONTH")}
+              className="px-2.5 py-1.5 rounded-xl text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer"
+            >
+              Bulan Ini
+            </button>
           </div>
 
           {/* Reset Filters Button */}

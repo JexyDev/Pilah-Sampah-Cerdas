@@ -19,7 +19,13 @@ import { ConfirmModal } from "../../components/common/ConfirmModal";
 import KategoriSampah from "../KategoriSampah/KategoriSampah";
 import MasterQrManager from "../SuperUser/MasterQrManager";
 import { MapContainer, Marker, Popup, Circle, Polygon, Tooltip, useMap, useMapEvents } from "react-leaflet";
-import { ThemeTileLayer } from "../../components/common/ThemeTileLayer";
+import {
+  ThemeTileLayer,
+  GOOGLE_SATELLITE_URL,
+  GOOGLE_VECTOR_URL,
+  CARTO_VOYAGER_URL,
+  OSM_LIGHT_URL,
+} from "../../components/common/ThemeTileLayer";
 import L from "leaflet";
 import {
   KELURAHAN_GEODATA,
@@ -138,16 +144,14 @@ const ManajemenTempatSampah: React.FC = () => {
   const [flyTarget, setFlyTarget] = useState<{ center: [number, number]; zoom: number; timestamp: number } | null>(null);
 
   // Map settings
-  const isMapSU = user?.peran === "SUPER_USER" || user?.peran === "DEVELOPER" || (user as any)?.role === "SUPER_USER" || (user as any)?.role === "DEVELOPER";
+  // QC-17b: Default basemap Satelit untuk semua role (khususnya Pimpinan, Super User, dll.)
   const [mapTileProvider, setMapTileProvider] = useState<"google_vector" | "google_satellite" | "cartodb" | "osm">(() => {
-    return isMapSU ? "google_satellite" : "google_vector";
+    return "google_satellite";
   });
 
-  // Sync default satellite for SU on user load
+  // Sync default satellite untuk semua role (termasuk Pimpinan) saat user load
   useEffect(() => {
-    if (user?.peran === "SUPER_USER" || user?.peran === "DEVELOPER") {
-      setMapTileProvider("google_satellite");
-    }
+    setMapTileProvider("google_satellite");
   }, [user?.peran]);
 
   const [mapCategoryFilter, setMapCategoryFilter] = useState<string>("Semua");
@@ -267,7 +271,7 @@ const ManajemenTempatSampah: React.FC = () => {
         const isRusak = b.status === "Rusak" || b.realStatus === "BROKEN";
         const isPenuh = b.status === "Penuh" || b.kapasitas >= 90;
         const isSedang = b.status === "Sedang" || (b.kapasitas >= 70 && b.kapasitas < 90);
-        const isAman = b.status === "Normal" || b.kapasitas < 70;
+        const isAman = b.status === "Aman" || b.status === "Normal" || b.kapasitas < 70;
 
         if (mapStatusFilter === "Rusak" && !isRusak) return false;
         if (mapStatusFilter === "Penuh" && !isPenuh) return false;
@@ -491,9 +495,25 @@ const ManajemenTempatSampah: React.FC = () => {
     setCurrentPage(1);
   }, [searchInput, statusFilter, rowsPerPage]);
 
-  const totalPages = Math.max(1, Math.ceil(bins.length / rowsPerPage));
+  const filteredBins = useMemo(() => {
+    return bins.filter((bin) => {
+      if (!statusFilter || statusFilter === "Semua Status") return true;
+      const cap = Number(bin.kapasitas || 0);
+      const isPenuh = cap > 90 || bin.status === "Penuh" || bin.realStatus === "BROKEN";
+      const isSedang = !isPenuh && cap >= 70;
+      const isAman = !isPenuh && !isSedang && cap < 70;
+
+      if (statusFilter === "Aman") return isAman;
+      if (statusFilter === "Sedang") return isSedang;
+      if (statusFilter === "Penuh") return isPenuh;
+      if (statusFilter === "Perbaikan") return bin.status === "Perbaikan" || bin.realStatus === "PENDING_APPROVAL";
+      return true;
+    });
+  }, [bins, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredBins.length / rowsPerPage));
   const startIndex = (currentPage - 1) * rowsPerPage;
-  const paginatedBins = bins.slice(startIndex, startIndex + rowsPerPage);
+  const paginatedBins = filteredBins.slice(startIndex, startIndex + rowsPerPage);
 
 
   const fetchBins = async () => {
@@ -767,32 +787,8 @@ const ManajemenTempatSampah: React.FC = () => {
                   : "bg-slate-100/80 dark:bg-slate-800/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200/80 dark:bg-slate-800/80 dark:hover:bg-slate-700"
               }`}
             >
-              <QrCode size={15} />
-              <span>Kodefikasi</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleTabChange("monitoring")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer ${
-                activeTab === "monitoring"
-                  ? "bg-[#009966] text-white shadow-xs"
-                  : "bg-slate-100/80 dark:bg-slate-800/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200/80 dark:bg-slate-800/80 dark:hover:bg-slate-700"
-              }`}
-            >
-              <Map size={15} />
-              <span>Monitoring &amp; Peta</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleTabChange("kategori")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer ${
-                activeTab === "kategori"
-                  ? "bg-[#009966] text-white shadow-xs"
-                  : "bg-slate-100/80 dark:bg-slate-800/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200/80 dark:bg-slate-800/80 dark:hover:bg-slate-700"
-              }`}
-            >
-              <Tags size={15} />
-              <span>Kategori Sampah</span>
+              <Box size={15} />
+              <span>Data Tempat Sampah</span>
             </button>
             <button
               type="button"
@@ -804,7 +800,7 @@ const ManajemenTempatSampah: React.FC = () => {
               }`}
             >
               <QrCode size={15} />
-              <span>Batch Kode QR</span>
+              <span>Batch Kode QR (Cetak Stiker)</span>
             </button>
           </div>
 
@@ -1020,19 +1016,7 @@ const ManajemenTempatSampah: React.FC = () => {
                       }`}
                       title="Tampilan Google Maps Satelit / Hybrid"
                     >
-                      Satelit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setMapTileProvider("cartodb")}
-                      className={`px-3 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
-                        mapTileProvider === "cartodb"
-                          ? "bg-[#009966] text-white shadow-2xs"
-                          : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-                      }`}
-                      title="Tampilan Kartografi Clean"
-                    >
-                      CartoDB
+                      Google Satelit
                     </button>
                   </div>
                 </div>
@@ -1218,12 +1202,17 @@ const ManajemenTempatSampah: React.FC = () => {
                 <ThemeTileLayer
                   lightUrl={
                     mapTileProvider === "google_vector"
-                      ? "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
+                      ? GOOGLE_VECTOR_URL
                       : mapTileProvider === "google_satellite"
-                      ? "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
+                      ? GOOGLE_SATELLITE_URL
                       : mapTileProvider === "cartodb"
-                      ? "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-                      : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      ? CARTO_VOYAGER_URL
+                      : OSM_LIGHT_URL
+                  }
+                  darkUrl={
+                    mapTileProvider === "google_satellite"
+                      ? GOOGLE_SATELLITE_URL
+                      : undefined
                   }
                 />
 
@@ -1475,10 +1464,10 @@ const ManajemenTempatSampah: React.FC = () => {
             <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-xs flex items-center justify-between transition-all hover:shadow-md">
               <div>
                 <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider">
-                  STATUS NORMAL
+                  STATUS AMAN
                 </p>
                 <h3 className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
-                  {bins.filter((b) => b.status === "ACTIVE_BOUND" || b.status === "ACTIVE" || b.status === "Normal").length}
+                  {bins.filter((b) => b.status === "ACTIVE_BOUND" || b.status === "ACTIVE" || b.status === "Normal" || b.status === "Aman" || b.kapasitas < 70).length}
                 </h3>
               </div>
               <div className="w-11 h-11 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-100 dark:border-emerald-700/50 shadow-2xs">
@@ -1523,11 +1512,11 @@ const ManajemenTempatSampah: React.FC = () => {
       <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
         <div className="flex flex-col md:flex-row items-center justify-between gap-3">
           {/* Search Box */}
-          <div className="relative w-full md:w-80">
+          <div className="relative w-full md:w-96">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="Cari nama atau kode tempat sampah..."
+              placeholder="Cari kode tempat sampah, nama pemilik, lokasi/alamat, atau wilayah RW..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-[#009966] focus:bg-white dark:focus:bg-slate-800 transition-all"
@@ -1542,24 +1531,24 @@ const ManajemenTempatSampah: React.FC = () => {
               className="flex items-center gap-2.5 px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-extrabold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all cursor-pointer shadow-2xs"
             >
               <span className={`w-2 h-2 rounded-full ${
-                statusFilter === "Normal" || statusFilter === "ACTIVE" || statusFilter === "Aktif" ? "bg-emerald-500" : statusFilter === "Penuh" ? "bg-rose-500" : statusFilter === "Sedang" ? "bg-amber-500" : statusFilter === "Perbaikan" ? "bg-rose-500" : "bg-slate-400"
+                statusFilter === "Aman" || statusFilter === "ACTIVE" || statusFilter === "Aktif" ? "bg-emerald-500" : statusFilter === "Penuh" ? "bg-rose-500" : statusFilter === "Sedang" ? "bg-amber-500" : statusFilter === "Perbaikan" ? "bg-rose-500" : "bg-slate-400"
               }`} />
-              <span>{statusFilter ? statusFilter : "Semua Status"}</span>
+              <span>{statusFilter ? statusFilter : "Semua Status Keterisian"}</span>
               <ChevronDown size={14} className="text-slate-400" />
             </button>
 
             {isStatusDropdownOpen && (
               <>
                 <div className="fixed inset-0 z-20" onClick={() => setIsStatusDropdownOpen(false)} />
-                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-xl z-30 p-1.5 space-y-1 animate-in fade-in zoom-in-95 duration-150">
-                  {["Semua Status", "Normal", "Penuh", "Sedang", "Perbaikan"].map((st) => {
-                    const isSelected = (st === "Semua Status" && !statusFilter) || statusFilter === st;
+                <div className="absolute right-0 mt-2 w-52 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-xl z-30 p-1.5 space-y-1 animate-in fade-in zoom-in-95 duration-150">
+                  {["Semua Status Keterisian", "Aman", "Sedang", "Penuh", "Perbaikan"].map((st) => {
+                    const isSelected = (st === "Semua Status Keterisian" && !statusFilter) || statusFilter === st;
                     return (
                       <button
                         key={st}
                         type="button"
                         onClick={() => {
-                          setStatusFilter(st === "Semua Status" ? "" : st);
+                          setStatusFilter(st === "Semua Status Keterisian" ? "" : st);
                           setIsStatusDropdownOpen(false);
                         }}
                         className={`w-full text-left px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
@@ -1585,14 +1574,16 @@ const ManajemenTempatSampah: React.FC = () => {
         <div className="overflow-x-auto w-full">
           <table className="w-full text-left border-collapse min-w-[1100px]">
             <thead>
-              <tr className="bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/80 text-[10.5px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-700 whitespace-nowrap">
+              <tr className="bg-slate-50/80 dark:bg-slate-800/80 text-[10.5px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-700 whitespace-nowrap">
                 <th className="py-3 px-4 text-center whitespace-nowrap">QR CODE</th>
                 <th className="py-3 px-4 whitespace-nowrap">KODE TEMPAT SAMPAH</th>
                 <th className="py-3 px-4 whitespace-nowrap">KATEGORI</th>
-                <th className="py-3 px-4 whitespace-nowrap">DIMILIKI OLEH</th>
-                <th className="py-3 px-4 whitespace-nowrap">KAPASITAS</th>
-                <th className="py-3 px-4 text-center whitespace-nowrap">STATUS</th>
-                <th className="py-3 px-4 whitespace-nowrap">DIVERIFIKASI PADA</th>
+                <th className="py-3 px-4 whitespace-nowrap">PEMILIK</th>
+                <th className="py-3 px-4 text-center whitespace-nowrap">KAPASITAS MAKSIMUM</th>
+                <th className="py-3 px-4 whitespace-nowrap">RASIO KETERISIAN</th>
+                <th className="py-3 px-4 text-center whitespace-nowrap">STATUS QR</th>
+                <th className="py-3 px-4 text-center whitespace-nowrap">STATUS KAPASITAS</th>
+                <th className="py-3 px-4 whitespace-nowrap">WAKTU AKTIVASI</th>
                 <th className="py-3 px-4 whitespace-nowrap">GPS</th>
                 {!isReadOnly && <th className="py-3 px-4 text-center whitespace-nowrap">AKSI</th>}
               </tr>
@@ -1600,7 +1591,7 @@ const ManajemenTempatSampah: React.FC = () => {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
             {loading ? (
               <tr>
-                <td colSpan={9} className="px-6 py-16 text-center">
+                <td colSpan={isReadOnly ? 10 : 11} className="px-6 py-16 text-center">
                   <div className="flex flex-col items-center justify-center gap-3">
                     <div className="w-12 h-12 rounded-2xl bg-[#009966]/10 text-[#009966] dark:text-emerald-400 flex items-center justify-center border border-[#009966]/20 dark:border-emerald-700/40 shadow-xs">
                       <Loader2 className="animate-spin text-[#009966]" size={24} />
@@ -1614,7 +1605,7 @@ const ManajemenTempatSampah: React.FC = () => {
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan={9} className="px-6 py-12 text-center">
+                <td colSpan={isReadOnly ? 10 : 11} className="px-6 py-12 text-center">
                   <div className="flex flex-col items-center justify-center gap-3">
                     <div className="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center border border-rose-100 dark:border-rose-700/50 shadow-xs">
                       <AlertTriangle size={24} />
@@ -1685,7 +1676,7 @@ const ManajemenTempatSampah: React.FC = () => {
                       </span>
                     </td>
 
-                    {/* 4. DIMILIKI OLEH */}
+                    {/* 4. PEMILIK */}
                     <td className="py-3 px-4 whitespace-nowrap">
                       {bin.wargaName || bin.user?.name ? (
                         <div>
@@ -1701,16 +1692,24 @@ const ManajemenTempatSampah: React.FC = () => {
                       )}
                     </td>
 
-                    {/* 5. KAPASITAS */}
+                    {/* 5. KAPASITAS MAKSIMUM (LITER) */}
+                    <td className="py-3 px-4 text-center whitespace-nowrap">
+                      <span className="font-bold text-slate-800 dark:text-slate-200 text-xs">
+                        {bin.maxCapacityLiter || 25} Liter
+                      </span>
+                      <span className="block text-[9.5px] text-slate-400 font-medium">Batas Maks</span>
+                    </td>
+
+                    {/* 6. RASIO KETERISIAN (%) */}
                     <td className="py-3 px-4 whitespace-nowrap">
-                      <div className="flex flex-col gap-1 min-w-[110px]">
+                      <div className="flex flex-col gap-1 min-w-[120px]">
                         <div className="flex justify-between items-center text-[11px] font-bold">
-                          <span className="text-slate-700 dark:text-slate-300">{bin.currentVolumeLiter || 0}/{bin.maxCapacityLiter || 25}L</span>
+                          <span className="text-slate-700 dark:text-slate-300">{bin.currentVolumeLiter || 0} L</span>
                           <span className={bin.kapasitas > 90 ? "text-rose-600 dark:text-rose-400" : bin.kapasitas >= 70 ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"}>
                             {bin.kapasitas}%
                           </span>
                         </div>
-                        <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-700">
+                        <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden border border-slate-200/60 dark:border-slate-700">
                           <div
                             className={`h-full rounded-full transition-all duration-500 ${
                               bin.kapasitas > 90 ? "bg-rose-500" : bin.kapasitas >= 70 ? "bg-amber-500" : "bg-emerald-500"
@@ -1718,30 +1717,59 @@ const ManajemenTempatSampah: React.FC = () => {
                             style={{ width: `${Math.min(bin.kapasitas, 100)}%` }}
                           />
                         </div>
+                        <span className="text-[9.5px] text-slate-400 font-medium">Tingkat Keterisian</span>
                       </div>
                     </td>
 
-                    {/* 6. STATUS */}
+                    {/* 7. STATUS QR */}
                     <td className="py-3 px-4 text-center whitespace-nowrap">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
-                        bin.status === "Penuh" || bin.realStatus === "BROKEN"
-                          ? "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-700/50"
-                          : bin.realStatus === "PENDING_APPROVAL" || bin.status === "Perbaikan"
-                          ? "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700/50"
-                          : "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/50"
-                      }`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${
-                          bin.status === "Penuh" || bin.realStatus === "BROKEN"
-                            ? "bg-rose-500"
-                            : bin.realStatus === "PENDING_APPROVAL" || bin.status === "Perbaikan"
-                            ? "bg-amber-500"
-                            : "bg-emerald-500"
-                        }`} />
-                        {bin.realStatus === "PENDING_APPROVAL" ? "Menunggu" : bin.status === "ACTIVE_BOUND" ? "Aktif" : bin.status || "Aktif"}
-                      </span>
+                      {bin.wargaName || bin.user?.name || bin.status === "ACTIVE_BOUND" ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/50">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          Tercetak &amp; Aktif
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                          Tercetak (Belum Terikat)
+                        </span>
+                      )}
                     </td>
 
-                    {/* 7. DIVERIFIKASI PADA */}
+                    {/* 8. STATUS KAPASITAS */}
+                    <td className="py-3 px-4 text-center whitespace-nowrap">
+                      {(() => {
+                        const isBroken = bin.status === "Perbaikan" || bin.realStatus === "BROKEN";
+                        const fillStatus = isBroken
+                          ? "Perbaikan"
+                          : bin.kapasitas > 90
+                          ? "Penuh"
+                          : bin.kapasitas >= 70
+                          ? "Sedang"
+                          : "Aman";
+
+                        return (
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
+                            fillStatus === "Penuh"
+                              ? "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-700/50"
+                              : fillStatus === "Sedang" || fillStatus === "Perbaikan"
+                              ? "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700/50"
+                              : "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/50"
+                          }`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${
+                              fillStatus === "Penuh"
+                                ? "bg-rose-500"
+                                : fillStatus === "Sedang" || fillStatus === "Perbaikan"
+                                ? "bg-amber-500"
+                                : "bg-emerald-500"
+                            }`} />
+                            {fillStatus}
+                          </span>
+                        );
+                      })()}
+                    </td>
+
+                    {/* 9. WAKTU AKTIVASI */}
                     <td className="py-3 px-4 text-slate-600 dark:text-slate-400 text-xs font-semibold whitespace-nowrap">
                       {bin.verifiedAt && bin.verifiedAt !== "Belum Diaktivasi" ? (
                         <span>{bin.verifiedAt}</span>
@@ -1750,7 +1778,7 @@ const ManajemenTempatSampah: React.FC = () => {
                       )}
                     </td>
 
-                    {/* 8. GPS */}
+                    {/* 10. GPS */}
                     <td className="py-3 px-4 font-mono text-[11px] text-slate-600 dark:text-slate-400 font-semibold whitespace-nowrap">
                       {bin.latitude && bin.longitude ? (
                         `${Number(bin.latitude).toFixed(4)}, ${Number(bin.longitude).toFixed(4)}, ${bin.altitude || 768} mdpl`
@@ -1761,7 +1789,7 @@ const ManajemenTempatSampah: React.FC = () => {
                       )}
                     </td>
 
-                    {/* 9. AKSI */}
+                    {/* 11. AKSI */}
                     {!isReadOnly && (
                       <td className="py-3 px-4 text-center">
                         <div className="flex items-center justify-center gap-1.5">
@@ -1807,7 +1835,7 @@ const ManajemenTempatSampah: React.FC = () => {
               })
             ) : (
               <EmptyTableState
-                colSpan={9}
+                colSpan={isReadOnly ? 10 : 11}
                 entityName="Tempat Sampah"
                 isSearch={!!(searchInput || statusFilter)}
                 searchQuery={searchInput}
@@ -1950,7 +1978,7 @@ const ManajemenTempatSampah: React.FC = () => {
                   <div>
                     <span className="text-slate-400 font-bold block text-[10px] uppercase">Status Operasional</span>
                     <span className="font-extrabold text-slate-800 dark:text-slate-200">
-                      {selectedBinObj?.realStatus === "PRINTED" || (!selectedBinObj?.wargaName && !selectedBinObj?.user?.name) ? "Belum Diaktivasi (PRINTED)" : selectedBinObj?.realStatus === "PENDING_APPROVAL" ? "Menunggu Verifikasi" : selectedBinObj?.status || "Normal"}
+                      {selectedBinObj?.realStatus === "PRINTED" || (!selectedBinObj?.wargaName && !selectedBinObj?.user?.name) ? "Belum Diaktivasi (PRINTED)" : selectedBinObj?.realStatus === "PENDING_APPROVAL" ? "Menunggu Verifikasi" : selectedBinObj?.status === "Normal" ? "Aman" : selectedBinObj?.status || "Aman"}
                     </span>
                   </div>
                 </div>

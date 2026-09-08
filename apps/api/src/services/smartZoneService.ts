@@ -35,6 +35,19 @@ const DEFAULT_POSKO_RADIUS_M = 200;
 const ACTIVE_STUDENT_WINDOW_MIN = 30;
 const MIN_STUDENTS_FOR_HULL = 3;
 
+/**
+ * Zona Sentral & Fallback Universal Kampus UNIKOM Bandung
+ * Berlaku otomatis untuk seluruh kelompok dan mahasiswa KKN.
+ */
+export const UNIKOM_CENTRAL_ZONE = {
+  id: "POSKO-UNIKOM-CENTRAL",
+  nama: "PRESENSI POSKO UNIKOM",
+  alamat: "Jl. Dipati Ukur No. 112-116, Coblong, Kota Bandung",
+  lat: -6.886884,
+  lng: 107.615286,
+  radius: 250,
+};
+
 export interface ZoneCheckResult {
   isInside: boolean;
   matchedPosko: string | null;
@@ -100,6 +113,20 @@ export class SmartZoneService {
       source: "POSKO_KKN" | "POSKO_MULTI";
     }>
   > {
+    if (!kelompokId) {
+      return [
+        {
+          id: UNIKOM_CENTRAL_ZONE.id,
+          nama: UNIKOM_CENTRAL_ZONE.nama,
+          lat: UNIKOM_CENTRAL_ZONE.lat,
+          lng: UNIKOM_CENTRAL_ZONE.lng,
+          isUtama: false,
+          radius: UNIKOM_CENTRAL_ZONE.radius,
+          source: "POSKO_MULTI",
+        },
+      ];
+    }
+
     const result: any[] = [];
     const primary = await prisma.poskoKkn.findUnique({
       where: { kelompokId },
@@ -132,8 +159,7 @@ export class SmartZoneService {
       const pLng = Number(p.longitude);
       const isDuplicate = result.some(
         (existing) =>
-          existing.id === p.id ||
-          calculateDistance(existing.lat, existing.lng, pLat, pLng) < 25
+          existing.id === p.id || calculateDistance(existing.lat, existing.lng, pLat, pLng) < 25
       );
       if (!isDuplicate) {
         result.push({
@@ -165,8 +191,7 @@ export class SmartZoneService {
         const fLng = Number(f.longitude);
         const isDuplicate = result.some(
           (existing) =>
-            existing.id === f.id ||
-            calculateDistance(existing.lat, existing.lng, fLat, fLng) < 25
+            existing.id === f.id || calculateDistance(existing.lat, existing.lng, fLat, fLng) < 25
         );
         if (!isDuplicate) {
           result.push({
@@ -182,6 +207,28 @@ export class SmartZoneService {
       }
     }
 
+    const unikomAlreadyInList = result.some(
+      (existing) =>
+        existing.id === UNIKOM_CENTRAL_ZONE.id ||
+        calculateDistance(
+          existing.lat,
+          existing.lng,
+          UNIKOM_CENTRAL_ZONE.lat,
+          UNIKOM_CENTRAL_ZONE.lng
+        ) < 25
+    );
+    if (!unikomAlreadyInList) {
+      result.push({
+        id: UNIKOM_CENTRAL_ZONE.id,
+        nama: UNIKOM_CENTRAL_ZONE.nama,
+        lat: UNIKOM_CENTRAL_ZONE.lat,
+        lng: UNIKOM_CENTRAL_ZONE.lng,
+        isUtama: false,
+        radius: UNIKOM_CENTRAL_ZONE.radius,
+        source: "POSKO_MULTI",
+      });
+    }
+
     return result;
   }
 
@@ -192,9 +239,10 @@ export class SmartZoneService {
     });
     if (!kelompok) return null;
     const poskoPoints = await this.getGroupPoskos(kelompokId);
+    const localPoskoPoints = poskoPoints.filter((p) => p.id !== UNIKOM_CENTRAL_ZONE.id);
     const studentPoints = await this.getActiveStudentLocations(kelompokId);
     const allPoints: Point[] = [
-      ...poskoPoints.map((p) => ({ lat: p.lat, lng: p.lng })),
+      ...localPoskoPoints.map((p) => ({ lat: p.lat, lng: p.lng })),
       ...studentPoints,
     ];
     if (allPoints.length === 0) return null;
@@ -226,7 +274,16 @@ export class SmartZoneService {
     };
   }
 
+  private static lastGroupUpdate = new Map<string, number>();
+
   async updateGroupAutoPolygon(kelompokId: string): Promise<void> {
+    const last = SmartZoneService.lastGroupUpdate.get(kelompokId) || 0;
+    // Throttle to at most once every 5 minutes (300,000 ms) per group
+    if (Date.now() - last < 5 * 60 * 1000) {
+      return;
+    }
+    SmartZoneService.lastGroupUpdate.set(kelompokId, Date.now());
+
     try {
       const info = await this.computeGroupPolygon(kelompokId);
       if (!info) return;

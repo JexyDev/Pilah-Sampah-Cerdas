@@ -10,7 +10,8 @@ import React, { useState, useEffect, useMemo } from "react";
 import toast from "react-hot-toast";
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
-import { MapContainer, TileLayer, Marker, Popup, Circle, Polygon, useMap, useMapEvents } from "react-leaflet";
+import { MapContainer, Marker, Popup, Circle, Polygon, useMap, useMapEvents } from "react-leaflet";
+import { ThemeTileLayer, GOOGLE_SATELLITE_URL } from "../../components/common/ThemeTileLayer";
 import * as turf from "@turf/turf";
 import L from "leaflet";
 
@@ -330,10 +331,7 @@ const ManajemenLokasi: React.FC = () => {
           >
             <MapUpdater center={mapCenter} zoom={mapZoom} />
             <MapEvents setZoom={setMapZoom} />
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
+            <ThemeTileLayer lightUrl={GOOGLE_SATELLITE_URL} darkUrl={GOOGLE_SATELLITE_URL} />
             {/* Zoom-dependent rendering: Zona (RW) vs Households */}
             {(() => {
               if (mapZoom >= 16) return null;
@@ -768,7 +766,7 @@ const ManajemenLokasi: React.FC = () => {
                     scrollWheelZoom={true}
                     style={{ height: "100%", width: "100%" }}
                   >
-                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                    <ThemeTileLayer lightUrl={GOOGLE_SATELLITE_URL} darkUrl={GOOGLE_SATELLITE_URL} />
                     <MapUpdater 
                       center={areaLat && areaLng ? [Number(areaLat), Number(areaLng)] : [-6.8903, 107.611]} 
                       zoom={15} 

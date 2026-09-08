@@ -61,6 +61,7 @@ import evaluasiDampakRouter from "./routes/evaluasiDampakRoutes.js";
 import datasetKlasifikasiRouter from "./routes/datasetKlasifikasiRoutes.js";
 import panduanRouter from "./routes/panduanRoutes.js";
 import masterKegiatanRouter from "./routes/masterKegiatanRoutes.js";
+import masterLuaranRouter from "./routes/masterLuaranRoutes.js";
 import penilaianKknRouter from "./routes/penilaianKknRoutes.js";
 import timelineKknRouter from "./routes/timelineKknRoutes.js";
 import logbookRouter from "./routes/logbookRoutes.js";
@@ -270,6 +271,8 @@ app.use("/api/v1/evaluasi-dampak", evaluasiDampakRouter);
 app.use("/api/v1", datasetKlasifikasiRouter);
 app.use("/api/v1/panduan", panduanRouter);
 app.use("/api/v1/master-kegiatan", masterKegiatanRouter);
+app.use("/api/v1/master/luaran", masterLuaranRouter);
+app.use("/api/v1/master-luaran", masterLuaranRouter);
 app.use("/api/v1/penilaian-kkn", penilaianKknRouter);
 app.use("/api/v1/timeline-kkn", timelineKknRouter);
 app.use("/api/v1/logbook", logbookRouter);
@@ -566,8 +569,75 @@ if (isPrimaryWorker) {
       'ALTER TABLE "jadwal" ADD COLUMN IF NOT EXISTS "is_aktif" BOOLEAN NOT NULL DEFAULT true;',
       // QC-36: Advance scheduling — bulan efektif polygon area kerja
       'ALTER TABLE "jadwal" ADD COLUMN IF NOT EXISTS "effective_month" TEXT;',
+      'ALTER TABLE "jadwal" ADD COLUMN IF NOT EXISTS "status_kegiatan" TEXT NOT NULL DEFAULT \'AKTIF\';',
+      'ALTER TABLE "jadwal" ADD COLUMN IF NOT EXISTS "detail_skip" JSONB;',
       'ALTER TABLE "kehadiran_kegiatan" ADD COLUMN IF NOT EXISTS "durasi_aktual_dalam_zona_menit" INTEGER;',
       'ALTER TABLE "kehadiran_kegiatan" ADD COLUMN IF NOT EXISTS "log_jeda" JSONB;',
+      'ALTER TABLE "kehadiran_kegiatan" ADD COLUMN IF NOT EXISTS "deskripsi_kegiatan" TEXT;',
+      'ALTER TABLE "kehadiran_kegiatan" ADD COLUMN IF NOT EXISTS "foto_url" TEXT;',
+      'ALTER TABLE "kehadiran_kegiatan" ADD COLUMN IF NOT EXISTS "platform_os" TEXT DEFAULT \'ANDROID\';',
+      'ALTER TABLE "kelompok_kkn" ADD COLUMN IF NOT EXISTS "auto_polygon" JSONB;',
+      'ALTER TABLE "kelompok_kkn" ADD COLUMN IF NOT EXISTS "auto_polygon_updated_at" TIMESTAMP(3);',
+      'ALTER TABLE "kelompok_kkn" ADD COLUMN IF NOT EXISTS "auto_polygon_student_count" INTEGER;',
+      'ALTER TABLE "kelompok_kkn" ADD COLUMN IF NOT EXISTS "id_mpl" TEXT;',
+      'ALTER TABLE "mahasiswa_kkn" ADD COLUMN IF NOT EXISTS "id_mpl" TEXT;',
+      'ALTER TABLE "mahasiswa_kkn" ADD COLUMN IF NOT EXISTS "id_rw_ditugaskan" INTEGER;',
+      'ALTER TABLE "mahasiswa_kkn" ADD COLUMN IF NOT EXISTS "status_whitelist" TEXT DEFAULT \'PENDING\';',
+      'ALTER TABLE "posko_kkn" ADD COLUMN IF NOT EXISTS "radius" INTEGER DEFAULT 500;',
+      `CREATE TABLE IF NOT EXISTS "posko_kkn_multi" (
+        "id" TEXT PRIMARY KEY,
+        "id_kelompok" TEXT NOT NULL,
+        "nama" TEXT NOT NULL,
+        "alamat" TEXT NOT NULL,
+        "latitude" DECIMAL(11, 8) NOT NULL,
+        "longitude" DECIMAL(11, 8) NOT NULL,
+        "is_utama" BOOLEAN DEFAULT false,
+        "radius" INTEGER DEFAULT 500,
+        "foto_url" TEXT,
+        "keterangan" TEXT,
+        "dibuat_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "diperbarui_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );`,
+      'CREATE INDEX IF NOT EXISTS "posko_kkn_multi_id_kelompok_idx" ON "posko_kkn_multi"("id_kelompok");',
+      `CREATE TABLE IF NOT EXISTS "presensi_mandiri" (
+        "id" TEXT PRIMARY KEY,
+        "id_mahasiswa" TEXT NOT NULL,
+        "id_kelompok" TEXT,
+        "latitude" DECIMAL(11, 8) NOT NULL,
+        "longitude" DECIMAL(11, 8) NOT NULL,
+        "deskripsi_kegiatan" VARCHAR(500) NOT NULL,
+        "foto_url" TEXT NOT NULL,
+        "platform_os" TEXT DEFAULT 'ANDROID',
+        "status" TEXT NOT NULL DEFAULT 'AKTIF',
+        "waktu_checkin" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "waktu_checkout" TIMESTAMP(3),
+        "durasi_menit" INTEGER,
+        "dibuat_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "diperbarui_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );`,
+      'ALTER TABLE "presensi_mandiri" ADD COLUMN IF NOT EXISTS "platform_os" TEXT DEFAULT \'ANDROID\';',
+      'CREATE INDEX IF NOT EXISTS "presensi_mandiri_id_mahasiswa_waktu_checkin_idx" ON "presensi_mandiri"("id_mahasiswa", "waktu_checkin" DESC);',
+      'CREATE INDEX IF NOT EXISTS "presensi_mandiri_id_kelompok_idx" ON "presensi_mandiri"("id_kelompok");',
+      'CREATE INDEX IF NOT EXISTS "presensi_mandiri_status_idx" ON "presensi_mandiri"("status");',
+      `CREATE TABLE IF NOT EXISTS "pengajuan_izin_mahasiswa" (
+        "id" TEXT PRIMARY KEY,
+        "id_mahasiswa" TEXT NOT NULL,
+        "tipe" TEXT NOT NULL,
+        "alasan" TEXT NOT NULL,
+        "url_bukti" TEXT,
+        "tanggal_mulai" TIMESTAMP(3) NOT NULL,
+        "tanggal_selesai" TIMESTAMP(3) NOT NULL,
+        "status" TEXT NOT NULL DEFAULT 'PENDING',
+        "id_pereview" TEXT,
+        "direview_pada" TIMESTAMP(3),
+        "alasan_penolakan" TEXT,
+        "dibuat_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "diperbarui_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );`,
+      'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "lampiran_file" TEXT;',
+      'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "lampiran_urls" JSONB;',
+      'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "ada_lampiran" BOOLEAN DEFAULT false;',
+      'ALTER TABLE "penilaian_kkn_mahasiswa" ADD COLUMN IF NOT EXISTS "id_mpl" TEXT;',
       'ALTER TABLE "jejak_audit" ADD COLUMN IF NOT EXISTS "hash" TEXT;',
       'ALTER TABLE "jejak_audit" ADD COLUMN IF NOT EXISTS "previous_hash" TEXT;',
       'ALTER TABLE "fasilitas" ADD COLUMN IF NOT EXISTS "id_pendaftar" TEXT;',
@@ -827,6 +897,16 @@ if (isPrimaryWorker) {
         "id_pengguna" TEXT NOT NULL UNIQUE,
         "terakhir_sinkron" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "status" TEXT DEFAULT 'SYNCED',
+        "dibuat_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "diperbarui_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );`,
+      `CREATE TABLE IF NOT EXISTS "master_luaran_sampah" (
+        "id" SERIAL PRIMARY KEY,
+        "nama" TEXT UNIQUE NOT NULL,
+        "kategori" TEXT NOT NULL DEFAULT 'ORGANIK',
+        "satuan_default" TEXT NOT NULL DEFAULT 'Kg',
+        "deskripsi" TEXT,
+        "is_active" BOOLEAN NOT NULL DEFAULT true,
         "dibuat_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "diperbarui_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
       );`,

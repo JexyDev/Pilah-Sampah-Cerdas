@@ -36,7 +36,7 @@ import api from "../../services/api";
 import showToast from "../../utils/showToast";
 import { Pagination } from "../../components/common/Pagination";
 import PageHeader from "../../components/common/PageHeader";
-import { ThemeTileLayer } from "../../components/common/ThemeTileLayer";
+import { ThemeTileLayer, GOOGLE_SATELLITE_URL } from "../../components/common/ThemeTileLayer";
 import { createFacilityIcon, KELURAHAN_GEODATA } from "../../constants/coblongGeoData";
 import { resolveImageUrl } from "../../utils/imageUrl";
 
@@ -662,7 +662,7 @@ export const PemanfaatanSampah: React.FC = () => {
               style={{ height: '100%', width: '100%' }}
               className="z-0"
             >
-              <ThemeTileLayer />
+              <ThemeTileLayer lightUrl={GOOGLE_SATELLITE_URL} darkUrl={GOOGLE_SATELLITE_URL} />
               <MapFlyToController center={mapTargetCenter} zoom={mapTargetZoom} />
               
               {/* Render Kelurahan Boundaries */}

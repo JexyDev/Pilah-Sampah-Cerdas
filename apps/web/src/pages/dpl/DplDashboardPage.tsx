@@ -42,6 +42,7 @@ import {
   type ProgramKerjaItem,
 } from "../../services/dplService";
 import { resolveImageUrl } from "../../utils/imageUrl";
+import { getPortalLoadingText, getPortalDisplayName } from "../../utils/portalLoading";
 
 // ─── Sub-Component: Posko & Fasilitas Gabungan (Tabbed) ──────────────────────
 type FasilitasItem = { id?: string; nama: string; jenis: string; alamat?: string | null; statusApproval: string; latitude?: number | null; longitude?: number | null };
@@ -204,6 +205,7 @@ export const DplDashboardPage: React.FC = () => {
 
   // Detail Kelompok Modal State (Mendukung hingga 44+ mahasiswa dengan pencarian & paginasi)
   const [selectedGroupForDetail, setSelectedGroupForDetail] = useState<GroupSummary | null>(null);
+  const [loadingGroupStudents, setLoadingGroupStudents] = useState(false);
   const [groupStudentSearchQuery, setGroupStudentSearchQuery] = useState("");
   const [groupStudentPage, setGroupStudentPage] = useState(1);
   const MODAL_STUDENTS_PER_PAGE = 8;
@@ -212,6 +214,7 @@ export const DplDashboardPage: React.FC = () => {
   const [rejectionReasonInput, setRejectionReasonInput] = useState("");
   const [previewEvidence, setPreviewEvidence] = useState<{ url: string; title: string } | null>(null);
   const [decidingLeaveId, setDecidingLeaveId] = useState<string | null>(null);
+  const [reviewingRequest, setReviewingRequest] = useState<any | null>(null);
 
   useEffect(() => {
     loadDashboardData();
@@ -220,26 +223,68 @@ export const DplDashboardPage: React.FC = () => {
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      const [groupsData, studentsData, alertsData, historyData, prokersData] = await Promise.all([
+      // 1. Muat metrik utama ringkasan kelompok, alert, history, dan proker secara bersamaan
+      const [groupsData, alertsData, historyData, prokersData] = await Promise.all([
         dplService.getGroupSummary(),
-        dplService.getStudents(),
         dplService.getAlerts(),
         dplService.getApprovalHistory(),
         dplService.getProgramKerja(),
       ]);
 
       setGroups(groupsData || []);
-      setStudents(studentsData || []);
       setAlerts(alertsData || null);
       setApprovalHistory(historyData || []);
       setProkers(prokersData || []);
+      setLoading(false);
+
+      // 2. Muat data mahasiswa secara non-blocking di latar belakang
+      dplService
+        .getStudents()
+        .then((studentsData) => {
+          if (studentsData && studentsData.length > 0) {
+            setStudents(studentsData);
+          }
+        })
+        .catch((err) => {
+          console.warn("Background students load notice:", err);
+        });
     } catch (err: any) {
-      console.error("Failed loading DPL dashboard data:", err);
-      toast.error("Gagal memuat data Dashboard DPL");
-    } finally {
+      console.error("Failed loading dashboard data:", err);
+      toast.error(
+        isPimpinan
+          ? "Gagal memuat data Dashboard Pimpinan"
+          : "Gagal memuat data Dashboard DPL"
+      );
       setLoading(false);
     }
   };
+
+  // Muat data anggota kelompok secara instan dan on-demand jika belum ada di state
+  useEffect(() => {
+    if (selectedGroupForDetail) {
+      const hasStudents = students.some((s) => s.kelompokId === selectedGroupForDetail.id);
+      if (!hasStudents) {
+        setLoadingGroupStudents(true);
+        dplService
+          .getStudents(selectedGroupForDetail.id)
+          .then((res) => {
+            if (res && res.length > 0) {
+              setStudents((prev) => {
+                const existingIds = new Set(prev.map((p) => p.id));
+                const filtered = res.filter((r) => !existingIds.has(r.id));
+                return [...prev, ...filtered];
+              });
+            }
+          })
+          .catch((err) => {
+            console.error("Failed loading group students:", err);
+          })
+          .finally(() => {
+            setLoadingGroupStudents(false);
+          });
+      }
+    }
+  }, [selectedGroupForDetail]);
 
   const effectiveProkers = useMemo(() => {
     if (prokers && prokers.length > 0) return prokers;
@@ -711,7 +756,7 @@ export const DplDashboardPage: React.FC = () => {
 
         {/* MODAL 3: PREVIEW BUKTI DOKUMEN / SURAT SAKIT */}
         {previewEvidence && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
               <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-800 text-white">
                 <div className="flex items-center gap-2.5">
@@ -758,7 +803,100 @@ export const DplDashboardPage: React.FC = () => {
           </div>
         )}
 
+        {/* MODAL 4: TINJAU PERMOHONAN IZIN/SAKIT */}
+        {reviewingRequest && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
+              <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-800 text-white">
+                <div className="flex items-center gap-2.5">
+                  <FileCheck size={18} className="text-emerald-400" />
+                  <h3 className="font-bold text-white text-sm">Tinjau Permohonan</h3>
+                </div>
+                <button
+                  onClick={() => setReviewingRequest(null)}
+                  className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/20 text-white/80 hover:text-white transition cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="p-6 flex flex-col space-y-5">
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Nama Mahasiswa</p>
+                    <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{reviewingRequest.studentName}</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Kategori Permohonan</p>
+                      <span className={`inline-block text-xs font-bold px-2 py-0.5 rounded ${
+                        reviewingRequest.type === "SAKIT"
+                          ? "bg-red-100 dark:bg-rose-950 text-red-800 dark:text-rose-300 border border-red-200 dark:border-rose-700"
+                          : "bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-700"
+                      }`}>
+                        {reviewingRequest.type}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Diajukan Pada</p>
+                      <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                        {new Date(reviewingRequest.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
+                      </p>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Periode Izin/Sakit</p>
+                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                      {reviewingRequest.startDate ? new Date(reviewingRequest.startDate).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "-"}
+                      {reviewingRequest.endDate && reviewingRequest.endDate !== reviewingRequest.startDate ? ` s/d ${new Date(reviewingRequest.endDate).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}` : ""}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Alasan</p>
+                    <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
+                      <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{reviewingRequest.reason}</p>
+                    </div>
+                  </div>
+                </div>
 
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-center">
+                  {reviewingRequest.evidenceUrl ? (
+                    <button
+                      type="button"
+                      onClick={() => setPreviewEvidence({ url: resolveImageUrl(reviewingRequest.evidenceUrl) || reviewingRequest.evidenceUrl!, title: `Surat Bukti ${reviewingRequest.type}: ${reviewingRequest.studentName}` })}
+                      className="inline-flex items-center justify-center gap-1.5 w-full bg-emerald-100 dark:bg-emerald-900/40 hover:bg-emerald-200 dark:hover:bg-emerald-800/60 text-emerald-700 dark:text-emerald-300 font-bold py-2.5 rounded-xl transition cursor-pointer"
+                    >
+                      <Eye size={16} /> Lihat Surat / Foto Bukti
+                    </button>
+                  ) : (
+                    <p className="text-xs text-slate-500 italic">Tidak ada lampiran surat/bukti</p>
+                  )}
+                </div>
+              </div>
+              <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 flex gap-3">
+                <button
+                  disabled={decidingLeaveId === reviewingRequest.id}
+                  onClick={() => {
+                    setRejectingRequestId(reviewingRequest.id);
+                    setReviewingRequest(null);
+                  }}
+                  className="flex-1 py-2.5 bg-white dark:bg-slate-800 border border-red-200 dark:border-rose-800 text-red-600 dark:text-rose-400 font-bold rounded-xl hover:bg-red-50 dark:hover:bg-rose-950/50 transition cursor-pointer disabled:opacity-50"
+                >
+                  Tolak
+                </button>
+                <button
+                  disabled={decidingLeaveId === reviewingRequest.id}
+                  onClick={() => {
+                    handleDecideLeave(reviewingRequest.id, "APPROVED");
+                    setReviewingRequest(null);
+                  }}
+                  className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition cursor-pointer shadow-md disabled:opacity-50"
+                >
+                  Setujui
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         {/* MODAL 5: DETAIL KELOMPOK DAMPINGAN & DAFTAR MAHASISWA */}
         {selectedGroupForDetail && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
@@ -895,7 +1033,12 @@ export const DplDashboardPage: React.FC = () => {
                 </div>
 
                 {/* Tabel Mahasiswa Kelompok */}
-                {filteredModalGroupStudents.length === 0 ? (
+                {loadingGroupStudents ? (
+                  <div className="p-8 flex flex-col items-center justify-center gap-3 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs text-slate-500">
+                    <div className="w-6 h-6 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+                    <span>Memuat data anggota kelompok...</span>
+                  </div>
+                ) : filteredModalGroupStudents.length === 0 ? (
                   <div className="p-8 text-center text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 text-xs">
                     {groupStudentSearchQuery
                       ? `Tidak ada mahasiswa di kelompok ini yang cocok dengan kata kunci "${groupStudentSearchQuery}".`
@@ -1013,7 +1156,7 @@ export const DplDashboardPage: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
         <div className="w-10 h-10 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">Memuat Data Portal DPL...</p>
+        <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">{getPortalLoadingText(userRole)}</p>
       </div>
     );
   }
@@ -1023,13 +1166,13 @@ export const DplDashboardPage: React.FC = () => {
   // ==========================================
   if (isAjuanAbsensiPage) {
     return (
-      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 text-slate-800 dark:text-slate-200 w-full min-w-0">
+      <div className="space-y-4 sm:space-y-5 text-slate-800 dark:text-slate-100 w-full min-w-0 max-w-full overflow-x-hidden">
         {/* Header Ajuan Absensi */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 sm:p-6 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 sm:p-5 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4 w-full min-w-0 max-w-full overflow-hidden">
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 dark:text-emerald-400">
               <GraduationCap size={16} />
-              <span>Portal DPL</span>
+              <span>{isPimpinan ? "Portal Pimpinan & Eksekutif KKN" : getPortalDisplayName(userRole)}</span>
               <span className="text-slate-300 dark:text-slate-600">•</span>
               <span className="text-slate-500 dark:text-slate-400 font-normal">{user?.wilayah || "Wilayah Dampingan"}</span>
             </div>
@@ -1092,78 +1235,35 @@ export const DplDashboardPage: React.FC = () => {
                         )}
                         {!isCancelReq && isOver24Hours && (
                           <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-700 flex items-center gap-1">
-                            <Clock size={11} /> &gt;24 Jam (Siap Diambil Alih Panitia Taskforce)
+                            <Clock size={11} /> &gt;24 Jam (Siap Diambil Alih)
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-slate-600 dark:text-slate-300">
+                      <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-1">
                         <span className="font-semibold text-slate-700 dark:text-slate-200">Alasan:</span> {req.reason}
                       </p>
-                      <div className="flex items-center gap-2 flex-wrap pt-1">
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                          Diajukan:{" "}
-                          <span className="font-medium text-slate-700 dark:text-slate-300">
-                            {new Date(req.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })} ({Math.floor(hoursElapsed)} jam lalu)
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                        Diajukan:{" "}
+                        <span className="font-medium text-slate-700 dark:text-slate-300">
+                          {new Date(req.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })} ({Math.floor(hoursElapsed)} jam lalu)
+                        </span>
+                        {req.startDate && (
+                          <span className="ml-2 font-medium text-slate-600 dark:text-slate-300">
+                            (Periode: {new Date(req.startDate).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
+                            {req.endDate && req.endDate !== req.startDate ? ` - ${new Date(req.endDate).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}` : ""})
                           </span>
-                          {req.startDate && (
-                            <span className="ml-2 font-medium text-slate-600 dark:text-slate-300">
-                              (Periode: {new Date(req.startDate).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
-                              {req.endDate && req.endDate !== req.startDate ? ` - ${new Date(req.endDate).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}` : ""})
-                            </span>
-                          )}
-                        </p>
-                        {req.evidenceUrl && (
-                          <button
-                            type="button"
-                            onClick={() => setPreviewEvidence({ url: resolveImageUrl(req.evidenceUrl) || req.evidenceUrl!, title: `Surat Bukti ${req.type}: ${req.studentName}` })}
-                            className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 bg-emerald-100/70 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700/60 px-2 py-0.5 rounded-md cursor-pointer transition shadow-2xs hover:bg-emerald-200/80"
-                          >
-                            <Eye size={12} /> Lihat Surat / Foto Bukti
-                          </button>
                         )}
-                      </div>
+                      </p>
                     </div>
 
                     <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-                      {isCancelReq ? (
-                        <>
-                          <button
-                            disabled={isBusy}
-                            onClick={() => handleDecideCancelLeave(req.id, "REJECT_CANCEL")}
-                            className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition flex items-center gap-1 border border-slate-300 dark:border-slate-700 cursor-pointer disabled:opacity-50"
-                          >
-                            <XCircle size={14} /> Tolak Batal
-                          </button>
-                          <button
-                            disabled={isBusy}
-                            onClick={() => handleDecideCancelLeave(req.id, "APPROVE_HADIR")}
-                            className="px-3.5 py-1.5 bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs rounded-lg transition flex items-center gap-1 shadow-xs cursor-pointer disabled:opacity-50"
-                          >
-                            <CheckCircle size={14} /> Setujui Batal &amp; Jadikan Hadir
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <button
-                            disabled={isBusy}
-                            onClick={() => setRejectingRequestId(req.id)}
-                            className="px-3 py-1.5 bg-red-50 dark:bg-rose-950/60 text-red-700 dark:text-rose-400 font-bold text-xs rounded-lg hover:bg-red-100 dark:hover:bg-rose-900/60 transition flex items-center gap-1 border border-red-200 dark:border-rose-700/40 cursor-pointer disabled:opacity-50"
-                          >
-                            <XCircle size={14} /> {isOver24Hours && canTakeover ? "Ambil Alih & Tolak" : "Tolak"}
-                          </button>
-                          <button
-                            disabled={isBusy}
-                            onClick={() => handleDecideLeave(req.id, "APPROVED")}
-                            className={`px-3.5 py-1.5 font-bold text-xs rounded-lg transition flex items-center gap-1 shadow-xs cursor-pointer disabled:opacity-50 ${
-                              isOver24Hours && canTakeover
-                                ? "bg-rose-600 hover:bg-rose-700 text-white"
-                                : "bg-emerald-600 hover:bg-emerald-700 text-white"
-                            }`}
-                          >
-                            <CheckCircle size={14} /> {isOver24Hours && canTakeover ? "Ambil Alih & Setujui" : "Setujui"}
-                          </button>
-                        </>
-                      )}
+                      <button
+                        disabled={isBusy}
+                        onClick={() => setReviewingRequest(req)}
+                        className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg transition shadow-xs cursor-pointer disabled:opacity-50"
+                      >
+                        Tinjau
+                      </button>
                     </div>
                   </div>
                 );
@@ -1394,13 +1494,13 @@ export const DplDashboardPage: React.FC = () => {
   // VIEW B: DASBOR DPL TUNGGAL (RINGKASAN EKSEKUTIF)
   // ==========================================
   return (
-    <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 text-slate-800 dark:text-slate-200 w-full min-w-0">
+    <div className="space-y-4 sm:space-y-5 text-slate-800 dark:text-slate-100 w-full min-w-0 max-w-full overflow-x-hidden">
       {/* Clean Academic Portal Header */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 sm:p-6 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 sm:p-5 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4 w-full min-w-0 max-w-full overflow-hidden">
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 dark:text-emerald-400">
             <GraduationCap size={16} />
-            <span>{isPimpinan ? "Portal Pimpinan & Eksekutif KKN" : "Portal DPL"}</span>
+            <span>{isPimpinan ? "Portal Pimpinan & Eksekutif KKN" : getPortalDisplayName(userRole)}</span>
             <span className="text-slate-300 dark:text-slate-600">•</span>
             <span className="text-slate-500 dark:text-slate-400 font-normal">
               {dplKelurahanList.length > 0

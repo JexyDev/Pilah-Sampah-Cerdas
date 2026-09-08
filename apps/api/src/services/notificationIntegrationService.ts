@@ -114,10 +114,28 @@ export const notificationIntegrationService = {
     token: string,
     title: string,
     body: string,
-    triggerType: string = "PUSH_ALARM"
+    triggerType: string = "PUSH_ALARM",
+    dataPayload?: Record<string, string>
   ) => {
     let statusKirim = "SUCCESS";
     let messageId = `fcm-${Date.now()}`;
+
+    // Sanitasi dataPayload: semua nilai harus string untuk Firebase Admin SDK
+    const sanitizedData: Record<string, string> = {
+      triggerType,
+      sentAt: new Date().toISOString(),
+      title,
+      body,
+      desc: body,
+      message: body,
+    };
+    if (dataPayload) {
+      for (const [key, value] of Object.entries(dataPayload)) {
+        if (value !== undefined && value !== null) {
+          sanitizedData[key] = String(value);
+        }
+      }
+    }
 
     if (firebaseMessaging && token && !token.startsWith("mock-")) {
       try {
@@ -127,10 +145,7 @@ export const notificationIntegrationService = {
             title,
             body,
           },
-          data: {
-            triggerType,
-            sentAt: new Date().toISOString(),
-          },
+          data: sanitizedData,
         });
         messageId = response;
         console.log(
@@ -159,6 +174,129 @@ export const notificationIntegrationService = {
     });
 
     return { success: statusKirim === "SUCCESS", messageId };
+  },
+
+  /**
+   * Helper terpusat: Simpan notifikasi ke DB sekaligus kirim push notification ke 1 pengguna
+   */
+  sendToUser: async ({
+    userId,
+    title,
+    message,
+    triggerType = "PUSH_ALARM",
+    dataPayload = {},
+  }: {
+    userId: string;
+    title: string;
+    message: string;
+    triggerType?: string;
+    dataPayload?: Record<string, string>;
+  }) => {
+    try {
+      // 1. Buat record notifikasi in-app di database
+      const notif = await prisma.notification.create({
+        data: {
+          userId,
+          title,
+          message,
+          isRead: false,
+        },
+      });
+
+      // 2. Ambil token FCM pengguna
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { fcmToken: true },
+      });
+
+      // 3. Kirim push notification jika token tersedia
+      let pushResult = null;
+      if (user?.fcmToken) {
+        pushResult = await notificationIntegrationService.sendPushNotification(
+          user.fcmToken,
+          title,
+          message,
+          triggerType,
+          {
+            notificationId: notif.id,
+            ...dataPayload,
+          }
+        );
+      }
+
+      return { notification: notif, pushResult };
+    } catch (err: any) {
+      console.error(`[NotificationService.sendToUser] Error for user ${userId}:`, err.message);
+      return null;
+    }
+  },
+
+  /**
+   * Helper terpusat: Simpan notifikasi ke DB sekaligus kirim push notification ke multi-pengguna (misal kelompok KKN)
+   */
+  sendToUsers: async ({
+    userIds,
+    title,
+    message,
+    triggerType = "PUSH_ALARM",
+    dataPayload = {},
+  }: {
+    userIds: string[];
+    title: string;
+    message: string;
+    triggerType?: string;
+    dataPayload?: Record<string, string>;
+  }) => {
+    try {
+      if (!userIds || userIds.length === 0) return [];
+      const uniqueUserIds = [...new Set(userIds.filter(Boolean))];
+
+      // 1. Buat notifikasi DB untuk setiap user
+      const createdNotifs = await Promise.all(
+        uniqueUserIds.map((userId) =>
+          prisma.notification
+            .create({
+              data: {
+                userId,
+                title,
+                message,
+                isRead: false,
+              },
+            })
+            .catch(() => null)
+        )
+      );
+
+      // 2. Ambil seluruh token FCM pengguna yang ada
+      const users = await prisma.user.findMany({
+        where: {
+          id: { in: uniqueUserIds },
+          fcmToken: { not: null },
+        },
+        select: { id: true, fcmToken: true },
+      });
+
+      // 3. Kirim push notification ke setiap user yang memiliki fcmToken
+      const pushPromises = users.map((u) => {
+        if (!u.fcmToken) return Promise.resolve(null);
+        const userNotif = createdNotifs.find((n) => n?.userId === u.id);
+        return notificationIntegrationService
+          .sendPushNotification(u.fcmToken, title, message, triggerType, {
+            notificationId: userNotif?.id || "",
+            ...dataPayload,
+          })
+          .catch((err) => {
+            console.error(`[NotificationService.sendToUsers] Error sending to user ${u.id}:`, err);
+            return null;
+          });
+      });
+
+      await Promise.all(pushPromises);
+      return createdNotifs.filter(Boolean);
+    } catch (err: any) {
+      console.error("[NotificationService.sendToUsers] Error:", err.message);
+      return [];
+    }
   },
 
   /**

@@ -1,6 +1,7 @@
 import { prisma } from "../lib/prisma.js";
 import { configService } from "./configService.js";
 import { normalizeProkerKategori } from "./kknService.js";
+import { notificationIntegrationService } from "./notificationIntegrationService.js";
 
 export function parseProkerDeskripsi(rawDeskripsi?: string | null): {
   judul: string;
@@ -742,6 +743,7 @@ export const dplService = {
     todayEnd.setHours(23, 59, 59, 999);
 
     const configTargets = await dplService.getConfigTargets();
+    const ruleConfigs = await configService.getRuleEngineConfigs();
 
     const groupSummaries = await Promise.all(
       groups.map(async (grp) => {
@@ -1016,7 +1018,6 @@ export const dplService = {
         }
         actualHours = Math.round(actualHours * 100) / 100;
 
-        const ruleConfigs = await configService.getRuleEngineConfigs();
         const totalSchedules = await getEligiblePastSchedulesCount(grp.id);
         const studentRates = await Promise.all(
           studentUserIds.map((uId) =>
@@ -1225,121 +1226,174 @@ export const dplService = {
       orderBy: { createdAt: "asc" },
     });
 
-    const studentDetails = await Promise.all(
-      students.map(async (st) => {
-        const attendances = await prisma.activityAttendance.findMany({
-          where: { studentId: st.userId },
-          include: { schedule: true },
-          orderBy: { attendedAt: "desc" },
-        });
+    if (students.length === 0) {
+      return [];
+    }
 
-        const leaveRequests = await prisma.studentLeaveRequest.findMany({
-          where: { studentId: st.userId },
-          orderBy: { createdAt: "desc" },
-        });
+    const studentUserIds = students.map((s) => s.userId);
+    const configTargets = await dplService.getConfigTargets();
+    const ruleConfigs = await configService.getRuleEngineConfigs();
 
-        const sickCount = leaveRequests.filter(
-          (r) => r.type === "SAKIT" && r.status === "APPROVED"
-        ).length;
-        const izinCount = leaveRequests.filter(
-          (r) => r.type === "IZIN" && r.status === "APPROVED"
-        ).length;
-        const rejectedAbsenceCount = leaveRequests.filter((r) => r.status === "REJECTED").length;
+    // Batch query attendances in a single database roundtrip
+    const allAttendances = await prisma.activityAttendance.findMany({
+      where: { studentId: { in: studentUserIds } },
+      include: { schedule: { select: { title: true } } },
+      orderBy: { attendedAt: "desc" },
+    });
+    const attendancesByStudent = new Map<string, typeof allAttendances>();
+    for (const a of allAttendances) {
+      const list = attendancesByStudent.get(a.studentId) || [];
+      list.push(a);
+      attendancesByStudent.set(a.studentId, list);
+    }
 
-        const totalSchedules = await getEligiblePastSchedulesCount(st.kelompokId || undefined);
-        const attendedCount = attendances.filter((a) => {
-          const stUpper = String(a.status || "").toUpperCase();
-          return !["ALPA", "ALPHA", "TIDAK_ADA_KEGIATAN", "SKIP_KEGIATAN"].includes(stUpper);
-        }).length;
-        const alphaCount = attendances.filter((a) => {
-          const stUpper = String(a.status || "").toUpperCase();
-          return stUpper === "ALPA" || stUpper === "ALPHA";
-        }).length;
+    // Batch query leave requests in a single database roundtrip
+    const allLeaveRequests = await prisma.studentLeaveRequest.findMany({
+      where: { studentId: { in: studentUserIds } },
+      orderBy: { createdAt: "desc" },
+    });
+    const leaveRequestsByStudent = new Map<string, typeof allLeaveRequests>();
+    for (const l of allLeaveRequests) {
+      const list = leaveRequestsByStudent.get(l.studentId) || [];
+      list.push(l);
+      leaveRequestsByStudent.set(l.studentId, list);
+    }
 
-        const configTargets = await dplService.getConfigTargets();
-        const ruleConfigs = await configService.getRuleEngineConfigs();
-        const baseScore = Number(st.assessmentScore || 0);
-        const finalCalculatedScore = baseScore;
+    // Batch query points via groupBy
+    const allPoints = await prisma.pointHistory.groupBy({
+      by: ["userId"],
+      where: { userId: { in: studentUserIds } },
+      _sum: { points: true },
+    });
+    const pointsByStudent = new Map<string, number>();
+    for (const p of allPoints) {
+      pointsByStudent.set(p.userId, p._sum.points || 0);
+    }
 
-        let totalMinutes = 0;
-        for (const a of attendances) {
-          if (a.checkOutAt && a.attendedAt) {
-            const diffMs = Math.max(
-              0,
-              new Date(a.checkOutAt).getTime() - new Date(a.attendedAt).getTime()
-            );
-            const mins = Math.min(480, Math.round(diffMs / (1000 * 60)));
+    const targetDailyMinutes =
+      (ruleConfigs?.attendanceMinDurationHours || configTargets?.targetHarianJam || 4) * 60;
+
+    const studentDetails = students.map((st) => {
+      const attendances = attendancesByStudent.get(st.userId) || [];
+      const leaveRequests = leaveRequestsByStudent.get(st.userId) || [];
+
+      const sickCount = leaveRequests.filter(
+        (r) => r.type === "SAKIT" && r.status === "APPROVED"
+      ).length;
+      const izinCount = leaveRequests.filter(
+        (r) => r.type === "IZIN" && r.status === "APPROVED"
+      ).length;
+
+      const attendedCount = attendances.filter((a) => {
+        const stUpper = String(a.status || "").toUpperCase();
+        return !["ALPA", "ALPHA", "TIDAK_ADA_KEGIATAN", "SKIP_KEGIATAN"].includes(stUpper);
+      }).length;
+      const alphaCount = attendances.filter((a) => {
+        const stUpper = String(a.status || "").toUpperCase();
+        return stUpper === "ALPA" || stUpper === "ALPHA";
+      }).length;
+
+      const baseScore = Number(st.assessmentScore || 0);
+      const finalCalculatedScore = baseScore;
+
+      let totalMinutes = 0;
+      let sumSessionScores = 0;
+      const validSessions = attendances.filter((a) => {
+        const stUpper = String(a.status || "").toUpperCase();
+        return !["TIDAK_ADA_KEGIATAN", "SKIP_KEGIATAN"].includes(stUpper);
+      });
+
+      for (const a of attendances) {
+        const stUpper = String(a.status || "").toUpperCase();
+        let mins = Math.min(480, Math.max(0, a.actualInZoneMinutes ?? 0));
+        if (a.checkOutAt && a.attendedAt) {
+          const diffMs = Math.max(
+            0,
+            new Date(a.checkOutAt).getTime() - new Date(a.attendedAt).getTime()
+          );
+          mins = Math.min(480, Math.round(diffMs / (1000 * 60)));
+          totalMinutes += mins;
+        } else if (a.attendedAt) {
+          const isToday = new Date(a.attendedAt).toDateString() === new Date().toDateString();
+          if (isToday) {
+            const diffMs = Math.max(0, Date.now() - new Date(a.attendedAt).getTime());
+            mins = Math.min(480, Math.round(diffMs / (1000 * 60)));
             totalMinutes += mins;
-          } else if (a.attendedAt) {
-            const isToday = new Date(a.attendedAt).toDateString() === new Date().toDateString();
-            if (isToday) {
-              const diffMs = Math.max(0, Date.now() - new Date(a.attendedAt).getTime());
-              totalMinutes += Math.min(480, Math.round(diffMs / (1000 * 60)));
-            } else {
-              totalMinutes += Math.round((configTargets.targetHarianJam || 4) * 60);
-            }
+          } else {
+            totalMinutes += Math.round((configTargets.targetHarianJam || 4) * 60);
           }
         }
-        const totalHours = Math.floor(totalMinutes / 60);
-        const remainingMinutes = totalMinutes % 60;
-        const targetHours = configTargets.targetTotalJam || 200;
-        const progressPercentage = Math.min(100, Math.round((totalMinutes / (targetHours * 60 || 1)) * 100));
 
-        const points = await prisma.pointHistory.aggregate({
-          where: { userId: st.userId },
-          _sum: { points: true },
-        });
-        const netPoints = Math.max(0, points._sum.points || 0);
+        if (!["TIDAK_ADA_KEGIATAN", "SKIP_KEGIATAN"].includes(stUpper)) {
+          let sessionScore = 0;
+          if (stUpper === "HADIR_MEMENUHI" || (stUpper === "HADIR" && mins >= targetDailyMinutes)) {
+            sessionScore = 100;
+          } else if (mins > 0) {
+            sessionScore = Math.min(100, Math.round((mins / targetDailyMinutes) * 100));
+          } else if (stUpper.includes("IZIN") || stUpper.includes("SAKIT")) {
+            sessionScore = 100;
+          }
+          sumSessionScores += sessionScore;
+        }
+      }
 
-        return {
-          id: st.id,
-          userId: st.userId,
-          name: st.user?.name || "Mahasiswa KKN",
-          phone: st.user?.phone || "-",
-          nim: st.nim || "-",
-          jurusan: st.jurusan || "-",
-          fakultas: st.fakultas || "-",
-          fotoProfil: st.user?.fotoProfil || null,
-          isKetua: Boolean(st.isKetua),
-          kelompokId: st.kelompokId || st.kelompok?.id || null,
-          kelompokName: st.kelompok?.name || "-",
-          assessmentScore: finalCalculatedScore,
-          baseAssessmentScore: baseScore,
-          isAssessed: Boolean(st.isAssessed),
-          individualPoints: netPoints,
-          attendanceRate: await calculateStudentAttendanceRate(
-            st.userId,
-            totalSchedules,
-            ruleConfigs,
-            configTargets
-          ),
-          attendedCount,
-          sickCount,
-          izinCount,
-          alphaCount,
-          totalHours,
-          totalMinutes,
-          remainingMinutes,
-          targetHours,
-          progressPercentage,
-          statusKehadiranLabel:
-            alphaCount > 0 ? "Perlu Perhatian (Ada Alpa)" : "Tertib Presensi",
-          attendances: attendances.map((a) => ({
-            id: a.id,
-            scheduleTitle: a.schedule?.title || "Kegiatan KKN",
-            attendedAt: a.attendedAt,
-            status: a.status,
-          })),
-          leaveRequests: leaveRequests.map((l) => ({
-            id: l.id,
-            type: l.type,
-            reason: l.reason,
-            status: l.status,
-            createdAt: l.createdAt,
-          })),
-        };
-      })
-    );
+      const totalHours = Math.floor(totalMinutes / 60);
+      const remainingMinutes = totalMinutes % 60;
+      const targetHours = configTargets.targetTotalJam || 200;
+      const progressPercentage = Math.min(
+        100,
+        Math.round((totalMinutes / (targetHours * 60 || 1)) * 100)
+      );
+
+      const netPoints = Math.max(0, pointsByStudent.get(st.userId) || 0);
+      const attendanceRate =
+        validSessions.length > 0
+          ? Math.min(100, Math.max(0, Math.round(sumSessionScores / validSessions.length)))
+          : 0;
+
+      return {
+        id: st.id,
+        userId: st.userId,
+        name: st.user?.name || "Mahasiswa KKN",
+        phone: st.user?.phone || "-",
+        nim: st.nim || "-",
+        jurusan: st.jurusan || "-",
+        fakultas: st.fakultas || "-",
+        fotoProfil: st.user?.fotoProfil || null,
+        isKetua: Boolean(st.isKetua),
+        kelompokId: st.kelompokId || st.kelompok?.id || null,
+        kelompokName: st.kelompok?.name || "-",
+        assessmentScore: finalCalculatedScore,
+        baseAssessmentScore: baseScore,
+        isAssessed: Boolean(st.isAssessed),
+        individualPoints: netPoints,
+        attendanceRate,
+        attendedCount,
+        sickCount,
+        izinCount,
+        alphaCount,
+        totalHours,
+        totalMinutes,
+        remainingMinutes,
+        targetHours,
+        progressPercentage,
+        statusKehadiranLabel:
+          alphaCount > 0 ? "Perlu Perhatian (Ada Alpa)" : "Tertib Presensi",
+        attendances: attendances.map((a) => ({
+          id: a.id,
+          scheduleTitle: a.schedule?.title || "Kegiatan KKN",
+          attendedAt: a.attendedAt,
+          status: a.status,
+        })),
+        leaveRequests: leaveRequests.map((l) => ({
+          id: l.id,
+          type: l.type,
+          reason: l.reason,
+          status: l.status,
+          createdAt: l.createdAt,
+        })),
+      };
+    });
 
     return studentDetails;
   },
@@ -2789,6 +2843,70 @@ export const dplService = {
       where: { id },
       data: updatePayload,
     });
+
+    // Notifikasi & Push Notification ke seluruh Mahasiswa di kelompok KKN ini
+    try {
+      const kelompok = await prisma.kelompokKkn.findUnique({
+        where: { id: prokerExisting.kelompokId },
+        include: {
+          students: { select: { userId: true } },
+          dpl: { select: { name: true } },
+        },
+      });
+      const studentUserIds = (kelompok?.students || [])
+        .map((s) => s.userId)
+        .filter(Boolean);
+
+      if (studentUserIds.length > 0) {
+        const parsedJudul = parseProkerDeskripsi(prokerExisting.deskripsi).judul;
+        const isApproved = statusUsulan === "DISETUJUI";
+        const isRejected = statusUsulan === "DITOLAK";
+
+        if (isApproved) {
+          const title = "Program Kerja Disetujui! 🎯";
+          const message = `Program kerja "${parsedJudul}" untuk kelompok ${kelompok?.name || ""} telah resmi disetujui oleh DPL (${kelompok?.dpl?.name || "DPL"}).`;
+          await notificationIntegrationService.sendToUsers({
+            userIds: studentUserIds,
+            title,
+            message,
+            triggerType: "PROKER_APPROVED",
+            dataPayload: {
+              event: "REFRESH_PROKER_MAHASISWA",
+              type: "PROKER_DISETUJUI",
+              entityId: id,
+              prokerId: id,
+              kelompokId: prokerExisting.kelompokId,
+              status: "DISETUJUI",
+              statusPelaksanaan: newStatusPelaksanaan,
+              catatan: catatanDpl || "",
+              click_action: "FLUTTER_NOTIFICATION_CLICK",
+            },
+          });
+        } else if (isRejected) {
+          const title = "Program Kerja Belum Disetujui ⚠️";
+          const message = `Program kerja "${parsedJudul}" belum disetujui DPL: ${catatanDpl || "Silakan cek catatan evaluasi DPL."}`;
+          await notificationIntegrationService.sendToUsers({
+            userIds: studentUserIds,
+            title,
+            message,
+            triggerType: "PROKER_REJECTED",
+            dataPayload: {
+              event: "REFRESH_PROKER_MAHASISWA",
+              type: "PROKER_DITOLAK",
+              entityId: id,
+              prokerId: id,
+              kelompokId: prokerExisting.kelompokId,
+              status: "DITOLAK",
+              catatan: catatanDpl || "",
+              click_action: "FLUTTER_NOTIFICATION_CLICK",
+            },
+          });
+        }
+      }
+    } catch (notifErr: any) {
+      console.warn("[dplService.decideProgramKerja] Gagal mengirim push notifikasi proker:", notifErr?.message);
+    }
+
     return {
       ...proker,
       statusUsulan: (proker as any).statusUsulan || statusUsulan,
@@ -2899,6 +3017,36 @@ export const dplService = {
       where: { id },
       data: updateData,
     });
+
+    // Notifikasi & Push ke seluruh Mahasiswa di kelompok KKN ini
+    try {
+      const kelompok = await prisma.kelompokKkn.findUnique({
+        where: { id: proker.kelompokId },
+        include: { students: { select: { userId: true } } },
+      });
+      const studentUserIds = (kelompok?.students || []).map((s) => s.userId).filter(Boolean);
+      if (studentUserIds.length > 0) {
+        const parsedJudul = parseProkerDeskripsi(proker.deskripsi).judul;
+        await notificationIntegrationService.sendToUsers({
+          userIds: studentUserIds,
+          title: "Evaluasi Program Kerja Dinilai! 📊",
+          message: `Program kerja "${parsedJudul}" telah dievaluasi oleh DPL dengan predikat ${finalPredikat} (skor: ${skorPenilaian}).`,
+          triggerType: "PROKER_ASSESSED",
+          dataPayload: {
+            event: "REFRESH_PROKER_MAHASISWA",
+            type: "PROKER_DINILAI",
+            entityId: id,
+            prokerId: id,
+            kelompokId: proker.kelompokId,
+            skor: String(skorPenilaian),
+            predikat: finalPredikat,
+            click_action: "FLUTTER_NOTIFICATION_CLICK",
+          },
+        });
+      }
+    } catch (notifErr: any) {
+      console.warn("[dplService.assessProgramKerja] Gagal mengirim push notifikasi proker:", notifErr?.message);
+    }
 
     return {
       ...proker,

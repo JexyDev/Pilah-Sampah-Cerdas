@@ -54,7 +54,7 @@ import { useAuthStore } from "../../store/useAuthStore";
 import { Pagination } from "../../components/common/Pagination";
 import PageHeader from "../../components/common/PageHeader";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
-import { ThemeTileLayer } from "../../components/common/ThemeTileLayer";
+import { ThemeTileLayer, GOOGLE_SATELLITE_URL } from "../../components/common/ThemeTileLayer";
 import { KELURAHAN_GEODATA, CoblongGeo, createFacilityIcon } from "../../constants/coblongGeoData";
 import { resolveImageUrl, handlePoskoImageError, getPoskoFallbackImage } from "../../utils/imageUrl";
 import { sortKelompokList } from "../../utils/sortUtils";
@@ -253,6 +253,18 @@ export const PoskoKknPage: React.FC = () => {
   // Detail Modal State
   const [detailModalPosko, setDetailModalPosko] = useState<PoskoItem | null>(null);
 
+  // Detail View State for DPL
+  const [selectedViewPoskoId, setSelectedViewPoskoId] = useState<string | null>(null);
+
+  // Set default when items load
+  useEffect(() => {
+    if (items.length > 0 && !selectedViewPoskoId) {
+      setSelectedViewPoskoId(items[0].id);
+    } else if (items.length === 0) {
+      setSelectedViewPoskoId(null);
+    }
+  }, [items, selectedViewPoskoId]);
+
   // Copy coordinate feedback state
   const [copiedCoordId, setCopiedCoordId] = useState<string | null>(null);
 
@@ -413,6 +425,22 @@ export const PoskoKknPage: React.FC = () => {
     const start = (currentPage - 1) * itemsPerPage;
     return filteredItems.slice(start, start + itemsPerPage);
   }, [filteredItems, currentPage, itemsPerPage]);
+
+  const handleSelectViewPosko = (id: string) => {
+    setSelectedViewPoskoId(id);
+    const p = items.find(i => i.id === id);
+    if (p) {
+      const latNum = Number(p.latitude);
+      const lngNum = Number(p.longitude);
+      if (!isNaN(latNum) && !isNaN(lngNum) && latNum !== 0 && lngNum !== 0) {
+        setMapTargetCenter([latNum, lngNum]);
+        setMapTargetZoom(17);
+        if (mapSectionRef.current) {
+          mapSectionRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }
+    }
+  };
 
   // Fly to Map Location Handler
   const handleViewOnMap = (lat: number | string, lng: number | string) => {
@@ -653,19 +681,22 @@ export const PoskoKknPage: React.FC = () => {
   };
 
   return (
-    <div className="pb-24 lg:pb-8">
-      <PageHeader
-        title={isDpl ? "Posko KKN Kelompok Bimbingan" : "Posko KKN Mahasiswa"}
-        description={
-          isDpl
-            ? "Pangkalan posko, kontak tim mahasiswa, titik koordinat GPS, dan lokasi kelompok KKN binaan Anda."
-            : "Direktori pangkalan posko kegiatan mahasiswa KKN, kelompok binaan, dosen pendamping lapangan (DPL), dan titik koordinat GPS di seluruh wilayah operasional."
-        }
-        icon={GraduationCap}
-      />
+    <div className="space-y-6 text-slate-800 dark:text-slate-100">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
+            {isDpl ? "Posko KKN Kelompok Bimbingan" : "Posko KKN Mahasiswa"}
+          </h1>
+          <p className="text-slate-500 text-xs mt-1">
+            {isDpl
+              ? "Pangkalan posko, kontak tim mahasiswa, titik koordinat GPS, dan lokasi kelompok KKN binaan Anda."
+              : "Direktori pangkalan posko kegiatan mahasiswa KKN, kelompok binaan, dosen pendamping lapangan (DPL), dan titik koordinat GPS di seluruh wilayah operasional."}
+          </p>
+        </div>
+      </div>
 
       {isDpl ? (
-        <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-6">
+        <div className="space-y-6">
           {loading ? (
             <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-12 text-center shadow-xs">
               <Loader2 className="w-8 h-8 animate-spin text-emerald-600 dark:text-emerald-400 mx-auto mb-3" />
@@ -887,7 +918,7 @@ export const PoskoKknPage: React.FC = () => {
                             style={{ height: "100%", width: "100%" }}
                             className="z-0"
                           >
-                            <ThemeTileLayer />
+                            <ThemeTileLayer lightUrl={GOOGLE_SATELLITE_URL} darkUrl={GOOGLE_SATELLITE_URL} />
                             <MapFlyToController center={mapTargetCenter || mapCenter} zoom={mapTargetZoom} />
 
                             {kelurahanGeo?.bounds && (
@@ -1120,22 +1151,39 @@ export const PoskoKknPage: React.FC = () => {
                   {/* 2 Column Details & Map */}
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                     
-                    {/* Left Column: DYNAMIC ITERATION OF ALL POSKO CARDS */}
-                    <div className="lg:col-span-6 space-y-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Building2 size={18} className="text-indigo-600 dark:text-indigo-400" />
-                          <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100">
-                            Daftar Titik Posko Bimbingan
-                          </h3>
+                    {/* Left Column: SINGLE POSKO CARD WITH DROPDOWN */}
+                    <div className="lg:col-span-5 space-y-6">
+                      <div className="flex flex-col gap-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Building2 size={18} className="text-indigo-600 dark:text-indigo-400" />
+                            <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100">
+                              Detail Titik Posko
+                            </h3>
+                          </div>
+                          <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300">
+                            {items.length} Titik Posko
+                          </span>
                         </div>
-                        <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300">
-                          {items.length} Titik Posko
-                        </span>
+                        
+                        <select
+                          value={selectedViewPoskoId || ""}
+                          onChange={(e) => handleSelectViewPosko(e.target.value)}
+                          className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm text-slate-800 dark:text-slate-100 font-bold focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-xs"
+                        >
+                          {items.map((p, idx) => (
+                            <option key={p.id} value={p.id}>
+                              {p.isUtama ?? (idx === 0) ? "[UTAMA]" : `[KEGIATAN #${idx}]`} {p.nama}
+                            </option>
+                          ))}
+                        </select>
                       </div>
 
-                      {/* Map through ALL Posko Items dynamically */}
-                      {items.map((posko, index) => {
+                      {/* Render only the selected posko */}
+                      {(() => {
+                        const posko = items.find(p => p.id === selectedViewPoskoId) || items[0];
+                        if (!posko) return null;
+                        const index = items.findIndex(p => p.id === posko.id);
                         const isUtama = posko.isUtama ?? (index === 0);
                         const latNum = Number(posko.latitude);
                         const lngNum = Number(posko.longitude);
@@ -1144,7 +1192,7 @@ export const PoskoKknPage: React.FC = () => {
 
                         return (
                           <div
-                            key={posko.id || index}
+                            key={posko.id}
                             className={`bg-white dark:bg-slate-900 rounded-3xl border ${
                               isUtama
                                 ? "border-indigo-200 dark:border-indigo-800/80 ring-1 ring-indigo-500/10"
@@ -1332,7 +1380,7 @@ export const PoskoKknPage: React.FC = () => {
                             </div>
                           </div>
                         );
-                      })}
+                      })()}
 
                       {/* Card Fasilitas Kebersihan di Kelurahan Binaan */}
                       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs space-y-3">
@@ -1382,7 +1430,7 @@ export const PoskoKknPage: React.FC = () => {
                     </div>
 
                     {/* Right Column: GIS MULTI-POSKO INTERACTIVE MAP */}
-                    <div className="lg:col-span-6 lg:sticky lg:top-6">
+                    <div className="lg:col-span-7 lg:sticky lg:top-6">
                       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-4 shadow-xs h-[560px] flex flex-col">
                         <div className="flex items-center justify-between px-2 pb-3 mb-2 border-b border-slate-100 dark:border-slate-800">
                           <div className="flex items-center gap-2">
@@ -1413,7 +1461,7 @@ export const PoskoKknPage: React.FC = () => {
                             style={{ height: "100%", width: "100%" }}
                             className="z-0"
                           >
-                            <ThemeTileLayer />
+                            <ThemeTileLayer lightUrl={GOOGLE_SATELLITE_URL} darkUrl={GOOGLE_SATELLITE_URL} />
                             <MapFlyToController center={mapTargetCenter || defaultCenter} zoom={mapTargetZoom} />
 
                             {/* Batas Poligon Kelurahan */}
@@ -1493,14 +1541,25 @@ export const PoskoKknPage: React.FC = () => {
                                           <strong>PIC:</strong> {p.pic} {p.kontak ? `(${p.kontak})` : ""}
                                         </p>
                                       )}
-                                      <div className="pt-1 flex items-center justify-between">
+                                      <div className="pt-2 flex items-center justify-between gap-2 mt-1">
+                                        <button
+                                          type="button"
+                                          onClick={() => handleSelectViewPosko(p.id)}
+                                          className={`text-[10px] font-bold px-2.5 py-1.5 rounded-lg transition-colors flex-1 ${
+                                            selectedViewPoskoId === p.id 
+                                              ? 'bg-indigo-600 text-white cursor-default' 
+                                              : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 cursor-pointer border border-indigo-200'
+                                          }`}
+                                        >
+                                          {selectedViewPoskoId === p.id ? 'Sedang Aktif' : 'Lihat Detail'}
+                                        </button>
                                         <a
                                           href={`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`}
                                           target="_blank"
                                           rel="noreferrer"
-                                          className="text-[10.5px] font-bold text-blue-600 hover:underline flex items-center gap-1"
+                                          className="text-[10px] font-bold text-blue-700 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-colors border border-blue-200"
                                         >
-                                          <ExternalLink size={10} /> Google Maps
+                                          <ExternalLink size={10} /> Maps
                                         </a>
                                       </div>
                                     </div>
@@ -1570,7 +1629,7 @@ export const PoskoKknPage: React.FC = () => {
           )}
         </div>
       ) : (
-        <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-6">
+        <div className="space-y-6">
         
           {/* ========================================================================= */}
           {/* 1. METRIC STATS CARDS                                                     */}
@@ -1822,7 +1881,7 @@ export const PoskoKknPage: React.FC = () => {
               style={{ height: '100%', width: '100%' }}
               className="z-0"
             >
-              <ThemeTileLayer />
+              <ThemeTileLayer lightUrl={GOOGLE_SATELLITE_URL} darkUrl={GOOGLE_SATELLITE_URL} />
               <MapFlyToController center={mapTargetCenter} zoom={mapTargetZoom} />
 
               {/* Poligon Batas 6 Kelurahan Coblong */}

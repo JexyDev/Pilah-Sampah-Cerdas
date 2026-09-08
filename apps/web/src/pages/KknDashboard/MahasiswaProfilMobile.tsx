@@ -28,6 +28,7 @@ import { useAuthStore } from "../../store/useAuthStore";
 import api from "../../utils/api";
 import showToast from "../../utils/showToast";
 import { compressImage } from "../../utils/compressImage";
+import { safeFormatDateShort } from "../../utils/safeDateUtils";
 import { useNavigate } from "react-router-dom";
 
 export const MahasiswaProfilMobile: React.FC = () => {
@@ -197,7 +198,7 @@ export const MahasiswaProfilMobile: React.FC = () => {
                 <div>
                   <p className="font-bold text-slate-800 dark:text-slate-200">{iz.reason}</p>
                   <p className="text-[10px] text-slate-400">
-                    {iz.type} • {new Date(iz.createdAt).toLocaleDateString("id-ID")}
+                    {iz.type} • {safeFormatDateShort(iz.createdAt, true)}
                   </p>
                 </div>
                 <span

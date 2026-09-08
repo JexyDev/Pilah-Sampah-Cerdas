@@ -498,11 +498,11 @@ export const ManajemenEkosistemKkn: React.FC = () => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="space-y-6 text-slate-800 dark:text-slate-100">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">Kelompok Dampingan KKN</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
+          <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Kelompok Dampingan KKN</h1>
+          <p className="text-slate-500 text-xs mt-1">
             Pengelolaan kelompok mahasiswa KKN, alokasi wilayah dampingan, dan struktur dosen pendamping lapangan.
           </p>
         </div>

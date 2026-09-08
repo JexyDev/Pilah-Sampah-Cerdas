@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   RefreshCw,
   PauseCircle,
+  PlayCircle,
   Send,
   Loader2,
   Image as ImageIcon,
@@ -28,6 +29,7 @@ import api from "../../utils/api";
 import showToast from "../../utils/showToast";
 import { compressImage } from "../../utils/compressImage";
 import { useAuthStore } from "../../store/useAuthStore";
+import { parseSafeDate, safeFormatDateShort, safeFormatTime, safeToDateString } from "../../utils/safeDateUtils";
 
 // Haversine Formula untuk menghitung jarak dalam meter
 function calculateDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -74,7 +76,7 @@ export const MahasiswaPresensiMobile: React.FC = () => {
   const todayHistoryItem = historyList.find((item: any) => {
     const rawDate = item.waktuAbsen || item.waktuCheckin || item.checkInAt || item.jamMasuk || item.createdAt;
     if (!rawDate) return false;
-    const itemDateStr = new Date(rawDate).toDateString();
+    const itemDateStr = safeToDateString(rawDate);
     const todayDateStr = new Date().toDateString();
     return itemDateStr === todayDateStr && (
       Boolean(item.checkOutAt) ||
@@ -112,6 +114,8 @@ export const MahasiswaPresensiMobile: React.FC = () => {
   const [fotoFile, setFotoFile] = useState<File | null>(null);
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isResuming, setIsResuming] = useState(false);
+  const [showCheckOutModal, setShowCheckOutModal] = useState(false);
   const [elapsedTime, setElapsedTime] = useState<string>("00:00:00");
 
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -276,7 +280,8 @@ export const MahasiswaPresensiMobile: React.FC = () => {
 
     if (startWaktu && !isTerjeda && isOngoing) {
       const updateTimer = () => {
-        const start = new Date(startWaktu);
+        const start = parseSafeDate(startWaktu);
+        if (!start) return;
         const startTime = start.getTime();
 
         // Batas Cutoff Jam 18:00:00 pada tanggal kegiatan presensi
@@ -287,7 +292,23 @@ export const MahasiswaPresensiMobile: React.FC = () => {
         const now = Date.now();
         // Batasi penghitungan waktu sampai jam 18:00 jika mahasiswa lupa mengklik selesai
         const effectiveEnd = Math.min(now, cutoffTime);
-        const diffSec = Math.max(0, Math.floor((effectiveEnd - startTime) / 1000));
+        const rawDiffSec = Math.max(0, Math.floor((effectiveEnd - startTime) / 1000));
+
+        // Kurangi total durasi jeda dari jedaLogs agar sinkron dengan kalkulasi backend
+        let totalPauseSec = 0;
+        const logs = (primaryKegiatan?.jedaLogs as any[]) || (activeSession?.jedaLogs as any[]) || [];
+        if (Array.isArray(logs)) {
+          for (const log of logs) {
+            if (log?.waktuJeda && log?.waktuResume) {
+              const pStart = new Date(log.waktuJeda).getTime();
+              const pEnd = new Date(log.waktuResume).getTime();
+              if (!isNaN(pStart) && !isNaN(pEnd) && pEnd > pStart) {
+                totalPauseSec += Math.floor((pEnd - pStart) / 1000);
+              }
+            }
+          }
+        }
+        const diffSec = Math.max(0, rawDiffSec - totalPauseSec);
 
         const hrs = String(Math.floor(diffSec / 3600)).padStart(2, "0");
         const mins = String(Math.floor((diffSec % 3600) / 60)).padStart(2, "0");
@@ -303,7 +324,14 @@ export const MahasiswaPresensiMobile: React.FC = () => {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [activeSession, primaryKegiatan?.attendedAt, primaryKegiatan?.statusKehadiran, isLiveActiveInZone, isAttendedToday]);
+  }, [
+    activeSession,
+    primaryKegiatan?.attendedAt,
+    primaryKegiatan?.statusKehadiran,
+    primaryKegiatan?.jedaLogs,
+    isLiveActiveInZone,
+    isAttendedToday,
+  ]);
 
   // Sinkronisasi display elapsedTime saat status TERJEDA
   useEffect(() => {
@@ -665,11 +693,52 @@ export const MahasiswaPresensiMobile: React.FC = () => {
     }
   };
 
+  // 5b. Lanjutkan Sesi Kegiatan dari Status TERJEDA
+  const handleResumeSession = async () => {
+    if (!primaryKegiatan || !primaryKegiatan.id) {
+      showToast.error("Jadwal kegiatan aktif tidak ditemukan.");
+      return;
+    }
+
+    const finalLat = coords ? coords.latitude : (posko?.lat ?? -6.8915);
+    const finalLng = coords ? coords.longitude : (posko?.lng ?? 107.6107);
+
+    setIsResuming(true);
+    try {
+      const res = await api.post(`/kkn/kegiatan/${primaryKegiatan.id}/lanjut`, {
+        latitude: finalLat,
+        longitude: finalLng,
+      });
+
+      if (res.data?.success || res.status === 200) {
+        showToast.success("Sesi kegiatan KKN berhasil dilanjutkan! Timer kembali aktif.");
+        setIsLiveActiveInZone(true);
+        await Promise.all([fetchKegiatanAktif(), fetchRiwayatPresensi()]);
+      } else {
+        showToast.error(res.data?.message || "Gagal melanjutkan sesi kegiatan.");
+      }
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        "Gagal melanjutkan sesi.";
+      if (msg.includes("OUT_OF_GEOFENCE")) {
+        showToast.error("Anda harus berada di dalam radius posko KKN untuk melanjutkan sesi presensi.");
+      } else {
+        showToast.error(msg);
+      }
+    } finally {
+      setIsResuming(false);
+    }
+  };
+
   // 6. Submit Presensi Check-Out
   const handleCheckOut = async () => {
     if (!activeSession && !primaryKegiatan) return;
 
     setIsSubmitting(true);
+    setShowCheckOutModal(false);
     let checkOutDone = false;
     try {
       // 1. Selesaikan sesi jadwal kegiatan resmi KKN
@@ -687,8 +756,18 @@ export const MahasiswaPresensiMobile: React.FC = () => {
           if (res.data?.success || res.status === 200) {
             checkOutDone = true;
           }
-        } catch (officialErr) {
+        } catch (officialErr: any) {
           console.warn("[Check-Out] Selesai kegiatan resmi warning/fallback:", officialErr);
+          if (
+            officialErr?.response?.status === 422 ||
+            officialErr?.response?.data?.code === "EARLY_CHECKOUT_RESTRICTED"
+          ) {
+            showToast.error(
+              officialErr.response?.data?.message || "Belum dapat presensi pulang. Minimal 30 menit sebelum jam pulang."
+            );
+            setIsSubmitting(false);
+            return;
+          }
         }
       }
 
@@ -704,8 +783,18 @@ export const MahasiswaPresensiMobile: React.FC = () => {
             if (res.data?.success || res.status === 200) {
               checkOutDone = true;
             }
-          } catch (mandiriErr) {
+          } catch (mandiriErr: any) {
             console.warn("[Check-Out] Checkout presensi mandiri warning:", mandiriErr);
+            if (
+              mandiriErr?.response?.status === 422 ||
+              mandiriErr?.response?.data?.code === "MINIMUM_DURATION_NOT_MET"
+            ) {
+              showToast.error(
+                mandiriErr.response?.data?.message || "Durasi presensi belum memenuhi batas minimal 30 menit."
+              );
+              setIsSubmitting(false);
+              return;
+            }
           }
         }
       }
@@ -718,12 +807,7 @@ export const MahasiswaPresensiMobile: React.FC = () => {
         setElapsedTime("00:00:00");
         await Promise.all([fetchRiwayatPresensi(), fetchKegiatanAktif()]);
       } else {
-        showToast.success("Sesi presensi telah diselesaikan.");
-        setActiveSession(null);
-        setIsLiveActiveInZone(false);
-        setLiveInZoneSecs(0);
-        setElapsedTime("00:00:00");
-        await Promise.all([fetchRiwayatPresensi(), fetchKegiatanAktif()]);
+        showToast.error("Gagal melakukan check-out. Silakan periksa koneksi atau coba beberapa saat lagi.");
       }
     } catch (err: any) {
       showToast.error(err.response?.data?.message || "Gagal melakukan check-out presensi.");
@@ -978,19 +1062,25 @@ export const MahasiswaPresensiMobile: React.FC = () => {
             <div className="flex justify-between items-center text-xs pt-2 border-t border-emerald-200/40 dark:border-emerald-900/40">
               <span className="text-slate-500 dark:text-slate-400">Waktu Masuk:</span>
               <span className="font-bold text-slate-800 dark:text-slate-200">
-                {(() => {
-                  const t = primaryKegiatan?.attendedAt || todayHistoryItem?.waktuCheckin || todayHistoryItem?.checkInAt || todayHistoryItem?.jamMasuk || todayHistoryItem?.waktuAbsen;
-                  return t ? new Date(t).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) + " WIB" : "-";
-                })()}
+                {safeFormatTime(
+                  primaryKegiatan?.attendedAt ||
+                    todayHistoryItem?.waktuCheckin ||
+                    todayHistoryItem?.checkInAt ||
+                    todayHistoryItem?.jamMasuk ||
+                    todayHistoryItem?.waktuAbsen
+                )}
               </span>
             </div>
             <div className="flex justify-between items-center text-xs pt-2 border-t border-emerald-200/40 dark:border-emerald-900/40">
               <span className="text-slate-500 dark:text-slate-400">Waktu Pulang (Check-Out):</span>
               <span className="font-bold text-slate-800 dark:text-slate-200">
-                {(() => {
-                  const t = primaryKegiatan?.checkOutAt || primaryKegiatan?.waktuCheckout || todayHistoryItem?.waktuCheckout || todayHistoryItem?.checkOutAt || todayHistoryItem?.jamPulang;
-                  return t ? new Date(t).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) + " WIB" : "-";
-                })()}
+                {safeFormatTime(
+                  primaryKegiatan?.checkOutAt ||
+                    primaryKegiatan?.waktuCheckout ||
+                    todayHistoryItem?.waktuCheckout ||
+                    todayHistoryItem?.checkOutAt ||
+                    todayHistoryItem?.jamPulang
+                )}
               </span>
             </div>
             <div className="flex justify-between items-center text-xs pt-2 border-t border-emerald-200/40 dark:border-emerald-900/40">
@@ -1053,13 +1143,15 @@ export const MahasiswaPresensiMobile: React.FC = () => {
 
           {/* Banner Informasi Khusus Saat Sesi Terjeda */}
           {primaryKegiatan?.statusKehadiran === "TERJEDA" && (
-            <div className="p-3 bg-amber-50 dark:bg-amber-950/40 rounded-2xl border border-amber-200 dark:border-amber-900/60 text-xs text-amber-800 dark:text-amber-300 space-y-1">
+            <div className="p-3 bg-amber-50 dark:bg-amber-950/40 rounded-2xl border border-amber-200 dark:border-amber-900/60 text-xs text-amber-800 dark:text-amber-300 space-y-1.5">
               <div className="flex items-center gap-1.5 font-bold">
                 <Info size={14} className="text-amber-600 shrink-0" />
                 <span>Waktu Terjeda Sementara: {primaryKegiatan.durasiJedaFormatted || "0 Menit"}</span>
               </div>
               <p className="text-[11px] text-amber-700/90 dark:text-amber-400/90 leading-relaxed">
-                Sesi dalam keadaan dijeda. Masuk kembali ke dalam zona KKN dan klik "Lanjutkan Sesi" untuk melanjutkan penghitungan durasi.
+                {nearestPoskoInfo?.isInside || (distanceToPosko !== null && posko && distanceToPosko <= posko.radius)
+                  ? "Posisi GPS Anda saat ini sudah berada di dalam posko KKN. Klik tombol 'Lanjutkan Sesi Presensi' di bawah untuk melanjutkan penghitungan jam kegiatan."
+                  : "Sesi dalam keadaan dijeda. Pastikan Anda berada di dalam zona/posko KKN lalu klik tombol 'Lanjutkan Sesi Presensi' di bawah untuk melanjutkan penghitungan durasi."}
               </p>
             </div>
           )}
@@ -1074,11 +1166,9 @@ export const MahasiswaPresensiMobile: React.FC = () => {
             <div className="flex justify-between items-center text-xs pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
               <span className="text-slate-400">Waktu Masuk:</span>
               <span className="font-bold text-slate-800 dark:text-slate-200">
-                {(activeSession?.jamMasuk || activeSession?.checkInAt || primaryKegiatan?.attendedAt)
-                  ? new Date(
-                      activeSession?.jamMasuk || activeSession?.checkInAt || primaryKegiatan?.attendedAt
-                    ).toLocaleTimeString("id-ID")
-                  : "-"}
+                {safeFormatTime(
+                  activeSession?.jamMasuk || activeSession?.checkInAt || primaryKegiatan?.attendedAt
+                )}
               </span>
             </div>
             <div className="flex justify-between items-center text-xs pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
@@ -1122,16 +1212,49 @@ export const MahasiswaPresensiMobile: React.FC = () => {
 
           {/* Panduan Pengakhiran Sesi */}
           <div className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 text-center">
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-              💡 Tekan tombol di bawah saat Anda telah selesai melaksanakan aktivitas KKN hari ini untuk mencatat waktu pulang dan mengunci durasi.
-            </p>
+            {primaryKegiatan?.canCheckoutNow === false && primaryKegiatan?.earliestCheckoutTimeString ? (
+              <p className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold leading-relaxed">
+                ⏳ Presensi pulang minimal dibuka pukul <b>{primaryKegiatan.earliestCheckoutTimeString}</b> (30 menit sebelum jam selesai kegiatan).
+              </p>
+            ) : (
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                💡 Tekan tombol di bawah saat Anda telah selesai melaksanakan aktivitas KKN hari ini untuk mencatat waktu pulang dan mengunci durasi.
+              </p>
+            )}
           </div>
+
+          {/* Tombol Lanjutkan Sesi (Khusus saat status TERJEDA) */}
+          {primaryKegiatan?.statusKehadiran === "TERJEDA" && (
+            <button
+              type="button"
+              onClick={handleResumeSession}
+              disabled={isResuming || isSubmitting}
+              className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            >
+              {isResuming ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  <span>Melanjutkan Sesi...</span>
+                </>
+              ) : (
+                <>
+                  <PlayCircle size={16} />
+                  <span>Lanjutkan Sesi Presensi</span>
+                </>
+              )}
+            </button>
+          )}
 
           {/* Tombol Check-Out Sesi (Dapat digunakan baik saat Aktif maupun Terjeda) */}
           <button
-            onClick={handleCheckOut}
-            disabled={isSubmitting}
-            className="w-full py-3.5 bg-rose-600 hover:bg-rose-700 active:scale-[0.99] text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            type="button"
+            onClick={() => setShowCheckOutModal(true)}
+            disabled={isSubmitting || isResuming}
+            className={`w-full py-3.5 active:scale-[0.99] rounded-2xl text-xs font-black uppercase tracking-wider shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 ${
+              primaryKegiatan?.statusKehadiran === "TERJEDA"
+                ? "bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 dark:hover:bg-rose-950/60 border border-rose-200 dark:border-rose-900"
+                : "bg-rose-600 hover:bg-rose-700 text-white"
+            }`}
           >
             {isSubmitting ? (
               <>
@@ -1326,9 +1449,9 @@ export const MahasiswaPresensiMobile: React.FC = () => {
                     {item.deskripsiKegiatan || "Aktivitas Lapangan"}
                   </p>
                   <p className="text-[10px] text-slate-400 mt-0.5">
-                    {(item.jamMasuk || item.checkInAt) ? new Date(item.jamMasuk || item.checkInAt).toLocaleDateString("id-ID", { day: "numeric", month: "short" }) : "-"}{" "}
-                    • Masuk: {(item.jamMasuk || item.checkInAt) ? new Date(item.jamMasuk || item.checkInAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) : "-"}
-                    {item.jamPulang ? ` • Pulang: ${new Date(item.jamPulang).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}` : ""}
+                    {safeFormatDateShort(item.jamMasuk || item.checkInAt || item.waktuAbsen || item.createdAt)}{" "}
+                    • Masuk: {safeFormatTime(item.jamMasuk || item.checkInAt || item.waktuAbsen || item.waktuCheckin)}
+                    {Boolean(item.jamPulang || item.checkOutAt || item.waktuCheckout) ? ` • Pulang: ${safeFormatTime(item.jamPulang || item.checkOutAt || item.waktuCheckout)}` : ""}
                     {item.durasiJedaMenit && item.durasiJedaMenit > 0 ? ` • Jeda: ${item.durasiJedaFormatted || `${item.durasiJedaMenit}m`}` : ""}
                   </p>
                 </div>
@@ -1417,6 +1540,165 @@ export const MahasiswaPresensiMobile: React.FC = () => {
                 )}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 7. Modal Konfirmasi Check-Out Presensi */}
+      {showCheckOutModal && (
+        <div className="fixed inset-0 z-[100] bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-sm w-full p-5 shadow-2xl space-y-4 animate-scale-in">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-rose-100 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                <CheckCircle2 size={20} />
+              </div>
+              <div className="min-w-0">
+                <h4 className="text-sm font-black text-slate-900 dark:text-white">
+                  Akhiri Sesi &amp; Presensi Pulang?
+                </h4>
+                <p className="text-[10px] text-slate-500 font-mono">
+                  {primaryKegiatan?.namaKegiatan || "Sesi Kegiatan Aktif"}
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 space-y-2 text-xs text-slate-600 dark:text-slate-300">
+              <div className="flex justify-between items-center text-[11px]">
+                <span className="text-slate-500">Durasi Tercatat:</span>
+                <span className="font-bold text-slate-900 dark:text-white">{primaryKegiatan?.durasiLapangFormatted || elapsedTime}</span>
+              </div>
+              {primaryKegiatan?.canCheckoutNow === false && primaryKegiatan?.earliestCheckoutTimeString && (
+                <div className="p-2 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-xl text-[11px] text-amber-800 dark:text-amber-300 font-semibold">
+                  ⚠️ Peringatan: Jam pulang minimal adalah pukul {primaryKegiatan.earliestCheckoutTimeString}. Jika Anda checkout lebih awal, presensi dapat ditolak oleh sistem.
+                </div>
+              )}
+              <p className="text-[11px] leading-relaxed">
+                Pastikan Anda telah menyelesaikan kegiatan hari ini. Waktu kepulangan akan dicatat dan sesi presensi akan dikunci.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setShowCheckOutModal(false)}
+                disabled={isSubmitting}
+                className="py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition cursor-pointer"
+              >
+                Batal
+              </button>
+
+              <button
+                type="button"
+                onClick={handleCheckOut}
+                disabled={isSubmitting}
+                className="py-2.5 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black uppercase tracking-wider transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 size={13} className="animate-spin" />
+                    <span>Memproses...</span>
+                  </>
+                ) : (
+                  <span>Ya, Presensi Pulang</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* 7. Modal Konfirmasi Check-Out / Selesai Sesi */}
+      {showCheckOutModal && (
+        <div className="fixed inset-0 z-[100] bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-sm w-full p-5 shadow-2xl space-y-4 animate-scale-in">
+            {(() => {
+              const targetMins = primaryKegiatan?.durasiWajibMenit || 240;
+              const currentMins =
+                primaryKegiatan?.actualInZoneMinutes ||
+                (typeof liveInZoneSecs === "number" && liveInZoneSecs > 0
+                  ? Math.floor(liveInZoneSecs / 60)
+                  : 0);
+              const isTargetMet = currentMins >= targetMins;
+
+              return (
+                <>
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
+                        isTargetMet
+                          ? "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400"
+                          : "bg-amber-100 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400"
+                      }`}
+                    >
+                      {isTargetMet ? <CheckCircle2 size={22} /> : <AlertTriangle size={22} />}
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className="text-sm font-black text-slate-900 dark:text-white">
+                        {isTargetMet ? "Konfirmasi Selesai Presensi" : "Perhatian: Target Belum Memenuhi!"}
+                      </h4>
+                      <p className="text-[10px] text-slate-500 font-mono truncate">
+                        {primaryKegiatan?.namaKegiatan || "Kegiatan Posko KKN"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 space-y-2 text-xs">
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500">Durasi Saat Ini:</span>
+                      <span className={`font-black ${isTargetMet ? "text-emerald-600" : "text-amber-600"}`}>
+                        {currentMins} Menit
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center pt-1.5 border-t border-slate-200/60 dark:border-slate-700/60">
+                      <span className="text-slate-500">Target Minimal:</span>
+                      <span className="font-bold text-slate-700 dark:text-slate-300">
+                        {targetMins} Menit ({(targetMins / 60).toFixed(1).replace(/\.0$/, "")} Jam)
+                      </span>
+                    </div>
+                  </div>
+
+                  {!isTargetMet ? (
+                    <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-2xl text-[11px] text-amber-800 dark:text-amber-300 space-y-1">
+                      <p className="font-bold">⚠️ Peringatan Konsekuensi Status:</p>
+                      <p className="leading-relaxed">
+                        Jika Anda mengakhiri sesi sekarang, sistem akan mencatat status kehadiran Anda sebagai{" "}
+                        <span className="font-black underline">HADIR &amp; TIDAK MEMENUHI</span> karena durasi belum mencukupi target wajib.
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                      Target durasi wajib Anda telah tercapai. Tekan tombol di bawah untuk mengunci waktu checkout dan menyimpan presensi resmi Anda hari ini.
+                    </p>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setShowCheckOutModal(false)}
+                      disabled={isSubmitting}
+                      className="py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition cursor-pointer"
+                    >
+                      Lanjut Bertugas
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleCheckOut}
+                      disabled={isSubmitting}
+                      className="py-2.5 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black uppercase tracking-wider transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 size={13} className="animate-spin" />
+                          <span>Menyimpan...</span>
+                        </>
+                      ) : (
+                        <span>{isTargetMet ? "Ya, Selesai" : "Tetap Selesai"}</span>
+                      )}
+                    </button>
+                  </div>
+                </>
+              );
+            })()}
           </div>
         </div>
       )}

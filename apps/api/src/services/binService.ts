@@ -144,6 +144,12 @@ export class BinService {
         const searchCondition = [
           { qrCode: { contains: filters.search, mode: "insensitive" } },
           { id: { contains: filters.search, mode: "insensitive" } },
+          { binType: { contains: filters.search, mode: "insensitive" } },
+          { user: { name: { contains: filters.search, mode: "insensitive" } } },
+          { user: { address: { contains: filters.search, mode: "insensitive" } } },
+          { rw: { name: { contains: filters.search, mode: "insensitive" } } },
+          { kelurahan: { name: { contains: filters.search, mode: "insensitive" } } },
+          { category: { name: { contains: filters.search, mode: "insensitive" } } },
         ];
         if (whereClause.OR || whereClause.AND) {
           whereClause = {
@@ -817,7 +823,9 @@ export class BinService {
           });
 
           const hasOrganik = currentBins.some((b) => checkIsOrganicCategory(b.category?.name));
-          const hasNonOrganik = currentBins.some((b) => b.category?.name && !checkIsOrganicCategory(b.category?.name));
+          const hasNonOrganik = currentBins.some(
+            (b) => b.category?.name && !checkIsOrganicCategory(b.category?.name)
+          );
           const onboardingComplete = hasOrganik && hasNonOrganik;
 
           // Check duplicate category in the request payload itself
@@ -1435,7 +1443,7 @@ export class BinService {
     const maxCap = Number(bin.maxCapacityLiter ?? 25.0);
     const fillRatio = maxCap > 0 ? currentVol / maxCap : 0;
 
-    if (fillRatio < 0.70) {
+    if (fillRatio < 0.7) {
       const currentPercent = Math.round(fillRatio * 100);
       const error = new Error(`BIN_CAPACITY_NOT_ENOUGH:${currentPercent}`);
       (error as any).currentPercent = currentPercent;
@@ -1903,7 +1911,7 @@ export class BinService {
     userId: string,
     issueType: "EMPTY_REQUEST" | "BROKEN_REPORT",
     _notes: string,
-    evidencePhotoUrl?: string
+    _evidencePhotoUrl?: string
   ) {
     const bin = await prisma.bin.findUnique({
       where: { id: binId },

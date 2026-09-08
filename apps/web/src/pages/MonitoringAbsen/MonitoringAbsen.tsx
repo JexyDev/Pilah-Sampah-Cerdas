@@ -17,7 +17,13 @@ import {
   useMap,
   useMapEvents,
 } from "react-leaflet";
-import { ThemeTileLayer } from "../../components/common/ThemeTileLayer";
+import {
+  ThemeTileLayer,
+  GOOGLE_SATELLITE_URL,
+  GOOGLE_VECTOR_URL,
+  CARTO_VOYAGER_URL,
+  OSM_LIGHT_URL,
+} from "../../components/common/ThemeTileLayer";
 import L from "leaflet";
 import {
   Loader2,
@@ -1011,6 +1017,14 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   const [mapZoom, setMapZoom] = useState<number>(13.5);
   const [manualMapTrigger, setManualMapTrigger] = useState<number>(0);
   const [isMapExpanded, setIsMapExpanded] = useState<boolean>(false);
+  // QC-17b: Default basemap Satelit untuk semua role (termasuk Pimpinan, DPL, Taskforce, dll.)
+  const [mapTileProvider, setMapTileProvider] = useState<"google_vector" | "google_satellite" | "cartodb" | "osm">(() => {
+    return "google_satellite";
+  });
+
+  useEffect(() => {
+    setMapTileProvider("google_satellite");
+  }, [userRole]);
 
   const handleFitFullCoblong = () => {
     setMapCenter([-6.8906, 107.6150]);
@@ -2907,7 +2921,47 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               )}
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Basemap Switcher (Google Peta / Satelit / CartoDB) */}
+              <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl border border-slate-200/80 dark:border-slate-700">
+                <button
+                  type="button"
+                  onClick={() => setMapTileProvider("google_vector")}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer ${
+                    mapTileProvider === "google_vector"
+                      ? "bg-[#009966] text-white shadow-2xs"
+                      : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                  title="Tampilan Google Maps Vektor"
+                >
+                  Google Peta
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMapTileProvider("google_satellite")}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer ${
+                    mapTileProvider === "google_satellite"
+                      ? "bg-[#009966] text-white shadow-2xs"
+                      : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                  title="Tampilan Google Maps Satelit / Hybrid"
+                >
+                  Satelit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMapTileProvider("cartodb")}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer ${
+                    mapTileProvider === "cartodb"
+                      ? "bg-[#009966] text-white shadow-2xs"
+                      : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                  title="Tampilan Kartografi CartoDB"
+                >
+                  CartoDB
+                </button>
+              </div>
+
               {/* Tinjau Seluruh Wilayah / Full Bounds Button */}
               <button
                 type="button"
@@ -2969,7 +3023,24 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 isDeveloper={isDeveloper}
               />
               <MapZoomEvents onZoom={(z) => setMapZoom(z)} />
-              <ThemeTileLayer maxZoom={20} maxNativeZoom={19} />
+              <ThemeTileLayer
+                lightUrl={
+                  mapTileProvider === "google_vector"
+                    ? GOOGLE_VECTOR_URL
+                    : mapTileProvider === "google_satellite"
+                    ? GOOGLE_SATELLITE_URL
+                    : mapTileProvider === "cartodb"
+                    ? CARTO_VOYAGER_URL
+                    : OSM_LIGHT_URL
+                }
+                darkUrl={
+                  mapTileProvider === "google_satellite"
+                    ? GOOGLE_SATELLITE_URL
+                    : undefined
+                }
+                maxZoom={20}
+                maxNativeZoom={19}
+              />
 
               {/* Boundary 6 Kelurahan */}
               {Object.values(KELURAHAN_GEODATA).map((kg) => {
@@ -4790,7 +4861,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                             minZoom={11}
                             style={{ height: "100%", width: "100%" }}
                           >
-                            <ThemeTileLayer maxZoom={20} maxNativeZoom={19} />
+                            <ThemeTileLayer lightUrl={GOOGLE_SATELLITE_URL} darkUrl={GOOGLE_SATELLITE_URL} maxZoom={20} maxNativeZoom={19} />
                             <DualGeofencePickerModalMap
                               mode={geofenceMode}
                               points={selectedPos || []}

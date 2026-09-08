@@ -13,6 +13,7 @@ import { StatusLogbookKkn, TipeAktivitasKkn } from "@prisma/client";
 import { getKelompokWhere } from "./dplService.js";
 import { configService } from "./configService.js";
 import { auditTrailService } from "./auditTrailService.js";
+import { notificationIntegrationService } from "./notificationIntegrationService.js";
 
 // Target standar logbook per kelompok selama KKN (misal: 6 hari/pekan x 4 pekan = 24 aktivitas)
 const DEFAULT_LOGBOOK_TARGET = 24;
@@ -772,27 +773,36 @@ export class LogbookService {
 
     // 4. Notifikasi
     if (!isDeveloper && targetDplId) {
-      await prisma.notification
-        .create({
-          data: {
-            userId: targetDplId,
-            title: "Logbook Aktivitas Baru — Perlu Verifikasi",
-            message: `${user.name} (${kelompokName}) mengajukan logbook aktivitas untuk pekan ke-${pekanKe}: "${payload.deskripsi.slice(0, 60)}...". Silakan tinjau dan verifikasi.`,
-            isRead: false,
-          },
-        })
-        .catch(() => {});
+      await notificationIntegrationService.sendToUser({
+        userId: targetDplId,
+        title: "Logbook Aktivitas Baru — Perlu Verifikasi",
+        message: `${user.name} (${kelompokName}) mengajukan logbook aktivitas untuk pekan ke-${pekanKe}: "${payload.deskripsi.slice(0, 60)}...". Silakan tinjau dan verifikasi.`,
+        triggerType: "LOGBOOK_SUBMITTED",
+        dataPayload: {
+          event: "REFRESH_LOGBOOK_DPL",
+          type: "LOGBOOK_PERLU_VERIFIKASI",
+          entityId: logbook.id,
+          logbookId: logbook.id,
+          kelompokId: targetKelompokId,
+          pekanKe: String(pekanKe),
+          click_action: "FLUTTER_NOTIFICATION_CLICK",
+        },
+      });
     } else if (isDeveloper) {
-      await prisma.notification
-        .create({
-          data: {
-            userId: targetUserId,
-            title: "Logbook Aktivitas Telah Diinput oleh Tim Developer",
-            message: `Logbook aktivitas Anda tanggal ${activityDate.toISOString().split("T")[0]} telah berhasil diinput dan disetujui oleh Developer.`,
-            isRead: false,
-          },
-        })
-        .catch(() => {});
+      await notificationIntegrationService.sendToUser({
+        userId: targetUserId,
+        title: "Logbook Aktivitas Telah Diinput oleh Tim Developer",
+        message: `Logbook aktivitas Anda tanggal ${activityDate.toISOString().split("T")[0]} telah berhasil diinput dan disetujui oleh Developer.`,
+        triggerType: "LOGBOOK_APPROVED_DEVELOPER",
+        dataPayload: {
+          event: "REFRESH_KEGIATAN_MAHASISWA",
+          type: "KEGIATAN_DISETUJUI",
+          entityId: logbook.id,
+          logbookId: logbook.id,
+          status: "DISETUJUI_DPL",
+          click_action: "FLUTTER_NOTIFICATION_CLICK",
+        },
+      });
     }
 
     // Record into system history / audit trail
@@ -1015,33 +1025,48 @@ export class LogbookService {
       },
     });
 
-    // Notifikasi ke Penulis
-    await prisma.notification
-      .create({
-        data: {
-          userId: logbook.penulisId,
-          title: action === "APPROVE" ? "Logbook Disetujui Ketua" : "Logbook Ditolak Ketua",
-          message:
-            action === "APPROVE"
-              ? `Logbook aktivitas Anda telah disetujui Ketua Kelompok dan kini menunggu verifikasi DPL.`
-              : `Logbook aktivitas Anda ditolak oleh Ketua Kelompok: ${catatanKetua || "Perbaiki isi/bukti kegiatan."}`,
-          isRead: false,
-        },
-      })
-      .catch(() => {});
+    // Notifikasi & Push ke Penulis
+    const notifTitleKetua =
+      action === "APPROVE"
+        ? "Logbook Disetujui Ketua Kelompok 👍"
+        : "Logbook Ditolak Ketua Kelompok ⚠️";
+    const notifMsgKetua =
+      action === "APPROVE"
+        ? `Logbook aktivitas Anda telah disetujui Ketua Kelompok dan kini menunggu verifikasi DPL.`
+        : `Logbook aktivitas Anda ditolak oleh Ketua Kelompok: ${catatanKetua || "Perbaiki isi/bukti kegiatan."}`;
+
+    await notificationIntegrationService.sendToUser({
+      userId: logbook.penulisId,
+      title: notifTitleKetua,
+      message: notifMsgKetua,
+      triggerType: action === "APPROVE" ? "LOGBOOK_APPROVED_KETUA" : "LOGBOOK_REJECTED_KETUA",
+      dataPayload: {
+        event: "REFRESH_KEGIATAN_MAHASISWA",
+        type: action === "APPROVE" ? "KEGIATAN_DISETUJUI" : "KEGIATAN_REVISI",
+        entityId: logbook.id,
+        logbookId: logbook.id,
+        status: newStatus,
+        catatan: catatanKetua || "",
+        click_action: "FLUTTER_NOTIFICATION_CLICK",
+      },
+    });
 
     // Jika disetujui, teruskan notifikasi ke DPL
     if (action === "APPROVE" && logbook.kelompok.dplId) {
-      await prisma.notification
-        .create({
-          data: {
-            userId: logbook.kelompok.dplId,
-            title: "Logbook Siap Diverifikasi",
-            message: `Logbook aktivitas dari kelompok ${logbook.kelompok.name} telah disetujui Ketua dan siap untuk diverifikasi DPL.`,
-            isRead: false,
-          },
-        })
-        .catch(() => {});
+      await notificationIntegrationService.sendToUser({
+        userId: logbook.kelompok.dplId,
+        title: "Logbook Siap Diverifikasi 📋",
+        message: `Logbook aktivitas dari kelompok ${logbook.kelompok.name} telah disetujui Ketua dan siap untuk diverifikasi DPL.`,
+        triggerType: "LOGBOOK_READY_VERIFIKASI",
+        dataPayload: {
+          event: "REFRESH_LOGBOOK_DPL",
+          type: "LOGBOOK_PERLU_VERIFIKASI",
+          entityId: logbook.id,
+          logbookId: logbook.id,
+          kelompokId: logbook.kelompokId,
+          click_action: "FLUTTER_NOTIFICATION_CLICK",
+        },
+      });
     }
 
     return updated;
@@ -1103,20 +1128,30 @@ export class LogbookService {
         .catch(() => {});
     }
 
-    // Notifikasi ke Penulis
-    await prisma.notification
-      .create({
-        data: {
-          userId: logbook.penulisId,
-          title: action === "APPROVE" ? "Logbook Disetujui DPL! 🎉" : "Logbook Perlu Revisi DPL",
-          message:
-            action === "APPROVE"
-              ? `Logbook aktivitas Anda telah diverifikasi dan disetujui resmi oleh DPL.`
-              : `Logbook aktivitas Anda memerlukan revisi dari DPL: ${catatanDpl || "Silakan cek catatan evaluasi DPL."}`,
-          isRead: false,
-        },
-      })
-      .catch(() => {});
+    // Notifikasi in-app DB & Push Notification FCM ke Penulis
+    const notifTitleDpl =
+      action === "APPROVE" ? "Kegiatan Disetujui DPL! 🎉" : "Kegiatan Perlu Perbaikan DPL ⚠️";
+    const notifMsgDpl =
+      action === "APPROVE"
+        ? `Logbook kegiatan Anda (${logbook.deskripsi.slice(0, 50)}...) telah diverifikasi dan disetujui resmi oleh DPL.`
+        : `Logbook kegiatan Anda memerlukan perbaikan: ${catatanDpl || "Silakan periksa catatan revisi DPL di aplikasi."}`;
+
+    await notificationIntegrationService.sendToUser({
+      userId: logbook.penulisId,
+      title: notifTitleDpl,
+      message: notifMsgDpl,
+      triggerType: action === "APPROVE" ? "LOGBOOK_APPROVED" : "LOGBOOK_REVISI",
+      dataPayload: {
+        event: "REFRESH_KEGIATAN_MAHASISWA",
+        type: action === "APPROVE" ? "KEGIATAN_DISETUJUI" : "KEGIATAN_REVISI",
+        entityId: logbook.id,
+        logbookId: logbook.id,
+        status: newStatus,
+        catatan: catatanDpl || "",
+        pekanKe: String(logbook.pekanKe || 1),
+        click_action: "FLUTTER_NOTIFICATION_CLICK",
+      },
+    });
 
     return updated;
   }

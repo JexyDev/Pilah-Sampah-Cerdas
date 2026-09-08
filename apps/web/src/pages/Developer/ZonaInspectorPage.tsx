@@ -46,7 +46,7 @@ import {
 import toast from "react-hot-toast";
 import { useSearchParams } from "react-router-dom";
 import api from "../../services/api";
-import { ThemeTileLayer } from "../../components/common/ThemeTileLayer";
+import { ThemeTileLayer, GOOGLE_SATELLITE_URL } from "../../components/common/ThemeTileLayer";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { sortKelompokList } from "../../utils/sortUtils";
 import {
@@ -692,7 +692,7 @@ export const ZonaInspectorPage: React.FC = () => {
               </span>
             </div>
             <h1 className="text-xl md:text-2xl font-black tracking-tight text-slate-900 dark:text-white mt-1">
-              Inspeksi Geospatial Seluruh Zona KKN &amp; Overlap
+              Inspeksi Geospatial Seluruh Zona KKN
             </h1>
             <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-0.5 max-w-3xl">
               Pantau seluruh zona otomatis by system dan posko 50+ kelompok KKN secara simultan, verifikasi tabrakan antar zona, sesuaikan ukuran/radius, dan pastikan presensi mahasiswa otomatis mengikuti titik terbaru.
@@ -893,7 +893,7 @@ export const ZonaInspectorPage: React.FC = () => {
               className="w-full h-full z-10"
               style={{ minHeight: "100%", width: "100%" }}
             >
-              <ThemeTileLayer />
+              <ThemeTileLayer lightUrl={GOOGLE_SATELLITE_URL} darkUrl={GOOGLE_SATELLITE_URL} />
               <MapController center={mapCenter} zoom={mapZoom} />
 
               {/* LAYER 1: Official Kelurahan Boundary Polygons */}
@@ -1808,7 +1808,7 @@ export const ZonaInspectorPage: React.FC = () => {
                       scrollWheelZoom={true}
                       className="w-full h-full"
                     >
-                      <ThemeTileLayer />
+                      <ThemeTileLayer lightUrl={GOOGLE_SATELLITE_URL} darkUrl={GOOGLE_SATELLITE_URL} />
                       <DualGeofencePickerModalMap
                         mode={editMode}
                         points={editPoints}

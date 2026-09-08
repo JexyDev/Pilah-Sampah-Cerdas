@@ -71,7 +71,10 @@ import {
 
 // ── Shared Preset Images ──────────────────────────────────────────────────────
 const PRESET_GALLERY_IMAGES = [
-  { label: "Pemilahan & Daur Ulang", url: "/image/kkn-hero-sorting.webp", desc: "Aksi pemilahan sampah KKN" },
+  { label: "Aksi Pemilahan KKN", url: "/image/kkn-hero-pemilahan.webp", desc: "Pemilahan sampah mandiri KKN UNIKOM 2026" },
+  { label: "Penjemputan & QR Code", url: "/image/kkn-hero-penjemputan.webp", desc: "Penjemputan sampah terpilah & armada Berseka" },
+  { label: "Lokakarya & Edukasi", url: "/image/kkn-hero-lokakarya.webp", desc: "Lokakarya edukasi pemilahan sampah mandiri" },
+  { label: "Pemilahan & Daur Ulang (Lama)", url: "/image/kkn-hero-sorting.webp", desc: "Aksi pemilahan sampah KKN" },
   { label: "Biokonversi Maggot & Kompos", url: "/image/activity-2.webp", desc: "Budidaya maggot BSF & kasgot" },
   { label: "Daur Ulang & Sosialisasi", url: "/image/activity-1.webp", desc: "Sosialisasi penimbangan warga" },
   { label: "Aksi Bersih Lingkungan", url: "/image/activity-3.webp", desc: "Pelatihan eco-enzyme & POC" },

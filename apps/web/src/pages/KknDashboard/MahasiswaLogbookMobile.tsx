@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { logbookApiService, type LogbookMahasiswaItem } from "../../services/logbookService";
 import showToast from "../../utils/showToast";
+import { safeFormatDateShort, safeFormatDateLong } from "../../utils/safeDateUtils";
 
 interface MahasiswaLogbookMobileProps {
   onOpenCreateModal: () => void;
@@ -184,7 +185,7 @@ export const MahasiswaLogbookMobile: React.FC<MahasiswaLogbookMobileProps> = ({
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-slate-400 pt-1">
                   <span className="flex items-center gap-1">
                     <Calendar size={11} />
-                    {new Date(log.tanggalKegiatan).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
+                    {safeFormatDateShort(log.tanggalKegiatan, true)}
                   </span>
                   <span className="flex items-center gap-1">
                     <Clock size={11} />
@@ -236,7 +237,7 @@ export const MahasiswaLogbookMobile: React.FC<MahasiswaLogbookMobileProps> = ({
               <div className="flex justify-between items-center">
                 <span className="text-slate-400">Tanggal:</span>
                 <span className="font-bold text-slate-800 dark:text-slate-200">
-                  {new Date(selectedLogbook.tanggalKegiatan).toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+                  {safeFormatDateLong(selectedLogbook.tanggalKegiatan)}
                 </span>
               </div>
               <div className="flex justify-between items-center">
