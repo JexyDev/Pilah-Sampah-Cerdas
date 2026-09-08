@@ -140,27 +140,60 @@ export const DashboardEksekutifKkn: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
-  // Dynamic RW options
-  const rwOptions = useMemo(() => {
-    return [
-      "Semua RW",
-      "RW 01",
-      "RW 02",
-      "RW 03",
-      "RW 04",
-      "RW 05",
-      "RW 06",
-      "RW 07",
-      "RW 08",
-      "RW 09",
-      "RW 10",
-      "RW 11",
-      "RW 12",
-      "RW 13",
-      "RW 14",
-      "RW 15",
-    ];
+  // Master RW List dari API Area
+  const [masterRwList, setMasterRwList] = useState<Array<{ id: number; name: string; kelurahanName: string }>>([]);
+
+  // Ambil data master RW dari /areas/rw
+  useEffect(() => {
+    const fetchMasterRw = async () => {
+      try {
+        const res = await api.get("/areas/rw");
+        if (res.data?.success && Array.isArray(res.data?.data)) {
+          const mapped = res.data.data.map((r: any) => ({
+            id: r.id,
+            name: r.name,
+            kelurahanName: r.kelurahan?.name || "",
+          }));
+          setMasterRwList(mapped);
+        }
+      } catch (err) {
+        console.error("Gagal memuat master RW:", err);
+      }
+    };
+    fetchMasterRw();
   }, []);
+
+  // Filter RW dinamis berdasarkan kelurahan yang dipilih
+  const rwOptions = useMemo(() => {
+    if (!masterRwList || masterRwList.length === 0) {
+      return ["Semua RW"];
+    }
+
+    let filtered = masterRwList;
+    if (selectedKelurahan && selectedKelurahan !== "Semua Kelurahan" && selectedKelurahan !== "ALL") {
+      const targetKel = selectedKelurahan.toLowerCase().replace(/\s+/g, "");
+      filtered = masterRwList.filter((r) => {
+        const kName = (r.kelurahanName || "").toLowerCase().replace(/\s+/g, "");
+        return kName.includes(targetKel) || targetKel.includes(kName);
+      });
+    }
+
+    // Ekstrak nama RW unik & urutkan secara natural (RW 01, RW 02, dst)
+    const uniqueRw = Array.from(new Set(filtered.map((r) => r.name))).sort((a, b) => {
+      const numA = parseInt(a.replace(/\D/g, ""), 10) || 0;
+      const numB = parseInt(b.replace(/\D/g, ""), 10) || 0;
+      return numA - numB;
+    });
+
+    return ["Semua RW", ...uniqueRw];
+  }, [masterRwList, selectedKelurahan]);
+
+  // Reset selectedRw jika RW terpilih tidak valid untuk kelurahan yang baru dipilih
+  useEffect(() => {
+    if (selectedRw !== "Semua RW" && !rwOptions.includes(selectedRw)) {
+      setSelectedRw("Semua RW");
+    }
+  }, [selectedKelurahan, rwOptions, selectedRw]);
 
   const fetchData = async (isSilent = false) => {
     try {
@@ -253,6 +286,14 @@ export const DashboardEksekutifKkn: React.FC = () => {
     return `${day} ${month} ${year} • ${hours}.${mins} WIB`;
   }, [data?.lastUpdated]);
 
+  // Sebaran Mahasiswa per Wilayah dengan Indeks Angka (1-6) agar label X-Axis tidak menumpuk
+  const sebaranMahasiswaIndexedData = useMemo(() => {
+    return (data?.sebaranMahasiswaPerWilayah || []).map((item, idx) => ({
+      ...item,
+      wilayahNo: String(idx + 1),
+    }));
+  }, [data?.sebaranMahasiswaPerWilayah]);
+
   if (loading && !data) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[500px] w-full gap-3 py-16">
@@ -287,7 +328,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-[26px] font-black text-slate-900 dark:text-slate-100 tracking-tight">
-            Dashboard Eksekutif KKN Pimpinan
+            Dashboard Eksekutif KKN
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
             Ringkasan strategis pelaksanaan KKN secara real-time
@@ -308,7 +349,6 @@ export const DashboardEksekutifKkn: React.FC = () => {
                   className="bg-transparent outline-none cursor-pointer pr-2 text-xs font-bold text-slate-700 dark:text-slate-200"
                 >
                   <option value="2026">Periode KKN 2026</option>
-                  <option value="2025">Periode KKN 2025</option>
                   <option value="ALL">Semua Periode</option>
                 </select>
               </div>
@@ -395,14 +435,14 @@ export const DashboardEksekutifKkn: React.FC = () => {
           </div>
         </div>
 
-        {/* Card 2: Kelompok Mahasiswa */}
+        {/* Card 2: Total Semua Kelompok Mahasiswa */}
         <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-xs flex items-center gap-3.5">
           <div className="w-11 h-11 rounded-xl bg-blue-50 dark:bg-blue-950/60 flex items-center justify-center shrink-0 border border-blue-100 dark:border-blue-800/40">
             <Users size={20} className="text-blue-600 dark:text-blue-400" />
           </div>
           <div>
             <p className="text-[11.5px] font-semibold text-slate-400 dark:text-slate-400">
-              Kelompok Mahasiswa
+              Total Semua Kelompok
             </p>
             <p className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5 tracking-tight">
               {summary.totalKelompok.label}
@@ -611,23 +651,22 @@ export const DashboardEksekutifKkn: React.FC = () => {
             </h2>
           </div>
 
-          <div className="h-52 w-full">
+          <div className="h-48 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
-                data={data?.sebaranMahasiswaPerWilayah || []}
-                margin={{ top: 15, right: 10, left: -20, bottom: 20 }}
+                data={sebaranMahasiswaIndexedData}
+                margin={{ top: 15, right: 10, left: -20, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis
-                  dataKey="kelurahan"
-                  tick={{ fontSize: 8.5, fill: "#475569" }}
+                  dataKey="wilayahNo"
+                  tick={{ fontSize: 11, fontWeight: 700, fill: "#334155" }}
                   interval={0}
                   tickLine={false}
                   axisLine={{ stroke: "#e2e8f0" }}
                 />
                 <YAxis
-                  domain={[0, 120]}
-                  ticks={[0, 20, 40, 60, 80, 100, 120]}
+                  domain={[0, "auto"]}
                   tick={{ fontSize: 9, fill: "#94a3b8" }}
                   tickLine={false}
                   axisLine={false}
@@ -638,7 +677,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
                       const d = payload[0].payload;
                       return (
                         <div className="bg-slate-900 text-white text-[11px] font-bold py-1 px-2.5 rounded-lg shadow">
-                          <span>{d.kelurahan}: </span>
+                          <span>Wilayah {d.wilayahNo} ({d.kelurahan}): </span>
                           <span className="text-emerald-400 font-extrabold">{d.count} Mahasiswa</span>
                         </div>
                       );
@@ -661,9 +700,25 @@ export const DashboardEksekutifKkn: React.FC = () => {
               </BarChart>
             </ResponsiveContainer>
           </div>
-          <p className="text-center text-[10.5px] text-slate-400 font-medium">
-            Kelurahan
-          </p>
+
+          {/* Keterangan Nomor Wilayah (1 = Cipaganti, 2 = Dago, dst) */}
+          <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+              Keterangan Wilayah:
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-2 gap-y-1">
+              {sebaranMahasiswaIndexedData.map((item) => (
+                <div key={item.wilayahNo} className="flex items-center gap-1.5 text-[10.5px] leading-tight text-slate-600 dark:text-slate-300">
+                  <span className="w-4 h-4 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/40 text-[#009966] font-extrabold text-[9px] flex items-center justify-center shrink-0">
+                    {item.wilayahNo}
+                  </span>
+                  <span className="truncate font-semibold" title={item.kelurahan}>
+                    {item.kelurahan}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Col 4: Sebaran DPL per Wilayah (2 cols) */}
@@ -774,7 +829,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
             <div className="bg-[#eff6ff] dark:bg-blue-950/40 p-2.5 rounded-xl border border-blue-100 dark:border-blue-800/40">
               <div className="flex items-center gap-1 text-blue-600 dark:text-blue-400 mb-1">
                 <Clock size={13} />
-                <span className="text-[9px] font-semibold truncate">Sedang Berjalan</span>
+                <span className="text-[10px] font-semibold">Berlangsung</span>
               </div>
               <p className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">
                 {data?.statusProker?.sedangDilaksanakan?.count ?? 0}
@@ -833,65 +888,77 @@ export const DashboardEksekutifKkn: React.FC = () => {
         </div>
 
         {/* Col 2: Presensi Mahasiswa (3 cols) */}
-        <div className="lg:col-span-3 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-3">
-          <div className="flex items-center gap-2">
+        <div className="lg:col-span-3 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center gap-2 mb-2">
             <UserCheck size={16} className="text-blue-600 dark:text-blue-400" />
             <h2 className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100">
               Presensi Mahasiswa
             </h2>
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* Donut Chart */}
-            <div className="relative w-28 h-28 shrink-0 flex items-center justify-center">
-              <ResponsiveContainer width="100%" height="100%">
-                <RechartsPieChart>
-                  <Pie
-                    data={data?.presensiMahasiswa?.breakdown || []}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={32}
-                    outerRadius={46}
-                    paddingAngle={2}
-                    dataKey="count"
-                  >
-                    {(data?.presensiMahasiswa?.breakdown || []).map((entry, idx) => (
-                      <Cell key={`presensi-cell-${idx}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                </RechartsPieChart>
-              </ResponsiveContainer>
+          {/* Donut Chart Besar Simetris di Tengah Atas */}
+          <div className="relative h-40 w-full flex items-center justify-center my-auto">
+            <ResponsiveContainer width="100%" height="100%">
+              <RechartsPieChart>
+                <Pie
+                  data={data?.presensiMahasiswa?.breakdown || []}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={44}
+                  outerRadius={64}
+                  paddingAngle={3}
+                  dataKey="count"
+                >
+                  {(data?.presensiMahasiswa?.breakdown || []).map((entry, idx) => (
+                    <Cell key={`presensi-cell-${idx}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <RechartsTooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const d = payload[0].payload;
+                      return (
+                        <div className="bg-slate-900 text-white text-[11px] font-bold py-1 px-2.5 rounded-lg shadow">
+                          <span>{d.label}: </span>
+                          <span className="text-emerald-400 font-extrabold">{d.count} ({d.percentage}%)</span>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+              </RechartsPieChart>
+            </ResponsiveContainer>
 
-              {/* Inner Center Text */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-xs font-black text-slate-900 dark:text-slate-100 leading-none">
-                  {data?.presensiMahasiswa?.percentageHadir ?? 0}%
-                </span>
-                <span className="text-[9px] text-slate-400 font-medium mt-0.5">
-                  Hadir
-                </span>
-              </div>
+            {/* Inner Center Text */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <span className="text-xl font-black text-slate-900 dark:text-slate-100 leading-none">
+                {data?.presensiMahasiswa?.percentageHadir ?? 0}%
+              </span>
+              <span className="text-[10px] text-slate-400 font-semibold mt-1">
+                Hadir
+              </span>
             </div>
+          </div>
 
-            {/* Breakdown List */}
-            <div className="flex-1 space-y-1 text-[11px]">
-              {(data?.presensiMahasiswa?.breakdown || []).map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      className="w-2 h-2 rounded-full shrink-0"
-                      style={{ backgroundColor: item.color }}
-                    />
-                    <span className="text-slate-600 dark:text-slate-300 font-medium text-[10.5px]">
-                      {item.label}
-                    </span>
-                  </div>
-                  <span className="font-bold text-slate-800 dark:text-slate-100 text-[10.5px]">
-                    {item.count} ({item.percentage}%)
+          {/* Breakdown List di Bawah (Simetris & Terbaca Jelas) */}
+          <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px]">
+            {(data?.presensiMahasiswa?.breakdown || []).map((item, idx) => (
+              <div key={idx} className="flex items-center justify-between gap-1">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span
+                    className="w-2.5 h-2.5 rounded-full shrink-0"
+                    style={{ backgroundColor: item.color }}
+                  />
+                  <span className="text-slate-600 dark:text-slate-300 font-medium text-[10.5px] truncate">
+                    {item.label}
                   </span>
                 </div>
-              ))}
-            </div>
+                <span className="font-bold text-slate-800 dark:text-slate-100 text-[10.5px] shrink-0">
+                  {item.count} <span className="text-slate-400 font-normal">({item.percentage}%)</span>
+                </span>
+              </div>
+            ))}
           </div>
         </div>
 

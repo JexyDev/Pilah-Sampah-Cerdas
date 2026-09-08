@@ -7,7 +7,7 @@ import { Loader2, Check, X, Trash2, Map, Plus, Search, AlertTriangle, Pencil, Ta
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { exportToXlsx } from "../../utils/exportXlsx";

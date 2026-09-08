@@ -621,7 +621,6 @@ export const kknExecutiveService = {
       filterOptions: {
         periodeOptions: [
           { value: "2026", label: "Periode KKN 2026" },
-          { value: "2025", label: "Periode KKN 2025" },
           { value: "ALL", label: "Semua Periode" },
         ],
         kelurahanOptions: [
