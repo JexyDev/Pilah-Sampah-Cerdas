@@ -182,21 +182,27 @@ class _PetugasNotificationViewState
                     if (_selectedFilter == 'Semua') return true;
                     final typeUpper = n.type.toUpperCase();
                     final titleLower = n.title.toLowerCase();
-
-                    final isPengosongan = typeUpper.contains('PENGOSONGAN') ||
-                        typeUpper.contains('PENGAJUAN') ||
-                        typeUpper.contains('RESET') ||
-                        typeUpper.contains('PENUH') ||
-                        typeUpper.contains('KRITIS') ||
-                        titleLower.contains('pengosongan') ||
-                        titleLower.contains('pengajuan') ||
-                        titleLower.contains('tempat sampah') ||
-                        titleLower.contains('kritis');
+                    final descLower = n.desc.toLowerCase();
 
                     final isTimbangan = typeUpper.contains('TIMBANGAN') ||
                         typeUpper.contains('PEMILAHAN') ||
                         titleLower.contains('timbangan') ||
-                        titleLower.contains('pemilahan');
+                        titleLower.contains('pemilahan') ||
+                        descLower.contains('timbangan') ||
+                        descLower.contains('pemilahan');
+
+                    final isPengosongan = !isTimbangan &&
+                        (typeUpper.contains('PENGOSONGAN') ||
+                            typeUpper.contains('PENGAJUAN') ||
+                            typeUpper.contains('RESET') ||
+                            typeUpper.contains('PENUH') ||
+                            typeUpper.contains('KRITIS') ||
+                            titleLower.contains('pengosongan') ||
+                            titleLower.contains('pengajuan') ||
+                            titleLower.contains('tempat sampah') ||
+                            titleLower.contains('kritis') ||
+                            descLower.contains('pengosongan') ||
+                            descLower.contains('pengajuan'));
 
                     if (_selectedFilter == 'Pengosongan') {
                       return isPengosongan;
@@ -272,22 +278,50 @@ class _PetugasNotificationViewState
                           if (context.mounted) {
                             final typeU = notif.type.toUpperCase();
                             final titleL = notif.title.toLowerCase();
+                            final descL = notif.desc.toLowerCase();
+
+                            final isTimbangan = typeU.contains('TIMBANGAN') ||
+                                typeU.contains('PEMILAHAN') ||
+                                titleL.contains('timbangan') ||
+                                titleL.contains('pemilahan') ||
+                                descL.contains('timbangan') ||
+                                descL.contains('pemilahan');
+
+                            final isPengosongan = !isTimbangan &&
+                                (typeU.contains('PENGOSONGAN') ||
+                                    typeU.contains('PENGAJUAN') ||
+                                    typeU.contains('RESET') ||
+                                    titleL.contains('pengosongan') ||
+                                    titleL.contains('pengajuan') ||
+                                    descL.contains('pengosongan') ||
+                                    descL.contains('pengajuan'));
+
+                            final isPunishment = !isTimbangan &&
+                                (typeU.contains('PUNISHMENT') ||
+                                    titleL.contains('penalti') ||
+                                    descL.contains('penalti'));
+
+                            final isPoin = !isTimbangan &&
+                                !isPengosongan &&
+                                !isPunishment &&
+                                (typeU.contains('POIN') ||
+                                    notif.icon == 'star' ||
+                                    typeU == 'POIN_BERTAMBAH' ||
+                                    titleL.contains('poin'));
+
                             // ponytail: route by notification category; upgrade when notification entity has custom payload url.
-                            if (typeU.contains('POIN') ||
-                                typeU.contains('PUNISHMENT') ||
-                                titleL.contains('poin') ||
-                                titleL.contains('penalti') ||
-                                notif.icon == 'star') {
-                              Navigator.pushNamed(context, AppRoutes.poin);
-                            } else if (typeU.contains('PENGOSONGAN') ||
-                                typeU.contains('PENGAJUAN') ||
-                                typeU.contains('RESET') ||
-                                titleL.contains('pengosongan') ||
-                                titleL.contains('pengajuan')) {
+                            if (isTimbangan) {
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.riwayatPetugasPemilahan,
+                              );
+                            } else if (isPengosongan) {
                               Navigator.pushNamed(
                                 context,
                                 AppRoutes.pengajuanWarga,
                               );
+                            } else if (isPoin || isPunishment) {
+                              Navigator.pushNamed(context, AppRoutes.poin);
                             } else {
                               Navigator.pushNamed(
                                 context,
@@ -300,31 +334,52 @@ class _PetugasNotificationViewState
                         child: Builder(
                           builder: (context) {
                             final typeU = notif.type.toUpperCase();
-                            final isPunishment = typeU.contains('PUNISHMENT');
-                            final isPoin = !isPunishment &&
-                                (typeU.contains('POIN') ||
-                                    notif.icon == 'star' ||
-                                    typeU == 'POIN_BERTAMBAH');
-                            final isPengosongan = !isPunishment &&
-                                !isPoin &&
+                            final titleL = notif.title.toLowerCase();
+                            final descL = notif.desc.toLowerCase();
+
+                            final isTimbangan = typeU.contains('TIMBANGAN') ||
+                                typeU.contains('PEMILAHAN') ||
+                                titleL.contains('timbangan') ||
+                                titleL.contains('pemilahan') ||
+                                descL.contains('timbangan') ||
+                                descL.contains('pemilahan');
+
+                            final isPengosongan = !isTimbangan &&
                                 (typeU.contains('PENGOSONGAN') ||
                                     typeU.contains('PENGAJUAN') ||
-                                    typeU.contains('RESET'));
+                                    typeU.contains('RESET') ||
+                                    titleL.contains('pengosongan') ||
+                                    titleL.contains('pengajuan') ||
+                                    descL.contains('pengosongan') ||
+                                    descL.contains('pengajuan'));
+
+                            final isPunishment = !isTimbangan &&
+                                (typeU.contains('PUNISHMENT') ||
+                                    titleL.contains('penalti') ||
+                                    descL.contains('penalti'));
+
+                            final isPoin = !isTimbangan &&
+                                !isPengosongan &&
+                                !isPunishment &&
+                                (typeU.contains('POIN') ||
+                                    notif.icon == 'star' ||
+                                    typeU == 'POIN_BERTAMBAH' ||
+                                    titleL.contains('poin'));
 
                             final Color categoryColor = isPunishment
                                 ? const Color(0xFFEF4444)
-                                : isPoin
-                                ? AppColors.warningYellow
                                 : isPengosongan
                                 ? AppColors.warningOrange
+                                : isPoin
+                                ? AppColors.warningYellow
                                 : AppColors.primaryGreen;
 
                             final Color categoryBg = isPunishment
                                 ? const Color(0xFFFEE2E2)
-                                : isPoin
-                                ? AppColors.warningYellow.withValues(alpha: 0.15)
                                 : isPengosongan
                                 ? AppColors.warningOrange.withValues(alpha: 0.15)
+                                : isPoin
+                                ? AppColors.warningYellow.withValues(alpha: 0.15)
                                 : AppColors.primaryGreen.withValues(alpha: 0.12);
 
                             final String categoryLabel = isPunishment

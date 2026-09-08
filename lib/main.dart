@@ -43,45 +43,47 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 /// Background message handler â€” harus top-level function (bukan method class).
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  debugPrint(
-    '[FCM Background] ${message.notification?.title}: ${message.notification?.body}',
-  );
-  if (message.notification != null) {
+  final title = message.notification?.title ??
+      message.data['title']?.toString() ??
+      'Notifikasi Baru';
+  final body = message.notification?.body ??
+      message.data['body']?.toString() ??
+      message.data['desc']?.toString() ??
+      message.data['message']?.toString() ??
+      '';
+
+  debugPrint('[FCM Background] $title: $body');
+
+  try {
+    final type = message.data['type']?.toString() ?? 'SYSTEM';
+    String role = message.data['role']?.toString() ?? 'WARGA';
+    String userId = message.data['userId']?.toString() ?? 'system';
+
     try {
-      final title = message.notification?.title ?? 'Notifikasi Baru';
-      final body = message.notification?.body ?? '';
-      final type = message.data['type'] ?? 'SYSTEM';
+      const storage = SafeStorage();
+      final userData = await storage.read(key: AppConfig.userDataKey);
+      if (userData != null) {
+        final decoded = jsonDecode(userData);
+        userId = decoded['id']?.toString() ?? userId;
+        role = (decoded['role'] ??
+                decoded['userRole'] ??
+                decoded['roleName'] ??
+                role)
+            .toString()
+            .toUpperCase();
+      }
+    } catch (_) {}
 
-      String role = message.data['role'] ?? 'WARGA';
-      String userId = message.data['userId'] ?? 'system';
-
-      try {
-        const storage = SafeStorage();
-        final userData = await storage.read(key: AppConfig.userDataKey);
-        if (userData != null) {
-          final decoded = jsonDecode(userData);
-          userId = decoded['id']?.toString() ?? userId;
-          role =
-              (decoded['role'] ??
-                      decoded['userRole'] ??
-                      decoded['roleName'] ??
-                      role)
-                  .toString()
-                  .toUpperCase();
-        }
-      } catch (_) {}
-
-      await FirebaseNotificationService().saveNotification(
-        userId: userId,
-        role: role,
-        title: title,
-        desc: body,
-        type: type,
-        id: message.data['notificationId']?.toString() ?? message.messageId,
-      );
-    } catch (e) {
-      debugPrint('[FCM Background] Save error: $e');
-    }
+    await FirebaseNotificationService().saveNotification(
+      userId: userId,
+      role: role,
+      title: title,
+      desc: body,
+      type: type,
+      id: message.data['notificationId']?.toString() ?? message.messageId,
+    );
+  } catch (e) {
+    debugPrint('[FCM Background] Save error: $e');
   }
 }
 

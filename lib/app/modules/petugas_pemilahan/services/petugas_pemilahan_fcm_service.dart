@@ -47,8 +47,14 @@ class PetugasPemilahanFcmService {
           '[PetugasPemilahanFCM] Menerima pesan di foreground: ${message.messageId}',
         );
 
-        final title = message.notification?.title ?? 'Info Petugas';
-        final body = message.notification?.body ?? 'Ada pembaruan data';
+        final title = message.notification?.title ??
+            message.data['title']?.toString() ??
+            'Info Petugas';
+        final body = message.notification?.body ??
+            message.data['body']?.toString() ??
+            message.data['desc']?.toString() ??
+            message.data['message']?.toString() ??
+            'Ada pembaruan data';
         final type =
             (message.data['event']?.toString() ??
                     message.data['type']?.toString() ??

@@ -16,18 +16,29 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
   // State for Organic Bin
   String _organicMode = 'Standar';
   String _organicStandardSize = '25';
+  String _organicShape = 'Kotak / Balok / Bak';
   final TextEditingController _orgPanjangCtrl = TextEditingController();
   final TextEditingController _orgLebarCtrl = TextEditingController();
   final TextEditingController _orgTinggiCtrl = TextEditingController();
+  final TextEditingController _orgDiameterCtrl = TextEditingController();
+  final TextEditingController _orgSisiCtrl = TextEditingController();
 
   // State for Non-Organic Bin
   String _nonOrganicMode = 'Standar';
   String _nonOrganicStandardSize = '25';
+  String _nonOrganicShape = 'Kotak / Balok / Bak';
   final TextEditingController _nonOrgPanjangCtrl = TextEditingController();
   final TextEditingController _nonOrgLebarCtrl = TextEditingController();
   final TextEditingController _nonOrgTinggiCtrl = TextEditingController();
+  final TextEditingController _nonOrgDiameterCtrl = TextEditingController();
+  final TextEditingController _nonOrgSisiCtrl = TextEditingController();
 
   final List<String> _standardSizes = ['10', '20', '25', '40', '60', '120'];
+  final List<String> _shapeOptions = [
+    'Kotak / Balok / Bak',
+    'Tabung / Silinder',
+    'Kubus',
+  ];
   bool _isLoading = false;
   bool _activateOrganic = true;
   bool _activateAnorganic = true;
@@ -41,19 +52,43 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
 
     // Validasi input manual jika dipilih
     if (_activateOrganic && _organicMode == 'Manual') {
-      if (_orgPanjangCtrl.text.isEmpty ||
-          _orgLebarCtrl.text.isEmpty ||
-          _orgTinggiCtrl.text.isEmpty) {
-        _showError('Mohon lengkapi dimensi manual Tempat Sampah Organik');
-        return;
+      if (_organicShape == 'Kotak / Balok / Bak') {
+        if (_orgPanjangCtrl.text.isEmpty ||
+            _orgLebarCtrl.text.isEmpty ||
+            _orgTinggiCtrl.text.isEmpty) {
+          _showError('Mohon lengkapi Panjang, Lebar, dan Tinggi Tempat Sampah Organik');
+          return;
+        }
+      } else if (_organicShape == 'Tabung / Silinder') {
+        if (_orgDiameterCtrl.text.isEmpty || _orgTinggiCtrl.text.isEmpty) {
+          _showError('Mohon lengkapi Diameter dan Tinggi Tempat Sampah Organik');
+          return;
+        }
+      } else if (_organicShape == 'Kubus') {
+        if (_orgSisiCtrl.text.isEmpty) {
+          _showError('Mohon lengkapi Sisi Tempat Sampah Organik');
+          return;
+        }
       }
     }
     if (_activateAnorganic && _nonOrganicMode == 'Manual') {
-      if (_nonOrgPanjangCtrl.text.isEmpty ||
-          _nonOrgLebarCtrl.text.isEmpty ||
-          _nonOrgTinggiCtrl.text.isEmpty) {
-        _showError('Mohon lengkapi dimensi manual Tempat Sampah Anorganik');
-        return;
+      if (_nonOrganicShape == 'Kotak / Balok / Bak') {
+        if (_nonOrgPanjangCtrl.text.isEmpty ||
+            _nonOrgLebarCtrl.text.isEmpty ||
+            _nonOrgTinggiCtrl.text.isEmpty) {
+          _showError('Mohon lengkapi Panjang, Lebar, dan Tinggi Tempat Sampah Anorganik');
+          return;
+        }
+      } else if (_nonOrganicShape == 'Tabung / Silinder') {
+        if (_nonOrgDiameterCtrl.text.isEmpty || _nonOrgTinggiCtrl.text.isEmpty) {
+          _showError('Mohon lengkapi Diameter dan Tinggi Tempat Sampah Anorganik');
+          return;
+        }
+      } else if (_nonOrganicShape == 'Kubus') {
+        if (_nonOrgSisiCtrl.text.isEmpty) {
+          _showError('Mohon lengkapi Sisi Tempat Sampah Anorganik');
+          return;
+        }
       }
     }
 
@@ -62,20 +97,68 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
     if (!mounted) return;
     setState(() => _isLoading = false);
 
-    double parseCapacity(String mode, String standardSize, TextEditingController p, TextEditingController l, TextEditingController t, bool isOrganic) {
+    // ponytail: hardcoded 3 wadah shapes (Kotak, Tabung, Kubus). Upgrade to dynamic shape enum/models if backend adds custom geometry.
+    double parseCapacity({
+      required String mode,
+      required String standardSize,
+      required String shape,
+      required TextEditingController p,
+      required TextEditingController l,
+      required TextEditingController t,
+      required TextEditingController d,
+      required TextEditingController s,
+      required bool isOrganic,
+    }) {
       if (mode == 'Standar') {
         final kg = double.tryParse(standardSize.replaceAll(' KG', '').replaceAll(' Kg', '')) ?? 25.0;
         final density = isOrganic ? AppConfig.organicDensityKgPerLiter : AppConfig.nonOrganicDensityKgPerLiter;
-        return kg / density; // Convert Kg ke Liter (agar entitas Bin yang dikalikan densityKgPerLiter kembali tepat jadi Kg)
+        return kg / density; // Convert Kg ke Liter
       }
+      if (shape == 'Tabung / Silinder') {
+        final double diameter = double.tryParse(d.text) ?? 0.0;
+        final double tinggi = double.tryParse(t.text) ?? 0.0;
+        final double radius = diameter / 2.0;
+        // Volume tabung: pi * r^2 * t cm3 / 1000 -> Liter
+        return (3.141592653589793 * radius * radius * tinggi) / 1000.0;
+      }
+      if (shape == 'Kubus') {
+        final double sisi = double.tryParse(s.text) ?? 0.0;
+        // Volume kubus: s^3 cm3 / 1000 -> Liter
+        return (sisi * sisi * sisi) / 1000.0;
+      }
+      // Kotak / Balok / Bak
       final double pp = double.tryParse(p.text) ?? 0.0;
       final double ll = double.tryParse(l.text) ?? 0.0;
       final double tt = double.tryParse(t.text) ?? 0.0;
       return (pp * ll * tt) / 1000.0; // cm3 to Liter
     }
 
-    final orgCap = _activateOrganic ? parseCapacity(_organicMode, _organicStandardSize, _orgPanjangCtrl, _orgLebarCtrl, _orgTinggiCtrl, true) : 0.0;
-    final anorgCap = _activateAnorganic ? parseCapacity(_nonOrganicMode, _nonOrganicStandardSize, _nonOrgPanjangCtrl, _nonOrgLebarCtrl, _nonOrgTinggiCtrl, false) : 0.0;
+    final orgCap = _activateOrganic
+        ? parseCapacity(
+            mode: _organicMode,
+            standardSize: _organicStandardSize,
+            shape: _organicShape,
+            p: _orgPanjangCtrl,
+            l: _orgLebarCtrl,
+            t: _orgTinggiCtrl,
+            d: _orgDiameterCtrl,
+            s: _orgSisiCtrl,
+            isOrganic: true,
+          )
+        : 0.0;
+    final anorgCap = _activateAnorganic
+        ? parseCapacity(
+            mode: _nonOrganicMode,
+            standardSize: _nonOrganicStandardSize,
+            shape: _nonOrganicShape,
+            p: _nonOrgPanjangCtrl,
+            l: _nonOrgLebarCtrl,
+            t: _nonOrgTinggiCtrl,
+            d: _nonOrgDiameterCtrl,
+            s: _nonOrgSisiCtrl,
+            isOrganic: false,
+          )
+        : 0.0;
 
     // Lanjut ke aktivasi (scan barcode)
     Navigator.pushReplacementNamed(
@@ -84,7 +167,7 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
       arguments: {
         'orgCapacity': orgCap,
         'anorgCapacity': anorgCap,
-        'hasOrganic': !_activateOrganic, // Ini berarti kebalikan dari yang diaktifkan, artinya = true jika tidak dicentang (karena sudah punya)
+        'hasOrganic': !_activateOrganic, // true jika tidak dicentang (karena sudah punya)
         'hasAnorganic': !_activateAnorganic,
       },
     );
@@ -104,9 +187,13 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
     _orgPanjangCtrl.dispose();
     _orgLebarCtrl.dispose();
     _orgTinggiCtrl.dispose();
+    _orgDiameterCtrl.dispose();
+    _orgSisiCtrl.dispose();
     _nonOrgPanjangCtrl.dispose();
     _nonOrgLebarCtrl.dispose();
     _nonOrgTinggiCtrl.dispose();
+    _nonOrgDiameterCtrl.dispose();
+    _nonOrgSisiCtrl.dispose();
     super.dispose();
   }
 
@@ -131,7 +218,10 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
       if (_organicMode == 'Manual') {
         if (_orgPanjangCtrl.text.isNotEmpty ||
             _orgLebarCtrl.text.isNotEmpty ||
-            _orgTinggiCtrl.text.isNotEmpty) {
+            _orgTinggiCtrl.text.isNotEmpty ||
+            _orgDiameterCtrl.text.isNotEmpty ||
+            _orgSisiCtrl.text.isNotEmpty ||
+            _organicShape != 'Kotak / Balok / Bak') {
           return true;
         }
       } else {
@@ -141,7 +231,10 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
       if (_nonOrganicMode == 'Manual') {
         if (_nonOrgPanjangCtrl.text.isNotEmpty ||
             _nonOrgLebarCtrl.text.isNotEmpty ||
-            _nonOrgTinggiCtrl.text.isNotEmpty) {
+            _nonOrgTinggiCtrl.text.isNotEmpty ||
+            _nonOrgDiameterCtrl.text.isNotEmpty ||
+            _nonOrgSisiCtrl.text.isNotEmpty ||
+            _nonOrganicShape != 'Kotak / Balok / Bak') {
           return true;
         }
       } else {
@@ -220,12 +313,16 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
                   setState(() => _activateOrganic = val ?? false);
                 },
                 mode: _organicMode,
-                  onModeChanged: (val) => setState(() => _organicMode = val!),
-                  standardSize: _organicStandardSize,
-                  onStandardSizeChanged: (val) => setState(() => _organicStandardSize = val!),
-                  pCtrl: _orgPanjangCtrl,
+                onModeChanged: (val) => setState(() => _organicMode = val!),
+                standardSize: _organicStandardSize,
+                onStandardSizeChanged: (val) => setState(() => _organicStandardSize = val!),
+                shape: _organicShape,
+                onShapeChanged: (val) => setState(() => _organicShape = val!),
+                pCtrl: _orgPanjangCtrl,
                 lCtrl: _orgLebarCtrl,
                 tCtrl: _orgTinggiCtrl,
+                dCtrl: _orgDiameterCtrl,
+                sCtrl: _orgSisiCtrl,
               ),
             ),
 
@@ -240,12 +337,16 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
                   setState(() => _activateAnorganic = val ?? false);
                 },
                 mode: _nonOrganicMode,
-                  onModeChanged: (val) => setState(() => _nonOrganicMode = val!),
-                  standardSize: _nonOrganicStandardSize,
-                  onStandardSizeChanged: (val) => setState(() => _nonOrganicStandardSize = val!),
-                  pCtrl: _nonOrgPanjangCtrl,
+                onModeChanged: (val) => setState(() => _nonOrganicMode = val!),
+                standardSize: _nonOrganicStandardSize,
+                onStandardSizeChanged: (val) => setState(() => _nonOrganicStandardSize = val!),
+                shape: _nonOrganicShape,
+                onShapeChanged: (val) => setState(() => _nonOrganicShape = val!),
+                pCtrl: _nonOrgPanjangCtrl,
                 lCtrl: _nonOrgLebarCtrl,
                 tCtrl: _nonOrgTinggiCtrl,
+                dCtrl: _nonOrgDiameterCtrl,
+                sCtrl: _nonOrgSisiCtrl,
               ),
             ),
 
@@ -293,9 +394,13 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
     required ValueChanged<String?> onModeChanged,
     required String standardSize,
     required ValueChanged<String?> onStandardSizeChanged,
+    required String shape,
+    required ValueChanged<String?> onShapeChanged,
     required TextEditingController pCtrl,
     required TextEditingController lCtrl,
     required TextEditingController tCtrl,
+    required TextEditingController dCtrl,
+    required TextEditingController sCtrl,
   }) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -374,52 +479,114 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
                   .toList(),
               onChanged: onStandardSizeChanged,
             )
-          else
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: pCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: 'P (cm)',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                    ),
-                  ),
+          else ...[
+            DropdownButtonFormField<String>(
+              key: ValueKey(shape),
+              initialValue: shape,
+              decoration: InputDecoration(
+                labelText: 'Bentuk Tempat Sampah',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextField(
-                    controller: lCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: 'L (cm)',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextField(
-                    controller: tCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: 'T (cm)',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                    ),
-                  ),
-                ),
-              ],
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              ),
+              items: _shapeOptions
+                  .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                  .toList(),
+              onChanged: onShapeChanged,
             ),
+            const SizedBox(height: 12),
+            if (shape == 'Tabung / Silinder')
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: dCtrl,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(
+                        labelText: 'Diameter (cm)',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: tCtrl,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(
+                        labelText: 'Tinggi (cm)',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            else if (shape == 'Kubus')
+              TextField(
+                controller: sCtrl,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                  labelText: 'Panjang Sisi (cm)',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                ),
+              )
+            else
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: pCtrl,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(
+                        labelText: 'P (cm)',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: lCtrl,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(
+                        labelText: 'L (cm)',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: tCtrl,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(
+                        labelText: 'T (cm)',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+          ],
           ],
         ],
       ),

@@ -899,170 +899,116 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
     }
 
     // Default: Warga
-    return Column(
+    return Row(
       children: [
-        // Primary CTA: Scan Tempat Sampah
-        GestureDetector(
-          onTap: isOnline
-              ? () => ScanGuard.handleScanNavigation(context, ref)
-              : null,
-          child: AnimatedOpacity(
-            opacity: isOnline ? 1.0 : 0.5,
-            duration: const Duration(milliseconds: 200),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppColors.primaryGreen, Color(0xFF15803D)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+        // Primary CTA: Scan Sampah
+        Expanded(
+          child: GestureDetector(
+            onTap: isOnline
+                ? () => ScanGuard.handleScanNavigation(context, ref)
+                : null,
+            child: AnimatedOpacity(
+              opacity: isOnline ? 1.0 : 0.5,
+              duration: const Duration(milliseconds: 200),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 16,
+                  horizontal: 12,
                 ),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primaryGreen.withValues(alpha: 0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 5),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppColors.primaryGreen, Color(0xFF15803D)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                ],
-              ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.qr_code_scanner_rounded,
-                    color: Colors.white,
-                    size: 28,
-                  ),
-                  SizedBox(width: 12),
-                  Text(
-                    'Scan Sampah',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.3,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primaryGreen.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
                     ),
-                  ),
-                ],
+                  ],
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.qr_code_scanner_rounded,
+                      color: Colors.white,
+                      size: 22,
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      'Scan Sampah',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
         ),
-        const SizedBox(height: 12),
-        // Secondary Actions
-        Row(
-          children: [
-            Expanded(
-              child: GestureDetector(
-                onTap: isOnline
-                    ? () {
-                        Navigator.of(context).pushNamed(AppRoutes.resetBin);
-                      }
-                    : null,
-                child: AnimatedOpacity(
-                  opacity: isOnline ? 1.0 : 0.5,
-                  duration: const Duration(milliseconds: 200),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 16,
-                      horizontal: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Colors.grey.shade200,
-                        width: 1.5,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.03),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Image.asset(
-                          'assets/icons/waste.png',
-                          color: AppColors.primaryGreen,
-                          width: 20,
-                          height: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'Pengosongan',
-                          style: TextStyle(
-                            color: AppColors.textPrimary,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
+        const SizedBox(width: 12),
+        // Secondary CTA: Pengosongan
+        Expanded(
+          child: GestureDetector(
+            onTap: isOnline
+                ? () {
+                    Navigator.of(context).pushNamed(AppRoutes.resetBin);
+                  }
+                : null,
+            child: AnimatedOpacity(
+              opacity: isOnline ? 1.0 : 0.5,
+              duration: const Duration(milliseconds: 200),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 16,
+                  horizontal: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Colors.grey.shade200,
+                    width: 1.5,
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset(
+                      'assets/icons/waste.png',
+                      color: AppColors.primaryGreen,
+                      width: 20,
+                      height: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Pengosongan',
+                      style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: GestureDetector(
-                onTap: isOnline
-                    ? () => Navigator.of(
-                        context,
-                      ).pushNamed(AppRoutes.aspirasiWarga)
-                    : null,
-                child: AnimatedOpacity(
-                  opacity: isOnline ? 1.0 : 0.5,
-                  duration: const Duration(milliseconds: 200),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 16,
-                      horizontal: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Colors.grey.shade200,
-                        width: 1.5,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.03),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.forum_rounded,
-                          color: AppColors.primaryGreen,
-                          size: 20,
-                        ),
-                        SizedBox(width: 8),
-                        Text(
-                          'Kritik/Saran',
-                          style: TextStyle(
-                            color: AppColors.textPrimary,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ],
     );
