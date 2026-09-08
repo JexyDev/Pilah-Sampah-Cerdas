@@ -4,9 +4,21 @@ on:
   push:
     branches:
       - mobile
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'scratch/**'
+      - '.gitignore'
+      - 'LICENSE'
   pull_request:
     branches:
       - mobile
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'scratch/**'
+      - '.gitignore'
+      - 'LICENSE'
 
 jobs:
   validate:
