@@ -7,12 +7,14 @@ import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_config.dart';
 import '../../../core/values/app_dimensions.dart';
 import '../../../data/models/user_entity.dart';
+import '../../../data/models/petugas_pemilahan_models.dart';
 import '../../../routes/app_routes.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../controllers/petugas_pemilahan_controller.dart';
 import '../controllers/petugas_pemilahan_notifikasi_controller.dart';
 import 'petugas_notification_view.dart';
 import 'pengajuan_warga_view.dart';
+import '../widgets/petugas_whitelist_guard_widget.dart';
 
 import '../../shared/controllers/connectivity_controller.dart';
 
@@ -57,15 +59,12 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
     }
   }
 
-  String _kpiGradeLabel(double score) {
-    if (score >= 90) return 'Kinerja Sangat Baik';
-    if (score >= 75) return 'Kinerja Baik';
-    if (score >= 60) return 'Kinerja Cukup';
-    if (score >= 40) return 'Kinerja Kurang';
-    if (score == 0) return 'Belum Ada Data';
-    return 'Kinerja Buruk';
+  String _sanitizeTitle(String? raw) {
+    if (raw == null || raw.isEmpty) return 'Timbangan Pemilahan';
+    return raw
+        .replaceAll(RegExp(r'Setoran\s+Manual\s+Residu', caseSensitive: false), 'Timbangan Pemilahan')
+        .replaceAll(RegExp(r'\bResidu\b', caseSensitive: false), 'Pemilahan');
   }
-
 
   Widget _buildHeaderAvatarImage(String? fotoPath) {
     if (fotoPath == null || fotoPath.isEmpty) {
@@ -274,19 +273,21 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
     );
   }
 
-  Widget _buildKpiCard(double kpiScore) {
-    return Container(
-      padding: const EdgeInsets.all(AppDimensions.md),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.primaryBlueDark, AppColors.primaryBlue],
-          begin: Alignment.topLeft,
+  Widget _buildPointsCard(BuildContext context, int totalPoints) {
+    return GestureDetector(
+      onTap: () => Navigator.pushNamed(context, AppRoutes.poin),
+      child: Container(
+        padding: const EdgeInsets.all(AppDimensions.md),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [AppColors.primaryGreen, AppColors.primaryBlueDark],
+            begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryBlue.withValues(alpha: 0.3),
+            color: AppColors.primaryGreen.withValues(alpha: 0.25),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -295,31 +296,64 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Indeks Kinerja (KPI)', style: TextStyle(color: Colors.white70, fontSize: 13)),
-              const SizedBox(height: 4),
-              Text(
-                '${kpiScore.toStringAsFixed(1)} / 100',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24, color: Colors.white),
-              ),
-              const SizedBox(height: 4),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(20)),
-                child: Text(
-                  _kpiGradeLabel(kpiScore),
-                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.monetization_on_rounded, color: AppColors.warningYellow, size: 16),
+                    SizedBox(width: 6),
+                    Text(
+                      'Poin Insentif Pemilahan',
+                      style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
+                    ),
+                  ],
                 ),
-              ),
-            ],
+                const SizedBox(height: 6),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      '$totalPoints',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 30, color: Colors.white),
+                    ),
+                    const SizedBox(width: 6),
+                    const Text(
+                      'Poin',
+                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: AppColors.warningYellow),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Text(
+                    'Perolehan Poin Timbangan & Validasi Warga',
+                    style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
           ),
-          const Icon(Icons.stars_rounded, color: Colors.white, size: 48),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.stars_rounded, color: AppColors.warningYellow, size: 40),
+          ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildStatCard({required String title, required String value, required String unit, required IconData icon, required Color color}) {
     return Expanded(
@@ -368,6 +402,191 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
     );
   }
 
+  Widget _buildJadwalSection(BuildContext context, List<PemilahanBinPickup> jadwalList) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Jadwal Penimbangan RW',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 15,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: jadwalList.isEmpty
+                    ? AppColors.primaryGreen.withValues(alpha: 0.1)
+                    : AppColors.warningOrange.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                jadwalList.isEmpty ? 'Semua Normal' : '${jadwalList.length} Penuh (≥70%)',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: jadwalList.isEmpty ? AppColors.primaryGreen : AppColors.warningOrange,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        if (jadwalList.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.check_circle_outline_rounded, color: AppColors.primaryGreen, size: 22),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Tidak ada tempat sampah penuh (≥ 70%) di wilayah RW saat ini.',
+                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  ),
+                ),
+              ],
+            ),
+          )
+        else
+          Column(
+            children: jadwalList.map((item) {
+              final isOrganik = item.wasteCategory.toUpperCase().contains('ORGANIK') &&
+                  !item.wasteCategory.toUpperCase().contains('ANORGANIK');
+              final categoryColor = isOrganik ? AppColors.primaryGreen : AppColors.warningOrange;
+              final pct = item.volumePercentage.clamp(0.0, 100.0);
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.border),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.02),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: categoryColor.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            isOrganik ? Icons.eco_rounded : Icons.recycling_rounded,
+                            color: categoryColor,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.wargaName,
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '${item.binCode} • ${item.wasteCategory}',
+                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: categoryColor),
+                              ),
+                              if (item.address.isNotEmpty) ...[
+                                const SizedBox(height: 2),
+                                Text(
+                                  item.address,
+                                  style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.pushNamed(
+                              context,
+                              AppRoutes.timbanganPemilahan,
+                              arguments: {
+                                'binId': item.binId,
+                                'binCode': item.binCode,
+                                'category': item.wasteCategory,
+                                'wargaName': item.wargaName,
+                              },
+                            );
+                          },
+                          icon: const Icon(Icons.scale_rounded, size: 14),
+                          label: const Text('Timbang', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryGreen,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              value: pct / 100,
+                              backgroundColor: Colors.grey.shade200,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                pct >= 85 ? AppColors.maroonRed : AppColors.warningOrange,
+                              ),
+                              minHeight: 6,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${pct.toStringAsFixed(0)}%',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: pct >= 85 ? AppColors.maroonRed : AppColors.warningOrange,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -375,6 +594,26 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
     final state = ref.watch(petugasPemilahanControllerProvider);
     final unreadCount = ref.watch(petugasUnreadNotificationCountProvider);
     final dashboard = state.dashboard;
+
+    if (dashboard != null && !dashboard.isApproved) {
+      return Scaffold(
+        backgroundColor: AppColors.backgroundCanvas,
+        body: RefreshIndicator(
+          onRefresh: () => ref.read(petugasPemilahanControllerProvider.notifier).refreshAll(),
+          color: AppColors.primaryGreen,
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: [
+              _buildHeader(context, ref, user, unreadCount),
+              PetugasWhitelistGuardWidget(
+                onRefresh: () => ref.read(petugasPemilahanControllerProvider.notifier).refreshAll(),
+                statusText: dashboard.whitelistStatus == WhitelistStatus.rejected ? 'REJECTED' : 'PENDING',
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -394,8 +633,8 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
               padding: const EdgeInsets.all(AppDimensions.md),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  // Kinerja KPI
-                  _buildKpiCard(dashboard?.kpiScore ?? 0),
+                  // Poin Insentif Petugas
+                  _buildPointsCard(context, dashboard?.totalPoints ?? 0),
                   const SizedBox(height: 18),
 
                   // Matriks Statistik: Kg Hari Ini & Akumulasi Bulanan (2 Kolom)
@@ -408,7 +647,7 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                             : dashboard.totalWeightKg.toStringAsFixed(1),
                         unit: 'Kg',
                         icon: Icons.scale_rounded,
-                        color: AppColors.residuColor,
+                        color: AppColors.primaryGreen,
                       ),
                       const SizedBox(width: 14),
                       _buildStatCard(
@@ -421,6 +660,27 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                         color: AppColors.warningOrange,
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 18),
+
+                  // Tombol Aksi Cepat: Input Timbangan Pemilahan
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () => Navigator.pushNamed(context, AppRoutes.timbanganPemilahan),
+                      icon: const Icon(Icons.scale_rounded, size: 20),
+                      label: const Text(
+                        'Input Timbangan Pemilahan',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryGreen,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 1,
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 18),
 
@@ -500,6 +760,10 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                   ),
                   const SizedBox(height: 18),
 
+                  // ── Jadwal Penimbangan Tempat Sampah RW (>= 70%) ──────────────
+                  _buildJadwalSection(context, state.jadwalList),
+                  const SizedBox(height: 20),
+
                   // Riwayat Aktivitas Terbaru
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -545,7 +809,8 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                   else
                     Column(
                       children: state.historyList.take(5).map((item) {
-                        final title = item['title']?.toString() ?? item['classification']?.toString() ?? item['kategori']?.toString() ?? 'Setoran Timbangan';
+                        final rawTitle = item['title']?.toString() ?? item['classification']?.toString() ?? item['kategori']?.toString() ?? 'Timbangan Pemilahan';
+                        final title = _sanitizeTitle(rawTitle);
                         final subtitle = item['subtitle']?.toString() ?? item['wargaName']?.toString() ?? item['namaWarga']?.toString() ?? item['binCode']?.toString() ?? '';
                         final weight = item['weightKg'] ?? item['actualWeightKg'] ?? item['weight'] ?? 0;
                         

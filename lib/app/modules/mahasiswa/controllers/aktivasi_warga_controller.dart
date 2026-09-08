@@ -76,62 +76,98 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
       final user = ref.read(authProvider).user;
       final repo = ref.read(kknRepositoryProvider);
 
-      String cleanRw(String val) => val.replaceAll(RegExp(r'[^\d]'), '').replaceFirst(RegExp(r'^0+'), '');
-      String cleanKel(String val) => val.toLowerCase().replaceAll('kel.', '').replaceAll('kelurahan', '').replaceAll('desa', '').trim();
+      String cleanRw(String val) =>
+          val.replaceAll(RegExp(r'[^\d]'), '').replaceFirst(RegExp(r'^0+'), '');
+      String cleanKel(String val) => val
+          .toLowerCase()
+          .replaceAll('kel.', '')
+          .replaceAll('kelurahan', '')
+          .replaceAll('desa', '')
+          .trim();
 
-      final targetRwNumbers = RegExp(r'\d+')
+      final targetRwSet = RegExp(r'\d+')
           .allMatches(rw)
           .map((m) => m.group(0)!.replaceFirst(RegExp(r'^0+'), ''))
           .where((r) => r.isNotEmpty)
           .toSet();
       final targetKelClean = cleanKel(kelurahan);
-      final rwQuery = targetRwNumbers.length == 1 ? targetRwNumbers.first : null;
+
+      // Jika multi-RW, jangan kirim filter rw koma ke query backend, biarkan backend return warga kelurahan
+      final isMultiRw = targetRwSet.length > 1;
+      final queryRw = isMultiRw
+          ? null
+          : (targetRwSet.isNotEmpty ? targetRwSet.first : (rw.isEmpty ? null : rw));
 
       var data = await repo.getWargaForAktivasi(
         kecamatan: user?.kecamatan,
         kelurahan: kelurahan.isEmpty ? null : kelurahan,
-        rw: rwQuery,
+        rw: queryRw,
         search: search.isEmpty ? null : search,
       );
 
-      // Jika kosong dan merupakan single RW, coba query fallback
-      if (data.isEmpty && targetRwNumbers.length == 1) {
+      // Jika kosong dan single-RW, coba query dengan format RW bersih (hanya angka)
+      if (data.isEmpty && !isMultiRw && targetRwSet.isNotEmpty) {
         data = await repo.getWargaForAktivasi(
           kecamatan: user?.kecamatan,
           kelurahan: targetKelClean.isEmpty ? null : targetKelClean,
-          rw: targetRwNumbers.first,
+          rw: targetRwSet.first,
           search: search.isEmpty ? null : search,
         );
       }
 
       // Jika mahasiswa memiliki banyak RW dampingan, saring warga agar sesuai cakupan RW
-      if (data.isNotEmpty && targetRwNumbers.length > 1) {
+      if (data.isNotEmpty && targetRwSet.length > 1) {
         data = data.where((e) {
-          final w = e is WargaDampingan ? e : WargaDampingan.fromJson(e as Map<String, dynamic>);
+          final w = e is WargaDampingan
+              ? e
+              : WargaDampingan.fromJson(e as Map<String, dynamic>);
           final wRw = cleanRw(w.rw);
           final wAddr = w.address.toLowerCase();
-          return targetRwNumbers.contains(wRw) ||
-              targetRwNumbers.any((trw) => wAddr.contains('rw $trw') || wAddr.contains('rw 0$trw'));
+          return targetRwSet.contains(wRw) ||
+              targetRwSet.any(
+                (trw) =>
+                    wAddr.contains('rw $trw') || wAddr.contains('rw 0$trw'),
+              );
         }).toList();
       }
 
-      // Fallback: Jika backend tetap kosong atau mengembalikan data umum, lakukan filter ketat
+      // Filter atau Fallback: Pastikan data sesuai dengan target RW (baik single-RW maupun multi-RW)
       if (data.isEmpty && (kelurahan.isNotEmpty || rw.isNotEmpty)) {
         final allRaw = await repo.getWargaForAktivasi(
           search: search.isEmpty ? null : search,
         );
         data = allRaw.where((e) {
-          final w = e is WargaDampingan ? e : WargaDampingan.fromJson(e as Map<String, dynamic>);
+          final w = e is WargaDampingan
+              ? e
+              : WargaDampingan.fromJson(e as Map<String, dynamic>);
           final wRw = cleanRw(w.rw);
           final wKel = cleanKel(w.kelurahan);
           final wAddr = w.address.toLowerCase();
 
-          final rwMatches = targetRwNumbers.isEmpty ||
-              targetRwNumbers.contains(wRw) ||
-              targetRwNumbers.any((trw) => wAddr.contains('rw $trw') || wAddr.contains('rw 0$trw'));
-          final kelMatches = targetKelClean.isEmpty || wKel.contains(targetKelClean) || targetKelClean.contains(wKel) || wAddr.contains(targetKelClean);
+          final rwMatches = targetRwSet.isEmpty ||
+              targetRwSet.contains(wRw) ||
+              targetRwSet.any(
+                (r) => wAddr.contains('rw $r') || wAddr.contains('rw 0$r'),
+              );
+          final kelMatches = targetKelClean.isEmpty ||
+              wKel.contains(targetKelClean) ||
+              targetKelClean.contains(wKel) ||
+              wAddr.contains(targetKelClean);
 
           return rwMatches && kelMatches;
+        }).toList();
+      } else if (isMultiRw && data.isNotEmpty) {
+        // Jika data dari backend kelurahan ada, saring hanya yang masuk di cakupan RW
+        data = data.where((e) {
+          final w = e is WargaDampingan
+              ? e
+              : WargaDampingan.fromJson(e as Map<String, dynamic>);
+          final wRw = cleanRw(w.rw);
+          final wAddr = w.address.toLowerCase();
+          return targetRwSet.contains(wRw) ||
+              targetRwSet.any(
+                (r) => wAddr.contains('rw $r') || wAddr.contains('rw 0$r'),
+              );
         }).toList();
       }
 
@@ -165,7 +201,7 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
     try {
       double lat = 0.0;
       double lng = 0.0;
-      
+
       if (PlatformUtils.isMobile) {
         try {
           final pos = await Geolocator.getCurrentPosition(
@@ -186,7 +222,12 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
       }
 
       final repo = ref.read(kknRepositoryProvider);
-      final isSuccess = await repo.activateWargaByScan(wargaId, qrCode, lat, lng);
+      final isSuccess = await repo.activateWargaByScan(
+        wargaId,
+        qrCode,
+        lat,
+        lng,
+      );
 
       if (isSuccess) {
         await refresh(); // Refresh list after success
@@ -196,7 +237,8 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
       } else {
         state = state.copyWith(
           isLoading: false,
-          errorMessage: 'Gagal mengaktivasi warga. Mohon periksa kembali QR Code.',
+          errorMessage:
+              'Gagal mengaktivasi warga. Mohon periksa kembali QR Code.',
         );
         return false;
       }
@@ -209,7 +251,11 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
     }
   }
 
-  Future<bool> activateBin(String wargaId, String binOrganikId, String binAnorganikId) async {
+  Future<bool> activateBin(
+    String wargaId,
+    String binOrganikId,
+    String binAnorganikId,
+  ) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       double lat = 0.0;
@@ -223,7 +269,8 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
             perm = await Geolocator.requestPermission();
           }
 
-          if (perm == LocationPermission.whileInUse || perm == LocationPermission.always) {
+          if (perm == LocationPermission.whileInUse ||
+              perm == LocationPermission.always) {
             final pos = await Geolocator.getCurrentPosition(
               locationSettings: const LocationSettings(
                 accuracy: LocationAccuracy.high,
@@ -234,7 +281,9 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
             lng = pos.longitude;
           }
         } catch (gpsErr) {
-          debugPrint('[AktivasiWarga] GPS warning: $gpsErr, trying last known position...');
+          debugPrint(
+            '[AktivasiWarga] GPS warning: $gpsErr, trying last known position...',
+          );
           try {
             final lastPos = await Geolocator.getLastKnownPosition();
             if (lastPos != null) {
@@ -246,7 +295,13 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
       }
 
       final repo = ref.read(kknRepositoryProvider);
-      final isSuccess = await repo.activateBin(wargaId, binOrganikId, binAnorganikId, lat: lat, lng: lng);
+      final isSuccess = await repo.activateBin(
+        wargaId,
+        binOrganikId,
+        binAnorganikId,
+        lat: lat,
+        lng: lng,
+      );
 
       if (isSuccess) {
         await refresh(); // Refresh list after success
@@ -258,7 +313,8 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
       } else {
         state = state.copyWith(
           isLoading: false,
-          errorMessage: 'Gagal mengaktivasi tempat sampah warga. QR Code mungkin sudah diaktivasi sebelumnya.',
+          errorMessage:
+              'Gagal mengaktivasi tempat sampah warga. QR Code mungkin sudah diaktivasi sebelumnya.',
         );
         return false;
       }
@@ -273,6 +329,10 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
 }
 
 /// autoDispose: state reset setiap kali halaman Aktivasi Tempat Sampah dibuka baru.
-final aktivasiWargaProvider = StateNotifierProvider.autoDispose<AktivasiWargaNotifier, AktivasiWargaState>((ref) {
-  return AktivasiWargaNotifier(ref);
-});
+final aktivasiWargaProvider =
+    StateNotifierProvider.autoDispose<
+      AktivasiWargaNotifier,
+      AktivasiWargaState
+    >((ref) {
+      return AktivasiWargaNotifier(ref);
+    });

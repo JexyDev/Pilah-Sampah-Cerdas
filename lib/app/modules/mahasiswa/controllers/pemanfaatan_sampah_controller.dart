@@ -44,47 +44,69 @@ class PemanfaatanSampahNotifier extends StateNotifier<PemanfaatanSampahState> {
       final repo = ref.read(kknRepositoryProvider);
       final ok = await repo.submitPemanfaatanSampah(request);
       if (ok) {
-        state = state.copyWith(isLoading: false, isSuccess: true, clearError: true);
+        state = state.copyWith(
+          isLoading: false,
+          isSuccess: true,
+          clearError: true,
+        );
 
         final user = ref.read(authProvider).user;
         if (user != null) {
-          final isIdeProgram = request.satuan == 'Rp' || ['FISIK', 'NON_FISIK', 'LAINNYA'].contains(request.jenisPemanfaatan);
-          final notifTitle = isIdeProgram ? 'Laporan Ide Program Tersimpan 💡' : 'Laporan Pemanfaatan Sampah Tersimpan ♻️';
-          final notifType = isIdeProgram ? 'LAPORAN_IDE_PROGRAM' : 'LAPORAN_PEMANFAATAN';
+          final isIdeProgram =
+              request.satuan == 'Rp' ||
+              [
+                'FISIK',
+                'NON_FISIK',
+                'LAINNYA',
+              ].contains(request.jenisPemanfaatan);
+          final notifTitle = isIdeProgram
+              ? 'Laporan Ide Program Tersimpan 💡'
+              : 'Laporan Pemanfaatan Sampah Tersimpan ♻️';
+          final notifType = isIdeProgram
+              ? 'LAPORAN_IDE_PROGRAM'
+              : 'LAPORAN_PEMANFAATAN';
 
           await FirebaseNotificationService().saveNotification(
             userId: user.id,
             role: user.role.name,
             title: notifTitle,
-            desc: 'Laporan ${request.jenisPemanfaatan} di ${request.wilayahDampingan} berhasil dikirim.',
+            desc:
+                'Laporan ${request.jenisPemanfaatan} di ${request.wilayahDampingan} berhasil dikirim.',
             type: notifType,
           );
           LocalNotificationCacheService().addNotification(
             userId: user.id,
             role: user.role.name,
             title: notifTitle,
-            desc: 'Laporan ${request.jenisPemanfaatan} di ${request.wilayahDampingan} berhasil dikirim.',
+            desc:
+                'Laporan ${request.jenisPemanfaatan} di ${request.wilayahDampingan} berhasil dikirim.',
             type: notifType,
           );
         }
-        
+
         NotificationEngine().showGenericNotification(
           id: DateTime.now().millisecondsSinceEpoch.remainder(10000),
           title: 'Laporan Pemanfaatan Sampah Tersimpan ♻️',
-          body: 'Laporan ${request.jenisPemanfaatan} berhasil dikirim dan ditambahkan ke poin Anda.',
+          body:
+              'Laporan ${request.jenisPemanfaatan} berhasil dikirim dan ditambahkan ke poin Anda.',
         );
 
         ref.invalidate(mahasiswaNotificationsProvider);
         return true;
       }
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: NetworkExceptionHelper.getErrorMessage(e));
+      state = state.copyWith(
+        isLoading: false,
+        error: NetworkExceptionHelper.getErrorMessage(e),
+      );
     }
     return false;
   }
 }
 
 final pemanfaatanSampahProvider =
-    StateNotifierProvider<PemanfaatanSampahNotifier, PemanfaatanSampahState>((ref) {
-  return PemanfaatanSampahNotifier(ref);
-});
+    StateNotifierProvider<PemanfaatanSampahNotifier, PemanfaatanSampahState>((
+      ref,
+    ) {
+      return PemanfaatanSampahNotifier(ref);
+    });

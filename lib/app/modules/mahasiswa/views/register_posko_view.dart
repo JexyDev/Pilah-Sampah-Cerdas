@@ -44,7 +44,7 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
     super.initState();
     _latitudeController.addListener(_onCoordinateTextChanged);
     _longitudeController.addListener(_onCoordinateTextChanged);
-    
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final posko = ref.read(poskoKknProvider).poskoResponse?.posko;
       if (posko == null && !_hasTriggeredAutoGps) {
@@ -83,7 +83,7 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
     setState(() {
       _selectedLocation = point;
     });
-    
+
     _isUpdatingFromMap = true;
     _latitudeController.text = point.latitude.toStringAsFixed(6);
     _longitudeController.text = point.longitude.toStringAsFixed(6);
@@ -177,7 +177,9 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
       }
       if (permission == LocationPermission.deniedForever) {
         await Geolocator.openAppSettings();
-        throw Exception('Akses GPS ditolak permanen. Silakan nyalakan di Pengaturan lalu coba lagi.');
+        throw Exception(
+          'Akses GPS ditolak permanen. Silakan nyalakan di Pengaturan lalu coba lagi.',
+        );
       }
 
       final position = await Geolocator.getCurrentPosition(
@@ -225,13 +227,14 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
     } else {
       // Mode edit, jika form ditutup tidak ada perubahan
       if (!_isEditMode) return false;
-      
+
       // Jika form terbuka, bandingkan dengan data awal
       return _namaController.text != originalPosko.nama ||
           _alamatController.text != originalPosko.alamat ||
           _selectedLocation?.latitude != originalPosko.latitude ||
           _selectedLocation?.longitude != originalPosko.longitude ||
-          _photoPath != null; // _photoPath != null berarti user memilih foto baru
+          _photoPath !=
+              null; // _photoPath != null berarti user memilih foto baru
     }
   }
 
@@ -260,7 +263,9 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
 
     bool success = false;
     if (_isEditMode) {
-      success = await ref.read(poskoKknProvider.notifier).updatePosko(
+      success = await ref
+          .read(poskoKknProvider.notifier)
+          .updatePosko(
             latitude: _selectedLocation!.latitude,
             longitude: _selectedLocation!.longitude,
             nama: _namaController.text.trim(),
@@ -268,7 +273,9 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
             imagePath: _photoPath,
           );
     } else {
-      success = await ref.read(poskoKknProvider.notifier).registerPosko(
+      success = await ref
+          .read(poskoKknProvider.notifier)
+          .registerPosko(
             latitude: _selectedLocation!.latitude,
             longitude: _selectedLocation!.longitude,
             nama: _namaController.text.trim(),
@@ -302,8 +309,17 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
     bool isKetua = false;
     if (user != null && kelompokData != null) {
       final me = kelompokData.members.firstWhere(
-        (m) => m.userId == user.id || m.nim == user.nim, 
-        orElse: () => const KelompokMemberData(userId: '', nim: '', name: '', jurusan: '', fakultas: '', individualPoints: 0, isLeader: false, statusPenugasanRw: ''),
+        (m) => m.userId == user.id || m.nim == user.nim,
+        orElse: () => const KelompokMemberData(
+          userId: '',
+          nim: '',
+          name: '',
+          jurusan: '',
+          fakultas: '',
+          individualPoints: 0,
+          isLeader: false,
+          statusPenugasanRw: '',
+        ),
       );
       isKetua = me.isLeader;
     }
@@ -326,7 +342,7 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
-        
+
         if (!_hasUnsavedChanges(state.poskoResponse?.posko)) {
           if (context.mounted) Navigator.pop(context);
           return;
@@ -336,17 +352,29 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Keluar dari Halaman?'),
-            content: const Text('Perubahan ini akan terhapus jika Anda keluar dari halaman ini.'),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            content: const Text(
+              'Perubahan ini akan terhapus jika Anda keluar dari halaman ini.',
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('Batal', style: TextStyle(color: AppColors.textSecondary)),
+                child: const Text(
+                  'Batal',
+                  style: TextStyle(color: AppColors.textSecondary),
+                ),
               ),
               ElevatedButton(
                 onPressed: () => Navigator.pop(context, true),
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.dangerRed),
-                child: const Text('Keluar', style: TextStyle(color: Colors.white)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.dangerRed,
+                ),
+                child: const Text(
+                  'Keluar',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ],
           ),
@@ -358,416 +386,454 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
       },
       child: Scaffold(
         appBar: AppBar(
-        title: Text(
-          _isEditMode
-              ? 'Pembaruan Posko KKN'
-              : (hasExistingPosko ? 'Detail Posko KKN' : 'Daftar Posko KKN'),
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          title: Text(
+            _isEditMode
+                ? 'Pembaruan Posko KKN'
+                : (hasExistingPosko ? 'Detail Posko KKN' : 'Daftar Posko KKN'),
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          backgroundColor: Colors.white,
+          foregroundColor: AppColors.textPrimary,
+          elevation: 0,
+          actions: [
+            if (_isEditMode && hasExistingPosko)
+              TextButton(
+                onPressed: () => setState(() => _isEditMode = false),
+                child: const Text(
+                  'Batal',
+                  style: TextStyle(color: AppColors.dangerRed),
+                ),
+              ),
+          ],
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(1),
+            child: Container(color: Colors.grey.shade200, height: 1),
+          ),
         ),
-        backgroundColor: Colors.white,
-        foregroundColor: AppColors.textPrimary,
-        elevation: 0,
-        actions: [
-          if (_isEditMode && hasExistingPosko)
-            TextButton(
-              onPressed: () => setState(() => _isEditMode = false),
-              child: const Text('Batal', style: TextStyle(color: AppColors.dangerRed)),
-            ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(color: Colors.grey.shade200, height: 1),
-        ),
-      ),
-      backgroundColor: AppColors.backgroundCanvas,
-      body: state.isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppColors.primaryGreen),
-            )
-          : (hasExistingPosko && !_isEditMode)
-          ? _buildPoskoStatus(context, state.poskoResponse!.posko!, isKetua, kelompokData)
-          : (!isKetua && !hasExistingPosko)
-              ? _buildNonKetuaEmptyState()
-              : SingleChildScrollView(
-              padding: const EdgeInsets.all(AppDimensions.lg),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const _SectionLabel(
-                      icon: Icons.business_rounded,
-                      label: 'Nama Posko',
-                    ),
-                    const SizedBox(height: 8),
-                    _StyledTextField(
-                      controller: _namaController,
-                      hintText: 'Cth: Posko KKN Kelompok 12 Dago',
-                      validator: (val) => (val == null || val.isEmpty)
-                          ? 'Nama posko wajib diisi'
-                          : null,
-                    ),
-                    const SizedBox(height: AppDimensions.md),
-
-                    const _SectionLabel(
-                      icon: Icons.map_rounded,
-                      label: 'Alamat Lengkap',
-                    ),
-                    const SizedBox(height: 8),
-                    _StyledTextField(
-                      controller: _alamatController,
-                      maxLines: 2,
-                      hintText: 'Cth: Jl. Dago Asri No. 12, RT 03 / RW 08',
-                      validator: (val) => (val == null || val.isEmpty)
-                          ? 'Alamat lengkap wajib diisi'
-                          : null,
-                    ),
-                    const SizedBox(height: AppDimensions.md),
-
-                    const _SectionLabel(
-                      icon: Icons.location_on_rounded,
-                      label: 'Koordinat GPS Posko',
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'Tentukan lokasi posko pada peta dengan menempatkan pin di posisi yang tepat.',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
+        backgroundColor: AppColors.backgroundCanvas,
+        body: state.isLoading
+            ? const Center(
+                child: CircularProgressIndicator(color: AppColors.primaryGreen),
+              )
+            : (hasExistingPosko && !_isEditMode)
+            ? _buildPoskoStatus(
+                context,
+                state.poskoResponse!.posko!,
+                isKetua,
+                kelompokData,
+              )
+            : (!isKetua && !hasExistingPosko)
+            ? _buildNonKetuaEmptyState()
+            : SingleChildScrollView(
+                padding: const EdgeInsets.all(AppDimensions.lg),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const _SectionLabel(
+                        icon: Icons.business_rounded,
+                        label: 'Nama Posko',
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      height: 250,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.border),
+                      const SizedBox(height: 8),
+                      _StyledTextField(
+                        controller: _namaController,
+                        hintText: 'Cth: Posko KKN Kelompok 12 Dago',
+                        validator: (val) => (val == null || val.isEmpty)
+                            ? 'Nama posko wajib diisi'
+                            : null,
                       ),
-                      clipBehavior: Clip.antiAlias,
-                      child: Stack(
-                        children: [
-                          FlutterMap(
-                            mapController: _mapController,
-                            options: MapOptions(
-                              initialCenter:
-                                  _selectedLocation ??
-                                  const LatLng(-6.914744, 107.609810),
-                              initialZoom: 15.0,
-                              onTap: (tapPosition, point) => _updateControllersFromMap(point),
-                            ),
-                            children: [
-                              TileLayer(
-                                urlTemplate:
-                                    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                                userAgentPackageName:
-                                    'com.makerindo.pilahsampah',
+                      const SizedBox(height: AppDimensions.md),
+
+                      const _SectionLabel(
+                        icon: Icons.map_rounded,
+                        label: 'Alamat Lengkap',
+                      ),
+                      const SizedBox(height: 8),
+                      _StyledTextField(
+                        controller: _alamatController,
+                        maxLines: 2,
+                        hintText: 'Cth: Jl. Dago Asri No. 12, RT 03 / RW 08',
+                        validator: (val) => (val == null || val.isEmpty)
+                            ? 'Alamat lengkap wajib diisi'
+                            : null,
+                      ),
+                      const SizedBox(height: AppDimensions.md),
+
+                      const _SectionLabel(
+                        icon: Icons.location_on_rounded,
+                        label: 'Koordinat GPS Posko',
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Tentukan lokasi posko pada peta dengan menempatkan pin di posisi yang tepat.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        height: 250,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Stack(
+                          children: [
+                            FlutterMap(
+                              mapController: _mapController,
+                              options: MapOptions(
+                                initialCenter:
+                                    _selectedLocation ??
+                                    const LatLng(-6.914744, 107.609810),
+                                initialZoom: 15.0,
+                                onTap: (tapPosition, point) =>
+                                    _updateControllersFromMap(point),
                               ),
-                              if (_selectedLocation != null)
-                                MarkerLayer(
-                                  markers: [
-                                    Marker(
-                                      point: _selectedLocation!,
-                                      width: 36,
-                                      height: 36,
-                                      child: const Icon(
-                                        Icons.home_work_rounded,
-                                        size: 28,
-                                        color: AppColors.primaryGreen,
-                                      ),
-                                    ),
-                                  ],
+                              children: [
+                                TileLayer(
+                                  urlTemplate:
+                                      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                  userAgentPackageName:
+                                      'com.makerindo.pilahsampah',
                                 ),
-                            ],
-                          ),
-                          // Floating "Lokasi Saya" button
-                          Positioned(
-                            top: 12,
-                            right: 12,
-                            child: Material(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(8),
-                              elevation: 2,
-                              child: InkWell(
-                                onTap: _isGettingLocation ? null : _getLocation,
+                                if (_selectedLocation != null)
+                                  MarkerLayer(
+                                    markers: [
+                                      Marker(
+                                        point: _selectedLocation!,
+                                        width: 36,
+                                        height: 36,
+                                        child: const Icon(
+                                          Icons.home_work_rounded,
+                                          size: 28,
+                                          color: AppColors.primaryGreen,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                              ],
+                            ),
+                            // Floating "Lokasi Saya" button
+                            Positioned(
+                              top: 12,
+                              right: 12,
+                              child: Material(
+                                color: Colors.white,
                                 borderRadius: BorderRadius.circular(8),
-                                child: Padding(
+                                elevation: 2,
+                                child: InkWell(
+                                  onTap: _isGettingLocation
+                                      ? null
+                                      : _getLocation,
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 8,
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        _isGettingLocation
+                                            ? const SizedBox(
+                                                width: 16,
+                                                height: 16,
+                                                child:
+                                                    CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                      color: AppColors
+                                                          .primaryGreen,
+                                                    ),
+                                              )
+                                            : const Icon(
+                                                Icons.my_location_rounded,
+                                                size: 18,
+                                                color: AppColors.primaryGreen,
+                                              ),
+                                        const SizedBox(width: 6),
+                                        const Text(
+                                          'Lokasi Saya',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.textPrimary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            // Label coordinate overlay
+                            if (_selectedLocation != null)
+                              Positioned(
+                                bottom: 12,
+                                left: 12,
+                                right: 12,
+                                child: Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 12,
                                     vertical: 8,
                                   ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      _isGettingLocation
-                                          ? const SizedBox(
-                                              width: 16,
-                                              height: 16,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                                color: AppColors.primaryGreen,
-                                              ),
-                                            )
-                                          : const Icon(
-                                              Icons.my_location_rounded,
-                                              size: 18,
-                                              color: AppColors.primaryGreen,
-                                            ),
-                                      const SizedBox(width: 6),
-                                      const Text(
-                                        'Lokasi Saya',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                          color: AppColors.textPrimary,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.9),
+                                    borderRadius: BorderRadius.circular(8),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.05,
                                         ),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.pin_drop_rounded,
+                                        size: 16,
+                                        color: AppColors.primaryGreen,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          '${_selectedLocation!.latitude.toStringAsFixed(5)}, ${_selectedLocation!.longitude.toStringAsFixed(5)}',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.textPrimary,
+                                          ),
+                                        ),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.copy_rounded,
+                                          size: 16,
+                                          color: AppColors.primaryGreen,
+                                        ),
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(),
+                                        onPressed: () {
+                                          Clipboard.setData(
+                                            ClipboardData(
+                                              text:
+                                                  '${_selectedLocation!.latitude},${_selectedLocation!.longitude}',
+                                            ),
+                                          );
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                'Koordinat disalin!',
+                                              ),
+                                            ),
+                                          );
+                                        },
                                       ),
                                     ],
                                   ),
                                 ),
                               ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _StyledTextField(
+                              controller: _latitudeController,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                    signed: true,
+                                  ),
+                              hintText: 'Latitude',
+                              validator: (val) => (val == null || val.isEmpty)
+                                  ? 'Wajib diisi'
+                                  : null,
                             ),
                           ),
-                          // Label coordinate overlay
-                          if (_selectedLocation != null)
-                            Positioned(
-                              bottom: 12,
-                              left: 12,
-                              right: 12,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.9),
-                                  borderRadius: BorderRadius.circular(8),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(
-                                        alpha: 0.05,
-                                      ),
-                                      blurRadius: 4,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.pin_drop_rounded,
-                                      size: 16,
-                                      color: AppColors.primaryGreen,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        '${_selectedLocation!.latitude.toStringAsFixed(5)}, ${_selectedLocation!.longitude.toStringAsFixed(5)}',
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                          color: AppColors.textPrimary,
-                                        ),
-                                      ),
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(
-                                        Icons.copy_rounded,
-                                        size: 16,
-                                        color: AppColors.primaryGreen,
-                                      ),
-                                      padding: EdgeInsets.zero,
-                                      constraints: const BoxConstraints(),
-                                      onPressed: () {
-                                        Clipboard.setData(
-                                          ClipboardData(
-                                            text: '${_selectedLocation!.latitude},${_selectedLocation!.longitude}',
-                                          ),
-                                        );
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(
-                                            content: Text('Koordinat disalin!'),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _StyledTextField(
+                              controller: _longitudeController,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                    signed: true,
+                                  ),
+                              hintText: 'Longitude',
+                              validator: (val) => (val == null || val.isEmpty)
+                                  ? 'Wajib diisi'
+                                  : null,
                             ),
+                          ),
                         ],
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _StyledTextField(
-                            controller: _latitudeController,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-                            hintText: 'Latitude',
-                            validator: (val) => (val == null || val.isEmpty) ? 'Wajib diisi' : null,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: _StyledTextField(
-                            controller: _longitudeController,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-                            hintText: 'Longitude',
-                            validator: (val) => (val == null || val.isEmpty) ? 'Wajib diisi' : null,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppDimensions.md),
+                      const SizedBox(height: AppDimensions.md),
 
-                    const _SectionLabel(
-                      icon: Icons.camera_alt_rounded,
-                      label: 'Foto Posko',
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'Ambil foto langsung dari kamera atau unggah dari galeri.',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
+                      const _SectionLabel(
+                        icon: Icons.camera_alt_rounded,
+                        label: 'Foto Posko',
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    GestureDetector(
-                      onTap: _showImagePickerSource,
-                      child: Container(
-                        height: 200,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: _photoPath != null
-                                ? AppColors.primaryGreen
-                                : AppColors.border,
-                            width: _photoPath != null ? 2 : 1,
-                          ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Ambil foto langsung dari kamera atau unggah dari galeri.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
                         ),
-                        child: _photoPath != null
-                            ? Stack(
-                                children: [
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(14),
-                                    child: Image.file(
-                                      File(_photoPath!),
-                                      fit: BoxFit.cover,
-                                      width: double.infinity,
-                                      height: double.infinity,
+                      ),
+                      const SizedBox(height: 12),
+                      GestureDetector(
+                        onTap: _showImagePickerSource,
+                        child: Container(
+                          height: 200,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: _photoPath != null
+                                  ? AppColors.primaryGreen
+                                  : AppColors.border,
+                              width: _photoPath != null ? 2 : 1,
+                            ),
+                          ),
+                          child: _photoPath != null
+                              ? Stack(
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(14),
+                                      child: Image.file(
+                                        File(_photoPath!),
+                                        fit: BoxFit.cover,
+                                        width: double.infinity,
+                                        height: double.infinity,
+                                      ),
                                     ),
-                                  ),
-                                  Positioned(
-                                    top: 12,
-                                    right: 12,
-                                    child: GestureDetector(
-                                      onTap: () =>
-                                          setState(() => _photoPath = null),
-                                      child: Container(
-                                        padding: const EdgeInsets.all(6),
-                                        decoration: BoxDecoration(
-                                          color: Colors.black.withValues(
-                                            alpha: 0.6,
+                                    Positioned(
+                                      top: 12,
+                                      right: 12,
+                                      child: GestureDetector(
+                                        onTap: () =>
+                                            setState(() => _photoPath = null),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(6),
+                                          decoration: BoxDecoration(
+                                            color: Colors.black.withValues(
+                                              alpha: 0.6,
+                                            ),
+                                            shape: BoxShape.circle,
                                           ),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: const Icon(
-                                          Icons.close,
-                                          color: Colors.white,
-                                          size: 18,
+                                          child: const Icon(
+                                            Icons.close,
+                                            color: Colors.white,
+                                            size: 18,
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                ],
-                              )
-                            : Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.primaryGreen.withValues(
-                                        alpha: 0.1,
+                                  ],
+                                )
+                              : Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.primaryGreen
+                                            .withValues(alpha: 0.1),
+                                        shape: BoxShape.circle,
                                       ),
-                                      shape: BoxShape.circle,
+                                      child: const Icon(
+                                        Icons.add_a_photo_rounded,
+                                        size: 32,
+                                        color: AppColors.primaryGreen,
+                                      ),
                                     ),
-                                    child: const Icon(
-                                      Icons.add_a_photo_rounded,
-                                      size: 32,
-                                      color: AppColors.primaryGreen,
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      _isEditMode
+                                          ? 'Pilih Foto Baru (Opsional)'
+                                          : 'Pilih/Ambil Foto Posko (Wajib)',
+                                      style: const TextStyle(
+                                        color: AppColors.primaryGreen,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 13,
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    _isEditMode ? 'Pilih Foto Baru (Opsional)' : 'Pilih/Ambil Foto Posko (Wajib)',
-                                    style: const TextStyle(
-                                      color: AppColors.primaryGreen,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 13,
+                                    const SizedBox(height: 4),
+                                    const Text(
+                                      'Format JPG/PNG',
+                                      style: TextStyle(
+                                        color: AppColors.textSecondary,
+                                        fontSize: 12,
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  const Text(
-                                    'Format JPG/PNG',
-                                    style: TextStyle(
-                                      color: AppColors.textSecondary,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: state.isLoading ? null : _submit,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryGreen,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 0,
+                                  ],
+                                ),
                         ),
-                        child: state.isLoading
-                            ? const SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : Text(
-                                _isEditMode ? 'Simpan Perubahan' : 'Kirim Pendaftaran Posko',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
                       ),
-                    ),
-                    const SizedBox(height: 24),
-                  ],
+                      const SizedBox(height: 32),
+
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: state.isLoading ? null : _submit,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryGreen,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: state.isLoading
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Text(
+                                  _isEditMode
+                                      ? 'Simpan Perubahan'
+                                      : 'Kirim Pendaftaran Posko',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
                 ),
               ),
-          ),
       ),
     );
   }
 
-  Widget _buildPoskoStatus(BuildContext context, PoskoKknData posko, bool isKetua, KelompokKknData? kelompokData) {
+  Widget _buildPoskoStatus(
+    BuildContext context,
+    PoskoKknData posko,
+    bool isKetua,
+    KelompokKknData? kelompokData,
+  ) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -835,19 +901,29 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
                       color: AppColors.textSecondary,
                     ),
                   ),
-                  if (kelompokData != null && kelompokData.dosenPembimbing != '-') ...[
+                  if (kelompokData != null &&
+                      kelompokData.dosenPembimbing != '-') ...[
                     const SizedBox(height: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.warningYellow.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.warningYellow.withValues(alpha: 0.3)),
+                        border: Border.all(
+                          color: AppColors.warningYellow.withValues(alpha: 0.3),
+                        ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.school_rounded, size: 14, color: AppColors.warningYellow),
+                          const Icon(
+                            Icons.school_rounded,
+                            size: 14,
+                            color: AppColors.warningYellow,
+                          ),
                           const SizedBox(width: 6),
                           Flexible(
                             child: Text(
@@ -868,12 +944,21 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
                                 final cleanPhone = rawPhone
                                     .replaceAll(RegExp(r'[^0-9]'), '')
                                     .replaceFirst(RegExp(r'^0'), '62');
-                                final waUrl = Uri.parse('https://wa.me/$cleanPhone');
+                                final waUrl = Uri.parse(
+                                  'https://wa.me/$cleanPhone',
+                                );
                                 if (await canLaunchUrl(waUrl)) {
-                                  await launchUrl(waUrl, mode: LaunchMode.externalApplication);
+                                  await launchUrl(
+                                    waUrl,
+                                    mode: LaunchMode.externalApplication,
+                                  );
                                 }
                               },
-                              child: const Icon(Icons.chat_bubble_rounded, size: 16, color: Color(0xFF25D366)),
+                              child: const Icon(
+                                Icons.chat_bubble_rounded,
+                                size: 16,
+                                color: Color(0xFF25D366),
+                              ),
                             ),
                           ],
                         ],
@@ -980,7 +1065,10 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
                       borderRadius: BorderRadius.circular(8),
                       child: FlutterMap(
                         options: MapOptions(
-                          initialCenter: LatLng(posko.latitude, posko.longitude),
+                          initialCenter: LatLng(
+                            posko.latitude,
+                            posko.longitude,
+                          ),
                           initialZoom: 15.0,
                           interactionOptions: const InteractionOptions(
                             flags: InteractiveFlag.none,
@@ -988,7 +1076,8 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
                         ),
                         children: [
                           TileLayer(
-                            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                            urlTemplate:
+                                'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                             userAgentPackageName: 'com.makerindo.berseka',
                           ),
                           MarkerLayer(
@@ -1016,10 +1105,18 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
                         Expanded(
                           child: OutlinedButton.icon(
                             icon: const Icon(Icons.map_rounded, size: 16),
-                            label: const Text('Buka Map', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                            label: const Text(
+                              'Buka Map',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: AppColors.primaryBlue,
-                              side: const BorderSide(color: AppColors.primaryBlue),
+                              side: const BorderSide(
+                                color: AppColors.primaryBlue,
+                              ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
@@ -1041,7 +1138,13 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
                         Expanded(
                           child: ElevatedButton.icon(
                             icon: const Icon(Icons.edit_rounded, size: 16),
-                            label: const Text('Edit Data', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                            label: const Text(
+                              'Edit Data',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.warningYellow,
                               foregroundColor: AppColors.textPrimary,
@@ -1054,16 +1157,24 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
                               setState(() {
                                 _namaController.text = posko.nama;
                                 _alamatController.text = posko.alamat;
-                                _selectedLocation = LatLng(posko.latitude, posko.longitude);
+                                _selectedLocation = LatLng(
+                                  posko.latitude,
+                                  posko.longitude,
+                                );
                                 _isUpdatingFromMap = true;
-                                _latitudeController.text = posko.latitude.toStringAsFixed(6);
-                                _longitudeController.text = posko.longitude.toStringAsFixed(6);
+                                _latitudeController.text = posko.latitude
+                                    .toStringAsFixed(6);
+                                _longitudeController.text = posko.longitude
+                                    .toStringAsFixed(6);
                                 _isUpdatingFromMap = false;
                                 _isEditMode = true;
                               });
-                              Future.delayed(const Duration(milliseconds: 300), () {
-                                _mapController.move(_selectedLocation!, 15.0);
-                              });
+                              Future.delayed(
+                                const Duration(milliseconds: 300),
+                                () {
+                                  _mapController.move(_selectedLocation!, 15.0);
+                                },
+                              );
                             },
                           ),
                         ),
@@ -1100,7 +1211,6 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
             ),
           ),
 
-
           if (isKetua) ...[
             const SizedBox(height: 20),
             SizedBox(
@@ -1114,7 +1224,10 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
                 ),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.primaryGreen,
-                  side: const BorderSide(color: AppColors.primaryGreen, width: 1.5),
+                  side: const BorderSide(
+                    color: AppColors.primaryGreen,
+                    width: 1.5,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -1137,42 +1250,42 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
 }
 
 Widget _buildNonKetuaEmptyState() {
-    return const Center(
-      child: Padding(
-        padding: EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.domain_disabled_rounded,
-              size: 80,
-              color: AppColors.border,
+  return const Center(
+    child: Padding(
+      padding: EdgeInsets.all(32),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.domain_disabled_rounded,
+            size: 80,
+            color: AppColors.border,
+          ),
+          SizedBox(height: 24),
+          Text(
+            'Posko Belum Didaftarkan',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
             ),
-            SizedBox(height: 24),
-            Text(
-              'Posko Belum Didaftarkan',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-              textAlign: TextAlign.center,
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 12),
+          Text(
+            'Harap hubungi Ketua Kelompok Anda untuk mendaftarkan dan mengatur koordinat Posko KKN.',
+            style: TextStyle(
+              fontSize: 14,
+              color: AppColors.textSecondary,
+              height: 1.5,
             ),
-            SizedBox(height: 12),
-            Text(
-              'Harap hubungi Ketua Kelompok Anda untuk mendaftarkan dan mengatur koordinat Posko KKN.',
-              style: TextStyle(
-                fontSize: 14,
-                color: AppColors.textSecondary,
-                height: 1.5,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 
 class _SectionLabel extends StatelessWidget {
   final IconData icon;

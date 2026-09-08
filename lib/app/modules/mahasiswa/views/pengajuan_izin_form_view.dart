@@ -9,11 +9,7 @@ import '../../../data/providers/repository_providers.dart';
 import '../../../data/services/notification_engine.dart';
 
 class PengajuanIzinFormView extends ConsumerStatefulWidget {
-  const PengajuanIzinFormView({
-    super.key,
-    this.scheduleId,
-    this.scheduleTitle,
-  });
+  const PengajuanIzinFormView({super.key, this.scheduleId, this.scheduleTitle});
 
   /// ID jadwal kegiatan yang tidak bisa dihadiri
   final String? scheduleId;
@@ -22,7 +18,8 @@ class PengajuanIzinFormView extends ConsumerStatefulWidget {
   final String? scheduleTitle;
 
   @override
-  ConsumerState<PengajuanIzinFormView> createState() => _PengajuanIzinFormViewState();
+  ConsumerState<PengajuanIzinFormView> createState() =>
+      _PengajuanIzinFormViewState();
 }
 
 class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
@@ -61,10 +58,13 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
     if (_isLoadingHistory) return false;
     final selectedStr = DateFormat('yyyy-MM-dd').format(_tanggalKegiatan);
     for (final item in _izinHistory) {
-      final tglStr = item['startDate']?.toString() ?? item['createdAt']?.toString() ?? '';
+      final tglStr =
+          item['startDate']?.toString() ?? item['createdAt']?.toString() ?? '';
       if (tglStr.startsWith(selectedStr)) {
         final status = item['status']?.toString().toUpperCase();
-        if (status == 'PENDING' || status == 'APPROVED' || status == 'CANCEL_REQUESTED') {
+        if (status == 'PENDING' ||
+            status == 'APPROVED' ||
+            status == 'CANCEL_REQUESTED') {
           return true;
         }
       }
@@ -156,7 +156,8 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
       NotificationEngine().showGenericNotification(
         id: DateTime.now().millisecondsSinceEpoch.remainder(10000),
         title: 'Pengajuan Izin/Sakit Terkirim ⏳',
-        body: 'Pengajuan ${_selectedKategori.displayName} sedang menunggu verifikasi DPL.',
+        body:
+            'Pengajuan ${_selectedKategori.displayName} sedang menunggu verifikasi DPL.',
       );
     } catch (e) {
       if (!mounted) return;
@@ -165,8 +166,8 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
       // Jika API belum tersedia (404/network error) atau server sedang gangguan (500/502),
       // tetap anggap berhasil dan tampilkan pending status (akan dikirim saat API ready)
       final errMsg = e.toString().toLowerCase();
-      if (errMsg.contains('404') || 
-          errMsg.contains('network') || 
+      if (errMsg.contains('404') ||
+          errMsg.contains('network') ||
           errMsg.contains('connection') ||
           errMsg.contains('502') ||
           errMsg.contains('500') ||
@@ -194,7 +195,7 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
-        
+
         if (!hasUnsavedChanges() || _isSuccess) {
           if (context.mounted) Navigator.pop(context);
           return;
@@ -204,13 +205,23 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
           context: context,
           builder: (context) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: const Text('Batalkan Pengajuan?', style: TextStyle(fontWeight: FontWeight.bold)),
-              content: const Text('Perubahan ini akan terhapus jika Anda keluar dari halaman ini.'),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: const Text(
+                'Batalkan Pengajuan?',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              content: const Text(
+                'Perubahan ini akan terhapus jika Anda keluar dari halaman ini.',
+              ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Lanjutkan Edit', style: TextStyle(color: AppColors.textSecondary)),
+                  child: const Text(
+                    'Lanjutkan Edit',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
@@ -230,56 +241,70 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
         }
       },
       child: Scaffold(
-      backgroundColor: AppColors.backgroundCanvas,
-      appBar: AppBar(
-        title: const Text(
-          'Pengajuan Tidak Hadir / Izin',
-          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
-        ),
-        backgroundColor: Colors.white,  shadowColor: Colors.black12, surfaceTintColor: Colors.transparent,
-        foregroundColor: Colors.white,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
-          onPressed: () => Navigator.pop(context),
-        ),
-        
-      ),
-      body: _isSuccess ? _buildSuccessView() : _buildForm(),
-        bottomNavigationBar: (_isSuccess || _isDateBlocked) ? null : Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, -5),
-              ),
-            ],
+        backgroundColor: AppColors.backgroundCanvas,
+        appBar: AppBar(
+          title: const Text(
+            'Pengajuan Tidak Hadir / Izin',
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
           ),
-          child: SafeArea(
-            child: ElevatedButton(
-              onPressed: _isSubmitting ? null : _submit,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryGreen,
-                disabledBackgroundColor: Colors.grey.shade300,
-                shape: const StadiumBorder(),
-                elevation: 0,
-                minimumSize: const Size(double.infinity, 50),
-              ),
-              child: _isSubmitting
-                  ? const SizedBox(
-                      height: 22, width: 22,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
-                    )
-                  : const Text(
-                      'Kirim Pengajuan',
-                      style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
-                    ),
+          backgroundColor: Colors.white,
+          shadowColor: Colors.black12,
+          surfaceTintColor: Colors.transparent,
+          foregroundColor: Colors.white,
+          leading: IconButton(
+            icon: const Icon(
+              Icons.arrow_back_rounded,
+              color: AppColors.textPrimary,
             ),
+            onPressed: () => Navigator.pop(context),
           ),
         ),
-    ),
+        body: _isSuccess ? _buildSuccessView() : _buildForm(),
+        bottomNavigationBar: (_isSuccess || _isDateBlocked)
+            ? null
+            : Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, -5),
+                    ),
+                  ],
+                ),
+                child: SafeArea(
+                  child: ElevatedButton(
+                    onPressed: _isSubmitting ? null : _submit,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryGreen,
+                      disabledBackgroundColor: Colors.grey.shade300,
+                      shape: const StadiumBorder(),
+                      elevation: 0,
+                      minimumSize: const Size(double.infinity, 50),
+                    ),
+                    child: _isSubmitting
+                        ? const SizedBox(
+                            height: 22,
+                            width: 22,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2.5,
+                            ),
+                          )
+                        : const Text(
+                            'Kirim Pengajuan',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                  ),
+                ),
+              ),
+      ),
     );
   }
 
@@ -297,12 +322,20 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
                 shape: BoxShape.circle,
                 border: Border.all(color: AppColors.primaryGreen, width: 2),
               ),
-              child: const Icon(Icons.check_circle_rounded, color: AppColors.primaryGreen, size: 72),
+              child: const Icon(
+                Icons.check_circle_rounded,
+                color: AppColors.primaryGreen,
+                size: 72,
+              ),
             ),
             const SizedBox(height: 24),
             const Text(
               'Pengajuan Berhasil Dikirim!',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
@@ -311,24 +344,38 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
               decoration: BoxDecoration(
                 color: AppColors.warningOrange.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.warningOrange.withValues(alpha: 0.3)),
+                border: Border.all(
+                  color: AppColors.warningOrange.withValues(alpha: 0.3),
+                ),
               ),
               child: const Column(
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.access_time_rounded, color: AppColors.warningOrange, size: 20),
+                      Icon(
+                        Icons.access_time_rounded,
+                        color: AppColors.warningOrange,
+                        size: 20,
+                      ),
                       SizedBox(width: 8),
                       Text(
                         'Status: Menunggu Verifikasi',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.warningOrange),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: AppColors.warningOrange,
+                        ),
                       ),
                     ],
                   ),
                   SizedBox(height: 8),
                   Text(
                     'Pengajuan izin/sakit Anda telah dikirimkan ke DPL (Dosen Pembimbing Lapangan) untuk diverifikasi. Anda akan mendapat notifikasi setelah diproses.',
-                    style: TextStyle(fontSize: 13, color: AppColors.textPrimary, height: 1.4),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textPrimary,
+                      height: 1.4,
+                    ),
                   ),
                 ],
               ),
@@ -336,11 +383,17 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
             const SizedBox(height: 12),
             Text(
               'Kategori: ${_selectedKategori.displayName}',
-              style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+              ),
             ),
             Text(
               'Tanggal: ${DateFormat('dd MMMM yyyy', 'id').format(_tanggalKegiatan)}',
-              style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+              ),
             ),
             const SizedBox(height: 32),
             SizedBox(
@@ -349,11 +402,16 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
               child: ElevatedButton.icon(
                 onPressed: () => Navigator.pop(context),
                 icon: const Icon(Icons.arrow_back_rounded),
-                label: const Text('Kembali ke Absensi', style: TextStyle(fontWeight: FontWeight.bold)),
+                label: const Text(
+                  'Kembali ke Absensi',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryGreen,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
             ),
@@ -378,20 +436,36 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
                 decoration: BoxDecoration(
                   color: AppColors.primaryBlue.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.primaryBlue.withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: AppColors.primaryBlue.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.event_rounded, color: AppColors.primaryBlue, size: 20),
+                    const Icon(
+                      Icons.event_rounded,
+                      color: AppColors.primaryBlue,
+                      size: 20,
+                    ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Kegiatan Terkait:', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                          const Text(
+                            'Kegiatan Terkait:',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
                           Text(
                             widget.scheduleTitle!,
-                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primaryBlue),
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primaryBlue,
+                            ),
                           ),
                         ],
                       ),
@@ -408,17 +482,29 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
               decoration: BoxDecoration(
                 color: AppColors.primaryBlue.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(10),
-                border: const Border(left: BorderSide(color: AppColors.primaryBlue, width: 4)),
+                border: const Border(
+                  left: BorderSide(color: AppColors.primaryBlue, width: 4),
+                ),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.info_outline_rounded, color: AppColors.primaryBlue, size: 20),
+                  const Icon(
+                    Icons.info_outline_rounded,
+                    color: AppColors.primaryBlue,
+                    size: 20,
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      _selectedKategori == KategoriIzin.sakit ? 'Pemberitahuan sakit dapat diajukan hari ini dengan melampirkan bukti valid.' : 'Pengajuan izin wajib dilampirkan dengan foto bukti yang valid (H-1).',
-                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.4),
+                      _selectedKategori == KategoriIzin.sakit
+                          ? 'Pemberitahuan sakit dapat diajukan hari ini dengan melampirkan bukti valid.'
+                          : 'Pengajuan izin wajib dilampirkan dengan foto bukti yang valid (H-1).',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                        height: 1.4,
+                      ),
                     ),
                   ),
                 ],
@@ -427,7 +513,10 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
             const SizedBox(height: 20),
 
             // Kategori
-            const Text('Kategori Pengajuan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            const Text(
+              'Kategori Pengajuan',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
             const SizedBox(height: 8),
             Row(
               children: KategoriIzin.values.map((k) {
@@ -435,23 +524,31 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
                 return Expanded(
                   child: GestureDetector(
                     onTap: () => setState(() {
-                        _selectedKategori = k;
-                        final now = DateTime.now();
-                        final isSakit = k == KategoriIzin.sakit;
-                        final baseDate = isSakit ? DateTime(now.year, now.month, now.day) : DateTime(now.year, now.month, now.day + 1);
-                        if (_tanggalKegiatan.isBefore(baseDate)) {
-                          _tanggalKegiatan = baseDate;
-                        }
-                      }),
+                      _selectedKategori = k;
+                      final now = DateTime.now();
+                      final isSakit = k == KategoriIzin.sakit;
+                      final baseDate = isSakit
+                          ? DateTime(now.year, now.month, now.day)
+                          : DateTime(now.year, now.month, now.day + 1);
+                      if (_tanggalKegiatan.isBefore(baseDate)) {
+                        _tanggalKegiatan = baseDate;
+                      }
+                    }),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
-                      margin: EdgeInsets.only(right: k == KategoriIzin.sakit ? 8 : 0),
+                      margin: EdgeInsets.only(
+                        right: k == KategoriIzin.sakit ? 8 : 0,
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       decoration: BoxDecoration(
-                        color: isSelected ? AppColors.primaryGreen : Colors.white,
+                        color: isSelected
+                            ? AppColors.primaryGreen
+                            : Colors.white,
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                          color: isSelected ? AppColors.primaryGreen : Colors.grey.shade300,
+                          color: isSelected
+                              ? AppColors.primaryGreen
+                              : Colors.grey.shade300,
                           width: isSelected ? 2 : 1,
                         ),
                       ),
@@ -462,11 +559,15 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
                                   'assets/icons/medical-report.png',
                                   width: 22,
                                   height: 22,
-                                  color: isSelected ? Colors.white : AppColors.textSecondary,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : AppColors.textSecondary,
                                 )
                               : Icon(
                                   Icons.assignment_rounded,
-                                  color: isSelected ? Colors.white : AppColors.textSecondary,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : AppColors.textSecondary,
                                   size: 22,
                                 ),
                           const SizedBox(height: 4),
@@ -475,7 +576,9 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
-                              color: isSelected ? Colors.white : AppColors.textSecondary,
+                              color: isSelected
+                                  ? Colors.white
+                                  : AppColors.textSecondary,
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -489,28 +592,51 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
             const SizedBox(height: 20),
 
             // Tanggal Kegiatan
-            Text(_selectedKategori == KategoriIzin.sakit ? 'Tanggal Kegiatan Terkait' : 'Tanggal Kegiatan Terkait (Minimal H-1)', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            Text(
+              _selectedKategori == KategoriIzin.sakit
+                  ? 'Tanggal Kegiatan Terkait'
+                  : 'Tanggal Kegiatan Terkait (Minimal H-1)',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
             const SizedBox(height: 8),
             InkWell(
               onTap: () async {
                 final now = DateTime.now();
-                final baseDate = _selectedKategori == KategoriIzin.sakit ? DateTime(now.year, now.month, now.day) : DateTime(now.year, now.month, now.day + 1);
-                
+                final baseDate = _selectedKategori == KategoriIzin.sakit
+                    ? DateTime(now.year, now.month, now.day)
+                    : DateTime(now.year, now.month, now.day + 1);
+
                 final blockedDates = <DateTime>[];
                 for (final item in _izinHistory) {
                   final status = item['status']?.toString().toUpperCase();
-                  if (status == 'PENDING' || status == 'APPROVED' || status == 'CANCEL_REQUESTED') {
-                    final tglStr = item['startDate']?.toString() ?? item['createdAt']?.toString() ?? '';
+                  if (status == 'PENDING' ||
+                      status == 'APPROVED' ||
+                      status == 'CANCEL_REQUESTED') {
+                    final tglStr =
+                        item['startDate']?.toString() ??
+                        item['createdAt']?.toString() ??
+                        '';
                     if (tglStr.length >= 10) {
                       try {
-                        blockedDates.add(DateFormat('yyyy-MM-dd').parse(tglStr.substring(0, 10)));
+                        blockedDates.add(
+                          DateFormat(
+                            'yyyy-MM-dd',
+                          ).parse(tglStr.substring(0, 10)),
+                        );
                       } catch (_) {}
                     }
                   }
                 }
 
-                DateTime initial = _tanggalKegiatan.isBefore(baseDate) ? baseDate : _tanggalKegiatan;
-                while (blockedDates.any((b) => b.year == initial.year && b.month == initial.month && b.day == initial.day)) {
+                DateTime initial = _tanggalKegiatan.isBefore(baseDate)
+                    ? baseDate
+                    : _tanggalKegiatan;
+                while (blockedDates.any(
+                  (b) =>
+                      b.year == initial.year &&
+                      b.month == initial.month &&
+                      b.day == initial.day,
+                )) {
                   initial = initial.add(const Duration(days: 1));
                 }
 
@@ -522,7 +648,9 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
                   selectableDayPredicate: (DateTime day) {
                     if (day.isBefore(baseDate)) return false;
                     for (final blocked in blockedDates) {
-                      if (day.year == blocked.year && day.month == blocked.month && day.day == blocked.day) {
+                      if (day.year == blocked.year &&
+                          day.month == blocked.month &&
+                          day.day == blocked.day) {
                         return false;
                       }
                     }
@@ -530,7 +658,9 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
                   },
                   builder: (context, child) => Theme(
                     data: Theme.of(context).copyWith(
-                      colorScheme: const ColorScheme.light(primary: AppColors.primaryGreen),
+                      colorScheme: const ColorScheme.light(
+                        primary: AppColors.primaryGreen,
+                      ),
                     ),
                     child: child!,
                   ),
@@ -540,18 +670,32 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
               child: Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  border: Border.all(color: _isDateBlocked ? AppColors.warningOrange : Colors.grey[400]!),
+                  border: Border.all(
+                    color: _isDateBlocked
+                        ? AppColors.warningOrange
+                        : Colors.grey[400]!,
+                  ),
                   borderRadius: BorderRadius.circular(10),
-                  color: _isDateBlocked ? AppColors.warningOrange.withValues(alpha: 0.1) : Colors.white,
+                  color: _isDateBlocked
+                      ? AppColors.warningOrange.withValues(alpha: 0.1)
+                      : Colors.white,
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      DateFormat('EEEE, dd MMMM yyyy', 'id').format(_tanggalKegiatan),
+                      DateFormat(
+                        'EEEE, dd MMMM yyyy',
+                        'id',
+                      ).format(_tanggalKegiatan),
                       style: const TextStyle(fontSize: 13),
                     ),
-                    Image.asset('assets/icons/calendar.png', width: 18, height: 18, color: AppColors.primaryGreen),
+                    Image.asset(
+                      'assets/icons/calendar.png',
+                      width: 18,
+                      height: 18,
+                      color: AppColors.primaryGreen,
+                    ),
                   ],
                 ),
               ),
@@ -561,12 +705,20 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
                 padding: const EdgeInsets.only(top: 8),
                 child: Row(
                   children: [
-                    const Icon(Icons.info_outline, color: AppColors.warningOrange, size: 16),
+                    const Icon(
+                      Icons.info_outline,
+                      color: AppColors.warningOrange,
+                      size: 16,
+                    ),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
                         'Anda sudah memiliki pengajuan untuk tanggal ini (Menunggu/Disetujui).',
-                        style: TextStyle(color: AppColors.warningOrange.withValues(alpha: 0.9), fontSize: 11, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          color: AppColors.warningOrange.withValues(alpha: 0.9),
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],
@@ -575,32 +727,46 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
             const SizedBox(height: 20),
 
             // Deskripsi
-            const Text('Deskripsi / Alasan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            const Text(
+              'Deskripsi / Alasan',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
             const SizedBox(height: 8),
             TextFormField(
               controller: _deskripsiController,
               maxLines: 4,
               decoration: InputDecoration(
-                hintText: _selectedKategori == KategoriIzin.sakit ? 'Jelaskan kondisi sakit secara detail (misal: demam, kontrol dokter)...' : 'Jelaskan alasan izin secara detail...',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                hintText: _selectedKategori == KategoriIzin.sakit
+                    ? 'Jelaskan kondisi sakit secara detail (misal: demam, kontrol dokter)...'
+                    : 'Jelaskan alasan izin secara detail...',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
                 filled: true,
                 fillColor: Colors.white,
               ),
-              validator: (val) => val == null || val.trim().isEmpty ? 'Deskripsi wajib diisi' : null,
+              validator: (val) => val == null || val.trim().isEmpty
+                  ? 'Deskripsi wajib diisi'
+                  : null,
             ),
             const SizedBox(height: 20),
 
             // Upload Foto Bukti
             Text(
-              _selectedKategori == KategoriIzin.sakit ? 'Foto Bukti Surat Keterangan Sakit' : 'Foto Dokumen Pendukung Izin', 
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)
+              _selectedKategori == KategoriIzin.sakit
+                  ? 'Foto Bukti Surat Keterangan Sakit'
+                  : 'Foto Dokumen Pendukung Izin',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
             const SizedBox(height: 4),
             Text(
-              _selectedKategori == KategoriIzin.sakit 
-                ? 'Wajib — surat keterangan sakit / bukti periksa dokter.' 
-                : 'Wajib — surat izin instansi, surat pengantar, atau dokumen relevan lainnya.', 
-              style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)
+              _selectedKategori == KategoriIzin.sakit
+                  ? 'Wajib — surat keterangan sakit / bukti periksa dokter.'
+                  : 'Wajib — surat izin instansi, surat pengantar, atau dokumen relevan lainnya.',
+              style: const TextStyle(
+                fontSize: 11,
+                color: AppColors.textSecondary,
+              ),
             ),
             const SizedBox(height: 8),
             InkWell(
@@ -611,51 +777,103 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: _photoPath != null ? AppColors.primaryGreen : Colors.grey[400]!,
+                    color: _photoPath != null
+                        ? AppColors.primaryGreen
+                        : Colors.grey[400]!,
                     width: _photoPath != null ? 2 : 1,
                     style: BorderStyle.solid,
                   ),
                   borderRadius: BorderRadius.circular(10),
-                  color: _photoPath != null ? AppColors.primaryGreenLight : Colors.grey[50],
+                  color: _photoPath != null
+                      ? AppColors.primaryGreenLight
+                      : Colors.grey[50],
                 ),
                 child: _photoPath == null
                     ? const Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.add_a_photo_rounded, size: 36, color: AppColors.primaryGreen),
+                          Icon(
+                            Icons.add_a_photo_rounded,
+                            size: 36,
+                            color: AppColors.primaryGreen,
+                          ),
                           SizedBox(height: 8),
-                          Text('Ketuk untuk Upload Foto Bukti', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                          Text(
+                            'Ketuk untuk Upload Foto Bukti',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
                           SizedBox(height: 4),
-                          Text('Format: JPG, PNG • Maks 5MB', style: TextStyle(fontSize: 10, color: AppColors.textHint)),
+                          Text(
+                            'Format: JPG, PNG • Maks 5MB',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: AppColors.textHint,
+                            ),
+                          ),
                         ],
                       )
                     : Stack(
                         children: [
                           ClipRRect(
                             borderRadius: BorderRadius.circular(10),
-                            child: Image.file(File(_photoPath!), fit: BoxFit.cover, width: double.infinity, height: double.infinity),
+                            child: Image.file(
+                              File(_photoPath!),
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              height: double.infinity,
+                            ),
                           ),
                           Positioned(
-                            top: 8, right: 8,
+                            top: 8,
+                            right: 8,
                             child: GestureDetector(
                               onTap: () => setState(() => _photoPath = null),
                               child: Container(
                                 padding: const EdgeInsets.all(4),
-                                decoration: const BoxDecoration(color: AppColors.dangerRed, shape: BoxShape.circle),
-                                child: const Icon(Icons.close, color: Colors.white, size: 16),
+                                decoration: const BoxDecoration(
+                                  color: AppColors.dangerRed,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.close,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
                               ),
                             ),
                           ),
                           Positioned(
-                            bottom: 8, right: 8,
+                            bottom: 8,
+                            right: 8,
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(color: AppColors.primaryGreen, borderRadius: BorderRadius.circular(6)),
-                              child: const Row(children: [
-                                Icon(Icons.check, color: Colors.white, size: 12),
-                                SizedBox(width: 4),
-                                Text('Foto Terpilih', style: TextStyle(color: Colors.white, fontSize: 10)),
-                              ]),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryGreen,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Row(
+                                children: [
+                                  Icon(
+                                    Icons.check,
+                                    color: Colors.white,
+                                    size: 12,
+                                  ),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Foto Terpilih',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ],

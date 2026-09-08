@@ -15,6 +15,10 @@ import 'package:latlong2/latlong.dart';
 import '../../../data/models/group_zone_models.dart';
 import '../../../data/models/mahasiswa_kkn_models.dart';
 import '../../../data/models/user_entity.dart';
+import '../../../core/gps_calibration/state/gps_calibration_notifier.dart';
+import '../../../core/gps_calibration/state/gps_calibration_state.dart';
+import 'widgets/gps_calibration_panel.dart';
+import 'widgets/map_controls.dart';
 
 class KknAttendanceView extends ConsumerStatefulWidget {
   const KknAttendanceView({super.key});
@@ -27,8 +31,10 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
     with WidgetsBindingObserver {
   final TextEditingController _rtRwCtrl = TextEditingController();
   final TextEditingController _kodeZonaCtrl = TextEditingController(text: '');
+  final MapController _mapController = MapController();
   String _selectedKelurahan = '';
   bool _showDetail = false;
+  bool _showGpsPanel = false;
 
   @override
   void initState() {
@@ -116,20 +122,29 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
             },
           ),
           actions: [
+            // Tombol Diagnostik Sinyal GPS dipindah ke bawah map
             IconButton(
               icon: const Icon(
                 Icons.refresh_rounded,
                 color: AppColors.textPrimary,
               ),
-              tooltip: 'Perbarui Lokasi GPS',
+              tooltip: 'Perbarui Semua Data',
               onPressed: () async {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Memperbarui koordinat GPS & wilayah...'),
-                    duration: Duration(seconds: 1),
+                    content: Text(
+                      'Memperbarui data kegiatan, kelompok & lokasi...',
+                    ),
+                    duration: Duration(seconds: 2),
                   ),
                 );
-                await locationNotifier.forceLocationUpdate(context);
+                await Future.wait([
+                  locationNotifier.checkActiveSchedule(),
+                  locationNotifier.fetchKegiatanAktif(),
+                  locationNotifier.forceLocationUpdate(context),
+                  ref.read(kelompokKknProvider.notifier).fetchKelompok(),
+                  ref.read(kknMapProvider.notifier).fetchWilayahKelompok(),
+                ]);
               },
             ),
           ],
@@ -148,8 +163,68 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (!_showDetail) _buildMapSection(),
+                  if (!_showDetail)
+                    Consumer(
+                      builder: (ctx, r, _) {
+                        final isRunning = r
+                            .watch(gpsCalibrationProvider)
+                            .isRunning;
+                        return Center(
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 12.0),
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                setState(() => _showGpsPanel = !_showGpsPanel);
+                              },
+                              icon: isRunning
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: AppColors.primaryGreen,
+                                      ),
+                                    )
+                                  : const Icon(
+                                      Icons.gps_fixed,
+                                      color: AppColors.primaryGreen,
+                                    ),
+                              label: const Text(
+                                'Kalibrasi GPS',
+                                style: TextStyle(
+                                  color: AppColors.primaryGreen,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: AppColors.primaryGreen,
+                                elevation: 0,
+                                side: const BorderSide(
+                                  color: AppColors.primaryGreen,
+                                  width: 1.5,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 10,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  // Panel diagnostik GPS inline — tampil hanya jika diaktifkan
+                  if (!_showDetail && _showGpsPanel)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 12.0),
+                      child: GpsCalibrationPanel(),
+                    ),
                   if (!_showDetail) const SizedBox(height: 16),
-                  _buildAttendanceDetail(locationState, locationNotifier),
+                  _buildAttendanceDetail(locationState, locationNotifier, ref),
                 ],
               ),
             ),
@@ -161,267 +236,6 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
 
   /// Tampilkan Bottom Sheet untuk memilih Posko sebelum memulai kegiatan.
   /// Mengembalikan [PoskoItem] yang dipilih, atau [null] jika dibatalkan.
-  Future<PoskoItem?> _showPilihPoskoSheet(List<PoskoItem> poskoList) async {
-    // Jika hanya ada 1 posko, langsung kembalikan tanpa perlu memilih
-    if (poskoList.length == 1) return poskoList.first;
-
-    PoskoItem? selected = poskoList.firstWhere(
-      (p) => p.isUtama,
-      orElse: () => poskoList.first,
-    );
-
-    return await showModalBottomSheet<PoskoItem>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheetState) {
-          return Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-            ),
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Drag handle
-                Center(
-                  child: Container(
-                    width: 40, height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                // Header
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryGreen.withValues(alpha: 0.12),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.home_work_rounded,
-                        color: AppColors.primaryGreen,
-                        size: 22,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Pilih Lokasi Tugas',
-                            style: TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          SizedBox(height: 2),
-                          Text(
-                            'Sesuaikan dengan posko penugasan Anda',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                const Divider(),
-                const SizedBox(height: 8),
-                // Daftar posko
-                ...poskoList.map((posko) {
-                  final isSelected = selected?.id == posko.id;
-                  final isUtama = posko.isUtama || posko.type == 'POSKO_UTAMA';
-                  return GestureDetector(
-                    onTap: () => setSheetState(() => selected = posko),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      margin: const EdgeInsets.only(bottom: 10),
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? AppColors.primaryGreen.withValues(alpha: 0.08)
-                            : Colors.grey.shade50,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: isSelected
-                              ? AppColors.primaryGreen
-                              : Colors.grey.shade200,
-                          width: isSelected ? 2 : 1,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          // Radio indicator
-                          Container(
-                            width: 22, height: 22,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: isSelected
-                                    ? AppColors.primaryGreen
-                                    : Colors.grey.shade400,
-                                width: 2,
-                              ),
-                            ),
-                            child: isSelected
-                                ? Center(
-                                    child: Container(
-                                      width: 12, height: 12,
-                                      decoration: const BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: AppColors.primaryGreen,
-                                      ),
-                                    ),
-                                  )
-                                : null,
-                          ),
-                          const SizedBox(width: 14),
-                          // Icon posko
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: (isUtama
-                                  ? AppColors.primaryGreen
-                                  : Colors.blue)
-                                  .withValues(alpha: 0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              isUtama ? Icons.home_work_rounded : Icons.home_rounded,
-                              color: isUtama ? AppColors.primaryGreen : Colors.blue,
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          // Detail
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Flexible(
-                                      child: Text(
-                                        posko.nama,
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                          color: isSelected
-                                              ? AppColors.primaryGreen
-                                              : AppColors.textPrimary,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                    if (isUtama) ...[
-                                      const SizedBox(width: 6),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 6, vertical: 2,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.primaryGreen.withValues(alpha: 0.12),
-                                          borderRadius: BorderRadius.circular(6),
-                                        ),
-                                        child: const Text(
-                                          'Utama',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            color: AppColors.primaryGreen,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                                const SizedBox(height: 3),
-                                Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.location_on_outlined,
-                                      size: 12,
-                                      color: AppColors.textSecondary,
-                                    ),
-                                    const SizedBox(width: 3),
-                                    Flexible(
-                                      child: Text(
-                                        posko.alamat.isNotEmpty ? posko.alamat : 'Lokasi posko',
-                                        style: const TextStyle(
-                                          fontSize: 11,
-                                          color: AppColors.textSecondary,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'R: ${posko.radius}m',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: isSelected
-                                            ? AppColors.primaryGreen
-                                            : Colors.grey,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }),
-                const SizedBox(height: 8),
-                // Tombol Mulai
-                ElevatedButton.icon(
-                  onPressed: selected != null
-                      ? () => Navigator.of(ctx).pop(selected)
-                      : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryGreen,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    elevation: 0,
-                  ),
-                  icon: const Icon(Icons.play_circle_rounded, size: 20),
-                  label: Text(
-                    selected != null
-                        ? 'Mulai di ${selected!.nama}'
-                        : 'Pilih Posko Terlebih Dahulu',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
 
   Future<void> _showAbsenDialog(
     KknLocationState state,
@@ -455,7 +269,6 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
       ),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) {
-
           Future<void> pickImage(ImageSource source) async {
             final picked = await picker.pickImage(
               source: source,
@@ -482,16 +295,28 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         ListTile(
-                          leading: const Icon(Icons.camera_alt, color: AppColors.primaryGreen),
-                          title: const Text('Ambil dari Kamera', style: TextStyle(fontWeight: FontWeight.w500)),
+                          leading: const Icon(
+                            Icons.camera_alt,
+                            color: AppColors.primaryGreen,
+                          ),
+                          title: const Text(
+                            'Ambil dari Kamera',
+                            style: TextStyle(fontWeight: FontWeight.w500),
+                          ),
                           onTap: () {
                             Navigator.pop(pickerCtx);
                             pickImage(ImageSource.camera);
                           },
                         ),
                         ListTile(
-                          leading: const Icon(Icons.photo_library, color: AppColors.primaryGreen),
-                          title: const Text('Pilih dari Galeri', style: TextStyle(fontWeight: FontWeight.w500)),
+                          leading: const Icon(
+                            Icons.photo_library,
+                            color: AppColors.primaryGreen,
+                          ),
+                          title: const Text(
+                            'Pilih dari Galeri',
+                            style: TextStyle(fontWeight: FontWeight.w500),
+                          ),
                           onTap: () {
                             Navigator.pop(pickerCtx);
                             pickImage(ImageSource.gallery);
@@ -546,7 +371,8 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                   ),
                 );
               } else {
-                final err = ref.read(kknLocationProvider).error ??
+                final err =
+                    ref.read(kknLocationProvider).error ??
                     'Gagal melakukan presensi. Periksa GPS & koneksi internet.';
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -608,16 +434,16 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                       const SizedBox(height: 6),
                       _buildInfoRow('Nama', user.name),
                       const SizedBox(height: 6),
-                      _buildInfoRow('NIM', user.nim.isNotEmpty ? user.nim : '-'),
+                      _buildInfoRow(
+                        'NIM',
+                        user.nim.isNotEmpty ? user.nim : '-',
+                      ),
                       const SizedBox(height: 6),
                       _buildInfoRow('Kelompok', kelompokName),
                       const SizedBox(height: 6),
                       _buildInfoRow('DPL', dplName),
                       const SizedBox(height: 6),
-                      _buildInfoRow(
-                        'Durasi di Zona',
-                                '$durasiMenit menit',
-                      ),
+                      _buildInfoRow('Durasi di Zona', '$durasiMenit menit'),
                     ],
                   ),
                 ),
@@ -670,10 +496,15 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 24,
+                        horizontal: 16,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.primaryGreen.withValues(alpha: 0.05),
-                        border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.5)),
+                        border: Border.all(
+                          color: AppColors.primaryGreen.withValues(alpha: 0.5),
+                        ),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Column(
@@ -744,7 +575,9 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: AppColors.primaryGreen),
+                      borderSide: const BorderSide(
+                        color: AppColors.primaryGreen,
+                      ),
                     ),
                     contentPadding: const EdgeInsets.all(12),
                   ),
@@ -801,7 +634,10 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
             ),
           ),
         ),
-        const Text(': ', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+        const Text(
+          ': ',
+          style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+        ),
         Expanded(
           child: Text(
             value,
@@ -815,8 +651,6 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
       ],
     );
   }
-
-
 
   Widget _buildDashedDivider() {
     return Padding(
@@ -993,76 +827,114 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
       );
     }
 
-    // Kumpulkan Polygon Points
-    List<LatLng> polygonPoints = [];
-    if (mapState.groupZone?.autoZone.isActive == true && mapState.groupZone?.autoZone.polygon != null) {
-      polygonPoints = mapState.groupZone!.autoZone.polygon!;
-    } else if (wilayah.tipeArea == 'POLYGON' && wilayah.polygonKoordinat != null) {
-      polygonPoints = wilayah.polygonKoordinat!
-          .map((c) => LatLng(c['lat']!, c['lng']!))
-          .toList();
-    }
-
     // Kumpulkan Posko List
     List<CircleMarker> circleMarkers = [];
     List<Marker> poskoMarkers = [];
-    
-    if (mapState.groupZone != null && mapState.groupZone!.poskoList.isNotEmpty) {
+
+    final rawValidZones = locationState.activeActivity?['validZones'];
+    if (rawValidZones != null &&
+        rawValidZones is List &&
+        rawValidZones.isNotEmpty) {
+      for (final z in rawValidZones) {
+        final Map zMap = z is Map ? z : {};
+        final lat = (zMap['latitude'] as num?)?.toDouble() ?? 0.0;
+        final lng = (zMap['longitude'] as num?)?.toDouble() ?? 0.0;
+        final radius = (zMap['radius'] as num?)?.toDouble() ?? 100.0;
+        if (lat == 0.0 || lng == 0.0) continue;
+        final point = LatLng(lat, lng);
+
+        circleMarkers.add(
+          CircleMarker(
+            point: point,
+            radius: radius,
+            useRadiusInMeter: true,
+            color: AppColors.primaryGreen.withValues(alpha: 0.2),
+            borderColor: AppColors.primaryGreen,
+            borderStrokeWidth: 2,
+          ),
+        );
+
+        poskoMarkers.add(
+          Marker(
+            point: point,
+            width: 40,
+            height: 40,
+            child: const Icon(
+              Icons.home_work_rounded,
+              color: AppColors.primaryGreen,
+              size: 32,
+            ),
+          ),
+        );
+      }
+    } else if (mapState.groupZone != null &&
+        mapState.groupZone!.poskoList.isNotEmpty) {
       for (final posko in mapState.groupZone!.poskoList) {
         final point = LatLng(posko.latitude, posko.longitude);
-        
-        circleMarkers.add(CircleMarker(
-          point: point,
-          radius: posko.radius.toDouble(),
-          useRadiusInMeter: true,
-          color: posko.type == 'POSKO_UTAMA' 
-              ? AppColors.primaryGreen.withValues(alpha: 0.2)
-              : Colors.blue.withValues(alpha: 0.2),
-          borderColor: posko.type == 'POSKO_UTAMA' ? AppColors.primaryGreen : Colors.blue,
-          borderStrokeWidth: 2,
-        ));
-        
-        poskoMarkers.add(Marker(
-          point: point,
-          width: 40,
-          height: 40,
-          child: Icon(
-            posko.type == 'POSKO_UTAMA' ? Icons.home_work_rounded : Icons.home,
-            color: posko.type == 'POSKO_UTAMA' ? AppColors.primaryGreen : Colors.blue,
-            size: 32,
+
+        circleMarkers.add(
+          CircleMarker(
+            point: point,
+            radius: posko.radius.toDouble(),
+            useRadiusInMeter: true,
+            color: posko.type == 'POSKO_UTAMA'
+                ? AppColors.primaryGreen.withValues(alpha: 0.2)
+                : Colors.blue.withValues(alpha: 0.2),
+            borderColor: posko.type == 'POSKO_UTAMA'
+                ? AppColors.primaryGreen
+                : Colors.blue,
+            borderStrokeWidth: 2,
           ),
-        ));
+        );
+
+        poskoMarkers.add(
+          Marker(
+            point: point,
+            width: 40,
+            height: 40,
+            child: Icon(
+              posko.type == 'POSKO_UTAMA'
+                  ? Icons.home_work_rounded
+                  : Icons.home,
+              color: posko.type == 'POSKO_UTAMA'
+                  ? AppColors.primaryGreen
+                  : Colors.blue,
+              size: 32,
+            ),
+          ),
+        );
       }
     } else {
       // Fallback ke legacy posko jika data groupZone gagal di-load
       if (poskoLatLng != null) {
         if (wilayah.tipeArea == 'RADIUS' && wilayah.radiusMeters != null) {
-          circleMarkers.add(CircleMarker(
-            point: poskoLatLng,
-            radius: wilayah.radiusMeters!,
-            useRadiusInMeter: true,
-            color: AppColors.primaryGreen.withValues(alpha: 0.2),
-            borderColor: AppColors.primaryGreen,
-            borderStrokeWidth: 2,
-          ));
+          circleMarkers.add(
+            CircleMarker(
+              point: poskoLatLng,
+              radius: wilayah.radiusMeters!,
+              useRadiusInMeter: true,
+              color: AppColors.primaryGreen.withValues(alpha: 0.2),
+              borderColor: AppColors.primaryGreen,
+              borderStrokeWidth: 2,
+            ),
+          );
         }
-        poskoMarkers.add(Marker(
-          point: poskoLatLng,
-          width: 40,
-          height: 40,
-          child: const Icon(
-            Icons.home_work_rounded,
-            color: AppColors.primaryGreen,
-            size: 32,
+        poskoMarkers.add(
+          Marker(
+            point: poskoLatLng,
+            width: 40,
+            height: 40,
+            child: const Icon(
+              Icons.home_work_rounded,
+              color: AppColors.primaryGreen,
+              size: 32,
+            ),
           ),
-        ));
+        );
       }
     }
 
-    LatLng center = poskoLatLng ??
-        (polygonPoints.isNotEmpty
-            ? polygonPoints.first
-            : const LatLng(-6.914744, 107.609810));
+    LatLng center = poskoLatLng ?? const LatLng(-6.914744, 107.609810);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1084,13 +956,19 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                 builder: (context) {
                   final kelompokState = ref.watch(kelompokKknProvider);
                   final user = ref.watch(authProvider).user;
-                  final dplName = kelompokState.kelompok?.dosenPembimbing.isNotEmpty == true
+                  final dplName =
+                      kelompokState.kelompok?.dosenPembimbing.isNotEmpty == true
                       ? kelompokState.kelompok!.dosenPembimbing
-                      : (user?.dplName.isNotEmpty == true ? user!.dplName : '-');
+                      : (user?.dplName.isNotEmpty == true
+                            ? user!.dplName
+                            : '-');
 
                   return Flexible(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.primaryGreen.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
@@ -1113,7 +991,9 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                               'DPL: $dplName',
                               style: TextStyle(
                                 fontSize: 9,
-                                color: AppColors.primaryGreen.withValues(alpha: 0.8),
+                                color: AppColors.primaryGreen.withValues(
+                                  alpha: 0.8,
+                                ),
                                 fontWeight: FontWeight.w600,
                               ),
                               textAlign: TextAlign.right,
@@ -1133,68 +1013,93 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
           borderRadius: BorderRadius.circular(16),
           child: SizedBox(
             height: 250,
-            child: FlutterMap(
-              options: MapOptions(
-                initialCenter: center,
-                initialZoom: 15.0,
-                interactionOptions: const InteractionOptions(
-                  flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
-                ),
-              ),
+            child: Stack(
               children: [
-                TileLayer(
-                  urlTemplate:
-                      'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  subdomains: const ['a', 'b', 'c'],
-                  userAgentPackageName: 'com.makerindo.berseka',
-                ),
-                if (polygonPoints.isNotEmpty)
-                  PolygonLayer(
-                    polygons: [
-                      Polygon(
-                        points: polygonPoints,
-                        color: AppColors.primaryGreen.withValues(alpha: 0.2),
-                        borderStrokeWidth: 2,
-                        borderColor: AppColors.primaryGreen,
-                        isFilled: true,
-                      ),
-                    ],
+                FlutterMap(
+                  mapController: _mapController,
+                  options: MapOptions(
+                    initialCenter: center,
+                    initialZoom: 15.0,
+                    interactionOptions: const InteractionOptions(
+                      flags:
+                          InteractiveFlag.all, // mengizinkan rotasi untuk FR-18
+                    ),
                   ),
-                if (circleMarkers.isNotEmpty)
-                  CircleLayer(
-                    circles: circleMarkers,
-                  ),
-                MarkerLayer(
-                  markers: [
-                    ...poskoMarkers,
-                    if (locationState.currentPosition != null)
-                      Marker(
-                        point: LatLng(
-                          locationState.currentPosition!.latitude,
-                          locationState.currentPosition!.longitude,
-                        ),
-                        width: 30,
-                        height: 30,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.blueAccent,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Colors.black26,
-                                blurRadius: 4,
-                              )
-                            ],
+                  children: [
+                    TileLayer(
+                      urlTemplate:
+                          'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      subdomains: const ['a', 'b', 'c'],
+                      userAgentPackageName: 'com.makerindo.berseka',
+                    ),
+
+                    if (circleMarkers.isNotEmpty)
+                      CircleLayer(circles: circleMarkers),
+                    MarkerLayer(
+                      markers: [
+                        ...poskoMarkers,
+                        if (locationState.currentPosition != null)
+                          Marker(
+                            point: LatLng(
+                              locationState.currentPosition!.latitude,
+                              locationState.currentPosition!.longitude,
+                            ),
+                            width: 30,
+                            height: 30,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.blueAccent,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 2,
+                                ),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Colors.black26,
+                                    blurRadius: 4,
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.person,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                            ),
                           ),
-                          child: const Icon(
-                            Icons.person,
-                            color: Colors.white,
-                            size: 18,
-                          ),
-                        ),
-                      ),
-                  ],
+                      ],
+                    ), // close MarkerLayer
+                  ], // close children
+                ), // close FlutterMap
+                // Overlay Kontrol Peta (Kompas & Lokasi Saya) - FR-18 & FR-19
+                Consumer(
+                  builder: (ctx, ref, _) {
+                    final calibStatus = ref
+                        .watch(gpsCalibrationProvider)
+                        .status;
+                    final isGpsBad = calibStatus == GpsCalibrationStatus.guide;
+
+                    return MapControls(
+                      mapController: _mapController,
+                      isGpsBad: isGpsBad,
+                      onRecenter: () async {
+                        // Re-center kamera ke posisi terbaru
+                        await ref
+                            .read(kknLocationProvider.notifier)
+                            .forceLocationUpdate(context);
+                        final position = ref
+                            .read(kknLocationProvider)
+                            .currentPosition;
+                        if (position != null) {
+                          _mapController.move(
+                            LatLng(position.latitude, position.longitude),
+                            _mapController.camera.zoom,
+                          );
+                        }
+                      },
+                    );
+                  },
                 ),
               ],
             ),
@@ -1207,6 +1112,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
   Widget _buildAttendanceDetail(
     KknLocationState state,
     KknLocationNotifier notifier,
+    WidgetRef ref,
   ) {
     if (state.isLoadingKegiatan) {
       return const Center(
@@ -1345,122 +1251,76 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                   }
                 },
                 onMulai: (id) async {
-                final statusAktifSekarang =
-                    (kegiatan['statusKehadiran'] ??
-                            kegiatan['attendanceStatus'] ??
-                            '')
-                        .toString()
-                        .toUpperCase();
+                  final statusAktifSekarang =
+                      (kegiatan['statusKehadiran'] ??
+                              kegiatan['attendanceStatus'] ??
+                              '')
+                          .toString()
+                          .toUpperCase();
 
-                // Cek kegiatan LAIN yang sedang BERLANGSUNG
-                final activeId =
-                    state.activeActivity?['id']?.toString() ??
-                    state.activeActivity?['scheduleId']?.toString();
-                final statusAktifLain =
-                    (state.activeActivity?['statusKehadiran'] ??
-                            state.activeActivity?['attendanceStatus'] ??
-                            '')
-                        .toString()
-                        .toUpperCase();
-                final isDifferentActive =
-                    state.activeActivity != null &&
-                    activeId != null &&
-                    activeId != id &&
-                    (statusAktifLain == 'BERLANGSUNG' || statusAktifLain == 'TERJEDA') &&
-                    !state.isSuccessAttendance;
+                  // Cek kegiatan LAIN yang sedang BERLANGSUNG
+                  final activeId =
+                      state.activeActivity?['id']?.toString() ??
+                      state.activeActivity?['scheduleId']?.toString();
+                  final statusAktifLain =
+                      (state.activeActivity?['statusKehadiran'] ??
+                              state.activeActivity?['attendanceStatus'] ??
+                              '')
+                          .toString()
+                          .toUpperCase();
+                  final isDifferentActive =
+                      state.activeActivity != null &&
+                      activeId != null &&
+                      activeId != id &&
+                      (statusAktifLain == 'BERLANGSUNG' ||
+                          statusAktifLain == 'TERJEDA') &&
+                      !state.isSuccessAttendance;
 
-                if (isDifferentActive) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Anda masih memiliki kegiatan KKN lain yang aktif. Silakan keluar dari kegiatan sebelumnya terlebih dahulu!',
+                  if (isDifferentActive) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Anda masih memiliki kegiatan KKN lain yang aktif. Silakan keluar dari kegiatan sebelumnya terlebih dahulu!',
+                          ),
+                          backgroundColor: AppColors.dangerRed,
                         ),
-                        backgroundColor: AppColors.dangerRed,
-                      ),
-                    );
-                  }
-                  return;
-                }
-
-                // ── PILIH POSKO ──────────────────────────────────────────────
-                // Tampilkan bottom sheet pilih posko HANYA saat sesi baru (bukan resume).
-                // Saat BERLANGSUNG/TERJEDA, langsung resume tanpa pilih posko ulang.
-                Map<String, dynamic>? selectedPoskoMap;
-                final isResuming = statusAktifSekarang == 'BERLANGSUNG' ||
-                    statusAktifSekarang == 'TERJEDA';
-
-                if (!isResuming) {
-                  final mapState = ref.read(kknMapProvider);
-                  List<PoskoItem> poskoList = List.from(mapState.groupZone?.poskoList ?? []);
-                  if (poskoList.isEmpty) {
-                    final currentKegiatan = state.kegiatanList.firstWhere(
-                      (k) => k['id']?.toString() == id || k['scheduleId']?.toString() == id,
-                      orElse: () => <String, dynamic>{},
-                    );
-                    final rawPoskoList = currentKegiatan['poskoList'] as List<dynamic>?;
-                    if (rawPoskoList != null && rawPoskoList.isNotEmpty) {
-                      poskoList = rawPoskoList
-                          .map((e) => PoskoItem.fromJson(Map<String, dynamic>.from(e as Map)))
-                          .toList();
+                      );
                     }
+                    return;
                   }
 
-                  if (poskoList.isNotEmpty) {
-                    if (!mounted) return;
-                    final chosen = await _showPilihPoskoSheet(poskoList);
-                    // Jika user menutup sheet tanpa memilih, batalkan
-                    if (chosen == null) return;
-                    selectedPoskoMap = {
-                      'id': chosen.id,
-                      'nama': chosen.nama,
-                      'alamat': chosen.alamat,
-                      'latitude': chosen.latitude,
-                      'longitude': chosen.longitude,
-                      'radius': chosen.radius,
-                      'type': chosen.type,
-                    };
-                  }
-                }
-                // ─────────────────────────────────────────────────────────────
-
-                final result = await notifier.mulaiKegiatan(
-                  id,
-                  selectedPosko: selectedPoskoMap,
-                );
-                if (result == null) {
-                  if (mounted) {
-                    ref.read(authProvider.notifier).fetchProfile();
-                    final poskoName = selectedPoskoMap?['nama']?.toString();
+                  final result = await notifier.mulaiKegiatan(id);
+                  if (result == null) {
+                    if (mounted) {
+                      ref.read(authProvider.notifier).fetchProfile();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            statusAktifSekarang == 'TERJEDA'
+                                ? 'Sesi berhasil dilanjutkan.'
+                                : statusAktifSekarang == 'BERLANGSUNG'
+                                ? 'Sinkronisasi sesi aktif berhasil.'
+                                : '+10 Poin berhasil didapatkan dari Presensi Masuk!',
+                          ),
+                          backgroundColor: AppColors.primaryGreen,
+                        ),
+                      );
+                      setState(() => _showDetail = true);
+                    }
+                  } else if (mounted && result != 'CONFLICT') {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text(
-                          statusAktifSekarang == 'TERJEDA'
-                            ? 'Sesi berhasil dilanjutkan.'
-                            : statusAktifSekarang == 'BERLANGSUNG'
-                                ? 'Sinkronisasi sesi aktif berhasil.'
-                                : poskoName != null
-                                    ? '+10 Poin! Kegiatan dimulai di $poskoName.'
-                                    : '+10 Poin berhasil didapatkan dari Presensi Masuk!',
-                        ),
-                        backgroundColor: AppColors.primaryGreen,
+                        content: Text(result),
+                        backgroundColor: AppColors.dangerRed,
+                        behavior: SnackBarBehavior.floating,
                       ),
                     );
-                    setState(() => _showDetail = true);
                   }
-                } else if (mounted && result != 'CONFLICT') {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(result),
-                      backgroundColor: AppColors.dangerRed,
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                }
-              },
-            );
-          }).toList();
-        })(),
+                },
+              );
+            }).toList();
+          })(),
         ],
       );
     }
@@ -1498,6 +1358,17 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
         .replaceAllMapped(RegExp(r'(\d{2})\.(\d{2})'), (m) => '${m[1]}:${m[2]}')
         .trim();
 
+    ZoneStatus? zoneStatus;
+    final mapState = ref.watch(kknMapProvider);
+    final poskoList = mapState.groupZone?.poskoList ?? [];
+    if (state.currentPosition != null && poskoList.isNotEmpty) {
+      zoneStatus = checkStudentInGroupZones(
+        state.currentPosition!.latitude,
+        state.currentPosition!.longitude,
+        poskoList,
+      );
+    }
+
     Widget content = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1516,39 +1387,55 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
           ],
         ),
         const SizedBox(height: 16),
-        
-        if (state.smartZoneStatus != null)
+
+        if (zoneStatus != null)
           Container(
             padding: const EdgeInsets.all(12),
             margin: const EdgeInsets.only(bottom: 16),
             decoration: BoxDecoration(
-              color: AppColors.primaryGreen.withValues(alpha: 0.1),
+              color: zoneStatus.isInZone
+                  ? AppColors.primaryGreen.withValues(alpha: 0.1)
+                  : AppColors.dangerRed.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.5)),
+              border: Border.all(
+                color: zoneStatus.isInZone
+                    ? AppColors.primaryGreen.withValues(alpha: 0.5)
+                    : AppColors.dangerRed.withValues(alpha: 0.5),
+              ),
             ),
             child: Row(
               children: [
-                const Icon(
-                  Icons.auto_awesome,
-                  color: AppColors.primaryGreen,
+                Icon(
+                  zoneStatus.isInZone
+                      ? Icons.check_circle_outline
+                      : Icons.error_outline,
+                  color: zoneStatus.isInZone
+                      ? AppColors.primaryGreen
+                      : AppColors.dangerRed,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Smart Zone Aktif',
+                      Text(
+                        zoneStatus.isInZone ? 'Di Dalam Area' : 'Di Luar Area',
                         style: TextStyle(
-                          color: AppColors.primaryGreen,
+                          color: zoneStatus.isInZone
+                              ? AppColors.primaryGreen
+                              : AppColors.dangerRed,
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       Text(
-                        'Terdeteksi di area: ${state.smartZoneStatus!['detectedZoneName'] ?? 'Zona KKN'}',
+                        zoneStatus.isInZone
+                            ? 'Anda berada di area: ${zoneStatus.nearestPosko?.nama ?? 'Posko'} (Jarak: ${zoneStatus.distanceMeter.toStringAsFixed(0)} meter)'
+                            : 'Anda berada di luar radius (${zoneStatus.distanceMeter.toStringAsFixed(0)} meter dari ${zoneStatus.nearestPosko?.nama ?? 'Posko'})',
                         style: TextStyle(
-                          color: AppColors.primaryGreen.withValues(alpha: 0.8),
+                          color: zoneStatus.isInZone
+                              ? AppColors.primaryGreen.withValues(alpha: 0.8)
+                              : AppColors.dangerRed.withValues(alpha: 0.8),
                           fontSize: 11,
                         ),
                       ),
@@ -1631,8 +1518,6 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
           ),
           const SizedBox(height: 12),
         ],
-
-
 
         Card(
           color: Colors.white,
@@ -1779,10 +1664,13 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                         if (state.selectedPoskoType == 'POSKO_UTAMA')
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2,
+                              horizontal: 6,
+                              vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColors.primaryGreen.withValues(alpha: 0.15),
+                              color: AppColors.primaryGreen.withValues(
+                                alpha: 0.15,
+                              ),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: const Text(
@@ -1957,22 +1845,28 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
               ],
             ),
           )
-        else if ((state.zoneResetWarning != null && state.zoneResetWarning!.isNotEmpty && !isSuccess) || 
-                 (!isAlpa && !isDisabled && !state.isEligibleForAttendance))
+        else if ((state.zoneResetWarning != null &&
+                state.zoneResetWarning!.isNotEmpty &&
+                !isSuccess) ||
+            (!isAlpa && !isDisabled && !state.isEligibleForAttendance))
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: state.isInsideRadius && state.zoneResetWarning == null
                   ? AppColors.primaryGreen.withValues(alpha: 0.1)
-                  : (isAlpa || (!state.isInsideRadius && state.zoneResetWarning == null)
-                      ? AppColors.dangerRed.withValues(alpha: 0.1)
-                      : Colors.orange.withValues(alpha: 0.1)),
+                  : (isAlpa ||
+                            (!state.isInsideRadius &&
+                                state.zoneResetWarning == null)
+                        ? AppColors.dangerRed.withValues(alpha: 0.1)
+                        : Colors.orange.withValues(alpha: 0.1)),
               border: Border.all(
                 color: state.isInsideRadius && state.zoneResetWarning == null
                     ? AppColors.primaryGreen.withValues(alpha: 0.5)
-                    : (isAlpa || (!state.isInsideRadius && state.zoneResetWarning == null)
-                        ? AppColors.dangerRed.withValues(alpha: 0.5)
-                        : Colors.orange.withValues(alpha: 0.5)),
+                    : (isAlpa ||
+                              (!state.isInsideRadius &&
+                                  state.zoneResetWarning == null)
+                          ? AppColors.dangerRed.withValues(alpha: 0.5)
+                          : Colors.orange.withValues(alpha: 0.5)),
               ),
               borderRadius: BorderRadius.circular(12),
             ),
@@ -1981,19 +1875,24 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                 Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: state.isInsideRadius && state.zoneResetWarning == null
+                    color:
+                        state.isInsideRadius && state.zoneResetWarning == null
                         ? AppColors.primaryGreen
-                        : (isAlpa || (!state.isInsideRadius && state.zoneResetWarning == null)
-                            ? AppColors.dangerRed
-                            : Colors.orange),
+                        : (isAlpa ||
+                                  (!state.isInsideRadius &&
+                                      state.zoneResetWarning == null)
+                              ? AppColors.dangerRed
+                              : Colors.orange),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     state.isInsideRadius && state.zoneResetWarning == null
                         ? Icons.check_rounded
-                        : (isAlpa || (!state.isInsideRadius && state.zoneResetWarning == null)
-                            ? Icons.close_rounded
-                            : Icons.info_outline_rounded),
+                        : (isAlpa ||
+                                  (!state.isInsideRadius &&
+                                      state.zoneResetWarning == null)
+                              ? Icons.close_rounded
+                              : Icons.info_outline_rounded),
                     color: Colors.white,
                     size: 20,
                   ),
@@ -2004,28 +1903,38 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        (state.isInsideRadius && state.zoneResetWarning != null && state.zoneResetWarning!.isNotEmpty)
-                            ? (isAlpa || isDisabled ? 'Sesi Dibatalkan' : 'Peringatan Zona KKN')
+                        (state.isInsideRadius &&
+                                state.zoneResetWarning != null &&
+                                state.zoneResetWarning!.isNotEmpty)
+                            ? (isAlpa || isDisabled
+                                  ? 'Sesi Dibatalkan'
+                                  : 'Peringatan Zona KKN')
                             : (state.isInsideRadius
-                                ? 'Kamu berada di dalam radius lokasi'
-                                : 'Anda berada di luar zona KKN'),
+                                  ? 'Kamu berada di dalam radius lokasi'
+                                  : 'Anda berada di luar zona KKN'),
                         style: TextStyle(
-                          color: state.isInsideRadius && state.zoneResetWarning == null
+                          color:
+                              state.isInsideRadius &&
+                                  state.zoneResetWarning == null
                               ? AppColors.primaryGreen
-                              : (isAlpa || (!state.isInsideRadius && state.zoneResetWarning == null)
-                                  ? AppColors.dangerRed
-                                  : Colors.orange[800]),
+                              : (isAlpa ||
+                                        (!state.isInsideRadius &&
+                                            state.zoneResetWarning == null)
+                                    ? AppColors.dangerRed
+                                    : Colors.orange[800]),
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        (state.isInsideRadius && state.zoneResetWarning != null && state.zoneResetWarning!.isNotEmpty)
+                        (state.isInsideRadius &&
+                                state.zoneResetWarning != null &&
+                                state.zoneResetWarning!.isNotEmpty)
                             ? state.zoneResetWarning!
                             : (state.isInsideRadius
-                                ? 'Sinyal GPS stabil dan lokasi terdeteksi.'
-                                : 'Jika sedang tidak melakukan aktivitas KKN, harap jeda kegiatan.'),
+                                  ? 'Sinyal GPS stabil dan lokasi terdeteksi.'
+                                  : 'Jika sedang tidak melakukan aktivitas KKN, harap jeda kegiatan.'),
                         style: const TextStyle(
                           fontSize: 12,
                           color: AppColors.textSecondary,
@@ -2084,7 +1993,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Text(
-                        '$durasiMenit menit',
+                                '$durasiMenit menit',
                                 style: const TextStyle(
                                   color: Colors.orange,
                                   fontWeight: FontWeight.bold,
@@ -2156,7 +2065,10 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
             height: 52,
             child: ElevatedButton.icon(
               onPressed:
-                  (state.isEligibleForAttendance && !isSuccess && !isAlpa && durasiMenit >= targetMenit)
+                  (state.isEligibleForAttendance &&
+                      !isSuccess &&
+                      !isAlpa &&
+                      durasiMenit >= targetMenit)
                   ? () async {
                       await _showAbsenDialog(state, notifier);
                     }
@@ -2214,41 +2126,57 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 11, color: AppColors.dangerRed),
             ),
-          if (state.isEligibleForAttendance && !isSuccess && !isAlpa && durasiMenit < targetMenit)
+          if (state.isEligibleForAttendance &&
+              !isSuccess &&
+              !isAlpa &&
+              durasiMenit < targetMenit)
             Text(
               'Tombol Presensi Pulang aktif setelah durasi mencapai $targetMenit menit. (Saat ini: $durasiMenit menit)',
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 11, color: Colors.orange),
             ),
           const SizedBox(height: 16),
-          if (!isSuccess && !isAlpa && (state.activeActivity?['statusKehadiran']?.toString().toUpperCase() == 'TERJEDA' || state.activeActivity?['attendanceStatus']?.toString().toUpperCase() == 'TERJEDA'))
+          if (!isSuccess &&
+              !isAlpa &&
+              (state.activeActivity?['statusKehadiran']
+                          ?.toString()
+                          .toUpperCase() ==
+                      'TERJEDA' ||
+                  state.activeActivity?['attendanceStatus']
+                          ?.toString()
+                          .toUpperCase() ==
+                      'TERJEDA'))
             SizedBox(
               width: double.infinity,
               height: 52,
               child: ElevatedButton.icon(
-                onPressed: state.isInsideRadius ? () async {
-                  final isSuccess = await notifier.lanjutKegiatan();
-                  if (mounted) {
-                    if (isSuccess) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Sesi berhasil dilanjutkan.'),
-                          backgroundColor: AppColors.primaryGreen,
-                        ),
-                      );
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Gagal melanjutkan sesi.'),
-                          backgroundColor: AppColors.dangerRed,
-                        ),
-                      );
-                    }
-                  }
-                } : null,
+                onPressed: state.isInsideRadius
+                    ? () async {
+                        final isSuccess = await notifier.lanjutKegiatan();
+                        if (mounted) {
+                          if (isSuccess) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Sesi berhasil dilanjutkan.'),
+                                backgroundColor: AppColors.primaryGreen,
+                              ),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Gagal melanjutkan sesi.'),
+                                backgroundColor: AppColors.dangerRed,
+                              ),
+                            );
+                          }
+                        }
+                      }
+                    : null,
                 icon: const Icon(Icons.play_arrow_rounded, color: Colors.white),
                 label: Text(
-                  state.isInsideRadius ? 'Lanjutkan Sesi' : 'Masuk Zona untuk Lanjut',
+                  state.isInsideRadius
+                      ? 'Lanjutkan Sesi'
+                      : 'Masuk Zona untuk Lanjut',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
@@ -2256,7 +2184,9 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: state.isInsideRadius ? Colors.amber.shade700 : Colors.grey[400],
+                  backgroundColor: state.isInsideRadius
+                      ? Colors.amber.shade700
+                      : Colors.grey[400],
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -2445,7 +2375,8 @@ class KegiatanKknCard extends StatelessWidget {
           : 'Mendatang (Belum Masuk Waktu)';
     }
 
-    final bool canLeaderSkip = isLeaderOrDpl &&
+    final bool canLeaderSkip =
+        isLeaderOrDpl &&
         onSkip != null &&
         statusKehadiran != 'TIDAK_ADA_KEGIATAN' &&
         statusKehadiran != 'BERLANGSUNG' &&
@@ -2532,7 +2463,9 @@ class KegiatanKknCard extends StatelessWidget {
                         // Fitur Lihat Riwayat telah dipindah ke halaman History
                         return;
                       } else if (statusKehadiran == 'BERLANGSUNG') {
-                        onMulai(kegiatan['id'].toString()); // Parent akan menangani fallback jika BERLANGSUNG
+                        onMulai(
+                          kegiatan['id'].toString(),
+                        ); // Parent akan menangani fallback jika BERLANGSUNG
                       } else {
                         onMulai(kegiatan['id'].toString());
                       }
@@ -2541,16 +2474,16 @@ class KegiatanKknCard extends StatelessWidget {
                       backgroundColor: statusKehadiran == 'TERJEDA'
                           ? Colors.amber.shade700
                           : (canStart &&
-                                  statusKehadiran != 'TIDAK_ADA_KEGIATAN' &&
-                                  statusKehadiran != 'HADIR' &&
-                                  statusKehadiran != 'HADIR_MEMENUHI' &&
-                                  statusKehadiran != 'HADIR_TIDAK_MEMENUHI' &&
-                                  statusKehadiran != 'SELESAI' &&
-                                  statusKehadiran != 'SELESAI_TELAT' &&
-                                  statusKehadiran != 'ALPA' &&
-                                  statusKehadiran != 'TANPA_KETERANGAN')
-                              ? AppColors.primaryGreen
-                              : Colors.grey.shade400,
+                                statusKehadiran != 'TIDAK_ADA_KEGIATAN' &&
+                                statusKehadiran != 'HADIR' &&
+                                statusKehadiran != 'HADIR_MEMENUHI' &&
+                                statusKehadiran != 'HADIR_TIDAK_MEMENUHI' &&
+                                statusKehadiran != 'SELESAI' &&
+                                statusKehadiran != 'SELESAI_TELAT' &&
+                                statusKehadiran != 'ALPA' &&
+                                statusKehadiran != 'TANPA_KETERANGAN')
+                          ? AppColors.primaryGreen
+                          : Colors.grey.shade400,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -2570,24 +2503,24 @@ class KegiatanKknCard extends StatelessWidget {
                     Text(
                       statusKehadiran == 'TIDAK_ADA_KEGIATAN'
                           ? (keteranganSkip != null && keteranganSkip.isNotEmpty
-                              ? 'Tidak ada kegiatan: $keteranganSkip'
-                              : 'Kegiatan ini ditandai Tidak Ada Kegiatan oleh DPL / Ketua.')
+                                ? 'Tidak ada kegiatan: $keteranganSkip'
+                                : 'Kegiatan ini ditandai Tidak Ada Kegiatan oleh DPL / Ketua.')
                           : statusKehadiran == 'HADIR' ||
-                                  statusKehadiran == 'HADIR_MEMENUHI' ||
-                                  statusKehadiran == 'SELESAI'
-                              ? 'Anda sudah tercatat hadir pada kegiatan ini.'
-                              : statusKehadiran == 'HADIR_TIDAK_MEMENUHI' ||
-                                    statusKehadiran == 'SELESAI_TELAT'
-                              ? 'Sesi berakhir (durasi kurang dari target).'
-                              : (statusKehadiran == 'ALPA' ||
-                                    statusKehadiran == 'TANPA_KETERANGAN')
-                              ? 'Waktu kegiatan telah berakhir. Status: Tanpa Keterangan.'
-                              : statusKehadiran == 'IZIN' ||
-                                    statusKehadiran == 'SAKIT'
-                              ? 'Anda memiliki pengajuan $statusKehadiran yang aktif.'
-                              : !isAktif
-                              ? 'Kegiatan belum dimulai sesuai jadwal.'
-                              : 'Tombol tidak tersedia saat ini.',
+                                statusKehadiran == 'HADIR_MEMENUHI' ||
+                                statusKehadiran == 'SELESAI'
+                          ? 'Anda sudah tercatat hadir pada kegiatan ini.'
+                          : statusKehadiran == 'HADIR_TIDAK_MEMENUHI' ||
+                                statusKehadiran == 'SELESAI_TELAT'
+                          ? 'Sesi berakhir (durasi kurang dari target).'
+                          : (statusKehadiran == 'ALPA' ||
+                                statusKehadiran == 'TANPA_KETERANGAN')
+                          ? 'Waktu kegiatan telah berakhir. Status: Tanpa Keterangan.'
+                          : statusKehadiran == 'IZIN' ||
+                                statusKehadiran == 'SAKIT'
+                          ? 'Anda memiliki pengajuan $statusKehadiran yang aktif.'
+                          : !isAktif
+                          ? 'Kegiatan belum dimulai sesuai jadwal.'
+                          : 'Tombol tidak tersedia saat ini.',
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontSize: 11,
@@ -2599,7 +2532,11 @@ class KegiatanKknCard extends StatelessWidget {
                     const SizedBox(height: 8),
                     OutlinedButton.icon(
                       onPressed: () => _showSkipConfirmationDialog(context),
-                      icon: Icon(Icons.event_busy_rounded, size: 16, color: Colors.grey.shade700),
+                      icon: Icon(
+                        Icons.event_busy_rounded,
+                        size: 16,
+                        color: Colors.grey.shade700,
+                      ),
                       label: Text(
                         'Tandai: Tidak Ada Kegiatan',
                         style: TextStyle(
@@ -2677,7 +2614,8 @@ class KegiatanKknCard extends StatelessWidget {
           ElevatedButton(
             onPressed: () {
               Navigator.of(dialogCtx).pop();
-              final scheduleId = kegiatan['id']?.toString() ??
+              final scheduleId =
+                  kegiatan['id']?.toString() ??
                   kegiatan['scheduleId']?.toString() ??
                   '';
               if (scheduleId.isNotEmpty && onSkip != null) {

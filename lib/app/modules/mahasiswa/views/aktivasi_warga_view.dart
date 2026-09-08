@@ -24,14 +24,17 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
   String _binAnorganikId = '';
   bool _isProcessing = false;
   // Key untuk mengakses method resetScanner() secara manual dari luar widget
-  final GlobalKey<QrScannerWidgetState> _scannerKey = GlobalKey<QrScannerWidgetState>();
+  final GlobalKey<QrScannerWidgetState> _scannerKey =
+      GlobalKey<QrScannerWidgetState>();
 
   /// Memvalidasi format & kategori QR Code tempat sampah
   String? _validateBinQr(String qr, int step) {
     final lower = qr.toLowerCase().trim();
 
     // 1. Tolak QR acak / URL / link web yang bukan format tempat sampah
-    if (lower.startsWith('http://') || lower.startsWith('https://') || lower.startsWith('www.')) {
+    if (lower.startsWith('http://') ||
+        lower.startsWith('https://') ||
+        lower.startsWith('www.')) {
       return 'QR Code tidak valid!\n\nTerdeteksi sebagai tautan web. Pastikan Anda memindai stiker QR Code resmi fisik pada tempat sampah Berseka.';
     }
 
@@ -41,7 +44,8 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
     }
 
     // Pola Anorganik
-    final isAnorganicPattern = lower.contains('anorganik') ||
+    final isAnorganicPattern =
+        lower.contains('anorganik') ||
         lower.contains('anorg') ||
         lower.contains('non') ||
         lower.contains('an-org') ||
@@ -52,7 +56,8 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
         lower.contains('logam');
 
     // Pola Organik
-    final isOrganicPattern = !isAnorganicPattern &&
+    final isOrganicPattern =
+        !isAnorganicPattern &&
         (lower.contains('organik') ||
             lower.contains('organ') ||
             lower.contains('org') ||
@@ -77,7 +82,11 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
     return null; // Valid
   }
 
-  Future<void> _handleQrDetected(String qrCode, String wargaId, String wargaName) async {
+  Future<void> _handleQrDetected(
+    String qrCode,
+    String wargaId,
+    String wargaName,
+  ) async {
     if (_isProcessing) return;
     _isProcessing = true;
 
@@ -92,7 +101,9 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('ID Warga tidak ditemukan. Silakan pilih ulang warga dari daftar.'),
+            content: Text(
+              'ID Warga tidak ditemukan. Silakan pilih ulang warga dari daftar.',
+            ),
             backgroundColor: AppColors.dangerRed,
           ),
         );
@@ -107,20 +118,39 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
         await showDialog(
           context: context,
           builder: (dialogCtx) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             title: const Row(
               children: [
-                Icon(Icons.warning_amber_rounded, color: AppColors.dangerRed, size: 28),
+                Icon(
+                  Icons.warning_amber_rounded,
+                  color: AppColors.dangerRed,
+                  size: 28,
+                ),
                 SizedBox(width: 10),
-                Expanded(child: Text('Kategori QR Tidak Sesuai', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
+                Expanded(
+                  child: Text(
+                    'Kategori QR Tidak Sesuai',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
               ],
             ),
-            content: Text(validationError, style: const TextStyle(fontSize: 13, height: 1.4)),
+            content: Text(
+              validationError,
+              style: const TextStyle(fontSize: 13, height: 1.4),
+            ),
             actions: [
               ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryGreen),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryGreen,
+                ),
                 onPressed: () => Navigator.pop(dialogCtx),
-                child: const Text('Pindai Ulang', style: TextStyle(color: Colors.white)),
+                child: const Text(
+                  'Pindai Ulang',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ],
           ),
@@ -138,19 +168,29 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
         context: context,
         barrierDismissible: false,
         builder: (dialogCtx) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: const Row(
             children: [
               Icon(Icons.eco_rounded, color: AppColors.primaryGreen, size: 28),
               SizedBox(width: 10),
-              Expanded(child: Text('QR Organik Terdeteksi', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
+              Expanded(
+                child: Text(
+                  'QR Organik Terdeteksi',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
             ],
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Kode QR Tempat Sampah Organik:', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+              const Text(
+                'Kode QR Tempat Sampah Organik:',
+                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              ),
               const SizedBox(height: 4),
               Container(
                 width: double.infinity,
@@ -158,11 +198,17 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
                 decoration: BoxDecoration(
                   color: AppColors.primaryGreen.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: AppColors.primaryGreen.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Text(
                   cleanQr,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primaryGreen),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: AppColors.primaryGreen,
+                  ),
                 ),
               ),
               const SizedBox(height: 14),
@@ -175,15 +221,26 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogCtx, false),
-              child: const Text('Scan Ulang', style: TextStyle(color: AppColors.dangerRed)),
+              child: const Text(
+                'Scan Ulang',
+                style: TextStyle(color: AppColors.dangerRed),
+              ),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryGreen,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
               onPressed: () => Navigator.pop(dialogCtx, true),
-              child: const Text('Lanjut ke Scan Anorganik', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+              child: const Text(
+                'Lanjut ke Scan Anorganik',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
             ),
           ],
         ),
@@ -206,44 +263,96 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
         context: context,
         barrierDismissible: false,
         builder: (dialogCtx) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: const Row(
             children: [
-              Icon(Icons.verified_user_rounded, color: AppColors.primaryGreen, size: 28),
+              Icon(
+                Icons.verified_user_rounded,
+                color: AppColors.primaryGreen,
+                size: 28,
+              ),
               SizedBox(width: 10),
-              Expanded(child: Text('Konfirmasi Aktivasi', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
+              Expanded(
+                child: Text(
+                  'Konfirmasi Aktivasi',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
             ],
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Warga Binaan: $wargaName', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              Text(
+                'Warga Binaan: $wargaName',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
               const SizedBox(height: 12),
-              const Text('QR Organik:', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-              Text(_binOrganikId, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.primaryGreen)),
+              const Text(
+                'QR Organik:',
+                style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+              ),
+              Text(
+                _binOrganikId,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                  color: AppColors.primaryGreen,
+                ),
+              ),
               const SizedBox(height: 8),
-              const Text('QR Anorganik:', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-              Text(cleanQr, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.nonOrganicColor)),
+              const Text(
+                'QR Anorganik:',
+                style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+              ),
+              Text(
+                cleanQr,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                  color: AppColors.nonOrganicColor,
+                ),
+              ),
               const SizedBox(height: 14),
               const Text(
                 'Lokasi GPS saat ini akan direkam sebagai lokasi fisik tempat sampah Warga.',
-                style: TextStyle(fontSize: 11, color: AppColors.textHint, fontStyle: FontStyle.italic),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: AppColors.textHint,
+                  fontStyle: FontStyle.italic,
+                ),
               ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogCtx, false),
-              child: const Text('Batal', style: TextStyle(color: AppColors.textSecondary)),
+              child: const Text(
+                'Batal',
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryGreen,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
               onPressed: () => Navigator.pop(dialogCtx, true),
-              child: const Text('Proses Aktivasi Sekarang', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+              child: const Text(
+                'Proses Aktivasi Sekarang',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
             ),
           ],
         ),
@@ -268,19 +377,19 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
           builder: (_) => const Center(
             child: CircularProgressIndicator(color: AppColors.primaryGreen),
           ),
-
         );
       }
 
       // Submit bin activation to backend
-      final success = await ref.read(aktivasiWargaProvider.notifier).activateBin(
-        wargaId,
-        _binOrganikId,
-        _binAnorganikId,
-      );
+      final success = await ref
+          .read(aktivasiWargaProvider.notifier)
+          .activateBin(wargaId, _binOrganikId, _binAnorganikId);
 
       if (mounted) {
-        Navigator.of(context, rootNavigator: true).pop(); // Close loading dialog
+        Navigator.of(
+          context,
+          rootNavigator: true,
+        ).pop(); // Close loading dialog
       }
 
       if (success && mounted) {
@@ -291,7 +400,8 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
             userId: user.id,
             role: user.role.name,
             title: 'Tempat Sampah QR Warga Berhasil Dipasang',
-            desc: 'Aktivasi Tempat Sampah QR untuk Warga Binaan ($wargaName) sukses terdaftar.',
+            desc:
+                'Aktivasi Tempat Sampah QR untuk Warga Binaan ($wargaName) sukses terdaftar.',
             type: 'AKTIVASI_BIN_SUKSES',
           );
 
@@ -299,7 +409,8 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
             userId: user.id,
             role: user.role.name,
             title: 'Tempat Sampah QR Warga Berhasil Dipasang',
-            desc: 'Aktivasi Tempat Sampah QR untuk Warga Binaan ($wargaName) sukses terdaftar.',
+            desc:
+                'Aktivasi Tempat Sampah QR untuk Warga Binaan ($wargaName) sukses terdaftar.',
             type: 'AKTIVASI_BIN_SUKSES',
           );
         }
@@ -315,7 +426,9 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
             context: context,
             barrierDismissible: false,
             builder: (modalCtx) => AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
               contentPadding: const EdgeInsets.all(24),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -357,10 +470,18 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
                       onPressed: () => Navigator.of(modalCtx).pop(),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryGreen,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
-                      child: const Text('Tutup', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        'Tutup',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -374,20 +495,29 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
               context: context,
               featureKey: 'mahasiswa_aktivasi_warga',
               featureTitle: 'Aktivasi Warga Berhasil! ✨',
-              featureSubtitle: 'Bagaimana pengalaman Anda saat pertama kali membantu proses aktivasi tempat sampah warga binaan?',
+              featureSubtitle:
+                  'Bagaimana pengalaman Anda saat pertama kali membantu proses aktivasi tempat sampah warga binaan?',
               roleTag: 'Mahasiswa KKN',
             );
           }
         }
       } else if (mounted) {
-        final err = ref.read(aktivasiWargaProvider).errorMessage ?? 'Gagal mengaktivasi tempat sampah. QR Code mungkin sudah pernah terdaftar.';
+        final err =
+            ref.read(aktivasiWargaProvider).errorMessage ??
+            'Gagal mengaktivasi tempat sampah. QR Code mungkin sudah pernah terdaftar.';
         await showDialog(
           context: context,
           builder: (dialogCtx) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             title: const Row(
               children: [
-                Icon(Icons.error_outline_rounded, color: AppColors.dangerRed, size: 28),
+                Icon(
+                  Icons.error_outline_rounded,
+                  color: AppColors.dangerRed,
+                  size: 28,
+                ),
                 SizedBox(width: 10),
                 Expanded(child: Text('Aktivasi Gagal')),
               ],
@@ -395,9 +525,14 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
             content: Text(err),
             actions: [
               ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryGreen),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryGreen,
+                ),
                 onPressed: () => Navigator.pop(dialogCtx),
-                child: const Text('Coba Lagi', style: TextStyle(color: Colors.white)),
+                child: const Text(
+                  'Coba Lagi',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ],
           ),
@@ -418,10 +553,19 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
 
     if (rawArgs is Map<String, dynamic>) {
       final wargaMap = rawArgs['warga'] as Map<String, dynamic>? ?? rawArgs;
-      wargaId = wargaMap['id']?.toString() ?? wargaMap['wargaId']?.toString() ?? wargaMap['binId']?.toString() ?? '';
-      wargaName = wargaMap['name']?.toString() ?? wargaMap['wargaName']?.toString() ?? 'Warga';
+      wargaId =
+          wargaMap['id']?.toString() ??
+          wargaMap['wargaId']?.toString() ??
+          wargaMap['binId']?.toString() ??
+          '';
+      wargaName =
+          wargaMap['name']?.toString() ??
+          wargaMap['wargaName']?.toString() ??
+          'Warga';
     } else if (rawArgs is WargaDampingan) {
-      wargaId = rawArgs.wargaId.isNotEmpty ? rawArgs.wargaId : rawArgs.wargaName;
+      wargaId = rawArgs.wargaId.isNotEmpty
+          ? rawArgs.wargaId
+          : rawArgs.wargaName;
       wargaName = rawArgs.wargaName;
     } else if (rawArgs is String) {
       wargaId = rawArgs;
@@ -436,8 +580,12 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
           QrScannerWidget(
             key: _scannerKey,
             isFullScreen: true,
-            hint: _step == 1 ? 'Scan QR Tempat Sampah Organik' : 'Scan QR Tempat Sampah Anorganik',
-            overlayColor: _step == 1 ? const Color(0xFF10B981) : const Color(0xFFFFB800),
+            hint: _step == 1
+                ? 'Scan QR Tempat Sampah Organik'
+                : 'Scan QR Tempat Sampah Anorganik',
+            overlayColor: _step == 1
+                ? const Color(0xFF10B981)
+                : const Color(0xFFFFB800),
             onQrDetected: (qrCode) async {
               await _handleQrDetected(qrCode, wargaId, wargaName);
               // Kembalikan false agar QrScannerWidget tidak auto-reset (kita kelola via _scannerKey)
@@ -450,18 +598,29 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
             child: Align(
               alignment: Alignment.bottomCenter,
               child: Container(
-                margin: const EdgeInsets.only(left: 16, right: 16, bottom: 24, top: 12),
+                margin: const EdgeInsets.only(
+                  left: 16,
+                  right: 16,
+                  bottom: 24,
+                  top: 12,
+                ),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: const Color(0xFF121212).withValues(alpha: 0.92),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: _step == 1 ? const Color(0xFF10B981) : const Color(0xFFFFB800),
+                    color: _step == 1
+                        ? const Color(0xFF10B981)
+                        : const Color(0xFFFFB800),
                     width: 1.5,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: (_step == 1 ? const Color(0xFF10B981) : const Color(0xFFFFB800)).withValues(alpha: 0.3),
+                      color:
+                          (_step == 1
+                                  ? const Color(0xFF10B981)
+                                  : const Color(0xFFFFB800))
+                              .withValues(alpha: 0.3),
                       blurRadius: 16,
                       spreadRadius: 2,
                     ),
@@ -482,7 +641,11 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
                               color: Colors.white.withValues(alpha: 0.1),
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
+                            child: const Icon(
+                              Icons.arrow_back_rounded,
+                              color: Colors.white,
+                              size: 20,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -532,7 +695,9 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
                           child: Container(
                             height: 6,
                             decoration: BoxDecoration(
-                              color: _step == 2 ? const Color(0xFFFFB800) : Colors.white24, // Anorganik Yellow
+                              color: _step == 2
+                                  ? const Color(0xFFFFB800)
+                                  : Colors.white24, // Anorganik Yellow
                               borderRadius: BorderRadius.circular(3),
                             ),
                           ),
@@ -545,8 +710,12 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
                     Row(
                       children: [
                         Icon(
-                          _step == 1 ? Icons.eco_rounded : Icons.category_rounded,
-                          color: _step == 1 ? const Color(0xFF10B981) : const Color(0xFFFFB800),
+                          _step == 1
+                              ? Icons.eco_rounded
+                              : Icons.category_rounded,
+                          color: _step == 1
+                              ? const Color(0xFF10B981)
+                              : const Color(0xFFFFB800),
                           size: 20,
                         ),
                         const SizedBox(width: 8),
@@ -556,7 +725,9 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
                                 ? 'Tahap 1 dari 2: Scan QR Tempat Sampah Organik (Hijau)'
                                 : 'Tahap 2 dari 2: Scan QR Tempat Sampah Anorganik (Kuning)',
                             style: TextStyle(
-                              color: _step == 1 ? const Color(0xFF10B981) : const Color(0xFFFFB800),
+                              color: _step == 1
+                                  ? const Color(0xFF10B981)
+                                  : const Color(0xFFFFB800),
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
                             ),

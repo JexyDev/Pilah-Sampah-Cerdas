@@ -3,13 +3,20 @@ import '../models/pemanfaatan_entity.dart';
 /// Kontrak Repository untuk fitur Hasil Olahan & Evaluasi Warga (Pemanfaatan)
 abstract class PemanfaatanRepository {
   /// Mengambil daftar semua program pemanfaatan dan rekapitulasi hasil olahan
-  Future<List<PemanfaatanProgramEntity>> getPrograms({String? search, String? kategori});
+  Future<List<PemanfaatanProgramEntity>> getPrograms({
+    String? search,
+    String? kategori,
+  });
 
   /// Mengambil detail satu program pemanfaatan berdasarkan ID
   Future<PemanfaatanProgramEntity?> getProgramById(String id);
 
   /// Mengambil daftar aspirasi, kritik, dan evaluasi kepuasan warga
-  Future<List<FeedbackPemanfaatanEntity>> getFeedbackList({String? status, String? kategori, String? search});
+  Future<List<FeedbackPemanfaatanEntity>> getFeedbackList({
+    String? status,
+    String? kategori,
+    String? search,
+  });
 
   /// Mengirimkan kritik & saran baru dari warga/pengguna
   Future<FeedbackPemanfaatanEntity> createFeedback({

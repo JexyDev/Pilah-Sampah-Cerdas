@@ -5,7 +5,7 @@ import 'package:path_provider/path_provider.dart' as path_provider;
 import 'package:path/path.dart' as p;
 
 /// Utility terpusat untuk kompresi foto sebelum diunggah ke backend Express.js.
-/// 
+///
 /// Target Batas Ukuran:
 /// - AI Scan Sampah (FR-01): Target < 1MB (Max 1024 x 1024px, Quality ~80%)
 /// - Reset Tempat Sampah Evidence (FR-12): Target < 5MB (Max 1920 x 1080px, Quality ~85%)
@@ -24,13 +24,18 @@ class ImageCompressor {
     try {
       final inputFile = File(inputPath);
       if (!await inputFile.exists()) {
-        throw FileSystemException('Berkas fisik foto tidak ditemukan pada direktori lokal', inputPath);
+        throw FileSystemException(
+          'Berkas fisik foto tidak ditemukan pada direktori lokal',
+          inputPath,
+        );
       }
 
       final fileSize = await inputFile.length();
       // Jika ukuran file sudah di bawah target, kembalikan file asli
       if (fileSize <= maxSizeBytes && fileSize > 0) {
-        debugPrint('[ImageCompressor] File size already small ($fileSize bytes <= $maxSizeBytes bytes), skipping compression.');
+        debugPrint(
+          '[ImageCompressor] File size already small ($fileSize bytes <= $maxSizeBytes bytes), skipping compression.',
+        );
         return inputPath;
       }
 
@@ -51,7 +56,9 @@ class ImageCompressor {
       );
 
       if (result == null) {
-        debugPrint('[ImageCompressor] Native compression returned null, fallback to original path.');
+        debugPrint(
+          '[ImageCompressor] Native compression returned null, fallback to original path.',
+        );
         return inputPath;
       }
 
@@ -83,10 +90,14 @@ class ImageCompressor {
         }
       }
 
-      debugPrint('[ImageCompressor] Compression finished. Original: $fileSize bytes -> Compressed: $compressedSize bytes (Quality: $quality)');
+      debugPrint(
+        '[ImageCompressor] Compression finished. Original: $fileSize bytes -> Compressed: $compressedSize bytes (Quality: $quality)',
+      );
       return compressedFile.path;
     } catch (e) {
-      debugPrint('[ImageCompressor] Compression exception: $e. Fallback to original image.');
+      debugPrint(
+        '[ImageCompressor] Compression exception: $e. Fallback to original image.',
+      );
       return inputPath;
     }
   }

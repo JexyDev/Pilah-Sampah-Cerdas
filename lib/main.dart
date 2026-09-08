@@ -41,13 +41,15 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 /// Background message handler â€” harus top-level function (bukan method class).
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  debugPrint('[FCM Background] ${message.notification?.title}: ${message.notification?.body}');
+  debugPrint(
+    '[FCM Background] ${message.notification?.title}: ${message.notification?.body}',
+  );
   if (message.notification != null) {
     try {
       final title = message.notification?.title ?? 'Notifikasi Baru';
       final body = message.notification?.body ?? '';
       final type = message.data['type'] ?? 'SYSTEM';
-      
+
       String role = message.data['role'] ?? 'WARGA';
       String userId = message.data['userId'] ?? 'system';
 
@@ -57,10 +59,16 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
         if (userData != null) {
           final decoded = jsonDecode(userData);
           userId = decoded['id']?.toString() ?? userId;
-          role = (decoded['role'] ?? decoded['userRole'] ?? decoded['roleName'] ?? role).toString().toUpperCase();
+          role =
+              (decoded['role'] ??
+                      decoded['userRole'] ??
+                      decoded['roleName'] ??
+                      role)
+                  .toString()
+                  .toUpperCase();
         }
       } catch (_) {}
-      
+
       await FirebaseNotificationService().saveNotification(
         userId: userId,
         role: role,
@@ -102,15 +110,15 @@ void main() async {
 
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
-    // Kita hapus Snackbar di sini karena error layout/tampilan yang tidak fatal 
+    // Kita hapus Snackbar di sini karena error layout/tampilan yang tidak fatal
     // akan langsung ditangani oleh ErrorWidget.builder secara diam-diam.
     // Menampilkan Snackbar untuk error layout hanya akan mengganggu kenyamanan pengguna.
   };
 
   PlatformDispatcher.instance.onError = (error, stack) {
     debugPrint('Async Error: $error');
-    // We intentionally removed the global snackbar here because it causes 
-    // false-positive "Kendala sistem" errors to appear when background futures 
+    // We intentionally removed the global snackbar here because it causes
+    // false-positive "Kendala sistem" errors to appear when background futures
     // or non-fatal widget errors occur, confusing users when the feature actually succeeds.
     return true;
   };
@@ -129,7 +137,6 @@ void main() async {
       DeviceOrientation.portraitDown,
     ]);
   }
-
 
   // â”€â”€ Firebase Cloud Messaging Setup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // CATATAN: Memerlukan konfigurasi Firebase project terlebih dahulu:
@@ -179,11 +186,13 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
   void _setupFCMForeground() {
     try {
       FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
-        final title = message.notification?.title ??
+        final title =
+            message.notification?.title ??
             message.data['title']?.toString() ??
             message.data['header']?.toString() ??
             'Notifikasi Baru';
-        final body = message.notification?.body ??
+        final body =
+            message.notification?.body ??
             message.data['desc']?.toString() ??
             message.data['body']?.toString() ??
             message.data['message']?.toString() ??
@@ -192,31 +201,39 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
         final isSilentRefresh = triggerType == 'SILENT_REFRESH';
 
         if (isSilentRefresh) {
-          debugPrint('[FCM Foreground] Menerima SILENT DATA PUSH (No notification will be shown)');
+          debugPrint(
+            '[FCM Foreground] Menerima SILENT DATA PUSH (No notification will be shown)',
+          );
           final event = message.data['event']?.toString() ?? '';
-          
+
           if (event == 'REFRESH_POIN_WARGA') {
             ref.invalidate(totalPointsProvider);
             ref.invalidate(pointHistoryProvider);
             ref.invalidate(dailyPointsProvider);
             ref.invalidate(binsProvider);
             debugPrint('-> Warga providers invalidated in background.');
-          } else if (event == 'REFRESH_IZIN_MAHASISWA' || event == 'REFRESH_POIN_MAHASISWA' || event == 'REFRESH_KEGIATAN_MAHASISWA' || event == 'REFRESH_PRESENSI_MAHASISWA') {
-            // Import untuk ini belum tentu ada di main.dart, jadi lebih baik 
+          } else if (event == 'REFRESH_IZIN_MAHASISWA' ||
+              event == 'REFRESH_POIN_MAHASISWA' ||
+              event == 'REFRESH_KEGIATAN_MAHASISWA' ||
+              event == 'REFRESH_PRESENSI_MAHASISWA') {
+            // Import untuk ini belum tentu ada di main.dart, jadi lebih baik
             // biarkan mahasiswa controller merefresh via rute jika perlu,
             // atau tambahkan import-nya (saya pakai fallback aman tanpa import tambahan)
             debugPrint('-> Mahasiswa providers refresh event received: $event');
           } else if (event == 'MULTI_POSKO_UPDATED') {
-            debugPrint('-> Multi-Posko Updated event received. Delegating to KknLocationController/KelompokController if active.');
+            debugPrint(
+              '-> Multi-Posko Updated event received. Delegating to KknLocationController/KelompokController if active.',
+            );
             // Jika diperlukan, bisa di-invalidate atau call re-sync posko di sini
           }
           return;
         }
 
-        final type = (message.data['event']?.toString() ??
-                message.data['type']?.toString() ??
-                'INFO')
-            .toUpperCase();
+        final type =
+            (message.data['event']?.toString() ??
+                    message.data['type']?.toString() ??
+                    'INFO')
+                .toUpperCase();
 
         final titleUpper = title.toUpperCase();
         final bodyUpper = body.toUpperCase();
@@ -232,7 +249,9 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
             titleUpper.contains('HARUS DIAMBIL') ||
             bodyUpper.contains('HARUS DIAMBIL') ||
             bodyUpper.contains('ORG004520')) {
-          debugPrint('[FCM Foreground] Ignored obsolete pickup/seed notification: $title');
+          debugPrint(
+            '[FCM Foreground] Ignored obsolete pickup/seed notification: $title',
+          );
           return;
         }
 
@@ -241,8 +260,11 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
         // Catat push notification ke FirebaseNotificationService & LocalCache agar tersimpan di disk Halaman Notifikasi in-app
         final user = ref.read(authProvider).user;
         if (user != null && (title.isNotEmpty || body.isNotEmpty)) {
-          final notifId = message.data['notificationId']?.toString() ?? message.messageId ?? 'fcm_${DateTime.now().millisecondsSinceEpoch}';
-          
+          final notifId =
+              message.data['notificationId']?.toString() ??
+              message.messageId ??
+              'fcm_${DateTime.now().millisecondsSinceEpoch}';
+
           await FirebaseNotificationService().saveNotification(
             userId: user.id,
             role: user.role.name,
@@ -295,14 +317,20 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
 
       // Handle tap on notification when app is in background
       FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-        debugPrint('[FCM Background Tap] Tapped notification: ${message.notification?.title}');
+        debugPrint(
+          '[FCM Background Tap] Tapped notification: ${message.notification?.title}',
+        );
         _handleNotificationRoute(message);
       });
 
       // Handle tap on notification when app is terminated
-      FirebaseMessaging.instance.getInitialMessage().then((RemoteMessage? message) {
+      FirebaseMessaging.instance.getInitialMessage().then((
+        RemoteMessage? message,
+      ) {
         if (message != null) {
-          debugPrint('[FCM Terminated Tap] Tapped notification: ${message.notification?.title}');
+          debugPrint(
+            '[FCM Terminated Tap] Tapped notification: ${message.notification?.title}',
+          );
           // Kasih delay sedikit agar app selesai render dulu
           Future.delayed(const Duration(seconds: 2), () {
             _handleNotificationRoute(message);
@@ -317,13 +345,19 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
   void _handleNotificationRoute(RemoteMessage message) async {
     const storage = SafeStorage();
     final userData = await storage.read(key: AppConfig.userDataKey);
-    
+
     String role = 'WARGA'; // Default
 
     if (userData != null) {
       try {
         final decoded = jsonDecode(userData);
-        role = (decoded['role'] ?? decoded['userRole'] ?? decoded['roleName'] ?? 'WARGA').toString().toUpperCase();
+        role =
+            (decoded['role'] ??
+                    decoded['userRole'] ??
+                    decoded['roleName'] ??
+                    'WARGA')
+                .toString()
+                .toUpperCase();
       } catch (_) {}
     }
 
@@ -342,7 +376,8 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
       if (next.user?.role == UserRole.mahasiswaKkn) {
         // GPS tidak lagi auto-start saat login.
         // GPS hanya aktif saat mahasiswa menekan "Mulai Kegiatan".
-      } else if (previous?.user?.role == UserRole.mahasiswaKkn && next.user == null) {
+      } else if (previous?.user?.role == UserRole.mahasiswaKkn &&
+          next.user == null) {
         ref.read(locationPingControllerProvider.notifier).stopTracking();
         ref.read(kknLocationProvider.notifier).stopTracking();
       }
@@ -386,4 +421,3 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
     );
   }
 }
-

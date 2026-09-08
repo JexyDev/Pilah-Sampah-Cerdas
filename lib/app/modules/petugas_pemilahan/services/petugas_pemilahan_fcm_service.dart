@@ -42,12 +42,18 @@ class PetugasPemilahanFcmService {
 
       // Meneruskan pesan FCM (Push Notification) yang masuk ke NotificationEngine & Cache
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-        debugPrint('[PetugasPemilahanFCM] Menerima pesan di foreground: ${message.messageId}');
-        
+        debugPrint(
+          '[PetugasPemilahanFCM] Menerima pesan di foreground: ${message.messageId}',
+        );
+
         final title = message.notification?.title ?? 'Info Petugas';
         final body = message.notification?.body ?? 'Ada pembaruan data';
-        final type = (message.data['event']?.toString() ?? message.data['type']?.toString() ?? 'TIMBANGAN_PEMILAHAN').toUpperCase();
-        
+        final type =
+            (message.data['event']?.toString() ??
+                    message.data['type']?.toString() ??
+                    'TIMBANGAN_PEMILAHAN')
+                .toUpperCase();
+
         final user = ref.read(authProvider).user;
         if (user != null) {
           LocalNotificationCacheService().addNotification(
@@ -68,7 +74,6 @@ class PetugasPemilahanFcmService {
           body: body,
         );
       });
-
     } catch (e) {
       debugPrint('[PetugasPemilahanFCM] Error registering FCM token: $e');
     }
@@ -82,10 +87,7 @@ class PetugasPemilahanFcmService {
         final apiClient = ref.read(apiClientProvider);
         await apiClient.dio.post(
           '/notifications/fcm-token/unregister',
-          data: {
-            'fcmToken': token,
-            'role': 'PETUGAS_PEMILAHAN',
-          },
+          data: {'fcmToken': token, 'role': 'PETUGAS_PEMILAHAN'},
         );
         debugPrint('[PetugasPemilahanFCM] Successfully unregistered FCM token');
       }
@@ -99,19 +101,19 @@ class PetugasPemilahanFcmService {
       final apiClient = ref.read(apiClientProvider);
       await apiClient.dio.post(
         '/notifications/device-token',
-        data: {
-          'token': token,
-          'role': 'PETUGAS_PEMILAHAN',
-        },
+        data: {'token': token, 'role': 'PETUGAS_PEMILAHAN'},
       );
-      debugPrint('[PetugasPemilahanFCM] FCM Token registered: ${token.substring(0, 10)}...');
+      debugPrint(
+        '[PetugasPemilahanFCM] FCM Token registered: ${token.substring(0, 10)}...',
+      );
     } catch (e) {
       debugPrint('[PetugasPemilahanFCM] Failed to send token to backend: $e');
     }
   }
 }
 
-final petugasPemilahanFcmServiceProvider = Provider<PetugasPemilahanFcmService>((ref) {
-  return PetugasPemilahanFcmService(ref);
-});
-
+final petugasPemilahanFcmServiceProvider = Provider<PetugasPemilahanFcmService>(
+  (ref) {
+    return PetugasPemilahanFcmService(ref);
+  },
+);

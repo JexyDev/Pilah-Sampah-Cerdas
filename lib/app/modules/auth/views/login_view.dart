@@ -121,10 +121,9 @@ class _LoginViewState extends ConsumerState<LoginView> {
     final normalized = _normalizeIdentifier(identifier);
     ref.read(authProvider.notifier).clearError();
 
-    final bool ok = await ref.read(authProvider.notifier).login(
-          phone: normalized,
-          password: password,
-        );
+    final bool ok = await ref
+        .read(authProvider.notifier)
+        .login(phone: normalized, password: password);
 
     if (ok && mounted) {
       final user = ref.read(authProvider).user;
@@ -151,11 +150,13 @@ class _LoginViewState extends ConsumerState<LoginView> {
         return;
       }
 
-      String errorText = 'Nomor telepon/NIM atau kata sandi salah. Silakan coba lagi.';
+      String errorText =
+          'Nomor telepon/NIM atau kata sandi salah. Silakan coba lagi.';
       if (authState.errorCode == 'NETWORK_ERROR') {
         errorText = 'Tidak dapat terhubung ke server. Periksa koneksi.';
       } else if (authState.errorCode == 'UNAUTHORIZED_ROLE') {
-        errorText = 'Akses ditolak. Aplikasi mobile hanya untuk Warga, Petugas Pemilah, dan Mahasiswa.';
+        errorText =
+            'Akses ditolak. Aplikasi mobile hanya untuk Warga, Petugas Pemilah, dan Mahasiswa.';
       } else if (authState.errorCode == 'SERVER_ERROR' ||
           authState.errorCode == 'INTERNAL_SERVER_ERROR') {
         errorText =
@@ -187,7 +188,10 @@ class _LoginViewState extends ConsumerState<LoginView> {
             SafeArea(
               child: Center(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 16,
+                  ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -198,29 +202,6 @@ class _LoginViewState extends ConsumerState<LoginView> {
                             AppAssets.logo,
                             height: 100,
                             fit: BoxFit.contain,
-                          ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'BERSEKA',
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 34,
-                              fontWeight: FontWeight.w900,
-                              color: Color(0xFF005841),
-                              letterSpacing: 1.2,
-                              height: 1.1,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          const Text(
-                            'Bersih, Sehat, Kampung Asri',
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF5CA432),
-                              letterSpacing: 0.5,
-                            ),
                           ),
                         ],
                       ),
@@ -288,18 +269,30 @@ class _LoginViewState extends ConsumerState<LoginView> {
                                 decoration: InputDecoration(
                                   hintText: '81112345678',
                                   prefixIcon: Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                    ),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Container(
                                           decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.circular(4),
-                                            border: Border.all(color: Colors.grey.shade300),
+                                            borderRadius: BorderRadius.circular(
+                                              4,
+                                            ),
+                                            border: Border.all(
+                                              color: Colors.grey.shade300,
+                                            ),
                                             color: Colors.white,
                                           ),
-                                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                                          child: const Text('🇮🇩', style: TextStyle(fontSize: 16)),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 4,
+                                            vertical: 2,
+                                          ),
+                                          child: const Text(
+                                            '🇮🇩',
+                                            style: TextStyle(fontSize: 16),
+                                          ),
                                         ),
                                         const SizedBox(width: 8),
                                         const Text(
@@ -325,7 +318,10 @@ class _LoginViewState extends ConsumerState<LoginView> {
                                   if (v == null || v.trim().isEmpty) {
                                     return 'Nomor telepon atau NIM wajib diisi';
                                   }
-                                  final clean = v.trim().replaceAll(RegExp(r'[^\d]'), '');
+                                  final clean = v.trim().replaceAll(
+                                    RegExp(r'[^\d]'),
+                                    '',
+                                  );
                                   if (clean.length >= 8 && clean.length <= 16) {
                                     return null; // Valid
                                   }
@@ -366,7 +362,8 @@ class _LoginViewState extends ConsumerState<LoginView> {
                                       size: 20,
                                     ),
                                     onPressed: () => setState(
-                                      () => _obscurePassword = !_obscurePassword,
+                                      () =>
+                                          _obscurePassword = !_obscurePassword,
                                     ),
                                   ),
                                 ),
@@ -403,16 +400,21 @@ class _LoginViewState extends ConsumerState<LoginView> {
                                 width: double.infinity,
                                 height: 50,
                                 child: ElevatedButton(
-                                  onPressed: authState.isLoading ? null : _onLogin,
+                                  onPressed: authState.isLoading
+                                      ? null
+                                      : _onLogin,
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: AppColors.primaryGreen,
-                                    disabledBackgroundColor: AppColors.primaryGreen.withValues(alpha: 0.7),
+                                    disabledBackgroundColor: AppColors
+                                        .primaryGreen
+                                        .withValues(alpha: 0.7),
                                     foregroundColor: Colors.white,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     elevation: 2,
-                                    shadowColor: AppColors.primaryGreen.withValues(alpha: 0.3),
+                                    shadowColor: AppColors.primaryGreen
+                                        .withValues(alpha: 0.3),
                                   ),
                                   child: authState.isLoading
                                       ? const SizedBox(
@@ -424,7 +426,8 @@ class _LoginViewState extends ConsumerState<LoginView> {
                                           ),
                                         )
                                       : const Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
                                           children: [
                                             Icon(Icons.login_rounded, size: 20),
                                             SizedBox(width: 8),
@@ -455,8 +458,9 @@ class _LoginViewState extends ConsumerState<LoginView> {
                                       ),
                                     ),
                                     GestureDetector(
-                                      onTap: () => Navigator.of(context)
-                                          .pushNamed(AppRoutes.register),
+                                      onTap: () => Navigator.of(
+                                        context,
+                                      ).pushNamed(AppRoutes.register),
                                       child: const Text(
                                         'Daftar',
                                         style: TextStyle(
@@ -509,7 +513,10 @@ class _LoginViewState extends ConsumerState<LoginView> {
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
@@ -543,7 +550,8 @@ class _LoginViewState extends ConsumerState<LoginView> {
                           ),
                           const SizedBox(width: 10),
                           GestureDetector(
-                            onTap: () => setState(() => _isToastVisible = false),
+                            onTap: () =>
+                                setState(() => _isToastVisible = false),
                             child: const Icon(
                               Icons.close_rounded,
                               size: 16,

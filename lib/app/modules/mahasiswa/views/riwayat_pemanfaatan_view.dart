@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../data/providers/repository_providers.dart';
-import '../../riwayat/controllers/riwayat_controller.dart' show pointHistoryProvider;
+import '../../riwayat/controllers/riwayat_controller.dart'
+    show pointHistoryProvider;
 import 'package:intl/intl.dart';
 import '../../../routes/app_routes.dart';
 
-
-final riwayatPemanfaatanProvider = FutureProvider.autoDispose<List<dynamic>>((ref) async {
+final riwayatPemanfaatanProvider = FutureProvider.autoDispose<List<dynamic>>((
+  ref,
+) async {
   final repo = ref.read(kknRepositoryProvider);
   return await repo.getPemanfaatanLogs();
 });
@@ -32,7 +34,11 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           boxShadow: [
-            BoxShadow(color: Colors.black.withAlpha(13), blurRadius: 10, offset: const Offset(0, -5)),
+            BoxShadow(
+              color: Colors.black.withAlpha(13),
+              blurRadius: 10,
+              offset: const Offset(0, -5),
+            ),
           ],
         ),
         child: SafeArea(
@@ -40,14 +46,31 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
             children: [
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: () => Navigator.pushNamed(context, AppRoutes.logbookPemanfaatan),
-                  icon: const Icon(Icons.recycling, size: 18, color: Colors.white),
-                  label: const Text('Lapor Data', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                  onPressed: () => Navigator.pushNamed(
+                    context,
+                    AppRoutes.logbookPemanfaatan,
+                  ),
+                  icon: const Icon(
+                    Icons.recycling,
+                    size: 18,
+                    color: Colors.white,
+                  ),
+                  label: const Text(
+                    'Lapor Data',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryBlue,
                     elevation: 0,
                     minimumSize: Size.zero,
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 8,
+                    ),
                     shape: const StadiumBorder(),
                   ),
                 ),
@@ -55,14 +78,25 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: () => Navigator.pushNamed(context, AppRoutes.catatPanen),
+                  onPressed: () =>
+                      Navigator.pushNamed(context, AppRoutes.catatPanen),
                   icon: const Icon(Icons.eco, size: 18, color: Colors.white),
-                  label: const Text('Catat Hasil', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                  label: const Text(
+                    'Catat Hasil',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryGreen,
                     elevation: 0,
                     minimumSize: Size.zero,
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 8,
+                    ),
                     shape: const StadiumBorder(),
                   ),
                 ),
@@ -77,7 +111,10 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text('Gagal memuat data: ${err.toString()}', textAlign: TextAlign.center),
+              Text(
+                'Gagal memuat data: ${err.toString()}',
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () => ref.invalidate(riwayatPemanfaatanProvider),
@@ -88,7 +125,9 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
         ),
         data: (data) {
           if (data.isEmpty) {
-            return const Center(child: Text('Belum ada riwayat pemanfaatan/hasil'));
+            return const Center(
+              child: Text('Belum ada riwayat pemanfaatan/hasil'),
+            );
           }
 
           return RefreshIndicator(
@@ -109,23 +148,32 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
     );
   }
 
-  Widget _buildHistoryCard(BuildContext context, WidgetRef ref, Map<String, dynamic> item) {
+  Widget _buildHistoryCard(
+    BuildContext context,
+    WidgetRef ref,
+    Map<String, dynamic> item,
+  ) {
     final id = item['id']?.toString() ?? '';
-    final namaProgram = item['namaProgram']?.toString() ?? 'Program Pemanfaatan';
+    final namaProgram =
+        item['namaProgram']?.toString() ?? 'Program Pemanfaatan';
     final jenisProgram = item['jenisProgram']?.toString() ?? '';
     final bahanMasuk = item['jumlahBahanMasukKg'] ?? 0;
     final hasil = item['jumlahHasilKg'] ?? 0;
     final unit = item['unitHasil']?.toString() ?? 'Kg';
     final status = item['status']?.toString() ?? 'PROSES';
-    
+
     DateTime? tgl;
     if (item['tanggalPencatatan'] != null) {
       tgl = DateTime.tryParse(item['tanggalPencatatan'].toString())?.toLocal();
     }
-    final tglStr = tgl != null ? DateFormat('dd MMM yyyy, HH:mm').format(tgl) : '-';
+    final tglStr = tgl != null
+        ? DateFormat('dd MMM yyyy, HH:mm').format(tgl)
+        : '-';
 
     final isPanen = status == 'PANEN';
-    final displayStatus = isPanen ? 'Catatan Hasil Akhir' : 'Laporan Pemanfaatan Awal';
+    final displayStatus = isPanen
+        ? 'Catatan Hasil Akhir'
+        : 'Laporan Pemanfaatan Awal';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -145,19 +193,29 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
                 Expanded(
                   child: Text(
                     namaProgram,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                    color: isPanen ? AppColors.primaryGreen.withAlpha(26) : AppColors.primaryBlue.withAlpha(26),
+                    color: isPanen
+                        ? AppColors.primaryGreen.withAlpha(26)
+                        : AppColors.primaryBlue.withAlpha(26),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     displayStatus,
                     style: TextStyle(
-                      color: isPanen ? AppColors.primaryGreen : AppColors.primaryBlue,
+                      color: isPanen
+                          ? AppColors.primaryGreen
+                          : AppColors.primaryBlue,
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                     ),
@@ -166,17 +224,31 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 8),
-            Text('Teknologi: $jenisProgram', style: const TextStyle(fontSize: 13, color: Colors.black87)),
-            Text('Input Sampah: $bahanMasuk Kg', style: const TextStyle(fontSize: 13, color: Colors.black87)),
-            if (isPanen) Text('Total Hasil: $hasil $unit', style: const TextStyle(fontSize: 13, color: Colors.black87)),
-            Text('Tanggal: $tglStr', style: const TextStyle(fontSize: 13, color: Colors.black54)),
+            Text(
+              'Teknologi: $jenisProgram',
+              style: const TextStyle(fontSize: 13, color: Colors.black87),
+            ),
+            Text(
+              'Input Sampah: $bahanMasuk Kg',
+              style: const TextStyle(fontSize: 13, color: Colors.black87),
+            ),
+            if (isPanen)
+              Text(
+                'Total Hasil: $hasil $unit',
+                style: const TextStyle(fontSize: 13, color: Colors.black87),
+              ),
+            Text(
+              'Tanggal: $tglStr',
+              style: const TextStyle(fontSize: 13, color: Colors.black54),
+            ),
             const Divider(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 if (!isPanen) ...[
                   TextButton.icon(
-                    onPressed: () => _showEditPemanfaatanDialog(context, ref, item),
+                    onPressed: () =>
+                        _showEditPemanfaatanDialog(context, ref, item),
                     icon: const Icon(Icons.edit, size: 16),
                     label: const Text('Edit Input'),
                     style: TextButton.styleFrom(
@@ -206,9 +278,9 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
                   label: const Text('Hapus'),
                   style: TextButton.styleFrom(
                     foregroundColor: Colors.red,
-                    
+
                     padding: const EdgeInsets.symmetric(horizontal: 12),
-                      minimumSize: Size.zero,
+                    minimumSize: Size.zero,
                   ),
                 ),
               ],
@@ -219,16 +291,29 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
     );
   }
 
-  void _confirmDelete(BuildContext context, WidgetRef ref, String id, bool isPanen) {
+  void _confirmDelete(
+    BuildContext context,
+    WidgetRef ref,
+    String id,
+    bool isPanen,
+  ) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Konfirmasi Hapus'),
-        content: const Text('Apakah Anda yakin ingin menghapus data ini? Poin seluruh anggota kelompok akan ditarik kembali.'),
+        content: const Text(
+          'Apakah Anda yakin ingin menghapus data ini? Poin seluruh anggota kelompok akan ditarik kembali.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal'),
+          ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
             onPressed: () async {
               Navigator.pop(ctx);
               try {
@@ -239,13 +324,17 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
                   await repo.deleteLogbookPemanfaatan(id);
                 }
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Data berhasil dihapus')));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Data berhasil dihapus')),
+                  );
                 }
                 ref.invalidate(riwayatPemanfaatanProvider);
                 ref.invalidate(pointHistoryProvider);
               } catch (e) {
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(e.toString())));
                 }
               }
             },
@@ -256,15 +345,29 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
     );
   }
 
-  void _showEditPemanfaatanDialog(BuildContext context, WidgetRef ref, Map<String, dynamic> item) {
-    Navigator.push(context, MaterialPageRoute(builder: (_) => EditPemanfaatanScreen(item: item))).then((_) {
+  void _showEditPemanfaatanDialog(
+    BuildContext context,
+    WidgetRef ref,
+    Map<String, dynamic> item,
+  ) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => EditPemanfaatanScreen(item: item)),
+    ).then((_) {
       // ignore: unused_result
       ref.refresh(riwayatPemanfaatanProvider);
     });
   }
 
-  void _showEditPanenDialog(BuildContext context, WidgetRef ref, Map<String, dynamic> item) {
-    Navigator.push(context, MaterialPageRoute(builder: (_) => EditPanenScreen(item: item))).then((_) {
+  void _showEditPanenDialog(
+    BuildContext context,
+    WidgetRef ref,
+    Map<String, dynamic> item,
+  ) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => EditPanenScreen(item: item)),
+    ).then((_) {
       // ignore: unused_result
       ref.refresh(riwayatPemanfaatanProvider);
     });
@@ -280,12 +383,13 @@ class EditPemanfaatanScreen extends ConsumerStatefulWidget {
   const EditPemanfaatanScreen({super.key, required this.item});
 
   @override
-  ConsumerState<EditPemanfaatanScreen> createState() => _EditPemanfaatanScreenState();
+  ConsumerState<EditPemanfaatanScreen> createState() =>
+      _EditPemanfaatanScreenState();
 }
 
 class _EditPemanfaatanScreenState extends ConsumerState<EditPemanfaatanScreen> {
   final _formKey = GlobalKey<FormState>();
-  
+
   List<Map<String, dynamic>> _programList = [];
   bool _isLoading = true;
   String? _selectedProgram;
@@ -294,16 +398,24 @@ class _EditPemanfaatanScreenState extends ConsumerState<EditPemanfaatanScreen> {
   late TextEditingController tcTeknologi;
   late TextEditingController tcBerat;
   late TextEditingController tcUnit;
-  
+
   bool _isSubmitting = false;
 
   @override
   void initState() {
     super.initState();
-    tcKategori = TextEditingController(text: widget.item['bahanBaku']?.toString() ?? '');
-    tcTeknologi = TextEditingController(text: widget.item['jenisProgram']?.toString() ?? '');
-    tcBerat = TextEditingController(text: widget.item['jumlahBahanMasukKg']?.toString() ?? '');
-    tcUnit = TextEditingController(text: widget.item['unitBahanBaku']?.toString() ?? 'Kg');
+    tcKategori = TextEditingController(
+      text: widget.item['bahanBaku']?.toString() ?? '',
+    );
+    tcTeknologi = TextEditingController(
+      text: widget.item['jenisProgram']?.toString() ?? '',
+    );
+    tcBerat = TextEditingController(
+      text: widget.item['jumlahBahanMasukKg']?.toString() ?? '',
+    );
+    tcUnit = TextEditingController(
+      text: widget.item['unitBahanBaku']?.toString() ?? 'Kg',
+    );
     _loadPrograms();
   }
 
@@ -315,9 +427,11 @@ class _EditPemanfaatanScreenState extends ConsumerState<EditPemanfaatanScreen> {
         setState(() {
           _programList = progs;
           _isLoading = false;
-          
+
           final currentProg = widget.item['namaProgram']?.toString() ?? '';
-          if (_programList.any((p) => (p['judul']?.toString() ?? '') == currentProg)) {
+          if (_programList.any(
+            (p) => (p['judul']?.toString() ?? '') == currentProg,
+          )) {
             _selectedProgram = currentProg;
           } else if (_programList.isNotEmpty) {
             // let it be null
@@ -334,13 +448,15 @@ class _EditPemanfaatanScreenState extends ConsumerState<EditPemanfaatanScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedProgram == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pilih program terlebih dahulu')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pilih program terlebih dahulu')),
+      );
       return;
     }
 
     setState(() => _isSubmitting = true);
     final val = double.tryParse(tcBerat.text) ?? 0;
-    
+
     try {
       final repo = ref.read(kknRepositoryProvider);
       await repo.updateLogbookPemanfaatan(widget.item['id'].toString(), {
@@ -351,12 +467,22 @@ class _EditPemanfaatanScreenState extends ConsumerState<EditPemanfaatanScreen> {
         'unitBahanBaku': tcUnit.text,
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Data berhasil diupdate'), backgroundColor: AppColors.primaryGreen));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Data berhasil diupdate'),
+            backgroundColor: AppColors.primaryGreen,
+          ),
+        );
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gagal mengupdate. Silakan coba lagi.'), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Gagal mengupdate. Silakan coba lagi.'),
+            backgroundColor: Colors.red,
+          ),
+        );
         setState(() => _isSubmitting = false);
       }
     }
@@ -366,104 +492,173 @@ class _EditPemanfaatanScreenState extends ConsumerState<EditPemanfaatanScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Laporan Awal', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        title: const Text(
+          'Edit Laporan Awal',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
       ),
-      body: _isLoading 
-        ? const Center(child: CircularProgressIndicator(color: AppColors.primaryGreen))
-        : SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Program Pemanfaatan', style: TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  DropdownButtonFormField<String>(
-                    initialValue: _selectedProgram,
-                    isExpanded: true,
-                    decoration: InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.circular(8))),
-                    hint: const Text('Pilih Program'),
-                    items: _programList.map((p) {
-                      final title = p['judul']?.toString() ?? 'Tanpa Judul';
-                      return DropdownMenuItem(value: title, child: Text(title));
-                    }).toList(),
-                    onChanged: (val) => setState(() => _selectedProgram = val),
-                    validator: (val) => val == null ? 'Wajib dipilih' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  const Text('Kategori / Bahan Baku', style: TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: tcKategori,
-                    decoration: InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.circular(8))),
-                    validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  const Text('Metode / Teknologi', style: TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: tcTeknologi,
-                    decoration: InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.circular(8))),
-                    validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  Row(
-                    children: [
-                      Expanded(
-                        flex: 2,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Volume / Berat', style: TextStyle(fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 8),
-                            TextFormField(
-                              controller: tcBerat,
-                              keyboardType: TextInputType.number,
-                              decoration: InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.circular(8))),
-                              validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        flex: 1,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Unit', style: TextStyle(fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 8),
-                            TextFormField(
-                              controller: tcUnit,
-                              decoration: InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.circular(8))),
-                              validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 32),
-                  
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: _isSubmitting ? null : _submit,
-                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryGreen, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                      child: _isSubmitting 
-                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                        : const Text('Simpan Perubahan', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+      body: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator(color: AppColors.primaryGreen),
+            )
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Program Pemanfaatan',
+                      style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<String>(
+                      initialValue: _selectedProgram,
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      hint: const Text('Pilih Program'),
+                      items: _programList.map((p) {
+                        final title = p['judul']?.toString() ?? 'Tanpa Judul';
+                        return DropdownMenuItem(
+                          value: title,
+                          child: Text(title),
+                        );
+                      }).toList(),
+                      onChanged: (val) =>
+                          setState(() => _selectedProgram = val),
+                      validator: (val) => val == null ? 'Wajib dipilih' : null,
+                    ),
+                    const SizedBox(height: 16),
+
+                    const Text(
+                      'Kategori / Bahan Baku',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: tcKategori,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      validator: (val) =>
+                          val == null || val.isEmpty ? 'Wajib diisi' : null,
+                    ),
+                    const SizedBox(height: 16),
+
+                    const Text(
+                      'Metode / Teknologi',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: tcTeknologi,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      validator: (val) =>
+                          val == null || val.isEmpty ? 'Wajib diisi' : null,
+                    ),
+                    const SizedBox(height: 16),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Volume / Berat',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 8),
+                              TextFormField(
+                                controller: tcBerat,
+                                keyboardType: TextInputType.number,
+                                decoration: InputDecoration(
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                validator: (val) => val == null || val.isEmpty
+                                    ? 'Wajib diisi'
+                                    : null,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 1,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Unit',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 8),
+                              TextFormField(
+                                controller: tcUnit,
+                                decoration: InputDecoration(
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                validator: (val) => val == null || val.isEmpty
+                                    ? 'Wajib diisi'
+                                    : null,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 32),
+
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: _isSubmitting ? null : _submit,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryGreen,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: _isSubmitting
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text(
+                                'Simpan Perubahan',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
     );
   }
 }
@@ -478,7 +673,7 @@ class EditPanenScreen extends ConsumerStatefulWidget {
 
 class _EditPanenScreenState extends ConsumerState<EditPanenScreen> {
   final _formKey = GlobalKey<FormState>();
-  
+
   late TextEditingController tcHasil;
   late TextEditingController tcNilaiEkonomi;
   bool _isSubmitting = false;
@@ -486,17 +681,21 @@ class _EditPanenScreenState extends ConsumerState<EditPanenScreen> {
   @override
   void initState() {
     super.initState();
-    tcHasil = TextEditingController(text: widget.item['jumlahHasilKg']?.toString() ?? '');
-    tcNilaiEkonomi = TextEditingController(text: widget.item['luasLahanM2']?.toString() ?? '');
+    tcHasil = TextEditingController(
+      text: widget.item['jumlahHasilKg']?.toString() ?? '',
+    );
+    tcNilaiEkonomi = TextEditingController(
+      text: widget.item['luasLahanM2']?.toString() ?? '',
+    );
   }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     setState(() => _isSubmitting = true);
     final valHasil = double.tryParse(tcHasil.text) ?? 0;
     final valEkonomi = double.tryParse(tcNilaiEkonomi.text) ?? 0;
-    
+
     try {
       final repo = ref.read(kknRepositoryProvider);
       await repo.updatePanenHasil(widget.item['id'].toString(), {
@@ -504,12 +703,22 @@ class _EditPanenScreenState extends ConsumerState<EditPanenScreen> {
         'luasLahanM2': valEkonomi,
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Data berhasil diupdate'), backgroundColor: AppColors.primaryGreen));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Data berhasil diupdate'),
+            backgroundColor: AppColors.primaryGreen,
+          ),
+        );
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gagal mengupdate. Silakan coba lagi.'), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Gagal mengupdate. Silakan coba lagi.'),
+            backgroundColor: Colors.red,
+          ),
+        );
         setState(() => _isSubmitting = false);
       }
     }
@@ -519,7 +728,10 @@ class _EditPanenScreenState extends ConsumerState<EditPanenScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Laporan Akhir', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        title: const Text(
+          'Edit Laporan Akhir',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -528,35 +740,70 @@ class _EditPanenScreenState extends ConsumerState<EditPanenScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Jumlah Hasil Output', style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text(
+                'Jumlah Hasil Output',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 8),
               TextFormField(
                 controller: tcHasil,
                 keyboardType: TextInputType.number,
-                decoration: InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.circular(8))),
-                validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                validator: (val) =>
+                    val == null || val.isEmpty ? 'Wajib diisi' : null,
               ),
               const SizedBox(height: 16),
-              
-              const Text('Nilai Ekonomi (Rp)', style: TextStyle(fontWeight: FontWeight.bold)),
+
+              const Text(
+                'Nilai Ekonomi (Rp)',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 8),
               TextFormField(
                 controller: tcNilaiEkonomi,
                 keyboardType: TextInputType.number,
-                decoration: InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.circular(8))),
-                validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                validator: (val) =>
+                    val == null || val.isEmpty ? 'Wajib diisi' : null,
               ),
               const SizedBox(height: 32),
-              
+
               SizedBox(
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
                   onPressed: _isSubmitting ? null : _submit,
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryGreen, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                  child: _isSubmitting 
-                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : const Text('Simpan Perubahan', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryGreen,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: _isSubmitting
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          'Simpan Perubahan',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
                 ),
               ),
             ],

@@ -10,14 +10,15 @@ class InputLaporanAkhirView extends ConsumerStatefulWidget {
   const InputLaporanAkhirView({super.key});
 
   @override
-  ConsumerState<InputLaporanAkhirView> createState() => _InputLaporanAkhirViewState();
+  ConsumerState<InputLaporanAkhirView> createState() =>
+      _InputLaporanAkhirViewState();
 }
 
 class _InputLaporanAkhirViewState extends ConsumerState<InputLaporanAkhirView> {
   final _formKey = GlobalKey<FormState>();
   final _judulCtrl = TextEditingController();
   final _deskripsiCtrl = TextEditingController();
-  
+
   File? _selectedPdf;
   bool _isLoading = false;
 
@@ -31,7 +32,10 @@ class _InputLaporanAkhirViewState extends ConsumerState<InputLaporanAkhirView> {
       if (file.lengthSync() > 15 * 1024 * 1024) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Ukuran PDF melebihi batas maksimal 15MB!'), backgroundColor: AppColors.dangerRed),
+            const SnackBar(
+              content: Text('Ukuran PDF melebihi batas maksimal 15MB!'),
+              backgroundColor: AppColors.dangerRed,
+            ),
           );
         }
         return;
@@ -45,10 +49,15 @@ class _InputLaporanAkhirViewState extends ConsumerState<InputLaporanAkhirView> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedPdf == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pilih file PDF Laporan Akhir terlebih dahulu!'), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Pilih file PDF Laporan Akhir terlebih dahulu!'),
+          backgroundColor: Colors.red,
+        ),
+      );
       return;
     }
-    
+
     setState(() => _isLoading = true);
     try {
       final repo = ref.read(kknRepositoryProvider);
@@ -60,15 +69,16 @@ class _InputLaporanAkhirViewState extends ConsumerState<InputLaporanAkhirView> {
         'filePdfPath': _selectedPdf!.path,
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Laporan Akhir berhasil disubmit!')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Laporan Akhir berhasil disubmit!')),
+        );
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(e.toString()),
-          backgroundColor: Colors.red,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -79,15 +89,15 @@ class _InputLaporanAkhirViewState extends ConsumerState<InputLaporanAkhirView> {
   Widget build(BuildContext context) {
     bool hasUnsavedChanges() {
       return _judulCtrl.text.isNotEmpty ||
-             _deskripsiCtrl.text.isNotEmpty ||
-             _selectedPdf != null;
+          _deskripsiCtrl.text.isNotEmpty ||
+          _selectedPdf != null;
     }
 
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
-        
+
         if (!hasUnsavedChanges()) {
           if (context.mounted) Navigator.pop(context);
           return;
@@ -97,13 +107,23 @@ class _InputLaporanAkhirViewState extends ConsumerState<InputLaporanAkhirView> {
           context: context,
           builder: (context) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: const Text('Batalkan Input Laporan?', style: TextStyle(fontWeight: FontWeight.bold)),
-              content: const Text('Perubahan ini akan terhapus jika Anda keluar dari halaman ini.'),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: const Text(
+                'Batalkan Input Laporan?',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              content: const Text(
+                'Perubahan ini akan terhapus jika Anda keluar dari halaman ini.',
+              ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Lanjutkan Edit', style: TextStyle(color: AppColors.textSecondary)),
+                  child: const Text(
+                    'Lanjutkan Edit',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
@@ -123,131 +143,189 @@ class _InputLaporanAkhirViewState extends ConsumerState<InputLaporanAkhirView> {
         }
       },
       child: Scaffold(
-      backgroundColor: AppColors.backgroundCanvas,
-      appBar: AppBar(
-        title: const Text('Input Laporan Akhir', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-        backgroundColor: Colors.white,
-        foregroundColor: AppColors.textPrimary,
-        elevation: 0,
-        centerTitle: true,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(color: AppColors.border, height: 1),
+        backgroundColor: AppColors.backgroundCanvas,
+        appBar: AppBar(
+          title: const Text(
+            'Input Laporan Akhir',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
+          backgroundColor: Colors.white,
+          foregroundColor: AppColors.textPrimary,
+          elevation: 0,
+          centerTitle: true,
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(1),
+            child: Container(color: AppColors.border, height: 1),
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.history, color: AppColors.primaryGreen),
+              onPressed: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (ctx) => const _RiwayatLaporanAkhirSheet(),
+                );
+              },
+            ),
+          ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.history, color: AppColors.primaryGreen),
-            onPressed: () {
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder: (ctx) => const _RiwayatLaporanAkhirSheet(),
-              );
-            },
-          )
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildHeaderBanner(),
-              const SizedBox(height: 16),
-              
-              _buildSectionCard(
-                title: 'Data Laporan',
-                icon: Icons.article_rounded,
-                children: [
-                  const Text('Judul Laporan', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _judulCtrl,
-                    decoration: _inputDecoration('Contoh: Laporan Akhir KKN Desa X'),
-                    validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  const Text('Deskripsi Singkat', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _deskripsiCtrl,
-                    maxLines: 3,
-                    decoration: _inputDecoration('Deskripsikan secara singkat...'),
-                    validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              
-              _buildSectionCard(
-                title: 'Dokumen Laporan',
-                icon: Icons.picture_as_pdf_rounded,
-                children: [
-                  const Text('File Laporan Akhir (PDF)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
-                  const SizedBox(height: 8),
-                  InkWell(
-                    onTap: _pickPdf,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      decoration: BoxDecoration(
-                        color: AppColors.backgroundCanvas,
-                        border: Border.all(color: _selectedPdf != null ? AppColors.primaryGreen : AppColors.border),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.picture_as_pdf, color: Colors.red),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              _selectedPdf != null ? _selectedPdf!.path.split('/').last : 'Pilih File PDF...',
-                              style: TextStyle(
-                                color: _selectedPdf != null ? AppColors.textPrimary : AppColors.textHint,
-                                fontSize: 14
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          if (_selectedPdf != null)
-                            const Icon(Icons.check_circle, color: AppColors.primaryGreen, size: 20),
-                        ],
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildHeaderBanner(),
+                const SizedBox(height: 16),
+
+                _buildSectionCard(
+                  title: 'Data Laporan',
+                  icon: Icons.article_rounded,
+                  children: [
+                    const Text(
+                      'Judul Laporan',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 32),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _submit,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryGreen,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: _isLoading
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.send_rounded, size: 20),
-                          SizedBox(width: 10),
-                          Text('Submit Laporan Akhir', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-                        ],
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _judulCtrl,
+                      decoration: _inputDecoration(
+                        'Contoh: Laporan Akhir KKN Desa X',
                       ),
-              ),
-              const SizedBox(height: 40),
-            ],
+                      validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
+                    ),
+                    const SizedBox(height: 16),
+
+                    const Text(
+                      'Deskripsi Singkat',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _deskripsiCtrl,
+                      maxLines: 3,
+                      decoration: _inputDecoration(
+                        'Deskripsikan secara singkat...',
+                      ),
+                      validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                _buildSectionCard(
+                  title: 'Dokumen Laporan',
+                  icon: Icons.picture_as_pdf_rounded,
+                  children: [
+                    const Text(
+                      'File Laporan Akhir (PDF)',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    InkWell(
+                      onTap: _pickPdf,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.backgroundCanvas,
+                          border: Border.all(
+                            color: _selectedPdf != null
+                                ? AppColors.primaryGreen
+                                : AppColors.border,
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.picture_as_pdf, color: Colors.red),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                _selectedPdf != null
+                                    ? _selectedPdf!.path.split('/').last
+                                    : 'Pilih File PDF...',
+                                style: TextStyle(
+                                  color: _selectedPdf != null
+                                      ? AppColors.textPrimary
+                                      : AppColors.textHint,
+                                  fontSize: 14,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (_selectedPdf != null)
+                              const Icon(
+                                Icons.check_circle,
+                                color: AppColors.primaryGreen,
+                                size: 20,
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 32),
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _submit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryGreen,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.send_rounded, size: 20),
+                            SizedBox(width: 10),
+                            Text(
+                              'Submit Laporan Akhir',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
+                const SizedBox(height: 40),
+              ],
+            ),
           ),
         ),
       ),
-    ),
     );
   }
 
@@ -257,12 +335,18 @@ class _InputLaporanAkhirViewState extends ConsumerState<InputLaporanAkhirView> {
       decoration: BoxDecoration(
         color: AppColors.primaryGreen.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.3)),
+        border: Border.all(
+          color: AppColors.primaryGreen.withValues(alpha: 0.3),
+        ),
       ),
       child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.info_outline_rounded, color: AppColors.primaryGreen, size: 24),
+          Icon(
+            Icons.info_outline_rounded,
+            color: AppColors.primaryGreen,
+            size: 24,
+          ),
           SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -270,12 +354,20 @@ class _InputLaporanAkhirViewState extends ConsumerState<InputLaporanAkhirView> {
               children: [
                 Text(
                   'Unggah Laporan Akhir',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary, fontSize: 14),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                    fontSize: 14,
+                  ),
                 ),
                 SizedBox(height: 4),
                 Text(
                   'Laporan akhir ini akan menjadi syarat kelulusan dan akan ditinjau oleh DPL Anda.',
-                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.3),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                    height: 1.3,
+                  ),
                 ),
               ],
             ),
@@ -285,7 +377,11 @@ class _InputLaporanAkhirViewState extends ConsumerState<InputLaporanAkhirView> {
     );
   }
 
-  Widget _buildSectionCard({required String title, required IconData icon, required List<Widget> children}) {
+  Widget _buildSectionCard({
+    required String title,
+    required IconData icon,
+    required List<Widget> children,
+  }) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -313,7 +409,11 @@ class _InputLaporanAkhirViewState extends ConsumerState<InputLaporanAkhirView> {
                 const SizedBox(width: 10),
                 Text(
                   title,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textPrimary),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ],
             ),
@@ -357,10 +457,11 @@ class _InputLaporanAkhirViewState extends ConsumerState<InputLaporanAkhirView> {
   }
 }
 
-final programKerjaListProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
-  final repo = ref.read(kknRepositoryProvider);
-  return repo.getProgramKerja();
-});
+final programKerjaListProvider =
+    FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+      final repo = ref.read(kknRepositoryProvider);
+      return repo.getProgramKerja();
+    });
 
 class _RiwayatLaporanAkhirSheet extends ConsumerWidget {
   const _RiwayatLaporanAkhirSheet();
@@ -423,7 +524,14 @@ class _RiwayatLaporanAkhirSheet extends ConsumerWidget {
         children: [
           Icon(icon, size: 12, color: color),
           const SizedBox(width: 4),
-          Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
         ],
       ),
     );
@@ -445,7 +553,10 @@ class _RiwayatLaporanAkhirSheet extends ConsumerWidget {
           Container(
             width: 40,
             height: 4,
-            decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(2),
+            ),
           ),
           const SizedBox(height: 16),
           Padding(
@@ -453,13 +564,27 @@ class _RiwayatLaporanAkhirSheet extends ConsumerWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Riwayat Laporan Akhir', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                const Text(
+                  'Riwayat Laporan Akhir',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
                   child: Container(
                     padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
-                    child: const Icon(Icons.close, size: 20, color: AppColors.textSecondary),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.close,
+                      size: 20,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ),
               ],
@@ -470,7 +595,12 @@ class _RiwayatLaporanAkhirSheet extends ConsumerWidget {
           Expanded(
             child: prokerState.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, _) => Center(child: Text(err.toString(), style: const TextStyle(color: AppColors.dangerRed))),
+              error: (err, _) => Center(
+                child: Text(
+                  err.toString(),
+                  style: const TextStyle(color: AppColors.dangerRed),
+                ),
+              ),
               data: (rawList) {
                 final list = rawList.where((item) {
                   final kat = item['kategori']?.toString().toUpperCase() ?? '';
@@ -478,7 +608,9 @@ class _RiwayatLaporanAkhirSheet extends ConsumerWidget {
                 }).toList();
 
                 if (list.isEmpty) {
-                  return const Center(child: Text('Belum ada laporan akhir yang diajukan.'));
+                  return const Center(
+                    child: Text('Belum ada laporan akhir yang diajukan.'),
+                  );
                 }
 
                 return ListView.separated(
@@ -489,46 +621,94 @@ class _RiwayatLaporanAkhirSheet extends ConsumerWidget {
                     final item = list[index];
                     final judulStr = item['judul']?.toString() ?? '-';
                     final deskripsi = item['deskripsi']?.toString() ?? '-';
-                    final statusUsulan = item['statusTelaah']?.toString() ?? item['status_telaah']?.toString() ?? item['statusUsulan']?.toString();
+                    final statusUsulan =
+                        item['statusTelaah']?.toString() ??
+                        item['status_telaah']?.toString() ??
+                        item['statusUsulan']?.toString();
                     final legacyStatus = item['status']?.toString();
-                    final catatanDpl = item['catatanDpl'] ?? item['catatan_dpl'];
-                    final createdAtStr = item['createdAt']?.toString() ?? item['dibuat_pada']?.toString();
-                    
+                    final catatanDpl =
+                        item['catatanDpl'] ?? item['catatan_dpl'];
+                    final createdAtStr =
+                        item['createdAt']?.toString() ??
+                        item['dibuat_pada']?.toString();
+
                     final nilaiAkhir = item['nilaiAkhir'] ?? item['nilai'];
                     final predikat = item['predikat'] ?? item['predikatNilai'];
-                    
-                    final rubrikObj = item['rubrikScores'] ?? item['rubrik_scores'];
-                    final rubrikSistematika = rubrikObj?['sistematika'] ?? item['rubrikSistematika'] ?? item['sistematika'];
-                    final rubrikAnalisis = rubrikObj?['analisis'] ?? item['rubrikAnalisis'] ?? item['analisis'];
-                    final rubrikCapaian = rubrikObj?['output'] ?? item['rubrikCapaian'] ?? item['capaian'];
-                    final rubrikRefleksi = rubrikObj?['refleksi'] ?? item['rubrikRefleksi'] ?? item['refleksi'];
-                    
-                    final filePdfUrl = item['filePdfUrl'] ?? item['fileUrl'] ?? item['lampiranUrl'];
+
+                    final rubrikObj =
+                        item['rubrikScores'] ?? item['rubrik_scores'];
+                    final rubrikSistematika =
+                        rubrikObj?['sistematika'] ??
+                        item['rubrikSistematika'] ??
+                        item['sistematika'];
+                    final rubrikAnalisis =
+                        rubrikObj?['analisis'] ??
+                        item['rubrikAnalisis'] ??
+                        item['analisis'];
+                    final rubrikCapaian =
+                        rubrikObj?['output'] ??
+                        item['rubrikCapaian'] ??
+                        item['capaian'];
+                    final rubrikRefleksi =
+                        rubrikObj?['refleksi'] ??
+                        item['rubrikRefleksi'] ??
+                        item['refleksi'];
+
+                    final filePdfUrl =
+                        item['filePdfUrl'] ??
+                        item['fileUrl'] ??
+                        item['lampiranUrl'];
 
                     return Card(
                       elevation: 1.5,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(judulStr, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                            Text(
+                              judulStr,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
                             const SizedBox(height: 4),
-                            Text(deskripsi, style: const TextStyle(fontSize: 13, color: Colors.black87)),
+                            Text(
+                              deskripsi,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: Colors.black87,
+                              ),
+                            ),
                             const SizedBox(height: 10),
                             Wrap(
                               spacing: 8,
                               runSpacing: 6,
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 3,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: Colors.grey.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: Colors.grey.withValues(alpha: 0.4)),
+                                    border: Border.all(
+                                      color: Colors.grey.withValues(alpha: 0.4),
+                                    ),
                                   ),
-                                  child: const Text('LAPORAN_AKHIR', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.blueGrey)),
+                                  child: const Text(
+                                    'LAPORAN_AKHIR',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.blueGrey,
+                                    ),
+                                  ),
                                 ),
                                 _buildUsulanBadge(statusUsulan, legacyStatus),
                               ],
@@ -537,11 +717,18 @@ class _RiwayatLaporanAkhirSheet extends ConsumerWidget {
                             if (createdAtStr != null)
                               Row(
                                 children: [
-                                  const Icon(Icons.calendar_today, size: 14, color: AppColors.textSecondary),
+                                  const Icon(
+                                    Icons.calendar_today,
+                                    size: 14,
+                                    color: AppColors.textSecondary,
+                                  ),
                                   const SizedBox(width: 4),
                                   Text(
                                     'Diajukan Pada: ${_formatDate(createdAtStr)}',
-                                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.textSecondary,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -550,94 +737,174 @@ class _RiwayatLaporanAkhirSheet extends ConsumerWidget {
                               Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primaryGreen.withValues(alpha: 0.05),
+                                  color: AppColors.primaryGreen.withValues(
+                                    alpha: 0.05,
+                                  ),
                                   borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.2)),
+                                  border: Border.all(
+                                    color: AppColors.primaryGreen.withValues(
+                                      alpha: 0.2,
+                                    ),
+                                  ),
                                 ),
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
-                                        const Text('Nilai Akhir:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary)),
+                                        const Text(
+                                          'Nilai Akhir:',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 13,
+                                            color: AppColors.textPrimary,
+                                          ),
+                                        ),
                                         if (predikat != null)
                                           Text(
                                             '$predikat',
-                                            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.bold),
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              color: AppColors.textSecondary,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
                                       ],
                                     ),
                                     Text(
                                       '$nilaiAkhir',
-                                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 24, color: AppColors.primaryGreen),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 24,
+                                        color: AppColors.primaryGreen,
+                                      ),
                                     ),
                                   ],
                                 ),
                               ),
-                              if (rubrikSistematika != null || rubrikAnalisis != null || rubrikCapaian != null || rubrikRefleksi != null) ...[
+                              if (rubrikSistematika != null ||
+                                  rubrikAnalisis != null ||
+                                  rubrikCapaian != null ||
+                                  rubrikRefleksi != null) ...[
                                 const SizedBox(height: 8),
                                 Container(
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
                                     color: Colors.white,
                                     borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: Colors.grey.shade200),
+                                    border: Border.all(
+                                      color: Colors.grey.shade200,
+                                    ),
                                   ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      const Text('Rincian Penilaian Rubrik:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                      const Text(
+                                        'Rincian Penilaian Rubrik:',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                                       const SizedBox(height: 6),
-                                      if (rubrikSistematika != null) _buildRubrikRow('Sistematika Laporan (20%)', rubrikSistematika.toString()),
-                                      if (rubrikAnalisis != null) _buildRubrikRow('Analisis Data & Masalah (30%)', rubrikAnalisis.toString()),
-                                      if (rubrikCapaian != null) _buildRubrikRow('Capaian Output & Program (30%)', rubrikCapaian.toString()),
-                                      if (rubrikRefleksi != null) _buildRubrikRow('Refleksi & Rekomendasi (20%)', rubrikRefleksi.toString()),
+                                      if (rubrikSistematika != null)
+                                        _buildRubrikRow(
+                                          'Sistematika Laporan (20%)',
+                                          rubrikSistematika.toString(),
+                                        ),
+                                      if (rubrikAnalisis != null)
+                                        _buildRubrikRow(
+                                          'Analisis Data & Masalah (30%)',
+                                          rubrikAnalisis.toString(),
+                                        ),
+                                      if (rubrikCapaian != null)
+                                        _buildRubrikRow(
+                                          'Capaian Output & Program (30%)',
+                                          rubrikCapaian.toString(),
+                                        ),
+                                      if (rubrikRefleksi != null)
+                                        _buildRubrikRow(
+                                          'Refleksi & Rekomendasi (20%)',
+                                          rubrikRefleksi.toString(),
+                                        ),
                                     ],
                                   ),
                                 ),
-                                ],
                               ],
-                            if (catatanDpl != null && catatanDpl.toString().trim().isNotEmpty) ...[
+                            ],
+                            if (catatanDpl != null &&
+                                catatanDpl.toString().trim().isNotEmpty) ...[
                               const SizedBox(height: 10),
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: AppColors.warningYellow.withValues(alpha: 0.1),
+                                  color: AppColors.warningYellow.withValues(
+                                    alpha: 0.1,
+                                  ),
                                   borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: AppColors.warningYellow.withValues(alpha: 0.4)),
+                                  border: Border.all(
+                                    color: AppColors.warningYellow.withValues(
+                                      alpha: 0.4,
+                                    ),
+                                  ),
                                 ),
                                 child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Icon(Icons.feedback_outlined, size: 16, color: Colors.orange),
+                                    const Icon(
+                                      Icons.feedback_outlined,
+                                      size: 16,
+                                      color: Colors.orange,
+                                    ),
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
                                         'Ulasan DPL: $catatanDpl',
-                                        style: const TextStyle(fontSize: 12, color: Colors.black87, fontWeight: FontWeight.w500),
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.black87,
+                                          fontWeight: FontWeight.w500,
+                                        ),
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
                             ],
-                            if (filePdfUrl != null && filePdfUrl.toString().isNotEmpty) ...[
+                            if (filePdfUrl != null &&
+                                filePdfUrl.toString().isNotEmpty) ...[
                               const SizedBox(height: 12),
                               SizedBox(
                                 width: double.infinity,
                                 child: OutlinedButton.icon(
-                                  icon: const Icon(Icons.picture_as_pdf_rounded, size: 16, color: Colors.redAccent),
+                                  icon: const Icon(
+                                    Icons.picture_as_pdf_rounded,
+                                    size: 16,
+                                    color: Colors.redAccent,
+                                  ),
                                   label: const Text('Lihat Dokumen Laporan'),
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: AppColors.textPrimary,
-                                    side: BorderSide(color: Colors.grey.shade300),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    side: BorderSide(
+                                      color: Colors.grey.shade300,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
                                   ),
                                   onPressed: () async {
-                                    final url = Uri.parse(filePdfUrl.toString());
+                                    final url = Uri.parse(
+                                      filePdfUrl.toString(),
+                                    );
                                     if (await canLaunchUrl(url)) {
-                                      await launchUrl(url, mode: LaunchMode.externalApplication);
+                                      await launchUrl(
+                                        url,
+                                        mode: LaunchMode.externalApplication,
+                                      );
                                     }
                                   },
                                 ),
@@ -663,8 +930,23 @@ class _RiwayatLaporanAkhirSheet extends ConsumerWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Expanded(child: Text(title, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary))),
-          Text(score, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+          Expanded(
+            child: Text(
+              title,
+              style: const TextStyle(
+                fontSize: 11,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
+          Text(
+            score,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
         ],
       ),
     );

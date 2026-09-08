@@ -3,6 +3,7 @@ import '../models/notification_entity.dart';
 import 'notification_repository.dart';
 import '../providers/api_client.dart';
 import '../../core/values/api_constants.dart';
+import '../../core/utils/input_sanitizer.dart';
 
 /// Implementasi NotificationRepository yang terhubung ke backend Express.js.
 ///
@@ -24,7 +25,10 @@ class ApiNotificationRepository implements NotificationRepository {
 
       List<NotificationEntity> result = [];
       if (response.statusCode == 200 && response.data != null) {
-        final rawData = response.data['data'] ?? response.data['notifications'] ?? response.data;
+        final rawData =
+            response.data['data'] ??
+            response.data['notifications'] ??
+            response.data;
         if (rawData is List) {
           result = rawData
               .map((json) => _mapNotification(json as Map<String, dynamic>))
@@ -137,9 +141,13 @@ class ApiNotificationRepository implements NotificationRepository {
     try {
       final payload = <String, dynamic>{};
       if (readIds != null) payload['readIds'] = readIds;
-      if (markAllTimestamp != null) payload['markAllTimestamp'] = markAllTimestamp;
-      if (deleteAllTimestamp != null) payload['deleteAllTimestamp'] = deleteAllTimestamp;
-      
+      if (markAllTimestamp != null) {
+        payload['markAllTimestamp'] = markAllTimestamp;
+      }
+      if (deleteAllTimestamp != null) {
+        payload['deleteAllTimestamp'] = deleteAllTimestamp;
+      }
+
       await apiClient.dio.put('/notifications/sync', data: payload);
     } catch (_) {
       // Fire and forget
@@ -147,36 +155,53 @@ class ApiNotificationRepository implements NotificationRepository {
   }
 
   // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-  
+
   NotificationEntity _mapNotification(Map<String, dynamic> json) {
-    final rawDesc = json['desc']?.toString() ??
+    final rawDesc =
+        json['desc']?.toString() ??
         json['description']?.toString() ??
         json['pesan']?.toString() ??
         json['body']?.toString() ??
         '';
 
-    final rawTitle = json['title']?.toString() ??
+    final rawTitle =
+        json['title']?.toString() ??
         json['judul']?.toString() ??
         json['subject']?.toString() ??
         'Notifikasi Mahasiswa';
 
-    final rawType = json['type']?.toString() ??
+    final rawType =
+        json['type']?.toString() ??
         json['kategori']?.toString() ??
         json['category']?.toString() ??
         'INFO';
 
     // Kita prioritaskan createdAt/timestamp yang biasanya berupa format ISO 8601 yang valid
-    final rawCreatedAt = json['createdAt']?.toString() ?? json['timestamp']?.toString() ?? DateTime.now().toUtc().toIso8601String();
+    final rawCreatedAt =
+        json['createdAt']?.toString() ??
+        json['timestamp']?.toString() ??
+        DateTime.now().toUtc().toIso8601String();
     final dt = DateTime.tryParse(rawCreatedAt) ?? DateTime.now();
 
     final displayTime = json['time']?.toString() ?? 'Baru saja';
 
+    final cleanDesc = InputSanitizer.cleanSystemMessage(rawDesc);
+    final cleanTitle = InputSanitizer.cleanSystemMessage(rawTitle);
+
     return NotificationEntity(
-      id: json['id']?.toString() ?? json['_id']?.toString() ?? json['notificationId']?.toString() ?? '',
+      id:
+          json['id']?.toString() ??
+          json['_id']?.toString() ??
+          json['notificationId']?.toString() ??
+          '',
       type: rawType,
-      title: rawTitle,
-      desc: rawDesc,
-      isRead: json['isRead'] as bool? ?? json['read'] as bool? ?? json['is_read'] as bool? ?? false,
+      title: cleanTitle,
+      desc: cleanDesc,
+      isRead:
+          json['isRead'] as bool? ??
+          json['read'] as bool? ??
+          json['is_read'] as bool? ??
+          false,
       time: displayTime,
       icon: json['icon']?.toString() ?? 'info',
       createdAt: dt,

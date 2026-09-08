@@ -31,7 +31,9 @@ class PoinView extends ConsumerWidget {
           slivers: [
             // ─── Header biru besar ─────────────────────────────────────
             SliverToBoxAdapter(
-              child: totalAsync.when(skipLoadingOnReload: true, data: (total) => _buildHeader(context, ref, total),
+              child: totalAsync.when(
+                skipLoadingOnReload: true,
+                data: (total) => _buildHeader(context, ref, total),
                 loading: () => _buildHeaderSkeleton(context),
                 error: (_, __) => _buildHeaderSkeleton(context),
               ),
@@ -44,7 +46,7 @@ class PoinView extends ConsumerWidget {
                   // ─── Stats 3 kolom ──────────────────────────────────
                   _buildStatsRow(historyAsync.value ?? []),
                   const SizedBox(height: 16),
-                  
+
                   // ─── Status Jadwal Hari Ini ──────────────────────────
                   _buildScheduleStatusCard(),
                   const SizedBox(height: 20),
@@ -52,14 +54,13 @@ class PoinView extends ConsumerWidget {
                   // ─── Riwayat Poin ───────────────────────────────────
                   const Text(
                     'Riwayat Poin',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 12),
 
-                  historyAsync.when(skipLoadingOnReload: true, data: (history) => history.isEmpty
+                  historyAsync.when(
+                    skipLoadingOnReload: true,
+                    data: (history) => history.isEmpty
                         ? const EmptyState(
                             message: 'Belum ada riwayat poin.',
                             icon: Icons.monetization_on_rounded,
@@ -92,7 +93,8 @@ class PoinView extends ConsumerWidget {
                       message: 'Gagal memuat riwayat poin.',
                       icon: Icons.refresh_rounded,
                       buttonText: 'Coba Lagi',
-                      onButtonPressed: () => ref.invalidate(pointHistoryProvider),
+                      onButtonPressed: () =>
+                          ref.invalidate(pointHistoryProvider),
                     ),
                   ),
 
@@ -144,15 +146,23 @@ class PoinView extends ConsumerWidget {
     final now = DateTime.now();
     final isPagiAvailable = now.hour >= 6 && now.hour < 8;
     final isSoreAvailable = now.hour >= 16 && now.hour < 18;
-    
+
     final isPagiOver = now.hour >= 8;
     final isSoreOver = now.hour >= 18;
 
-    final statusPagi = isPagiAvailable ? 'Tersedia' : (isPagiOver ? 'Terlewat' : 'Belum Mulai');
-    final colorPagi = isPagiAvailable ? AppColors.primaryGreen : (isPagiOver ? AppColors.dangerRed : Colors.grey);
+    final statusPagi = isPagiAvailable
+        ? 'Tersedia'
+        : (isPagiOver ? 'Terlewat' : 'Belum Mulai');
+    final colorPagi = isPagiAvailable
+        ? AppColors.primaryGreen
+        : (isPagiOver ? AppColors.dangerRed : Colors.grey);
 
-    final statusSore = isSoreAvailable ? 'Tersedia' : (isSoreOver ? 'Terlewat' : 'Belum Mulai');
-    final colorSore = isSoreAvailable ? AppColors.primaryGreen : (isSoreOver ? AppColors.dangerRed : Colors.grey);
+    final statusSore = isSoreAvailable
+        ? 'Tersedia'
+        : (isSoreOver ? 'Terlewat' : 'Belum Mulai');
+    final colorSore = isSoreAvailable
+        ? AppColors.primaryGreen
+        : (isSoreOver ? AppColors.dangerRed : Colors.grey);
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -214,7 +224,7 @@ class PoinView extends ConsumerWidget {
 
   Widget _buildHeader(BuildContext context, WidgetRef ref, int total) {
     final rankAsync = ref.watch(userLeaderboardRankProvider);
-    
+
     return Container(
       color: Colors.white,
       padding: EdgeInsets.only(
@@ -233,9 +243,16 @@ class PoinView extends ConsumerWidget {
                 onTap: () => Navigator.pop(context),
                 child: const Row(
                   children: [
-                    Icon(Icons.arrow_back_rounded, size: 24, color: AppColors.textPrimary),
+                    Icon(
+                      Icons.arrow_back_rounded,
+                      size: 24,
+                      color: AppColors.textPrimary,
+                    ),
                     SizedBox(width: 8),
-                    Text('Kembali', style: TextStyle(fontWeight: FontWeight.w600)),
+                    Text(
+                      'Kembali',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
                   ],
                 ),
               ),
@@ -304,7 +321,9 @@ class PoinView extends ConsumerWidget {
                       size: 16,
                     ),
                     const SizedBox(width: 4),
-                    rankAsync.when(skipLoadingOnReload: true, data: (rank) => Text(
+                    rankAsync.when(
+                      skipLoadingOnReload: true,
+                      data: (rank) => Text(
                         rank,
                         style: const TextStyle(
                           color: AppColors.primaryGreen,
@@ -525,32 +544,49 @@ class _PoinHistoryItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String descLower = item.description.toLowerCase();
-    
+
     // Cek tipe transaksi berdasarkan deskripsi
-    bool isAktivasi = descLower.contains('aktivasi') || descLower.contains('activation');
-    bool isPunishment = item.points < 0 || descLower.contains('penalti') || descLower.contains('punishment');
+    bool isAktivasi =
+        descLower.contains('aktivasi') || descLower.contains('activation');
+    bool isPunishment =
+        item.points < 0 ||
+        descLower.contains('penalti') ||
+        descLower.contains('punishment');
     bool isRedeem = descLower.contains('redeem') || descLower.contains('tukar');
-    bool isPresensi = descLower.contains('presensi') || descLower.contains('geofence');
-    
-    // Fallback: Jika deskripsi kosong atau tidak jelas, tapi poinnya tepat 10 (dan bukan penalti), 
+    bool isPresensi =
+        descLower.contains('presensi') || descLower.contains('geofence');
+
+    // Fallback: Jika deskripsi kosong atau tidak jelas, tapi poinnya tepat 10 (dan bukan penalti),
     // asumsikan ini adalah Aktivasi Tempat Sampah (sesuai role Warga/Mahasiswa).
     if (!isAktivasi && !isPunishment && !isRedeem && !isPresensi) {
-      if (item.points == 10 && !descLower.contains('setor') && !descLower.contains('sampah')) {
+      if (item.points == 10 &&
+          !descLower.contains('setor') &&
+          !descLower.contains('sampah')) {
         isAktivasi = true;
       }
     }
 
     final bool isOrganic = item.wasteType == WasteType.organic;
-    
+
     final Color color = isPunishment
         ? AppColors.dangerRed
-        : (isAktivasi || isPresensi ? Colors.blue : (isOrganic ? AppColors.organicColor : AppColors.nonOrganicColor));
-        
-    final IconData iconData = isPunishment 
-        ? Icons.warning_rounded 
-        : (isAktivasi ? Icons.qr_code_scanner_rounded : (isPresensi ? Icons.location_on_rounded : Icons.delete_rounded));
+        : (isAktivasi || isPresensi
+              ? Colors.blue
+              : (isOrganic
+                    ? AppColors.organicColor
+                    : AppColors.nonOrganicColor));
 
-    String title = isOrganic ? 'Setor Sampah Organik' : 'Setor Sampah Anorganik';
+    final IconData iconData = isPunishment
+        ? Icons.warning_rounded
+        : (isAktivasi
+              ? Icons.qr_code_scanner_rounded
+              : (isPresensi
+                    ? Icons.location_on_rounded
+                    : Icons.delete_rounded));
+
+    String title = isOrganic
+        ? 'Setor Sampah Organik'
+        : 'Setor Sampah Anorganik';
     if (isAktivasi) {
       title = 'Aktivasi Tempat Sampah Berhasil';
     } else if (isPunishment) {
@@ -587,7 +623,12 @@ class _PoinHistoryItem extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             child: iconData == Icons.delete_rounded
-                ? Image.asset('assets/icons/recycle-bin.png', color: color, width: 24, height: 24)
+                ? Image.asset(
+                    'assets/icons/recycle-bin.png',
+                    color: color,
+                    width: 24,
+                    height: 24,
+                  )
                 : Icon(iconData, color: color, size: 24),
           ),
           const SizedBox(width: 16),
@@ -612,7 +653,10 @@ class _PoinHistoryItem extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      DateFormat('d MMM yyyy • HH:mm', 'id_ID').format(item.createdAt.toLocal()),
+                      DateFormat(
+                        'd MMM yyyy • HH:mm',
+                        'id_ID',
+                      ).format(item.createdAt.toLocal()),
                       style: const TextStyle(
                         fontSize: 12,
                         color: AppColors.textHint,
@@ -631,17 +675,25 @@ class _PoinHistoryItem extends StatelessWidget {
               Row(
                 children: [
                   Text(
-                    isPunishment ? '-${item.points.abs()}' : '+${item.points.abs()}',
+                    isPunishment
+                        ? '-${item.points.abs()}'
+                        : '+${item.points.abs()}',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
-                      color: isPunishment ? AppColors.dangerRed : AppColors.primaryGreen,
+                      color: isPunishment
+                          ? AppColors.dangerRed
+                          : AppColors.primaryGreen,
                     ),
                   ),
                   const SizedBox(width: 2),
                   const Text(
                     'pts',
-                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ),

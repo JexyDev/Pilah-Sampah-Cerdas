@@ -3,7 +3,6 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../core/values/app_colors.dart';
 
-
 class TentangAplikasiView extends StatefulWidget {
   const TentangAplikasiView({super.key});
 
@@ -57,7 +56,7 @@ class _TentangAplikasiViewState extends State<TentangAplikasiView> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Image.asset(
-                  'assets/app-logo.png',
+                  'assets/logo/BersekaNew-logo-text-bg-transparent.png',
                   height: 100,
                   fit: BoxFit.contain,
                   errorBuilder: (context, error, stackTrace) => const Icon(
@@ -65,29 +64,6 @@ class _TentangAplikasiViewState extends State<TentangAplikasiView> {
                     size: 80,
                     color: AppColors.primaryGreen,
                   ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'BERSEKA',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 34,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFF005841),
-                  letterSpacing: 1.2,
-                  height: 1.1,
-                ),
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'Bersih, Sehat, Kampung Asri',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF5CA432),
-                  letterSpacing: 0.5,
                 ),
               ),
               const SizedBox(height: 28),

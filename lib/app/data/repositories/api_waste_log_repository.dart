@@ -43,13 +43,18 @@ class ApiWasteLogRepository implements WasteLogRepository {
   Future<List<WasteLogEntity>> getWasteLogsByUser(String userId) async {
     final cacheKey = 'cached_waste_logs_$userId';
     try {
-      final response = await apiClient.dio.get(ApiEndpoints.transactionsMyDeposits);
+      final response = await apiClient.dio.get(
+        ApiEndpoints.transactionsMyDeposits,
+      );
 
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data['data'] as List<dynamic>;
-        
-        await apiClient.secureStorage.write(key: cacheKey, value: jsonEncode(data));
-        
+
+        await apiClient.secureStorage.write(
+          key: cacheKey,
+          value: jsonEncode(data),
+        );
+
         return data
             .map((json) => _mapWasteLog(json as Map<String, dynamic>, userId))
             .toList();
@@ -118,7 +123,7 @@ class ApiWasteLogRepository implements WasteLogRepository {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data['data'] as List<dynamic>;
-        
+
         final userEntry = data.firstWhere(
           (entry) => entry['id'] == userId,
           orElse: () => null,
@@ -146,21 +151,26 @@ class ApiWasteLogRepository implements WasteLogRepository {
     final categoryJson = binJson?['category'] as Map<String, dynamic>?;
     final categoryName = categoryJson?['name']?.toString().toUpperCase() ?? '';
 
-    final String rawKategori = (
-      categoryName.isNotEmpty ? categoryName :
-      (json['jenis'] ?? 
-      json['wasteType'] ?? 
-      json['kategori'] ?? 
-      json['type'] ?? 
-      json['hasilKlasifikasiAi'] ?? 
-      json['hasil_klasifikasi_ai'] ?? 
-      '').toString()
-    ).trim().toUpperCase();
-    
+    final String rawKategori =
+        (categoryName.isNotEmpty
+                ? categoryName
+                : (json['jenis'] ??
+                          json['wasteType'] ??
+                          json['kategori'] ??
+                          json['type'] ??
+                          json['hasilKlasifikasiAi'] ??
+                          json['hasil_klasifikasi_ai'] ??
+                          '')
+                      .toString())
+            .trim()
+            .toUpperCase();
+
     final String binQrCode = json['binQrCode']?.toString().toUpperCase() ?? '';
-    
+
     WasteType wasteType;
-    if (binQrCode.contains('ANO') || binQrCode.contains('ANG') || binQrCode.contains('ANORG')) {
+    if (binQrCode.contains('ANO') ||
+        binQrCode.contains('ANG') ||
+        binQrCode.contains('ANORG')) {
       wasteType = WasteType.nonOrganic;
     } else if (binQrCode.contains('OGN') || binQrCode.contains('ORG')) {
       wasteType = WasteType.organic;
@@ -176,34 +186,46 @@ class ApiWasteLogRepository implements WasteLogRepository {
     }
 
     // berat dari backend: coba weightKg dulu, fallback ke berat/volumeLiter
-    final double weightKg = double.tryParse(
-      json['weightKg']?.toString() ?? 
-      json['berat']?.toString() ?? 
-      json['volumeLiter']?.toString() ?? 
-      '0'
-    ) ?? 0.0;
-    
+    final double weightKg =
+        double.tryParse(
+          json['weightKg']?.toString() ??
+              json['berat']?.toString() ??
+              json['volumeLiter']?.toString() ??
+              '0',
+        ) ??
+        0.0;
+
     // Ambil poin dari pointsAwarded, poin, atau points
-    final int poin = (json['pointsAwarded'] as num?)?.toInt() ?? 
-        (json['poin'] as num?)?.toInt() ?? 
-        (json['points'] as num?)?.toInt() ?? 0;
+    final int poin =
+        (json['pointsAwarded'] as num?)?.toInt() ??
+        (json['poin'] as num?)?.toInt() ??
+        (json['points'] as num?)?.toInt() ??
+        0;
 
     // Ambil lokasi tempat sampah jika ada
-    final String rawLoc = json['binLocation']?.toString() ??
+    final String rawLoc =
+        json['binLocation']?.toString() ??
         json['kelurahan']?.toString() ??
         json['rtRw']?.toString() ??
         json['alamat']?.toString() ??
         json['address']?.toString() ??
         json['location']?.toString() ??
         '';
-    final String? binLocation = (rawLoc.isEmpty || rawLoc == 'null' || rawLoc == 'Lokasi tidak diketahui') ? null : rawLoc;
+    final String? binLocation =
+        (rawLoc.isEmpty ||
+            rawLoc == 'null' ||
+            rawLoc == 'Lokasi tidak diketahui')
+        ? null
+        : rawLoc;
 
     // tanggal: coba ISO 8601 dulu (dari my-deposits), fallback "12 Jan 2025"
     DateTime createdAt;
     try {
       final raw =
           json['createdAt']?.toString() ?? json['tanggal']?.toString() ?? '';
-      createdAt = raw.contains('T') ? DateTime.parse(raw).toLocal() : _parseIdDate(raw);
+      createdAt = raw.contains('T')
+          ? DateTime.parse(raw).toLocal()
+          : _parseIdDate(raw);
     } catch (_) {
       createdAt = DateTime.now();
     }
@@ -219,23 +241,29 @@ class ApiWasteLogRepository implements WasteLogRepository {
       createdAt: createdAt,
       kelurahan: binLocation,
       discrepancyStatus: json['discrepancyStatus']?.toString() ?? 'NONE',
-      aiConfidence: (json['confidence'] as num?)?.toDouble() ?? 
-                    (json['confidenceAi'] as num?)?.toDouble() ?? 
-                    (json['aiConfidence'] as num?)?.toDouble() ?? 
-                    (json['ai_confidence'] as num?)?.toDouble() ?? 0.0,
+      aiConfidence:
+          (json['confidence'] as num?)?.toDouble() ??
+          (json['confidenceAi'] as num?)?.toDouble() ??
+          (json['aiConfidence'] as num?)?.toDouble() ??
+          (json['ai_confidence'] as num?)?.toDouble() ??
+          0.0,
+      isCorrect: json['is_correct'] ?? json['isCorrect'] ?? false,
     );
   }
 
   PointHistoryEntity _mapPointHistory(Map<String, dynamic> json) {
     String desc = json['description']?.toString() ?? '';
-    desc = desc.replaceAll(RegExp(r'non[\s-]?organik', caseSensitive: false), 'Anorganik');
+    desc = desc.replaceAll(
+      RegExp(r'non[\s-]?organik', caseSensitive: false),
+      'Anorganik',
+    );
     // Cek field wasteType langsung dari backend (paling akurat)
-    final String rawWasteType = (
-      json['wasteType']?.toString() ??
-      json['kategori']?.toString() ??
-      json['type']?.toString() ??
-      ''
-    ).toUpperCase();
+    final String rawWasteType =
+        (json['wasteType']?.toString() ??
+                json['kategori']?.toString() ??
+                json['type']?.toString() ??
+                '')
+            .toUpperCase();
 
     WasteType wasteType;
     if (rawWasteType.contains('NON') || rawWasteType.contains('ANORG')) {
@@ -246,10 +274,13 @@ class ApiWasteLogRepository implements WasteLogRepository {
       // Fallback: deteksi dari description — cek NON/ANORG dulu sebelum ORG
       // karena 'ORGANIC' adalah substring dari 'ANORGANIK'
       final descUpper = desc.toUpperCase();
-      if (descUpper.contains('NON_ORGANIC') || descUpper.contains('NON ORGANIC') ||
-          descUpper.contains('ANORGANIK') || descUpper.contains('NON-ORGANIC')) {
+      if (descUpper.contains('NON_ORGANIC') ||
+          descUpper.contains('NON ORGANIC') ||
+          descUpper.contains('ANORGANIK') ||
+          descUpper.contains('NON-ORGANIC')) {
         wasteType = WasteType.nonOrganic;
-      } else if (descUpper.contains('ORGANIC') || descUpper.contains('ORGANIK')) {
+      } else if (descUpper.contains('ORGANIC') ||
+          descUpper.contains('ORGANIK')) {
         wasteType = WasteType.organic;
       } else {
         wasteType = WasteType.organic; // default
@@ -308,4 +339,3 @@ class ApiWasteLogRepository implements WasteLogRepository {
     }
   }
 }
-

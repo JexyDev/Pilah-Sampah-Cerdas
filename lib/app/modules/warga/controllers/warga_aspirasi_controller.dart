@@ -40,7 +40,7 @@ class WargaAspirasiNotifier extends StateNotifier<WargaAspirasiState> {
       final repo = ref.read(pemanfaatanRepositoryProvider);
       final authState = ref.read(authProvider);
       final user = authState.user;
-      
+
       await repo.createFeedback(
         judul: data['judul'] as String,
         isiKritikSaran: data['isiKritikSaran'] as String,
@@ -49,8 +49,12 @@ class WargaAspirasiNotifier extends StateNotifier<WargaAspirasiState> {
         fotoBuktiUrl: data['fotoBuktiUrl'] as String?,
         rwId: int.tryParse(user?.rw ?? ''),
       );
-      
-      state = state.copyWith(isLoading: false, isSuccess: true, clearError: true);
+
+      state = state.copyWith(
+        isLoading: false,
+        isSuccess: true,
+        clearError: true,
+      );
       NotificationEngine().showGenericNotification(
         id: DateTime.now().millisecondsSinceEpoch.remainder(10000),
         title: 'Aspirasi Berhasil Terkirim 📬',
@@ -58,12 +62,16 @@ class WargaAspirasiNotifier extends StateNotifier<WargaAspirasiState> {
       );
       return true;
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: NetworkExceptionHelper.getErrorMessage(e));
+      state = state.copyWith(
+        isLoading: false,
+        error: NetworkExceptionHelper.getErrorMessage(e),
+      );
     }
     return false;
   }
 }
 
-final wargaAspirasiProvider = StateNotifierProvider<WargaAspirasiNotifier, WargaAspirasiState>((ref) {
-  return WargaAspirasiNotifier(ref);
-});
+final wargaAspirasiProvider =
+    StateNotifierProvider<WargaAspirasiNotifier, WargaAspirasiState>((ref) {
+      return WargaAspirasiNotifier(ref);
+    });

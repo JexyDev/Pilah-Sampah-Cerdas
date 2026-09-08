@@ -74,16 +74,22 @@ class BinEntity extends Equatable {
   final String backendStatus;
 
   /// Persentase kapasitas terisi (0.0 – 1.0).
-  double get capacityPercent => currentVolumeL / maxCapacityL;
+  double get capacityPercent => maxCapacityL > 0 ? (currentVolumeL / maxCapacityL) : 0.0;
 
   /// Volume sisa dalam liter.
   double get remainingVolumeL => maxCapacityL - currentVolumeL;
 
-  /// Estimasi berat saat ini dalam Kg (konversi kasar).
-  double get currentWeightKg => currentVolumeL * 0.3;
+  /// Densitas berat per liter berdasarkan jenis sampah (sesuai AppConfig & backend DENSITY).
+  double get densityKgPerLiter =>
+      binType == WasteType.organic
+          ? AppConfig.organicDensityKgPerLiter
+          : AppConfig.nonOrganicDensityKgPerLiter;
 
-  /// Estimasi kapasitas maksimal dalam Kg (konversi kasar).
-  double get maxWeightKg => maxCapacityL * 0.3;
+  /// Estimasi berat saat ini dalam Kg (konsisten dengan densitas jenis sampah).
+  double get currentWeightKg => currentVolumeL * densityKgPerLiter;
+
+  /// Estimasi kapasitas maksimal dalam Kg (konsisten dengan densitas jenis sampah).
+  double get maxWeightKg => maxCapacityL * densityKgPerLiter;
 
   /// Status kapasitas tempat sampah sesuai threshold srs.md FR-04.
   BinStatus get status {

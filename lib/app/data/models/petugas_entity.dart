@@ -1,11 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 class PetugasEntity extends Equatable {
-  const PetugasEntity({
-    required this.id,
-    required this.name,
-    this.fotoProfil,
-  });
+  const PetugasEntity({required this.id, required this.name, this.fotoProfil});
 
   final String id;
   final String name;
@@ -20,11 +16,7 @@ class PetugasEntity extends Equatable {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'fotoProfil': fotoProfil,
-    };
+    return {'id': id, 'name': name, 'fotoProfil': fotoProfil};
   }
 
   @override

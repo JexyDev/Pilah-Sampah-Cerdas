@@ -8,14 +8,19 @@ import '../../auth/controllers/auth_controller.dart';
 
 /// Provider riwayat setoran sampah.
 /// Menggunakan GET /api/v1/transactions/deposits (global, bukan per-user).
-final wasteLogsProvider = AsyncNotifierProvider<WasteLogsNotifier, List<WasteLogEntity>>(WasteLogsNotifier.new);
+final wasteLogsProvider =
+    AsyncNotifierProvider<WasteLogsNotifier, List<WasteLogEntity>>(
+      WasteLogsNotifier.new,
+    );
 
 class WasteLogsNotifier extends AsyncNotifier<List<WasteLogEntity>> {
   @override
   FutureOr<List<WasteLogEntity>> build() async {
     final repo = ref.watch(wasteLogRepositoryProvider);
-    final userId = ref.watch(authProvider.select((state) => state.user?.id ?? ''));
-    
+    final userId = ref.watch(
+      authProvider.select((state) => state.user?.id ?? ''),
+    );
+
     // 1. Coba baca cache.
     final cached = await repo.getCachedWasteLogs(userId);
     if (cached != null && cached.isNotEmpty) {
@@ -47,7 +52,9 @@ final pointHistoryProvider = FutureProvider<List<PointHistoryEntity>>((
   ref,
 ) async {
   final repo = ref.watch(wasteLogRepositoryProvider);
-  final userId = ref.watch(authProvider.select((state) => state.user?.id ?? ''));
+  final userId = ref.watch(
+    authProvider.select((state) => state.user?.id ?? ''),
+  );
   final history = await repo.getPointHistoryByUser(userId);
 
   return history;
@@ -68,13 +75,17 @@ final dailyPointsProvider = FutureProvider<int>((ref) async {
 });
 final totalPointsProvider = FutureProvider<int>((ref) async {
   final repo = ref.watch(wasteLogRepositoryProvider);
-  final userId = ref.watch(authProvider.select((state) => state.user?.id ?? ''));
+  final userId = ref.watch(
+    authProvider.select((state) => state.user?.id ?? ''),
+  );
   return repo.getTotalPointsByUser(userId);
 });
 
 /// Provider peringkat user (misal: "#3 di RT 03")
 final userLeaderboardRankProvider = FutureProvider<String>((ref) async {
   final repo = ref.watch(wasteLogRepositoryProvider);
-  final userId = ref.watch(authProvider.select((state) => state.user?.id ?? ''));
+  final userId = ref.watch(
+    authProvider.select((state) => state.user?.id ?? ''),
+  );
   return repo.getUserLeaderboardRank(userId);
 });

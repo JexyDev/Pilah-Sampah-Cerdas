@@ -28,50 +28,68 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
 
   int _activationFilterIndex = 0; // 0=Semua, 1=Sudah, 2=Belum
 
-  List<WargaDampingan> _filteredList(List<WargaDampingan> list, String userKecamatan, String userKelurahan, String userRw, String userId, String userNim, String userName) {
+  List<WargaDampingan> _filteredList(
+    List<WargaDampingan> list,
+    String userKecamatan,
+    String userKelurahan,
+    String userRw,
+    String userId,
+    String userNim,
+    String userName,
+  ) {
     // Tampilkan Warga Dampingan mahasiswa sesuai filter aktivasi
-    var filtered = list.where((w) {
-      if (_activationFilterIndex == 1 && !w.isActivated) return false;
-      if (_activationFilterIndex == 2 && w.isActivated) return false;
+    var filtered = list
+        .where((w) {
+          if (_activationFilterIndex == 1 && !w.isActivated) return false;
+          if (_activationFilterIndex == 2 && w.isActivated) return false;
 
-      // Filter QC: Tampilkan HANYA warga si mahasiswa tersebut.
-      final isMyCitizen = w.mahasiswaId == userId;
+          // Filter QC: Tampilkan HANYA warga si mahasiswa tersebut.
+          final isMyCitizen = w.mahasiswaId == userId;
 
-      return isMyCitizen;
-    }).map((w) {
-      // Selaraskan alamat warga ke wilayah penugasan mahasiswa jika data mentah backend masih umum
-      final targetKel = userKelurahan;
-      final targetRw = userRw;
-      final targetKec = w.kecamatan.isNotEmpty ? w.kecamatan : userKecamatan;
-      final kelDisplay = targetKel.toLowerCase().startsWith('kel') ? targetKel : 'Kel. $targetKel';
-      final displayAddr = w.address.contains('Bojongsoang') || w.address.contains('RW')
-          ? w.address
-          : 'Jl. ${w.wargaName} No. ${w.binId.length > 3 ? w.binId.substring(w.binId.length - 2) : "4"}, RW $targetRw, $kelDisplay, Kec. $targetKec';
-      
-      return WargaDampingan(
-        wargaId: w.wargaId,
-        binId: w.binId,
-        binOrganikId: w.binOrganikId,
-        binAnorganikId: w.binAnorganikId,
-        wargaName: w.wargaName,
-        address: displayAddr,
-        kelurahan: targetKel,
-        rw: targetRw,
-        mahasiswaId: w.mahasiswaId,
-        recentLogs: w.recentLogs,
-        isActivated: w.isActivated,
-        role: w.role,
-        totalPoints: w.totalPoints,
-        apiCorrectPercentage: w.apiCorrectPercentage,
-      );
-    }).toList();
+          return isMyCitizen;
+        })
+        .map((w) {
+          // Selaraskan alamat warga ke wilayah penugasan mahasiswa jika data mentah backend masih umum
+          final targetKel = userKelurahan;
+          final targetRw = userRw;
+          final targetKec = w.kecamatan.isNotEmpty
+              ? w.kecamatan
+              : userKecamatan;
+          final kelDisplay = targetKel.toLowerCase().startsWith('kel')
+              ? targetKel
+              : 'Kel. $targetKel';
+          final displayAddr =
+              w.address.contains('Bojongsoang') || w.address.contains('RW')
+              ? w.address
+              : 'Jl. ${w.wargaName} No. ${w.binId.length > 3 ? w.binId.substring(w.binId.length - 2) : "4"}, RW $targetRw, $kelDisplay, Kec. $targetKec';
+
+          return WargaDampingan(
+            wargaId: w.wargaId,
+            binId: w.binId,
+            binOrganikId: w.binOrganikId,
+            binAnorganikId: w.binAnorganikId,
+            wargaName: w.wargaName,
+            address: displayAddr,
+            kelurahan: targetKel,
+            rw: targetRw,
+            mahasiswaId: w.mahasiswaId,
+            recentLogs: w.recentLogs,
+            isActivated: w.isActivated,
+            role: w.role,
+            totalPoints: w.totalPoints,
+            apiCorrectPercentage: w.apiCorrectPercentage,
+          );
+        })
+        .toList();
 
     if (_searchQuery.isEmpty) return filtered;
     final query = _searchQuery.toLowerCase();
     return filtered
-        .where((w) =>
-            w.wargaName.toLowerCase().contains(query) ||
-            w.address.toLowerCase().contains(query))
+        .where(
+          (w) =>
+              w.wargaName.toLowerCase().contains(query) ||
+              w.address.toLowerCase().contains(query),
+        )
         .toList();
   }
 
@@ -85,8 +103,16 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
     final userId = user?.id ?? '';
     final userNim = user?.nim ?? '';
     final userName = user?.name ?? '';
-    
-    final filtered = _filteredList(state.wargaList, userKec, userKel, userRw, userId, userNim, userName);
+
+    final filtered = _filteredList(
+      state.wargaList,
+      userKec,
+      userKel,
+      userRw,
+      userId,
+      userNim,
+      userName,
+    );
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -129,8 +155,11 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
                       ),
                       suffixIcon: _searchQuery.isNotEmpty
                           ? IconButton(
-                              icon: const Icon(Icons.clear_rounded,
-                                  size: 18, color: AppColors.textHint),
+                              icon: const Icon(
+                                Icons.clear_rounded,
+                                size: 18,
+                                color: AppColors.textHint,
+                              ),
                               onPressed: () {
                                 _searchCtrl.clear();
                                 setState(() => _searchQuery = '');
@@ -144,21 +173,24 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
                         vertical: 10,
                       ),
                       border: OutlineInputBorder(
-                        borderRadius:
-                            BorderRadius.circular(AppDimensions.radiusMd),
+                        borderRadius: BorderRadius.circular(
+                          AppDimensions.radiusMd,
+                        ),
                         borderSide: BorderSide.none,
                       ),
                     ),
                   ),
                 ),
-                
+
                 // ── Filter Aktivasi ─────────────────────────────
                 Container(
                   color: Colors.white,
                   padding: const EdgeInsets.only(bottom: AppDimensions.md),
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: AppDimensions.md),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppDimensions.md,
+                    ),
                     child: Row(
                       children: [
                         _filterChip('Semua', 0),
@@ -291,7 +323,9 @@ class _WargaListItem extends StatelessWidget {
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-              border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+              border: Border.all(
+                color: AppColors.border.withValues(alpha: 0.5),
+              ),
             ),
             child: Row(
               children: [
@@ -346,55 +380,91 @@ class _WargaListItem extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 2),
-                      Builder(builder: (_) {
-                        final org = warga.binOrganikId;
-                        final anorg = warga.binAnorganikId;
-                        final hasOrg = org != null && org.trim().isNotEmpty;
-                        final hasAnorg = anorg != null && anorg.trim().isNotEmpty;
-                        if (hasOrg && hasAnorg && org != anorg) {
-                          return Text(
-                            'Organik: $org • Anorganik: $anorg',
-                            style: const TextStyle(fontSize: 11, color: AppColors.primaryGreen, fontWeight: FontWeight.w600),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          );
-                        } else if (hasOrg) {
-                          return Text(
-                            'Organik: $org',
-                            style: const TextStyle(fontSize: 11, color: AppColors.primaryGreen, fontWeight: FontWeight.w600),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          );
-                        } else if (hasAnorg) {
-                          return Text(
-                            'Anorganik: $anorg',
-                            style: const TextStyle(fontSize: 11, color: AppColors.primaryGreen, fontWeight: FontWeight.w600),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          );
-                        } else if (warga.binId.isNotEmpty && warga.binId != 'Belum Ada Tempat Sampah') {
-                          return Text(
-                            'ID: ${warga.binId}',
-                            style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          );
-                        }
-                        return const SizedBox.shrink();
-                      }),
+                      Builder(
+                        builder: (_) {
+                          final org = warga.binOrganikId;
+                          final anorg = warga.binAnorganikId;
+                          final hasOrg = org != null && org.trim().isNotEmpty;
+                          final hasAnorg =
+                              anorg != null && anorg.trim().isNotEmpty;
+                          if (hasOrg && hasAnorg && org != anorg) {
+                            return Text(
+                              'Organik: $org • Anorganik: $anorg',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: AppColors.primaryGreen,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            );
+                          } else if (hasOrg) {
+                            return Text(
+                              'Organik: $org',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: AppColors.primaryGreen,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            );
+                          } else if (hasAnorg) {
+                            return Text(
+                              'Anorganik: $anorg',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: AppColors.primaryGreen,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            );
+                          } else if (warga.binId.isNotEmpty &&
+                              warga.binId != 'Belum Ada Tempat Sampah') {
+                            return Text(
+                              'ID: ${warga.binId}',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: AppColors.textSecondary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        },
+                      ),
                       if (warga.isActivated) ...[
                         const SizedBox(height: 5),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: warga.pendampingName.isNotEmpty ? const Color(0xFFEBF5FF) : AppColors.primaryGreen.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: warga.pendampingName.isNotEmpty ? const Color(0xFF90CDF4) : AppColors.primaryGreen.withValues(alpha: 0.3)),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: warga.pendampingName.isNotEmpty
+                                ? const Color(0xFFEBF5FF)
+                                : AppColors.primaryGreen.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: warga.pendampingName.isNotEmpty
+                                  ? const Color(0xFF90CDF4)
+                                  : AppColors.primaryGreen.withValues(
+                                      alpha: 0.3,
+                                    ),
                             ),
+                          ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.verified_rounded, size: 12, color: warga.pendampingName.isNotEmpty ? AppColors.primaryBlueDark : AppColors.primaryGreen),
+                              Icon(
+                                Icons.verified_rounded,
+                                size: 12,
+                                color: warga.pendampingName.isNotEmpty
+                                    ? AppColors.primaryBlueDark
+                                    : AppColors.primaryGreen,
+                              ),
                               const SizedBox(width: 4),
                               Flexible(
                                 child: Text(
@@ -404,7 +474,9 @@ class _WargaListItem extends StatelessWidget {
                                   style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
-                                    color: warga.pendampingName.isNotEmpty ? AppColors.primaryBlueDark : AppColors.primaryGreen,
+                                    color: warga.pendampingName.isNotEmpty
+                                        ? AppColors.primaryBlueDark
+                                        : AppColors.primaryGreen,
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -418,7 +490,8 @@ class _WargaListItem extends StatelessWidget {
                         children: [
                           _StatBadge(
                             icon: Icons.check_circle_outline_rounded,
-                            label: '${warga.correctPercentage.toStringAsFixed(0)}% benar',
+                            label:
+                                '${warga.correctPercentage.toStringAsFixed(0)}% benar',
                             color: AppColors.success,
                           ),
                           const SizedBox(width: 8),
@@ -445,8 +518,9 @@ class _WargaListItem extends StatelessWidget {
                         color: warga.needsReeducation
                             ? AppColors.warningOrange.withValues(alpha: 0.1)
                             : AppColors.success.withValues(alpha: 0.1),
-                        borderRadius:
-                            BorderRadius.circular(AppDimensions.radiusFull),
+                        borderRadius: BorderRadius.circular(
+                          AppDimensions.radiusFull,
+                        ),
                       ),
                       child: Text(
                         warga.needsReeducation ? '⚠ Edukasi' : '✅ Baik',

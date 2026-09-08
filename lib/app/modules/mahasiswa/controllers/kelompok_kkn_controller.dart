@@ -8,11 +8,7 @@ class KelompokKknState {
   final String? error;
   final KelompokKknData? kelompok;
 
-  const KelompokKknState({
-    this.isLoading = false,
-    this.error,
-    this.kelompok,
-  });
+  const KelompokKknState({this.isLoading = false, this.error, this.kelompok});
 
   KelompokKknState copyWith({
     bool? isLoading,
@@ -41,7 +37,11 @@ class KelompokKknNotifier extends StateNotifier<KelompokKknState> {
     try {
       final repo = ref.read(kknRepositoryProvider);
       final data = await repo.getKelompokKkn();
-      state = state.copyWith(isLoading: false, kelompok: data, clearError: true);
+      state = state.copyWith(
+        isLoading: false,
+        kelompok: data,
+        clearError: true,
+      );
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -51,6 +51,7 @@ class KelompokKknNotifier extends StateNotifier<KelompokKknState> {
   }
 }
 
-final kelompokKknProvider = StateNotifierProvider<KelompokKknNotifier, KelompokKknState>((ref) {
-  return KelompokKknNotifier(ref);
-});
+final kelompokKknProvider =
+    StateNotifierProvider<KelompokKknNotifier, KelompokKknState>((ref) {
+      return KelompokKknNotifier(ref);
+    });

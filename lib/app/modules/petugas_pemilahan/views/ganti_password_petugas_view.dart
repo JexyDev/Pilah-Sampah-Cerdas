@@ -9,10 +9,12 @@ class GantiPasswordPetugasView extends ConsumerStatefulWidget {
   const GantiPasswordPetugasView({super.key});
 
   @override
-  ConsumerState<GantiPasswordPetugasView> createState() => _GantiPasswordPetugasViewState();
+  ConsumerState<GantiPasswordPetugasView> createState() =>
+      _GantiPasswordPetugasViewState();
 }
 
-class _GantiPasswordPetugasViewState extends ConsumerState<GantiPasswordPetugasView> {
+class _GantiPasswordPetugasViewState
+    extends ConsumerState<GantiPasswordPetugasView> {
   final _formKey = GlobalKey<FormState>();
   final _oldPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
@@ -36,7 +38,9 @@ class _GantiPasswordPetugasViewState extends ConsumerState<GantiPasswordPetugasV
 
     setState(() => _isSubmitting = true);
 
-    final success = await ref.read(petugasPemilahanControllerProvider.notifier).changePassword(
+    final success = await ref
+        .read(petugasPemilahanControllerProvider.notifier)
+        .changePassword(
           oldPassword: _oldPasswordController.text.trim(),
           newPassword: _newPasswordController.text.trim(),
         );
@@ -44,7 +48,8 @@ class _GantiPasswordPetugasViewState extends ConsumerState<GantiPasswordPetugasV
     setState(() => _isSubmitting = false);
 
     if (success && mounted) {
-      ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Kata sandi Petugas Pemilahan berhasil diperbarui!'),
           backgroundColor: AppColors.primaryGreen,
@@ -53,21 +58,20 @@ class _GantiPasswordPetugasViewState extends ConsumerState<GantiPasswordPetugasV
       );
       Navigator.pop(context);
     } else if (mounted) {
-      final errorMsg = ref.read(petugasPemilahanControllerProvider).errorMessage ??
+      final errorMsg =
+          ref.read(petugasPemilahanControllerProvider).errorMessage ??
           'Gagal mengubah kata sandi. Periksa kata sandi lama Anda.';
-      ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(errorMsg),
-          backgroundColor: AppColors.maroonRed,
-        ),
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMsg), backgroundColor: AppColors.maroonRed),
       );
     }
   }
 
   bool _hasUnsavedChanges() {
     return _oldPasswordController.text.isNotEmpty ||
-           _newPasswordController.text.isNotEmpty ||
-           _confirmPasswordController.text.isNotEmpty;
+        _newPasswordController.text.isNotEmpty ||
+        _confirmPasswordController.text.isNotEmpty;
   }
 
   @override
@@ -76,7 +80,7 @@ class _GantiPasswordPetugasViewState extends ConsumerState<GantiPasswordPetugasV
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
-        
+
         if (!_hasUnsavedChanges()) {
           if (context.mounted) Navigator.pop(context);
           return;
@@ -86,13 +90,23 @@ class _GantiPasswordPetugasViewState extends ConsumerState<GantiPasswordPetugasV
           context: context,
           builder: (context) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: const Text('Keluar Halaman?', style: TextStyle(fontWeight: FontWeight.bold)),
-              content: const Text('Perubahan ini akan terhapus jika Anda keluar dari halaman ini.'),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: const Text(
+                'Keluar Halaman?',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              content: const Text(
+                'Perubahan ini akan terhapus jika Anda keluar dari halaman ini.',
+              ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Batal', style: TextStyle(color: AppColors.textSecondary)),
+                  child: const Text(
+                    'Batal',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
@@ -112,161 +126,250 @@ class _GantiPasswordPetugasViewState extends ConsumerState<GantiPasswordPetugasV
         }
       },
       child: Scaffold(
-      backgroundColor: AppColors.backgroundCanvas,
-      appBar: AppBar(
-        title: const Text(
-          'Ganti Kata Sandi',
-          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18, color: AppColors.primaryGreen),
+        backgroundColor: AppColors.backgroundCanvas,
+        appBar: AppBar(
+          title: const Text(
+            'Ganti Kata Sandi',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 18,
+              color: AppColors.primaryGreen,
+            ),
+          ),
+          backgroundColor: Colors.white,
+          foregroundColor: AppColors.primaryGreen,
+          elevation: 2,
+          shadowColor: Colors.black12,
+          leading: IconButton(
+            icon: const Icon(
+              Icons.arrow_back_rounded,
+              color: AppColors.primaryGreen,
+            ),
+            onPressed: () async {
+              final navigator = Navigator.of(context);
+              if (await navigator.maybePop()) return;
+            },
+          ),
         ),
-        backgroundColor: Colors.white,
-        foregroundColor: AppColors.primaryGreen,
-        elevation: 2,
-        shadowColor: Colors.black12,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.primaryGreen),
-          onPressed: () async {
-            final navigator = Navigator.of(context);
-            if (await navigator.maybePop()) return;
-          },
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppDimensions.md),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header Card Info
-              Container(
-                padding: const EdgeInsets.all(AppDimensions.md),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryGreen.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.3)),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.security_rounded, color: AppColors.primaryGreen, size: 28),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Untuk keamanan akun Petugas Pemilahan RT/RW, gunakan kata sandi yang kuat (minimal 8 karakter).',
-                        style: TextStyle(fontSize: 12, color: AppColors.textPrimary, height: 1.3),
-                      ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(AppDimensions.md),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header Card Info
+                Container(
+                  padding: const EdgeInsets.all(AppDimensions.md),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppColors.primaryGreen.withValues(alpha: 0.3),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppDimensions.lg),
-
-              // Form Input
-              Card(
-                elevation: 1,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                child: Padding(
-                  padding: const EdgeInsets.all(18.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  ),
+                  child: const Row(
                     children: [
-                      // 1. Password Saat Ini
-                      const Text('Kata Sandi Saat Ini', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                      const SizedBox(height: 6),
-                      TextFormField(
-                        controller: _oldPasswordController,
-                        obscureText: _obscureOld,
-                        decoration: InputDecoration(
-                          hintText: 'Masukkan kata sandi lama',
-                          prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppColors.primaryGreen),
-                          suffixIcon: IconButton(
-                            icon: Icon(_obscureOld ? Icons.visibility_off : Icons.visibility, color: AppColors.textHint),
-                            onPressed: () => setState(() => _obscureOld = !_obscureOld),
+                      Icon(
+                        Icons.security_rounded,
+                        color: AppColors.primaryGreen,
+                        size: 28,
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Untuk keamanan akun Petugas Pemilahan RT/RW, gunakan kata sandi yang kuat (minimal 8 karakter).',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textPrimary,
+                            height: 1.3,
                           ),
                         ),
-                        validator: (v) => (v == null || v.isEmpty) ? 'Kata sandi lama wajib diisi' : null,
-                      ),
-                      const SizedBox(height: 16),
-
-                      // 2. Password Baru
-                      const Text('Kata Sandi Baru', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                      const SizedBox(height: 6),
-                      TextFormField(
-                        controller: _newPasswordController,
-                        obscureText: _obscureNew,
-                        decoration: InputDecoration(
-                          hintText: 'Masukkan kata sandi baru',
-                          prefixIcon: const Icon(Icons.key_outlined, color: AppColors.primaryGreen),
-                          suffixIcon: IconButton(
-                            icon: Icon(_obscureNew ? Icons.visibility_off : Icons.visibility, color: AppColors.textHint),
-                            onPressed: () => setState(() => _obscureNew = !_obscureNew),
-                          ),
-                        ),
-                        validator: (v) {
-                          if (v == null || v.isEmpty) return 'Kata sandi baru wajib diisi';
-                          if (v.length < 8) return 'Kata sandi minimal 8 karakter';
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                      ValueListenableBuilder<TextEditingValue>(
-                        valueListenable: _newPasswordController,
-                        builder: (context, value, child) {
-                          return PasswordStrengthWidget(password: value.text);
-                        },
-                      ),
-                      const SizedBox(height: 16),
-
-                      // 3. Konfirmasi Password Baru
-                      const Text('Konfirmasi Kata Sandi Baru', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                      const SizedBox(height: 6),
-                      TextFormField(
-                        controller: _confirmPasswordController,
-                        obscureText: _obscureConfirm,
-                        decoration: InputDecoration(
-                          hintText: 'Ulangi kata sandi baru',
-                          prefixIcon: const Icon(Icons.check_circle_outline_rounded, color: AppColors.primaryGreen),
-                          suffixIcon: IconButton(
-                            icon: Icon(_obscureConfirm ? Icons.visibility_off : Icons.visibility, color: AppColors.textHint),
-                            onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
-                          ),
-                        ),
-                        validator: (v) {
-                          if (v == null || v.isEmpty) return 'Konfirmasi kata sandi wajib diisi';
-                          if (v != _newPasswordController.text) return 'Konfirmasi kata sandi tidak cocok';
-                          return null;
-                        },
                       ),
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(height: AppDimensions.xl),
+                const SizedBox(height: AppDimensions.lg),
 
-              // Submit Button
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton.icon(
-                  onPressed: _isSubmitting ? null : _submitGantiPassword,
-                  icon: _isSubmitting
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : const Icon(Icons.save_rounded, color: Colors.white),
-                  label: Text(
-                    _isSubmitting ? 'Memperbarui...' : 'Simpan Kata Sandi Baru',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white),
+                // Form Input
+                Card(
+                  elevation: 1,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryGreen,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(18.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // 1. Password Saat Ini
+                        const Text(
+                          'Kata Sandi Saat Ini',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        TextFormField(
+                          controller: _oldPasswordController,
+                          obscureText: _obscureOld,
+                          decoration: InputDecoration(
+                            hintText: 'Masukkan kata sandi lama',
+                            prefixIcon: const Icon(
+                              Icons.lock_outline_rounded,
+                              color: AppColors.primaryGreen,
+                            ),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscureOld
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                                color: AppColors.textHint,
+                              ),
+                              onPressed: () =>
+                                  setState(() => _obscureOld = !_obscureOld),
+                            ),
+                          ),
+                          validator: (v) => (v == null || v.isEmpty)
+                              ? 'Kata sandi lama wajib diisi'
+                              : null,
+                        ),
+                        const SizedBox(height: 16),
+
+                        // 2. Password Baru
+                        const Text(
+                          'Kata Sandi Baru',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        TextFormField(
+                          controller: _newPasswordController,
+                          obscureText: _obscureNew,
+                          decoration: InputDecoration(
+                            hintText: 'Masukkan kata sandi baru',
+                            prefixIcon: const Icon(
+                              Icons.key_outlined,
+                              color: AppColors.primaryGreen,
+                            ),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscureNew
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                                color: AppColors.textHint,
+                              ),
+                              onPressed: () =>
+                                  setState(() => _obscureNew = !_obscureNew),
+                            ),
+                          ),
+                          validator: (v) {
+                            if (v == null || v.isEmpty) {
+                              return 'Kata sandi baru wajib diisi';
+                            }
+                            if (v.length < 8) {
+                              return 'Kata sandi minimal 8 karakter';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        ValueListenableBuilder<TextEditingValue>(
+                          valueListenable: _newPasswordController,
+                          builder: (context, value, child) {
+                            return PasswordStrengthWidget(password: value.text);
+                          },
+                        ),
+                        const SizedBox(height: 16),
+
+                        // 3. Konfirmasi Password Baru
+                        const Text(
+                          'Konfirmasi Kata Sandi Baru',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        TextFormField(
+                          controller: _confirmPasswordController,
+                          obscureText: _obscureConfirm,
+                          decoration: InputDecoration(
+                            hintText: 'Ulangi kata sandi baru',
+                            prefixIcon: const Icon(
+                              Icons.check_circle_outline_rounded,
+                              color: AppColors.primaryGreen,
+                            ),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscureConfirm
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                                color: AppColors.textHint,
+                              ),
+                              onPressed: () => setState(
+                                () => _obscureConfirm = !_obscureConfirm,
+                              ),
+                            ),
+                          ),
+                          validator: (v) {
+                            if (v == null || v.isEmpty) {
+                              return 'Konfirmasi kata sandi wajib diisi';
+                            }
+                            if (v != _newPasswordController.text) {
+                              return 'Konfirmasi kata sandi tidak cocok';
+                            }
+                            return null;
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: AppDimensions.xl),
+
+                // Submit Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton.icon(
+                    onPressed: _isSubmitting ? null : _submitGantiPassword,
+                    icon: _isSubmitting
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Icon(Icons.save_rounded, color: Colors.white),
+                    label: Text(
+                      _isSubmitting
+                          ? 'Memperbarui...'
+                          : 'Simpan Kata Sandi Baru',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: Colors.white,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryGreen,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
-    ),
     );
   }
 }
-

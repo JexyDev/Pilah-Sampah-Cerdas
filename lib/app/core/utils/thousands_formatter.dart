@@ -12,7 +12,7 @@ class ThousandsFormatter extends TextInputFormatter {
     if (newValue.text.isEmpty) {
       return newValue;
     }
-    
+
     // Only allow digits (remove everything else to parse the number)
     final numericString = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
     if (numericString.isEmpty) return const TextEditingValue();

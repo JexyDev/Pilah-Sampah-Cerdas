@@ -13,7 +13,8 @@ class MonitoringWargaView extends ConsumerStatefulWidget {
   const MonitoringWargaView({super.key});
 
   @override
-  ConsumerState<MonitoringWargaView> createState() => _MonitoringWargaViewState();
+  ConsumerState<MonitoringWargaView> createState() =>
+      _MonitoringWargaViewState();
 }
 
 class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
@@ -64,15 +65,20 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
           }
         }
 
-        ref.read(aktivasiWargaProvider.notifier).fetchWargaWithRegion(
-              kelurahan: kelurahan,
-              rw: rw,
-            );
+        ref
+            .read(aktivasiWargaProvider.notifier)
+            .fetchWargaWithRegion(kelurahan: kelurahan, rw: rw);
       });
     }
   }
 
-  List<WargaDampingan> _getFilteredWarga(List<WargaDampingan> allWarga, bool isAktivasiBinMode, String userKec, String userKel, String userRw) {
+  List<WargaDampingan> _getFilteredWarga(
+    List<WargaDampingan> allWarga,
+    bool isAktivasiBinMode,
+    String userKec,
+    String userKel,
+    String userRw,
+  ) {
     // Helper: bersihkan string kelurahan untuk perbandingan
     String cleanKel(String val) => val
         .toLowerCase()
@@ -82,7 +88,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
         .trim();
 
     final targetKelClean = cleanKel(userKel);
-    final targetRwNumbers = RegExp(r'\d+')
+    final targetRwSet = RegExp(r'\d+')
         .allMatches(userRw)
         .map((m) => m.group(0)!.replaceFirst(RegExp(r'^0+'), ''))
         .where((r) => r.isNotEmpty)
@@ -91,14 +97,21 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
     return allWarga.where((w) {
       if (w.role.isNotEmpty && w.role != 'WARGA') return false;
 
-      final wRwClean = w.rw.replaceAll(RegExp(r'[^\d]'), '').replaceFirst(RegExp(r'^0+'), '');
+      final wRwClean = w.rw
+          .replaceAll(RegExp(r'[^\d]'), '')
+          .replaceFirst(RegExp(r'^0+'), '');
       final wKelClean = cleanKel(w.kelurahan);
       final wAddr = w.address.toLowerCase();
 
-      final rwMatches = targetRwNumbers.isEmpty ||
-          targetRwNumbers.contains(wRwClean) ||
-          targetRwNumbers.any((trw) => wAddr.contains('rw $trw') || wAddr.contains('rw 0$trw'));
-      final kelMatches = targetKelClean.isEmpty || wKelClean.contains(targetKelClean) || targetKelClean.contains(wKelClean) || wAddr.contains(targetKelClean);
+      final rwMatches = targetRwSet.isEmpty ||
+          targetRwSet.contains(wRwClean) ||
+          targetRwSet.any(
+            (r) => wAddr.contains('rw $r') || wAddr.contains('rw 0$r'),
+          );
+      final kelMatches = targetKelClean.isEmpty ||
+          wKelClean.contains(targetKelClean) ||
+          targetKelClean.contains(wKelClean) ||
+          wAddr.contains(targetKelClean);
 
       if (!rwMatches || !kelMatches) return false;
 
@@ -114,26 +127,46 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
     }).toList();
   }
 
-  List<WargaDampingan> _getFilteredWargaAktivasi(List<dynamic> allWarga, String userKec, String userKel, String userRw) {
+  List<WargaDampingan> _getFilteredWargaAktivasi(
+    List<dynamic> allWarga,
+    String userKec,
+    String userKel,
+    String userRw,
+  ) {
     try {
       return allWarga.map((e) {
-        final WargaDampingan w = e is WargaDampingan ? e : WargaDampingan.fromJson(e as Map<String, dynamic>);
+        final WargaDampingan w = e is WargaDampingan
+            ? e
+            : WargaDampingan.fromJson(e as Map<String, dynamic>);
         final targetKel = w.kelurahan.isNotEmpty ? w.kelurahan : userKel;
         final targetRw = w.rw.isNotEmpty ? w.rw : userRw;
         final targetKec = w.kecamatan.isNotEmpty ? w.kecamatan : userKec;
-        final kelDisplay = targetKel.toLowerCase().startsWith('kel') ? targetKel : 'Kel. $targetKel';
+        final kelDisplay = targetKel.toLowerCase().startsWith('kel')
+            ? targetKel
+            : 'Kel. $targetKel';
 
         String formattedAddr = w.address;
-        if (formattedAddr.contains('RT ,') || formattedAddr.contains('Kel.') && (formattedAddr.endsWith('Kel.') || formattedAddr.contains('Kel.,') || formattedAddr.contains('Kel. '))) {
+        if (formattedAddr.contains('RT ,') ||
+            formattedAddr.contains('Kel.') &&
+                (formattedAddr.endsWith('Kel.') ||
+                    formattedAddr.contains('Kel.,') ||
+                    formattedAddr.contains('Kel. '))) {
           String cleaned = formattedAddr
               .replaceAll(RegExp(r',?\s*RT\s*,?'), '')
               .replaceAll(RegExp(r',?\s*Kel\.?\s*$'), '')
               .trim();
-          if (cleaned.endsWith(',')) cleaned = cleaned.substring(0, cleaned.length - 1).trim();
-          formattedAddr = '$cleaned, RW $targetRw, $kelDisplay, Kec. $targetKec';
-        } else if (!formattedAddr.toLowerCase().contains('rw') && !formattedAddr.toLowerCase().contains('kel')) {
-          final numStr = w.binId.length >= 2 ? w.binId.substring(w.binId.length - 2) : '04';
-          formattedAddr = '$formattedAddr No. $numStr, RW $targetRw, $kelDisplay, Kec. $targetKec';
+          if (cleaned.endsWith(',')) {
+            cleaned = cleaned.substring(0, cleaned.length - 1).trim();
+          }
+          formattedAddr =
+              '$cleaned, RW $targetRw, $kelDisplay, Kec. $targetKec';
+        } else if (!formattedAddr.toLowerCase().contains('rw') &&
+            !formattedAddr.toLowerCase().contains('kel')) {
+          final numStr = w.binId.length >= 2
+              ? w.binId.substring(w.binId.length - 2)
+              : '';
+          formattedAddr =
+              '$formattedAddr${numStr.isNotEmpty ? " No. $numStr" : ""}, RW $targetRw, $kelDisplay, Kec. $targetKec';
         }
 
         return WargaDampingan(
@@ -176,16 +209,20 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
       if (loc.isNotEmpty && loc != '-') userKel = loc;
     }
 
-    final isAktivasiBinMode = ModalRoute.of(context)?.settings.arguments == 'aktivasi_bin';
-    
+    final isAktivasiBinMode =
+        ModalRoute.of(context)?.settings.arguments == 'aktivasi_bin';
+
     // For ALL modes, we need to watch the aktivasi controller to get ALL warga matching the RW.
     final aktivasiState = ref.watch(aktivasiWargaProvider);
 
     // Fetch list of ALL warga from aktivasiState (which hits /kkn/warga-list)
     // regardless of whether we are in aktivasi_bin mode or monitoring mode.
-    List<WargaDampingan> allWargaList = _getFilteredWargaAktivasi(aktivasiState.wargaList, userKec, userKel, userRw);
-
-
+    List<WargaDampingan> allWargaList = _getFilteredWargaAktivasi(
+      aktivasiState.wargaList,
+      userKec,
+      userKel,
+      userRw,
+    );
 
     // Remove duplicates
     final uniqueMap = <String, WargaDampingan>{};
@@ -210,8 +247,13 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
     kelurahans.sort();
 
     final rtrws = allWargaList
-        .where((w) => w.role == 'WARGA' && w.rw.isNotEmpty && 
-                     (_selectedKelurahan == 'Semua' || w.kelurahan == _selectedKelurahan))
+        .where(
+          (w) =>
+              w.role == 'WARGA' &&
+              w.rw.isNotEmpty &&
+              (_selectedKelurahan == 'Semua' ||
+                  w.kelurahan == _selectedKelurahan),
+        )
         .map((w) => w.rw)
         .toSet()
         .toList();
@@ -227,28 +269,52 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
       _selectedRtRw = 'Semua';
     }
 
-    final filteredWarga = _getFilteredWarga(allWargaList, isAktivasiBinMode, userKec, userKel, userRw);
+    final filteredWarga = _getFilteredWarga(
+      allWargaList,
+      isAktivasiBinMode,
+      userKec,
+      userKel,
+      userRw,
+    );
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
-        title: Text(isAktivasiBinMode ? 'Pilih Warga' : 'Monitoring Warga Dampingan', style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary, fontSize: 18)),
+        title: Text(
+          isAktivasiBinMode ? 'Pilih Warga' : 'Monitoring Warga Dampingan',
+          style: const TextStyle(
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+            fontSize: 18,
+          ),
+        ),
         backgroundColor: Colors.white,
         elevation: 2,
         shadowColor: Colors.black.withValues(alpha: 0.1),
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+          icon: const Icon(
+            Icons.arrow_back_rounded,
+            color: AppColors.textPrimary,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        actions: isAktivasiBinMode 
+        actions: isAktivasiBinMode
             ? [
                 TextButton.icon(
-                  onPressed: () => Navigator.pushNamed(context, '/ketersediaan-qr'),
-                  icon: const Icon(Icons.qr_code_2, color: AppColors.primaryGreen, size: 20),
+                  onPressed: () =>
+                      Navigator.pushNamed(context, '/ketersediaan-qr'),
+                  icon: const Icon(
+                    Icons.qr_code_2,
+                    color: AppColors.primaryGreen,
+                    size: 20,
+                  ),
                   label: const Text(
                     'Daftar QR',
-                    style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      color: AppColors.primaryGreen,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -264,21 +330,51 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
           }
         },
         color: AppColors.primaryGreen,
-        child: _buildBody(state, aktivasiState, kelompokState, filteredWarga, isAktivasiBinMode, kelurahanList, rtRwList, userKec, userKel, userRw),
+        child: _buildBody(
+          state,
+          aktivasiState,
+          kelompokState,
+          filteredWarga,
+          isAktivasiBinMode,
+          kelurahanList,
+          rtRwList,
+          userKec,
+          userKel,
+          userRw,
+        ),
       ),
     );
   }
 
-  Widget _buildBody(MahasiswaState state, AktivasiWargaState? aktivasiState, KelompokKknState kelompokState, List<WargaDampingan> filteredWarga, bool isAktivasiBinMode, List<String> kelurahanList, List<String> rtRwList, String userKec, String userKel, String userRw) {
-    final isLoading = isAktivasiBinMode ? (aktivasiState?.isLoading ?? false) : state.isLoading;
-    final errorMsg = isAktivasiBinMode ? aktivasiState?.errorMessage : state.errorMessage;
+  Widget _buildBody(
+    MahasiswaState state,
+    AktivasiWargaState? aktivasiState,
+    KelompokKknState kelompokState,
+    List<WargaDampingan> filteredWarga,
+    bool isAktivasiBinMode,
+    List<String> kelurahanList,
+    List<String> rtRwList,
+    String userKec,
+    String userKel,
+    String userRw,
+  ) {
+    final isLoading = isAktivasiBinMode
+        ? (aktivasiState?.isLoading ?? false)
+        : state.isLoading;
+    final errorMsg = isAktivasiBinMode
+        ? aktivasiState?.errorMessage
+        : state.errorMessage;
     final isEmpty = filteredWarga.isEmpty;
-    final isInitialLoading = isAktivasiBinMode 
-        ? (isLoading && (aktivasiState?.wargaList.isEmpty ?? true) && (aktivasiState?.selectedKelurahan == null))
+    final isInitialLoading = isAktivasiBinMode
+        ? (isLoading &&
+              (aktivasiState?.wargaList.isEmpty ?? true) &&
+              (aktivasiState?.selectedKelurahan == null))
         : (isLoading && state.wargaList.isEmpty);
 
     if (isInitialLoading) {
-      return const Center(child: CircularProgressIndicator(color: AppColors.primaryGreen));
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.primaryGreen),
+      );
     }
 
     if (errorMsg != null && isEmpty) {
@@ -288,7 +384,13 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(errorMsg, style: const TextStyle(color: AppColors.dangerRed, fontWeight: FontWeight.bold)),
+              Text(
+                errorMsg,
+                style: const TextStyle(
+                  color: AppColors.dangerRed,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               const SizedBox(height: 12),
               ElevatedButton(
                 onPressed: () {
@@ -320,7 +422,11 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
               ],
             ),
             child: Column(
@@ -330,7 +436,9 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                   decoration: InputDecoration(
                     hintText: 'Cari nama atau ID tempat sampah...',
                     prefixIcon: const Icon(Icons.search_rounded),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                   ),
                 ),
@@ -342,16 +450,33 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                         key: ValueKey('kel_$userKel'),
                         decoration: InputDecoration(
                           labelText: 'Kelurahan Dampingan',
-                          prefixIcon: const Icon(Icons.location_city_rounded, size: 18, color: AppColors.primaryGreen),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          prefixIcon: const Icon(
+                            Icons.location_city_rounded,
+                            size: 18,
+                            color: AppColors.primaryGreen,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
                           filled: true,
                           fillColor: const Color(0xFFF5F7FA),
                           isDense: true,
                         ),
                         child: Text(
-                          userKel.isNotEmpty ? (userKel.toLowerCase().startsWith('kel') ? userKel : 'Kel. $userKel') : '-',
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                          userKel.isNotEmpty
+                              ? (userKel.toLowerCase().startsWith('kel')
+                                    ? userKel
+                                    : 'Kel. $userKel')
+                              : '-',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -362,16 +487,33 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                         key: ValueKey('rtrw_$userRw'),
                         decoration: InputDecoration(
                           labelText: 'RW Dampingan',
-                          prefixIcon: const Icon(Icons.maps_home_work_rounded, size: 18, color: AppColors.primaryGreen),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          prefixIcon: const Icon(
+                            Icons.maps_home_work_rounded,
+                            size: 18,
+                            color: AppColors.primaryGreen,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
                           filled: true,
                           fillColor: const Color(0xFFF5F7FA),
                           isDense: true,
                         ),
                         child: Text(
-                          userRw.isNotEmpty ? (userRw.startsWith('RW') ? userRw : 'RW $userRw') : 'RW 02',
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                          userRw.isNotEmpty
+                              ? (userRw.startsWith('RW')
+                                    ? userRw
+                                    : 'RW $userRw')
+                              : '-',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -391,8 +533,14 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
 
           // Daftar Warga
           Text(
-            isAktivasiBinMode ? 'Pilih Warga untuk Aktivasi' : 'Daftar Warga Terdaftar',
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+            isAktivasiBinMode
+                ? 'Pilih Warga untuk Aktivasi'
+                : 'Daftar Warga Terdaftar',
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
           ),
           const SizedBox(height: AppDimensions.sm),
           if (filteredWarga.isEmpty)
@@ -400,10 +548,10 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
                 child: Text(
-                  isAktivasiBinMode 
-                      ? 'Tidak ada warga yang memerlukan aktivasi.' 
-                      : 'Belum ada warga dampingan terdaftar.', 
-                  textAlign: TextAlign.center
+                  isAktivasiBinMode
+                      ? 'Tidak ada warga yang memerlukan aktivasi.'
+                      : 'Belum ada warga dampingan terdaftar.',
+                  textAlign: TextAlign.center,
                 ),
               ),
             )
@@ -416,13 +564,15 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                 final warga = filteredWarga[index];
                 return Card(
                   margin: const EdgeInsets.only(bottom: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                   elevation: 2,
                   shadowColor: Colors.black.withValues(alpha: 0.06),
                   clipBehavior: Clip.antiAlias,
                   child: InkWell(
-                    onTap: isAktivasiBinMode 
-                        ? null 
+                    onTap: isAktivasiBinMode
+                        ? null
                         : () {
                             Navigator.pushNamed(
                               context,
@@ -454,63 +604,89 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                                     ),
                                     if (warga.isActivated) ...[
                                       const SizedBox(height: 4),
-                                      Builder(builder: (_) {
-                                        String mName = warga.pendampingName;
-                                        if (mName.isEmpty && warga.mahasiswaId.isNotEmpty) {
-                                          final mem = kelompokState.kelompok?.members
-                                              .where((m) => m.userId == warga.mahasiswaId)
-                                              .firstOrNull;
-                                          if (mem != null) mName = mem.name;
-                                        }
-                                        return Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                          decoration: BoxDecoration(
-                                            color: mName.isNotEmpty
-                                                ? const Color(0xFFEBF5FF)
-                                                : AppColors.primaryGreen.withValues(alpha: 0.1),
-                                            borderRadius: BorderRadius.circular(8),
-                                            border: Border.all(
-                                              color: mName.isNotEmpty
-                                                  ? const Color(0xFF90CDF4)
-                                                  : AppColors.primaryGreen.withValues(alpha: 0.3),
+                                      Builder(
+                                        builder: (_) {
+                                          String mName = warga.pendampingName;
+                                          if (mName.isEmpty &&
+                                              warga.mahasiswaId.isNotEmpty) {
+                                            final mem = kelompokState
+                                                .kelompok
+                                                ?.members
+                                                .where(
+                                                  (m) =>
+                                                      m.userId ==
+                                                      warga.mahasiswaId,
+                                                )
+                                                .firstOrNull;
+                                            if (mem != null) mName = mem.name;
+                                          }
+                                          return Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 3,
                                             ),
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(
-                                                Icons.verified_rounded,
-                                                size: 12,
+                                            decoration: BoxDecoration(
+                                              color: mName.isNotEmpty
+                                                  ? const Color(0xFFEBF5FF)
+                                                  : AppColors.primaryGreen
+                                                        .withValues(alpha: 0.1),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              border: Border.all(
                                                 color: mName.isNotEmpty
-                                                    ? AppColors.primaryBlueDark
-                                                    : AppColors.primaryGreen,
+                                                    ? const Color(0xFF90CDF4)
+                                                    : AppColors.primaryGreen
+                                                          .withValues(
+                                                            alpha: 0.3,
+                                                          ),
                                               ),
-                                              const SizedBox(width: 4),
-                                              Flexible(
-                                                child: Text(
-                                                  mName.isNotEmpty
-                                                      ? 'Diaktivasi oleh: $mName'
-                                                      : 'Aktivasi Mandiri',
-                                                  style: TextStyle(
-                                                    fontSize: 10,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: mName.isNotEmpty
-                                                        ? AppColors.primaryBlueDark
-                                                        : AppColors.primaryGreen,
-                                                  ),
-                                                  overflow: TextOverflow.ellipsis,
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(
+                                                  Icons.verified_rounded,
+                                                  size: 12,
+                                                  color: mName.isNotEmpty
+                                                      ? AppColors
+                                                            .primaryBlueDark
+                                                      : AppColors.primaryGreen,
                                                 ),
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                      }),
+                                                const SizedBox(width: 4),
+                                                Flexible(
+                                                  child: Text(
+                                                    mName.isNotEmpty
+                                                        ? 'Diaktivasi oleh: $mName'
+                                                        : 'Aktivasi Mandiri',
+                                                    style: TextStyle(
+                                                      fontSize: 10,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: mName.isNotEmpty
+                                                          ? AppColors
+                                                                .primaryBlueDark
+                                                          : AppColors
+                                                                .primaryGreen,
+                                                    ),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        },
+                                      ),
                                     ],
                                   ],
                                 ),
                               ),
                               if (!isAktivasiBinMode)
-                                const Icon(Icons.chevron_right, size: 20, color: AppColors.textHint),
+                                const Icon(
+                                  Icons.chevron_right,
+                                  size: 20,
+                                  color: AppColors.textHint,
+                                ),
                             ],
                           ),
                           const SizedBox(height: 6),
@@ -518,15 +694,31 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                           // ── Sub-info RT & Kelurahan ─────────────────────────
                           Builder(
                             builder: (_) {
-                              final rtStr = warga.rw.isNotEmpty 
-                                  ? (warga.rw.startsWith('RW') ? warga.rw : 'RW ${warga.rw}') 
-                                  : (userRw.startsWith('RW') ? userRw : 'RW $userRw');
-                              final kelStr = warga.kelurahan.isNotEmpty 
-                                  ? (warga.kelurahan.toLowerCase().startsWith('kel') ? warga.kelurahan : 'Kel. ${warga.kelurahan}') 
-                                  : (userKel.toLowerCase().startsWith('kel') ? userKel : 'Kel. $userKel');
+                              final rtStr = warga.rw.isNotEmpty
+                                  ? (warga.rw.startsWith('RW')
+                                        ? warga.rw
+                                        : 'RW ${warga.rw}')
+                                  : (userRw.isNotEmpty
+                                        ? (userRw.startsWith('RW')
+                                              ? userRw
+                                              : 'RW $userRw')
+                                        : '-');
+                              final kelStr = warga.kelurahan.isNotEmpty
+                                  ? (warga.kelurahan.toLowerCase().startsWith(
+                                          'kel',
+                                        )
+                                        ? warga.kelurahan
+                                        : 'Kel. ${warga.kelurahan}')
+                                  : (userKel.toLowerCase().startsWith('kel')
+                                        ? userKel
+                                        : 'Kel. $userKel');
                               return Text(
                                 '$rtStr, $kelStr',
-                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primaryGreen),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.primaryGreen,
+                                ),
                               );
                             },
                           ),
@@ -535,20 +727,44 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                           // ── Sub-info Alamat Lengkap ──────────────────────────
                           Text(
                             warga.address,
-                            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.3),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                              height: 1.3,
+                            ),
                           ),
                           const SizedBox(height: 10),
 
                           // ── Metrik Keaktifan (Poin & % Benar) ───────────────
                           Row(
                             children: [
-                              const Icon(Icons.monetization_on_rounded, size: 15, color: AppColors.warningYellow),
+                              const Icon(
+                                Icons.monetization_on_rounded,
+                                size: 15,
+                                color: AppColors.warningYellow,
+                              ),
                               const SizedBox(width: 4),
-                              Text('${warga.totalPoints} Poin', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                              Text(
+                                '${warga.totalPoints} Poin',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                               const SizedBox(width: 14),
-                              const Icon(Icons.analytics_rounded, size: 15, color: AppColors.primaryBlue),
+                              const Icon(
+                                Icons.analytics_rounded,
+                                size: 15,
+                                color: AppColors.primaryBlue,
+                              ),
                               const SizedBox(width: 4),
-                              Text('${warga.correctPercentage.toStringAsFixed(0)}% Benar', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                              Text(
+                                '${warga.correctPercentage.toStringAsFixed(0)}% Benar',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 4),
@@ -556,13 +772,20 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                           // ── Terakhir Aktif ──────────────────────────────────
                           Row(
                             children: [
-                              const Icon(Icons.access_time_rounded, size: 14, color: AppColors.textHint),
+                              const Icon(
+                                Icons.access_time_rounded,
+                                size: 14,
+                                color: AppColors.textHint,
+                              ),
                               const SizedBox(width: 4),
                               Text(
-                                warga.lastActiveDate != null 
-                                  ? 'Terakhir: ${warga.lastActiveDate!.day}/${warga.lastActiveDate!.month}/${warga.lastActiveDate!.year}' 
-                                  : 'Belum ada aktivitas', 
-                                style: const TextStyle(fontSize: 11, color: AppColors.textHint),
+                                warga.lastActiveDate != null
+                                    ? 'Terakhir: ${warga.lastActiveDate!.day}/${warga.lastActiveDate!.month}/${warga.lastActiveDate!.year}'
+                                    : 'Belum ada aktivitas',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.textHint,
+                                ),
                               ),
                             ],
                           ),
@@ -579,38 +802,62 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                                     Navigator.pushNamed(
                                       context,
                                       AppRoutes.aktivasiWarga,
-                                      arguments: {'warga': {
-                                        'id': warga.wargaId,
-                                        'name': warga.wargaName,
-                                      }},
+                                      arguments: {
+                                        'warga': {
+                                          'id': warga.wargaId,
+                                          'name': warga.wargaName,
+                                        },
+                                      },
                                     );
                                   },
-                                  icon: const Icon(Icons.qr_code_scanner_rounded, size: 18),
+                                  icon: const Icon(
+                                    Icons.qr_code_scanner_rounded,
+                                    size: 18,
+                                  ),
                                   label: const Text(
                                     'Aktivasi Tempat Sampah',
-                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: 0.2),
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                      letterSpacing: 0.2,
+                                    ),
                                   ),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: AppColors.primaryGreen,
                                     foregroundColor: Colors.white,
                                     elevation: 1,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
                                   ),
                                 ),
                               )
                             else
                               Container(
                                 width: double.infinity,
-                                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 10,
+                                  horizontal: 12,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primaryGreen.withValues(alpha: 0.08),
+                                  color: AppColors.primaryGreen.withValues(
+                                    alpha: 0.08,
+                                  ),
                                   borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.3)),
+                                  border: Border.all(
+                                    color: AppColors.primaryGreen.withValues(
+                                      alpha: 0.3,
+                                    ),
+                                  ),
                                 ),
                                 child: const Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(Icons.check_circle_rounded, color: AppColors.primaryGreen, size: 16),
+                                    Icon(
+                                      Icons.check_circle_rounded,
+                                      color: AppColors.primaryGreen,
+                                      size: 16,
+                                    ),
                                     SizedBox(width: 6),
                                     Text(
                                       'Sudah Teraktivasi (Warga Dampingan)',
@@ -643,14 +890,17 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
 
     final chartData = sortedWarga.take(5).map((e) {
       final String firstName = e.wargaName.split(' ').first;
-      final double score = e.totalPoints.toDouble(); // Pakai point asli, bukan percentage
+      final double score = e.totalPoints
+          .toDouble(); // Pakai point asli, bukan percentage
       return _ChartDataPoint(firstName, score);
     }).toList();
 
     // Hitung max value untuk skala Y yang dinamis
     double maxY = 50.0; // Default yang lebih rendah jika poin 0
     if (chartData.isNotEmpty) {
-      final highest = chartData.map((e) => e.value).reduce((a, b) => a > b ? a : b);
+      final highest = chartData
+          .map((e) => e.value)
+          .reduce((a, b) => a > b ? a : b);
       if (highest > 0) {
         maxY = ((highest / 50).ceil() * 50).toDouble();
       }
@@ -662,7 +912,11 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Column(
@@ -670,14 +924,26 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
         children: [
           const Text(
             'Grafik Poin Warga (Top 5)',
-            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary),
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 14,
+              color: AppColors.textPrimary,
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
           if (chartData.isEmpty)
             const SizedBox(
               height: 180,
-              child: Center(child: Text('Data tidak cukup untuk menampilkan grafik.', style: TextStyle(fontSize: 11, color: AppColors.textSecondary))),
+              child: Center(
+                child: Text(
+                  'Data tidak cukup untuk menampilkan grafik.',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
             )
           else
             Column(
@@ -702,10 +968,28 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                   child: const Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Keterangan Sumbu (Matematis):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                      Text(
+                        'Keterangan Sumbu (Matematis):',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
                       SizedBox(height: 4),
-                      Text('• Sumbu X (Horizontal) mewakili Nama Warga Dampingan.', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-                      Text('• Sumbu Y (Vertikal) mewakili Total Poin Warga.', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                      Text(
+                        '• Sumbu X (Horizontal) mewakili Nama Warga Dampingan.',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      Text(
+                        '• Sumbu Y (Vertikal) mewakili Total Poin Warga.',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -716,7 +1000,10 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
     );
   }
 
-  Widget _buildLeaderboard(BuildContext context, List<WargaDampingan> wargaList) {
+  Widget _buildLeaderboard(
+    BuildContext context,
+    List<WargaDampingan> wargaList,
+  ) {
     if (wargaList.isEmpty) return const SizedBox();
 
     // Sort by totalPoints descending, take top 3
@@ -764,12 +1051,19 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                 );
               },
               child: Padding(
-                padding: const EdgeInsets.only(bottom: 8.0, top: 4.0, left: 4.0, right: 4.0),
+                padding: const EdgeInsets.only(
+                  bottom: 8.0,
+                  top: 4.0,
+                  left: 4.0,
+                  right: 4.0,
+                ),
                 child: Row(
                   children: [
                     CircleAvatar(
                       radius: 12,
-                      backgroundColor: isFirst ? AppColors.warningYellow : AppColors.textHint,
+                      backgroundColor: isFirst
+                          ? AppColors.warningYellow
+                          : AppColors.textHint,
                       child: Text(
                         '${index + 1}',
                         style: const TextStyle(
@@ -784,7 +1078,9 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                       child: Text(
                         w.wargaName,
                         style: TextStyle(
-                          fontWeight: isFirst ? FontWeight.bold : FontWeight.w600,
+                          fontWeight: isFirst
+                              ? FontWeight.bold
+                              : FontWeight.w600,
                           fontSize: 14,
                         ),
                       ),
@@ -816,7 +1112,7 @@ class _ChartDataPoint {
 class _CustomXYChartPainter extends CustomPainter {
   final List<_ChartDataPoint> data;
   final double maxY;
-  
+
   _CustomXYChartPainter(this.data, this.maxY);
 
   @override
@@ -851,26 +1147,50 @@ class _CustomXYChartPainter extends CustomPainter {
     for (int i = 0; i <= 4; i++) {
       final yValue = (i * maxY) / 4;
       final yPos = size.height - paddingBottom - (yValue / maxY * chartHeight);
-      
+
       // Draw gridline
-      canvas.drawLine(Offset(paddingLeft, yPos), Offset(size.width - paddingRight, yPos), paintGrid);
+      canvas.drawLine(
+        Offset(paddingLeft, yPos),
+        Offset(size.width - paddingRight, yPos),
+        paintGrid,
+      );
 
       // Draw Y labels
       final tp = TextPainter(
-        text: TextSpan(text: yValue.toInt().toString(), style: const TextStyle(fontSize: 9, color: AppColors.textSecondary, fontWeight: FontWeight.bold)),
+        text: TextSpan(
+          text: yValue.toInt().toString(),
+          style: const TextStyle(
+            fontSize: 9,
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         textDirection: TextDirection.ltr,
       )..layout();
-      tp.paint(canvas, Offset(paddingLeft - tp.width - 8, yPos - (tp.height / 2)));
+      tp.paint(
+        canvas,
+        Offset(paddingLeft - tp.width - 8, yPos - (tp.height / 2)),
+      );
     }
 
     // Draw X and Y Axes
-    canvas.drawLine(const Offset(paddingLeft, paddingTop), Offset(paddingLeft, size.height - paddingBottom), paintAxis);
-    canvas.drawLine(Offset(paddingLeft, size.height - paddingBottom), Offset(size.width - paddingRight, size.height - paddingBottom), paintAxis);
+    canvas.drawLine(
+      const Offset(paddingLeft, paddingTop),
+      Offset(paddingLeft, size.height - paddingBottom),
+      paintAxis,
+    );
+    canvas.drawLine(
+      Offset(paddingLeft, size.height - paddingBottom),
+      Offset(size.width - paddingRight, size.height - paddingBottom),
+      paintAxis,
+    );
 
     if (data.isEmpty) return;
 
     // Calculate step width for X axis
-    final double stepX = data.length > 1 ? chartWidth / (data.length - 1) : chartWidth;
+    final double stepX = data.length > 1
+        ? chartWidth / (data.length - 1)
+        : chartWidth;
 
     // Build line path
     final path = Path();
@@ -879,7 +1199,10 @@ class _CustomXYChartPainter extends CustomPainter {
     for (int i = 0; i < data.length; i++) {
       final x = paddingLeft + (i * stepX);
       final double safeMaxY = maxY > 0 ? maxY : 1;
-      final y = size.height - paddingBottom - (data[i].value / safeMaxY * chartHeight);
+      final y =
+          size.height -
+          paddingBottom -
+          (data[i].value / safeMaxY * chartHeight);
       final pt = Offset(x, y);
       points.add(pt);
 
@@ -895,10 +1218,20 @@ class _CustomXYChartPainter extends CustomPainter {
         labelText = '${labelText.substring(0, 6)}..';
       }
       final tp = TextPainter(
-        text: TextSpan(text: labelText, style: const TextStyle(fontSize: 8, color: AppColors.textSecondary, fontWeight: FontWeight.bold)),
+        text: TextSpan(
+          text: labelText,
+          style: const TextStyle(
+            fontSize: 8,
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         textDirection: TextDirection.ltr,
       )..layout();
-      tp.paint(canvas, Offset(x - (tp.width / 2), size.height - paddingBottom + 6));
+      tp.paint(
+        canvas,
+        Offset(x - (tp.width / 2), size.height - paddingBottom + 6),
+      );
     }
 
     // Draw the gradient fill under the line
@@ -906,21 +1239,27 @@ class _CustomXYChartPainter extends CustomPainter {
       final fillPath = Path()
         ..moveTo(points.first.dx, size.height - paddingBottom)
         ..lineTo(points.first.dx, points.first.dy);
-      
+
       for (int i = 1; i < points.length; i++) {
         fillPath.lineTo(points[i].dx, points[i].dy);
       }
-      
+
       fillPath.lineTo(points.last.dx, size.height - paddingBottom);
       fillPath.close();
 
       final fillPaint = Paint()
-        ..shader = LinearGradient(
-          colors: [AppColors.primaryBlue.withValues(alpha: 0.3), AppColors.primaryBlue.withValues(alpha: 0.0)],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ).createShader(Rect.fromLTWH(paddingLeft, paddingTop, chartWidth, chartHeight));
-      
+        ..shader =
+            LinearGradient(
+              colors: [
+                AppColors.primaryBlue.withValues(alpha: 0.3),
+                AppColors.primaryBlue.withValues(alpha: 0.0),
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ).createShader(
+              Rect.fromLTWH(paddingLeft, paddingTop, chartWidth, chartHeight),
+            );
+
       canvas.drawPath(fillPath, fillPaint);
     }
 
@@ -929,10 +1268,17 @@ class _CustomXYChartPainter extends CustomPainter {
 
     for (final pt in points) {
       canvas.drawCircle(pt, 4.0, paintDot);
-      canvas.drawCircle(pt, 2.0, Paint()..color = Colors.white..style = PaintingStyle.fill);
+      canvas.drawCircle(
+        pt,
+        2.0,
+        Paint()
+          ..color = Colors.white
+          ..style = PaintingStyle.fill,
+      );
     }
   }
 
   @override
-  bool shouldRepaint(covariant _CustomXYChartPainter oldDelegate) => oldDelegate.data != data;
+  bool shouldRepaint(covariant _CustomXYChartPainter oldDelegate) =>
+      oldDelegate.data != data;
 }

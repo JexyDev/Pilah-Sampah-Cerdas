@@ -20,9 +20,15 @@ class ActiveTimelineResponse extends Equatable {
       return ActiveTimelineResponse(
         success: json['success'] ?? false,
         message: json['message'] ?? '',
-        summary: json['summary'] != null ? TimelineSummaryData.fromJson(json['summary']) : null,
-        activeFaseSummary: json['activeFaseSummary'] != null ? ActiveFaseSummary.fromJson(json['activeFaseSummary']) : null,
-        data: json['data'] != null ? ActiveStageData.fromJson(json['data']) : null,
+        summary: json['summary'] != null
+            ? TimelineSummaryData.fromJson(json['summary'])
+            : null,
+        activeFaseSummary: json['activeFaseSummary'] != null
+            ? ActiveFaseSummary.fromJson(json['activeFaseSummary'])
+            : null,
+        data: json['data'] != null
+            ? ActiveStageData.fromJson(json['data'])
+            : null,
       );
     } catch (e, st) {
       // ignore: avoid_print
@@ -32,7 +38,13 @@ class ActiveTimelineResponse extends Equatable {
   }
 
   @override
-  List<Object?> get props => [success, message, summary, activeFaseSummary, data];
+  List<Object?> get props => [
+    success,
+    message,
+    summary,
+    activeFaseSummary,
+    data,
+  ];
 }
 
 class TimelineSummaryData extends Equatable {
@@ -77,17 +89,17 @@ class TimelineSummaryData extends Equatable {
 
   @override
   List<Object?> get props => [
-        totalTahapan,
-        totalSelesai,
-        totalSedangBerjalan,
-        totalBelumDimulai,
-        progressPercentage,
-        activeWeek,
-        activeFase,
-        activeStageId,
-        activeStageTitle,
-        todayDate,
-      ];
+    totalTahapan,
+    totalSelesai,
+    totalSedangBerjalan,
+    totalBelumDimulai,
+    progressPercentage,
+    activeWeek,
+    activeFase,
+    activeStageId,
+    activeStageTitle,
+    todayDate,
+  ];
 }
 
 class ActiveFaseSummary extends Equatable {
@@ -116,7 +128,13 @@ class ActiveFaseSummary extends Equatable {
   }
 
   @override
-  List<Object?> get props => [fase, totalTahapan, totalSelesai, totalSedangBerjalan, progressPercentage];
+  List<Object?> get props => [
+    fase,
+    totalTahapan,
+    totalSelesai,
+    totalSedangBerjalan,
+    progressPercentage,
+  ];
 }
 
 class ActiveStageData extends Equatable {
@@ -176,38 +194,59 @@ class ActiveStageData extends Equatable {
       outputTarget: json['outputTarget']?.toString() ?? '',
       picKeterangan: json['picKeterangan']?.toString() ?? '',
       statusPelaksanaan: json['statusPelaksanaan']?.toString() ?? '',
-      isCurrentActive: json['isCurrentActive'] == true || json['isCurrentActive'] == 'true',
-      rekomendasiAksi: (json['rekomendasiAksi'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
-      pertanyaanKritis: (json['pertanyaanKritis'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
-      tipsSukses: (json['tipsSukses'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
-      checklist: (json['checklist'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
-      nextStage: json['nextStage'] != null ? StageRef.fromJson(json['nextStage']) : null,
-      prevStage: json['prevStage'] != null ? StageRef.fromJson(json['prevStage']) : null,
+      isCurrentActive:
+          json['isCurrentActive'] == true || json['isCurrentActive'] == 'true',
+      rekomendasiAksi:
+          (json['rekomendasiAksi'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          [],
+      pertanyaanKritis:
+          (json['pertanyaanKritis'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          [],
+      tipsSukses:
+          (json['tipsSukses'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          [],
+      checklist:
+          (json['checklist'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          [],
+      nextStage: json['nextStage'] != null
+          ? StageRef.fromJson(json['nextStage'])
+          : null,
+      prevStage: json['prevStage'] != null
+          ? StageRef.fromJson(json['prevStage'])
+          : null,
     );
   }
 
   @override
   List<Object?> get props => [
-        id,
-        stageIndex,
-        totalStages,
-        tahapMinggu,
-        tanggal,
-        startDate,
-        endDate,
-        fase,
-        kegiatanUtama,
-        outputTarget,
-        picKeterangan,
-        statusPelaksanaan,
-        isCurrentActive,
-        rekomendasiAksi,
-        pertanyaanKritis,
-        tipsSukses,
-        checklist,
-        nextStage,
-        prevStage,
-      ];
+    id,
+    stageIndex,
+    totalStages,
+    tahapMinggu,
+    tanggal,
+    startDate,
+    endDate,
+    fase,
+    kegiatanUtama,
+    outputTarget,
+    picKeterangan,
+    statusPelaksanaan,
+    isCurrentActive,
+    rekomendasiAksi,
+    pertanyaanKritis,
+    tipsSukses,
+    checklist,
+    nextStage,
+    prevStage,
+  ];
 }
 
 class StageRef extends Equatable {
@@ -234,10 +273,18 @@ class StageRef extends Equatable {
       tanggal: json['tanggal']?.toString() ?? '',
       fase: json['fase']?.toString() ?? '',
       kegiatanUtama: json['kegiatanUtama']?.toString() ?? '',
-      statusPelaksanaan: (json['statusPelaksanaan'] ?? json['status'])?.toString() ?? '',
+      statusPelaksanaan:
+          (json['statusPelaksanaan'] ?? json['status'])?.toString() ?? '',
     );
   }
 
   @override
-  List<Object?> get props => [id, tahapMinggu, tanggal, fase, kegiatanUtama, statusPelaksanaan];
+  List<Object?> get props => [
+    id,
+    tahapMinggu,
+    tanggal,
+    fase,
+    kegiatanUtama,
+    statusPelaksanaan,
+  ];
 }

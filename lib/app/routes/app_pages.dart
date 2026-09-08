@@ -48,6 +48,7 @@ import '../modules/mahasiswa/views/mahasiswa_notifikasi_view.dart';
 import '../modules/petugas_pemilahan/views/petugas_notification_view.dart';
 import '../modules/petugas_pemilahan/views/pengajuan_warga_view.dart';
 import '../modules/mahasiswa/views/pengajuan_program_kerja_view.dart';
+import '../modules/mahasiswa/views/kelompok_stiker_qr_view.dart';
 import '../modules/mahasiswa/views/riwayat_program_kerja_view.dart';
 import '../modules/mahasiswa/views/logbook_pemanfaatan_view.dart';
 import '../modules/mahasiswa/views/catat_panen_view.dart';
@@ -55,6 +56,7 @@ import '../modules/mahasiswa/views/data_logbook_harian_view.dart';
 import '../modules/mahasiswa/views/edit_logbook_kkn_view.dart';
 import '../modules/mahasiswa/views/data_proker_view.dart';
 import '../modules/mahasiswa/views/edit_program_kerja_view.dart';
+import '../modules/mahasiswa/views/proker_detail_view.dart';
 import '../modules/mahasiswa/views/riwayat_pemanfaatan_view.dart';
 
 /// Peta route terpusat untuk MaterialApp.
@@ -83,13 +85,22 @@ class AppPages {
         return _buildRoute(const DashboardView(), settings);
       case AppRoutes.pengajuanProgramKerja:
         final args = settings.arguments as Map<String, dynamic>?;
-        return _buildRoute(PengajuanProgramKerjaView(initialData: args), settings);
+        return _buildRoute(
+          PengajuanProgramKerjaView(initialData: args),
+          settings,
+        );
       case AppRoutes.riwayatProgramKerja:
         return _buildRoute(const RiwayatProgramKerjaView(), settings);
       case AppRoutes.riwayatPemanfaatan:
         return _buildRoute(const RiwayatPemanfaatanView(), settings);
       case AppRoutes.logbookPemanfaatan:
-        return _buildRoute(const LogbookPemanfaatanView(), settings);
+        final logbookArgs = settings.arguments as Map<String, dynamic>?;
+        return _buildRoute(
+          LogbookPemanfaatanView(
+            initialProkerId: logbookArgs?['prokerId'] as String?,
+          ),
+          settings,
+        );
       case AppRoutes.catatPanen:
         return _buildRoute(const CatatPanenView(), settings);
       case AppRoutes.scan:
@@ -111,7 +122,16 @@ class AppPages {
       case AppRoutes.petugasNotifikasi:
         return _buildRoute(const PetugasNotificationView(), settings);
       case AppRoutes.timbanganPemilahan:
-        return _buildRoute(const TimbanganPemilahanView(), settings);
+        final timbanganArgs = settings.arguments as Map<String, dynamic>?;
+        return _buildRoute(
+          TimbanganPemilahanView(
+            initialBinId: timbanganArgs?['binId'] as String?,
+            initialBinCode: timbanganArgs?['binCode'] as String?,
+            initialCategory: timbanganArgs?['category'] as String?,
+            initialWargaName: timbanganArgs?['wargaName'] as String?,
+          ),
+          settings,
+        );
       case AppRoutes.tentang:
         return _buildRoute(const TentangAplikasiView(), settings);
       case AppRoutes.kknAttendance:
@@ -119,7 +139,10 @@ class AppPages {
       case AppRoutes.kknAttendanceHistory:
         final args = settings.arguments as Map<String, dynamic>?;
         final scheduleId = args?['scheduleId'] as String? ?? '';
-        return _buildRoute(KknAttendanceHistoryView(scheduleId: scheduleId), settings);
+        return _buildRoute(
+          KknAttendanceHistoryView(scheduleId: scheduleId),
+          settings,
+        );
       case AppRoutes.monitoringWarga:
         return _buildRoute(const MonitoringWargaView(), settings);
       case AppRoutes.mahasiswa:
@@ -149,12 +172,16 @@ class AppPages {
           ),
           settings,
         );
+      case AppRoutes.petugasPemilahan:
+        return _buildRoute(const DashboardView(), settings);
       case AppRoutes.riwayatPetugasPemilahan:
         return _buildRoute(const RiwayatPetugasPemilahanView(), settings);
       case AppRoutes.petugasPemilahanGantiPassword:
         return _buildRoute(const GantiPasswordPetugasView(), settings);
       case AppRoutes.ketersediaanQr:
         return _buildRoute(const KetersediaanQrView(), settings);
+      case AppRoutes.kelompokStikerQr:
+        return _buildRoute(const KelompokStikerQrView(), settings);
       case AppRoutes.pengajuanWarga:
         return _buildRoute(const PengajuanWargaView(), settings);
       case AppRoutes.monitoringDampakKelurahan:
@@ -192,28 +219,35 @@ class AppPages {
 
       case AppRoutes.editLogbookKkn:
         final args = settings.arguments as Map<String, dynamic>;
-        return _buildRoute(EditLogbookKknView(logbookId: args['id'] as String), settings);
+        return _buildRoute(
+          EditLogbookKknView(logbookId: args['id'] as String),
+          settings,
+        );
 
       case AppRoutes.dataProker:
         return _buildRoute(const DataProkerView(), settings);
 
       case AppRoutes.editProgramKerja:
         final editArgs = settings.arguments as Map<String, dynamic>;
-        return _buildRoute(EditProgramKerjaView(prokerId: editArgs['id'] as String), settings);
+        return _buildRoute(
+          EditProgramKerjaView(prokerId: editArgs['id'] as String),
+          settings,
+        );
+
+      case AppRoutes.prokerDetail:
+        final detailArgs = settings.arguments as Map<String, dynamic>;
+        return _buildRoute(
+          ProkerDetailView(prokerId: detailArgs['id'] as String),
+          settings,
+        );
 
       default:
         return _buildRoute(const _NotFoundScreen(), settings);
     }
   }
 
-  static Route<dynamic> _buildRoute(
-    Widget page,
-    RouteSettings settings,
-  ) {
-    return MaterialPageRoute(
-      settings: settings,
-      builder: (_) => page,
-    );
+  static Route<dynamic> _buildRoute(Widget page, RouteSettings settings) {
+    return MaterialPageRoute(settings: settings, builder: (_) => page);
   }
 }
 
@@ -232,4 +266,3 @@ class _NotFoundScreen extends StatelessWidget {
     );
   }
 }
-

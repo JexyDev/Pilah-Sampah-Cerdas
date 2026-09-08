@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:geocoding/geocoding.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,9 +20,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import '../services/kkn_background_task_handler.dart';
 import '../../../core/values/app_config.dart';
+import '../../../data/models/group_zone_models.dart';
+import '../../../core/utils/geofence_zone_engine.dart';
 
 class KknLocationState {
   final Position? currentPosition;
+  final String? currentAddress;
+  final bool isFetchingAddress;
   final bool isTracking;
   final String? error;
   final bool isInsideRadius;
@@ -57,6 +62,9 @@ class KknLocationState {
 
   KknLocationState({
     this.currentPosition,
+    this.currentAddress,
+    this.isFetchingAddress = false,
+
     this.isTracking = false,
     this.error,
     this.isInsideRadius = false,
@@ -99,6 +107,8 @@ class KknLocationState {
 
   KknLocationState copyWith({
     Position? currentPosition,
+    String? currentAddress,
+    bool? isFetchingAddress,
     bool? isTracking,
     String? error,
     bool? isInsideRadius,
@@ -132,6 +142,10 @@ class KknLocationState {
   }) {
     return KknLocationState(
       currentPosition: currentPosition ?? this.currentPosition,
+
+      currentAddress: currentAddress ?? this.currentAddress,
+      isFetchingAddress: isFetchingAddress ?? this.isFetchingAddress,
+
       isTracking: isTracking ?? this.isTracking,
       error: clearError ? null : (error ?? this.error),
       isInsideRadius: isInsideRadius ?? this.isInsideRadius,
@@ -162,9 +176,15 @@ class KknLocationState {
       isLoadingKegiatan: isLoadingKegiatan ?? this.isLoadingKegiatan,
       isAutoStarted: isAutoStarted ?? this.isAutoStarted,
       smartZoneStatus: smartZoneStatus ?? this.smartZoneStatus,
-      selectedPoskoId: clearPosko ? null : (selectedPoskoId ?? this.selectedPoskoId),
-      selectedPoskoName: clearPosko ? null : (selectedPoskoName ?? this.selectedPoskoName),
-      selectedPoskoType: clearPosko ? null : (selectedPoskoType ?? this.selectedPoskoType),
+      selectedPoskoId: clearPosko
+          ? null
+          : (selectedPoskoId ?? this.selectedPoskoId),
+      selectedPoskoName: clearPosko
+          ? null
+          : (selectedPoskoName ?? this.selectedPoskoName),
+      selectedPoskoType: clearPosko
+          ? null
+          : (selectedPoskoType ?? this.selectedPoskoType),
     );
   }
 }
@@ -186,6 +206,70 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
   String? _currentTargetScheduleId;
   int _backendDurationMinutes = 0;
   bool _backgroundServiceStarted = false;
+
+  Future<void> fetchAddress(double fallbackLat, double fallbackLng) async {
+    state = state.copyWith(isFetchingAddress: true);
+    try {
+      double targetLat = fallbackLat;
+      double targetLng = fallbackLng;
+      try {
+        final freshPos = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.best,
+            timeLimit: Duration(seconds: 10),
+          ),
+        );
+        targetLat = freshPos.latitude;
+        targetLng = freshPos.longitude;
+        state = state.copyWith(currentPosition: freshPos);
+      } catch (_) {
+        // Fallback to the provided coordinates if fresh fetch times out
+      }
+
+      List<Placemark> placemarks = await Geocoding().placemarkFromCoordinates(
+        targetLat,
+        targetLng,
+      );
+      if (placemarks.isNotEmpty) {
+        final p = placemarks.first;
+        String address = '';
+        if (p.street != null && p.street!.isNotEmpty) {
+          address = p.street!;
+          // Clean up country dynamically using p.country instead of hardcoding
+          if (p.country != null && p.country!.isNotEmpty) {
+            address = address.replaceAll(', ${p.country!}', '').trim();
+            if (address.endsWith(',')) {
+              address = address.substring(0, address.length - 1);
+            }
+          }
+        } else {
+          List<String> parts = [];
+          if (p.subLocality != null && p.subLocality!.isNotEmpty) {
+            parts.add(p.subLocality!);
+          }
+          if (p.locality != null && p.locality!.isNotEmpty) {
+            parts.add(p.locality!);
+          }
+          address = parts.join(', ');
+        }
+        if (address.isEmpty) address = 'Lokasi tidak diketahui';
+        state = state.copyWith(
+          currentAddress: address,
+          isFetchingAddress: false,
+        );
+      } else {
+        state = state.copyWith(
+          currentAddress: 'Lokasi tidak ditemukan',
+          isFetchingAddress: false,
+        );
+      }
+    } catch (e) {
+      state = state.copyWith(
+        currentAddress: 'Gagal memuat alamat',
+        isFetchingAddress: false,
+      );
+    }
+  }
 
   String get _currentUserId {
     try {
@@ -222,7 +306,10 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
               int.tryParse(activeZone['actualInZoneMinutes'].toString()) ?? 0;
         } else if (activeZone['actualInZoneSeconds'] != null) {
           _backendDurationMinutes =
-              ((num.tryParse(activeZone['actualInZoneSeconds'].toString()) ?? 0) / 60).ceil();
+              ((num.tryParse(activeZone['actualInZoneSeconds'].toString()) ??
+                          0) /
+                      60)
+                  .ceil();
         }
 
         final double? targetLat = (activeZone['latitude'] as num?)?.toDouble();
@@ -232,17 +319,32 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         final double buffer =
             (activeZone['geofenceBufferMeters'] as num?)?.toDouble() ?? 15.0;
 
+        List<ValidZoneItem> validZones = [];
+        if (activeZone['validZones'] != null &&
+            activeZone['validZones'] is List) {
+          validZones = (activeZone['validZones'] as List)
+              .map(
+                (e) =>
+                    ValidZoneItem.fromJson(Map<String, dynamic>.from(e as Map)),
+              )
+              .toList();
+        }
+
         double distance = 999999.0;
         bool isInside = false;
 
-        if (pos != null && targetLat != null && targetLng != null) {
-          distance = Geolocator.distanceBetween(
-            pos.latitude,
-            pos.longitude,
-            targetLat,
-            targetLng,
+        if (pos != null) {
+          final evalResult = GeofenceZoneEngine.evaluateMultiZonePosition(
+            userLat: pos.latitude,
+            userLng: pos.longitude,
+            validZones: validZones,
+            fallbackLat: targetLat,
+            fallbackLng: targetLng,
+            fallbackRadiusMeters: radius,
+            bufferMeters: buffer,
           );
-          isInside = distance <= (radius + buffer);
+          distance = evalResult.distanceToTargetMeters;
+          isInside = evalResult.isInside;
         }
 
         final status =
@@ -331,7 +433,10 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
               int.tryParse(activeItem['actualInZoneMinutes'].toString()) ?? 0;
         } else if (activeItem['actualInZoneSeconds'] != null) {
           _backendDurationMinutes =
-              ((num.tryParse(activeItem['actualInZoneSeconds'].toString()) ?? 0) / 60).ceil();
+              ((num.tryParse(activeItem['actualInZoneSeconds'].toString()) ??
+                          0) /
+                      60)
+                  .ceil();
         }
 
         final durasiWajib =
@@ -374,7 +479,6 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
   Future<String?> mulaiKegiatan(
     String kegiatanId, {
     bool isAuto = false,
-    Map<String, dynamic>? selectedPosko,
   }) async {
     final hasPermission = await _checkPermissions();
     if (!hasPermission) {
@@ -391,14 +495,17 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
 
       state = state.copyWith(isLoadingKegiatan: true, clearError: true);
 
-      final pos = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
-      ).timeout(
-        const Duration(seconds: 30),
-        onTimeout: () => throw TimeoutException(
-          'GPS tidak merespons dalam 30 detik. Pastikan lokasi aktif dan sinyal GPS tersedia.',
-        ),
-      );
+      final pos =
+          await Geolocator.getCurrentPosition(
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.high,
+            ),
+          ).timeout(
+            const Duration(seconds: 30),
+            onTimeout: () => throw TimeoutException(
+              'GPS tidak merespons dalam 30 detik. Pastikan lokasi aktif dan sinyal GPS tersedia.',
+            ),
+          );
 
       final repo = ref.read(kknRepositoryProvider);
       final response = await repo.mulaiKegiatan(
@@ -406,7 +513,6 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         pos.latitude,
         pos.longitude,
         deviceInfo: await _getDeviceInfo(),
-        poskoId: selectedPosko?['id']?.toString(),
       );
 
       final sessionId = response['sessionId']?.toString();
@@ -419,7 +525,9 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
             int.tryParse(response['actualInZoneMinutes'].toString()) ?? 0;
       } else if (response['actualInZoneSeconds'] != null) {
         _backendDurationMinutes =
-            ((num.tryParse(response['actualInZoneSeconds'].toString()) ?? 0) / 60).ceil();
+            ((num.tryParse(response['actualInZoneSeconds'].toString()) ?? 0) /
+                    60)
+                .ceil();
       }
 
       // Parse lokasi dari response backend
@@ -441,14 +549,16 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         'statusKehadiran': response['statusKehadiran'] ?? 'BERLANGSUNG',
       };
 
-      // [PILIH POSKO] Jika mahasiswa memilih posko tertentu atau backend mencocokkan posko tertentu,
+      // [PILIH POSKO] Jika backend mencocokkan posko tertentu,
       // koordinat posko itu menggantikan koordinat default sebagai zona geofence-nya.
-      final effectivePosko = selectedPosko ?? matchedPosko;
+      final effectivePosko = matchedPosko;
       if (effectivePosko != null) {
         final poskoLat = (effectivePosko['latitude'] as num?)?.toDouble();
         final poskoLng = (effectivePosko['longitude'] as num?)?.toDouble();
-        final poskoRadius = (effectivePosko['radius'] as num?)?.toDouble() ?? 150.0;
-        final poskoAddress = effectivePosko['alamat']?.toString() ??
+        final poskoRadius =
+            (effectivePosko['radius'] as num?)?.toDouble() ?? 150.0;
+        final poskoAddress =
+            effectivePosko['alamat']?.toString() ??
             effectivePosko['nama']?.toString() ??
             'Posko KKN';
         if (poskoLat != null && poskoLng != null) {
@@ -518,7 +628,9 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
             : 'GPS atau koneksi tidak merespons. Pastikan lokasi & internet aktif, lalu coba lagi.';
       } else {
         final helper = NetworkExceptionHelper.getErrorMessage(e);
-        friendlyMsg = helper.isNotEmpty ? helper : (rawMsg.isNotEmpty ? rawMsg : 'Gagal memulai kegiatan');
+        friendlyMsg = helper.isNotEmpty
+            ? helper
+            : (rawMsg.isNotEmpty ? rawMsg : 'Gagal memulai kegiatan');
       }
       state = state.copyWith(error: friendlyMsg);
       return friendlyMsg;
@@ -576,16 +688,17 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       return null;
     } catch (e) {
       final errorMsg = e.toString().replaceAll('Exception: ', '');
-      state = state.copyWith(
-        isLoadingKegiatan: false,
-        error: errorMsg,
-      );
+      state = state.copyWith(isLoadingKegiatan: false, error: errorMsg);
       return errorMsg;
     }
   }
 
   /// Selesai kegiatan: panggil endpoint, lalu stop GPS background
-  Future<bool> selesaiKegiatan({String alasan = 'SELESAI', String? deskripsiKegiatan, String? fotoPath}) async {
+  Future<bool> selesaiKegiatan({
+    String alasan = 'SELESAI',
+    String? deskripsiKegiatan,
+    String? fotoPath,
+  }) async {
     final scheduleId =
         _currentTargetScheduleId ??
         state.activeActivity?['scheduleId']?.toString() ??
@@ -628,7 +741,8 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       _backendDurationMinutes = 0;
       try {
         final prefs = await SharedPreferences.getInstance();
-        final kknKeys = prefs.getKeys()
+        final kknKeys = prefs
+            .getKeys()
             .where((k) => k.startsWith('kkn_') || k.startsWith('kkn_bg_'))
             .toList();
         for (final key in kknKeys) {
@@ -642,7 +756,8 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         clearActivity:
             true, // Tambahkan ini agar mergedData tidak mewarisi aktivitas lama
         isAutoStarted: false,
-        clearPosko: true, // Reset pilihan posko agar sesi berikutnya bisa pilih ulang
+        clearPosko:
+            true, // Reset pilihan posko agar sesi berikutnya bisa pilih ulang
       );
     }
 
@@ -660,10 +775,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     bool isSuccess = false;
     try {
       final repo = ref.read(kknRepositoryProvider);
-      await repo.jedaKegiatan(
-        scheduleId,
-        alasan: alasan,
-      );
+      await repo.jedaKegiatan(scheduleId, alasan: alasan);
       isSuccess = true;
     } catch (e) {
       debugPrint('[KKN] jedaKegiatan error: $e');
@@ -714,10 +826,12 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         final data = response['data'] as Map<String, dynamic>;
         if (data['actualInZoneMinutes'] != null) {
           _backendDurationMinutes =
-              int.tryParse(data['actualInZoneMinutes'].toString()) ?? _backendDurationMinutes;
+              int.tryParse(data['actualInZoneMinutes'].toString()) ??
+              _backendDurationMinutes;
         } else if (data['actualInZoneSeconds'] != null) {
           _backendDurationMinutes =
-              ((num.tryParse(data['actualInZoneSeconds'].toString()) ?? 0) / 60).ceil();
+              ((num.tryParse(data['actualInZoneSeconds'].toString()) ?? 0) / 60)
+                  .ceil();
         }
       }
 
@@ -757,10 +871,12 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     // Sync durasi dari backend (SSOT) — gunakan actualInZoneMinutes
     if (data['actualInZoneMinutes'] != null) {
       _backendDurationMinutes =
-          int.tryParse(data['actualInZoneMinutes'].toString()) ?? _backendDurationMinutes;
+          int.tryParse(data['actualInZoneMinutes'].toString()) ??
+          _backendDurationMinutes;
     } else if (data['actualInZoneSeconds'] != null) {
       _backendDurationMinutes =
-          ((num.tryParse(data['actualInZoneSeconds'].toString()) ?? 0) / 60).ceil();
+          ((num.tryParse(data['actualInZoneSeconds'].toString()) ?? 0) / 60)
+              .ceil();
     }
     state = state.copyWith(inZoneDurationSeconds: _backendDurationMinutes);
 
@@ -942,10 +1058,16 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
             // Sync durasi dari backend (SSOT)
             if (activeZone['actualInZoneMinutes'] != null) {
               _backendDurationMinutes =
-                  int.tryParse(activeZone['actualInZoneMinutes'].toString()) ?? 0;
+                  int.tryParse(activeZone['actualInZoneMinutes'].toString()) ??
+                  0;
             } else if (activeZone['actualInZoneSeconds'] != null) {
               _backendDurationMinutes =
-                  ((num.tryParse(activeZone['actualInZoneSeconds'].toString()) ?? 0) / 60).ceil();
+                  ((num.tryParse(
+                                activeZone['actualInZoneSeconds'].toString(),
+                              ) ??
+                              0) /
+                          60)
+                      .ceil();
             }
 
             // FIX: Merge activeZone dengan activeActivity yang ada agar tidak kehilangan data penting seperti statusKehadiran
@@ -1273,7 +1395,9 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
             int.tryParse(mergedData['actualInZoneMinutes'].toString()) ?? 0;
       } else if (mergedData['actualInZoneSeconds'] != null) {
         _backendDurationMinutes =
-            ((num.tryParse(mergedData['actualInZoneSeconds'].toString()) ?? 0) / 60).ceil();
+            ((num.tryParse(mergedData['actualInZoneSeconds'].toString()) ?? 0) /
+                    60)
+                .ceil();
       }
 
       if (isAttended || status == 'hadir') {
@@ -1346,10 +1470,12 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
             (pingResponse['data'] as Map<String, dynamic>?) ?? pingResponse;
 
         // Debug: log nilai dari server
-        debugPrint('[KKN-PING] server actualInZoneMinutes=${pingData['actualInZoneMinutes']} '
-            '| local _backendDuration=$_backendDurationMinutes '
-            '| status=${pingData['attendanceStatus']} '
-            '| hasActiveScheduleId=${pingData.containsKey('activeScheduleId')}');
+        debugPrint(
+          '[KKN-PING] server actualInZoneMinutes=${pingData['actualInZoneMinutes']} '
+          '| local _backendDuration=$_backendDurationMinutes '
+          '| status=${pingData['attendanceStatus']} '
+          '| hasActiveScheduleId=${pingData.containsKey('activeScheduleId')}',
+        );
 
         // Sinkronkan status dan durasi dari server
         syncWithPingData(pingData);
@@ -1446,48 +1572,30 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         : 15.0;
     final effectiveRadius = radius + buffer;
 
-    // POLYGON CHECK: Jika API menyediakan polygon, gunakan Ray Casting algorithm
-    // untuk cek apakah user berada di dalam area polygon tersebut.
-    // Ini lebih akurat dan mengatasi kasus di mana titik pusat (lat/lng) salah input
-    // oleh Admin tapi polygon sudah benar.
-    final polygonRaw = target['polygon'];
-    if (polygonRaw != null && polygonRaw is List && polygonRaw.length >= 3) {
-      try {
-        final polygonPoints = polygonRaw.map((point) {
-          final List pts = point as List;
-          final double val0 = (pts[0] as num).toDouble();
-          final double val1 = (pts[1] as num).toDouble();
-          final double pLat = (val0.abs() > 45.0) ? val1 : val0;
-          final double pLng = (val0.abs() > 45.0) ? val0 : val1;
-          return (lat: pLat, lng: pLng);
-        }).toList();
+    List<ValidZoneItem> validZones = [];
+    if (target['validZones'] != null && target['validZones'] is List) {
+      validZones = (target['validZones'] as List)
+          .map(
+            (e) => ValidZoneItem.fromJson(Map<String, dynamic>.from(e as Map)),
+          )
+          .toList();
+    }
 
-        final insidePoly = _isPointInPolygon(
-          lat: pos.latitude,
-          lng: pos.longitude,
-          polygon: polygonPoints,
-        );
-
-        distance = Geolocator.distanceBetween(
-          pos.latitude,
-          pos.longitude,
-          targetLat,
-          targetLng,
-        );
-
-        nowInside = insidePoly || (distance <= effectiveRadius);
-      } catch (_) {
-        // Fallback ke radius jika parsing polygon gagal
-        distance = Geolocator.distanceBetween(
-          pos.latitude,
-          pos.longitude,
-          targetLat,
-          targetLng,
-        );
-        nowInside = distance <= effectiveRadius;
-      }
+    // MULTI-GEONFENCE CHECK: (Update KKN 2026) Prioritas utama jika validZones dikirim backend
+    if (validZones.isNotEmpty) {
+      final multiEval = GeofenceZoneEngine.evaluateMultiZonePosition(
+        userLat: pos.latitude,
+        userLng: pos.longitude,
+        validZones: validZones,
+        fallbackLat: targetLat,
+        fallbackLng: targetLng,
+        fallbackRadiusMeters: radius,
+        bufferMeters: buffer,
+      );
+      distance = multiEval.distanceToTargetMeters;
+      nowInside = multiEval.isInside;
     } else {
-      // RADIUS CHECK: Fallback jika tidak ada polygon
+      // RADIUS CHECK: Fallback jika tidak ada validZones
       distance = Geolocator.distanceBetween(
         pos.latitude,
         pos.longitude,
@@ -1532,34 +1640,6 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         );
       }
     }
-  }
-
-  /// Ray Casting algorithm untuk Point-in-Polygon check.
-  /// Mengirimkan sebuah sinar horizontal dari titik (lat, lng) ke arah kanan
-  /// dan menghitung berapa kali sinar tersebut memotong tepi polygon.
-  /// Jika ganjil → di dalam; jika genap → di luar.
-  bool _isPointInPolygon({
-    required double lat,
-    required double lng,
-    required List<({double lat, double lng})> polygon,
-  }) {
-    bool inside = false;
-    final int n = polygon.length;
-    int j = n - 1;
-    for (int i = 0; i < n; i++) {
-      final double xi = polygon[i].lat;
-      final double yi = polygon[i].lng;
-      final double xj = polygon[j].lat;
-      final double yj = polygon[j].lng;
-
-      final bool intersect =
-          ((yi > lng) != (yj > lng)) &&
-          (lat < (xj - xi) * (lng - yi) / (yj - yi) + xi);
-
-      if (intersect) inside = !inside;
-      j = i;
-    }
-    return inside;
   }
 
   /// Trigger manual or auto attendance with full payload
@@ -1665,7 +1745,8 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         _backendDurationMinutes = 0;
         try {
           final prefs = await SharedPreferences.getInstance();
-          final kknKeys = prefs.getKeys()
+          final kknKeys = prefs
+              .getKeys()
               .where((k) => k.startsWith('kkn_') || k.startsWith('kkn_bg_'))
               .toList();
           for (final key in kknKeys) {
@@ -1725,7 +1806,8 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     // 4. Bersihkan SharedPreferences — hapus semua key kkn_ dan kkn_bg_
     try {
       final prefs = await SharedPreferences.getInstance();
-      final kknKeys = prefs.getKeys()
+      final kknKeys = prefs
+          .getKeys()
           .where((k) => k.startsWith('kkn_') || k.startsWith('kkn_bg_'))
           .toList();
       for (final key in kknKeys) {

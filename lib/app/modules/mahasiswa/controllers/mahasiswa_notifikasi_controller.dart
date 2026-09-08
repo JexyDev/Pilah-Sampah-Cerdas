@@ -6,6 +6,7 @@ import '../../auth/controllers/auth_controller.dart';
 import '../../../data/services/firebase_notification_service.dart';
 import '../../../data/services/local_notification_cache_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/utils/input_sanitizer.dart';
 
 final Set<String> _mhsShownNotifIds = {};
 
@@ -15,7 +16,8 @@ bool _isMahasiswaNotification(NotificationEntity notif) {
   final desc = notif.desc.toUpperCase();
 
   // Keyword & Tipe yang DILARANG untuk Mahasiswa KKN (Milik Warga / Petugas)
-  final isForbidden = type.contains('TIMBANGAN_PEMILAHAN') ||
+  final isForbidden =
+      type.contains('TIMBANGAN_PEMILAHAN') ||
       type.contains('JADWAL') ||
       type.contains('JEMPUT') ||
       type.contains('PENGANGKUTAN') ||
@@ -28,7 +30,8 @@ bool _isMahasiswaNotification(NotificationEntity notif) {
   if (isForbidden) return false;
 
   // Wajib cocok dengan salah satu kategori Mahasiswa KKN
-  final isMahasiswaTopic = type.contains('PEMANFAATAN') ||
+  final isMahasiswaTopic =
+      type.contains('PEMANFAATAN') ||
       type.contains('AI') ||
       type.contains('LAPORAN') ||
       type.contains('AKTIVASI') ||
@@ -85,7 +88,9 @@ bool _isMahasiswaNotification(NotificationEntity notif) {
 }
 
 /// Provider khusus daftar notifikasi Mahasiswa KKN
-final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>((ref) async {
+final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>((
+  ref,
+) async {
   final repo = ref.watch(notificationRepositoryProvider);
   final user = ref.watch(authProvider).user;
   if (user == null) return [];
@@ -107,26 +112,43 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
   try {
     final pointRepo = ref.read(wasteLogRepositoryProvider);
     final pointHistory = await pointRepo.getPointHistoryByUser(userId);
-    
-          for (final ph in pointHistory) {
-        if (ph.points != 0) {
-          final notifId = 'point_${ph.id}';
-        final isRead = readSet.contains(notifId) || 
+
+    for (final ph in pointHistory) {
+      if (ph.points != 0) {
+        final notifId = 'point_${ph.id}';
+        final isRead =
+            readSet.contains(notifId) ||
             ph.createdAt.millisecondsSinceEpoch <= markAllTimestamp ||
-            LocalNotificationCacheService().isRead(userId, role, notifId, ph.createdAt);
-            
+            LocalNotificationCacheService().isRead(
+              userId,
+              role,
+              notifId,
+              ph.createdAt,
+            );
+
         final isPunishment = ph.points < 0;
-            
-        list.add(NotificationEntity(
-          id: notifId,
-          type: isPunishment ? 'PUNISHMENT' : 'POIN_KKN',
-          title: isPunishment ? 'Penalti Poin KKN' : 'Poin KKN Bertambah!',
-          desc: ph.description.isNotEmpty ? ph.description : (isPunishment ? 'Poin KKN Anda dikurangi ${ph.points}.' : 'Anda mendapatkan +${ph.points} poin.'),
-          isRead: isRead,
-          time: ph.createdAt.toLocal().toIso8601String().substring(0, 16).replaceAll('T', ' '),
-          icon: isPunishment ? 'warning' : 'star',
-          createdAt: ph.createdAt,
-        ));
+
+        final cleanDesc = InputSanitizer.cleanSystemMessage(ph.description);
+        list.add(
+          NotificationEntity(
+            id: notifId,
+            type: isPunishment ? 'PUNISHMENT' : 'POIN_KKN',
+            title: isPunishment ? 'Penalti Poin KKN' : 'Poin KKN Bertambah!',
+            desc: cleanDesc.isNotEmpty
+                ? cleanDesc
+                : (isPunishment
+                      ? 'Poin KKN Anda dikurangi ${ph.points}.'
+                      : 'Anda mendapatkan +${ph.points} poin.'),
+            isRead: isRead,
+            time: ph.createdAt
+                .toLocal()
+                .toIso8601String()
+                .substring(0, 16)
+                .replaceAll('T', ' '),
+            icon: isPunishment ? 'warning' : 'star',
+            createdAt: ph.createdAt,
+          ),
+        );
       }
     }
   } catch (_) {}
@@ -141,25 +163,47 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
         final isApproved = status == 'APPROVED';
         final isPending = status == 'PENDING';
         final kategori = izin['kategori']?.toString() ?? 'Izin';
-        final timestamp = izin['reviewedAt']?.toString() ?? izin['createdAt']?.toString() ?? DateTime.now().toIso8601String();
+        final timestamp =
+            izin['reviewedAt']?.toString() ??
+            izin['createdAt']?.toString() ??
+            DateTime.now().toIso8601String();
         final dt = DateTime.tryParse(timestamp) ?? DateTime.now();
-        
+
         // Bedakan ID notif agar ketika status berubah jadi APPROVED/REJECTED, jadi notif baru
-        final notifId = isPending ? 'izin_pending_${izin['id']}' : 'izin_${izin['id']}';
-        final isRead = readSet.contains(notifId) || 
+        final notifId = isPending
+            ? 'izin_pending_${izin['id']}'
+            : 'izin_${izin['id']}';
+        final isRead =
+            readSet.contains(notifId) ||
             dt.millisecondsSinceEpoch <= markAllTimestamp ||
             LocalNotificationCacheService().isRead(userId, role, notifId, dt);
-            
-        list.add(NotificationEntity(
-          id: notifId,
-          type: 'IZIN',
-          title: isPending ? 'Pengajuan Izin Dikirim' : (isApproved ? 'Pengajuan Izin Disetujui' : 'Pengajuan Izin Ditolak'),
-          desc: isPending ? 'Pengajuan $kategori Anda telah terkirim dan menunggu verifikasi DPL.' : (isApproved ? 'DPL telah menyetujui pengajuan $kategori Anda.' : 'DPL menolak pengajuan $kategori Anda. ${izin['rejectionReason'] ?? ''}'),
-          isRead: isRead,
-          time: dt.toLocal().toIso8601String().substring(0, 16).replaceAll('T', ' '),
-          icon: isPending ? 'access_time' : (isApproved ? 'check_circle' : 'cancel'),
-          createdAt: dt,
-        ));
+
+        list.add(
+          NotificationEntity(
+            id: notifId,
+            type: 'IZIN',
+            title: isPending
+                ? 'Pengajuan Izin Dikirim'
+                : (isApproved
+                      ? 'Pengajuan Izin Disetujui'
+                      : 'Pengajuan Izin Ditolak'),
+            desc: isPending
+                ? 'Pengajuan $kategori Anda telah terkirim dan menunggu verifikasi DPL.'
+                : (isApproved
+                      ? 'DPL telah menyetujui pengajuan $kategori Anda.'
+                      : 'DPL menolak pengajuan $kategori Anda. ${izin['rejectionReason'] ?? ''}'),
+            isRead: isRead,
+            time: dt
+                .toLocal()
+                .toIso8601String()
+                .substring(0, 16)
+                .replaceAll('T', ' '),
+            icon: isPending
+                ? 'access_time'
+                : (isApproved ? 'check_circle' : 'cancel'),
+            createdAt: dt,
+          ),
+        );
       }
     }
   } catch (_) {}
@@ -168,16 +212,37 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
 
   for (final notif in list) {
     if (!_isMahasiswaNotification(notif)) continue;
-    
+
+    // Bersihkan metadata sistem seperti [ReportID:xxxx] dari judul dan deskripsi
+    final sanitizedTitle = InputSanitizer.cleanSystemMessage(notif.title);
+    final sanitizedDesc = InputSanitizer.cleanSystemMessage(notif.desc);
+
     // Deduplikasi berdasar ID atau kesamaan persis (Title + Desc + Type)
-    if (result.any((n) => n.id == notif.id || (n.title == notif.title && n.desc == notif.desc && n.type == notif.type))) continue;
+    if (result.any(
+      (n) =>
+          n.id == notif.id ||
+          (n.title == sanitizedTitle &&
+              n.desc == sanitizedDesc &&
+              n.type == notif.type),
+    )) {
+      continue;
+    }
 
     // Pastikan konversi waktu ke lokal jika formatnya UTC (ada 'Z')
-    NotificationEntity finalNotif = notif;
+    NotificationEntity finalNotif = notif.copyWith(
+      title: sanitizedTitle,
+      desc: sanitizedDesc,
+    );
     if (notif.time.endsWith('Z')) {
       final dt = DateTime.tryParse(notif.time);
       if (dt != null) {
-        finalNotif = notif.copyWith(time: dt.toLocal().toIso8601String().substring(0, 16).replaceAll('T', ' '));
+        finalNotif = finalNotif.copyWith(
+          time: dt
+              .toLocal()
+              .toIso8601String()
+              .substring(0, 16)
+              .replaceAll('T', ' '),
+        );
       }
     }
 
@@ -191,41 +256,50 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
 
   // Ambil notifikasi dari Firebase local storage
   try {
-    final firebaseNotifs = await FirebaseNotificationService().getNotifications(userId, role);
+    final firebaseNotifs = await FirebaseNotificationService().getNotifications(
+      userId,
+      role,
+    );
     for (final fn in firebaseNotifs) {
-      if (result.any((n) => n.id == fn.id || (n.title == fn.title && n.desc == fn.desc && n.type == fn.type))) {
+      if (result.any(
+        (n) =>
+            n.id == fn.id ||
+            (n.title == fn.title && n.desc == fn.desc && n.type == fn.type),
+      )) {
         continue;
       }
       if (!_isMahasiswaNotification(fn)) continue;
-      
+
       result.add(fn);
     }
   } catch (_) {}
 
-    final deleteAllTimestamp = prefs.getInt('delete_all_notifs_${userId}_$role') ?? 0;
-  
+  final deleteAllTimestamp =
+      prefs.getInt('delete_all_notifs_${userId}_$role') ?? 0;
+
   final List<NotificationEntity> finalResult = [];
   for (int i = 0; i < result.length; i++) {
     final dt = result[i].createdAt.toLocal();
-    
+
     // Skip if deleted
     if (dt.millisecondsSinceEpoch <= deleteAllTimestamp) {
       continue;
     }
-    
+
     var item = result[i];
-    final isReadLocally = readSet.contains(item.id) || 
-        dt.millisecondsSinceEpoch <= markAllTimestamp || 
+    final isReadLocally =
+        readSet.contains(item.id) ||
+        dt.millisecondsSinceEpoch <= markAllTimestamp ||
         LocalNotificationCacheService().isRead(userId, role, item.id, dt);
-    
+
     if (isReadLocally && !item.isRead) {
       item = item.copyWith(isRead: true);
     }
     finalResult.add(item);
   }
 
-    // Urutkan: terbaru di atas
-    finalResult.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  // Urutkan: terbaru di atas
+  finalResult.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
   return finalResult;
 });
@@ -233,12 +307,10 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
 /// Provider jumlah notifikasi belum dibaca untuk Mahasiswa KKN
 final mahasiswaUnreadNotificationCountProvider = Provider<int>((ref) {
   final notifAsync = ref.watch(mahasiswaNotificationsProvider);
-  return notifAsync.when(skipLoadingOnReload: true, data: (list) => list.where((n) => !n.isRead).length,
+  return notifAsync.when(
+    skipLoadingOnReload: true,
+    data: (list) => list.where((n) => !n.isRead).length,
     loading: () => 0,
     error: (_, __) => 0,
   );
 });
-
-
-
-

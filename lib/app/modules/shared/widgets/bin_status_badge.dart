@@ -67,4 +67,3 @@ class BinStatusBadge extends StatelessWidget {
     }
   }
 }
-

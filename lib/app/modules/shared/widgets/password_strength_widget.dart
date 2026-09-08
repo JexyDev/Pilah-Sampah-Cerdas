@@ -10,7 +10,8 @@ class PasswordStrengthWidget extends StatelessWidget {
   bool get hasUppercase => password.contains(RegExp(r'[A-Z]'));
   bool get hasLowercase => password.contains(RegExp(r'[a-z]'));
   bool get hasNumber => password.contains(RegExp(r'[0-9]'));
-  bool get hasSpecialChar => password.contains(RegExp(r'[!@#\$%^&*(),.?":{}|<>]'));
+  bool get hasSpecialChar =>
+      password.contains(RegExp(r'[!@#\$%^&*(),.?":{}|<>]'));
 
   @override
   Widget build(BuildContext context) {

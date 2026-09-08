@@ -7,45 +7,70 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
+import '../../../data/models/bin_entity.dart';
+import '../../../data/providers/repository_providers.dart';
 import '../../../data/services/location_service.dart';
+import '../../auth/controllers/auth_controller.dart';
 import '../../shared/controllers/connectivity_controller.dart';
-import '../../shared/widgets/feature_rating_dialog.dart';
+import '../../shared/widgets/qr_scanner_widget.dart';
 import '../controllers/petugas_pemilahan_controller.dart';
 
 class TimbanganPemilahanView extends ConsumerStatefulWidget {
-  const TimbanganPemilahanView({super.key});
+  const TimbanganPemilahanView({
+    super.key,
+    this.initialBinId,
+    this.initialBinCode,
+    this.initialCategory,
+    this.initialWargaName,
+  });
+
+  final String? initialBinId;
+  final String? initialBinCode;
+  final String? initialCategory;
+  final String? initialWargaName;
 
   @override
-  ConsumerState<TimbanganPemilahanView> createState() => _TimbanganPemilahanViewState();
+  ConsumerState<TimbanganPemilahanView> createState() =>
+      _TimbanganPemilahanViewState();
 }
 
-class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView> {
+class _TimbanganPemilahanViewState
+    extends ConsumerState<TimbanganPemilahanView> {
   final _formKey = GlobalKey<FormState>();
   final _weightController = TextEditingController();
-  
+
+  String? _activeBinId;
+  String? _activeBinCode;
+  String? _activeWargaName;
   String? _photoPath;
   Position? _currentLocation;
-  String _selectedClassification = 'Pemilahan Non-B3';
+  String _selectedClassification = 'Organik';
   bool _isSubmitting = false;
+  bool _isScanningAi = false;
   SharedPreferences? _prefs;
-  
+
   int _estimatedPoints = 0;
 
   bool get _canSubmit {
     final weight = double.tryParse(_weightController.text.trim().replaceAll(',', '.')) ?? 0.0;
-    return _photoPath != null && weight > 0 && !_isSubmitting;
+    return _photoPath != null && weight > 0 && !_isSubmitting && !_isScanningAi;
   }
 
   final List<String> _classifications = [
-    'Pemilahan Non-B3',
-    'Pemilahan B3',
-    'Pemilahan Popok/Pembalut',
-    'Pemilahan Lainnya',
+    'Organik',
+    'Anorganik',
   ];
 
   @override
   void initState() {
     super.initState();
+    _activeBinId = widget.initialBinId;
+    _activeBinCode = widget.initialBinCode;
+    _activeWargaName = widget.initialWargaName;
+    if (widget.initialCategory != null &&
+        _classifications.contains(widget.initialCategory)) {
+      _selectedClassification = widget.initialCategory!;
+    }
     _weightController.addListener(_calculatePoints);
     _loadDraft();
   }
@@ -59,7 +84,8 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
     if (mounted) {
       setState(() {
         if (weight != null) _weightController.text = weight;
-        if (classification != null && _classifications.contains(classification)) {
+        if (classification != null &&
+            _classifications.contains(classification)) {
           _selectedClassification = classification;
         }
         if (photo != null && File(photo).existsSync()) _photoPath = photo;
@@ -94,15 +120,15 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
   void _calculatePoints() {
     final weightStr = _weightController.text.trim().replaceAll(',', '.');
     final weight = double.tryParse(weightStr) ?? 0.0;
-    
+
     // Skala KPI Petugas: 2 Poin per 1 Kg (Dibulatkan)
     int points = weight.round() * 2;
-    
+
     // Bonus kehadiran & foto bukti di titik kumpul (+10)
     if (weight > 0 && _photoPath != null) {
       points += 10;
     }
-    
+
     if (points != _estimatedPoints) {
       setState(() {
         _estimatedPoints = points;
@@ -114,46 +140,144 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
   Future<void> _takePhoto() async {
     try {
       final picker = ImagePicker();
-      final file = await picker.pickImage(source: ImageSource.camera, imageQuality: 80);
+      final file = await picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 80,
+      );
       if (file != null) {
         if (!mounted) return;
-        final locPermission = await LocationService.instance.checkAndRequestPermission(context);
+        final locPermission = await LocationService.instance
+            .checkAndRequestPermission(context);
         Position? loc;
-        if (locPermission == LocationPermission.whileInUse || locPermission == LocationPermission.always) {
+        if (locPermission == LocationPermission.whileInUse ||
+            locPermission == LocationPermission.always) {
           loc = await LocationService.instance.getCurrentLocation();
         }
         setState(() {
           _photoPath = file.path;
           _currentLocation = loc;
-          _calculatePoints();
+          _isScanningAi = true;
         });
+
+        // ponytail: Auto-detect classification suggestion. Fallback silently to manual entry if offline/timeout.
+        try {
+          final user = ref.read(authProvider).user;
+          final userId = user?.id ?? '';
+          final aiResult = await ref.read(binRepositoryProvider).detectWaste(
+            userId,
+            imagePath: file.path,
+          );
+          if (mounted) {
+            final category = aiResult.detectedType == WasteType.organic ? 'Organik' : 'Anorganik';
+            setState(() {
+              _selectedClassification = category;
+              if (_weightController.text.trim().isEmpty && aiResult.displayWeightKg > 0) {
+                _weightController.text = aiResult.displayWeightKg.toString();
+              }
+            });
+            _calculatePoints();
+          }
+        } catch (e) {
+          debugPrint('[TimbanganPemilahan] Waste detect fallback: $e');
+        } finally {
+          if (mounted) {
+            setState(() => _isScanningAi = false);
+          }
+        }
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal mengambil foto: $e'), backgroundColor: AppColors.maroonRed),
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal mengambil foto: $e'),
+          backgroundColor: AppColors.maroonRed,
+          duration: const Duration(seconds: 3),
+        ),
       );
     }
+  }
+
+  Future<void> _scanBinQr() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.black,
+      builder: (ctx) => SafeArea(
+        child: SizedBox(
+          height: MediaQuery.of(context).size.height * 0.75,
+          child: Column(
+            children: [
+              AppBar(
+                title: const Text('Pindai QR Tempat Sampah Warga'),
+                backgroundColor: Colors.black,
+                foregroundColor: Colors.white,
+                leading: IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(ctx),
+                ),
+              ),
+              Expanded(
+                child: QrScannerWidget(
+                  isFullScreen: true,
+                  hint: 'Arahkan kamera ke kode QR tempat sampah warga',
+                  onQrDetected: (code) async {
+                    HapticFeedback.heavyImpact();
+                    if (mounted) {
+                      setState(() {
+                        _activeBinCode = code.trim();
+                        _activeBinId = code.trim();
+                        if (code.toUpperCase().contains('ORGANIK') || code.toUpperCase().contains('ORG')) {
+                          if (!code.toUpperCase().contains('ANORGANIK') && !code.toUpperCase().contains('ANORG')) {
+                            _selectedClassification = 'Organik';
+                          } else {
+                            _selectedClassification = 'Anorganik';
+                          }
+                        }
+                      });
+                      Navigator.pop(ctx);
+                      ScaffoldMessenger.of(context).clearSnackBars();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Target tempat sampah "$code" terpilih.'),
+                          backgroundColor: AppColors.primaryGreen,
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                    return true;
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _submitLog() async {
     if (!_formKey.currentState!.validate()) return;
     if (_photoPath == null) {
-      ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Foto bukti timbangan pemilahan wajib diambil!'),
           backgroundColor: AppColors.maroonRed,
+          duration: Duration(seconds: 3),
         ),
       );
       return;
     }
 
     final double? weight = double.tryParse(_weightController.text.trim().replaceAll(',', '.'));
-    if (weight == null || weight <= 0 || weight > 9999) {
-      ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
+    if (weight == null || weight <= 0 || weight > 500) {
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Berat timbangan tidak valid!'),
+          content: Text('Berat timbangan tidak valid (0.1 - 500 Kg)!'),
           backgroundColor: AppColors.maroonRed,
+          duration: Duration(seconds: 3),
         ),
       );
       return;
@@ -161,10 +285,12 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
 
     final isOnline = ref.read(isOnlineProvider);
     if (!isOnline) {
-      ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Koneksi terputus. Data disimpan sebagai draft.'),
           backgroundColor: AppColors.maroonRed,
+          duration: Duration(seconds: 3),
         ),
       );
       return;
@@ -172,29 +298,22 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
 
     setState(() => _isSubmitting = true);
 
-    final success = await ref.read(petugasPemilahanControllerProvider.notifier).submitLog(
-      binId: 'GLOBAL_BIN_RT_RW', 
-      actualWeightKg: weight,
-      classification: _selectedClassification,
-      photoPath: _photoPath!,
-      latitude: _currentLocation?.latitude,
-      longitude: _currentLocation?.longitude,
-    );
+    final success = await ref
+        .read(petugasPemilahanControllerProvider.notifier)
+        .submitLog(
+          binId: _activeBinId ?? 'GLOBAL_BIN_RT_RW',
+          actualWeightKg: weight,
+          classification: _selectedClassification,
+          photoPath: _photoPath!,
+          latitude: _currentLocation?.latitude,
+          longitude: _currentLocation?.longitude,
+        );
 
     setState(() => _isSubmitting = false);
 
     if (success && mounted) {
       await _showSuccessDialog(weight);
       if (mounted) {
-        // Rating dialog 1-5 bintang (hanya muncul 1x saat pertama kali berhasil input timbangan)
-        await showFeatureRatingOnceIfNeeded(
-          context: context,
-          featureKey: 'petugas_input_timbangan',
-          featureTitle: 'Input Timbangan Berhasil! ⭐',
-          featureSubtitle: 'Bagaimana kepuasan dan kemudahan Anda saat pertama kali melakukan input manual timbangan pemilahan?',
-          roleTag: 'Petugas Pemilahan',
-        );
-
         _clearDraft();
         _weightController.clear();
         setState(() {
@@ -209,12 +328,15 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
         }
       }
     } else if (!success && mounted) {
-      final errorMsg = ref.read(petugasPemilahanControllerProvider).errorMessage ?? 'Gagal menyimpan data timbangan.';
+      final errorMsg =
+          ref.read(petugasPemilahanControllerProvider).errorMessage ??
+          'Gagal menyimpan data timbangan.';
       ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(errorMsg),
           backgroundColor: AppColors.maroonRed,
+          duration: const Duration(seconds: 3),
         ),
       );
     }
@@ -232,10 +354,15 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
       barrierDismissible: false,
       builder: (ctx) {
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
           backgroundColor: Colors.white,
           elevation: 8,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 24,
+            vertical: 24,
+          ),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
             child: Column(
@@ -274,32 +401,84 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
                           color: AppColors.primaryGreen,
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.check_rounded, color: Colors.white, size: 28),
+                        child: const Icon(
+                          Icons.check_rounded,
+                          color: Colors.white,
+                          size: 28,
+                        ),
                       ),
                       // Dekorasi bintang kecil (Stars)
-                      const Positioned(top: 12, left: 12, child: Icon(Icons.circle, size: 4, color: AppColors.primaryBlue)),
-                      const Positioned(top: 8, right: 24, child: Icon(Icons.star, size: 8, color: AppColors.primaryBlue)),
-                      const Positioned(bottom: 16, left: 16, child: Icon(Icons.circle, size: 3, color: AppColors.primaryBlue)),
-                      const Positioned(bottom: 24, right: 12, child: Icon(Icons.star, size: 10, color: AppColors.primaryGreen)),
-                      const Positioned(top: 28, left: 6, child: Icon(Icons.star, size: 6, color: AppColors.primaryGreen)),
+                      const Positioned(
+                        top: 12,
+                        left: 12,
+                        child: Icon(
+                          Icons.circle,
+                          size: 4,
+                          color: AppColors.primaryBlue,
+                        ),
+                      ),
+                      const Positioned(
+                        top: 8,
+                        right: 24,
+                        child: Icon(
+                          Icons.star,
+                          size: 8,
+                          color: AppColors.primaryBlue,
+                        ),
+                      ),
+                      const Positioned(
+                        bottom: 16,
+                        left: 16,
+                        child: Icon(
+                          Icons.circle,
+                          size: 3,
+                          color: AppColors.primaryBlue,
+                        ),
+                      ),
+                      const Positioned(
+                        bottom: 24,
+                        right: 12,
+                        child: Icon(
+                          Icons.star,
+                          size: 10,
+                          color: AppColors.primaryGreen,
+                        ),
+                      ),
+                      const Positioned(
+                        top: 28,
+                        left: 6,
+                        child: Icon(
+                          Icons.star,
+                          size: 6,
+                          color: AppColors.primaryGreen,
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 12),
-                
+
                 // 2. Judul
                 RichText(
                   textAlign: TextAlign.center,
                   text: const TextSpan(
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary, height: 1.2),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                      height: 1.2,
+                    ),
                     children: [
                       TextSpan(text: 'Timbangan Berhasil\n'),
-                      TextSpan(text: 'Disimpan!', style: TextStyle(color: AppColors.primaryGreen)),
+                      TextSpan(
+                        text: 'Disimpan!',
+                        style: TextStyle(color: AppColors.primaryGreen),
+                      ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 8),
-                
+
                 // 3. Subjudul
                 const Text(
                   'Data pemilahan fisik telah tercatat\ndi Tempat Sampah Pemilahan Global RW.',
@@ -312,14 +491,20 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
                   ),
                 ),
                 const SizedBox(height: 20),
-                
+
                 // 4. Card Berat yang dicatat
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 16,
+                    horizontal: 16,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    border: Border.all(color: AppColors.primaryBlue, width: 1.5),
+                    border: Border.all(
+                      color: AppColors.primaryBlue,
+                      width: 1.5,
+                    ),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Column(
@@ -327,9 +512,20 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
                       const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.scale_rounded, size: 16, color: AppColors.primaryBlue),
+                          Icon(
+                            Icons.scale_rounded,
+                            size: 16,
+                            color: AppColors.primaryBlue,
+                          ),
                           SizedBox(width: 8),
-                          Text('Berat yang dicatat', style: TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w500)),
+                          Text(
+                            'Berat yang dicatat',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 8),
@@ -339,12 +535,24 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
                         children: [
                           Text(
                             weight.toStringAsFixed(1),
-                            style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppColors.primaryBlue, height: 1),
+                            style: const TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primaryBlue,
+                              height: 1,
+                            ),
                           ),
                           const SizedBox(width: 4),
                           const Padding(
                             padding: EdgeInsets.only(bottom: 2),
-                            child: Text('kg', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primaryBlue)),
+                            child: Text(
+                              'kg',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primaryBlue,
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -352,7 +560,7 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
                   ),
                 ),
                 const SizedBox(height: 12),
-                
+
                 // 5. Card Akumulasi Bin Global
                 Container(
                   width: double.infinity,
@@ -369,45 +577,75 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
                           color: Colors.white,
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.delete_outline_rounded, color: AppColors.primaryGreen, size: 20),
+                        child: const Icon(
+                          Icons.delete_outline_rounded,
+                          color: AppColors.primaryGreen,
+                          size: 20,
+                        ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Akumulasi Tempat Sampah Pemilahan Global', style: TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w500)),
-                            const SizedBox(height: 2),
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Text(
-                                    newTotal.toStringAsFixed(1),
-                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryGreen, height: 1),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  const Text('kg', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryGreen)),
-                                ],
+                            const Text(
+                              'Akumulasi Tempat Sampah Pemilahan Global',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppColors.textSecondary,
+                                fontWeight: FontWeight.w500,
                               ),
+                            ),
+                            const SizedBox(height: 2),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  newTotal.toStringAsFixed(1),
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.primaryGreen,
+                                    height: 1,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                const Text(
+                                  'kg',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.primaryGreen,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ],
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.primaryGreen.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           '↑ +${weight.toStringAsFixed(1)} kg',
-                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primaryGreen,
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 20),
-                
+
                 // 6. Tombol Selesai
                 SizedBox(
                   width: double.infinity,
@@ -418,7 +656,9 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF1C64F2),
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       elevation: 0,
                     ),
@@ -444,15 +684,15 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
   Widget build(BuildContext context) {
     bool hasUnsavedChanges() {
       return _weightController.text.isNotEmpty ||
-             _photoPath != null ||
-             _selectedClassification != 'Pemilahan Non-B3';
+          _photoPath != null ||
+          _selectedClassification != _classifications.first;
     }
 
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
-        
+
         if (!hasUnsavedChanges()) {
           if (context.mounted) Navigator.pop(context);
           return;
@@ -462,13 +702,23 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
           context: context,
           builder: (context) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: const Text('Batalkan Input Timbangan?', style: TextStyle(fontWeight: FontWeight.bold)),
-              content: const Text('Perubahan ini akan terhapus jika Anda keluar dari halaman ini.'),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: const Text(
+                'Batalkan Input Timbangan?',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              content: const Text(
+                'Perubahan ini akan terhapus jika Anda keluar dari halaman ini.',
+              ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Lanjutkan Edit', style: TextStyle(color: AppColors.textSecondary)),
+                  child: const Text(
+                    'Lanjutkan Edit',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
@@ -523,7 +773,7 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
               ),
               const SizedBox(height: AppDimensions.lg),
 
-              // 1. Lokasi / Bin Global Info
+              // 1. Lokasi / Bin Info
               const Text('Target Penampungan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
               const SizedBox(height: 8),
               Container(
@@ -531,21 +781,55 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(
+                    color: _activeBinCode != null ? AppColors.primaryGreen : AppColors.border,
+                    width: _activeBinCode != null ? 1.5 : 1.0,
+                  ),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.delete_sweep_rounded, color: AppColors.primaryGreen),
-                    SizedBox(width: 12),
+                    Icon(
+                      _activeBinCode != null ? Icons.qr_code_2_rounded : Icons.delete_sweep_rounded,
+                      color: AppColors.primaryGreen,
+                    ),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Tempat Sampah Pemilahan Global RW', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                          Text('Tercatat di Audit Trail Monitoring RW & DLH', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                          Text(
+                            _activeBinCode != null
+                                ? 'Tempat Sampah: $_activeBinCode'
+                                : 'Tempat Sampah Pemilahan Global RW',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                          ),
+                          Text(
+                            _activeBinCode != null
+                                ? 'Warga: ${_activeWargaName ?? "Dampingan RW"}'
+                                : 'Tercatat di Audit Trail Monitoring RW & DLH',
+                            style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                          ),
                         ],
                       ),
                     ),
+                    if (_activeBinCode != null)
+                      IconButton(
+                        tooltip: 'Ganti ke Global Bin',
+                        icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.textSecondary),
+                        onPressed: () {
+                          setState(() {
+                            _activeBinId = null;
+                            _activeBinCode = null;
+                            _activeWargaName = null;
+                          });
+                        },
+                      )
+                    else
+                      IconButton(
+                        tooltip: 'Pindai QR Tempat Sampah Warga',
+                        icon: const Icon(Icons.qr_code_scanner_rounded, size: 20, color: AppColors.primaryGreen),
+                        onPressed: _scanBinQr,
+                      ),
                   ],
                 ),
               ),
@@ -568,7 +852,7 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
                   if (v == null || v.trim().isEmpty) return 'Berat timbangan wajib diisi';
                   final val = double.tryParse(v.replaceAll(',', '.'));
                   if (val == null || val <= 0) return 'Masukkan angka positif';
-                  if (val > 9999) return 'Maksimal 9999 kg';
+                  if (val > 500) return 'Maksimal 500 kg per input';
                   return null;
                 },
               ),
@@ -578,6 +862,7 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
               const Text('Klasifikasi Kategori Pemilahan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
+                key: ValueKey(_selectedClassification),
                 initialValue: _selectedClassification,
                 decoration: const InputDecoration(
                   prefixIcon: Icon(Icons.category_outlined, color: AppColors.primaryGreen),
@@ -594,11 +879,11 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
               ),
               const SizedBox(height: AppDimensions.lg),
 
-              // 4. Foto Timbangan (Kamera Langsung)
-              const Text('Foto Bukti Timbangan (Kamera Langsung)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              // 4. Foto Bukti Timbangan Fisik
+              const Text('Foto Bukti Timbangan Fisik', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
               const SizedBox(height: 8),
               GestureDetector(
-                onTap: _takePhoto,
+                onTap: _isScanningAi ? null : _takePhoto,
                 child: Container(
                   height: 200, // Make camera area taller for better view
                   width: double.infinity,
@@ -645,8 +930,25 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
                                         const Icon(Icons.location_on, color: AppColors.primaryGreen, size: 14),
                                         const SizedBox(width: 4),
                                         Text(
-                                          'GPS Tercatat: ${_currentLocation!.latitude.toStringAsFixed(4)}, ${_currentLocation!.longitude.toStringAsFixed(4)}',
+                                          'GPS: ${_currentLocation!.latitude.toStringAsFixed(4)}, ${_currentLocation!.longitude.toStringAsFixed(4)}',
                                           style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              if (_isScanningAi)
+                                Container(
+                                  color: Colors.black54,
+                                  child: const Center(
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        CircularProgressIndicator(color: Colors.white),
+                                        SizedBox(height: 12),
+                                        Text(
+                                          'Memproses bukti foto...',
+                                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
                                         ),
                                       ],
                                     ),
@@ -655,16 +957,30 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
                             ],
                           ),
                         )
-                      : const Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.camera_alt_rounded, size: 48, color: AppColors.primaryGreen),
-                            SizedBox(height: 8),
-                            Text('Ketuk untuk Ambil Foto Timbangan', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryGreen)),
-                            SizedBox(height: 4),
-                            Text('Hanya mendukung kamera langsung', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-                          ],
-                        ),
+                      : _isScanningAi
+                          ? const Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  CircularProgressIndicator(color: AppColors.primaryGreen),
+                                  SizedBox(height: 12),
+                                  Text(
+                                    'Memproses bukti foto...',
+                                    style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.bold, fontSize: 13),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : const Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.camera_alt_rounded, size: 48, color: AppColors.primaryGreen),
+                                SizedBox(height: 8),
+                                Text('Ambil Foto Bukti Timbangan Fisik', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryGreen)),
+                                SizedBox(height: 4),
+                                Text('Foto timbangan & sampah terpilah sebagai bukti audit', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                              ],
+                            ),
                 ),
               ),
             ],
@@ -734,10 +1050,17 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
                           children: [
                             Icon(Icons.camera_alt_rounded, size: 12, color: AppColors.warningOrange),
                             SizedBox(width: 4),
-                            Text('+10', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.warningOrange)),
+                            Text(
+                              '+10',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.warningOrange,
+                              ),
+                            ),
                           ],
                         ),
-                      )
+                      ),
                   ],
                 ),
               ),
@@ -749,16 +1072,34 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
                 child: ElevatedButton.icon(
                   onPressed: _canSubmit ? _submitLog : null,
                   icon: _isSubmitting
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : const Icon(Icons.check_circle_rounded, color: Colors.white),
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Icon(
+                          Icons.check_circle_rounded,
+                          color: Colors.white,
+                        ),
                   label: Text(
-                    _isSubmitting ? 'Mengirim Data...' : 'Simpan Timbangan Pemilahan',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white),
+                    _isSubmitting
+                        ? 'Mengirim Data...'
+                        : 'Simpan Timbangan Pemilahan',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                      color: Colors.white,
+                    ),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryGreen,
                     disabledBackgroundColor: Colors.grey[300],
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                 ),
               ),
@@ -767,7 +1108,6 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
         ),
       ),
     ),
-    );
-  }
+  );
 }
-
+}

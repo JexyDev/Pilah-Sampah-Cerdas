@@ -44,23 +44,25 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
   }
 
   List<Widget> _getScreens(UserRole role) => [
-    role == UserRole.mahasiswaKkn 
-        ? const MahasiswaView() 
-        : (role == UserRole.petugasPemilahan 
-            ? const PetugasPemilahanDashboardView() 
-            : BerandaView(onNavigateToHistory: () => _onTabTap(1))),
-    role == UserRole.mahasiswaKkn 
-        ? const RiwayatKknView() 
-        : (role == UserRole.petugasPemilahan 
-            ? const RiwayatPetugasPemilahanView() 
-            : const RiwayatView()),
+    role == UserRole.mahasiswaKkn
+        ? const MahasiswaView()
+        : (role == UserRole.petugasPemilahan
+              ? const PetugasPemilahanDashboardView()
+              : BerandaView(onNavigateToHistory: () => _onTabTap(1))),
+    role == UserRole.mahasiswaKkn
+        ? const RiwayatKknView()
+        : (role == UserRole.petugasPemilahan
+              ? const RiwayatPetugasPemilahanView()
+              : const RiwayatView()),
     const SizedBox.shrink(),
-    role == UserRole.mahasiswaKkn 
-        ? const MahasiswaPoinView() 
-        : (role == UserRole.petugasPemilahan 
-            ? const PetugasPemilahanPoinView() 
-            : const PoinView()),
-    role == UserRole.petugasPemilahan ? const PetugasPemilahanProfilView() : const ProfilView(),
+    role == UserRole.mahasiswaKkn
+        ? const MahasiswaPoinView()
+        : (role == UserRole.petugasPemilahan
+              ? const PetugasPemilahanPoinView()
+              : const PoinView()),
+    role == UserRole.petugasPemilahan
+        ? const PetugasPemilahanProfilView()
+        : const ProfilView(),
   ];
 
   void _onTabTap(int index) {
@@ -76,7 +78,8 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
     // Dengarkan perubahan status koneksi untuk notifikasi "Internet kembali pulih"
     ref.listen<bool>(isOnlineProvider, (prev, next) {
       if (prev == false && next == true) {
-        ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Internet kembali pulih'),
             backgroundColor: AppColors.primaryGreen,
@@ -84,7 +87,8 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
           ),
         );
       } else if (prev == true && next == false) {
-        ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Anda sedang offline. Koneksi internet terputus.'),
             backgroundColor: AppColors.dangerRed,
@@ -106,24 +110,26 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
 
   Widget _buildMobileShell(bool isOnline, UserRole role) {
     final screens = _getScreens(role);
-    final bool showFab = role == UserRole.warga || role == UserRole.petugasPemilahan || role == UserRole.mahasiswaKkn;
+    final bool showFab =
+        role == UserRole.warga ||
+        role == UserRole.petugasPemilahan ||
+        role == UserRole.mahasiswaKkn;
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       resizeToAvoidBottomInset: false,
-      body: Column(
-        children: [
-
-          Expanded(child: screens[_selectedIndex]),
-        ],
-      ),
+      body: Column(children: [Expanded(child: screens[_selectedIndex])]),
       bottomNavigationBar: _buildBottomBar(role),
       floatingActionButton: showFab ? _buildFab(isOnline, role) : null,
-      floatingActionButtonLocation: showFab ? FloatingActionButtonLocation.centerDocked : null,
+      floatingActionButtonLocation: showFab
+          ? FloatingActionButtonLocation.centerDocked
+          : null,
     );
   }
 
   Widget _buildFab(bool isOnline, UserRole role) {
-    final fabColor = (role == UserRole.petugasPemilahan) ? AppColors.residuColor : AppColors.primaryGreen;
+    final fabColor = (role == UserRole.petugasPemilahan)
+        ? AppColors.residuColor
+        : AppColors.primaryGreen;
 
     return Container(
       width: 60,
@@ -151,14 +157,20 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
                   if (role == UserRole.petugasPemilahan) {
                     Navigator.pushNamed(context, AppRoutes.timbanganPemilahan);
                   } else if (role == UserRole.mahasiswaKkn) {
-                    Navigator.pushNamed(context, AppRoutes.monitoringWarga, arguments: 'aktivasi_bin');
+                    Navigator.pushNamed(
+                      context,
+                      AppRoutes.monitoringWarga,
+                      arguments: 'aktivasi_bin',
+                    );
                   } else {
                     ScanGuard.handleScanNavigation(context, ref);
                   }
                 }
               : null,
           child: Icon(
-            role == UserRole.petugasPemilahan ? Icons.scale_rounded : Icons.qr_code_scanner_rounded,
+            role == UserRole.petugasPemilahan
+                ? Icons.scale_rounded
+                : Icons.qr_code_scanner_rounded,
             color: Colors.white,
             size: 26,
           ),
@@ -188,10 +200,10 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   _navItem(
-                    0, 
-                    Icons.home_rounded, 
-                    Icons.home_outlined, 
-                    role == UserRole.petugasPemilahan ? 'Beranda' : 'Home'
+                    0,
+                    Icons.home_rounded,
+                    Icons.home_outlined,
+                    role == UserRole.petugasPemilahan ? 'Beranda' : 'Home',
                   ),
                   _navItem(
                     1,
@@ -209,11 +221,19 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
                 children: [
                   _navItem(
                     3,
-                    role == UserRole.petugasPemilahan ? Icons.monetization_on_rounded : null,
-                    role == UserRole.petugasPemilahan ? Icons.monetization_on_outlined : null,
+                    role == UserRole.petugasPemilahan
+                        ? Icons.monetization_on_rounded
+                        : null,
+                    role == UserRole.petugasPemilahan
+                        ? Icons.monetization_on_outlined
+                        : null,
                     'Poin', // Semua role dinamakan 'Poin'
-                    activeAsset: role == UserRole.petugasPemilahan ? null : 'assets/icons/medal_active.png',
-                    inactiveAsset: role == UserRole.petugasPemilahan ? null : 'assets/icons/medal.png',
+                    activeAsset: role == UserRole.petugasPemilahan
+                        ? null
+                        : 'assets/icons/medal_active.png',
+                    inactiveAsset: role == UserRole.petugasPemilahan
+                        ? null
+                        : 'assets/icons/medal.png',
                   ),
                   _navItem(
                     4,
@@ -230,7 +250,14 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
     );
   }
 
-  Widget _navItem(int index, IconData? active, IconData? inactive, String label, {String? activeAsset, String? inactiveAsset}) {
+  Widget _navItem(
+    int index,
+    IconData? active,
+    IconData? inactive,
+    String label, {
+    String? activeAsset,
+    String? inactiveAsset,
+  }) {
     final bool sel = _selectedIndex == index;
     return InkWell(
       onTap: () => _onTabTap(index),
@@ -276,7 +303,6 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
       resizeToAvoidBottomInset: false,
       body: Column(
         children: [
-
           Expanded(
             child: Row(
               children: [
@@ -369,8 +395,16 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
           label: Text('History'),
         ),
         NavigationRailDestination(
-          icon: Icon(role == UserRole.petugasPemilahan ? Icons.map_outlined : Icons.stars_outlined),
-          selectedIcon: Icon(role == UserRole.petugasPemilahan ? Icons.map_rounded : Icons.stars_rounded),
+          icon: Icon(
+            role == UserRole.petugasPemilahan
+                ? Icons.map_outlined
+                : Icons.stars_outlined,
+          ),
+          selectedIcon: Icon(
+            role == UserRole.petugasPemilahan
+                ? Icons.map_rounded
+                : Icons.stars_rounded,
+          ),
           label: Text(role == UserRole.petugasPemilahan ? 'Peta' : 'Poin'),
         ),
         const NavigationRailDestination(
@@ -382,6 +416,3 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
     );
   }
 }
-
-
-

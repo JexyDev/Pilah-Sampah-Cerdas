@@ -48,5 +48,7 @@ class NotificationException implements Exception {
   final String? message;
 
   @override
-  String toString() => message != null && message!.isNotEmpty ? message! : 'Gagal memuat notifikasi. Silakan coba beberapa saat lagi.';
+  String toString() => message != null && message!.isNotEmpty
+      ? message!
+      : 'Gagal memuat notifikasi. Silakan coba beberapa saat lagi.';
 }

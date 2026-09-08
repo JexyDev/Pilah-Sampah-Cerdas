@@ -10,16 +10,18 @@ import '../../auth/controllers/auth_controller.dart';
 
 import '../../../data/providers/repository_providers.dart';
 
-final pemanfaatanProgramKerjaListProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
-  final repo = ref.read(kknRepositoryProvider);
-  return repo.getProgramKerja();
-});
+final pemanfaatanProgramKerjaListProvider =
+    FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+      final repo = ref.read(kknRepositoryProvider);
+      return repo.getProgramKerja();
+    });
 
 class PemanfaatanSampahView extends ConsumerStatefulWidget {
   const PemanfaatanSampahView({super.key});
 
   @override
-  ConsumerState<PemanfaatanSampahView> createState() => _PemanfaatanSampahViewState();
+  ConsumerState<PemanfaatanSampahView> createState() =>
+      _PemanfaatanSampahViewState();
 }
 
 class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
@@ -59,7 +61,12 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
 
   final List<String> _unitList = ['Kg', 'Liter', 'Gram', 'Unit'];
   final List<String> _kategoriProkerList = ['FISIK', 'NON_FISIK', 'LAINNYA'];
-  final List<String> _sumberProkerList = ['MAHASISWA', 'WARGA', 'DPL', 'LAINNYA'];
+  final List<String> _sumberProkerList = [
+    'MAHASISWA',
+    'WARGA',
+    'DPL',
+    'LAINNYA',
+  ];
 
   Future<void> _pickImage(bool isPemanfaatan) async {
     final ImagePicker picker = ImagePicker();
@@ -73,12 +80,18 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.camera_alt, color: AppColors.primaryGreen),
+              leading: const Icon(
+                Icons.camera_alt,
+                color: AppColors.primaryGreen,
+              ),
               title: const Text('Kamera'),
               onTap: () => Navigator.pop(ctx, ImageSource.camera),
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library, color: AppColors.primaryGreen),
+              leading: const Icon(
+                Icons.photo_library,
+                color: AppColors.primaryGreen,
+              ),
               title: const Text('Galeri HP'),
               onTap: () => Navigator.pop(ctx, ImageSource.gallery),
             ),
@@ -110,10 +123,15 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
     final isPemanfaatan = _jenisLaporan == 'Pemanfaatan & Hasil';
     final formKey = isPemanfaatan ? _formKey1 : _formKey2;
     if (!formKey.currentState!.validate()) return;
-    
+
     if (_selectedProgramKerjaId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Anda harus memilih Program Kerja KKN terlebih dahulu!'), backgroundColor: AppColors.maroonRed),
+        const SnackBar(
+          content: Text(
+            'Anda harus memilih Program Kerja KKN terlebih dahulu!',
+          ),
+          backgroundColor: AppColors.maroonRed,
+        ),
       );
       return;
     }
@@ -123,17 +141,34 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
     final user = authState.user;
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('User tidak ditemukan. Silakan login ulang.'), backgroundColor: AppColors.maroonRed),
+        const SnackBar(
+          content: Text('User tidak ditemukan. Silakan login ulang.'),
+          backgroundColor: AppColors.maroonRed,
+        ),
       );
       return;
     }
     final req = PemanfaatanSampahRequest(
       jenisPemanfaatan: isPemanfaatan ? _selectedTeknologi : _kategoriProker,
-      kategoriSampah: isPemanfaatan ? _bahanBakuCtrl.text.trim() : _sumberProker,
-      jumlah: isPemanfaatan ? (double.tryParse(_volBahanBakuCtrl.text.trim().replaceAll('.', '')) ?? 0) : (double.tryParse(_kebutuhanBiayaCtrl.text.trim().replaceAll('.', '')) ?? 0),
+      kategoriSampah: isPemanfaatan
+          ? _bahanBakuCtrl.text.trim()
+          : _sumberProker,
+      jumlah: isPemanfaatan
+          ? (double.tryParse(
+                  _volBahanBakuCtrl.text.trim().replaceAll('.', ''),
+                ) ??
+                0)
+          : (double.tryParse(
+                  _kebutuhanBiayaCtrl.text.trim().replaceAll('.', ''),
+                ) ??
+                0),
       satuan: isPemanfaatan ? _unitBahanBaku : 'Rupiah',
-      wilayahDampingan: isPemanfaatan ? _programPemanfaatanCtrl.text.trim() : _judulProkerCtrl.text.trim(),
-      deskripsi: isPemanfaatan ? _catatanCtrl.text.trim() : _waktuPelaksanaanCtrl.text.trim(),
+      wilayahDampingan: isPemanfaatan
+          ? _programPemanfaatanCtrl.text.trim()
+          : _judulProkerCtrl.text.trim(),
+      deskripsi: isPemanfaatan
+          ? _catatanCtrl.text.trim()
+          : _waktuPelaksanaanCtrl.text.trim(),
       programKerjaId: _selectedProgramKerjaId,
       fotoPath: isPemanfaatan ? _selectedImage1?.path : _selectedImage2?.path,
     );
@@ -142,7 +177,10 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
 
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Laporan berhasil dikirim!'), backgroundColor: AppColors.primaryGreen),
+        const SnackBar(
+          content: Text('Laporan berhasil dikirim!'),
+          backgroundColor: AppColors.primaryGreen,
+        ),
       );
       Navigator.pop(context);
     }
@@ -155,18 +193,18 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
     bool hasUnsavedChanges() {
       if (_jenisLaporan == 'Pemanfaatan & Hasil') {
         return _programPemanfaatanCtrl.text.isNotEmpty ||
-               _bahanBakuCtrl.text.isNotEmpty ||
-               _volBahanBakuCtrl.text.isNotEmpty ||
-               _hasilCtrl.text.isNotEmpty ||
-               _catatanCtrl.text.isNotEmpty ||
-               _selectedImage1 != null;
+            _bahanBakuCtrl.text.isNotEmpty ||
+            _volBahanBakuCtrl.text.isNotEmpty ||
+            _hasilCtrl.text.isNotEmpty ||
+            _catatanCtrl.text.isNotEmpty ||
+            _selectedImage1 != null;
       } else {
         return _nomorProkerCtrl.text.isNotEmpty ||
-               _judulProkerCtrl.text.isNotEmpty ||
-               _waktuPelaksanaanCtrl.text.isNotEmpty ||
-               _linkGdriveCtrl.text.isNotEmpty ||
-               _kebutuhanBiayaCtrl.text.isNotEmpty ||
-               _selectedImage2 != null;
+            _judulProkerCtrl.text.isNotEmpty ||
+            _waktuPelaksanaanCtrl.text.isNotEmpty ||
+            _linkGdriveCtrl.text.isNotEmpty ||
+            _kebutuhanBiayaCtrl.text.isNotEmpty ||
+            _selectedImage2 != null;
       }
     }
 
@@ -174,7 +212,7 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
-        
+
         if (!hasUnsavedChanges()) {
           if (context.mounted) Navigator.pop(context);
           return;
@@ -184,13 +222,23 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
           context: context,
           builder: (context) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: const Text('Batalkan Laporan?', style: TextStyle(fontWeight: FontWeight.bold)),
-              content: const Text('Perubahan ini akan terhapus jika Anda keluar dari halaman ini.'),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: const Text(
+                'Batalkan Laporan?',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              content: const Text(
+                'Perubahan ini akan terhapus jika Anda keluar dari halaman ini.',
+              ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Lanjutkan Edit', style: TextStyle(color: AppColors.textSecondary)),
+                  child: const Text(
+                    'Lanjutkan Edit',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
@@ -210,114 +258,162 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
         }
       },
       child: Scaffold(
-      backgroundColor: AppColors.backgroundCanvas,
-      appBar: AppBar(
-        title: const Text(
-          'Laporan Mahasiswa',
-          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18, color: AppColors.textPrimary),
-        ),
-        backgroundColor: Colors.white,
-        foregroundColor: AppColors.textPrimary,
-        elevation: 0.5,
-      ),
-      body: Column(
-        children: [
-          Container(
-            color: Colors.white,
-            width: double.infinity,
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                DropdownButtonFormField<String>(
-                  initialValue: _jenisLaporan,
-                  decoration: InputDecoration(
-                    labelText: 'Pilih Jenis Laporan',
-                    labelStyle: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.primaryGreen),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.primaryGreen, width: 1.5),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 'Laporan Ide Program', child: Text('Laporan Ide Program')),
-                    DropdownMenuItem(value: 'Pemanfaatan & Hasil', child: Text('Pemanfaatan & Hasil')),
-                  ],
-                  onChanged: (val) {
-                    if (val != null) setState(() => _jenisLaporan = val);
-                  },
-                ),
-                const SizedBox(height: 16),
-                
-                // Dropdown Pilih Program Kerja
-                prokerState.when(
-                  data: (prokers) {
-                    if (prokers.isEmpty) return const SizedBox.shrink();
-                    return DropdownButtonFormField<String>(
-                      isExpanded: true,
-                      initialValue: _selectedProgramKerjaId,
-                      decoration: InputDecoration(
-                        labelText: 'Program Kerja KKN Terkait',
-                        labelStyle: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      ),
-                      hint: const Text('Wajib - Pilih Program Kerja', style: TextStyle(fontSize: 14)),
-                      items: prokers.map((p) {
-                        return DropdownMenuItem<String>(
-                          value: p['id'].toString(),
-                          child: Text(
-                            p['deskripsi']?.toString() ?? 'Program',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 14),
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (val) => setState(() => _selectedProgramKerjaId = val),
-                    );
-                  },
-                  loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (_, __) => const SizedBox.shrink(),
-                ),
-              ],
+        backgroundColor: AppColors.backgroundCanvas,
+        appBar: AppBar(
+          title: const Text(
+            'Laporan Mahasiswa',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 18,
+              color: AppColors.textPrimary,
             ),
           ),
-          Expanded(
-            child: SingleChildScrollView(
+          backgroundColor: Colors.white,
+          foregroundColor: AppColors.textPrimary,
+          elevation: 0.5,
+        ),
+        body: Column(
+          children: [
+            Container(
+              color: Colors.white,
+              width: double.infinity,
               padding: const EdgeInsets.all(16.0),
-              child: _jenisLaporan == 'Pemanfaatan & Hasil' ? _buildFormPemanfaatan() : _buildFormIdeProgram(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  DropdownButtonFormField<String>(
+                    initialValue: _jenisLaporan,
+                    decoration: InputDecoration(
+                      labelText: 'Pilih Jenis Laporan',
+                      labelStyle: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primaryGreen,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: AppColors.primaryGreen,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: AppColors.primaryGreen,
+                          width: 1.5,
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'Laporan Ide Program',
+                        child: Text('Laporan Ide Program'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'Pemanfaatan & Hasil',
+                        child: Text('Pemanfaatan & Hasil'),
+                      ),
+                    ],
+                    onChanged: (val) {
+                      if (val != null) setState(() => _jenisLaporan = val);
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Dropdown Pilih Program Kerja
+                  prokerState.when(
+                    data: (prokers) {
+                      if (prokers.isEmpty) return const SizedBox.shrink();
+                      return DropdownButtonFormField<String>(
+                        isExpanded: true,
+                        initialValue: _selectedProgramKerjaId,
+                        decoration: InputDecoration(
+                          labelText: 'Program Kerja KKN Terkait',
+                          labelStyle: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primaryGreen,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                        ),
+                        hint: const Text(
+                          'Wajib - Pilih Program Kerja',
+                          style: TextStyle(fontSize: 14),
+                        ),
+                        items: prokers.map((p) {
+                          return DropdownMenuItem<String>(
+                            value: p['id'].toString(),
+                            child: Text(
+                              p['deskripsi']?.toString() ?? 'Program',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (val) =>
+                            setState(() => _selectedProgramKerjaId = val),
+                      );
+                    },
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    error: (_, __) => const SizedBox.shrink(),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: ElevatedButton(
-            onPressed: state.isLoading ? null : _onSubmit,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryGreen,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              elevation: 0,
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16.0),
+                child: _jenisLaporan == 'Pemanfaatan & Hasil'
+                    ? _buildFormPemanfaatan()
+                    : _buildFormIdeProgram(),
+              ),
             ),
-            child: state.isLoading
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
-                  )
-                : const Text('Kirim Laporan', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white)),
+          ],
+        ),
+        bottomNavigationBar: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: ElevatedButton(
+              onPressed: state.isLoading ? null : _onSubmit,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryGreen,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: state.isLoading
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2.5,
+                      ),
+                    )
+                  : const Text(
+                      'Kirim Laporan',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+            ),
           ),
         ),
       ),
-    ),
     );
   }
 
@@ -327,7 +423,14 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Program Pemanfaatan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary)),
+          const Text(
+            'Program Pemanfaatan',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+              color: AppColors.textPrimary,
+            ),
+          ),
           const SizedBox(height: 6),
           TextFormField(
             controller: _programPemanfaatanCtrl,
@@ -335,14 +438,27 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
               hintText: 'Contoh: Maggotisasi / Komposter',
               filled: true,
               fillColor: Colors.white,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
             ),
             validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
           ),
           const SizedBox(height: 16),
-          
-          const Text('Metode / Kategori Pengolahan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary)),
+
+          const Text(
+            'Metode / Kategori Pengolahan',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+              color: AppColors.textPrimary,
+            ),
+          ),
           const SizedBox(height: 6),
           DropdownButtonFormField<String>(
             initialValue: _selectedTeknologi,
@@ -350,15 +466,35 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
             decoration: InputDecoration(
               filled: true,
               fillColor: Colors.white,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
             ),
-            items: _teknologiList.map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(fontSize: 13)))).toList(),
+            items: _teknologiList
+                .map(
+                  (e) => DropdownMenuItem(
+                    value: e,
+                    child: Text(e, style: const TextStyle(fontSize: 13)),
+                  ),
+                )
+                .toList(),
             onChanged: (v) => setState(() => _selectedTeknologi = v!),
           ),
           const SizedBox(height: 16),
 
-          const Text('Bahan Baku Utama', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary)),
+          const Text(
+            'Bahan Baku Utama',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+              color: AppColors.textPrimary,
+            ),
+          ),
           const SizedBox(height: 6),
           TextFormField(
             controller: _bahanBakuCtrl,
@@ -366,8 +502,14 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
               hintText: 'Contoh: Sampah Sayur / Buah',
               filled: true,
               fillColor: Colors.white,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
             ),
             validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
           ),
@@ -381,7 +523,14 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Vol. Bahan Baku', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary)),
+                    const Text(
+                      'Vol. Bahan Baku',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
                     const SizedBox(height: 6),
                     TextFormField(
                       controller: _volBahanBakuCtrl,
@@ -391,8 +540,14 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
                         hintText: '0',
                         filled: true,
                         fillColor: Colors.white,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
                       ),
                       validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
                     ),
@@ -405,18 +560,38 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Unit', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary)),
+                    const Text(
+                      'Unit',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
                       initialValue: _unitBahanBaku,
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: Colors.white,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 14,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
                       ),
-                      items: _unitList.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                      items: _unitList
+                          .map(
+                            (e) => DropdownMenuItem(value: e, child: Text(e)),
+                          )
+                          .toList(),
                       onChanged: (v) => setState(() => _unitBahanBaku = v!),
                     ),
                   ],
@@ -434,7 +609,14 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Total Hasil / Output', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary)),
+                    const Text(
+                      'Total Hasil / Output',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
                     const SizedBox(height: 6),
                     TextFormField(
                       controller: _hasilCtrl,
@@ -444,8 +626,14 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
                         hintText: '0',
                         filled: true,
                         fillColor: Colors.white,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
                       ),
                       validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
                     ),
@@ -458,18 +646,38 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Unit Hasil', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary)),
+                    const Text(
+                      'Unit Hasil',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
                       initialValue: _unitHasil,
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: Colors.white,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 14,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
                       ),
-                      items: _unitList.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                      items: _unitList
+                          .map(
+                            (e) => DropdownMenuItem(value: e, child: Text(e)),
+                          )
+                          .toList(),
                       onChanged: (v) => setState(() => _unitHasil = v!),
                     ),
                   ],
@@ -479,7 +687,14 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
           ),
           const SizedBox(height: 16),
 
-          const Text('Catatan Tambahan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary)),
+          const Text(
+            'Catatan Tambahan',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+              color: AppColors.textPrimary,
+            ),
+          ),
           const SizedBox(height: 6),
           TextFormField(
             controller: _catatanCtrl,
@@ -488,8 +703,14 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
               hintText: 'Opsional',
               filled: true,
               fillColor: Colors.white,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
             ),
           ),
           const SizedBox(height: 24),
@@ -504,7 +725,14 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Nomor Proker (Opsional)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary)),
+          const Text(
+            'Nomor Proker (Opsional)',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+              color: AppColors.textPrimary,
+            ),
+          ),
           const SizedBox(height: 6),
           TextFormField(
             controller: _nomorProkerCtrl,
@@ -513,13 +741,26 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
               hintText: 'Contoh: 1',
               filled: true,
               fillColor: Colors.white,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
             ),
           ),
           const SizedBox(height: 16),
 
-          const Text('Judul / Deskripsi Ide Program', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary)),
+          const Text(
+            'Judul / Deskripsi Ide Program',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+              color: AppColors.textPrimary,
+            ),
+          ),
           const SizedBox(height: 6),
           TextFormField(
             controller: _judulProkerCtrl,
@@ -528,8 +769,14 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
               hintText: 'Jelaskan ide program kerja secara singkat',
               filled: true,
               fillColor: Colors.white,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
             ),
             validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
           ),
@@ -542,18 +789,38 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Kategori', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary)),
+                    const Text(
+                      'Kategori',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
                       initialValue: _kategoriProker,
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: Colors.white,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 14,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
                       ),
-                      items: _kategoriProkerList.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                      items: _kategoriProkerList
+                          .map(
+                            (e) => DropdownMenuItem(value: e, child: Text(e)),
+                          )
+                          .toList(),
                       onChanged: (v) => setState(() => _kategoriProker = v!),
                     ),
                   ],
@@ -564,18 +831,38 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Sumber', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary)),
+                    const Text(
+                      'Sumber',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
                       initialValue: _sumberProker,
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: Colors.white,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 14,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
                       ),
-                      items: _sumberProkerList.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                      items: _sumberProkerList
+                          .map(
+                            (e) => DropdownMenuItem(value: e, child: Text(e)),
+                          )
+                          .toList(),
                       onChanged: (v) => setState(() => _sumberProker = v!),
                     ),
                   ],
@@ -585,7 +872,14 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
           ),
           const SizedBox(height: 16),
 
-          const Text('Waktu Pelaksanaan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary)),
+          const Text(
+            'Waktu Pelaksanaan',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+              color: AppColors.textPrimary,
+            ),
+          ),
           const SizedBox(height: 6),
           TextFormField(
             controller: _waktuPelaksanaanCtrl,
@@ -593,14 +887,27 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
               hintText: 'Contoh: Agustus 2026',
               filled: true,
               fillColor: Colors.white,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
             ),
             validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
           ),
           const SizedBox(height: 16),
 
-          const Text('Kebutuhan Biaya (Rp)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary)),
+          const Text(
+            'Kebutuhan Biaya (Rp)',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+              color: AppColors.textPrimary,
+            ),
+          ),
           const SizedBox(height: 6),
           TextFormField(
             controller: _kebutuhanBiayaCtrl,
@@ -611,13 +918,26 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
               prefixText: 'Rp ',
               filled: true,
               fillColor: Colors.white,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
             ),
           ),
           const SizedBox(height: 16),
 
-          const Text('Link Google Drive Laporan / Bukti', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary)),
+          const Text(
+            'Link Google Drive Laporan / Bukti',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+              color: AppColors.textPrimary,
+            ),
+          ),
           const SizedBox(height: 6),
           TextFormField(
             controller: _linkGdriveCtrl,
@@ -626,13 +946,26 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
               hintText: 'https://drive.google.com/...',
               filled: true,
               fillColor: Colors.white,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
             ),
           ),
           const SizedBox(height: 24),
-          
-          const Text('Foto Thumbnail (Opsional)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary)),
+
+          const Text(
+            'Foto Thumbnail (Opsional)',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+              color: AppColors.textPrimary,
+            ),
+          ),
           const SizedBox(height: 8),
           _buildImagePicker(false),
         ],
@@ -652,19 +985,23 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.grey.shade300),
           image: imageFile != null
-              ? DecorationImage(
-                  image: FileImage(imageFile),
-                  fit: BoxFit.cover,
-                )
+              ? DecorationImage(image: FileImage(imageFile), fit: BoxFit.cover)
               : null,
         ),
         child: imageFile == null
             ? Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.add_a_photo_rounded, size: 40, color: Colors.grey.shade400),
+                  Icon(
+                    Icons.add_a_photo_rounded,
+                    size: 40,
+                    color: Colors.grey.shade400,
+                  ),
                   const SizedBox(height: 8),
-                  Text('Ketuk untuk unggah foto', style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
+                  Text(
+                    'Ketuk untuk unggah foto',
+                    style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+                  ),
                 ],
               )
             : Align(
@@ -676,7 +1013,11 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
                     radius: 16,
                     child: IconButton(
                       padding: EdgeInsets.zero,
-                      icon: const Icon(Icons.close, color: Colors.white, size: 16),
+                      icon: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 16,
+                      ),
                       onPressed: () => setState(() {
                         if (isPemanfaatan) {
                           _selectedImage1 = null;

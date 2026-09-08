@@ -45,8 +45,11 @@ class _InlineCameraWidgetState extends State<InlineCameraWidget>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final CameraController? cameraController = _controller;
-    if (state == AppLifecycleState.inactive || state == AppLifecycleState.paused) {
-      if (cameraController != null && cameraController.value.isInitialized && !_isInitializing) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused) {
+      if (cameraController != null &&
+          cameraController.value.isInitialized &&
+          !_isInitializing) {
         try {
           cameraController.dispose();
         } catch (_) {}
@@ -127,7 +130,9 @@ class _InlineCameraWidgetState extends State<InlineCameraWidget>
       );
       if (_cameras.isEmpty) {
         if (mounted) {
-          setState(() => _errorMessage = 'Tidak ada kamera aktif yang terdeteksi.');
+          setState(
+            () => _errorMessage = 'Tidak ada kamera aktif yang terdeteksi.',
+          );
         }
         _isInitializing = false;
         return;
@@ -153,15 +158,13 @@ class _InlineCameraWidgetState extends State<InlineCameraWidget>
       try {
         await ctrl.initialize().timeout(const Duration(seconds: 4));
       } catch (initErr) {
-        debugPrint('[InlineCameraWidget] Max preset failed or timed out ($initErr), trying high preset...');
+        debugPrint(
+          '[InlineCameraWidget] Max preset failed or timed out ($initErr), trying high preset...',
+        );
         try {
           await ctrl.dispose();
         } catch (_) {}
-        ctrl = CameraController(
-          cam,
-          ResolutionPreset.high,
-          enableAudio: false,
-        );
+        ctrl = CameraController(cam, ResolutionPreset.high, enableAudio: false);
         await ctrl.initialize().timeout(const Duration(seconds: 4));
       }
 
@@ -207,11 +210,11 @@ class _InlineCameraWidgetState extends State<InlineCameraWidget>
         });
         widget.onImageCaptured(photo.path, sizeKB);
       }
-
     } catch (e) {
       if (mounted) {
         setState(() => _isCapturing = false);
-        ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Gagal mengambil foto: $e'),
             backgroundColor: AppColors.dangerRed,
@@ -246,7 +249,8 @@ class _InlineCameraWidgetState extends State<InlineCameraWidget>
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Gagal membuka galeri: $e'),
             backgroundColor: AppColors.dangerRed,
@@ -305,7 +309,7 @@ class _InlineCameraWidgetState extends State<InlineCameraWidget>
               final previewSize = _controller!.value.previewSize;
               final double sensorWidth = previewSize?.height ?? 1080;
               final double sensorHeight = previewSize?.width ?? 1920;
-              
+
               return ClipRect(
                 child: SizedBox(
                   width: constraints.maxWidth,
@@ -538,7 +542,9 @@ class _InlineCameraWidgetState extends State<InlineCameraWidget>
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                permanent ? Icons.lock_outline_rounded : Icons.camera_alt_outlined,
+                permanent
+                    ? Icons.lock_outline_rounded
+                    : Icons.camera_alt_outlined,
                 color: permanent ? AppColors.warningYellow : Colors.white38,
                 size: 44,
               ),
@@ -667,4 +673,3 @@ class _ControlButton extends StatelessWidget {
     );
   }
 }
-

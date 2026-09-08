@@ -1,3 +1,4 @@
+import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
 class GroupZoneData {
@@ -105,6 +106,54 @@ class AutoZoneData {
   }
 }
 
+class ZoneStatus {
+  final bool isInZone;
+  final PoskoItem? nearestPosko;
+  final double distanceMeter;
+
+  ZoneStatus({
+    required this.isInZone,
+    this.nearestPosko,
+    required this.distanceMeter,
+  });
+}
+
+ZoneStatus checkStudentInGroupZones(
+    double lat, double lng, List<PoskoItem> poskoList) {
+  if (poskoList.isEmpty) {
+    return ZoneStatus(
+        isInZone: false, nearestPosko: null, distanceMeter: -1);
+  }
+
+  bool isInZone = false;
+  PoskoItem? nearest;
+  double minDistance = double.infinity;
+
+  // Toleransi GPS + Radius bawaan posko
+  const double gpsTolerance = 100.0;
+
+  for (var posko in poskoList) {
+    double dist = Geolocator.distanceBetween(
+        lat, lng, posko.latitude, posko.longitude);
+    
+    if (dist < minDistance) {
+      minDistance = dist;
+      nearest = posko;
+    }
+
+    if (dist <= (posko.radius + gpsTolerance)) {
+      isInZone = true;
+    }
+  }
+
+  return ZoneStatus(
+    isInZone: isInZone,
+    nearestPosko: nearest,
+    distanceMeter: minDistance,
+  );
+}
+
+
 class SmartZoneStatus {
   final bool isInsideAnyZone;
   final String? matchedPosko;
@@ -136,3 +185,39 @@ class SmartZoneStatus {
     );
   }
 }
+
+/// Model untuk item zona valid dari backend (Multi-Geofence Update KKN 2026)
+class ValidZoneItem {
+  final String id;
+  final String nama;
+  final double latitude;
+  final double longitude;
+  final double radius;
+
+  ValidZoneItem({
+    required this.id,
+    required this.nama,
+    required this.latitude,
+    required this.longitude,
+    required this.radius,
+  });
+
+  factory ValidZoneItem.fromJson(Map<String, dynamic> json) {
+    return ValidZoneItem(
+      id: (json['id'] ?? '').toString(),
+      nama: (json['nama'] ?? json['name'] ?? 'Posko KKN').toString(),
+      latitude: (json['latitude'] as num?)?.toDouble() ?? 0.0,
+      longitude: (json['longitude'] as num?)?.toDouble() ?? 0.0,
+      radius: (json['radius'] as num?)?.toDouble() ?? 100.0,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'nama': nama,
+        'latitude': latitude,
+        'longitude': longitude,
+        'radius': radius,
+      };
+}
+

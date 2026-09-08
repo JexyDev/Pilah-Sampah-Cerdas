@@ -6,7 +6,9 @@ import '../../../core/values/app_colors.dart';
 import '../../../core/utils/thousands_formatter.dart';
 import '../../../data/providers/repository_providers.dart';
 
-final unharvestedLogbooksProvider = FutureProvider.autoDispose<List<dynamic>>((ref) async {
+final unharvestedLogbooksProvider = FutureProvider.autoDispose<List<dynamic>>((
+  ref,
+) async {
   final repo = ref.watch(kknRepositoryProvider);
   return repo.getUnharvestedLogbooks();
 });
@@ -37,22 +39,34 @@ class _CatatPanenViewState extends ConsumerState<CatatPanenView> {
           child: Wrap(
             children: [
               ListTile(
-                leading: const Icon(Icons.camera_alt_rounded, color: AppColors.primaryGreen),
+                leading: const Icon(
+                  Icons.camera_alt_rounded,
+                  color: AppColors.primaryGreen,
+                ),
                 title: const Text('Ambil dari Kamera'),
                 onTap: () async {
                   Navigator.pop(context);
-                  final picked = await ImagePicker().pickImage(source: ImageSource.camera, imageQuality: 70);
+                  final picked = await ImagePicker().pickImage(
+                    source: ImageSource.camera,
+                    imageQuality: 70,
+                  );
                   if (picked != null) {
                     setState(() => _selectedImage = File(picked.path));
                   }
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.photo_library_rounded, color: AppColors.primaryGreen),
+                leading: const Icon(
+                  Icons.photo_library_rounded,
+                  color: AppColors.primaryGreen,
+                ),
                 title: const Text('Pilih dari Galeri'),
                 onTap: () async {
                   Navigator.pop(context);
-                  final picked = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 70);
+                  final picked = await ImagePicker().pickImage(
+                    source: ImageSource.gallery,
+                    imageQuality: 70,
+                  );
                   if (picked != null) {
                     setState(() => _selectedImage = File(picked.path));
                   }
@@ -68,30 +82,44 @@ class _CatatPanenViewState extends ConsumerState<CatatPanenView> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedPemanfaatanId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pilih Laporan Kegiatan terlebih dahulu.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Pilih Laporan Kegiatan terlebih dahulu.'),
+        ),
+      );
       return;
     }
-    
+
     setState(() => _isLoading = true);
     try {
       final repo = ref.read(kknRepositoryProvider);
       await repo.submitPanenHasil({
         'pemanfaatanId': _selectedPemanfaatanId,
-        'beratOutputKg': double.tryParse(_beratOutputCtrl.text.trim().replaceAll('.', '')) ?? 0,
-        'nilaiEkonomiRp': double.tryParse(_nilaiEkonomiCtrl.text.trim().replaceAll('.', '')) ?? 0,
+        'beratOutputKg':
+            double.tryParse(_beratOutputCtrl.text.trim().replaceAll('.', '')) ??
+            0,
+        'nilaiEkonomiRp':
+            double.tryParse(
+              _nilaiEkonomiCtrl.text.trim().replaceAll('.', ''),
+            ) ??
+            0,
       }, imagePath: _selectedImage?.path);
-      
+
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Berhasil mencatat hasil!')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Berhasil mencatat hasil!')),
+        );
         ref.invalidate(unharvestedLogbooksProvider);
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(e.toString()),
-          backgroundColor: AppColors.dangerRed,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: AppColors.dangerRed,
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -104,16 +132,16 @@ class _CatatPanenViewState extends ConsumerState<CatatPanenView> {
 
     bool hasUnsavedChanges() {
       return _selectedPemanfaatanId != null ||
-             _beratOutputCtrl.text.isNotEmpty ||
-             _nilaiEkonomiCtrl.text.isNotEmpty ||
-             _selectedImage != null;
+          _beratOutputCtrl.text.isNotEmpty ||
+          _nilaiEkonomiCtrl.text.isNotEmpty ||
+          _selectedImage != null;
     }
 
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
-        
+
         if (!hasUnsavedChanges()) {
           if (context.mounted) Navigator.pop(context);
           return;
@@ -123,13 +151,23 @@ class _CatatPanenViewState extends ConsumerState<CatatPanenView> {
           context: context,
           builder: (context) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: const Text('Batalkan Catat Hasil?', style: TextStyle(fontWeight: FontWeight.bold)),
-              content: const Text('Perubahan ini akan terhapus jika Anda keluar dari halaman ini.'),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: const Text(
+                'Batalkan Catat Hasil?',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              content: const Text(
+                'Perubahan ini akan terhapus jika Anda keluar dari halaman ini.',
+              ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Lanjutkan Edit', style: TextStyle(color: AppColors.textSecondary)),
+                  child: const Text(
+                    'Lanjutkan Edit',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
@@ -149,198 +187,292 @@ class _CatatPanenViewState extends ConsumerState<CatatPanenView> {
         }
       },
       child: Scaffold(
-      appBar: AppBar(
-        title: const Text('Catat Hasil', style: TextStyle(fontSize: 18)),
-        backgroundColor: Colors.white,
-        foregroundColor: AppColors.textPrimary,
-        elevation: 0,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(color: AppColors.border, height: 1),
+        appBar: AppBar(
+          title: const Text('Catat Hasil', style: TextStyle(fontSize: 18)),
+          backgroundColor: Colors.white,
+          foregroundColor: AppColors.textPrimary,
+          elevation: 0,
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(1),
+            child: Container(color: AppColors.border, height: 1),
+          ),
         ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildHeaderBanner(),
-              const SizedBox(height: 16),
-              
-              _buildSectionCard(
-                title: 'Sumber Hasil',
-                icon: Icons.list_alt_rounded,
-                children: [
-                  const Text('Pilih Laporan (Sumber Hasil)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                  const SizedBox(height: 8),
-                  unharvestedState.when(
-                    loading: () => const Center(child: CircularProgressIndicator()),
-                    error: (e, _) => Text(e.toString()),
-                    data: (list) {
-                      if (list.isEmpty) {
-                        return const Text('Tidak ada laporan kegiatan yang belum dicatat hasilnya.', style: TextStyle(color: AppColors.dangerRed));
-                      }
-                      return _buildBottomSheetDropdown(
-                        hint: 'Pilih Laporan...',
-                        title: 'Pilih Laporan Kegiatan',
-                        selectedValue: _selectedPemanfaatanId,
-                        items: list.map((p) => {
-                          'id': p['id'].toString(),
-                          'label': "${p['program'] ?? ''} - ${p['teknologi'] ?? ''}",
-                          'icon': Icons.assignment_rounded,
-                        }).toList(),
-                        onSelected: (val) => setState(() => _selectedPemanfaatanId = val),
-                      );
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildHeaderBanner(),
+                const SizedBox(height: 16),
 
-              _buildSectionCard(
-                title: 'Data Hasil',
-                icon: Icons.eco_rounded,
-                children: [
-                  const Text('Berat Hasil Jadi (Output)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _beratOutputCtrl,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [ThousandsFormatter()],
-                    decoration: InputDecoration(
-                      filled: true,
-                      fillColor: Colors.white,
-                      hintText: 'Contoh: 5',
-                      suffixText: 'Kg',
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primaryGreen, width: 1.5)),
+                _buildSectionCard(
+                  title: 'Sumber Hasil',
+                  icon: Icons.list_alt_rounded,
+                  children: [
+                    const Text(
+                      'Pilih Laporan (Sumber Hasil)',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
                     ),
-                    validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  const Text('Estimasi Nilai Ekonomi (Rp)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _nilaiEkonomiCtrl,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [ThousandsFormatter()],
-                    decoration: InputDecoration(
-                      filled: true,
-                      fillColor: Colors.white,
-                      hintText: 'Contoh: 50.000',
-                      prefixText: 'Rp ',
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primaryGreen, width: 1.5)),
+                    const SizedBox(height: 8),
+                    unharvestedState.when(
+                      loading: () =>
+                          const Center(child: CircularProgressIndicator()),
+                      error: (e, _) => Text(e.toString()),
+                      data: (list) {
+                        if (list.isEmpty) {
+                          return const Text(
+                            'Tidak ada laporan kegiatan yang belum dicatat hasilnya.',
+                            style: TextStyle(color: AppColors.dangerRed),
+                          );
+                        }
+                        return _buildBottomSheetDropdown(
+                          hint: 'Pilih Laporan...',
+                          title: 'Pilih Laporan Kegiatan',
+                          selectedValue: _selectedPemanfaatanId,
+                          items: list
+                              .map(
+                                (p) => {
+                                  'id': p['id'].toString(),
+                                  'label':
+                                      "${p['program'] ?? ''} - ${p['teknologi'] ?? ''}",
+                                  'icon': Icons.assignment_rounded,
+                                },
+                              )
+                              .toList(),
+                          onSelected: (val) =>
+                              setState(() => _selectedPemanfaatanId = val),
+                        );
+                      },
                     ),
-                    validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
+                  ],
+                ),
+                const SizedBox(height: 16),
 
-              _buildSectionCard(
-                title: 'Foto Bukti',
-                icon: Icons.camera_alt_rounded,
-                children: [
-                  const Text('Foto Hasil', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                  const SizedBox(height: 8),
-                  InkWell(
-                    onTap: _showPhotoPicker,
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      height: 160,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[50],
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: _selectedImage == null ? Colors.grey[300]! : AppColors.primaryGreen,
-                          width: _selectedImage == null ? 1 : 2,
+                _buildSectionCard(
+                  title: 'Data Hasil',
+                  icon: Icons.eco_rounded,
+                  children: [
+                    const Text(
+                      'Berat Hasil Jadi (Output)',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _beratOutputCtrl,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [ThousandsFormatter()],
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.white,
+                        hintText: 'Contoh: 5',
+                        suffixText: 'Kg',
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: AppColors.primaryGreen,
+                            width: 1.5,
+                          ),
                         ),
                       ),
-                      child: _selectedImage != null
-                          ? ClipRRect(
-                              borderRadius: BorderRadius.circular(10),
-                              child: Stack(
-                                fit: StackFit.expand,
-                                children: [
-                                  Image.file(_selectedImage!, fit: BoxFit.cover),
-                                  Positioned(
-                                    right: 8,
-                                    top: 8,
-                                    child: Container(
-                                      padding: const EdgeInsets.all(6),
-                                      decoration: const BoxDecoration(
-                                        color: Colors.black54,
-                                        shape: BoxShape.circle,
+                      validator: (val) =>
+                          val == null || val.isEmpty ? 'Wajib diisi' : null,
+                    ),
+                    const SizedBox(height: 16),
+
+                    const Text(
+                      'Estimasi Nilai Ekonomi (Rp)',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _nilaiEkonomiCtrl,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [ThousandsFormatter()],
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.white,
+                        hintText: 'Contoh: 50.000',
+                        prefixText: 'Rp ',
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: AppColors.primaryGreen,
+                            width: 1.5,
+                          ),
+                        ),
+                      ),
+                      validator: (val) =>
+                          val == null || val.isEmpty ? 'Wajib diisi' : null,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                _buildSectionCard(
+                  title: 'Foto Bukti',
+                  icon: Icons.camera_alt_rounded,
+                  children: [
+                    const Text(
+                      'Foto Hasil',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    InkWell(
+                      onTap: _showPhotoPicker,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        height: 160,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: _selectedImage == null
+                                ? Colors.grey[300]!
+                                : AppColors.primaryGreen,
+                            width: _selectedImage == null ? 1 : 2,
+                          ),
+                        ),
+                        child: _selectedImage != null
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: Stack(
+                                  fit: StackFit.expand,
+                                  children: [
+                                    Image.file(
+                                      _selectedImage!,
+                                      fit: BoxFit.cover,
+                                    ),
+                                    Positioned(
+                                      right: 8,
+                                      top: 8,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: const BoxDecoration(
+                                          color: Colors.black54,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(
+                                          Icons.edit,
+                                          color: Colors.white,
+                                          size: 16,
+                                        ),
                                       ),
-                                      child: const Icon(Icons.edit, color: Colors.white, size: 16),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : const Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.add_a_photo_rounded,
+                                    size: 40,
+                                    color: AppColors.primaryGreen,
+                                  ),
+                                  SizedBox(height: 12),
+                                  Text(
+                                    'Ketuk untuk ambil/pilih foto',
+                                    style: TextStyle(
+                                      color: AppColors.primaryGreen,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    'Format: JPG, PNG',
+                                    style: TextStyle(
+                                      color: AppColors.textSecondary,
+                                      fontSize: 12,
                                     ),
                                   ),
                                 ],
                               ),
-                            )
-                          : const Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.add_a_photo_rounded, size: 40, color: AppColors.primaryGreen),
-                                SizedBox(height: 12),
-                                Text(
-                                  'Ketuk untuk ambil/pilih foto',
-                                  style: TextStyle(
-                                    color: AppColors.primaryGreen,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  'Format: JPG, PNG',
-                                  style: TextStyle(
-                                    color: AppColors.textSecondary,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 32),
-              
-              ElevatedButton(
-                onPressed: _isLoading ? null : _submit,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryGreen,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 0,
-                ),
-                child: _isLoading
-                    ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                    : const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.save_rounded, size: 20),
-                          SizedBox(width: 10),
-                          Text('Simpan Hasil', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-                        ],
                       ),
-              ),
-              const SizedBox(height: 40),
-            ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 32),
+
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _submit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryGreen,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.save_rounded, size: 20),
+                            SizedBox(width: 10),
+                            Text(
+                              'Simpan Hasil',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
+                const SizedBox(height: 40),
+              ],
+            ),
           ),
         ),
       ),
-    ),
     );
   }
 
@@ -424,20 +556,27 @@ class _CatatPanenViewState extends ConsumerState<CatatPanenView> {
                             Navigator.pop(ctx);
                           },
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 14,
+                            ),
                             child: Row(
                               children: [
                                 Container(
                                   width: 36,
                                   height: 36,
                                   decoration: BoxDecoration(
-                                    color: isSelected ? const Color(0xFFE8F5E9) : const Color(0xFFF5F7FA),
+                                    color: isSelected
+                                        ? const Color(0xFFE8F5E9)
+                                        : const Color(0xFFF5F7FA),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Icon(
                                     item['icon'] ?? Icons.assignment_rounded,
                                     size: 20,
-                                    color: isSelected ? AppColors.primaryGreen : AppColors.textHint,
+                                    color: isSelected
+                                        ? AppColors.primaryGreen
+                                        : AppColors.textHint,
                                   ),
                                 ),
                                 const SizedBox(width: 14),
@@ -446,8 +585,12 @@ class _CatatPanenViewState extends ConsumerState<CatatPanenView> {
                                     item['label'],
                                     style: TextStyle(
                                       fontSize: 14,
-                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                                      color: isSelected ? AppColors.primaryGreen : AppColors.textPrimary,
+                                      fontWeight: isSelected
+                                          ? FontWeight.bold
+                                          : FontWeight.w500,
+                                      color: isSelected
+                                          ? AppColors.primaryGreen
+                                          : AppColors.textPrimary,
                                     ),
                                   ),
                                 ),
@@ -512,7 +655,8 @@ class _CatatPanenViewState extends ConsumerState<CatatPanenView> {
 
     return FormField<String>(
       initialValue: selectedValue,
-      validator: (val) => isRequired && selectedValue == null ? 'Wajib dipilih' : null,
+      validator: (val) =>
+          isRequired && selectedValue == null ? 'Wajib dipilih' : null,
       builder: (state) {
         return InkWell(
           onTap: () {
@@ -530,13 +674,18 @@ class _CatatPanenViewState extends ConsumerState<CatatPanenView> {
             decoration: InputDecoration(
               border: const OutlineInputBorder(),
               errorText: state.errorText,
-              suffixIcon: const Icon(Icons.arrow_drop_down, color: AppColors.textSecondary),
+              suffixIcon: const Icon(
+                Icons.arrow_drop_down,
+                color: AppColors.textSecondary,
+              ),
             ),
             child: Text(
               selectedLabel ?? hint,
               style: TextStyle(
                 fontSize: 14,
-                color: selectedLabel != null ? AppColors.textPrimary : AppColors.textHint,
+                color: selectedLabel != null
+                    ? AppColors.textPrimary
+                    : AppColors.textHint,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -546,18 +695,25 @@ class _CatatPanenViewState extends ConsumerState<CatatPanenView> {
       },
     );
   }
+
   Widget _buildHeaderBanner() {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.primaryGreen.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.3)),
+        border: Border.all(
+          color: AppColors.primaryGreen.withValues(alpha: 0.3),
+        ),
       ),
       child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.info_outline_rounded, color: AppColors.primaryGreen, size: 24),
+          Icon(
+            Icons.info_outline_rounded,
+            color: AppColors.primaryGreen,
+            size: 24,
+          ),
           SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -565,12 +721,20 @@ class _CatatPanenViewState extends ConsumerState<CatatPanenView> {
               children: [
                 Text(
                   'Pencatatan Hasil',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary, fontSize: 14),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                    fontSize: 14,
+                  ),
                 ),
                 SizedBox(height: 4),
                 Text(
                   'Catat hasil dari kegiatan pemanfaatan sampah yang sudah disetujui.',
-                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.3),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                    height: 1.3,
+                  ),
                 ),
               ],
             ),
@@ -580,7 +744,11 @@ class _CatatPanenViewState extends ConsumerState<CatatPanenView> {
     );
   }
 
-  Widget _buildSectionCard({required String title, required IconData icon, required List<Widget> children}) {
+  Widget _buildSectionCard({
+    required String title,
+    required IconData icon,
+    required List<Widget> children,
+  }) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -608,7 +776,11 @@ class _CatatPanenViewState extends ConsumerState<CatatPanenView> {
                 const SizedBox(width: 10),
                 Text(
                   title,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textPrimary),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ],
             ),

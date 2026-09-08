@@ -1,6 +1,7 @@
 import '../models/mahasiswa_kkn_models.dart';
 import '../models/kkn_timeline_models.dart';
 import '../models/wilayah_kelompok_model.dart';
+import '../models/kelompok_qr_models.dart';
 
 /// Interface repository untuk fitur Mahasiswa KKN.
 ///
@@ -27,13 +28,20 @@ abstract class KknRepository {
   Future<List<dynamic>> getActivityLog();
 
   /// Mengirim ping lokasi (latitude, longitude) ke backend dan mengembalikan seluruh response (termasuk autoAttendanceTriggered).
-  Future<Map<String, dynamic>> sendLocationPing(double latitude, double longitude, {int? inZoneSeconds});
+  Future<Map<String, dynamic>> sendLocationPing(
+    double latitude,
+    double longitude, {
+    int? inZoneSeconds,
+  });
 
   /// Mengambil daftar jadwal kegiatan KKN.
   Future<List<dynamic>> getSchedules();
 
   /// Mengambil data koordinat zona penugasan aktif (GET /kkn/active-zone)
-  Future<Map<String, dynamic>> getActiveZone({double? latitude, double? longitude});
+  Future<Map<String, dynamic>> getActiveZone({
+    double? latitude,
+    double? longitude,
+  });
 
   /// Mengambil target lokasi kegiatan KKN.
   Future<Map<String, dynamic>> getTargetLocation(String scheduleId);
@@ -48,7 +56,8 @@ abstract class KknRepository {
     String? namaMahasiswa,
     String? kodeZona,
     String? rw,
-    String? kecamatan, String? kelurahan,
+    String? kecamatan,
+    String? kelurahan,
     int? durationMinutes,
     int? accumulatedSeconds,
     String? timestamp,
@@ -57,13 +66,29 @@ abstract class KknRepository {
   });
 
   /// Mengambil daftar warga (untuk fitur aktivasi)
-  Future<List<dynamic>> getWargaForAktivasi({String? kecamatan, String? kelurahan, String? rw, String? search});
+  Future<List<dynamic>> getWargaForAktivasi({
+    String? kecamatan,
+    String? kelurahan,
+    String? rw,
+    String? search,
+  });
 
   /// Mengaktivasi warga by scan (wargaId + qrCode)
-  Future<bool> activateWargaByScan(String wargaId, String qrCode, double latitude, double longitude);
+  Future<bool> activateWargaByScan(
+    String wargaId,
+    String qrCode,
+    double latitude,
+    double longitude,
+  );
 
   /// Mengaktivasi tempat sampah untuk warga dengan lokasi GPS (latitude, longitude)
-  Future<bool> activateBin(String wargaId, String binOrganikId, String binAnorganikId, {double? lat, double? lng});
+  Future<bool> activateBin(
+    String wargaId,
+    String binOrganikId,
+    String binAnorganikId, {
+    double? lat,
+    double? lng,
+  });
 
   /// Mengklaim warga yang melakukan aktivasi mandiri (POST /api/v1/kkn/warga/:wargaId/claim)
   Future<bool> claimWargaMandiri(String wargaId);
@@ -77,6 +102,9 @@ abstract class KknRepository {
 
   /// Mengambil data kelompok KKN mahasiswa yang sedang login (GET /kkn/kelompok/me)
   Future<KelompokKknData?> getKelompokKkn();
+
+  /// Mengambil data kuota dan daftar 20 QR Code Stiker kelompok
+  Future<KelompokQrResponse> getKelompokQrCodes();
 
   /// Mengambil data wilayah dan posko kelompok KKN (GET /api/v1/kkn/wilayah-kelompok)
   Future<WilayahKelompokModel?> getWilayahKelompok();
@@ -102,10 +130,14 @@ abstract class KknRepository {
   Future<DampakKelurahanData> getDampakKelurahan();
 
   /// Mendaftarkan lokasi posko KKN
-  Future<Map<String, dynamic>> registerPosko(Map<String, dynamic> data, {String? imagePath});
-  Future<Map<String, dynamic>> updatePosko(Map<String, dynamic> data, {String? imagePath});
-
-
+  Future<Map<String, dynamic>> registerPosko(
+    Map<String, dynamic> data, {
+    String? imagePath,
+  });
+  Future<Map<String, dynamic>> updatePosko(
+    Map<String, dynamic> data, {
+    String? imagePath,
+  });
 
   /// Mendapatkan detail posko me
   Future<PoskoKknResponse?> getPoskoMe();
@@ -117,7 +149,10 @@ abstract class KknRepository {
   Future<List<Map<String, dynamic>>> getFasilitasWarga();
 
   /// Mendaftarkan fasilitas daur ulang (Rumah Maggot dll)
-  Future<Map<String, dynamic>> registerFasilitas(Map<String, dynamic> data, {String? imagePath});
+  Future<Map<String, dynamic>> registerFasilitas(
+    Map<String, dynamic> data, {
+    String? imagePath,
+  });
 
   /// Serah terima (handover) KKN — mengirim laporan final ke DPL / admin
   /// POST /api/v1/kkn/handover
@@ -133,7 +168,12 @@ abstract class KknRepository {
 
   /// Konfirmasi mulai kegiatan KKN (check-in awal)
   /// POST /api/v1/kkn/kegiatan/{id}/mulai
-  Future<Map<String, dynamic>> mulaiKegiatan(String id, double latitude, double longitude, {String? deviceInfo, String? poskoId});
+  Future<Map<String, dynamic>> mulaiKegiatan(
+    String id,
+    double latitude,
+    double longitude, {
+    String? deviceInfo,
+  });
 
   /// Lewati kegiatan KKN (Tandai: Tidak Ada Kegiatan oleh DPL / Ketua Kelompok)
   /// POST /api/v1/kkn/kegiatan/{id}/skip
@@ -143,13 +183,30 @@ abstract class KknRepository {
   /// POST /api/v1/kkn/kegiatan/{id}/selesai (multipart/form-data)
   /// Jeda kegiatan KKN (manual oleh mahasiswa)
   /// POST /api/v1/kkn/kegiatan/{id}/jeda
-  Future<Map<String, dynamic>> jedaKegiatan(String id, {required String alasan});
+  Future<Map<String, dynamic>> jedaKegiatan(
+    String id, {
+    required String alasan,
+  });
 
   /// Lanjutkan kegiatan setelah jeda
   /// POST /api/v1/kkn/kegiatan/{id}/lanjut
-  Future<Map<String, dynamic>> lanjutKegiatan(String id, {required double latitude, required double longitude});
+  Future<Map<String, dynamic>> lanjutKegiatan(
+    String id, {
+    required double latitude,
+    required double longitude,
+  });
 
-  Future<Map<String, dynamic>> selesaiKegiatan(String id, {required String sessionId, required int totalDurasiDalamZonaMenit, int? accumulatedSeconds, required String alasan, String? deskripsiKegiatan, String? fotoPath, double? latitude, double? longitude});
+  Future<Map<String, dynamic>> selesaiKegiatan(
+    String id, {
+    required String sessionId,
+    required int totalDurasiDalamZonaMenit,
+    int? accumulatedSeconds,
+    required String alasan,
+    String? deskripsiKegiatan,
+    String? fotoPath,
+    double? latitude,
+    double? longitude,
+  });
 
   /// Ambil riwayat presensi (jam masuk, jam pulang, durasi aktual/target) — untuk tampilan historis setelah GPS mati
   /// GET /api/v1/kkn/kegiatan/{id}/presensi-history
@@ -183,29 +240,55 @@ abstract class KknRepository {
   /// DELETE /api/v1/kkn/program-kerja/:id
   Future<bool> deleteProgramKerja(String id);
 
+  /// Update status pelaksanaan Program Kerja (Mulai / Selesai)
+  /// PATCH /api/v1/kkn/program-kerja/:id
+  Future<bool> updateStatusPelaksanaan(String id, String statusPelaksanaan);
+
   /// GET /api/v1/pemanfaatan
   Future<List<dynamic>> getPemanfaatanLogs();
 
   /// Pilar 2: Logbook Pemanfaatan (Mewarisi/menggantikan submitPemanfaatanSampah lama)
   /// POST /api/v1/kkn/pemanfaatan-sampah
-  Future<bool> submitLogbookPemanfaatan(Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths});
+  Future<bool> submitLogbookPemanfaatan(
+    Map<String, dynamic> data, {
+    String? imagePath,
+    List<String>? imagePaths,
+  });
 
   /// Edit Logbook Pemanfaatan
   /// PUT /api/v1/kkn/pemanfaatan-sampah/:id
-  Future<bool> editLogbookPemanfaatan(String id, Map<String, dynamic> data, {String? imagePath});
+  Future<bool> editLogbookPemanfaatan(
+    String id,
+    Map<String, dynamic> data, {
+    String? imagePath,
+  });
 
   /// PUT /api/v1/kkn/pemanfaatan-sampah/:id
-  Future<bool> updateLogbookPemanfaatan(String id, Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths});
+  Future<bool> updateLogbookPemanfaatan(
+    String id,
+    Map<String, dynamic> data, {
+    String? imagePath,
+    List<String>? imagePaths,
+  });
 
   /// DELETE /api/v1/kkn/pemanfaatan-sampah/:id
   Future<bool> deleteLogbookPemanfaatan(String id);
 
   /// Input Logbook Harian (Umum) oleh Mahasiswa
-  Future<bool> submitLogbookHarian(Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths});
+  Future<bool> submitLogbookHarian(
+    Map<String, dynamic> data, {
+    String? imagePath,
+    List<String>? imagePaths,
+  });
 
   /// Edit Logbook Harian
   /// PUT /api/v1/logbook/mahasiswa/:id
-  Future<bool> editLogbookHarian(String id, Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths});
+  Future<bool> editLogbookHarian(
+    String id,
+    Map<String, dynamic> data, {
+    String? imagePath,
+    List<String>? imagePaths,
+  });
 
   /// Detail satu Logbook Harian
   /// GET /api/v1/logbook/mahasiswa/:id
@@ -220,10 +303,19 @@ abstract class KknRepository {
   Future<List<dynamic>> getUnharvestedLogbooks();
 
   /// POST /api/v1/kkn/panen-hasil
-  Future<bool> submitPanenHasil(Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths});
+  Future<bool> submitPanenHasil(
+    Map<String, dynamic> data, {
+    String? imagePath,
+    List<String>? imagePaths,
+  });
 
   /// PUT /api/v1/kkn/panen-hasil/:id
-  Future<bool> updatePanenHasil(String id, Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths});
+  Future<bool> updatePanenHasil(
+    String id,
+    Map<String, dynamic> data, {
+    String? imagePath,
+    List<String>? imagePaths,
+  });
 
   /// DELETE /api/v1/kkn/panen-hasil/:id
   Future<bool> deletePanenHasil(String id);
@@ -231,16 +323,16 @@ abstract class KknRepository {
   // ──────────────────────────────────────────────────────────
   // Smart Multi-Zone Geofence
   // ──────────────────────────────────────────────────────────
-  
+
   /// Sync seluruh zona kelompok (Posko Utama + Multi + Polygon)
   Future<Map<String, dynamic>> syncGroupZones();
-  
+
   /// Daftar Posko Tambahan (Ketua Kelompok)
   Future<bool> addMultiPosko(Map<String, dynamic> data);
-  
+
   /// Update Posko Tambahan
   Future<bool> updateMultiPosko(String poskoId, Map<String, dynamic> data);
-  
+
   /// Hapus Posko Tambahan
   Future<bool> deleteMultiPosko(String poskoId);
 }

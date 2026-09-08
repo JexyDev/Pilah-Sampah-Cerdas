@@ -132,7 +132,7 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
         slivers: [
           // ── App Bar + Header ────────────────────────────────
           SliverAppBar(
-            expandedHeight: 175,
+            expandedHeight: 220,
             pinned: true,
             backgroundColor: AppColors.primaryGreen,
             foregroundColor: Colors.white,

@@ -41,7 +41,8 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
       final response = await apiClient.dio.get('/petugas-residu/dashboard');
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data is Map<String, dynamic>
-            ? (response.data['data'] as Map<String, dynamic>? ?? response.data as Map<String, dynamic>)
+            ? (response.data['data'] as Map<String, dynamic>? ??
+                  response.data as Map<String, dynamic>)
             : <String, dynamic>{};
 
         final prefs = await SharedPreferences.getInstance();
@@ -49,7 +50,9 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
 
         return PetugasPemilahanDashboard.fromJson(data);
       }
-      throw Exception('Respon dari server tidak valid. Silakan coba beberapa saat lagi.');
+      throw Exception(
+        'Respon dari server tidak valid. Silakan coba beberapa saat lagi.',
+      );
     } catch (e) {
       final prefs = await SharedPreferences.getInstance();
       final cachedStr = prefs.getString(_cacheKeyDashboard);
@@ -66,13 +69,19 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
   }
 
   @override
-  Future<List<PemilahanBinPickup>?> getCachedJadwalHarian({String? kecamatan, String? kelurahan, String? rw}) async {
+  Future<List<PemilahanBinPickup>?> getCachedJadwalHarian({
+    String? kecamatan,
+    String? kelurahan,
+    String? rw,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     final cachedStr = prefs.getString(_cacheKeyJadwal);
     if (cachedStr != null && cachedStr.isNotEmpty) {
       try {
         final list = jsonDecode(cachedStr) as List<dynamic>;
-        return list.map((e) => PemilahanBinPickup.fromJson(e as Map<String, dynamic>)).toList();
+        return list
+            .map((e) => PemilahanBinPickup.fromJson(e as Map<String, dynamic>))
+            .toList();
       } catch (e) {
         debugPrint('[ApiPetugasPemilahanRepository] Cache error: $e');
       }
@@ -81,13 +90,24 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
   }
 
   @override
-  Future<List<PemilahanBinPickup>> getJadwalHarian({String? kecamatan, String? kelurahan, String? rw}) async {
+  Future<List<PemilahanBinPickup>> getJadwalHarian({
+    String? kecamatan,
+    String? kelurahan,
+    String? rw,
+  }) async {
     final Map<String, dynamic> queryParams = {};
-    if (kelurahan != null && kelurahan.isNotEmpty) queryParams['kelurahan'] = kelurahan;
-    if (rw != null && rw.isNotEmpty) queryParams['rw'] = rw;
+    if (kelurahan != null && kelurahan.isNotEmpty) {
+      queryParams['kelurahan'] = kelurahan;
+    }
+    if (rw != null && rw.isNotEmpty) {
+      queryParams['rw'] = rw;
+    }
 
     try {
-      final response = await apiClient.dio.get('/petugas-residu/jadwal-harian', queryParameters: queryParams);
+      final response = await apiClient.dio.get(
+        '/petugas-residu/jadwal-harian',
+        queryParameters: queryParams,
+      );
       if (response.statusCode == 200 && response.data != null) {
         final List<dynamic> list = response.data is Map<String, dynamic>
             ? (response.data['data'] as List<dynamic>? ?? [])
@@ -97,11 +117,17 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
         await prefs.setString(_cacheKeyJadwal, jsonEncode(list));
 
         if (list.isNotEmpty) {
-          return list.map((e) => PemilahanBinPickup.fromJson(e as Map<String, dynamic>)).toList();
+          return list
+              .map(
+                (e) => PemilahanBinPickup.fromJson(e as Map<String, dynamic>),
+              )
+              .toList();
         }
         return [];
       }
-      throw Exception('Respon dari server tidak valid. Silakan coba beberapa saat lagi.');
+      throw Exception(
+        'Respon dari server tidak valid. Silakan coba beberapa saat lagi.',
+      );
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) {
         return [];
@@ -138,7 +164,7 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
         'classification': classification,
         'image': await MultipartFile.fromFile(
           compressedPhotoPath,
-          filename: compressedPhotoPath.split('/').last,
+          filename: compressedPhotoPath.split(RegExp(r'[\\/]')).last,
           contentType: MediaType('image', 'jpeg'),
         ),
         'isGlobalBin': true,
@@ -146,14 +172,22 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
         if (latitude != null) 'latitude': latitude,
         if (longitude != null) 'longitude': longitude,
       });
-      debugPrint('[ApiPetugasPemilahanRepository] Sending request to /petugas-residu/submit-log...');
+      debugPrint(
+        '[ApiPetugasPemilahanRepository] Sending request to /petugas-residu/submit-log...',
+      );
 
-      final response = await apiClient.dio.post('/petugas-residu/submit-log', data: formData);
-      debugPrint('[ApiPetugasPemilahanRepository] Response received: ${response.statusCode}');
+      final response = await apiClient.dio.post(
+        '/petugas-residu/submit-log',
+        data: formData,
+      );
+      debugPrint(
+        '[ApiPetugasPemilahanRepository] Response received: ${response.statusCode}',
+      );
       if (response.statusCode == 200 || response.statusCode == 201) {
         // Ambil data dari response backend (termasuk poin yang diperoleh)
         final responseData = response.data is Map<String, dynamic>
-            ? (response.data['data'] as Map<String, dynamic>? ?? response.data as Map<String, dynamic>)
+            ? (response.data['data'] as Map<String, dynamic>? ??
+                  response.data as Map<String, dynamic>)
             : <String, dynamic>{};
 
         // Tampilkan push notification sistem
@@ -204,7 +238,9 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
         }
         return [];
       }
-      throw Exception('Respon dari server tidak valid. Silakan coba beberapa saat lagi.');
+      throw Exception(
+        'Respon dari server tidak valid. Silakan coba beberapa saat lagi.',
+      );
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) {
         return [];
@@ -216,19 +252,21 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
   }
 
   @override
-  Future<bool> changePassword({required String oldPassword, required String newPassword}) async {
+  Future<bool> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
     try {
       final response = await apiClient.dio.put(
         '/auth/password',
-        data: {
-          'currentPassword': oldPassword,
-          'newPassword': newPassword,
-        },
+        data: {'currentPassword': oldPassword, 'newPassword': newPassword},
       );
       if (response.statusCode == 200 || response.statusCode == 201) {
         return true;
       }
-      throw Exception('Gagal memperbarui kata sandi. Periksa kata sandi lama Anda.');
+      throw Exception(
+        'Gagal memperbarui kata sandi. Periksa kata sandi lama Anda.',
+      );
     } catch (e) {
       rethrow;
     }
@@ -254,13 +292,17 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
           if (e is Map<String, dynamic>) {
             final user = e['user'] as Map<String, dynamic>? ?? {};
             final bin = e['bin'] as Map<String, dynamic>? ?? {};
+            final category = bin['category'] as Map<String, dynamic>? ?? {};
             final rtRw = bin['rw'] as Map<String, dynamic>? ?? user['rtRw'] as Map<String, dynamic>? ?? {};
             final kelurahan = bin['kelurahan'] as Map<String, dynamic>? ?? user['kelurahan'] as Map<String, dynamic>? ?? {};
+            final categoryName = category['name']?.toString() ?? e['jenisSampah']?.toString() ?? bin['binType']?.toString() ?? 'Organik';
 
             return {
               'id': e['id']?.toString() ?? '',
+              'binId': bin['id']?.toString() ?? e['binId']?.toString() ?? '',
               'wargaName': user['name']?.toString() ?? e['wargaName']?.toString() ?? '',
               'binCode': bin['qrCode']?.toString() ?? e['binCode']?.toString() ?? e['binId']?.toString() ?? '',
+              'category': categoryName,
               'alasan': e['alasan']?.toString() ?? e['reason']?.toString() ?? '',
               'address': user['address']?.toString() ?? e['address']?.toString() ?? e['alamat']?.toString() ?? '',
               'rtRw': rtRw['name']?.toString() ?? e['rw']?.toString() ?? '',
@@ -278,27 +320,71 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
       if (e.response?.statusCode == 404) {
         return [];
       }
-      debugPrint('[ApiPetugasPemilahanRepository] Error getDaftarPengajuanWarga: $e');
+      debugPrint(
+        '[ApiPetugasPemilahanRepository] Error getDaftarPengajuanWarga: $e',
+      );
       return [];
     } catch (e) {
-      debugPrint('[ApiPetugasPemilahanRepository] Error getDaftarPengajuanWarga: $e');
+      debugPrint(
+        '[ApiPetugasPemilahanRepository] Error getDaftarPengajuanWarga: $e',
+      );
       return [];
     }
   }
 
-  /// Klaim pengajuan pengosongan dari warga menggunakan endpoint tunggal.
+  /// Klaim pengajuan pengosongan dari warga menggunakan endpoint PUT /api/v1/bins/reset/:id/approve
+  /// Mendukung kontrak audit trail: emptyBinPhoto, scannedQrCode, latitude, longitude
   @override
-  Future<bool> claimPengajuanReset(String pengajuanId) async {
+  Future<bool> claimPengajuanReset(
+    String pengajuanId, {
+    String? emptyBinPhotoPath,
+    String? scannedQrCode,
+    double? latitude,
+    double? longitude,
+  }) async {
     try {
+      dynamic data;
+      if (emptyBinPhotoPath != null && emptyBinPhotoPath.isNotEmpty) {
+        final compressedPhotoPath = await ImageCompressor.compressImage(
+          emptyBinPhotoPath,
+          maxSizeBytes: 500 * 1024,
+          maxWidth: 1280,
+          maxHeight: 720,
+        );
+        data = FormData.fromMap({
+          'emptyBinPhoto': await MultipartFile.fromFile(
+            compressedPhotoPath,
+            filename: compressedPhotoPath.split(RegExp(r'[\\/]')).last,
+            contentType: MediaType('image', 'jpeg'),
+          ),
+          if (scannedQrCode != null && scannedQrCode.isNotEmpty)
+            'scannedQrCode': scannedQrCode,
+          if (latitude != null) 'latitude': latitude,
+          if (longitude != null) 'longitude': longitude,
+        });
+      } else if (scannedQrCode != null || latitude != null || longitude != null) {
+        data = {
+          if (scannedQrCode != null && scannedQrCode.isNotEmpty)
+            'scannedQrCode': scannedQrCode,
+          if (latitude != null) 'latitude': latitude,
+          if (longitude != null) 'longitude': longitude,
+        };
+      }
+
       final response = await apiClient.dio.put(
         ApiEndpoints.binsApproveReset(pengajuanId),
+        data: data,
       );
       return response.statusCode == 200 || response.statusCode == 201;
     } on DioException catch (e) {
-      debugPrint('[ApiPetugasPemilahanRepository] Error claimPengajuanReset: $e');
+      debugPrint(
+        '[ApiPetugasPemilahanRepository] Error claimPengajuanReset: $e',
+      );
       return false;
     } catch (e) {
-      debugPrint('[ApiPetugasPemilahanRepository] Error claimPengajuanReset: $e');
+      debugPrint(
+        '[ApiPetugasPemilahanRepository] Error claimPengajuanReset: $e',
+      );
       return false;
     }
   }

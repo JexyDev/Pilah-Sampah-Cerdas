@@ -3,13 +3,16 @@ import 'dart:io';
 
 void main() {
   final dir = Directory('d:/TrashCare/mobile/lib');
-  final files = dir.listSync(recursive: true).whereType<File>().where((f) => f.path.endsWith('.dart'));
-  
+  final files = dir
+      .listSync(recursive: true)
+      .whereType<File>()
+      .where((f) => f.path.endsWith('.dart'));
+
   for (final file in files) {
     String content = file.readAsStringSync();
-    
+
     bool changed = false;
-    
+
     if (content.contains('Tong Sampah')) {
       content = content.replaceAll('Tong Sampah', 'Tempat Sampah');
       changed = true;
@@ -18,8 +21,8 @@ void main() {
       content = content.replaceAll('tong sampah', 'tempat sampah');
       changed = true;
     }
-    
-    // Replace "Tong" directly if it's standalone, but carefully. 
+
+    // Replace "Tong" directly if it's standalone, but carefully.
     // E.g. "Tong" or "tong"
     if (content.contains('Tong ')) {
       content = content.replaceAll('Tong ', 'Tempat Sampah ');

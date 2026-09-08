@@ -42,39 +42,29 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 });
 
 final binRepositoryProvider = Provider<BinRepository>((ref) {
-  return ApiBinRepository(
-    apiClient: ref.read(apiClientProvider),
-  );
+  return ApiBinRepository(apiClient: ref.read(apiClientProvider));
 });
 
 final wasteLogRepositoryProvider = Provider<WasteLogRepository>((ref) {
-  return ApiWasteLogRepository(
-    apiClient: ref.read(apiClientProvider),
-  );
+  return ApiWasteLogRepository(apiClient: ref.read(apiClientProvider));
 });
 
 final notificationRepositoryProvider = Provider<NotificationRepository>((ref) {
-  return ApiNotificationRepository(
-    apiClient: ref.read(apiClientProvider),
-  );
+  return ApiNotificationRepository(apiClient: ref.read(apiClientProvider));
 });
 
 final kknRepositoryProvider = Provider<KknRepository>((ref) {
-  return ApiKknRepository(
-    apiClient: ref.read(apiClientProvider),
-  );
+  return ApiKknRepository(apiClient: ref.read(apiClientProvider));
 });
 
-final petugasPemilahanRepositoryProvider = Provider<PetugasPemilahanRepository>((ref) {
-  return ApiPetugasPemilahanRepository(
-    apiClient: ref.read(apiClientProvider),
-  );
-});
+final petugasPemilahanRepositoryProvider = Provider<PetugasPemilahanRepository>(
+  (ref) {
+    return ApiPetugasPemilahanRepository(
+      apiClient: ref.read(apiClientProvider),
+    );
+  },
+);
 
 final pemanfaatanRepositoryProvider = Provider<PemanfaatanRepository>((ref) {
-  return ApiPemanfaatanRepository(
-    apiClient: ref.read(apiClientProvider),
-  );
+  return ApiPemanfaatanRepository(apiClient: ref.read(apiClientProvider));
 });
-
-

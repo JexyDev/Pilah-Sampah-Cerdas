@@ -18,12 +18,23 @@ class PetugasPemilahanPoinView extends ConsumerWidget {
     }
   }
 
+  String _sanitizeTitle(String? raw) {
+    if (raw == null || raw.isEmpty) return 'Timbangan Pemilahan';
+    return raw
+        .replaceAll(RegExp(r'Setoran\s+Manual\s+Residu', caseSensitive: false), 'Timbangan Pemilahan')
+        .replaceAll(RegExp(r'\bResidu\b', caseSensitive: false), 'Pemilahan');
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(petugasPemilahanControllerProvider);
     final dashboard = state.dashboard;
 
     final int totalPoints = dashboard?.totalPoints ?? 0;
+    final pointItems = state.historyList.where((item) {
+      final points = (item['points'] ?? item['pointsEarned'] ?? 0).toInt();
+      return points > 0;
+    }).toList();
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -91,7 +102,7 @@ class PetugasPemilahanPoinView extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: const Text(
-                        'Insentif Dihitung Otomatis oleh Server Backend Admin',
+                        'Poin Otomatis Diperoleh dari Timbangan & Validasi RW',
                         style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
                         textAlign: TextAlign.center,
                       ),
@@ -123,10 +134,10 @@ class PetugasPemilahanPoinView extends ConsumerWidget {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    _buildPoinRuleRow(Icons.scale_rounded, 'Timbangan Dasar', '1 Kg = 1 Poin'),
-                    _buildPoinRuleRow(Icons.camera_alt_rounded, 'Bonus Foto Valid', '+5 Poin / Input'),
-                    _buildPoinRuleRow(Icons.verified_rounded, 'Penyelesaian Jadwal', '+10 Poin (100% Selesai)'),
-                    _buildPoinRuleRow(Icons.assessment_rounded, 'Bonus Mingguan', 'KPI Score x 1 Poin'),
+                    _buildPoinRuleRow(Icons.scale_rounded, 'Timbangan Sampah', '1 Kg = 2 Poin'),
+                    _buildPoinRuleRow(Icons.camera_alt_rounded, 'Bonus Foto Bukti Valid', '+10 Poin / Input'),
+                    _buildPoinRuleRow(Icons.check_circle_outline_rounded, 'Validasi Pengosongan RW', '+15 Poin / Pengajuan Warga'),
+                    _buildPoinRuleRow(Icons.event_available_rounded, 'Penyelesaian Jadwal RW', 'Bonus Insentif Harian'),
                   ],
                 ),
               ),
@@ -139,21 +150,20 @@ class PetugasPemilahanPoinView extends ConsumerWidget {
               ),
               const SizedBox(height: 10),
 
-              if (state.historyList.isEmpty)
+              if (pointItems.isEmpty)
                 const Center(
                   child: Padding(
                     padding: EdgeInsets.all(24.0),
-                    child: Text('Belum ada log poin.', style: TextStyle(color: AppColors.textSecondary)),
+                    child: Text('Belum ada riwayat perolehan poin yang tercatat.', style: TextStyle(color: AppColors.textSecondary)),
                   ),
                 )
               else
                 ListView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  itemCount: state.historyList.length,
+                  itemCount: pointItems.length,
                   itemBuilder: (ctx, idx) {
-                    final item = state.historyList[idx];
-                    // final rawWeight = item['actualWeightKg'] ?? item['weightKg'] ?? item['weight'] ?? 0.0;
+                    final item = pointItems[idx];
                     final points = (item['points'] ?? item['pointsEarned'] ?? 0).toInt();
 
                     return Card(
@@ -169,7 +179,7 @@ class PetugasPemilahanPoinView extends ConsumerWidget {
                           ),
                         ),
                         title: Text(
-                          item['title']?.toString() ?? 'Timbangan Pemilahan',
+                          _sanitizeTitle(item['title']?.toString()),
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                         ),
                         subtitle: Text(
