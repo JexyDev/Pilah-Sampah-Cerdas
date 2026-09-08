@@ -429,7 +429,7 @@ export class KknService {
         primaryBin?.registeredByStudent?.name ||
         binOrganik?.registeredByStudent?.name ||
         binAnorganik?.registeredByStudent?.name ||
-        "Mahasiswa KKN";
+        "";
 
       return {
         id: u.id,
@@ -1157,7 +1157,7 @@ export class KknService {
         primaryBin?.registeredByStudent?.name ||
         binOrganik?.registeredByStudent?.name ||
         binAnorganik?.registeredByStudent?.name ||
-        "Mahasiswa KKN";
+        "";
 
       const isActivated =
         allBins.some(
