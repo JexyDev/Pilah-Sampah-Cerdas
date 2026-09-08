@@ -453,6 +453,15 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       const startOfDay = new Date();
       startOfDay.setHours(0, 0, 0, 0);
 
+      vi.mocked(prisma.schedule.findUnique).mockResolvedValue({
+        id: scheduleId,
+        title: "Kegiatan Posko KKN",
+        latitude: -6.8915,
+        longitude: 107.6107,
+        radius: 150,
+        time: "06:00 - 09:00 WIB",
+      } as any);
+
       vi.mocked(prisma.activityAttendance.findFirst).mockResolvedValue({
         id: "att-rec-1",
         studentId,
@@ -495,6 +504,12 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
     });
 
     it("should NOT duplicate check-out points if already awarded today", async () => {
+      vi.mocked(prisma.schedule.findUnique).mockResolvedValue({
+        id: scheduleId,
+        title: "Kegiatan Posko KKN",
+        time: "06:00 - 09:00 WIB",
+      } as any);
+
       vi.mocked(prisma.activityAttendance.findFirst).mockResolvedValue({
         id: "att-rec-1",
         studentId,
@@ -1862,5 +1877,164 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       expect(unikom?.radius).toBe(250);
     });
   });
+
+  describe("Early Checkout Restriction (H-30 Menit Jam Pulang & Durasi Minimal 30 Menit)", () => {
+    const studentId = "mhs-early-check";
+    const scheduleId = "sch-early-check";
+
+    it("should reject checkout when current time is more than 30 minutes before schedule end time", async () => {
+      // System time is 11:00 WIB (from beforeEach)
+      vi.mocked(prisma.schedule.findUnique).mockResolvedValue({
+        id: scheduleId,
+        title: "Kegiatan Harian KKN",
+        time: "08:00 - 16:00 WIB",
+        date: new Date("2026-09-03"),
+      } as any);
+
+      vi.mocked(prisma.activityAttendance.findFirst).mockResolvedValue({
+        id: "att-early-1",
+        studentId,
+        scheduleId,
+        status: "BERLANGSUNG",
+        attendedAt: new Date("2026-09-03T01:00:00.000Z"), // 08:00 WIB (3 jam lalu)
+        checkOutAt: null,
+      } as any);
+
+      await expect(
+        service.checkOutAttendance({
+          studentId,
+          scheduleId,
+        })
+      ).rejects.toMatchObject({
+        code: "EARLY_CHECKOUT_RESTRICTED",
+        statusCode: 422,
+        details: expect.objectContaining({
+          earliestCheckoutTimeString: "15:30 WIB",
+          jamPulangJadwal: "16:00 WIB",
+          currentTimeString: "11:00 WIB",
+          minutesRemaining: 270,
+        }),
+      });
+    });
+
+    it("should allow checkout when current time is within 30 minutes of schedule end time", async () => {
+      // System time is 11:00 WIB, schedule ends at 11:15 WIB (min checkout is 10:45 WIB)
+      vi.mocked(prisma.schedule.findUnique).mockResolvedValue({
+        id: scheduleId,
+        title: "Kegiatan Pagi KKN",
+        time: "08:00 - 11:15 WIB",
+        date: new Date("2026-09-03"),
+      } as any);
+
+      vi.mocked(prisma.activityAttendance.findFirst).mockResolvedValue({
+        id: "att-ontime-1",
+        studentId,
+        scheduleId,
+        status: "BERLANGSUNG",
+        attendedAt: new Date("2026-09-03T01:00:00.000Z"), // 08:00 WIB
+        checkOutAt: null,
+      } as any);
+
+      vi.mocked(prisma.studentLocation.findMany).mockResolvedValue([]);
+      (prisma.activityAttendance.update as any).mockImplementation(async ({ data }: any) => {
+        return {
+          id: "att-ontime-1",
+          studentId,
+          scheduleId,
+          status: data.status,
+          attendedAt: new Date("2026-09-03T01:00:00.000Z"),
+          checkOutAt: new Date(),
+          schedule: { id: scheduleId, title: "Kegiatan Pagi KKN" },
+          student: { id: studentId, name: "Mahasiswa On-Time", studentProfile: { nim: "10120099" } },
+        } as any;
+      });
+
+      const res = await service.checkOutAttendance({
+        studentId,
+        scheduleId,
+      });
+
+      expect(res.success).toBe(true);
+      expect(res.data.status).toBeDefined();
+    });
+
+    it("should reject checkout when elapsed time since check-in is less than 30 minutes", async () => {
+      // System time is 11:00 WIB, schedule ends at 11:00 WIB (H-30 is 10:30, passed),
+      // but student just checked in 10 minutes ago at 10:50 WIB
+      vi.mocked(prisma.schedule.findUnique).mockResolvedValue({
+        id: scheduleId,
+        title: "Kegiatan Kilat KKN",
+        time: "08:00 - 11:00 WIB",
+        date: new Date("2026-09-03"),
+      } as any);
+
+      vi.mocked(prisma.activityAttendance.findFirst).mockResolvedValue({
+        id: "att-too-short-1",
+        studentId,
+        scheduleId,
+        status: "BERLANGSUNG",
+        attendedAt: new Date("2026-09-03T03:50:00.000Z"), // 10:50 WIB (10 mins elapsed)
+        checkOutAt: null,
+      } as any);
+
+      await expect(
+        service.checkOutAttendance({
+          studentId,
+          scheduleId,
+        })
+      ).rejects.toMatchObject({
+        code: "EARLY_CHECKOUT_RESTRICTED",
+        statusCode: 422,
+        details: expect.objectContaining({
+          elapsedMinutes: 10,
+          minimumRequiredMinutes: 30,
+          minutesRemaining: 20,
+        }),
+      });
+    });
+
+    it("should bypass early checkout validation when isAutoCheckout is true", async () => {
+      // System time is 11:00 WIB, schedule ends at 16:00 WIB, attendedAt only 10 mins ago
+      vi.mocked(prisma.schedule.findUnique).mockResolvedValue({
+        id: scheduleId,
+        title: "Kegiatan KKN Auto Checkout",
+        time: "08:00 - 16:00 WIB",
+        date: new Date("2026-09-03"),
+      } as any);
+
+      vi.mocked(prisma.activityAttendance.findFirst).mockResolvedValue({
+        id: "att-auto-1",
+        studentId,
+        scheduleId,
+        status: "BERLANGSUNG",
+        attendedAt: new Date("2026-09-03T03:50:00.000Z"),
+        checkOutAt: null,
+      } as any);
+
+      vi.mocked(prisma.studentLocation.findMany).mockResolvedValue([]);
+      (prisma.activityAttendance.update as any).mockImplementation(async ({ data }: any) => {
+        return {
+          id: "att-auto-1",
+          studentId,
+          scheduleId,
+          status: data.status,
+          attendedAt: new Date("2026-09-03T03:50:00.000Z"),
+          checkOutAt: new Date(),
+          schedule: { id: scheduleId, title: "Kegiatan KKN Auto Checkout" },
+          student: { id: studentId, name: "Mahasiswa Auto", studentProfile: { nim: "10120088" } },
+        } as any;
+      });
+
+      const res = await service.checkOutAttendance({
+        studentId,
+        scheduleId,
+        isAutoCheckout: true,
+      });
+
+      expect(res.success).toBe(true);
+      expect(res.data.status).toBe("HADIR_MEMENUHI");
+    });
+  });
 });
+
 
