@@ -435,10 +435,10 @@ const Leaderboard: React.FC = () => {
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">
-              Peringkat Warga
+              Papan Peringkat
             </h1>
             <p className="text-xs text-slate-500 font-semibold mt-0.5">
-              Pemeringkatan berdasarkan tingkat <strong className="text-slate-600 dark:text-slate-400">kepatuhan pemilahan sampah</strong> di seluruh wilayah binaan.
+              Papan klasemen &amp; apresiasi kinerja pemilahan sampah di seluruh wilayah binaan dan program KKN.
             </p>
           </div>
         </div>
@@ -478,7 +478,7 @@ const Leaderboard: React.FC = () => {
           </div>
 
           {/* View Mode Toggle (Visual Chart vs Table vs Both) */}
-          {system === "system1" && !["kelurahan", "overview"].includes(s1Tab) && (
+          {system === "system1" && s1Tab !== "overview" && (
             <div className="flex items-center bg-slate-100/80 dark:bg-slate-800/80 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-700 self-start sm:self-auto">
               <button
                 onClick={() => setViewDisplayMode("BOTH")}
