@@ -27,6 +27,7 @@ import {
   Eye,
   CheckCheck,
   Layers,
+  Trash2,
 } from "lucide-react";
 import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
