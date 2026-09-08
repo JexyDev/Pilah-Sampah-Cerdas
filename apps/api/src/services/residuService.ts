@@ -457,9 +457,9 @@ export class ResiduService {
           return {
             id: s.id,
             logId: s.id,
-            title: "Setoran Manual Residu",
-            classification: s.kategori || "Residu",
-            kategori: s.kategori || "Residu",
+            title: "Timbangan Pemilahan",
+            classification: s.kategori || "Pemilahan",
+            kategori: s.kategori || "Pemilahan",
             binId: "GLOBAL_BIN",
             binCode: "Bin Global RT/RW",
             wargaName: "Global",
@@ -760,7 +760,7 @@ export class ResiduService {
         data: {
           userId: petugasUserId,
           points: pointsEarned,
-          description: `Setoran timbangan residu global: ${weightKg} kg`,
+          description: `Setoran timbangan pemilahan: ${weightKg} kg (${data.classification || "Pemilahan"})`,
           kategori: "SUBMIT_RESIDU",
         },
       });
@@ -771,7 +771,7 @@ export class ResiduService {
       data: {
         userId: petugasUserId,
         title: "Log Timbangan Berhasil Disimpan",
-        message: `Log timbangan seberat ${weightKg} kg (${data.classification || "Residu"}) berhasil dicatat. Poin diperoleh: +${pointsEarned}.`,
+        message: `Log timbangan seberat ${weightKg} kg (${data.classification || "Pemilahan"}) berhasil dicatat. Poin diperoleh: +${pointsEarned}.`,
       },
     });
 
