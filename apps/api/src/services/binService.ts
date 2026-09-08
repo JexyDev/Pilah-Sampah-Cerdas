@@ -292,13 +292,21 @@ export class BinService {
       }
     }
 
-    // 2. Validate Geofencing (< 50m) if coordinates are provided
-    if (
+    // 2. Validate Geofencing (< 50m) if valid coordinates are provided (Filters 0.0 Null Island cold-start GPS)
+    const hasValidUserCoords =
       userLat !== undefined &&
       userLng !== undefined &&
+      userLat !== 0 &&
+      userLng !== 0 &&
+      Math.abs(userLat) > 0.0001;
+
+    const hasValidBinCoords =
       bin.latitude !== null &&
-      bin.longitude !== null
-    ) {
+      bin.longitude !== null &&
+      Number(bin.latitude) !== 0 &&
+      Number(bin.longitude) !== 0;
+
+    if (hasValidUserCoords && hasValidBinCoords) {
       const distance = getDistanceMeters(
         userLat,
         userLng,

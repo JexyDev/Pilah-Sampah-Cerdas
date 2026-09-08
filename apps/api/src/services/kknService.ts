@@ -1419,6 +1419,8 @@ export class KknService {
               categoryId: category?.id,
               userId: wargaId,
               registeredByStudentId: kknUserId,
+              latitude: latitude ?? -6.8903,
+              longitude: longitude ?? 107.611,
             },
           });
           bins.push(newBin);
@@ -1439,7 +1441,12 @@ export class KknService {
 
         await tx.bin.update({
           where: { id: bin.id },
-          data: { userId: wargaId, status: "ACTIVE_BOUND", registeredByStudentId: kknUserId },
+          data: {
+            userId: wargaId,
+            status: "ACTIVE_BOUND",
+            registeredByStudentId: kknUserId,
+            ...(latitude && longitude ? { latitude, longitude } : {}),
+          },
         });
 
         const existingOwnership = await tx.binOwnership.findFirst({
