@@ -392,6 +392,7 @@ class ApiBinRepository implements BinRepository {
         );
       }
       if (errorCode == 'BIN_OVERFLOW' ||
+          errorCode == 'BIN_FULL' ||
           (serverMsg != null && serverMsg.toLowerCase().contains('penuh'))) {
         throw BinException(
           'BIN_OVERFLOW',
@@ -400,11 +401,12 @@ class ApiBinRepository implements BinRepository {
         );
       }
       if (errorCode == 'LOCATION_OUT_OF_RANGE' ||
+          errorCode == 'LOCATION_TOO_FAR' ||
           (serverMsg != null && serverMsg.toLowerCase().contains('jauh'))) {
         throw BinException(
           'LOCATION_OUT_OF_RANGE',
           serverMsg ??
-              'Anda berada lebih dari 25 meter dari tempat sampah. Harap mendekat ke lokasi tempat sampah.',
+              'Anda berada lebih dari 50 meter dari tempat sampah. Harap mendekat ke lokasi tempat sampah.',
         );
       }
       if (errorCode == 'RESOURCE_NOT_FOUND' ||
@@ -417,13 +419,15 @@ class ApiBinRepository implements BinRepository {
         );
       }
       if (errorCode == 'BIN_NOT_ACTIVATED' ||
+          errorCode == 'BIN_NOT_ACTIVE' ||
           (serverMsg != null && serverMsg.toLowerCase().contains('aktivasi'))) {
         throw BinException(
           'BIN_NOT_ACTIVATED',
-          serverMsg ?? 'Tempat Sampah sampah belum diaktivasi.',
+          serverMsg ?? 'Tempat Sampah belum diaktivasi.',
         );
       }
       if (errorCode == 'BIN_NOT_OWNED' ||
+          errorCode == 'BIN_RW_MISMATCH' ||
           (serverMsg != null && serverMsg.toLowerCase().contains('milik'))) {
         throw BinException(
           'BIN_NOT_OWNED',

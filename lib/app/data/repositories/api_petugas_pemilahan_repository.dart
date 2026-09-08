@@ -297,11 +297,25 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
             final kelurahan = bin['kelurahan'] as Map<String, dynamic>? ?? user['kelurahan'] as Map<String, dynamic>? ?? {};
             final categoryName = category['name']?.toString() ?? e['jenisSampah']?.toString() ?? bin['binType']?.toString() ?? 'Organik';
 
+            final String binQr = (bin['qrCode'] ??
+                    bin['qrSerial'] ??
+                    bin['kode'] ??
+                    bin['code'] ??
+                    e['qrCode'] ??
+                    e['qrSerial'] ??
+                    e['binCode'] ??
+                    e['kode'] ??
+                    '')
+                .toString()
+                .trim();
+            final String binId = (bin['id'] ?? e['binId'] ?? '').toString().trim();
+
             return {
               'id': e['id']?.toString() ?? '',
-              'binId': bin['id']?.toString() ?? e['binId']?.toString() ?? '',
+              'binId': binId,
               'wargaName': user['name']?.toString() ?? e['wargaName']?.toString() ?? '',
-              'binCode': bin['qrCode']?.toString() ?? e['binCode']?.toString() ?? e['binId']?.toString() ?? '',
+              'binCode': binQr.isNotEmpty ? binQr : binId,
+              'qrCode': binQr,
               'category': categoryName,
               'alasan': e['alasan']?.toString() ?? e['reason']?.toString() ?? '',
               'address': user['address']?.toString() ?? e['address']?.toString() ?? e['alamat']?.toString() ?? '',

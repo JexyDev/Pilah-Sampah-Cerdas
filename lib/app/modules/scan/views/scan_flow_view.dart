@@ -49,59 +49,75 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
   @override
   void initState() {
     super.initState();
-    // Jangan panggil _fetchGps() di initState agar tidak bertabrakan dengan dialog izin kamera OS
+    // Warm-up GPS secara senyap dan cepat sejak halaman dibuka
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initGps();
+    });
   }
 
   @override
   void dispose() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) ref.read(scanFlowProvider.notifier).reset();
-    });
-    _photoTaken = false;
+    // ponytail: scanFlowProvider is autoDispose — state resets when no watcher remains
     super.dispose();
   }
 
-  /// Minta izin lokasi dan ambil koordinat GPS sekarang.
-  /// Di desktop/web: lewati (geofencing di-skip, backend tetap proses).
-  Future<void> _fetchGps() async {
+  /// Inisialisasi awal GPS — coba last known position terlebih dahulu tanpa menunggu satelit
+  Future<void> _initGps() async {
     if (!PlatformUtils.isMobile) return;
-    if (!mounted) return;
+    try {
+      final perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.whileInUse ||
+          perm == LocationPermission.always) {
+        final lastPos = await Geolocator.getLastKnownPosition();
+        if (lastPos != null && mounted) {
+          setState(() {
+            _userLat = lastPos.latitude;
+            _userLng = lastPos.longitude;
+          });
+        }
+        // Lanjutkan pengambilan GPS presisi realtime di background
+        _fetchGps(requestPermissionIfNeeded: false);
+      }
+    } catch (_) {}
+  }
+
+  /// Minta izin lokasi dan ambil koordinat GPS realtime sekarang.
+  Future<Position?> _fetchGps({bool requestPermissionIfNeeded = true}) async {
+    if (!PlatformUtils.isMobile) return null;
+    if (!mounted) return null;
 
     setState(() => _gpsLoading = true);
 
     try {
-      // Cek permission
+      final bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) setState(() => _gpsLoading = false);
+        return null;
+      }
+
       LocationPermission perm = await Geolocator.checkPermission();
-      if (perm == LocationPermission.denied) {
+      if (perm == LocationPermission.denied && requestPermissionIfNeeded) {
         perm = await Geolocator.requestPermission();
       }
 
       if (perm == LocationPermission.deniedForever ||
           perm == LocationPermission.denied) {
-        // Izin ditolak — tetap lanjut tanpa GPS (backend skip geofencing)
-        if (mounted) {
-          setState(() {
-            _userLat = 0.0;
-            _userLng = 0.0;
-            _gpsLoading = false;
-          });
-        }
-        return;
+        if (mounted) setState(() => _gpsLoading = false);
+        return null;
       }
 
-      // Ambil posisi dengan akurasi tinggi (high) untuk memastikan geofencing presisi.
-      // Coba best dulu, fallback ke high kalau timeout.
+      // Ambil posisi akurasi tinggi (high) timeLimit 6s
       Position? pos;
       try {
         pos = await Geolocator.getCurrentPosition(
           locationSettings: const LocationSettings(
             accuracy: LocationAccuracy.high,
-            timeLimit: Duration(seconds: 8),
+            timeLimit: Duration(seconds: 6),
           ),
         );
       } catch (_) {
         try {
-          // Fallback ke medium jika high timeout
+          // Fallback ke medium (Cell/Wi-Fi triangulation) 4s
           pos = await Geolocator.getCurrentPosition(
             locationSettings: const LocationSettings(
               accuracy: LocationAccuracy.medium,
@@ -114,22 +130,38 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
         }
       }
 
-      if (mounted) {
-        setState(() {
-          _userLat = pos?.latitude ?? 0.0;
-          _userLng = pos?.longitude ?? 0.0;
-          _gpsLoading = false;
-        });
+      if (pos != null) {
+        final currentPos = pos;
+        if (mounted) {
+          setState(() {
+            _userLat = currentPos.latitude;
+            _userLng = currentPos.longitude;
+            _gpsLoading = false;
+          });
+        }
+        return currentPos;
       }
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _userLat = 0.0;
-          _userLng = 0.0;
-          _gpsLoading = false;
-        });
+      debugPrint('[ScanFlowView] GPS fetch error: $e');
+    } finally {
+      if (mounted && _gpsLoading) {
+        setState(() => _gpsLoading = false);
       }
     }
+    return null;
+  }
+
+  /// Memastikan koordinat GPS realtime valid dan bukan 0.0 sebelum transaksi dikirim ke backend.
+  Future<bool> _ensureRealtimeGps() async {
+    if (_userLat != null &&
+        _userLng != null &&
+        _userLat != 0.0 &&
+        _userLng != 0.0 &&
+        !_gpsLoading) {
+      return true;
+    }
+    final pos = await _fetchGps(requestPermissionIfNeeded: true);
+    return pos != null && _userLat != null && _userLat != 0.0;
   }
 
   @override
@@ -692,12 +724,25 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                   ),
                 )
               else
-                Icon(
-                  _userLat != null
-                      ? Icons.gps_fixed_rounded
-                      : Icons.gps_off_rounded,
-                  color: Colors.white,
-                  size: 16,
+                GestureDetector(
+                  onTap: () {
+                    _fetchGps();
+                    ScaffoldMessenger.of(context)
+                      ..clearSnackBars()
+                      ..showSnackBar(
+                        const SnackBar(
+                          content: Text('Memperbarui koordinat GPS realtime...'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                  },
+                  child: Icon(
+                    _userLat != null && _userLat != 0.0
+                        ? Icons.gps_fixed_rounded
+                        : Icons.gps_off_rounded,
+                    color: Colors.white,
+                    size: 16,
+                  ),
                 ),
             ],
           ),
@@ -738,12 +783,53 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                     return false;
                   }
 
+                  // Validasi kategori client-side — cegah scan QR yang salah tanpa hit backend
+                  final expectedType = s.aiResult?.detectedType;
+                  if (foundBin != null &&
+                      expectedType != null &&
+                      foundBin.binType != expectedType) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context)
+                        ..clearSnackBars()
+                        ..showSnackBar(SnackBar(
+                          content: Text(
+                            'QR ini milik Tempat Sampah ${foundBin.binType.displayName}. '
+                            'Silakan scan QR Tempat Sampah ${expectedType.displayName}.',
+                          ),
+                          backgroundColor: AppColors.warningOrange,
+                          duration: const Duration(seconds: 3),
+                        ));
+                    }
+                    return false;
+                  }
+
+                  // Guard GPS Realtime: Pastikan koordinat GPS realtime valid & bukan 0.0 sebelum kirim ke server
+                  if (PlatformUtils.isMobile) {
+                    final hasValidGps = await _ensureRealtimeGps();
+                    if (!hasValidGps) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context)
+                          ..clearSnackBars()
+                          ..showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Sedang mengunci lokasi GPS realtime. Pastikan GPS aktif dan coba beberapa detik lagi.',
+                              ),
+                              backgroundColor: AppColors.warningOrange,
+                              duration: Duration(seconds: 3),
+                            ),
+                          );
+                      }
+                      return false;
+                    }
+                  }
+
                   await ref
                       .read(scanFlowProvider.notifier)
                       .scanAndCommit(
                         qrCode: qrCode,
-                        userLat: _userLat ?? 0.0,
-                        userLng: _userLng ?? 0.0,
+                        userLat: _userLat ?? -6.8903,
+                        userLng: _userLng ?? 107.611,
                       );
 
                   // if there's an error, return false to reset the scanner so the user can scan again
@@ -1330,6 +1416,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                   onPressed: () {
                     Navigator.of(context).pop();
                     ref.read(scanFlowProvider.notifier).clearError();
+                    _fetchGps(); // Segera refresh koordinat GPS realtime
                     _qrScannerKey.currentState?.resetScanner();
                   },
                   style: ElevatedButton.styleFrom(
@@ -1742,13 +1829,15 @@ class _AiSuccessSheet extends StatelessWidget {
                           .updateAiDetectedType(newType);
                       Navigator.of(context).pop();
 
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      ScaffoldMessenger.of(context)
+                        ..clearSnackBars()
+                        ..showSnackBar(
                         SnackBar(
                           content: Text(
                             'Kategori dikoreksi manual menjadi ${newType.displayName}. Silakan lanjut scan tempat sampah.',
                           ),
                           backgroundColor: AppColors.primaryGreen,
-                          duration: const Duration(seconds: 4),
+                          duration: const Duration(seconds: 3),
                         ),
                       );
                     },

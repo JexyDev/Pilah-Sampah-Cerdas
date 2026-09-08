@@ -161,6 +161,7 @@ class ApiNotificationRepository implements NotificationRepository {
         json['desc']?.toString() ??
         json['description']?.toString() ??
         json['pesan']?.toString() ??
+        json['message']?.toString() ??
         json['body']?.toString() ??
         '';
 
@@ -168,7 +169,7 @@ class ApiNotificationRepository implements NotificationRepository {
         json['title']?.toString() ??
         json['judul']?.toString() ??
         json['subject']?.toString() ??
-        'Notifikasi Mahasiswa';
+        'Notifikasi';
 
     final rawType =
         json['type']?.toString() ??

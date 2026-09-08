@@ -339,9 +339,12 @@ class PengajuanWargaView extends ConsumerWidget {
                       }
                     },
                     icon: const Icon(Icons.qr_code_scanner_rounded, size: 18),
-                    label: const Text(
-                      'Verifikasi & Kosongkan Tempat Sampah',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    label: const FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        'Verifikasi & Kosongkan Tempat Sampah',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryGreen,

@@ -347,14 +347,17 @@ class _GantiPasswordPetugasViewState
                             ),
                           )
                         : const Icon(Icons.save_rounded, color: Colors.white),
-                    label: Text(
-                      _isSubmitting
-                          ? 'Memperbarui...'
-                          : 'Simpan Kata Sandi Baru',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                        color: Colors.white,
+                    label: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        _isSubmitting
+                            ? 'Memperbarui...'
+                            : 'Simpan Kata Sandi Baru',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                     style: ElevatedButton.styleFrom(

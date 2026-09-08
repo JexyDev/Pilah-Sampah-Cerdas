@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/providers/repository_providers.dart';
 
+import '../../../core/values/api_constants.dart';
 import '../../../data/services/notification_engine.dart';
 import '../../../data/services/local_notification_cache_service.dart';
 import '../../auth/controllers/auth_controller.dart';
@@ -86,8 +87,8 @@ class PetugasPemilahanFcmService {
       if (token != null) {
         final apiClient = ref.read(apiClientProvider);
         await apiClient.dio.post(
-          '/notifications/fcm-token/unregister',
-          data: {'fcmToken': token, 'role': 'PETUGAS_PEMILAHAN'},
+          ApiEndpoints.notificationsUnregisterToken,
+          data: {'token': token, 'fcmToken': token, 'role': 'PETUGAS_PEMILAHAN'},
         );
         debugPrint('[PetugasPemilahanFCM] Successfully unregistered FCM token');
       }
@@ -100,7 +101,7 @@ class PetugasPemilahanFcmService {
     try {
       final apiClient = ref.read(apiClientProvider);
       await apiClient.dio.post(
-        '/notifications/device-token',
+        ApiEndpoints.notificationsDeviceToken,
         data: {'token': token, 'role': 'PETUGAS_PEMILAHAN'},
       );
       debugPrint(

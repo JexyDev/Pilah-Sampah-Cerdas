@@ -10,7 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 final Set<String> _petugasShownNotifIds = {};
 
-/// Sanitasi string agar istilah lama 'Residu' digantikan dengan 'Pemilahan'.
+/// Sanitasi string agar istilah lama 'Residu' digantikan dengan 'Pemilahan' dan istilah terlarang dieliminasi.
 String _sanitizePetugasText(String text) {
   if (text.isEmpty) return text;
   return text
@@ -18,7 +18,9 @@ String _sanitizePetugasText(String text) {
       .replaceAll(RegExp(r'residu\s+global', caseSensitive: false), 'pemilahan')
       .replaceAll(RegExp(r'timbangan\s+residu', caseSensitive: false), 'timbangan pemilahan')
       .replaceAll(RegExp(r'\bresidu\b', caseSensitive: false), 'pemilahan')
-      .replaceAll(RegExp(r'\bResidu\b'), 'Pemilahan');
+      .replaceAll(RegExp(r'\bResidu\b'), 'Pemilahan')
+      .replaceAll(RegExp(r'tong\s+sampah', caseSensitive: false), 'Tempat Sampah')
+      .replaceAll(RegExp(r'\btong\b', caseSensitive: false), 'Tempat Sampah');
 }
 
 bool _isPetugasPemilahanNotification(NotificationEntity notif) {
@@ -94,6 +96,7 @@ bool _isPetugasPemilahanNotification(NotificationEntity notif) {
 final petugasPemilahanNotificationsProvider =
     FutureProvider<List<NotificationEntity>>((ref) async {
       final repo = ref.watch(notificationRepositoryProvider);
+      final petugasRepo = ref.watch(petugasPemilahanRepositoryProvider);
       final user = ref.watch(authProvider).user;
       if (user == null) return [];
 
@@ -106,13 +109,65 @@ final petugasPemilahanNotificationsProvider =
         list = [];
       }
 
-      // Tambahkan riwayat poin non-duplikat (PointHistory) agar tampil di Notification Page
       final prefs = await SharedPreferences.getInstance();
       final readList = prefs.getStringList('read_notifs_${userId}_$role') ?? [];
       final readSet = readList.toSet();
       final markAllTimestamp =
           prefs.getInt('mark_all_notifs_${userId}_$role') ?? 0;
 
+      // Ambil pengajuan pengosongan aktif dari warga agar selalu muncul di notifikasi Petugas
+      try {
+        final pengajuanList = await petugasRepo.getDaftarPengajuanWarga();
+        for (final p in pengajuanList) {
+          final pId = p['id']?.toString() ?? '';
+          if (pId.isEmpty) continue;
+
+          final notifId = 'pengajuan_$pId';
+          final createdAtRaw = p['createdAt']?.toString() ?? '';
+          final dt = DateTime.tryParse(createdAtRaw) ?? DateTime.now();
+
+          final isRead =
+              readSet.contains(notifId) ||
+              dt.millisecondsSinceEpoch <= markAllTimestamp ||
+              LocalNotificationCacheService().isRead(userId, role, notifId, dt);
+
+          final wargaName =
+              (p['wargaName']?.toString().isNotEmpty == true)
+                  ? p['wargaName'].toString()
+                  : 'Warga';
+          final category = p['category']?.toString() ?? 'Organik';
+          final binCode = p['binCode']?.toString() ?? '';
+          final locationParts = [
+            if (p['rtRw'] != null && p['rtRw'].toString().isNotEmpty) p['rtRw'],
+            if (p['kelurahan'] != null && p['kelurahan'].toString().isNotEmpty)
+              p['kelurahan'],
+          ].join(', ');
+          final locSuffix = locationParts.isNotEmpty ? ' di $locationParts' : '';
+          final codeSuffix = binCode.isNotEmpty ? ' ($binCode)' : '';
+          final cleanDesc = _sanitizePetugasText(
+            '$wargaName mengajukan pengosongan Tempat Sampah $category$codeSuffix$locSuffix.',
+          );
+
+          list.add(
+            NotificationEntity(
+              id: notifId,
+              type: 'PENGAJUAN_PENGOSONGAN',
+              title: 'Pengajuan Pengosongan Baru',
+              desc: cleanDesc,
+              isRead: isRead,
+              time: dt
+                  .toLocal()
+                  .toIso8601String()
+                  .substring(0, 16)
+                  .replaceAll('T', ' '),
+              icon: 'delete_sweep',
+              createdAt: dt,
+            ),
+          );
+        }
+      } catch (_) {}
+
+      // Tambahkan riwayat poin non-duplikat (PointHistory) agar tampil di Notification Page
       try {
         final pointRepo = ref.read(wasteLogRepositoryProvider);
         final pointHistory = await pointRepo.getPointHistoryByUser(userId);
@@ -170,6 +225,7 @@ final petugasPemilahanNotificationsProvider =
 
       for (final notif in list) {
         if (!_isPetugasPemilahanNotification(notif)) continue;
+        if (result.any((n) => n.id == notif.id)) continue;
         result.add(notif);
 
         final notifKey = 'petugas_${userId}_${notif.id}';

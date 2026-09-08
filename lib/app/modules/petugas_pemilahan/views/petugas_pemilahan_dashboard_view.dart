@@ -333,9 +333,13 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                     color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Text(
-                    'Perolehan Poin Timbangan & Validasi Warga',
-                    style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                  child: const FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Perolehan Poin Timbangan & Validasi Warga',
+                      style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ),
               ],
@@ -409,12 +413,16 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'Jadwal Penimbangan RW',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 15,
-                color: AppColors.textPrimary,
+            const Flexible(
+              child: Text(
+                'Jadwal Penimbangan RW',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                  color: AppColors.textPrimary,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
             Container(
@@ -526,28 +534,22 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                             ],
                           ),
                         ),
-                        ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.pushNamed(
-                              context,
-                              AppRoutes.timbanganPemilahan,
-                              arguments: {
-                                'binId': item.binId,
-                                'binCode': item.binCode,
-                                'category': item.wasteCategory,
-                                'wargaName': item.wargaName,
-                              },
-                            );
-                          },
-                          icon: const Icon(Icons.scale_rounded, size: 14),
-                          label: const Text('Timbang', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primaryGreen,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            minimumSize: Size.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: (pct >= 85 ? AppColors.maroonRed : AppColors.warningOrange).withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: (pct >= 85 ? AppColors.maroonRed : AppColors.warningOrange).withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Text(
+                            pct >= 85 ? 'Penuh' : 'Kritis',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: pct >= 85 ? AppColors.maroonRed : AppColors.warningOrange,
+                            ),
                           ),
                         ),
                       ],
@@ -660,27 +662,6 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                         color: AppColors.warningOrange,
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 18),
-
-                  // Tombol Aksi Cepat: Input Timbangan Pemilahan
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () => Navigator.pushNamed(context, AppRoutes.timbanganPemilahan),
-                      icon: const Icon(Icons.scale_rounded, size: 20),
-                      label: const Text(
-                        'Input Timbangan Pemilahan',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryGreen,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        elevation: 1,
-                      ),
-                    ),
                   ),
                   const SizedBox(height: 18),
 
@@ -802,6 +783,7 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                       child: const Center(
                         child: Text(
                           'Belum ada aktivitas timbangan yang tercatat hari ini.',
+                          textAlign: TextAlign.center,
                           style: TextStyle(color: AppColors.textSecondary),
                         ),
                       ),
@@ -832,10 +814,10 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                           ),
                           child: ListTile(
                             leading: CircleAvatar(
-                              backgroundColor: AppColors.residuColor.withValues(alpha: 0.1),
+                              backgroundColor: AppColors.primaryGreen.withValues(alpha: 0.1),
                               child: const Icon(
                                 Icons.scale_rounded,
-                                color: AppColors.residuColor,
+                                color: AppColors.primaryGreen,
                                 size: 20,
                               ),
                             ),
@@ -866,7 +848,7 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 12,
-                                color: AppColors.residuColor,
+                                color: AppColors.primaryGreen,
                               ),
                             ),
                           ),

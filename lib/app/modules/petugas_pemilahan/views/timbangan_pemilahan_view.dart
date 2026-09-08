@@ -12,7 +12,6 @@ import '../../../data/providers/repository_providers.dart';
 import '../../../data/services/location_service.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../shared/controllers/connectivity_controller.dart';
-import '../../shared/widgets/qr_scanner_widget.dart';
 import '../controllers/petugas_pemilahan_controller.dart';
 
 class TimbanganPemilahanView extends ConsumerStatefulWidget {
@@ -39,9 +38,6 @@ class _TimbanganPemilahanViewState
   final _formKey = GlobalKey<FormState>();
   final _weightController = TextEditingController();
 
-  String? _activeBinId;
-  String? _activeBinCode;
-  String? _activeWargaName;
   String? _photoPath;
   Position? _currentLocation;
   String _selectedClassification = 'Organik';
@@ -64,9 +60,6 @@ class _TimbanganPemilahanViewState
   @override
   void initState() {
     super.initState();
-    _activeBinId = widget.initialBinId;
-    _activeBinCode = widget.initialBinCode;
-    _activeWargaName = widget.initialWargaName;
     if (widget.initialCategory != null &&
         _classifications.contains(widget.initialCategory)) {
       _selectedClassification = widget.initialCategory!;
@@ -198,64 +191,6 @@ class _TimbanganPemilahanViewState
     }
   }
 
-  Future<void> _scanBinQr() async {
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.black,
-      builder: (ctx) => SafeArea(
-        child: SizedBox(
-          height: MediaQuery.of(context).size.height * 0.75,
-          child: Column(
-            children: [
-              AppBar(
-                title: const Text('Pindai QR Tempat Sampah Warga'),
-                backgroundColor: Colors.black,
-                foregroundColor: Colors.white,
-                leading: IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(ctx),
-                ),
-              ),
-              Expanded(
-                child: QrScannerWidget(
-                  isFullScreen: true,
-                  hint: 'Arahkan kamera ke kode QR tempat sampah warga',
-                  onQrDetected: (code) async {
-                    HapticFeedback.heavyImpact();
-                    if (mounted) {
-                      setState(() {
-                        _activeBinCode = code.trim();
-                        _activeBinId = code.trim();
-                        if (code.toUpperCase().contains('ORGANIK') || code.toUpperCase().contains('ORG')) {
-                          if (!code.toUpperCase().contains('ANORGANIK') && !code.toUpperCase().contains('ANORG')) {
-                            _selectedClassification = 'Organik';
-                          } else {
-                            _selectedClassification = 'Anorganik';
-                          }
-                        }
-                      });
-                      Navigator.pop(ctx);
-                      ScaffoldMessenger.of(context).clearSnackBars();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Target tempat sampah "$code" terpilih.'),
-                          backgroundColor: AppColors.primaryGreen,
-                          duration: const Duration(seconds: 2),
-                        ),
-                      );
-                    }
-                    return true;
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Future<void> _submitLog() async {
     if (!_formKey.currentState!.validate()) return;
     if (_photoPath == null) {
@@ -301,7 +236,7 @@ class _TimbanganPemilahanViewState
     final success = await ref
         .read(petugasPemilahanControllerProvider.notifier)
         .submitLog(
-          binId: _activeBinId ?? 'GLOBAL_BIN_RT_RW',
+          binId: 'GLOBAL_BIN_RT_RW',
           actualWeightKg: weight,
           classification: _selectedClassification,
           photoPath: _photoPath!,
@@ -763,73 +698,21 @@ class _TimbanganPemilahanViewState
                     Icon(Icons.scale_rounded, color: AppColors.primaryGreen, size: 28),
                     SizedBox(width: 12),
                     Expanded(
-                      child: Text(
-                        'Input manual hasil timbangan fisik pemilahan untuk terakumulasi ke Tempat Sampah Pemilahan Global RW.',
-                        style: TextStyle(fontSize: 12, color: AppColors.textPrimary, fontWeight: FontWeight.w500),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppDimensions.lg),
-
-              // 1. Lokasi / Bin Info
-              const Text('Target Penampungan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: _activeBinCode != null ? AppColors.primaryGreen : AppColors.border,
-                    width: _activeBinCode != null ? 1.5 : 1.0,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      _activeBinCode != null ? Icons.qr_code_2_rounded : Icons.delete_sweep_rounded,
-                      color: AppColors.primaryGreen,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _activeBinCode != null
-                                ? 'Tempat Sampah: $_activeBinCode'
-                                : 'Tempat Sampah Pemilahan Global RW',
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                            'Tempat Sampah Pemilahan Global RW',
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                           ),
+                          SizedBox(height: 2),
                           Text(
-                            _activeBinCode != null
-                                ? 'Warga: ${_activeWargaName ?? "Dampingan RW"}'
-                                : 'Tercatat di Audit Trail Monitoring RW & DLH',
-                            style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                            'Input manual hasil timbangan fisik pemilahan untuk terakumulasi ke audit trail RW & DLH.',
+                            style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
                           ),
                         ],
                       ),
                     ),
-                    if (_activeBinCode != null)
-                      IconButton(
-                        tooltip: 'Ganti ke Global Bin',
-                        icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.textSecondary),
-                        onPressed: () {
-                          setState(() {
-                            _activeBinId = null;
-                            _activeBinCode = null;
-                            _activeWargaName = null;
-                          });
-                        },
-                      )
-                    else
-                      IconButton(
-                        tooltip: 'Pindai QR Tempat Sampah Warga',
-                        icon: const Icon(Icons.qr_code_scanner_rounded, size: 20, color: AppColors.primaryGreen),
-                        onPressed: _scanBinQr,
-                      ),
                   ],
                 ),
               ),
@@ -1084,14 +967,17 @@ class _TimbanganPemilahanViewState
                           Icons.check_circle_rounded,
                           color: Colors.white,
                         ),
-                  label: Text(
-                    _isSubmitting
-                        ? 'Mengirim Data...'
-                        : 'Simpan Timbangan Pemilahan',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                      color: Colors.white,
+                  label: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      _isSubmitting
+                          ? 'Mengirim Data...'
+                          : 'Simpan Timbangan Pemilahan',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                   style: ElevatedButton.styleFrom(
