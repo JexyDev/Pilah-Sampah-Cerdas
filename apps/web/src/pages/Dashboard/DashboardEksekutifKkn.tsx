@@ -163,7 +163,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
     fetchMasterRw();
   }, []);
 
-  // Filter RW dinamis berdasarkan kelurahan yang dipilih
+  // Filter RW dinamis berdasarkan kelurahan yang dipilih dengan standardisasi label ISO
   const rwOptions = useMemo(() => {
     if (!masterRwList || masterRwList.length === 0) {
       return ["Semua RW"];
@@ -178,19 +178,29 @@ export const DashboardEksekutifKkn: React.FC = () => {
       });
     }
 
-    // Ekstrak nama RW unik & urutkan secara natural (RW 01, RW 02, dst)
-    const uniqueRw = Array.from(new Set(filtered.map((r) => r.name))).sort((a, b) => {
-      const numA = parseInt(a.replace(/\D/g, ""), 10) || 0;
-      const numB = parseInt(b.replace(/\D/g, ""), 10) || 0;
-      return numA - numB;
+    // Ekstrak nomor RW, filter data dummy/test (seperti 99), dan standardisasi jadi "RW XX" yang seragam
+    const rwMap = new Map<number, string>();
+    filtered.forEach((r) => {
+      const num = parseInt(r.name.replace(/\D/g, ""), 10);
+      if (!isNaN(num) && num > 0 && num < 90) {
+        // Abaikan nomor test / dummy seperti RW 99
+        const standardLabel = `RW ${String(num).padStart(2, "0")}`;
+        rwMap.set(num, standardLabel);
+      }
     });
 
-    return ["Semua RW", ...uniqueRw];
+    const sortedRw = Array.from(rwMap.entries())
+      .sort(([a], [b]) => a - b)
+      .map(([, label]) => label);
+
+    return ["Semua RW", ...sortedRw];
   }, [masterRwList, selectedKelurahan]);
 
-  // Reset selectedRw jika RW terpilih tidak valid untuk kelurahan yang baru dipilih
+  // Reset selectedRw jika RW terpilih tidak valid untuk kelurahan baru, atau jika kembali ke "Semua Kelurahan"
   useEffect(() => {
-    if (selectedRw !== "Semua RW" && !rwOptions.includes(selectedRw)) {
+    if (selectedKelurahan === "Semua Kelurahan" || selectedKelurahan === "ALL") {
+      setSelectedRw("Semua RW");
+    } else if (selectedRw !== "Semua RW" && !rwOptions.includes(selectedRw)) {
       setSelectedRw("Semua RW");
     }
   }, [selectedKelurahan, rwOptions, selectedRw]);
@@ -360,7 +370,10 @@ export const DashboardEksekutifKkn: React.FC = () => {
                 <MapPin size={14} className="text-emerald-600 shrink-0" />
                 <select
                   value={selectedKelurahan}
-                  onChange={(e) => setSelectedKelurahan(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedKelurahan(e.target.value);
+                    setSelectedRw("Semua RW");
+                  }}
                   aria-label="Filter Kelurahan"
                   className="bg-transparent outline-none cursor-pointer pr-2 text-xs font-bold text-slate-700 dark:text-slate-200"
                 >
