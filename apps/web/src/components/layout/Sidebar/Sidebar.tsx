@@ -96,7 +96,7 @@ const checkRouteActive = (
     const pengangkutanAliases = ["/monitoring-pemilahan/pengangkutan-sampah", "/pengangkutan-residu", "/residu", "/manajemen-pengangkutan"];
     if (pengangkutanAliases.includes(tPath) && pengangkutanAliases.includes(cPath)) return true;
 
-    const peringkatAliases = ["/monitoring-pemilahan/peringkat-warga", "/peringkat", "/leaderboard", "/poin-warga"];
+    const peringkatAliases = ["/monitoring-pemilahan/peringkat-warga", "/monitoring-pemilahan/papan-peringkat", "/peringkat", "/leaderboard", "/poin-warga"];
     if (peringkatAliases.includes(tPath) && peringkatAliases.includes(cPath)) return true;
 
     const rekapSetoranAliases = [
@@ -1143,7 +1143,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             },
             {
               to: "/monitoring-pemilahan/peringkat-warga",
-              label: "Peringkat Warga",
+              label: "Papan Peringkat",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",

@@ -215,9 +215,24 @@ export class PresensiMandiriService {
     if (record.status === "SELESAI") throw new Error("ALREADY_CHECKED_OUT");
 
     const checkOutAt = new Date();
-    const durasiMenit = Math.max(1, Math.floor((checkOutAt.getTime() - record.checkInAt.getTime()) / 60000));
+    const durasiMenit = Math.max(0, Math.floor((checkOutAt.getTime() - record.checkInAt.getTime()) / 60000));
 
-    const updateData: any = { status: "SELESAI", checkOutAt, durasiMenit };
+    if (durasiMenit < 30) {
+      const minutesRemaining = 30 - durasiMenit;
+      const err: any = new Error(
+        `MINIMUM_DURATION_NOT_MET: Presensi pulang mandiri minimal dapat dilakukan 30 menit setelah jam masuk (check-in). Anda baru berkegiatan selama ${durasiMenit} menit. Sisa waktu: ${minutesRemaining} menit lagi.`
+      );
+      err.code = "MINIMUM_DURATION_NOT_MET";
+      err.statusCode = 422;
+      err.details = {
+        minutesRemaining,
+        durasiMenit,
+        minimumRequiredMinutes: 30,
+      };
+      throw err;
+    }
+
+    const updateData: any = { status: "SELESAI", checkOutAt, durasiMenit: Math.max(1, durasiMenit) };
     if (deskripsiKegiatan && deskripsiKegiatan.trim().length > 0) {
       if (deskripsiKegiatan.trim().length > MAX_DESKRIPSI_LENGTH) {
         throw new Error(`DESKRIPSI_TOO_LONG: Maksimal ${MAX_DESKRIPSI_LENGTH} karakter`);
