@@ -1572,7 +1572,6 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         : 15.0;
     final effectiveRadius = radius + buffer;
 
-    final polygonRaw = target['polygon'];
     List<ValidZoneItem> validZones = [];
     if (target['validZones'] != null && target['validZones'] is List) {
       validZones = (target['validZones'] as List)
@@ -1595,47 +1594,8 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       );
       distance = multiEval.distanceToTargetMeters;
       nowInside = multiEval.isInside;
-    } else if (polygonRaw != null &&
-        polygonRaw is List &&
-        polygonRaw.length >= 3) {
-      // POLYGON CHECK: Jika API menyediakan polygon, gunakan Ray Casting algorithm
-      // untuk cek apakah user berada di dalam area polygon tersebut.
-      try {
-        final polygonPoints = polygonRaw.map((point) {
-          final List pts = point as List;
-          final double val0 = (pts[0] as num).toDouble();
-          final double val1 = (pts[1] as num).toDouble();
-          final double pLat = (val0.abs() > 45.0) ? val1 : val0;
-          final double pLng = (val0.abs() > 45.0) ? val0 : val1;
-          return (lat: pLat, lng: pLng);
-        }).toList();
-
-        final insidePoly = _isPointInPolygon(
-          lat: pos.latitude,
-          lng: pos.longitude,
-          polygon: polygonPoints,
-        );
-
-        distance = Geolocator.distanceBetween(
-          pos.latitude,
-          pos.longitude,
-          targetLat,
-          targetLng,
-        );
-
-        nowInside = insidePoly || (distance <= effectiveRadius);
-      } catch (_) {
-        // Fallback ke radius jika parsing polygon gagal
-        distance = Geolocator.distanceBetween(
-          pos.latitude,
-          pos.longitude,
-          targetLat,
-          targetLng,
-        );
-        nowInside = distance <= effectiveRadius;
-      }
     } else {
-      // RADIUS CHECK: Fallback jika tidak ada polygon & validZones
+      // RADIUS CHECK: Fallback jika tidak ada validZones
       distance = Geolocator.distanceBetween(
         pos.latitude,
         pos.longitude,
@@ -1680,34 +1640,6 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         );
       }
     }
-  }
-
-  /// Ray Casting algorithm untuk Point-in-Polygon check.
-  /// Mengirimkan sebuah sinar horizontal dari titik (lat, lng) ke arah kanan
-  /// dan menghitung berapa kali sinar tersebut memotong tepi polygon.
-  /// Jika ganjil → di dalam; jika genap → di luar.
-  bool _isPointInPolygon({
-    required double lat,
-    required double lng,
-    required List<({double lat, double lng})> polygon,
-  }) {
-    bool inside = false;
-    final int n = polygon.length;
-    int j = n - 1;
-    for (int i = 0; i < n; i++) {
-      final double xi = polygon[i].lat;
-      final double yi = polygon[i].lng;
-      final double xj = polygon[j].lat;
-      final double yj = polygon[j].lng;
-
-      final bool intersect =
-          ((yi > lng) != (yj > lng)) &&
-          (lat < (xj - xi) * (lng - yi) / (yj - yi) + xi);
-
-      if (intersect) inside = !inside;
-      j = i;
-    }
-    return inside;
   }
 
   /// Trigger manual or auto attendance with full payload
