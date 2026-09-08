@@ -32,6 +32,7 @@ import {
   X,
   Shield,
   Sliders,
+  GraduationCap,
 } from "lucide-react";
 
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
@@ -588,11 +589,13 @@ const SectionHeader: React.FC<{ label: string }> = ({ label }) => (
 );
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false }) => {
-  const { user, logout } = useAuthStore();
+  const { user, logout, can } = useAuthStore();
   const navigate = useNavigate();
   const rawRole = ((user?.peran || (user as any)?.role || "WARGA") as string).toUpperCase();
   const userRole = (["PEMIMPIN", "PIMPINAN", "Pemimpin", "Pimpinan"].includes(rawRole) ? "PIMPINAN" : rawRole) as UserRole;
   const isDpl = userRole === "DPL" || userRole === "DOSEN_PEMBIMBING";
+  const isMpl = userRole === "MPL" || rawRole === "MITRA_PENDAMPING_LAPANGAN";
+  const isPimpinan = userRole === "PIMPINAN";
 
   // Live real-time clock state
   const [timeStr, setTimeStr] = React.useState("");
@@ -649,9 +652,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     "WARGA",
   ];
 
-  const hasAccess = (allowed?: UserRole[]) => {
+  const hasAccess = (allowed?: UserRole[], resource?: string) => {
+    if (userRole === "DEVELOPER" || userRole === "SUPER_USER") return true;
+
+    // 1. Dynamic RBAC check jika resource didefinisikan
+    if (resource) {
+      return can(resource, "canView");
+    }
+
+    // 2. Fallback static allowed role check
     if (!allowed) return true;
-    if (userRole === "DEVELOPER") return true;
     if (userRole === "PIMPINAN" || (userRole as string) === "PEMIMPIN") {
       return allowed.includes("PIMPINAN") || (allowed as any).includes("PEMIMPIN");
     }
@@ -660,26 +670,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
 
   const getFilteredGroupChildren = (
     groupLabel: string,
-    items: Array<{ to: string; label: string; allowed?: UserRole[] }>
+    items: Array<{ to: string; label: string; allowed?: UserRole[]; resource?: string }>
   ) => {
     if (groupLabel === "Wilayah" || groupLabel === "Data Wilayah") {
+      if (isPimpinan) return [];
       if (
         userRole === "DEVELOPER" ||
         userRole === "SUPER_USER" ||
         userRole === "ADMIN_DLH" ||
-        userRole === "PIMPINAN" ||
-        (userRole as string) === "PEMIMPIN"
+        can("master_data_wilayah", "canView")
       ) {
         return items;
       }
       return [];
     }
 
-    if (groupLabel === "Dataset") {
-      return items.filter((c) => !c.allowed || hasAccess(c.allowed));
-    }
-
-    return items.filter((c) => !c.allowed || hasAccess(c.allowed));
+    return items.filter((c) => hasAccess(c.allowed, c.resource));
   };
 
   const menuSections = [
@@ -697,6 +703,19 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     {
       header: "PROGRAM KKN",
       items: [
+        {
+          to: "/dasbor?tab=kkn",
+          icon: GraduationCap,
+          label: "Dasbor Eksekutif KKN",
+          allowed: [
+            "DEVELOPER",
+            "SUPER_USER",
+            "ADMIN_DLH",
+            "PANITIA_TASKFORCE",
+            "PIMPINAN",
+            "PEMIMPIN",
+          ] as UserRole[],
+        },
         {
           type: "group",
           label: "Pelaksanaan",
@@ -1011,6 +1030,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           to: "/monitoring-wilayah",
           icon: MapPin,
           label: "Monitoring Wilayah",
+          resource: "monitoring_sampah",
           allowed: [
             "DEVELOPER",
             "SUPER_USER",
@@ -1044,6 +1064,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             {
               to: "/monitoring-pengelolaan/tempat-sampah",
               label: "Tempat Sampah",
+              resource: "manajemen_tempat_sampah",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
@@ -1052,7 +1073,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "LURAH",
                 "RW",
                 "PETUGAS_RESIDU",
-                "PIMPINAN",
                 "PANITIA_TASKFORCE",
                 "MAHASISWA_KKN",
               ] as UserRole[],
@@ -1060,6 +1080,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             {
               to: "/monitoring-pengelolaan/fasilitas",
               label: "Fasilitas",
+              resource: "pemanfaatan",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
@@ -1114,6 +1135,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             {
               to: "/monitoring-pemilahan/rekapitulasi-setoran",
               label: "Rekapitulasi Setoran",
+              resource: "laporan_analitik",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
@@ -1129,6 +1151,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             {
               to: "/monitoring-pemilahan/pengangkutan-sampah",
               label: "Pengangkutan Sampah",
+              resource: "pengangkutan",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
@@ -1144,6 +1167,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             {
               to: "/monitoring-pemilahan/peringkat-warga",
               label: "Papan Peringkat",
+              resource: "poin_warga",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
@@ -1164,6 +1188,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           to: "/monitoring-pemanfaatan",
           icon: Recycle,
           label: "Monitoring Pemanfaatan",
+          resource: "hasil_pemanfaatan",
           allowed: [
             "DEVELOPER",
             "SUPER_USER",
@@ -1182,11 +1207,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     },
     {
       header: "MASTER DATA",
-      items: [
+      items: isPimpinan ? [] : [
         {
           type: "group",
           label: "Pengguna",
           icon: Users,
+          resource: "manajemen_pengguna",
           allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PIMPINAN", "RW"] as UserRole[],
           children: [
             { to: "/pengguna?role=developer", label: "Developer", allowed: ["DEVELOPER"] as UserRole[] },
@@ -1204,6 +1230,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           type: "group",
           label: "Wilayah",
           icon: MapPin,
+          resource: "master_data_wilayah",
           allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PIMPINAN", "PEMIMPIN"] as UserRole[],
           children: [
             { to: "/wilayah/provinsi", label: "Provinsi" },
@@ -1261,12 +1288,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           to: "/konfigurasi-sistem",
           icon: Sliders,
           label: "Konfigurasi Sistem",
+          resource: "konfigurasi_sistem",
           allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[],
         },
         {
           to: "/histori-sistem",
           icon: FileText,
           label: "Histori Sistem (Audit)",
+          resource: "audit_trail",
           allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[],
         },
         {
@@ -1290,7 +1319,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           to: "/panduan",
           icon: BookOpen,
           label: "Panduan",
-          allowed: ALL_ROLES.filter(role => role !== "DPL" && role !== "DOSEN_PEMBIMBING"),
+          allowed: ALL_ROLES.filter(role => role !== "DPL" && role !== "DOSEN_PEMBIMBING" && role !== "PIMPINAN" && role !== "PEMIMPIN"),
         },
         {
           to: "/informasi",
@@ -1302,6 +1331,28 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     },
 
   ];
+
+  const effectiveSections = isMpl
+    ? [
+        {
+          header: "PENILAIAN",
+          items: [
+            {
+              to: "/penilaian/mahasiswa",
+              icon: Award,
+              label: "Form Penilaian Mahasiswa",
+              allowed: ["MPL"] as UserRole[],
+            },
+            {
+              to: "/penilaian/rekapitulasi-nilai-akhir",
+              icon: ClipboardList,
+              label: "Rekap Nilai Akhir",
+              allowed: ["MPL"] as UserRole[],
+            },
+          ],
+        },
+      ]
+    : menuSections;
 
   return (
     <>
@@ -1340,9 +1391,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
 
             {/* Centered Icons Navigation List */}
             <nav className="flex-1 overflow-y-auto w-full px-2 py-2 space-y-1 flex flex-col items-center scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
-              {menuSections.map((sec, idx) => {
+              {effectiveSections.map((sec, idx) => {
                 const visibleItems = sec.items.filter((item) => {
-                  if (!hasAccess(item.allowed)) return false;
+                  if (!hasAccess(item.allowed, (item as any).resource)) return false;
                   if (item.type === "group") {
                     const kids = getFilteredGroupChildren(item.label, (item as any).children);
                     return kids.length > 0;
@@ -1377,6 +1428,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
 
             {/* Bottom Actions for Collapsed Mode */}
             <div className="flex flex-col items-center pt-2 border-t border-slate-100 dark:border-slate-800 w-full px-2 shrink-0 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  logout();
+                  navigate("/login");
+                }}
+                className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 hover:bg-rose-100 flex items-center justify-center transition cursor-pointer"
+                title="Keluar (Logout)"
+              >
+                <LogOut size={16} />
+              </button>
               <CollapsedClockButton dateStr={dateStr} timeStr={timeStr} />
             </div>
           </div>
@@ -1411,9 +1473,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
 
             {/* Scrollable Navigation Sections */}
             <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-1 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
-              {menuSections.map((sec) => {
+              {effectiveSections.map((sec) => {
                 const visibleItems = sec.items.filter((item) => {
-                  if (!hasAccess(item.allowed)) return false;
+                  if (!hasAccess(item.allowed, (item as any).resource)) return false;
                   if (item.type === "group") {
                     const kids = getFilteredGroupChildren(item.label, (item as any).children);
                     return kids.length > 0;
@@ -1467,8 +1529,20 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               })}
             </nav>
 
-            {/* Bottom Footer Section: Real-time System Clock Card */}
-            <div className="p-3.5 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
+            {/* Bottom Footer Section: Real-time System Clock Card & Logout */}
+            <div className="p-3.5 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0 space-y-2">
+              <button
+                type="button"
+                onClick={() => {
+                  logout();
+                  navigate("/login");
+                }}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50/50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-xs font-bold transition cursor-pointer"
+              >
+                <LogOut size={14} />
+                <span>Keluar (Logout)</span>
+              </button>
+
               {/* Real-time System Clock Card */}
               <div className="w-full bg-[#f2f8f4]/90 dark:bg-slate-800/90 hover:bg-[#ebf7ee] dark:hover:bg-slate-700/90 p-2.5 rounded-2xl border border-[#c8e6b2]/80 dark:border-slate-700/80 shadow-xs text-center space-y-0.5 transition-all duration-300 relative z-10 hover:scale-[1.02] backdrop-blur-xs">
                 <div className="flex items-center justify-center gap-1.5 text-slate-500 dark:text-slate-400 mb-0.5">

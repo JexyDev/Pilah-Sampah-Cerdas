@@ -1,24 +1,40 @@
-﻿import { Router } from "express";
+import { Router } from "express";
 import { ideDaurUlangController } from "../controllers/ideDaurUlangController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
+import { requirePermission } from "../middlewares/permissionMiddleware.js";
 import { uploadAvatarMiddleware } from "../middlewares/uploadMiddleware.js";
 
 const router = Router();
 
-// Submit ide — WARGA + MAHASISWA_KKN + Admin
+// Submit ide — WARGA + MAHASISWA_KKN + Admin (Dicek via Dynamic Permission)
 router.post(
   "/",
   authMiddleware,
-  roleMiddleware(["WARGA", "MAHASISWA_KKN", "SUPER_USER", "ADMIN_DLH", "RW", "RT"]),
+  requirePermission("ide_daur_ulang", "canCreate", [
+    "WARGA",
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "RW",
+    "RT",
+  ]),
   uploadAvatarMiddleware.single("foto"),
   ideDaurUlangController.submitIde.bind(ideDaurUlangController)
 );
 
-// Social feed — semua authenticated
+// Social feed — diproteksi canView
 router.get(
   "/",
   authMiddleware,
+  requirePermission("ide_daur_ulang", "canView", [
+    "WARGA",
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "RW",
+    "RT",
+  ]),
   ideDaurUlangController.getIdeDaurUlang.bind(ideDaurUlangController)
 );
 
@@ -34,7 +50,7 @@ router.get(
 router.put(
   "/:id/approve",
   authMiddleware,
-  roleMiddleware(["RW", "RT", "SUPER_USER", "ADMIN_DLH"]),
+  requirePermission("rw_approval", "canEdit", ["RW", "RT", "SUPER_USER", "ADMIN_DLH"]),
   ideDaurUlangController.approve.bind(ideDaurUlangController)
 );
 

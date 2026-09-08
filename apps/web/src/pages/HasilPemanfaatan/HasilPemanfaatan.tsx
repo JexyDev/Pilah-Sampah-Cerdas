@@ -35,14 +35,15 @@ import { resolveImageUrl } from "../../utils/imageUrl";
 
 export const HasilPemanfaatan: React.FC = () => {
   const { user } = useAuthStore();
-  const [activeSectionTab, setActiveSectionTab] = useState<"HASIL" | "FEEDBACK">("HASIL");
+  const [activeSectionTab] = useState<"HASIL">("HASIL");
 
   // Feedback State
   const [items, setItems] = useState<FeedbackItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   // Program / Product Outputs State
   const [programs, setPrograms] = useState<PemanfaatanProgram[]>([]);
+  const [masterLuaranList, setMasterLuaranList] = useState<Array<{ id: number; nama: string; kategori: string }>>([]);
 
   // Search & Filter states
   const [searchQuery, setSearchQuery] = useState("");
@@ -74,19 +75,6 @@ export const HasilPemanfaatan: React.FC = () => {
   const [deleteFeedbackId, setDeleteFeedbackId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const fetchFeedbackList = async () => {
-    try {
-      setLoading(true);
-      const data = await pemanfaatanApiService.getFeedbackList();
-      setItems(data);
-    } catch (e: any) {
-      console.warn("[HasilPemanfaatan] Gagal memuat feedback:", e?.message || e);
-      setItems([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const fetchProgramList = async () => {
     try {
       const data = await pemanfaatanApiService.getPrograms();
@@ -98,8 +86,12 @@ export const HasilPemanfaatan: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchFeedbackList();
     fetchProgramList();
+    pemanfaatanApiService.getMasterLuaran().then((data) => {
+      if (Array.isArray(data) && data.length > 0) {
+        setMasterLuaranList(data);
+      }
+    });
   }, []);
 
 
@@ -412,132 +404,95 @@ export const HasilPemanfaatan: React.FC = () => {
             : user?.wilayah || "Wilayah Operasional"
         }
         title="Pemanfaatan & Hasil"
-        description="Pusat pemantauan konversi produk hasil daur ulang (Kompos, Maggot BSF, Pupuk POC, Saldo Bank Sampah) dan evaluasi kepuasan pemanfaatan warga."
-        actions={
-          activeSectionTab === "FEEDBACK" ? (
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
-            >
-              <Plus size={15} /> <span>Sampaikan Kritik & Saran</span>
-            </button>
-          ) : undefined
-        }
+        description="Pusat pemantauan konversi produk hasil daur ulang (Kompos, Maggot BSF, Pupuk POC, Saldo Bank Sampah) berbasis Master Luaran Sampah."
       />
 
-      {/* Segmented Top Navigation Sub-Tabs */}
-      <div className="bg-slate-100/90 dark:bg-slate-800/90 p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 flex flex-col sm:flex-row gap-1.5">
-        <button
-          onClick={() => {
-            setActiveSectionTab("HASIL");
-            setSearchQuery("");
-            setKategoriFilter("ALL");
-          }}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 sm:px-4 rounded-xl text-xs font-black transition-all cursor-pointer ${
-            activeSectionTab === "HASIL"
-              ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-700"
-              : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-white/50 dark:hover:bg-slate-700/50"
-          }`}
-        >
-          <PackageCheck size={16} className="shrink-0" />
-          <span className="truncate">Rekapitulasi Produk &amp; Hasil Olahan ({programs.length})</span>
-        </button>
-        <button
-          onClick={() => {
-            setActiveSectionTab("FEEDBACK");
-            setSearchQuery("");
-            setKategoriFilter("ALL");
-          }}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 sm:px-4 rounded-xl text-xs font-black transition-all cursor-pointer ${
-            activeSectionTab === "FEEDBACK"
-              ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-700"
-              : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-white/50 dark:hover:bg-slate-700/50"
-          }`}
-        >
-          <MessageSquare size={16} className="shrink-0" />
-          <span className="truncate">Aspirasi &amp; Evaluasi Warga ({items.length})</span>
-        </button>
-      </div>
-
-      {/* VIEW TAB 1: REKAPITULASI PRODUK & HASIL OLAHAN */}
-      {activeSectionTab === "HASIL" && (
-        <>
-          {/* KPI Metric Summary Cards - Hasil Produk */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            <div className="bg-white dark:bg-slate-900 p-4 sm:p-4.5 rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5 min-w-0">
-              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded-xl shrink-0 border border-emerald-100 dark:border-emerald-700/50">
-                <Leaf className="w-5 h-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider truncate">Hasil Panen Olahan</p>
-                <p className="text-base sm:text-lg font-black text-emerald-700 dark:text-emerald-400 mt-0.5 truncate">{totalPanenKg.toLocaleString("id-ID")} <span className="text-xs font-semibold text-slate-400">Kg/L</span></p>
-              </div>
+      {/* VIEW: REKAPITULASI PRODUK & HASIL OLAHAN */}
+      <div className="space-y-4">
+        {/* KPI Metric Summary Cards - Hasil Produk */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="bg-white dark:bg-slate-900 p-4 sm:p-4.5 rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5 min-w-0">
+            <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded-xl shrink-0 border border-emerald-100 dark:border-emerald-700/50">
+              <Leaf className="w-5 h-5" />
             </div>
-
-            <div className="bg-white dark:bg-slate-900 p-4 sm:p-4.5 rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5 min-w-0">
-              <div className="p-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl shrink-0 border border-slate-200 dark:border-slate-700">
-                <TrendingUp className="w-5 h-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider truncate">Nilai Ekonomi Daur</p>
-                <p className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5 truncate" title={`Rp ${totalNilaiEkonomi.toLocaleString("id-ID")}`}>
-                  Rp {totalNilaiEkonomi.toLocaleString("id-ID")}
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-slate-900 p-4 sm:p-4.5 rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5 min-w-0">
-              <div className="p-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl shrink-0 border border-slate-200 dark:border-slate-700">
-                <Boxes className="w-5 h-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider truncate">Total Bahan Terolah</p>
-                <p className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5 truncate">{totalBahanMasukKg.toLocaleString("id-ID")} <span className="text-xs font-semibold text-slate-400">Kg</span></p>
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-slate-900 p-4 sm:p-4.5 rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5 min-w-0">
-              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded-xl shrink-0 border border-emerald-100 dark:border-emerald-700/50">
-                <Building2 className="w-5 h-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider truncate">Program &amp; Fasilitas</p>
-                <p className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5 truncate">{programs.length} <span className="text-xs font-semibold text-slate-400">Titik Olahan</span></p>
-              </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider truncate">Hasil Panen Olahan</p>
+              <p className="text-base sm:text-lg font-black text-emerald-700 dark:text-emerald-400 mt-0.5 truncate">{totalPanenKg.toLocaleString("id-ID")} <span className="text-xs font-semibold text-slate-400">Kg/L</span></p>
             </div>
           </div>
 
-          {/* Search & Filter Bar - Hasil Produk */}
-          <div className="bg-white dark:bg-slate-900 p-4.5 sm:p-5 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-4">
-            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                <input
-                  type="text"
-                  placeholder="Cari nama program, jenis olahan, lokasi fasilitas, atau penerima manfaat..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 pl-10 pr-4 py-2.5 rounded-2xl text-xs font-bold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-[#009966] focus:bg-white dark:focus:bg-slate-800 transition-all"
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <select
-                  value={kategoriFilter}
-                  onChange={(e) => setKategoriFilter(e.target.value)}
-                  className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 px-3 py-2.5 rounded-2xl text-xs font-bold outline-none focus:border-[#009966] transition-all cursor-pointer"
-                >
-                  <option value="ALL">Semua Jenis Pengolahan</option>
-                  <option value="Kompos">Kompos Organik (Buruan Sae)</option>
-                  <option value="Maggot">Maggot BSF</option>
-                  <option value="POC">Pupuk Organik Cair (POC)</option>
-                  <option value="Bank Sampah">Bank Sampah Anorganik</option>
-                  <option value="Loseda">Loseda (Lorong Sisa Dapur)</option>
-                  <option value="Bata Terawang">Bata Terawang</option>
-                </select>
-              </div>
+          <div className="bg-white dark:bg-slate-900 p-4 sm:p-4.5 rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5 min-w-0">
+            <div className="p-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl shrink-0 border border-slate-200 dark:border-slate-700">
+              <TrendingUp className="w-5 h-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider truncate">Nilai Ekonomi Daur</p>
+              <p className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5 truncate" title={`Rp ${totalNilaiEkonomi.toLocaleString("id-ID")}`}>
+                Rp {totalNilaiEkonomi.toLocaleString("id-ID")}
+              </p>
             </div>
           </div>
+
+          <div className="bg-white dark:bg-slate-900 p-4 sm:p-4.5 rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5 min-w-0">
+            <div className="p-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl shrink-0 border border-slate-200 dark:border-slate-700">
+              <Boxes className="w-5 h-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider truncate">Total Bahan Terolah</p>
+              <p className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5 truncate">{totalBahanMasukKg.toLocaleString("id-ID")} <span className="text-xs font-semibold text-slate-400">Kg</span></p>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 p-4 sm:p-4.5 rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5 min-w-0">
+            <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded-xl shrink-0 border border-emerald-100 dark:border-emerald-700/50">
+              <Building2 className="w-5 h-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider truncate">Program &amp; Fasilitas</p>
+              <p className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5 truncate">{programs.length} <span className="text-xs font-semibold text-slate-400">Titik Olahan</span></p>
+            </div>
+          </div>
+        </div>
+
+        {/* Search & Filter Bar - Hasil Produk */}
+        <div className="bg-white dark:bg-slate-900 p-4.5 sm:p-5 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-4">
+          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+              <input
+                type="text"
+                placeholder="Cari nama program, jenis olahan, lokasi fasilitas, atau penerima manfaat..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 pl-10 pr-4 py-2.5 rounded-2xl text-xs font-bold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-[#009966] focus:bg-white dark:focus:bg-slate-800 transition-all"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <select
+                value={kategoriFilter}
+                onChange={(e) => setKategoriFilter(e.target.value)}
+                className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 px-3 py-2.5 rounded-2xl text-xs font-bold outline-none focus:border-[#009966] transition-all cursor-pointer"
+              >
+                <option value="ALL">Semua Jenis Pengolahan (Master Data)</option>
+                {masterLuaranList.length > 0 ? (
+                  masterLuaranList.map((m) => (
+                    <option key={m.id} value={m.nama}>{m.nama} ({m.kategori})</option>
+                  ))
+                ) : (
+                  <>
+                    <option value="Kompos">Kompos Organik (Buruan Sae)</option>
+                    <option value="Maggot">Maggot BSF</option>
+                    <option value="POC">Pupuk Organik Cair (POC)</option>
+                    <option value="Bank Sampah">Bank Sampah Anorganik</option>
+                    <option value="Loseda">Loseda (Lorong Sisa Dapur)</option>
+                    <option value="Bata Terawang">Bata Terawang</option>
+                  </>
+                )}
+              </select>
+            </div>
+          </div>
+        </div>
 
           {/* Table Hasil Olahan & Distribusi */}
           <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs overflow-hidden">
@@ -635,8 +590,7 @@ export const HasilPemanfaatan: React.FC = () => {
               </div>
             )}
           </div>
-        </>
-      )}
+        </div>
 
       {/* VIEW TAB 2: ASPIRASI & EVALUASI WARGA */}
       {activeSectionTab === "FEEDBACK" && (

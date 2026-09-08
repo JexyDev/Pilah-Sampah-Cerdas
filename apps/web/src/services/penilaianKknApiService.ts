@@ -37,12 +37,17 @@ export interface StudentRekapItem {
   kelurahan?: string;
   rw?: string;
   dplNama?: string;
+  namaMitraPenilai?: string;
   subtotalMitra: number;
+  kontribusiMitra?: number;
   subtotalDpl: number;
+  kontribusiDpl?: number;
   nilaiAkhir: number;
   kategori: string;
   status: string;
   statusDpl: "BELUM_DINILAI" | "SEDANG_DINILAI" | "SUDAH_DINILAI";
+  statusMitra?: "BELUM_DINILAI" | "SEDANG_DINILAI" | "SUDAH_DINILAI";
+  statusPenilaian?: "LENGKAP" | "MENUNGGU_MPL" | "MENUNGGU_DPL" | "BELUM_DINILAI";
   isFinalized: boolean;
   skorDplPerencanaan?: number;
   skorDplKontribusi?: number;
@@ -50,7 +55,16 @@ export interface StudentRekapItem {
   skorDplAnalisis?: number;
   skorDplOutput?: number;
   skorDplLaporanAkhir?: number;
+  skorMitraKehadiran?: number;
+  skorMitraWargaBinaan?: number;
+  skorMitraProker?: number;
+  skorMitraKomunikasi?: number;
+  skorMitraTanggungJawab?: number;
+  skorMitraBuktiKegiatan?: number;
+  skorMitraDampak?: number;
+  skorMitraInisiatif?: number;
   catatanDpl?: string;
+  catatanMitra?: string;
 }
 
 export interface RequirementsInfo {

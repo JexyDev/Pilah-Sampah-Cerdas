@@ -525,10 +525,10 @@ const Leaderboard: React.FC = () => {
           {system === "system1" ? (
             <>
               {[
-                { id: "citizens" as System1Tab, label: "Warga", icon: Users },
-                { id: "rtrw" as System1Tab, label: "Rukun Warga", icon: MapPin },
-                { id: "pengangkut" as System1Tab, label: "Petugas Pemilah", icon: TrendingUp },
-                { id: "kelurahan" as System1Tab, label: "Kelurahan", icon: BarChart2 },
+                { id: "citizens" as System1Tab, label: "Peringkat Warga", icon: Users },
+                { id: "pengangkut" as System1Tab, label: "Peringkat Petugas", icon: TrendingUp },
+                { id: "rtrw" as System1Tab, label: "Peringkat RW", icon: MapPin },
+                { id: "kelurahan" as System1Tab, label: "Peringkat Kelurahan", icon: BarChart2 },
                 { id: "overview" as System1Tab, label: "Rekap Wilayah", icon: Activity },
               ].map((tab) => {
                 const TabIcon = tab.icon;

@@ -55,6 +55,19 @@ export interface PemanfaatanProgram {
 }
 
 export const pemanfaatanApiService = {
+  /** Mengambil master luaran produk sampah dari database */
+  getMasterLuaran: async (): Promise<Array<{ id: number; nama: string; kategori: string; deskripsi?: string; satuanDefault?: string; hargaEstimasiPerSatuan?: number }>> => {
+    try {
+      const res = await api.get("/master/luaran");
+      if (res.data?.success && Array.isArray(res.data.data)) {
+        return res.data.data;
+      }
+      return [];
+    } catch {
+      return [];
+    }
+  },
+
   /** Mengambil daftar program dan hasil olahan pemanfaatan */
   getPrograms: async (): Promise<PemanfaatanProgram[]> => {
     try {

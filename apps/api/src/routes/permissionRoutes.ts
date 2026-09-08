@@ -12,26 +12,60 @@ import { roleMiddleware } from "../middlewares/roleMiddleware.js";
 
 const router = Router();
 
-// Cache permission per roleId (invalidate saat update)
-const permissionCache = new Map<number, Record<string, any>>();
+import {
+  getRolePermissionCache,
+  setRolePermissionCache,
+  invalidateRolePermissionCache,
+} from "../lib/permissionCache.js";
 
 router.use(authMiddleware);
 
 /** GET /api/v1/permissions/me — permission user yang login (semua role) */
 router.get("/me", async (req, res) => {
   try {
+    const userRole = String(req.user?.role || "").toUpperCase();
+
+    // If DEVELOPER or SUPER_USER, return full access directly
+    if (userRole === "DEVELOPER" || userRole === "SUPER_USER") {
+      const allPermissions: Record<
+        string,
+        { canView: boolean; canCreate: boolean; canEdit: boolean; canDelete: boolean }
+      > = {
+        dashboard_utama: { canView: true, canCreate: true, canEdit: true, canDelete: true },
+        dashboard_kkn: { canView: true, canCreate: true, canEdit: true, canDelete: true },
+        monitoring_sampah: { canView: true, canCreate: true, canEdit: true, canDelete: true },
+        laporan_analitik: { canView: true, canCreate: true, canEdit: true, canDelete: true },
+        pengangkutan: { canView: true, canCreate: true, canEdit: true, canDelete: true },
+        pemanfaatan: { canView: true, canCreate: true, canEdit: true, canDelete: true },
+        hasil_pemanfaatan: { canView: true, canCreate: true, canEdit: true, canDelete: true },
+        evaluasi_ai: { canView: true, canCreate: true, canEdit: true, canDelete: true },
+        manajemen_pengguna: { canView: true, canCreate: true, canEdit: true, canDelete: true },
+        manajemen_tempat_sampah: { canView: true, canCreate: true, canEdit: true, canDelete: true },
+        manajemen_lokasi: { canView: true, canCreate: true, canEdit: true, canDelete: true },
+        master_data_wilayah: { canView: true, canCreate: true, canEdit: true, canDelete: true },
+        rw_approval: { canView: true, canCreate: true, canEdit: true, canDelete: true },
+        rw_fasilitas: { canView: true, canCreate: true, canEdit: true, canDelete: true },
+        poin_warga: { canView: true, canCreate: true, canEdit: true, canDelete: true },
+        ide_daur_ulang: { canView: true, canCreate: true, canEdit: true, canDelete: true },
+        konfigurasi_sistem: { canView: true, canCreate: true, canEdit: true, canDelete: true },
+        audit_trail: { canView: true, canCreate: true, canEdit: true, canDelete: true },
+      };
+      res.json({ success: true, data: allPermissions, role: userRole });
+      return;
+    }
+
     const user = await prisma.user.findUnique({
       where: { id: req.user!.userId },
-      select: { roleId: true },
+      select: { roleId: true, role: { select: { name: true } } },
     });
     if (!user) {
       res.status(404).json({ error: "USER_NOT_FOUND" });
       return;
     }
 
-    const cached = permissionCache.get(user.roleId);
+    const cached = getRolePermissionCache(user.roleId);
     if (cached) {
-      res.json({ success: true, data: cached });
+      res.json({ success: true, data: cached, role: user.role?.name || userRole });
       return;
     }
 
@@ -51,8 +85,8 @@ router.get("/me", async (req, res) => {
       ])
     );
 
-    permissionCache.set(user.roleId, result);
-    res.json({ success: true, data: result });
+    setRolePermissionCache(user.roleId, result);
+    res.json({ success: true, data: result, role: user.role?.name || userRole });
   } catch (err: any) {
     res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: err.message });
   }
@@ -137,7 +171,7 @@ router.put("/:roleId", async (req, res) => {
     await prisma.$transaction(ops);
 
     // Invalidate cache
-    permissionCache.delete(roleId);
+    invalidateRolePermissionCache(roleId);
 
     res.json({ success: true, message: `Hak akses untuk role ${role.name} berhasil diperbarui` });
   } catch (err: any) {

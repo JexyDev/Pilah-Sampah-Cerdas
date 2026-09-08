@@ -130,4 +130,74 @@ router.get("/regions", authMiddleware, dashboardController.getRegions);
  */
 router.get("/trend", authMiddleware, dashboardController.getTrend);
 
+/**
+ * @swagger
+ * /api/v1/dashboard/kkn-executive:
+ *   get:
+ *     summary: Mendapatkan Data Ringkasan Dashboard Eksekutif KKN untuk Role Pimpinan
+ *     tags: [Executive & Monitoring (Camat, Lurah, Admin DLH), Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: kelurahan
+ *         schema:
+ *           type: string
+ *         description: Filter nama kelurahan
+ *       - in: query
+ *         name: rw
+ *         schema:
+ *           type: string
+ *         description: Filter RW
+ *       - in: query
+ *         name: periode
+ *         schema:
+ *           type: string
+ *         description: Filter periode KKN
+ *     responses:
+ *       200:
+ *         description: Data dashboard eksekutif KKN berhasil dimuat
+ */
+router.get(
+  "/kkn-executive",
+  authMiddleware,
+  roleMiddleware([
+    "PIMPINAN",
+    "PEMIMPIN",
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "PANITIA_TASKFORCE",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+  ]),
+  dashboardController.getKknExecutiveDashboard
+);
+
+/**
+ * @swagger
+ * /api/v1/dashboard/kkn-executive/export:
+ *   get:
+ *     summary: Mengunduh Laporan Spreadsheet Excel Dashboard Eksekutif KKN
+ *     tags: [Executive & Monitoring (Camat, Lurah, Admin DLH), Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Unduhan file spreadsheet Excel (.xlsx)
+ */
+router.get(
+  "/kkn-executive/export",
+  authMiddleware,
+  roleMiddleware([
+    "PIMPINAN",
+    "PEMIMPIN",
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "PANITIA_TASKFORCE",
+  ]),
+  dashboardController.exportKknExecutiveReport
+);
+
 export default router;

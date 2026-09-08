@@ -873,18 +873,7 @@ const Monitoring: React.FC = () => {
                         : "text-slate-600 hover:text-slate-900"
                     }`}
                   >
-                    Satelit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMapTileProvider("cartodb")}
-                    className={`px-3 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
-                      mapTileProvider === "cartodb"
-                        ? "bg-[#009966] text-white shadow-2xs"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
-                  >
-                    CartoDB
+                    Google Satelit
                   </button>
                 </div>
               </div>
@@ -901,7 +890,7 @@ const Monitoring: React.FC = () => {
                   <Search size={15} className="text-[#009966] dark:text-emerald-400 shrink-0 mr-2.5" />
                   <input
                     type="text"
-                    placeholder="Cari kode tempat sampah..."
+                    placeholder="Cari tempat sampah / nama pemilik..."
                     value={mapSearchInput}
                     onChange={(e) => setMapSearchInput(e.target.value)}
                     className="w-full bg-transparent text-xs font-bold text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none"
@@ -1477,10 +1466,10 @@ const Monitoring: React.FC = () => {
                   <th className="py-3.5 px-4 text-center">QR Code</th>
                   <th className="py-3.5 px-4">Kode Tempat Sampah</th>
                   <th className="py-3.5 px-4">Kategori</th>
-                  <th className="py-3.5 px-4">Dimiliki Oleh</th>
-                  <th className="py-3.5 px-4">Kapasitas &amp; Volume</th>
+                  <th className="py-3.5 px-4">Pemilik</th>
+                  <th className="py-3.5 px-4">Kapasitas &amp; Rasio Keterisian</th>
                   <th className="py-3.5 px-4 text-center">Status</th>
-                  <th className="py-3.5 px-4">Diverifikasi Pada</th>
+                  <th className="py-3.5 px-4">Waktu Aktivasi</th>
                   <th className="py-3.5 px-4">GPS / Koordinat</th>
                   <th className="py-3.5 px-4 text-center">Aksi</th>
                 </tr>

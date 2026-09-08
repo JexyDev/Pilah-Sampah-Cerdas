@@ -1024,19 +1024,7 @@ const ManajemenTempatSampah: React.FC = () => {
                       }`}
                       title="Tampilan Google Maps Satelit / Hybrid"
                     >
-                      Satelit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setMapTileProvider("cartodb")}
-                      className={`px-3 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
-                        mapTileProvider === "cartodb"
-                          ? "bg-[#009966] text-white shadow-2xs"
-                          : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-                      }`}
-                      title="Tampilan Kartografi Clean"
-                    >
-                      CartoDB
+                      Google Satelit
                     </button>
                   </div>
                 </div>

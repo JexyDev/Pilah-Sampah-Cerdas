@@ -10,6 +10,7 @@ import { kknController } from "../controllers/kknController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { readOnlyGuard } from "../middlewares/readOnlyGuard.js";
 import { safeUploadPemanfaatanImage } from "../middlewares/uploadMiddleware.js";
+import { requirePermission } from "../middlewares/permissionMiddleware.js";
 
 const router = Router();
 
@@ -54,11 +55,53 @@ router.patch(
 );
 router.delete("/panen-hasil/:id", authMiddleware, kknController.deletePanenHasil);
 
-// Pemanfaatan Program CRUD routes
-router.post("/", authMiddleware, readOnlyGuard, pemanfaatanController.create);
-router.get("/", authMiddleware, pemanfaatanController.getAll);
-router.get("/:id", authMiddleware, pemanfaatanController.getById);
-router.put("/:id", authMiddleware, readOnlyGuard, pemanfaatanController.update);
-router.delete("/:id", authMiddleware, readOnlyGuard, pemanfaatanController.delete);
+// Pemanfaatan Program CRUD routes (Protected via Dynamic RBAC)
+router.post(
+  "/",
+  authMiddleware,
+  readOnlyGuard,
+  requirePermission("pemanfaatan", "canCreate", ["SUPER_USER", "ADMIN_DLH", "DEVELOPER"]),
+  pemanfaatanController.create
+);
+router.get(
+  "/",
+  authMiddleware,
+  requirePermission("pemanfaatan", "canView", [
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "DEVELOPER",
+    "RW",
+    "PETUGAS_RESIDU",
+    "MAHASISWA_KKN",
+  ]),
+  pemanfaatanController.getAll
+);
+router.get(
+  "/:id",
+  authMiddleware,
+  requirePermission("pemanfaatan", "canView", [
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "DEVELOPER",
+    "RW",
+    "PETUGAS_RESIDU",
+    "MAHASISWA_KKN",
+  ]),
+  pemanfaatanController.getById
+);
+router.put(
+  "/:id",
+  authMiddleware,
+  readOnlyGuard,
+  requirePermission("pemanfaatan", "canEdit", ["SUPER_USER", "ADMIN_DLH", "DEVELOPER"]),
+  pemanfaatanController.update
+);
+router.delete(
+  "/:id",
+  authMiddleware,
+  readOnlyGuard,
+  requirePermission("pemanfaatan", "canDelete", ["SUPER_USER", "ADMIN_DLH", "DEVELOPER"]),
+  pemanfaatanController.delete
+);
 
 export default router;

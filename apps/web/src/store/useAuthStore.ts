@@ -30,6 +30,15 @@ export type UserRole =
   | "TASK_FORCE"
   | "PANITIA_TASKFORCE";
 
+export interface PermissionActions {
+  canView: boolean;
+  canCreate: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
+}
+
+export type RolePermissionsMap = Record<string, PermissionActions>;
+
 export interface User {
   id: string;
   name: string;
@@ -57,6 +66,7 @@ export interface User {
 
 interface AuthState {
   user: User | null;
+  permissions: RolePermissionsMap | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
@@ -66,6 +76,8 @@ interface AuthState {
   logout: () => Promise<void>;
   updateWilayah: (newWilayah: string) => void;
   updateUser: (updatedFields: Partial<User>) => void;
+  fetchPermissions: () => Promise<void>;
+  can: (resource: string, action?: keyof PermissionActions) => boolean;
 }
 
 const normalizeRole = (role: string): UserRole => {
@@ -147,7 +159,12 @@ export const computeAvatarInitials = (name: string = "User"): string => {
 export const WEB_DISABLED_ROLES: UserRole[] = ["WARGA", "PETUGAS_RESIDU"];
 
 // ─── Helper: Storage abstraction (localStorage vs sessionStorage) ─────────────
-const TOKEN_KEYS = ["psc_access_token", "psc_refresh_token", "psc_user"] as const;
+const TOKEN_KEYS = [
+  "psc_access_token",
+  "psc_refresh_token",
+  "psc_user",
+  "psc_permissions",
+] as const;
 
 function getActiveStorage(): Storage {
   // Jika flag remember_me disimpan di localStorage → localStorage, else → sessionStorage
@@ -175,6 +192,16 @@ function clearAllStoredItems(): void {
   });
   localStorage.removeItem("psc_remember_me");
 }
+
+const getInitialPermissions = (): RolePermissionsMap | null => {
+  try {
+    const stored = getStoredItem("psc_permissions");
+    if (!stored) return null;
+    return JSON.parse(stored);
+  } catch {
+    return null;
+  }
+};
 
 const getInitialUser = (): User | null => {
   try {
@@ -238,8 +265,9 @@ const getInitialUser = (): User | null => {
   }
 };
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: getInitialUser(),
+  permissions: getInitialPermissions(),
   isAuthenticated: !!getStoredItem("psc_access_token") && (!getInitialUser() ? false : true),
   isLoading: false,
   error: null,
@@ -325,6 +353,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       setStoredItem("psc_user", JSON.stringify(user), rememberMe);
       set({ user, isAuthenticated: true, isLoading: false, error: null });
       useThemeStore.getState().initTheme();
+      get().fetchPermissions().catch(() => {});
       return true;
     } catch (err: any) {
       const code = err?.response?.data?.code || (err?.response ? "UNKNOWN_ERROR" : "NETWORK_ERROR");
@@ -402,6 +431,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       localStorage.setItem("psc_user", JSON.stringify(user));
       set({ user, isAuthenticated: true, isLoading: false, error: null });
       useThemeStore.getState().initTheme();
+      get().fetchPermissions().catch(() => {});
       return true;
     } catch (err: any) {
       const code = err?.response?.data?.code || (err?.response ? "UNKNOWN_ERROR" : "NETWORK_ERROR");
@@ -420,7 +450,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       clearAllStoredItems();
       useThemeStore.getState().setInsideMainLayout(false);
       useThemeStore.getState().resetThemeToLight();
-      set({ user: null, isAuthenticated: false, error: null });
+      set({ user: null, permissions: null, isAuthenticated: false, error: null });
     }
   },
 
@@ -442,5 +472,36 @@ export const useAuthStore = create<AuthState>((set) => ({
       setStoredItem("psc_user", JSON.stringify(updatedUser), remember);
       return { user: updatedUser };
     });
+  },
+
+  fetchPermissions: async () => {
+    try {
+      const res = await api.get("/permissions/me");
+      if (res.data?.success && res.data?.data) {
+        const perms: RolePermissionsMap = res.data.data;
+        const remember = localStorage.getItem("psc_remember_me") === "1";
+        setStoredItem("psc_permissions", JSON.stringify(perms), remember);
+        set({ permissions: perms });
+      }
+    } catch (err) {
+      console.error("[useAuthStore] Gagal memuat hak akses pengguna:", err);
+    }
+  },
+
+  can: (resource: string, action: keyof PermissionActions = "canView") => {
+    const { user, permissions } = get();
+    if (!user) return false;
+    const role = user.peran?.toUpperCase();
+    if (role === "DEVELOPER" || role === "SUPER_USER") {
+      return true;
+    }
+    if (!permissions) {
+      return false;
+    }
+    const perm = permissions[resource];
+    if (!perm) {
+      return false;
+    }
+    return Boolean(perm[action]);
   },
 }));

@@ -157,6 +157,8 @@ const RolePermissionPage: React.FC = () => {
     try {
       await api.put(`/permissions/${roleId}`, { permissions: localPerms[roleId] });
       toast.success("Hak akses berhasil disimpan");
+      // Refresh user permissions in store
+      useAuthStore.getState().fetchPermissions().catch(() => {});
       setDirty((prev) => {
         const next = new Set(prev);
         next.delete(roleId);

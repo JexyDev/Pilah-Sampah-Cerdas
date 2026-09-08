@@ -158,6 +158,7 @@ const Login: React.FC = () => {
         RW: "Pengurus RW",
         RT: "Pengurus RT",
         DPL: "Dosen Pendamping Lapangan (DPL)",
+        MPL: "Mitra Pendamping Lapangan (MPL)",
         PEMIMPIN: "Pimpinan",
         PIMPINAN: "Pimpinan",
         PANITIA_TASKFORCE: "Task Force",
@@ -167,7 +168,13 @@ const Login: React.FC = () => {
       const displayName = user?.name || displayRole;
       
       showToast.success(`Selamat datang kembali, ${displayName}!`);
-      navigate("/dasbor");
+
+      const normRole = String(user?.peran || "").toUpperCase();
+      if (normRole === "MPL" || normRole === "MITRA_PENDAMPING_LAPANGAN") {
+        navigate("/penilaian/mahasiswa");
+      } else {
+        navigate("/dasbor");
+      }
     } else {
       const storeErr = useAuthStore.getState().error;
       if (storeErr === "USER_NOT_FOUND") {

@@ -78,6 +78,8 @@ export default function SetorSampah() {
   const [filterRw, setFilterRw] = useState<string>("ALL");
   const [filterCategory, setFilterCategory] = useState<string>("ALL");
   const [filterPeriode, setFilterPeriode] = useState<string>("ALL");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
 
   // Pagination
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -238,8 +240,20 @@ export default function SetorSampah() {
         if (filterCategory === "RESIDU" && !catUpper.includes("RESIDU")) return false;
       }
 
-      // 5. Periode
-      if (filterPeriode !== "ALL") {
+      // 5. Periode & Dynamic Date Range
+      if (startDate || endDate) {
+        const depositDate = new Date(log.waktu);
+        if (startDate) {
+          const start = new Date(startDate);
+          start.setHours(0, 0, 0, 0);
+          if (depositDate < start) return false;
+        }
+        if (endDate) {
+          const end = new Date(endDate);
+          end.setHours(23, 59, 59, 999);
+          if (depositDate > end) return false;
+        }
+      } else if (filterPeriode !== "ALL") {
         const depositDate = new Date(log.waktu);
         const limitDate = new Date();
         if (filterPeriode === "7d") limitDate.setDate(limitDate.getDate() - 7);
@@ -250,12 +264,12 @@ export default function SetorSampah() {
 
       return true;
     });
-  }, [logs, searchQuery, filterKelurahan, filterRw, filterCategory, filterPeriode, isLurah, userKelurahan]);
+  }, [logs, searchQuery, filterKelurahan, filterRw, filterCategory, filterPeriode, startDate, endDate, isLurah, userKelurahan]);
 
   // Reset pagination on filter change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, filterKelurahan, filterRw, filterCategory, filterPeriode, itemsPerPage]);
+  }, [searchQuery, filterKelurahan, filterRw, filterCategory, filterPeriode, startDate, endDate, itemsPerPage]);
 
   const totalItems = filteredLogs.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
@@ -285,6 +299,8 @@ export default function SetorSampah() {
     setFilterRw("ALL");
     setFilterCategory("ALL");
     setFilterPeriode("ALL");
+    setStartDate("");
+    setEndDate("");
   };
 
   const renderCategoryTag = (jenis?: string) => {
@@ -499,7 +515,11 @@ export default function SetorSampah() {
           {/* Periode */}
           <select
             value={filterPeriode}
-            onChange={(e) => setFilterPeriode(e.target.value)}
+            onChange={(e) => {
+              setFilterPeriode(e.target.value);
+              setStartDate("");
+              setEndDate("");
+            }}
             className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 outline-none"
           >
             <option value="ALL">Semua Periode</option>
@@ -508,7 +528,33 @@ export default function SetorSampah() {
             <option value="90d">90 Hari Terakhir</option>
           </select>
 
-          {(searchQuery || filterKelurahan !== (isLurah ? userKelurahan : "ALL") || filterRw !== "ALL" || filterCategory !== "ALL" || filterPeriode !== "ALL") && (
+          {/* Rentang Tanggal Dinamis */}
+          <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5">
+            <span className="text-[10px] text-slate-400 font-bold uppercase">Rentang:</span>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => {
+                setStartDate(e.target.value);
+                setFilterPeriode("ALL");
+              }}
+              className="bg-transparent text-xs text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
+              title="Tanggal Mulai"
+            />
+            <span className="text-slate-400 text-xs">-</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => {
+                setEndDate(e.target.value);
+                setFilterPeriode("ALL");
+              }}
+              className="bg-transparent text-xs text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
+              title="Tanggal Selesai"
+            />
+          </div>
+
+          {(searchQuery || filterKelurahan !== (isLurah ? userKelurahan : "ALL") || filterRw !== "ALL" || filterCategory !== "ALL" || filterPeriode !== "ALL" || startDate || endDate) && (
             <button
               onClick={resetFilters}
               className="px-3 py-2 text-xs font-medium bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg transition"
@@ -541,7 +587,7 @@ export default function SetorSampah() {
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-semibold uppercase text-[11px] tracking-wide">
                   <th className="py-3 px-3">ID Transaksi</th>
-                  <th className="py-3 px-3">Nama Penyetor</th>
+                  <th className="py-3 px-3">Nama Pemilah</th>
                   <th className="py-3 px-3">Wilayah</th>
                   <th className="py-3 px-3">Kategori</th>
                   <th className="py-3 px-3 text-right">Berat (Kg)</th>
@@ -735,7 +781,7 @@ export default function SetorSampah() {
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="p-3 bg-slate-50 dark:bg-slate-800/70 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-1">
                   <div className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1">
-                    <User size={12} className="text-[#009966]" /> Penyetor / Warga
+                    <User size={12} className="text-[#009966]" /> Pemilah / Warga
                   </div>
                   <div className="font-extrabold text-slate-800 dark:text-slate-100">
                     {cleanWargaName(selectedLog.warga)}

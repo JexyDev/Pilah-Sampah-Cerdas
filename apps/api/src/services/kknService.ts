@@ -17,7 +17,7 @@ import {
   kknAttendanceService,
 } from "./kknAttendanceService.js";
 import { parseProkerDeskripsi } from "./dplService.js";
-import { calculateNilaiEkonomi, normalizeJenisOlahan } from "./pemanfaatanService.js";
+import { calculateNilaiEkonomi } from "./pemanfaatanService.js";
 import { logbookService } from "./logbookService.js";
 import { evaluateSortingStatus } from "../utils/sortingEvaluation.js";
 
@@ -41,10 +41,19 @@ export function normalizeProkerKategori(kategori?: string | null): string {
 }
 
 export function isAnorganikBin(
-  bin?: { category?: { name?: string | null; type?: string | null } | null; binType?: string | null; qrCode?: string | null } | null
+  bin?: {
+    category?: { name?: string | null; type?: string | null } | null;
+    binType?: string | null;
+    qrCode?: string | null;
+  } | null
 ): boolean {
   if (!bin) return false;
-  const cat = (bin.category?.name || bin.category?.type || (bin as any).binType || "").toUpperCase();
+  const cat = (
+    bin.category?.name ||
+    bin.category?.type ||
+    (bin as any).binType ||
+    ""
+  ).toUpperCase();
   if (
     cat.includes("NON_ORGANIC") ||
     cat.includes("ANORGANIK") ||
@@ -68,15 +77,21 @@ export function isAnorganikBin(
 }
 
 export function isOrganikBin(
-  bin?: { category?: { name?: string | null; type?: string | null } | null; binType?: string | null; qrCode?: string | null } | null
+  bin?: {
+    category?: { name?: string | null; type?: string | null } | null;
+    binType?: string | null;
+    qrCode?: string | null;
+  } | null
 ): boolean {
   if (!bin) return false;
   if (isAnorganikBin(bin)) return false;
-  const cat = (bin.category?.name || bin.category?.type || (bin as any).binType || "").toUpperCase();
-  if (
-    cat.includes("ORGANIC") ||
-    cat.includes("ORGANIK")
-  ) {
+  const cat = (
+    bin.category?.name ||
+    bin.category?.type ||
+    (bin as any).binType ||
+    ""
+  ).toUpperCase();
+  if (cat.includes("ORGANIC") || cat.includes("ORGANIK")) {
     return true;
   }
   const qr = (bin.qrCode || "").toLowerCase();
@@ -229,7 +244,8 @@ export class KknService {
       // Backward compatibility aliases
       nim: student?.nim || (isSuperOrAdmin ? "ADMIN" : "10123000"),
       jurusan: student?.jurusan || (isSuperOrAdmin ? "Monitoring Wilayah" : "Teknik Informatika"),
-      programStudi: student?.jurusan || (isSuperOrAdmin ? "Monitoring Wilayah" : "Teknik Informatika"),
+      programStudi:
+        student?.jurusan || (isSuperOrAdmin ? "Monitoring Wilayah" : "Teknik Informatika"),
       poskoKkn: areaName,
       poskoName: areaName,
       wilayahKkn: areaName,
@@ -429,7 +445,7 @@ export class KknService {
         primaryBin?.registeredByStudent?.name ||
         binOrganik?.registeredByStudent?.name ||
         binAnorganik?.registeredByStudent?.name ||
-        "Mahasiswa KKN";
+        "";
 
       return {
         id: u.id,
@@ -463,10 +479,12 @@ export class KknService {
         benarCount: correctCount,
         incorrectCount,
         salahCount: incorrectCount,
-        correctPercentage: totalActivities > 0 ? Math.round((correctCount / totalActivities) * 1000) / 10 : 0,
-        errorPercentage: totalActivities > 0 ? Math.round((incorrectCount / totalActivities) * 1000) / 10 : 0,
+        correctPercentage:
+          totalActivities > 0 ? Math.round((correctCount / totalActivities) * 1000) / 10 : 0,
+        errorPercentage:
+          totalActivities > 0 ? Math.round((incorrectCount / totalActivities) * 1000) / 10 : 0,
         isActivated: true,
-        needsReeducation: totalActivities > 0 && (correctCount / totalActivities) < 0.8,
+        needsReeducation: totalActivities > 0 && correctCount / totalActivities < 0.8,
         bins: userBins.map((b: any) => ({
           id: b.id,
           qrCode: b.qrCode,
@@ -571,8 +589,9 @@ export class KknService {
       });
 
       if (student) {
-        const groupStudentUserIds =
-          student.kelompok?.students?.map((s: any) => s.userId) || [kknUserId];
+        const groupStudentUserIds = student.kelompok?.students?.map((s: any) => s.userId) || [
+          kknUserId,
+        ];
 
         // 1. Direct registration / ownership by student or fellow group member
         const isRegisteredByGroup =
@@ -580,18 +599,14 @@ export class KknService {
             const regId = bo.bin?.registeredByStudentId;
             const picId = bo.bin?.qrBatch?.assignedPicUserId;
             return (
-              regId === kknUserId ||
-              groupStudentUserIds.includes(regId) ||
-              picId === kknUserId
+              regId === kknUserId || groupStudentUserIds.includes(regId) || picId === kknUserId
             );
           }) ||
           warga.bins?.some((b: any) => {
             const regId = b.registeredByStudentId;
             const picId = b.qrBatch?.assignedPicUserId;
             return (
-              regId === kknUserId ||
-              groupStudentUserIds.includes(regId) ||
-              picId === kknUserId
+              regId === kknUserId || groupStudentUserIds.includes(regId) || picId === kknUserId
             );
           });
 
@@ -623,8 +638,7 @@ export class KknService {
             return !isNaN(num) && num === studentRwId;
           });
 
-        const isRwMatch =
-          (studentRwId != null && wargaRwIds.includes(studentRwId)) || isRwNumMatch;
+        const isRwMatch = (studentRwId != null && wargaRwIds.includes(studentRwId)) || isRwNumMatch;
 
         // 3. Kelurahan match
         const studentKelurahanName =
@@ -645,9 +659,10 @@ export class KknService {
 
         if (studentKelurahanName) {
           const normStudentKel = studentKelurahanName.toLowerCase().trim();
-          isKelurahanMatch = wargaKelurahans.some((k) =>
-            k.toLowerCase().trim().includes(normStudentKel) ||
-            normStudentKel.includes(k.toLowerCase().trim())
+          isKelurahanMatch = wargaKelurahans.some(
+            (k) =>
+              k.toLowerCase().trim().includes(normStudentKel) ||
+              normStudentKel.includes(k.toLowerCase().trim())
           );
         }
 
@@ -668,9 +683,7 @@ export class KknService {
                 .map((n: string) => parseInt(n.replace(/\D/g, ""), 10))
                 .filter((n: number) => !isNaN(n));
 
-              isCakupanRwMatch = wargaRwNumbers.some((num: number) =>
-                cakupanNumbers.includes(num)
-              );
+              isCakupanRwMatch = wargaRwNumbers.some((num: number) => cakupanNumbers.includes(num));
             }
           } catch {}
         }
@@ -835,9 +848,11 @@ export class KknService {
       benarCount: correctCount,
       incorrectCount,
       salahCount: incorrectCount,
-      correctPercentage: totalActivities > 0 ? Math.round((correctCount / totalActivities) * 1000) / 10 : 0,
-      errorPercentage: totalActivities > 0 ? Math.round((incorrectCount / totalActivities) * 1000) / 10 : 0,
-      needsReeducation: totalActivities > 0 && (correctCount / totalActivities) < 0.8,
+      correctPercentage:
+        totalActivities > 0 ? Math.round((correctCount / totalActivities) * 1000) / 10 : 0,
+      errorPercentage:
+        totalActivities > 0 ? Math.round((incorrectCount / totalActivities) * 1000) / 10 : 0,
+      needsReeducation: totalActivities > 0 && correctCount / totalActivities < 0.8,
       binOrganikId: binOrganik?.qrCode || null,
       binAnorganikId: binAnorganik?.qrCode || null,
       binId: primaryBin?.qrCode || "",
@@ -857,9 +872,8 @@ export class KknService {
       })),
       binOwnerships: warga.binOwnerships || [],
       isActivated:
-        allBins.some(
-          (b: any) => b.status === "ACTIVE_BOUND" || b.status === "PENDING_APPROVAL"
-        ) || allBins.length > 0,
+        allBins.some((b: any) => b.status === "ACTIVE_BOUND" || b.status === "PENDING_APPROVAL") ||
+        allBins.length > 0,
       pendampingName: registeredStudent,
       registeredByStudent: registeredStudent,
       registeredByStudentName: registeredStudent,
@@ -927,8 +941,7 @@ export class KknService {
         studentAssignedRwId = student.assignedRwId || student.user?.rwId;
         studentKelompokKelurahan =
           student.assignedRw?.kelurahan?.name || student.kelompok?.kelurahan;
-        studentGroupUserIds =
-          student.kelompok?.students?.map((s: any) => s.userId) || [kknUserId];
+        studentGroupUserIds = student.kelompok?.students?.map((s: any) => s.userId) || [kknUserId];
 
         // Resolve all RW IDs in group's cakupanRw dynamically
         if (!targetRwId && student.kelompok?.cakupanRw) {
@@ -960,7 +973,7 @@ export class KknService {
                 targetRwIds = matchedRws.map((r) => r.id);
               }
             }
-          } catch (_) {}
+          } catch {}
         }
 
         // Default scoping if not explicitly filtered
@@ -1157,12 +1170,11 @@ export class KknService {
         primaryBin?.registeredByStudent?.name ||
         binOrganik?.registeredByStudent?.name ||
         binAnorganik?.registeredByStudent?.name ||
-        "Mahasiswa KKN";
+        "";
 
       const isActivated =
-        allBins.some(
-          (b: any) => b.status === "ACTIVE_BOUND" || b.status === "PENDING_APPROVAL"
-        ) || allBins.length > 0;
+        allBins.some((b: any) => b.status === "ACTIVE_BOUND" || b.status === "PENDING_APPROVAL") ||
+        allBins.length > 0;
 
       const lat = household?.latitude
         ? Number(household.latitude)
@@ -1419,6 +1431,8 @@ export class KknService {
               categoryId: category?.id,
               userId: wargaId,
               registeredByStudentId: kknUserId,
+              latitude: latitude ?? -6.8903,
+              longitude: longitude ?? 107.611,
             },
           });
           bins.push(newBin);
@@ -1439,7 +1453,12 @@ export class KknService {
 
         await tx.bin.update({
           where: { id: bin.id },
-          data: { userId: wargaId, status: "ACTIVE_BOUND", registeredByStudentId: kknUserId },
+          data: {
+            userId: wargaId,
+            status: "ACTIVE_BOUND",
+            registeredByStudentId: kknUserId,
+            ...(latitude && longitude ? { latitude, longitude } : {}),
+          },
         });
 
         const existingOwnership = await tx.binOwnership.findFirst({
@@ -2701,6 +2720,7 @@ export class KknService {
       radiusMeter: 500,
       totalGroupPoints,
       members,
+      linkGoogleDrive: group.linkGoogleDrive || null,
     };
   }
 
@@ -2744,18 +2764,20 @@ export class KknService {
       }
     }
 
-    const startDate = new Date(targetStartDate);
-    startDate.setHours(0, 0, 0, 0);
-    const endDate = new Date(targetEndDate);
-    endDate.setHours(23, 59, 59, 999);
+    const startWibStr = new Date(targetStartDate.getTime() + 7 * 60 * 60 * 1000)
+      .toISOString()
+      .slice(0, 10);
+    const endWibStr = new Date(targetEndDate.getTime() + 7 * 60 * 60 * 1000)
+      .toISOString()
+      .slice(0, 10);
+    const startDate = new Date(`${startWibStr}T00:00:00+07:00`);
+    const endDate = new Date(`${endWibStr}T23:59:59.999+07:00`);
 
     // Validasi Tanggal: Tidak boleh mengajukan izin untuk hari yang sudah lewat (WIB Timezone)
     const nowWib = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
     const startWib = new Date(startDate.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
     if (startWib < nowWib) {
-      throw new Error(
-        "Anda tidak dapat mengajukan izin untuk tanggal yang sudah lewat."
-      );
+      throw new Error("Anda tidak dapat mengajukan izin untuk tanggal yang sudah lewat.");
     }
 
     // VALIDASI ANTI-TUMPUK (1 Hari/Pertemuan = 1 Status Pengajuan)
@@ -3315,7 +3337,9 @@ export class KknService {
           const effectiveStartMins = Math.min(5 * 60, startMins);
           const effectiveEndMins = Math.max(20 * 60, endMins);
           isTimeMatch =
-            isSchedDateToday && currentWibMinutes >= effectiveStartMins && currentWibMinutes <= effectiveEndMins;
+            isSchedDateToday &&
+            currentWibMinutes >= effectiveStartMins &&
+            currentWibMinutes <= effectiveEndMins;
         } else {
           // Overnight schedule (e.g. 11:00 - 08:02)
           if (isSchedDateToday) {
@@ -3467,19 +3491,6 @@ export class KknService {
       };
     }
 
-    let isOvernight = false;
-    if (activeSchedule?.time && activeSchedule.time.includes("-")) {
-      const parts = activeSchedule.time.split("-");
-      const startParts = parts[0].trim().replace(".", ":").split(":");
-      const endParts = parts[1].trim().replace(".", ":").split(":");
-      if (startParts.length >= 2 && endParts.length >= 2) {
-        const startMins = parseInt(startParts[0], 10) * 60 + parseInt(startParts[1], 10);
-        const endMins = parseInt(endParts[0], 10) * 60 + parseInt(endParts[1], 10);
-        if (endMins <= startMins) {
-          isOvernight = true;
-        }
-      }
-    }
     const finalTargetDurationMinutes = targetDurationMinutes;
 
     // Kebijakan Fleksibilitas Lapangan & Batas Maksimal 20:00 WIB:
@@ -4208,10 +4219,7 @@ export class KknService {
 
     // Query seluruh data Logbook Pemanfaatan terkait proker ini
     const pemanfaatanWhere: any = {
-      OR: [
-        { programKerjaId: id },
-        ...(proker.deskripsi ? [{ program: proker.deskripsi }] : []),
-      ],
+      OR: [{ programKerjaId: id }, ...(proker.deskripsi ? [{ program: proker.deskripsi }] : [])],
     };
 
     const pemanfaatanLogs = await prisma.pemanfaatan.findMany({

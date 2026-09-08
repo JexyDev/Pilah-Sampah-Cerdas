@@ -292,7 +292,23 @@ export const MahasiswaPresensiMobile: React.FC = () => {
         const now = Date.now();
         // Batasi penghitungan waktu sampai jam 18:00 jika mahasiswa lupa mengklik selesai
         const effectiveEnd = Math.min(now, cutoffTime);
-        const diffSec = Math.max(0, Math.floor((effectiveEnd - startTime) / 1000));
+        const rawDiffSec = Math.max(0, Math.floor((effectiveEnd - startTime) / 1000));
+
+        // Kurangi total durasi jeda dari jedaLogs agar sinkron dengan kalkulasi backend
+        let totalPauseSec = 0;
+        const logs = (primaryKegiatan?.jedaLogs as any[]) || (activeSession?.jedaLogs as any[]) || [];
+        if (Array.isArray(logs)) {
+          for (const log of logs) {
+            if (log?.waktuJeda && log?.waktuResume) {
+              const pStart = new Date(log.waktuJeda).getTime();
+              const pEnd = new Date(log.waktuResume).getTime();
+              if (!isNaN(pStart) && !isNaN(pEnd) && pEnd > pStart) {
+                totalPauseSec += Math.floor((pEnd - pStart) / 1000);
+              }
+            }
+          }
+        }
+        const diffSec = Math.max(0, rawDiffSec - totalPauseSec);
 
         const hrs = String(Math.floor(diffSec / 3600)).padStart(2, "0");
         const mins = String(Math.floor((diffSec % 3600) / 60)).padStart(2, "0");
@@ -308,7 +324,14 @@ export const MahasiswaPresensiMobile: React.FC = () => {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [activeSession, primaryKegiatan?.attendedAt, primaryKegiatan?.statusKehadiran, isLiveActiveInZone, isAttendedToday]);
+  }, [
+    activeSession,
+    primaryKegiatan?.attendedAt,
+    primaryKegiatan?.statusKehadiran,
+    primaryKegiatan?.jedaLogs,
+    isLiveActiveInZone,
+    isAttendedToday,
+  ]);
 
   // Sinkronisasi display elapsedTime saat status TERJEDA
   useEffect(() => {

@@ -38,11 +38,12 @@ export const calculateCompositeScore = (subtotalMitra: number, subtotalDpl: numb
   if (sMitra > 0 && sDpl > 0) {
     return Number((sMitra * 0.5 + sDpl * 0.5).toFixed(2));
   }
+  // Nilai progresif/sementara berdasarkan kontribusi masing-masing 50%
   if (sDpl > 0) {
-    return Number(sDpl.toFixed(2));
+    return Number((sDpl * 0.5).toFixed(2));
   }
   if (sMitra > 0) {
-    return Number(sMitra.toFixed(2));
+    return Number((sMitra * 0.5).toFixed(2));
   }
   return 0;
 };
@@ -567,9 +568,12 @@ export const penilaianKknService = {
       : prev?.dplId || studentUser.studentProfile?.kelompok?.dplId || null;
 
     const mitraId = isMitra ? evaluatorId : prev?.mitraId || null;
-    const defaultMitraName = studentUser.studentProfile?.assignedRw?.name
-      ? `Ketua ${studentUser.studentProfile.assignedRw.name}`
-      : "Mitra Pendamping Lapangan";
+    const mplId = isMpl ? evaluatorId : prev?.mplId || null;
+    const defaultMitraName = isMpl
+      ? "Mitra Pendamping Lapangan"
+      : studentUser.studentProfile?.assignedRw?.name
+        ? `Ketua ${studentUser.studentProfile.assignedRw.name}`
+        : "Mitra Pendamping Lapangan";
     const namaMitraPenilai = payload.namaMitraPenilai || prev?.namaMitraPenilai || defaultMitraName;
     const catatanDpl = isMitra
       ? (prev?.catatanDpl ?? "")
@@ -589,7 +593,8 @@ export const penilaianKknService = {
         data: {
           assessmentScore: subtotalDpl,
           assessmentNote: catatanDpl || undefined,
-          isAssessed: true,
+          isAssessed: subtotalDpl > 0 || subtotalMitra > 0,
+          ...(isMpl && !studentUser.studentProfile.mplId ? { mplId: evaluatorId } : {}),
         },
       });
     }
@@ -601,6 +606,7 @@ export const penilaianKknService = {
         kelompokId,
         dplId,
         mitraId,
+        mplId,
         namaMitraPenilai,
         skorMitraKehadiran: Math.round(skorMitraKehadiran),
         skorMitraWargaBinaan: Math.round(skorMitraWargaBinaan),
@@ -630,6 +636,7 @@ export const penilaianKknService = {
         kelompokId: kelompokId || undefined,
         dplId: dplId || undefined,
         mitraId: mitraId || undefined,
+        mplId: mplId || undefined,
         namaMitraPenilai: namaMitraPenilai || undefined,
         skorMitraKehadiran: Math.round(skorMitraKehadiran),
         skorMitraWargaBinaan: Math.round(skorMitraWargaBinaan),
@@ -661,16 +668,17 @@ export const penilaianKknService = {
   },
 
   /**
-   * Mengambil Rekapitulasi Penilaian KKN (Role-Scoped untuk DPL / RW / Lurah / DLH / Super User)
+   * Mengambil Rekapitulasi Penilaian KKN (Role-Scoped untuk DPL / MPL / RW / Lurah / DLH / Super User)
    */
   getRekapPenilaian: async (groupId?: string, evaluatorId?: string, evaluatorRole?: string) => {
     const whereCondition: any = {
       role: { name: "MAHASISWA_KKN" },
     };
 
+    const normRole = String(evaluatorRole || "").toUpperCase();
+
     if (
-      evaluatorRole &&
-      ["DPL", "DOSEN_PEMBIMBING"].includes(evaluatorRole.toUpperCase()) &&
+      ["DPL", "DOSEN_PEMBIMBING", "DOSEN_PENDAMPING"].includes(normRole) &&
       evaluatorId
     ) {
       const evalUser = await prisma.user.findUnique({
@@ -691,9 +699,34 @@ export const penilaianKknService = {
           OR: dplOr,
         },
       };
+    } else if (
+      ["MPL", "MITRA_PENDAMPING_LAPANGAN", "MITRA_PEMBIMBING_LAPANGAN"].includes(normRole) &&
+      evaluatorId
+    ) {
+      const mplUser = await prisma.user.findUnique({
+        where: { id: evaluatorId },
+        include: { rw: { include: { kelurahan: true } } },
+      });
+      const kelurahanId = mplUser?.rw?.kelurahanId;
+      const kelurahanName = mplUser?.rw?.kelurahan?.name;
+
+      const mplConditions: any[] = [
+        { mplId: evaluatorId },
+        { kelompok: { mplId: evaluatorId } },
+      ];
+      if (kelurahanId) {
+        mplConditions.push({ assignedRw: { kelurahanId } });
+      }
+      if (kelurahanName) {
+        mplConditions.push({ kelompok: { kelurahan: { equals: kelurahanName, mode: "insensitive" } } });
+      }
+      whereCondition.studentProfile = {
+        OR: mplConditions,
+        ...(groupId ? { kelompokId: groupId } : {}),
+      };
     } else if (groupId) {
       whereCondition.studentProfile = { kelompokId: groupId };
-    } else if (evaluatorRole === "RW" && evaluatorId) {
+    } else if (normRole === "RW" && evaluatorId) {
       const userRw = await prisma.user.findUnique({
         where: { id: evaluatorId },
         select: { rwId: true },
@@ -701,7 +734,7 @@ export const penilaianKknService = {
       if (userRw?.rwId) {
         whereCondition.studentProfile = { assignedRwId: userRw.rwId };
       }
-    } else if (evaluatorRole === "LURAH" && evaluatorId) {
+    } else if (normRole === "LURAH" && evaluatorId) {
       const userLurah = await prisma.user.findUnique({
         where: { id: evaluatorId },
         include: { rw: true },
@@ -763,12 +796,58 @@ export const penilaianKknService = {
               ).toFixed(2)
             ) || (directScore > 0 ? directScore : 0);
 
-      const subtotalMitra = p ? Number(p.subtotalMitra) : 0;
-      const calculatedNilaiAkhir = calculateCompositeScore(subtotalMitra, subtotalDpl);
+      const skorMitraKehadiran = p ? Number(p.skorMitraKehadiran) : 0;
+      const skorMitraWargaBinaan = p ? Number(p.skorMitraWargaBinaan) : 0;
+      const skorMitraProker = p ? Number(p.skorMitraProker) : 0;
+      const skorMitraKomunikasi = p ? Number(p.skorMitraKomunikasi) : 0;
+      const skorMitraTanggungJawab = p ? Number(p.skorMitraTanggungJawab) : 0;
+      const skorMitraBuktiKegiatan = p ? Number(p.skorMitraBuktiKegiatan) : 0;
+      const skorMitraDampak = p ? Number(p.skorMitraDampak) : 0;
+      const skorMitraInisiatif = p ? Number(p.skorMitraInisiatif) : 0;
+
+      const hasMitraScores =
+        skorMitraKehadiran > 0 ||
+        skorMitraWargaBinaan > 0 ||
+        skorMitraProker > 0 ||
+        skorMitraKomunikasi > 0 ||
+        skorMitraTanggungJawab > 0 ||
+        skorMitraBuktiKegiatan > 0 ||
+        skorMitraDampak > 0 ||
+        skorMitraInisiatif > 0;
+
+      const subtotalMitra =
+        p && Number(p.subtotalMitra) > 0
+          ? Number(p.subtotalMitra)
+          : Number(
+              (
+                calculateAspectScore(skorMitraKehadiran, 15) +
+                calculateAspectScore(skorMitraWargaBinaan, 15) +
+                calculateAspectScore(skorMitraProker, 15) +
+                calculateAspectScore(skorMitraKomunikasi, 10) +
+                calculateAspectScore(skorMitraTanggungJawab, 10) +
+                calculateAspectScore(skorMitraBuktiKegiatan, 10) +
+                calculateAspectScore(skorMitraDampak, 15) +
+                calculateAspectScore(skorMitraInisiatif, 10)
+              ).toFixed(2)
+            );
+
+      // Transparansi komposisi 50% DPL + 50% MPL
+      const kontribusiDpl = Number((subtotalDpl * 0.5).toFixed(2));
+      const kontribusiMitra = Number((subtotalMitra * 0.5).toFixed(2));
+
+      const calculatedNilaiAkhir =
+        subtotalDpl > 0 && subtotalMitra > 0
+          ? Number((kontribusiDpl + kontribusiMitra).toFixed(2))
+          : subtotalDpl > 0
+            ? kontribusiDpl
+            : subtotalMitra > 0
+              ? kontribusiMitra
+              : 0;
+
       const finalNilai =
         p && Number(p.nilaiAkhir) > 0 ? Number(p.nilaiAkhir) : calculatedNilaiAkhir;
 
-      const hasAnyScore =
+      const hasDplAny =
         skorDplPerencanaan > 0 ||
         skorDplKontribusi > 0 ||
         skorDplLogbook > 0 ||
@@ -777,7 +856,7 @@ export const penilaianKknService = {
         skorDplLaporanAkhir > 0 ||
         directScore > 0;
 
-      const hasAllScores =
+      const hasDplAll =
         skorDplPerencanaan > 0 &&
         skorDplKontribusi > 0 &&
         skorDplLogbook > 0 &&
@@ -786,10 +865,24 @@ export const penilaianKknService = {
         skorDplLaporanAkhir > 0;
 
       let statusDpl = "BELUM_DINILAI";
-      if (hasAllScores || (p && p.status === "FINAL") || (subtotalDpl > 0 && hasAllScores)) {
+      if (hasDplAll || (p && p.status === "FINAL") || (subtotalDpl > 0 && hasDplAll)) {
         statusDpl = "SUDAH_DINILAI";
-      } else if (hasAnyScore) {
+      } else if (hasDplAny) {
         statusDpl = "SEDANG_DINILAI";
+      }
+
+      let statusMitra = "BELUM_DINILAI";
+      if (subtotalMitra > 0 || hasMitraScores) {
+        statusMitra = "SUDAH_DINILAI";
+      }
+
+      let statusPenilaian = "BELUM_DINILAI";
+      if ((subtotalDpl > 0 || hasDplAll) && (subtotalMitra > 0 || hasMitraScores)) {
+        statusPenilaian = "LENGKAP";
+      } else if (subtotalDpl > 0 || hasDplAny) {
+        statusPenilaian = "MENUNGGU_MPL";
+      } else if (subtotalMitra > 0 || hasMitraScores) {
+        statusPenilaian = "MENUNGGU_DPL";
       }
 
       return {
@@ -803,14 +896,19 @@ export const penilaianKknService = {
         kelurahan: s.studentProfile?.assignedRw?.kelurahan?.name || "-",
         rw: s.studentProfile?.assignedRw?.name || "-",
         dplNama: s.studentProfile?.kelompok?.dpl?.name || "-",
+        namaMitraPenilai: p?.namaMitraPenilai || "-",
         subtotalMitra,
+        kontribusiMitra,
         subtotalDpl,
+        kontribusiDpl,
         nilaiAkhir: finalNilai,
         kategori:
           p?.kategoriNilai ||
           (finalNilai > 0 ? calculateGradeCategory(finalNilai) : "Belum Dinilai"),
         status: p?.status || "BELUM_DINILAI",
         statusDpl,
+        statusMitra,
+        statusPenilaian,
         isFinalized: Boolean(p?.isFinalized),
         skorDplPerencanaan,
         skorDplKontribusi,
@@ -818,7 +916,16 @@ export const penilaianKknService = {
         skorDplAnalisis,
         skorDplOutput,
         skorDplLaporanAkhir,
+        skorMitraKehadiran,
+        skorMitraWargaBinaan,
+        skorMitraProker,
+        skorMitraKomunikasi,
+        skorMitraTanggungJawab,
+        skorMitraBuktiKegiatan,
+        skorMitraDampak,
+        skorMitraInisiatif,
         catatanDpl: p?.catatanDpl || s.studentProfile?.assessmentNote || "",
+        catatanMitra: p?.catatanMitra || "",
       };
     });
   },

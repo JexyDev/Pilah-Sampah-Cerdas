@@ -12,7 +12,7 @@ import { X, Star, Banknote, Recycle, AlertCircle, Eye, LineChart, BarChart, Leaf
  */
 
 import React, { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, Navigate, useSearchParams } from "react-router-dom";
 import { RwDashboard } from "../RwPortal/RwDashboard";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
@@ -23,6 +23,7 @@ import KknDashboard from "../KknDashboard/KknDashboard";
 import ResiduDashboard from "../ResiduDashboard/ResiduDashboard";
 import DplDashboardPage from "../dpl/DplDashboardPage";
 import TaskforceDashboardPage from "../taskforce/TaskforceDashboardPage";
+import DashboardEksekutifKkn from "./DashboardEksekutifKkn";
 import { getPortalLoadingText } from "../../utils/portalLoading";
 import LeaderboardWidget from "../../components/LeaderboardWidget";
 import { CustomSelect, type SelectOption } from "../../components/common/CustomSelect";
@@ -1551,6 +1552,14 @@ const KpiCard: React.FC<KpiCardProps> = ({
 const Dashboard: React.FC = () => {
   const { user, updateWilayah } = useAuthStore();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const isPimpinan = user?.peran === "PIMPINAN" || user?.peran === "PEMIMPIN";
+  const isSuperOrDev = user?.peran === "SUPER_USER" || user?.peran === "DEVELOPER";
+  const canAccessKknSub = isPimpinan || isSuperOrDev;
+
+  const activeSubTab = searchParams.get("tab") || (isPimpinan ? "kkn" : "sampah");
+
   const [stats, setStats] = useState<any>(null);
   const [recentBins, setRecentBins] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1802,21 +1811,57 @@ const Dashboard: React.FC = () => {
     return () => clearInterval(interval);
   }, [user, weeks, timeFilter, selectedWilayah]);
 
+  if (user?.peran === "MPL" || (user?.peran as string) === "MITRA_PENDAMPING_LAPANGAN") {
+    return <Navigate to="/penilaian/mahasiswa" replace />;
+  }
   if (user?.peran === "WARGA") return <WargaDashboard />;
   if (user?.peran === "RW") return <RwDashboard />;
   if (user?.peran === "MAHASISWA_KKN") return <KknDashboard />;
   if (user?.peran === "PETUGAS_RESIDU") return <ResiduDashboard />;
   if (
     user?.peran === "DPL" ||
-    user?.peran === "DOSEN_PEMBIMBING" ||
-    user?.peran === "PIMPINAN" ||
-    user?.peran === "PEMIMPIN"
+    user?.peran === "DOSEN_PEMBIMBING"
   ) {
     return <DplDashboardPage />;
   }
 
   if (user?.peran === "PANITIA_TASKFORCE") {
     return <TaskforceDashboardPage />;
+  }
+
+  // Khusus Pimpinan (atau Super User/Dev) jika sub-dashboard KKN aktif
+  if (canAccessKknSub && activeSubTab === "kkn") {
+    return (
+      <div className="space-y-6">
+        {/* Executive Sub-Dashboard Tab Switcher */}
+        <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-850 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-750 w-fit">
+          <button
+            onClick={() => setSearchParams({ tab: "kkn" })}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              activeSubTab === "kkn"
+                ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs border border-slate-200/80 dark:border-slate-700"
+                : "text-slate-500 hover:text-slate-800 dark:text-slate-400"
+            }`}
+          >
+            <GraduationCap size={15} />
+            <span>Sub-Dasbor Eksekutif KKN</span>
+          </button>
+          <button
+            onClick={() => setSearchParams({ tab: "sampah" })}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              activeSubTab === "sampah"
+                ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs border border-slate-200/80 dark:border-slate-700"
+                : "text-slate-500 hover:text-slate-800 dark:text-slate-400"
+            }`}
+          >
+            <Recycle size={15} />
+            <span>Tata Kelola Sampah Kota</span>
+          </button>
+        </div>
+
+        <DashboardEksekutifKkn />
+      </div>
+    );
   }
 
   if (loading) {
@@ -1890,6 +1935,33 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12 text-slate-800 dark:text-slate-100 font-sans relative">
+      {canAccessKknSub && (
+        <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-850 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-750 w-fit">
+          <button
+            onClick={() => setSearchParams({ tab: "kkn" })}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              activeSubTab === "kkn"
+                ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs border border-slate-200/80 dark:border-slate-700"
+                : "text-slate-500 hover:text-slate-800 dark:text-slate-400"
+            }`}
+          >
+            <GraduationCap size={15} />
+            <span>Sub-Dasbor Eksekutif KKN</span>
+          </button>
+          <button
+            onClick={() => setSearchParams({ tab: "sampah" })}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              activeSubTab === "sampah"
+                ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs border border-slate-200/80 dark:border-slate-700"
+                : "text-slate-500 hover:text-slate-800 dark:text-slate-400"
+            }`}
+          >
+            <Recycle size={15} />
+            <span>Tata Kelola Sampah Kota</span>
+          </button>
+        </div>
+      )}
+
       {/* 1. Header Bar (Clean Multi-Tier Executive UI) */}
       <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-4">
         {/* Top Tier: Title & Live Badge */}

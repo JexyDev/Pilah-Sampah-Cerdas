@@ -292,13 +292,21 @@ export class BinService {
       }
     }
 
-    // 2. Validate Geofencing (< 50m) if coordinates are provided
-    if (
+    // 2. Validate Geofencing (< 50m) if valid coordinates are provided (Filters 0.0 Null Island cold-start GPS)
+    const hasValidUserCoords =
       userLat !== undefined &&
       userLng !== undefined &&
+      userLat !== 0 &&
+      userLng !== 0 &&
+      Math.abs(userLat) > 0.0001;
+
+    const hasValidBinCoords =
       bin.latitude !== null &&
-      bin.longitude !== null
-    ) {
+      bin.longitude !== null &&
+      Number(bin.latitude) !== 0 &&
+      Number(bin.longitude) !== 0;
+
+    if (hasValidUserCoords && hasValidBinCoords) {
       const distance = getDistanceMeters(
         userLat,
         userLng,
@@ -809,7 +817,9 @@ export class BinService {
           });
 
           const hasOrganik = currentBins.some((b) => checkIsOrganicCategory(b.category?.name));
-          const hasNonOrganik = currentBins.some((b) => b.category?.name && !checkIsOrganicCategory(b.category?.name));
+          const hasNonOrganik = currentBins.some(
+            (b) => b.category?.name && !checkIsOrganicCategory(b.category?.name)
+          );
           const onboardingComplete = hasOrganik && hasNonOrganik;
 
           // Check duplicate category in the request payload itself
@@ -1427,7 +1437,7 @@ export class BinService {
     const maxCap = Number(bin.maxCapacityLiter ?? 25.0);
     const fillRatio = maxCap > 0 ? currentVol / maxCap : 0;
 
-    if (fillRatio < 0.70) {
+    if (fillRatio < 0.7) {
       const currentPercent = Math.round(fillRatio * 100);
       const error = new Error(`BIN_CAPACITY_NOT_ENOUGH:${currentPercent}`);
       (error as any).currentPercent = currentPercent;
@@ -1895,7 +1905,7 @@ export class BinService {
     userId: string,
     issueType: "EMPTY_REQUEST" | "BROKEN_REPORT",
     _notes: string,
-    evidencePhotoUrl?: string
+    _evidencePhotoUrl?: string
   ) {
     const bin = await prisma.bin.findUnique({
       where: { id: binId },
