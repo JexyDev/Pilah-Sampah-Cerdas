@@ -336,41 +336,6 @@ const NavItemCollapsed: React.FC<NavItemProps> = ({ to, icon: Icon, label }) => 
   );
 };
 
-const CollapsedClockButton: React.FC<{ dateStr: string; timeStr: string }> = ({ dateStr, timeStr }) => {
-  const [isHovered, setIsHovered] = React.useState(false);
-  const [coords, setCoords] = React.useState<{ top: number; left: number }>({ top: 0, left: 0 });
-  const containerRef = React.useRef<HTMLDivElement>(null);
-
-  const handleMouseEnter = () => {
-    if (containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      setCoords({ top: rect.top + (rect.height - 30) / 2, left: rect.right + 12 });
-    }
-    setIsHovered(true);
-  };
-
-  return (
-    <div
-      ref={containerRef}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={() => setIsHovered(false)}
-      className="w-10 h-10 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-slate-600 dark:text-slate-300 flex items-center justify-center relative group cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/80 transition-all shrink-0"
-    >
-      <Clock size={17} className="text-[#035941] dark:text-emerald-400" />
-      {isHovered && (
-        <Portal>
-          <div
-            style={{ top: `${coords.top}px`, left: `${coords.left}px` }}
-            className="fixed bg-slate-900 dark:bg-slate-800 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-xl whitespace-nowrap z-[999999] border border-slate-700/60 pointer-events-none animate-in fade-in slide-in-from-left-2 duration-150"
-          >
-            {dateStr ? `${dateStr} â€¢ ${timeStr}` : timeStr || "Jam Sistem"}
-          </div>
-        </Portal>
-      )}
-    </div>
-  );
-};
-
 
 const NavGroupCollapsed: React.FC<{
   icon: LucideIcon;
@@ -597,34 +562,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
   const isMpl = userRole === "MPL" || rawRole === "MITRA_PENDAMPING_LAPANGAN";
   const isPimpinan = userRole === "PIMPINAN";
 
-  // Live real-time clock state
-  const [timeStr, setTimeStr] = React.useState("");
-  const [dateStr, setDateStr] = React.useState("");
-
-  React.useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      setTimeStr(
-        now.toLocaleTimeString("id-ID", {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-        }).replace(/:/g, ".")
-      );
-      setDateStr(
-        now.toLocaleDateString("id-ID", {
-          weekday: "long",
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        })
-      );
-    };
-
-    updateTime();
-    const interval = setInterval(updateTime, 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   const handleMobileItemClick = () => {
     if (typeof window !== "undefined" && window.innerWidth < 1024) {
@@ -1427,7 +1364,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             </nav>
 
             {/* Bottom Actions for Collapsed Mode */}
-            <div className="flex flex-col items-center pt-2 border-t border-slate-100 dark:border-slate-800 w-full px-2 shrink-0 gap-2">
+            <div className="flex flex-col items-center pt-2 border-t border-slate-100 dark:border-slate-800 w-full px-2 shrink-0">
               <button
                 type="button"
                 onClick={() => {
@@ -1439,7 +1376,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               >
                 <LogOut size={16} />
               </button>
-              <CollapsedClockButton dateStr={dateStr} timeStr={timeStr} />
             </div>
           </div>
         ) : (
@@ -1529,8 +1465,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               })}
             </nav>
 
-            {/* Bottom Footer Section: Real-time System Clock Card & Logout */}
-            <div className="p-3.5 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0 space-y-2">
+            {/* Bottom Footer Section: Logout */}
+            <div className="p-3.5 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
               <button
                 type="button"
                 onClick={() => {
@@ -1542,19 +1478,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 <LogOut size={14} />
                 <span>Keluar (Logout)</span>
               </button>
-
-              {/* Real-time System Clock Card */}
-              <div className="w-full bg-[#f2f8f4]/90 dark:bg-slate-800/90 hover:bg-[#ebf7ee] dark:hover:bg-slate-700/90 p-2.5 rounded-2xl border border-[#c8e6b2]/80 dark:border-slate-700/80 shadow-xs text-center space-y-0.5 transition-all duration-300 relative z-10 hover:scale-[1.02] backdrop-blur-xs">
-                <div className="flex items-center justify-center gap-1.5 text-slate-500 dark:text-slate-400 mb-0.5">
-                  <Clock size={13} className="text-[#035941] dark:text-emerald-400" />
-                  <p className="text-[10.5px] font-black text-slate-600 dark:text-slate-300 truncate">
-                    {dateStr || "Kamis, 20 Agustus 2026"}
-                  </p>
-                </div>
-                <p className="text-sm font-black text-[#035941] dark:text-emerald-400">
-                  {timeStr || "09.55.12"}
-                </p>
-              </div>
             </div>
           </div>
         )}
