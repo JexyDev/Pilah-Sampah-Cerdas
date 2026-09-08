@@ -3,8 +3,10 @@ import '../../../data/models/notification_entity.dart';
 import '../../../data/repositories/notification_repository.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../auth/controllers/auth_controller.dart';
-import '../../mahasiswa/controllers/mahasiswa_notifikasi_controller.dart' as mhs_ctrl;
-import '../../petugas_pemilahan/controllers/petugas_pemilahan_notifikasi_controller.dart' as ptgs_ctrl;
+import '../../mahasiswa/controllers/mahasiswa_notifikasi_controller.dart'
+    as mhs_ctrl;
+import '../../petugas_pemilahan/controllers/petugas_pemilahan_notifikasi_controller.dart'
+    as ptgs_ctrl;
 import 'warga_notifikasi_controller.dart' as warga_ctrl;
 
 import '../../../data/services/local_notification_cache_service.dart';
@@ -21,13 +23,19 @@ bool _isWargaNotification(NotificationEntity notif) {
   final desc = notif.desc.toUpperCase();
 
   // Pengingat Buang Sampah Pagi (07:00) & Sore (16:00) untuk Warga diperbolehkan
-  final isWargaReminder = title.contains('BUANG SAMPAH') || title.contains('PENGINGAT') || type.contains('REMINDER');
-  if (isWargaReminder && !title.contains('HARUS DIAMBIL') && !desc.contains('HARUS DIAMBIL')) {
+  final isWargaReminder =
+      title.contains('BUANG SAMPAH') ||
+      title.contains('PENGINGAT') ||
+      type.contains('REMINDER');
+  if (isWargaReminder &&
+      !title.contains('HARUS DIAMBIL') &&
+      !desc.contains('HARUS DIAMBIL')) {
     return true;
   }
 
   // Dilarang total untuk Warga (Penjemputan Petugas, Mahasiswa KKN & Petugas Pemilahan)
-  final isForbidden = type.contains('JEMPUT') ||
+  final isForbidden =
+      type.contains('JEMPUT') ||
       type.contains('PENGANGKUTAN') ||
       type.contains('KKN') ||
       type.contains('DPL') ||
@@ -58,7 +66,8 @@ bool _isWargaNotification(NotificationEntity notif) {
   // 2. Notifikasi Kepenuhan Tempat Sampah (90%)
   // 3. Poin reward
   // 4. Penalti, Peringatan, Jadwal
-  final isWargaTopic = type.contains('TONG_PENUH') ||
+  final isWargaTopic =
+      type.contains('TONG_PENUH') ||
       type.contains('PENGAJUAN') ||
       type.contains('POIN') ||
       title.contains('PENUH') ||
@@ -95,8 +104,9 @@ void clearNotificationCache() {
 
 /// Provider daftar notifikasi user yang login.
 /// Memanggil GET /api/v1/notifications dari backend.
-final notificationsProvider =
-    FutureProvider<List<NotificationEntity>>((ref) async {
+final notificationsProvider = FutureProvider<List<NotificationEntity>>((
+  ref,
+) async {
   final repo = ref.watch(notificationRepositoryProvider);
   // Pastikan user sudah login
   final user = ref.watch(authProvider).user;
@@ -112,29 +122,44 @@ final notificationsProvider =
   try {
     final pointRepo = ref.read(wasteLogRepositoryProvider);
     final pointHistory = await pointRepo.getPointHistoryByUser(user.id);
-    
+
     final prefs = await SharedPreferences.getInstance();
-    final readList = prefs.getStringList('read_notifs_${user.id}_${user.role.name}') ?? [];
+    final readList =
+        prefs.getStringList('read_notifs_${user.id}_${user.role.name}') ?? [];
     final readSet = readList.toSet();
-    final markAllTimestamp = prefs.getInt('mark_all_notifs_${user.id}_${user.role.name}') ?? 0;
-    
+    final markAllTimestamp =
+        prefs.getInt('mark_all_notifs_${user.id}_${user.role.name}') ?? 0;
+
     for (final ph in pointHistory) {
       if (ph.points > 0) {
         final notifId = 'point_${ph.id}';
-        final isRead = readSet.contains(notifId) || 
+        final isRead =
+            readSet.contains(notifId) ||
             ph.createdAt.millisecondsSinceEpoch <= markAllTimestamp ||
-            LocalNotificationCacheService().isRead(user.id, user.role.name, notifId);
-        
-        list.add(NotificationEntity(
-          id: notifId,
-          type: 'POIN',
-          title: 'Poin Bertambah!',
-          desc: ph.description.isNotEmpty ? ph.description : 'Anda mendapatkan +${ph.points} poin.',
-          isRead: isRead,
-          time: ph.createdAt.toLocal().toIso8601String().substring(0, 16).replaceAll('T', ' '),
-          icon: 'star',
-          createdAt: ph.createdAt,
-        ));
+            LocalNotificationCacheService().isRead(
+              user.id,
+              user.role.name,
+              notifId,
+            );
+
+        list.add(
+          NotificationEntity(
+            id: notifId,
+            type: 'POIN',
+            title: 'Poin Bertambah!',
+            desc: ph.description.isNotEmpty
+                ? ph.description
+                : 'Anda mendapatkan +${ph.points} poin.',
+            isRead: isRead,
+            time: ph.createdAt
+                .toLocal()
+                .toIso8601String()
+                .substring(0, 16)
+                .replaceAll('T', ' '),
+            icon: 'star',
+            createdAt: ph.createdAt,
+          ),
+        );
       }
     }
   } catch (_) {}
@@ -158,7 +183,10 @@ final notificationsProvider =
   }
 
   // Gabungkan dengan LocalNotificationCacheService & FirebaseNotificationService (hanya notifikasi Warga)
-  final localNotifs = LocalNotificationCacheService().getNotifications(userId, roleName);
+  final localNotifs = LocalNotificationCacheService().getNotifications(
+    userId,
+    roleName,
+  );
   for (final localItem in localNotifs) {
     if (!_isWargaNotification(localItem)) continue;
     if (!filteredList.any((n) => n.id == localItem.id)) {
@@ -166,7 +194,10 @@ final notificationsProvider =
     }
   }
 
-  final firebaseNotifs = await FirebaseNotificationService().getNotifications(userId, roleName);
+  final firebaseNotifs = await FirebaseNotificationService().getNotifications(
+    userId,
+    roleName,
+  );
   for (final fbItem in firebaseNotifs) {
     if (!_isWargaNotification(fbItem)) continue;
     if (!filteredList.any((n) => n.id == fbItem.id)) {
@@ -176,19 +207,27 @@ final notificationsProvider =
 
   // FORCE override isRead based on persistent local cache
   final prefs = await SharedPreferences.getInstance();
-  final readSet = (prefs.getStringList('read_notifs_${userId}_$roleName') ?? []).toSet();
+  final readSet = (prefs.getStringList('read_notifs_${userId}_$roleName') ?? [])
+      .toSet();
   final markAllTs = prefs.getInt('mark_all_notifs_${userId}_$roleName') ?? 0;
-  final deleteAllTs = prefs.getInt('delete_all_notifs_${userId}_$roleName') ?? 0;
-  
+  final deleteAllTs =
+      prefs.getInt('delete_all_notifs_${userId}_$roleName') ?? 0;
+
   final List<NotificationEntity> finalFilteredList = [];
   for (int i = 0; i < filteredList.length; i++) {
     final dt = filteredList[i].createdAt.toLocal();
     if (dt.millisecondsSinceEpoch <= deleteAllTs) continue;
-    
-    final isReadLocally = readSet.contains(filteredList[i].id) || 
-        dt.millisecondsSinceEpoch <= markAllTs || 
-        LocalNotificationCacheService().isRead(userId, roleName, filteredList[i].id, dt);
-    
+
+    final isReadLocally =
+        readSet.contains(filteredList[i].id) ||
+        dt.millisecondsSinceEpoch <= markAllTs ||
+        LocalNotificationCacheService().isRead(
+          userId,
+          roleName,
+          filteredList[i].id,
+          dt,
+        );
+
     var item = filteredList[i];
     if (isReadLocally && !item.isRead) {
       item = item.copyWith(isRead: true);
@@ -202,7 +241,9 @@ final notificationsProvider =
 /// Provider jumlah notifikasi yang belum dibaca (badge count).
 final unreadNotificationCountProvider = Provider<int>((ref) {
   final notifAsync = ref.watch(notificationsProvider);
-  return notifAsync.when(skipLoadingOnReload: true, data: (list) => list.where((n) => !n.isRead).length,
+  return notifAsync.when(
+    skipLoadingOnReload: true,
+    data: (list) => list.where((n) => !n.isRead).length,
     loading: () => 0,
     error: (_, __) => 0,
   );
@@ -234,15 +275,19 @@ class MarkReadNotifier extends StateNotifier<MarkReadState> {
     final user = _ref.read(authProvider).user;
     if (user != null) {
       LocalNotificationCacheService().markAsRead(user.id, user.role.name, id);
-      await FirebaseNotificationService().markAsRead(user.id, user.role.name, id);
-      
+      await FirebaseNotificationService().markAsRead(
+        user.id,
+        user.role.name,
+        id,
+      );
+
       final prefs = await SharedPreferences.getInstance();
       final key = 'read_notifs_${user.id}_${user.role.name}';
       final readList = prefs.getStringList(key) ?? [];
       if (!readList.contains(id)) {
         readList.add(id);
         await prefs.setStringList(key, readList);
-        
+
         // Backup to cloud
         _repo.updateSyncState(readIds: readList);
       }
@@ -269,13 +314,16 @@ class MarkReadNotifier extends StateNotifier<MarkReadState> {
     final user = _ref.read(authProvider).user;
     if (user != null) {
       LocalNotificationCacheService().markAllAsRead(user.id, user.role.name);
-      await FirebaseNotificationService().markAllAsRead(user.id, user.role.name);
-      
+      await FirebaseNotificationService().markAllAsRead(
+        user.id,
+        user.role.name,
+      );
+
       final prefs = await SharedPreferences.getInstance();
       final key = 'mark_all_notifs_${user.id}_${user.role.name}';
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       await prefs.setInt(key, timestamp);
-      
+
       // Backup to cloud
       _repo.updateSyncState(markAllTimestamp: timestamp);
     }
@@ -296,10 +344,11 @@ class MarkReadNotifier extends StateNotifier<MarkReadState> {
   }
 }
 
-final markReadProvider =
-    StateNotifierProvider<MarkReadNotifier, MarkReadState>((ref) {
-  return MarkReadNotifier(ref.watch(notificationRepositoryProvider), ref);
-});
+final markReadProvider = StateNotifierProvider<MarkReadNotifier, MarkReadState>(
+  (ref) {
+    return MarkReadNotifier(ref.watch(notificationRepositoryProvider), ref);
+  },
+);
 
 // ─── Register Device Token ────────────────────────────────────────────────────
 
@@ -311,7 +360,6 @@ Future<void> registerFcmToken(NotificationRepository repo, String token) async {
     // Non-critical — abaikan error, jangan crash app
   }
 }
-
 
 class DeleteAllNotifier extends StateNotifier<MarkReadState> {
   DeleteAllNotifier(this._repo, this._ref) : super(const MarkReadState());
@@ -325,9 +373,12 @@ class DeleteAllNotifier extends StateNotifier<MarkReadState> {
     if (user != null) {
       final prefs = await SharedPreferences.getInstance();
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      await prefs.setInt('delete_all_notifs_${user.id}_${user.role.name}', timestamp);
+      await prefs.setInt(
+        'delete_all_notifs_${user.id}_${user.role.name}',
+        timestamp,
+      );
       LocalNotificationCacheService().clear();
-      
+
       // Backup to cloud
       _repo.updateSyncState(deleteAllTimestamp: timestamp);
     }
@@ -346,6 +397,7 @@ class DeleteAllNotifier extends StateNotifier<MarkReadState> {
   }
 }
 
-final deleteAllProvider = StateNotifierProvider<DeleteAllNotifier, MarkReadState>((ref) {
-  return DeleteAllNotifier(ref.watch(notificationRepositoryProvider), ref);
-});
+final deleteAllProvider =
+    StateNotifierProvider<DeleteAllNotifier, MarkReadState>((ref) {
+      return DeleteAllNotifier(ref.watch(notificationRepositoryProvider), ref);
+    });

@@ -13,7 +13,7 @@ class GpsCalibrationNotifier extends StateNotifier<GpsCalibrationState> {
   StreamSubscription<GpsCalibrationState>? _subscription;
 
   GpsCalibrationNotifier({this.config = GpsCalibrationConfig.kknDefault})
-      : super(const GpsCalibrationState());
+    : super(const GpsCalibrationState());
 
   /// Memulai proses kalibrasi GPS.
   /// Jika kalibrasi sedang berjalan, panggilan ini diabaikan.
@@ -67,5 +67,5 @@ class GpsCalibrationNotifier extends StateNotifier<GpsCalibrationState> {
 /// Gunakan [gpsCalibrationProvider] di seluruh widget.
 final gpsCalibrationProvider =
     StateNotifierProvider<GpsCalibrationNotifier, GpsCalibrationState>(
-  (ref) => GpsCalibrationNotifier(),
-);
+      (ref) => GpsCalibrationNotifier(),
+    );

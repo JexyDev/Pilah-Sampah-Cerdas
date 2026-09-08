@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/utils/thousands_formatter.dart';
+import '../../../core/utils/image_compressor.dart';
 import '../../../data/providers/repository_providers.dart';
 
 class PengajuanProgramKerjaView extends ConsumerStatefulWidget {
@@ -12,10 +13,12 @@ class PengajuanProgramKerjaView extends ConsumerStatefulWidget {
   const PengajuanProgramKerjaView({super.key, this.initialData});
 
   @override
-  ConsumerState<PengajuanProgramKerjaView> createState() => _PengajuanProgramKerjaViewState();
+  ConsumerState<PengajuanProgramKerjaView> createState() =>
+      _PengajuanProgramKerjaViewState();
 }
 
-class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerjaView> {
+class _PengajuanProgramKerjaViewState
+    extends ConsumerState<PengajuanProgramKerjaView> {
   final _formKey = GlobalKey<FormState>();
   final _anggaranCtrl = TextEditingController();
   final _tanggalMulaiCtrl = TextEditingController();
@@ -23,7 +26,7 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
   final _judulCtrl = TextEditingController();
   final _deskripsiCtrl = TextEditingController();
   final _linkDriveCtrl = TextEditingController();
-  
+
   String? _kategori;
   File? _attachmentFile;
   bool _isLoading = false;
@@ -68,11 +71,15 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
       final data = widget.initialData!;
       _judulCtrl.text = data['judul'] ?? data['deskripsi'] ?? '';
       _kategori = data['kategori']?.toString().toUpperCase();
-      _anggaranCtrl.text = data['rencanaAnggaran']?.toString() ?? data['kebutuhanBiaya']?.toString() ?? '';
+      _anggaranCtrl.text =
+          data['rencanaAnggaran']?.toString() ??
+          data['kebutuhanBiaya']?.toString() ??
+          '';
       _deskripsiCtrl.text = data['deskripsi'] ?? '';
       _linkDriveCtrl.text = data['linkGoogleDrive'] ?? '';
-      
-      final waktuPelaksanaan = data['waktuPelaksanaan'] ?? data['targetTanggal'] ?? '';
+
+      final waktuPelaksanaan =
+          data['waktuPelaksanaan'] ?? data['targetTanggal'] ?? '';
       if (waktuPelaksanaan.toString().contains(' s/d ')) {
         final split = waktuPelaksanaan.split(' s/d ');
         if (split.length == 2) {
@@ -94,7 +101,10 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
           child: Wrap(
             children: [
               ListTile(
-                leading: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.primaryGreen),
+                leading: const Icon(
+                  Icons.picture_as_pdf_rounded,
+                  color: AppColors.primaryGreen,
+                ),
                 title: const Text('Dokumen PDF Proposal / Bukti'),
                 onTap: () async {
                   Navigator.pop(context);
@@ -103,12 +113,17 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
                     allowedExtensions: ['pdf'],
                   );
                   if (result != null && result.files.single.path != null) {
-                    setState(() => _attachmentFile = File(result.files.single.path!));
+                    setState(
+                      () => _attachmentFile = File(result.files.single.path!),
+                    );
                   }
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.photo_library_rounded, color: AppColors.primaryGreen),
+                leading: const Icon(
+                  Icons.photo_library_rounded,
+                  color: AppColors.primaryGreen,
+                ),
                 title: const Text('Foto Galeri'),
                 onTap: () async {
                   Navigator.pop(context);
@@ -117,12 +132,30 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
                     imageQuality: 75,
                   );
                   if (picked != null) {
-                    setState(() => _attachmentFile = File(picked.path));
+                    setState(() => _isLoading = true);
+                    try {
+                      final compressedPath = await ImageCompressor.compressImage(
+                        picked.path,
+                        maxSizeBytes: 2 * 1024 * 1024,
+                      );
+                      setState(() {
+                        _attachmentFile = File(compressedPath);
+                        _isLoading = false;
+                      });
+                    } catch (e) {
+                      setState(() {
+                        _attachmentFile = File(picked.path);
+                        _isLoading = false;
+                      });
+                    }
                   }
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.camera_alt_rounded, color: AppColors.primaryGreen),
+                leading: const Icon(
+                  Icons.camera_alt_rounded,
+                  color: AppColors.primaryGreen,
+                ),
                 title: const Text('Kamera Langsung'),
                 onTap: () async {
                   Navigator.pop(context);
@@ -131,7 +164,22 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
                     imageQuality: 75,
                   );
                   if (picked != null) {
-                    setState(() => _attachmentFile = File(picked.path));
+                    setState(() => _isLoading = true);
+                    try {
+                      final compressedPath = await ImageCompressor.compressImage(
+                        picked.path,
+                        maxSizeBytes: 2 * 1024 * 1024,
+                      );
+                      setState(() {
+                        _attachmentFile = File(compressedPath);
+                        _isLoading = false;
+                      });
+                    } catch (e) {
+                      setState(() {
+                        _attachmentFile = File(picked.path);
+                        _isLoading = false;
+                      });
+                    }
                   }
                 },
               ),
@@ -145,18 +193,22 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_kategori == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Harap pilih kategori.')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Harap pilih kategori.')));
       return;
     }
-    
+
     setState(() => _isLoading = true);
     try {
       final repo = ref.read(kknRepositoryProvider);
       final payload = {
         'judul': _judulCtrl.text.trim(),
         'kategori': _kategori!,
-        'rencanaAnggaran': double.tryParse(_anggaranCtrl.text.trim().replaceAll('.', '')) ?? 0,
-        'targetTanggal': '${_tanggalMulaiCtrl.text.trim()} s/d ${_tanggalSelesaiCtrl.text.trim()}', 
+        'rencanaAnggaran':
+            double.tryParse(_anggaranCtrl.text.trim().replaceAll('.', '')) ?? 0,
+        'targetTanggal':
+            '${_tanggalMulaiCtrl.text.trim()} s/d ${_tanggalSelesaiCtrl.text.trim()}',
         'deskripsi': _deskripsiCtrl.text.trim(),
         'linkGoogleDrive': _linkDriveCtrl.text.trim(),
         if (_attachmentFile != null) 'filePdfPath': _attachmentFile!.path,
@@ -168,22 +220,27 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
         await repo.submitProgramKerja(payload);
       }
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Berhasil diajukan!')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Berhasil diajukan!')));
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(e.toString()),
-          backgroundColor: Colors.red,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  InputDecoration _buildInputDecoration({String? hintText, Widget? prefixIcon, Widget? suffixIcon}) {
+  InputDecoration _buildInputDecoration({
+    String? hintText,
+    Widget? prefixIcon,
+    Widget? suffixIcon,
+  }) {
     return InputDecoration(
       hintText: hintText,
       prefixIcon: prefixIcon,
@@ -381,19 +438,19 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
   Widget build(BuildContext context) {
     bool hasUnsavedChanges() {
       return _anggaranCtrl.text.isNotEmpty ||
-             _tanggalMulaiCtrl.text.isNotEmpty ||
-             _tanggalSelesaiCtrl.text.isNotEmpty ||
-             _judulCtrl.text.isNotEmpty ||
-             _deskripsiCtrl.text.isNotEmpty ||
-             _linkDriveCtrl.text.isNotEmpty ||
-             _kategori != null;
+          _tanggalMulaiCtrl.text.isNotEmpty ||
+          _tanggalSelesaiCtrl.text.isNotEmpty ||
+          _judulCtrl.text.isNotEmpty ||
+          _deskripsiCtrl.text.isNotEmpty ||
+          _linkDriveCtrl.text.isNotEmpty ||
+          _kategori != null;
     }
 
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
-        
+
         if (!hasUnsavedChanges()) {
           if (context.mounted) Navigator.pop(context);
           return;
@@ -403,13 +460,23 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
           context: context,
           builder: (context) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: const Text('Batalkan Pengajuan?', style: TextStyle(fontWeight: FontWeight.bold)),
-              content: const Text('Perubahan ini akan terhapus jika Anda keluar dari halaman ini.'),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: const Text(
+                'Batalkan Pengajuan?',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              content: const Text(
+                'Perubahan ini akan terhapus jika Anda keluar dari halaman ini.',
+              ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Lanjutkan Edit', style: TextStyle(color: AppColors.textSecondary)),
+                  child: const Text(
+                    'Lanjutkan Edit',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
@@ -429,288 +496,441 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
         }
       },
       child: Scaffold(
-      appBar: AppBar(
-        title: Text(
-          widget.initialData != null ? 'Edit Program Kerja' : 'Ajukan Program Kerja',
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        appBar: AppBar(
+          title: Text(
+            widget.initialData != null
+                ? 'Edit Program Kerja'
+                : 'Ajukan Program Kerja',
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          backgroundColor: AppColors.primaryGreen,
+          foregroundColor: AppColors.textPrimary,
+          elevation: 0,
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(1),
+            child: Container(color: AppColors.border, height: 1),
+          ),
         ),
-        backgroundColor: AppColors.primaryGreen,
-        foregroundColor: AppColors.textPrimary,
-        elevation: 0,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(color: AppColors.border, height: 1),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildHeaderBanner(),
-              const SizedBox(height: 16),
-              
-              _buildSectionCard(
-                title: 'Informasi Dasar',
-                icon: Icons.info_outline_rounded,
-                children: [
-                  const Text('Kategori', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                  const SizedBox(height: 8),
-                  GestureDetector(
-                    onTap: _isLoading ? null : _showKategoriBottomSheet,
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade300),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              _kategori ?? 'Pilih Kategori Program',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: _kategori == null ? AppColors.textHint : AppColors.textPrimary,
-                              ),
-                            ),
-                          ),
-                          const Icon(
-                            Icons.keyboard_arrow_down_rounded,
-                            color: AppColors.textSecondary,
-                          ),
-                        ],
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildHeaderBanner(),
+                const SizedBox(height: 16),
+
+                _buildSectionCard(
+                  title: 'Informasi Dasar',
+                  icon: Icons.info_outline_rounded,
+                  children: [
+                    const Text(
+                      'Kategori',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text('Rencana Anggaran (Rp)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _anggaranCtrl,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [ThousandsFormatter()],
-                    decoration: _buildInputDecoration(
-                      prefixIcon: const Padding(
-                        padding: EdgeInsets.only(left: 16, right: 8),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          mainAxisSize: MainAxisSize.min,
+                    const SizedBox(height: 8),
+                    GestureDetector(
+                      onTap: _isLoading ? null : _showKategoriBottomSheet,
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: Row(
                           children: [
-                            Text(
-                              'Rp',
-                              style: TextStyle(fontSize: 14, color: AppColors.textPrimary),
+                            Expanded(
+                              child: Text(
+                                _kategori ?? 'Pilih Kategori Program',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: _kategori == null
+                                      ? AppColors.textHint
+                                      : AppColors.textPrimary,
+                                ),
+                              ),
+                            ),
+                            const Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              color: AppColors.textSecondary,
                             ),
                           ],
                         ),
                       ),
-                      hintText: '0',
                     ),
-                    validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            const Text('Tanggal Mulai', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                            const SizedBox(height: 8),
-                            TextFormField(
-                              controller: _tanggalMulaiCtrl,
-                              readOnly: true,
-                              decoration: _buildInputDecoration(hintText: 'YYYY-MM-DD', suffixIcon: const Icon(Icons.calendar_today, size: 20)),
-                              validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
-                              onTap: () async {
-                                  final minDate = DateTime.now().add(const Duration(days: 1));
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Rencana Anggaran (Rp)',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _anggaranCtrl,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [ThousandsFormatter()],
+                      decoration: _buildInputDecoration(
+                        prefixIcon: const Padding(
+                          padding: EdgeInsets.only(left: 16, right: 8),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Rp',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        hintText: '0',
+                      ),
+                      validator: (val) =>
+                          val == null || val.isEmpty ? 'Wajib diisi' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              const Text(
+                                'Tanggal Mulai',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              TextFormField(
+                                controller: _tanggalMulaiCtrl,
+                                readOnly: true,
+                                decoration: _buildInputDecoration(
+                                  hintText: 'YYYY-MM-DD',
+                                  suffixIcon: const Icon(
+                                    Icons.calendar_today,
+                                    size: 20,
+                                  ),
+                                ),
+                                validator: (val) => val == null || val.isEmpty
+                                    ? 'Wajib diisi'
+                                    : null,
+                                onTap: () async {
+                                  final minDate = DateTime.now().add(
+                                    const Duration(days: 1),
+                                  );
                                   final picked = await showDatePicker(
                                     context: context,
                                     initialDate: minDate,
                                     firstDate: minDate,
                                     lastDate: DateTime(2030),
                                   );
-                                if (picked != null) {
-                                  _tanggalMulaiCtrl.text = picked.toIso8601String().split('T').first;
-                                  if (_tanggalSelesaiCtrl.text.isNotEmpty) {
-                                    final sDate = DateTime.parse(_tanggalSelesaiCtrl.text);
-                                    if (sDate.isBefore(picked)) {
-                                      _tanggalSelesaiCtrl.text = picked.toIso8601String().split('T').first;
+                                  if (picked != null) {
+                                    _tanggalMulaiCtrl.text = picked
+                                        .toIso8601String()
+                                        .split('T')
+                                        .first;
+                                    if (_tanggalSelesaiCtrl.text.isNotEmpty) {
+                                      final sDate = DateTime.parse(
+                                        _tanggalSelesaiCtrl.text,
+                                      );
+                                      if (sDate.isBefore(picked)) {
+                                        _tanggalSelesaiCtrl.text = picked
+                                            .toIso8601String()
+                                            .split('T')
+                                            .first;
+                                      }
                                     }
                                   }
-                                }
-                              },
-                            ),
-                          ],
+                                },
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            const Text('Tanggal Selesai', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                            const SizedBox(height: 8),
-                            TextFormField(
-                              controller: _tanggalSelesaiCtrl,
-                              readOnly: true,
-                              decoration: _buildInputDecoration(hintText: 'YYYY-MM-DD', suffixIcon: const Icon(Icons.calendar_today, size: 20)),
-                              validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
-                              onTap: () async {
-                                  final minDate = _tanggalMulaiCtrl.text.isNotEmpty ? DateTime.parse(_tanggalMulaiCtrl.text) : DateTime.now().add(const Duration(days: 1));
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              const Text(
+                                'Tanggal Selesai',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              TextFormField(
+                                controller: _tanggalSelesaiCtrl,
+                                readOnly: true,
+                                decoration: _buildInputDecoration(
+                                  hintText: 'YYYY-MM-DD',
+                                  suffixIcon: const Icon(
+                                    Icons.calendar_today,
+                                    size: 20,
+                                  ),
+                                ),
+                                validator: (val) => val == null || val.isEmpty
+                                    ? 'Wajib diisi'
+                                    : null,
+                                onTap: () async {
+                                  final minDate =
+                                      _tanggalMulaiCtrl.text.isNotEmpty
+                                      ? DateTime.parse(_tanggalMulaiCtrl.text)
+                                      : DateTime.now().add(
+                                          const Duration(days: 1),
+                                        );
                                   final picked = await showDatePicker(
                                     context: context,
                                     initialDate: minDate,
                                     firstDate: minDate,
                                     lastDate: DateTime(2030),
                                   );
-                                if (picked != null) {
-                                  _tanggalSelesaiCtrl.text = picked.toIso8601String().split('T').first;
-                                }
-                              },
+                                  if (picked != null) {
+                                    _tanggalSelesaiCtrl.text = picked
+                                        .toIso8601String()
+                                        .split('T')
+                                        .first;
+                                  }
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                _buildSectionCard(
+                  title: 'Detail Program',
+                  icon: Icons.article_outlined,
+                  children: [
+                    const Text(
+                      'Judul Program',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _judulCtrl,
+                      decoration: _buildInputDecoration(
+                        hintText: 'Contoh: Sosialisasi Maggot BSF',
+                      ),
+                      validator: (val) => val == null || val.isEmpty
+                          ? 'Judul wajib diisi'
+                          : null,
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Deskripsi Singkat',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _deskripsiCtrl,
+                      maxLines: 4,
+                      decoration: _buildInputDecoration(
+                        hintText:
+                            'Jelaskan tujuan dan mekanisme pelaksanaan...',
+                      ),
+                      validator: (val) => val == null || val.isEmpty
+                          ? 'Deskripsi wajib diisi'
+                          : null,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                _buildSectionCard(
+                  title: 'Lampiran Berkas',
+                  icon: Icons.attachment_rounded,
+                  children: [
+                    const Text(
+                      'Tautan Bukti Google Drive (URL)',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _linkDriveCtrl,
+                      keyboardType: TextInputType.url,
+                      decoration: _buildInputDecoration(
+                        hintText: 'https://drive.google.com/...',
+                      ),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.only(top: 6.0, left: 4.0),
+                      child: Text(
+                        '*Pastikan akses link diatur ke "Siapa saja yang memiliki tautan" (Public)',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: AppColors.dangerRed,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Unggah Berkas Bukti / Proposal (PDF/Foto)',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    InkWell(
+                      onTap: _showAttachmentPicker,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: _attachmentFile != null
+                                ? AppColors.primaryGreen
+                                : Colors.grey.shade300,
+                            width: _attachmentFile != null ? 1.5 : 1.0,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              _attachmentFile != null
+                                  ? Icons.check_circle_rounded
+                                  : Icons.attach_file_rounded,
+                              color: _attachmentFile != null
+                                  ? AppColors.primaryGreen
+                                  : AppColors.textSecondary,
                             ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                _attachmentFile != null
+                                    ? _attachmentFile!.path
+                                          .split('/')
+                                          .last
+                                          .split('\\')
+                                          .last
+                                    : 'Pilih Berkas Lampiran (Opsional)',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: _attachmentFile != null
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                  color: _attachmentFile != null
+                                      ? AppColors.textPrimary
+                                      : AppColors.textHint,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (_attachmentFile != null)
+                              GestureDetector(
+                                onTap: () =>
+                                    setState(() => _attachmentFile = null),
+                                child: const Padding(
+                                  padding: EdgeInsets.all(4.0),
+                                  child: Icon(
+                                    Icons.close_rounded,
+                                    size: 20,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ),
                           ],
                         ),
                       ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              _buildSectionCard(
-                title: 'Detail Program',
-                icon: Icons.article_outlined,
-                children: [
-                  const Text('Judul Program', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _judulCtrl,
-                    decoration: _buildInputDecoration(hintText: 'Contoh: Sosialisasi Maggot BSF'),
-                    validator: (val) => val == null || val.isEmpty ? 'Judul wajib diisi' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  const Text('Deskripsi Singkat', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _deskripsiCtrl,
-                    maxLines: 4,
-                    decoration: _buildInputDecoration(hintText: 'Jelaskan tujuan dan mekanisme pelaksanaan...'),
-                    validator: (val) => val == null || val.isEmpty ? 'Deskripsi wajib diisi' : null,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              _buildSectionCard(
-                title: 'Lampiran Berkas',
-                icon: Icons.attachment_rounded,
-                children: [
-                  const Text('Tautan Bukti Google Drive (URL)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _linkDriveCtrl,
-                    keyboardType: TextInputType.url,
-                    decoration: _buildInputDecoration(hintText: 'https://drive.google.com/...'),
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.only(top: 6.0, left: 4.0),
-                    child: Text(
-                      '*Pastikan akses link diatur ke "Siapa saja yang memiliki tautan" (Public)',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: AppColors.dangerRed,
-                        fontStyle: FontStyle.italic,
-                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text('Unggah Berkas Bukti / Proposal (PDF/Foto)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                  const SizedBox(height: 8),
-                  InkWell(
-                    onTap: _showAttachmentPicker,
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: _attachmentFile != null ? AppColors.primaryGreen : Colors.grey.shade300,
-                          width: _attachmentFile != null ? 1.5 : 1.0,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            _attachmentFile != null ? Icons.check_circle_rounded : Icons.attach_file_rounded,
-                            color: _attachmentFile != null ? AppColors.primaryGreen : AppColors.textSecondary,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              _attachmentFile != null
-                                  ? _attachmentFile!.path.split('/').last.split('\\').last
-                                  : 'Pilih Berkas Lampiran (Opsional)',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: _attachmentFile != null ? FontWeight.w600 : FontWeight.normal,
-                                color: _attachmentFile != null ? AppColors.textPrimary : AppColors.textHint,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          if (_attachmentFile != null)
-                            GestureDetector(
-                              onTap: () => setState(() => _attachmentFile = null),
-                              child: const Padding(
-                                padding: EdgeInsets.all(4.0),
-                                child: Icon(Icons.close_rounded, size: 20, color: Colors.grey),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 32),
-              
-              ElevatedButton(
-                onPressed: _isLoading ? null : _submit,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryGreen,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 0,
+                  ],
                 ),
-                child: _isLoading
-                    ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                    : Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.send_rounded, size: 20, color: Colors.white),
-                          const SizedBox(width: 10),
-                          Text(widget.initialData != null ? 'Simpan Perubahan' : 'Ajukan Program Kerja', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white)),
-                        ],
-                      ),
-              ),
-              const SizedBox(height: 40),
-            ],
+                const SizedBox(height: 32),
+
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _submit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryGreen,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.send_rounded,
+                              size: 20,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              widget.initialData != null
+                                  ? 'Simpan Perubahan'
+                                  : 'Ajukan Program Kerja',
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
+                const SizedBox(height: 40),
+              ],
+            ),
           ),
         ),
       ),
-    ),
     );
   }
+
   Widget _buildHeaderBanner() {
     final isEdit = widget.initialData != null;
-    final statusUsulan = widget.initialData?['statusUsulan']?.toString().toUpperCase() ?? '';
+    final statusUsulan =
+        widget.initialData?['statusUsulan']?.toString().toUpperCase() ?? '';
     final catatanDpl = widget.initialData?['catatanDpl']?.toString() ?? '';
 
     // Mode edit: PERLU_REVISI_DPL — tampilkan banner merah revisi
@@ -727,12 +947,20 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
           children: [
             Row(
               children: [
-                Icon(Icons.rate_review_rounded, color: Colors.orange.shade700, size: 22),
+                Icon(
+                  Icons.rate_review_rounded,
+                  color: Colors.orange.shade700,
+                  size: 22,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     '⚠️ Program Kerja Perlu Direvisi',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange.shade800, fontSize: 14),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.orange.shade800,
+                      fontSize: 14,
+                    ),
                   ),
                 ),
               ],
@@ -740,7 +968,11 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
             const SizedBox(height: 6),
             Text(
               'DPL meminta perubahan pada program kerja ini. Silakan perbaiki sesuai catatan di bawah, lalu simpan ulang.',
-              style: TextStyle(fontSize: 12, color: Colors.orange.shade800, height: 1.4),
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.orange.shade800,
+                height: 1.4,
+              ),
             ),
             if (catatanDpl.isNotEmpty) ...[
               const SizedBox(height: 10),
@@ -757,12 +989,20 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
                   children: [
                     Text(
                       'Catatan dari DPL:',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.orange.shade700),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange.shade700,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       catatanDpl,
-                      style: const TextStyle(fontSize: 13, color: Colors.black87, height: 1.4),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.black87,
+                        height: 1.4,
+                      ),
                     ),
                   ],
                 ),
@@ -785,7 +1025,11 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.info_outline_rounded, color: Colors.blue.shade600, size: 22),
+            Icon(
+              Icons.info_outline_rounded,
+              color: Colors.blue.shade600,
+              size: 22,
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
@@ -793,12 +1037,20 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
                 children: [
                   Text(
                     'Edit Program Kerja',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue.shade800, fontSize: 14),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue.shade800,
+                      fontSize: 14,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     'Usulan Anda masih menunggu persetujuan DPL. Anda masih bisa mengubah detail sebelum DPL merespons.',
-                    style: TextStyle(fontSize: 12, color: Colors.blue.shade700, height: 1.3),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.blue.shade700,
+                      height: 1.3,
+                    ),
                   ),
                 ],
               ),
@@ -814,12 +1066,18 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
       decoration: BoxDecoration(
         color: AppColors.primaryGreen.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.3)),
+        border: Border.all(
+          color: AppColors.primaryGreen.withValues(alpha: 0.3),
+        ),
       ),
       child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.info_outline_rounded, color: AppColors.primaryGreen, size: 24),
+          Icon(
+            Icons.info_outline_rounded,
+            color: AppColors.primaryGreen,
+            size: 24,
+          ),
           SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -827,12 +1085,20 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
               children: [
                 Text(
                   'Pengajuan Program Kerja',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary, fontSize: 14),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                    fontSize: 14,
+                  ),
                 ),
                 SizedBox(height: 4),
                 Text(
                   'Program kerja yang diajukan akan direview oleh DPL sebelum dapat dilaksanakan.',
-                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.3),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                    height: 1.3,
+                  ),
                 ),
               ],
             ),
@@ -842,7 +1108,11 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
     );
   }
 
-  Widget _buildSectionCard({required String title, required IconData icon, required List<Widget> children}) {
+  Widget _buildSectionCard({
+    required String title,
+    required IconData icon,
+    required List<Widget> children,
+  }) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -870,7 +1140,11 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
                 const SizedBox(width: 10),
                 Text(
                   title,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textPrimary),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ],
             ),

@@ -18,20 +18,15 @@ class WeightText extends StatelessWidget {
   Widget build(BuildContext context) {
     final defaultStyle = DefaultTextStyle.of(context).style;
     final baseStyle = style != null ? defaultStyle.merge(style) : defaultStyle;
-    final boldStyle = kgStyle ?? baseStyle.copyWith(fontWeight: FontWeight.bold);
+    final boldStyle =
+        kgStyle ?? baseStyle.copyWith(fontWeight: FontWeight.bold);
 
     return RichText(
       text: TextSpan(
         text: '${weight.toStringAsFixed(fractionDigits)} ',
         style: baseStyle,
-        children: [
-          TextSpan(
-            text: 'KG',
-            style: boldStyle,
-          ),
-        ],
+        children: [TextSpan(text: 'KG', style: boldStyle)],
       ),
     );
   }
 }
-

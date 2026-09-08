@@ -11,7 +11,7 @@ import 'dart:math' as math;
 class DistanceAnalyzer {
   const DistanceAnalyzer._();
 
-  static const double _bestStdDev = 5.0;  // meter → skor penuh
+  static const double _bestStdDev = 5.0; // meter → skor penuh
   static const double _worstStdDev = 30.0; // meter → skor nol
 
   /// Menghitung skor konsistensi jarak dari daftar sampel GPS.
@@ -39,12 +39,14 @@ class DistanceAnalyzer {
     if (samples.length < 2) return [];
     final result = <double>[];
     for (int i = 1; i < samples.length; i++) {
-      result.add(Geolocator.distanceBetween(
-        samples[i - 1].latitude,
-        samples[i - 1].longitude,
-        samples[i].latitude,
-        samples[i].longitude,
-      ));
+      result.add(
+        Geolocator.distanceBetween(
+          samples[i - 1].latitude,
+          samples[i - 1].longitude,
+          samples[i].latitude,
+          samples[i].longitude,
+        ),
+      );
     }
     return result;
   }
@@ -57,7 +59,7 @@ class DistanceAnalyzer {
     final m = _mean(values);
     final variance =
         values.map((v) => math.pow(v - m, 2)).reduce((a, b) => a + b) /
-            values.length;
+        values.length;
     return math.sqrt(variance);
   }
 

@@ -12,10 +12,12 @@ class EditProfilMahasiswaView extends ConsumerStatefulWidget {
   const EditProfilMahasiswaView({super.key});
 
   @override
-  ConsumerState<EditProfilMahasiswaView> createState() => _EditProfilMahasiswaViewState();
+  ConsumerState<EditProfilMahasiswaView> createState() =>
+      _EditProfilMahasiswaViewState();
 }
 
-class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaView> {
+class _EditProfilMahasiswaViewState
+    extends ConsumerState<EditProfilMahasiswaView> {
   final _passwordFormKey = GlobalKey<FormState>();
 
   final _oldPasswordController = TextEditingController();
@@ -73,7 +75,8 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
 
   void _showAvatarOptions() {
     final user = ref.read(authProvider).user;
-    final hasPhoto = (_profileImage != null) ||
+    final hasPhoto =
+        (_profileImage != null) ||
         (user?.fotoProfil != null && user!.fotoProfil!.isNotEmpty);
 
     showModalBottomSheet(
@@ -88,7 +91,10 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
             child: Wrap(
               children: [
                 ListTile(
-                  leading: const Icon(Icons.photo_camera_rounded, color: AppColors.primaryGreen),
+                  leading: const Icon(
+                    Icons.photo_camera_rounded,
+                    color: AppColors.primaryGreen,
+                  ),
                   title: const Text('Ambil Foto dari Kamera'),
                   onTap: () {
                     Navigator.pop(ctx);
@@ -96,7 +102,10 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.photo_library_rounded, color: AppColors.primaryGreen),
+                  leading: const Icon(
+                    Icons.photo_library_rounded,
+                    color: AppColors.primaryGreen,
+                  ),
                   title: const Text('Pilih dari Galeri'),
                   onTap: () {
                     Navigator.pop(ctx);
@@ -105,8 +114,14 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
                 ),
                 if (hasPhoto)
                   ListTile(
-                    leading: const Icon(Icons.delete_outline_rounded, color: AppColors.dangerRed),
-                    title: const Text('Hapus Foto Profil', style: TextStyle(color: AppColors.dangerRed)),
+                    leading: const Icon(
+                      Icons.delete_outline_rounded,
+                      color: AppColors.dangerRed,
+                    ),
+                    title: const Text(
+                      'Hapus Foto Profil',
+                      style: TextStyle(color: AppColors.dangerRed),
+                    ),
                     onTap: () {
                       Navigator.pop(ctx);
                       _confirmDeletePhoto();
@@ -124,7 +139,9 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
     final picked = await _picker.pickImage(source: source, imageQuality: 80);
     if (picked != null) {
       setState(() => _profileImage = File(picked.path));
-      final success = await ref.read(authProvider.notifier).uploadAvatar(picked.path);
+      final success = await ref
+          .read(authProvider.notifier)
+          .uploadAvatar(picked.path);
       if (mounted) {
         if (success) {
           ref.read(authProvider.notifier).fetchProfile();
@@ -141,12 +158,20 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Hapus Foto Profil?', style: TextStyle(fontWeight: FontWeight.bold)),
-        content: const Text('Foto profil Anda akan dihapus dan kembali ke avatar default.'),
+        title: const Text(
+          'Hapus Foto Profil?',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: const Text(
+          'Foto profil Anda akan dihapus dan kembali ke avatar default.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Batal', style: TextStyle(color: AppColors.textSecondary)),
+            child: const Text(
+              'Batal',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -194,10 +219,9 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
     final oldPassword = _oldPasswordController.text;
     final newPassword = _newPasswordController.text;
 
-    final success = await ref.read(authProvider.notifier).changePassword(
-          oldPassword: oldPassword,
-          newPassword: newPassword,
-        );
+    final success = await ref
+        .read(authProvider.notifier)
+        .changePassword(oldPassword: oldPassword, newPassword: newPassword);
 
     setState(() => _isSubmittingPassword = false);
 
@@ -209,7 +233,10 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
         _confirmPasswordController.clear();
         setState(() => _isPasswordSectionExpanded = false);
       } else {
-        _showPopup('Gagal mengubah kata sandi. Periksa kata sandi lama Anda.', false);
+        _showPopup(
+          'Gagal mengubah kata sandi. Periksa kata sandi lama Anda.',
+          false,
+        );
       }
     }
   }
@@ -219,7 +246,9 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: Text(
             isSuccess ? 'Berhasil' : 'Gagal',
             style: TextStyle(
@@ -231,7 +260,10 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK', style: TextStyle(color: AppColors.textSecondary)),
+              child: const Text(
+                'OK',
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
             ),
           ],
         );
@@ -243,10 +275,12 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
     if (!_profileFormKey.currentState!.validate()) return;
     setState(() => _isSubmittingProfile = true);
 
-    final success = await ref.read(authProvider.notifier).updateProfile(
-      name: _nameController.text.trim(),
-      phone: _phoneController.text.trim(),
-    );
+    final success = await ref
+        .read(authProvider.notifier)
+        .updateProfile(
+          name: _nameController.text.trim(),
+          phone: _phoneController.text.trim(),
+        );
 
     setState(() => _isSubmittingProfile = false);
     if (mounted) {
@@ -263,11 +297,15 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
     final isNameChanged = _nameController.text != (user?.name ?? '');
     final isPhoneChanged = _phoneController.text != (user?.phone ?? '');
     final isImageChanged = _profileImage != null;
-    final isPasswordFieldsFilled = _oldPasswordController.text.isNotEmpty ||
+    final isPasswordFieldsFilled =
+        _oldPasswordController.text.isNotEmpty ||
         _newPasswordController.text.isNotEmpty ||
         _confirmPasswordController.text.isNotEmpty;
 
-    return isNameChanged || isPhoneChanged || isImageChanged || isPasswordFieldsFilled;
+    return isNameChanged ||
+        isPhoneChanged ||
+        isImageChanged ||
+        isPasswordFieldsFilled;
   }
 
   @override
@@ -275,16 +313,29 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
     final user = ref.watch(authProvider).user;
     final mhsData = ref.watch(mahasiswaControllerProvider).dashboard;
 
-    final userNim = user?.nim.isNotEmpty == true ? user!.nim : (mhsData?.nim.isNotEmpty == true ? mhsData!.nim : '-');
-    final userProdi = user?.prodi.isNotEmpty == true ? user!.prodi : (user?.jurusan.isNotEmpty == true ? user!.jurusan : (mhsData?.jurusan.isNotEmpty == true ? mhsData!.jurusan : '-'));
-    final kelurahan = user?.kelurahan.isNotEmpty == true ? user!.kelurahan.replaceAll(RegExp(r'^(?:Kel\.|Kelurahan|Desa)\s+', caseSensitive: false), '').trim() : '-';
+    final userNim = user?.nim.isNotEmpty == true
+        ? user!.nim
+        : (mhsData?.nim.isNotEmpty == true ? mhsData!.nim : '-');
+    final userProdi = user?.prodi.isNotEmpty == true
+        ? user!.prodi
+        : (user?.jurusan.isNotEmpty == true
+              ? user!.jurusan
+              : (mhsData?.jurusan.isNotEmpty == true ? mhsData!.jurusan : '-'));
+    final kelurahan = user?.kelurahan.isNotEmpty == true
+        ? user!.kelurahan
+              .replaceAll(
+                RegExp(r'^(?:Kel\.|Kelurahan|Desa)\s+', caseSensitive: false),
+                '',
+              )
+              .trim()
+        : '-';
     final rw = user?.rw.isNotEmpty == true ? user!.rw : '-';
 
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
-        
+
         if (!_hasUnsavedChanges()) {
           if (context.mounted) Navigator.pop(context);
           return;
@@ -294,13 +345,23 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
           context: context,
           builder: (context) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: const Text('Keluar Halaman?', style: TextStyle(fontWeight: FontWeight.bold)),
-              content: const Text('Perubahan ini akan terhapus jika Anda keluar dari halaman ini.'),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: const Text(
+                'Keluar Halaman?',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              content: const Text(
+                'Perubahan ini akan terhapus jika Anda keluar dari halaman ini.',
+              ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Batal', style: TextStyle(color: AppColors.textSecondary)),
+                  child: const Text(
+                    'Batal',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
@@ -320,314 +381,525 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
         }
       },
       child: Scaffold(
-      backgroundColor: AppColors.backgroundCanvas,
-      appBar: AppBar(
-        title: const Text(
-          'Edit Profil Mahasiswa',
-          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18, color: AppColors.textPrimary),
+        backgroundColor: AppColors.backgroundCanvas,
+        appBar: AppBar(
+          title: const Text(
+            'Edit Profil Mahasiswa',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 18,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          backgroundColor: Colors.white,
+          shadowColor: Colors.black12,
+          surfaceTintColor: Colors.transparent,
+          foregroundColor: Colors.white,
         ),
-        backgroundColor: Colors.white,  shadowColor: Colors.black12, surfaceTintColor: Colors.transparent,
-        foregroundColor: Colors.white,
-        
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppDimensions.md),
-        child: Column(
-          children: [
-            // ── 1. Avatar Upload Card ────────────────────────────────
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  GestureDetector(
-                    onTap: _showAvatarOptions,
-                    child: Stack(
-                      alignment: Alignment.bottomRight,
-                      children: [
-                        CircleAvatar(
-                          radius: 44,
-                          backgroundColor: AppColors.primaryGreen.withValues(alpha: 0.15),
-                          backgroundImage: _profileImage != null
-                              ? FileImage(_profileImage!)
-                              : (user?.fotoProfil != null && user!.fotoProfil!.isNotEmpty
-                                  ? NetworkImage(user.fotoProfil!) as ImageProvider
-                                  : null),
-                          child: (_profileImage == null && (user?.fotoProfil == null || user!.fotoProfil!.isEmpty))
-                              ? Text(
-                                  user?.name.isNotEmpty == true ? user!.name[0].toUpperCase() : 'M',
-                                  style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
-                                )
-                              : null,
-                        ),
-                        Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: const BoxDecoration(
-                            color: AppColors.primaryGreen,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 16),
-                        ),
-                      ],
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(AppDimensions.md),
+          child: Column(
+            children: [
+              // ── 1. Avatar Upload Card ────────────────────────────────
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    user?.name ?? '-',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                  ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    GestureDetector(
+                      onTap: _showAvatarOptions,
+                      child: Stack(
+                        alignment: Alignment.bottomRight,
+                        children: [
+                          CircleAvatar(
+                            radius: 44,
+                            backgroundColor: AppColors.primaryGreen.withValues(
+                              alpha: 0.15,
+                            ),
+                            backgroundImage: _profileImage != null
+                                ? FileImage(_profileImage!)
+                                : (user?.fotoProfil != null &&
+                                          user!.fotoProfil!.isNotEmpty
+                                      ? NetworkImage(user.fotoProfil!)
+                                            as ImageProvider
+                                      : null),
+                            child:
+                                (_profileImage == null &&
+                                    (user?.fotoProfil == null ||
+                                        user!.fotoProfil!.isEmpty))
+                                ? Text(
+                                    user?.name.isNotEmpty == true
+                                        ? user!.name[0].toUpperCase()
+                                        : 'M',
+                                    style: const TextStyle(
+                                      fontSize: 32,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.primaryGreen,
+                                    ),
+                                  )
+                                : null,
+                          ),
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: const BoxDecoration(
+                              color: AppColors.primaryGreen,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.camera_alt_rounded,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      user?.name ?? '-',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
                     if (userNim.isNotEmpty)
                       Text(
                         userNim,
-                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: AppDimensions.lg),
+              const SizedBox(height: AppDimensions.lg),
 
-            // ── Form Edit Profil ─────────────────────────────────────
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.border),
+              // ── Form Edit Profil ─────────────────────────────────────
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Form(
+                  key: _profileFormKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(
+                            Icons.person_outline_rounded,
+                            color: AppColors.primaryGreen,
+                            size: 18,
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            'DATA PRIBADI',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _nameController,
+                        decoration: InputDecoration(
+                          labelText: 'Nama Lengkap',
+                          labelStyle: const TextStyle(
+                            color: AppColors.textHint,
+                            fontSize: 13,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: AppColors.primaryGreen,
+                            ),
+                          ),
+                        ),
+                        validator: (val) => val == null || val.isEmpty
+                            ? 'Nama wajib diisi'
+                            : null,
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _phoneController,
+                        keyboardType: TextInputType.phone,
+                        decoration: InputDecoration(
+                          labelText: 'Nomor WhatsApp',
+                          labelStyle: const TextStyle(
+                            color: AppColors.textHint,
+                            fontSize: 13,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: AppColors.primaryGreen,
+                            ),
+                          ),
+                        ),
+                        validator: (val) => val == null || val.isEmpty
+                            ? 'Nomor WA wajib diisi'
+                            : null,
+                      ),
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryGreen,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
+                          ),
+                          onPressed: _isSubmittingProfile
+                              ? null
+                              : _submitProfile,
+                          child: _isSubmittingProfile
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text(
+                                  'Simpan Profil',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              child: Form(
-                key: _profileFormKey,
+              const SizedBox(height: AppDimensions.lg),
+
+              // ── 2. Read-Only Academic & Assignment Section ────────────
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.border),
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Row(
                       children: [
-                        Icon(Icons.person_outline_rounded, color: AppColors.primaryGreen, size: 18),
+                        Icon(
+                          Icons.lock_outline_rounded,
+                          color: AppColors.textHint,
+                          size: 18,
+                        ),
                         SizedBox(width: 8),
                         Text(
-                          'DATA PRIBADI',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.textSecondary),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: InputDecoration(
-                        labelText: 'Nama Lengkap',
-                        labelStyle: const TextStyle(color: AppColors.textHint, fontSize: 13),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primaryGreen)),
-                      ),
-                      validator: (val) => val == null || val.isEmpty ? 'Nama wajib diisi' : null,
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _phoneController,
-                      keyboardType: TextInputType.phone,
-                      decoration: InputDecoration(
-                        labelText: 'Nomor WhatsApp',
-                        labelStyle: const TextStyle(color: AppColors.textHint, fontSize: 13),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primaryGreen)),
-                      ),
-                      validator: (val) => val == null || val.isEmpty ? 'Nomor WA wajib diisi' : null,
-                    ),
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryGreen,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          elevation: 0,
-                        ),
-                        onPressed: _isSubmittingProfile ? null : _submitProfile,
-                        child: _isSubmittingProfile
-                            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                            : const Text('Simpan Profil', style: TextStyle(fontWeight: FontWeight.bold)),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: AppDimensions.lg),
-
-            // ── 2. Read-Only Academic & Assignment Section ────────────
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Row(
-                    children: [
-                      Icon(Icons.lock_outline_rounded, color: AppColors.textHint, size: 18),
-                      SizedBox(width: 8),
-                      Text(
-                        'DATA AKADEMIK & PENUGASAN (READ-ONLY)',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.textSecondary),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                    _buildReadOnlyField('NIM', userNim.isNotEmpty ? userNim : '-'),
-                    _buildReadOnlyField('Program Studi', userProdi.isNotEmpty ? userProdi : '-'),
-                    _buildReadOnlyField('Jenjang Studi', (user?.jenjangPendidikan != null && user!.jenjangPendidikan.isNotEmpty) ? user.jenjangPendidikan : '-'),
-
-                  _buildReadOnlyField('Kelurahan Dampingan', kelurahan.isNotEmpty ? kelurahan : '-'),
-                  _buildReadOnlyField('RW Dampingan', rw.isNotEmpty ? rw : '-'),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.info_outline_rounded, color: AppColors.textSecondary, size: 18),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Data akademik & wilayah penugasan bersifat resmi. Perubahan data wajib diajukan melalui Admin KKN / DPL.',
-                            style: TextStyle(fontSize: 11, color: AppColors.textSecondary, height: 1.3),
+                          'DATA AKADEMIK & PENUGASAN (READ-ONLY)',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
                           ),
                         ),
                       ],
                     ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppDimensions.lg),
+                    const SizedBox(height: 12),
+                    _buildReadOnlyField(
+                      'NIM',
+                      userNim.isNotEmpty ? userNim : '-',
+                    ),
+                    _buildReadOnlyField(
+                      'Program Studi',
+                      userProdi.isNotEmpty ? userProdi : '-',
+                    ),
+                    _buildReadOnlyField(
+                      'Jenjang Studi',
+                      (user?.jenjangPendidikan != null &&
+                              user!.jenjangPendidikan.isNotEmpty)
+                          ? user.jenjangPendidikan
+                          : '-',
+                    ),
 
-            // ── 3. Embedded Submenu Ganti Password ────────────────────
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: ExpansionTile(
-                shape: const Border(),
-                collapsedShape: const Border(),
-                initiallyExpanded: _isPasswordSectionExpanded,
-                onExpansionChanged: (exp) => setState(() => _isPasswordSectionExpanded = exp),
-                leading: const Icon(Icons.lock_reset_rounded, color: AppColors.primaryGreen),
-                title: const Text('Ganti Kata Sandi', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                subtitle: const Text('Kelola keamanan kata sandi akun', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Form(
-                      key: _passwordFormKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    _buildReadOnlyField(
+                      'Kelurahan Dampingan',
+                      kelurahan.isNotEmpty ? kelurahan : '-',
+                    ),
+                    _buildReadOnlyField(
+                      'RW Dampingan',
+                      rw.isNotEmpty ? rw : '-',
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Row(
                         children: [
-                          const Text('Kata Sandi Saat Ini', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                          const SizedBox(height: 6),
-                          TextFormField(
-                            controller: _oldPasswordController,
-                            obscureText: _obscureOld,
-                            decoration: InputDecoration(
-                              prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppColors.primaryGreen),
-                              suffixIcon: IconButton(
-                                icon: Icon(_obscureOld ? Icons.visibility_off_rounded : Icons.visibility_rounded, color: AppColors.textHint),
-                                onPressed: () => setState(() => _obscureOld = !_obscureOld),
-                              ),
-                              hintText: 'Masukkan kata sandi lama',
-                            ),
-                            validator: (v) => (v == null || v.trim().isEmpty) ? 'Wajib diisi' : null,
+                          Icon(
+                            Icons.info_outline_rounded,
+                            color: AppColors.textSecondary,
+                            size: 18,
                           ),
-                          const SizedBox(height: 14),
-                          const Text('Kata Sandi Baru', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                          const SizedBox(height: 6),
-                          TextFormField(
-                            controller: _newPasswordController,
-                            obscureText: _obscureNew,
-                            onChanged: _checkPassword,
-                            decoration: InputDecoration(
-                              prefixIcon: const Icon(Icons.lock_rounded, color: AppColors.primaryGreen),
-                              suffixIcon: IconButton(
-                                icon: Icon(_obscureNew ? Icons.visibility_off_rounded : Icons.visibility_rounded, color: AppColors.textHint),
-                                onPressed: () => setState(() => _obscureNew = !_obscureNew),
-                              ),
-                              hintText: 'Minimal 6 karakter',
-                            ),
-                            validator: (v) => (v != null && v.length < 6) ? 'Minimal 6 karakter' : null,
-                          ),
-                          const SizedBox(height: 12),
-                          _buildPasswordStrength(),
-                          const SizedBox(height: 14),
-                          const Text('Konfirmasi Kata Sandi Baru', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                          const SizedBox(height: 6),
-                          TextFormField(
-                            controller: _confirmPasswordController,
-                            obscureText: _obscureConfirm,
-                            decoration: InputDecoration(
-                              prefixIcon: const Icon(Icons.lock_rounded, color: AppColors.primaryGreen),
-                              suffixIcon: IconButton(
-                                icon: Icon(_obscureConfirm ? Icons.visibility_off_rounded : Icons.visibility_rounded, color: AppColors.textHint),
-                                onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
-                              ),
-                              hintText: 'Ketik ulang kata sandi baru',
-                            ),
-                            validator: (v) {
-                              if (v == null || v.trim().isEmpty) return 'Wajib diisi';
-                              if (v != _newPasswordController.text) return 'Kata sandi tidak cocok';
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 46,
-                            child: ElevatedButton.icon(
-                              onPressed: _isSubmittingPassword ? null : _submitChangePassword,
-                              icon: _isSubmittingPassword
-                                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                                  : const Icon(Icons.save_rounded, color: Colors.white, size: 18),
-                              label: Text(_isSubmittingPassword ? 'Memperbarui...' : 'Simpan Kata Sandi Baru'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primaryGreen,
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Data akademik & wilayah penugasan bersifat resmi. Perubahan data wajib diajukan melalui Admin KKN / DPL.',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppColors.textSecondary,
+                                height: 1.3,
                               ),
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 30),
-          ],
+              const SizedBox(height: AppDimensions.lg),
+
+              // ── 3. Embedded Submenu Ganti Password ────────────────────
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: ExpansionTile(
+                  shape: const Border(),
+                  collapsedShape: const Border(),
+                  initiallyExpanded: _isPasswordSectionExpanded,
+                  onExpansionChanged: (exp) =>
+                      setState(() => _isPasswordSectionExpanded = exp),
+                  leading: const Icon(
+                    Icons.lock_reset_rounded,
+                    color: AppColors.primaryGreen,
+                  ),
+                  title: const Text(
+                    'Ganti Kata Sandi',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  subtitle: const Text(
+                    'Kelola keamanan kata sandi akun',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Form(
+                        key: _passwordFormKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Kata Sandi Saat Ini',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            TextFormField(
+                              controller: _oldPasswordController,
+                              obscureText: _obscureOld,
+                              decoration: InputDecoration(
+                                prefixIcon: const Icon(
+                                  Icons.lock_outline_rounded,
+                                  color: AppColors.primaryGreen,
+                                ),
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _obscureOld
+                                        ? Icons.visibility_off_rounded
+                                        : Icons.visibility_rounded,
+                                    color: AppColors.textHint,
+                                  ),
+                                  onPressed: () => setState(
+                                    () => _obscureOld = !_obscureOld,
+                                  ),
+                                ),
+                                hintText: 'Masukkan kata sandi lama',
+                              ),
+                              validator: (v) => (v == null || v.trim().isEmpty)
+                                  ? 'Wajib diisi'
+                                  : null,
+                            ),
+                            const SizedBox(height: 14),
+                            const Text(
+                              'Kata Sandi Baru',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            TextFormField(
+                              controller: _newPasswordController,
+                              obscureText: _obscureNew,
+                              onChanged: _checkPassword,
+                              decoration: InputDecoration(
+                                prefixIcon: const Icon(
+                                  Icons.lock_rounded,
+                                  color: AppColors.primaryGreen,
+                                ),
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _obscureNew
+                                        ? Icons.visibility_off_rounded
+                                        : Icons.visibility_rounded,
+                                    color: AppColors.textHint,
+                                  ),
+                                  onPressed: () => setState(
+                                    () => _obscureNew = !_obscureNew,
+                                  ),
+                                ),
+                                hintText: 'Minimal 6 karakter',
+                              ),
+                              validator: (v) => (v != null && v.length < 6)
+                                  ? 'Minimal 6 karakter'
+                                  : null,
+                            ),
+                            const SizedBox(height: 12),
+                            _buildPasswordStrength(),
+                            const SizedBox(height: 14),
+                            const Text(
+                              'Konfirmasi Kata Sandi Baru',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            TextFormField(
+                              controller: _confirmPasswordController,
+                              obscureText: _obscureConfirm,
+                              decoration: InputDecoration(
+                                prefixIcon: const Icon(
+                                  Icons.lock_rounded,
+                                  color: AppColors.primaryGreen,
+                                ),
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _obscureConfirm
+                                        ? Icons.visibility_off_rounded
+                                        : Icons.visibility_rounded,
+                                    color: AppColors.textHint,
+                                  ),
+                                  onPressed: () => setState(
+                                    () => _obscureConfirm = !_obscureConfirm,
+                                  ),
+                                ),
+                                hintText: 'Ketik ulang kata sandi baru',
+                              ),
+                              validator: (v) {
+                                if (v == null || v.trim().isEmpty) {
+                                  return 'Wajib diisi';
+                                }
+                                if (v != _newPasswordController.text) {
+                                  return 'Kata sandi tidak cocok';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 46,
+                              child: ElevatedButton.icon(
+                                onPressed: _isSubmittingPassword
+                                    ? null
+                                    : _submitChangePassword,
+                                icon: _isSubmittingPassword
+                                    ? const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : const Icon(
+                                        Icons.save_rounded,
+                                        color: Colors.white,
+                                        size: 18,
+                                      ),
+                                label: Text(
+                                  _isSubmittingPassword
+                                      ? 'Memperbarui...'
+                                      : 'Simpan Kata Sandi Baru',
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primaryGreen,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 30),
+            ],
+          ),
         ),
       ),
-    ),
     );
   }
 
@@ -647,13 +919,31 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label, style: const TextStyle(fontSize: 10, color: AppColors.textHint, fontWeight: FontWeight.w600)),
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: AppColors.textHint,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   const SizedBox(height: 2),
-                  Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textSecondary)),
+                  Text(
+                    value,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
                 ],
               ),
             ),
-            const Icon(Icons.lock_outline_rounded, size: 16, color: AppColors.textHint),
+            const Icon(
+              Icons.lock_outline_rounded,
+              size: 16,
+              color: AppColors.textHint,
+            ),
           ],
         ),
       ),

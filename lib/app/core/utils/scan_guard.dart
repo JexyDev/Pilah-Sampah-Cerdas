@@ -1,25 +1,42 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../modules/scan/controllers/scan_controller.dart';
+import '../../modules/auth/controllers/auth_controller.dart';
+import '../../data/models/user_entity.dart';
 import '../../data/models/bin_entity.dart';
 import '../../routes/app_routes.dart';
 import '../values/app_colors.dart';
 
 class ScanGuard {
   static void handleScanNavigation(BuildContext context, WidgetRef ref) {
+    final user = ref.read(authProvider).user;
+    if (user?.role == UserRole.petugasPemilahan) {
+      Navigator.pushNamed(context, AppRoutes.timbanganPemilahan);
+      return;
+    }
+
     if (kIsWeb) {
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: const Row(
             children: [
-              Icon(Icons.desktop_windows_rounded, color: AppColors.primaryGreen),
+              Icon(
+                Icons.desktop_windows_rounded,
+                color: AppColors.primaryGreen,
+              ),
               SizedBox(width: 8),
-              Expanded(child: Text('Monitoring Web', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18))),
+              Expanded(
+                child: Text(
+                  'Monitoring Web',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                ),
+              ),
             ],
           ),
           content: const Text(
@@ -31,9 +48,14 @@ class ScanGuard {
               onPressed: () => Navigator.pop(ctx),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryGreen,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
-              child: const Text('Mengerti', style: TextStyle(color: Colors.white)),
+              child: const Text(
+                'Mengerti',
+                style: TextStyle(color: Colors.white),
+              ),
             ),
           ],
         ),
@@ -41,17 +63,25 @@ class ScanGuard {
       return;
     }
     final bins = ref.read(binsProvider).value ?? [];
-    final hasOrganic = bins.any((b) => b.binType == WasteType.organic && b.isActive);
-    final hasNonOrganic = bins.any((b) => b.binType == WasteType.nonOrganic && b.isActive);
-    
+    final hasOrganic = bins.any(
+      (b) => b.binType == WasteType.organic && b.isActive,
+    );
+    final hasNonOrganic = bins.any(
+      (b) => b.binType == WasteType.nonOrganic && b.isActive,
+    );
+
     final activeBins = bins.where((b) => b.isActive).toList();
-    final areAllBinsFull = activeBins.isNotEmpty && activeBins.every((b) => b.currentVolumeL >= b.maxCapacityL);
+    final areAllBinsFull =
+        activeBins.isNotEmpty &&
+        activeBins.every((b) => b.currentVolumeL >= b.maxCapacityL);
 
     if (areAllBinsFull) {
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: const Row(
             children: [
               Icon(Icons.warning_rounded, color: AppColors.dangerRed),
@@ -71,7 +101,10 @@ class ScanGuard {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Batal', style: TextStyle(color: AppColors.textHint)),
+              child: const Text(
+                'Batal',
+                style: TextStyle(color: AppColors.textHint),
+              ),
             ),
             ElevatedButton(
               onPressed: () {
@@ -80,9 +113,14 @@ class ScanGuard {
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryGreen,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
-              child: const Text('Ajukan Pengosongan', style: TextStyle(color: Colors.white)),
+              child: const Text(
+                'Ajukan Pengosongan',
+                style: TextStyle(color: Colors.white),
+              ),
             ),
           ],
         ),
@@ -91,7 +129,9 @@ class ScanGuard {
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: const Row(
             children: [
               Icon(Icons.info_outline_rounded, color: AppColors.warningOrange),
@@ -111,7 +151,10 @@ class ScanGuard {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Batal', style: TextStyle(color: AppColors.textHint)),
+              child: const Text(
+                'Batal',
+                style: TextStyle(color: AppColors.textHint),
+              ),
             ),
             ElevatedButton(
               onPressed: () {
@@ -120,9 +163,14 @@ class ScanGuard {
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryGreen,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
-              child: const Text('Aktivasi & Ukur Sekarang', style: TextStyle(color: Colors.white)),
+              child: const Text(
+                'Aktivasi & Ukur Sekarang',
+                style: TextStyle(color: Colors.white),
+              ),
             ),
           ],
         ),

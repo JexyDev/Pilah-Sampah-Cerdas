@@ -66,7 +66,7 @@ class ApiBinRepository implements BinRepository {
 
         final List<BinEntity> parsedBins = data.map((json) {
           final bin = _mapMyBin(json as Map<String, dynamic>);
-          if (pendingBinIds.contains(bin.id) && bin.currentVolumeL >= (bin.maxCapacityL * 0.90)) {
+          if (pendingBinIds.contains(bin.id)) {
             return bin.copyWith(isResetPending: true);
           }
           return bin;
@@ -77,14 +77,11 @@ class ApiBinRepository implements BinRepository {
           if (entry.key.startsWith('active_reset_request_')) {
             try {
               final req = _mapResetRequest(jsonDecode(entry.value));
-              final matchingBin = parsedBins.firstWhere(
-                (b) => b.id == req.binId,
-                orElse: () => parsedBins.firstWhere(
-                  (b) => b.currentVolumeL < b.maxCapacityL,
-                  orElse: () => parsedBins.first,
-                ),
-              );
-              if (matchingBin.currentVolumeL < (matchingBin.maxCapacityL * 0.90)) {
+              // Cari bin yang tepat sesuai binId pengajuan; skip jika tidak ditemukan
+              final matchingBin = parsedBins.where((b) => b.id == req.binId).firstOrNull;
+              if (matchingBin == null) continue; // Bin tidak ditemukan, jangan hapus pengajuan
+              // Hanya hapus pengajuan aktif jika tempat sampah telah benar-benar dikosongkan petugas (volume mendekati 0L)
+              if (matchingBin.currentVolumeL < 0.05) {
                 await apiClient.secureStorage.delete(key: entry.key);
               }
             } catch (e) {
@@ -268,10 +265,20 @@ class ApiBinRepository implements BinRepository {
         );
 
         final data = response.data['data'] as Map<String, dynamic>;
+        final detectedType = _parseWasteType(data['detectedType']?.toString());
+        final volume = (data['volumeEstimate'] as num?)?.toDouble() ?? 2.5;
+
+        // Pastikan perhitungan berat konsisten dengan jenis sampah & densitas standar:
+        // Organik = 0.4 kg/L, Anorganik = 0.2 kg/L
+        final density = detectedType == WasteType.organic
+            ? AppConfig.organicDensityKgPerLiter
+            : AppConfig.nonOrganicDensityKgPerLiter;
+        final consistentWeight = double.parse((volume * density).toStringAsFixed(2));
+
         return AiDetectionEntity(
-          detectedType: _parseWasteType(data['detectedType']?.toString()),
-          volumeEstimate: (data['volumeEstimate'] as num).toDouble(),
-          weightKg: (data['weightKg'] as num?)?.toDouble(),
+          detectedType: detectedType,
+          volumeEstimate: volume,
+          weightKg: consistentWeight,
           confidence: (data['confidence'] as num?)?.toDouble(),
           organicPercentage: (data['organicPercentage'] as num?)?.toDouble(),
           estimatedPoints: (data['estimatedPoints'] as num?)?.toInt(),
@@ -385,6 +392,7 @@ class ApiBinRepository implements BinRepository {
         );
       }
       if (errorCode == 'BIN_OVERFLOW' ||
+          errorCode == 'BIN_FULL' ||
           (serverMsg != null && serverMsg.toLowerCase().contains('penuh'))) {
         throw BinException(
           'BIN_OVERFLOW',
@@ -393,11 +401,12 @@ class ApiBinRepository implements BinRepository {
         );
       }
       if (errorCode == 'LOCATION_OUT_OF_RANGE' ||
+          errorCode == 'LOCATION_TOO_FAR' ||
           (serverMsg != null && serverMsg.toLowerCase().contains('jauh'))) {
         throw BinException(
           'LOCATION_OUT_OF_RANGE',
           serverMsg ??
-              'Anda berada lebih dari 25 meter dari tempat sampah. Harap mendekat ke lokasi tempat sampah.',
+              'Anda berada lebih dari 50 meter dari tempat sampah. Harap mendekat ke lokasi tempat sampah.',
         );
       }
       if (errorCode == 'RESOURCE_NOT_FOUND' ||
@@ -410,13 +419,15 @@ class ApiBinRepository implements BinRepository {
         );
       }
       if (errorCode == 'BIN_NOT_ACTIVATED' ||
+          errorCode == 'BIN_NOT_ACTIVE' ||
           (serverMsg != null && serverMsg.toLowerCase().contains('aktivasi'))) {
         throw BinException(
           'BIN_NOT_ACTIVATED',
-          serverMsg ?? 'Tempat Sampah sampah belum diaktivasi.',
+          serverMsg ?? 'Tempat Sampah belum diaktivasi.',
         );
       }
       if (errorCode == 'BIN_NOT_OWNED' ||
+          errorCode == 'BIN_RW_MISMATCH' ||
           (serverMsg != null && serverMsg.toLowerCase().contains('milik'))) {
         throw BinException(
           'BIN_NOT_OWNED',
@@ -626,18 +637,27 @@ class ApiBinRepository implements BinRepository {
         options: Options(contentType: 'multipart/form-data'),
       );
 
-      if (response.statusCode == 201) {
-        final data = response.data['data'] as Map<String, dynamic>;
-        // Paksa auto-approve di mobile (sekarang manual dan instan)
-        data['status'] = 'APPROVED';
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        final rawData = response.data['data'];
+        final Map<String, dynamic> data = rawData is Map<String, dynamic>
+            ? Map<String, dynamic>.from(rawData)
+            : <String, dynamic>{};
+        // Pastikan status awal pengajuan baru selalu PENDING agar tidak langsung COMPLETED sebelum disetujui Petugas
+        data['status'] = 'PENDING';
         final resetEntity = _mapResetRequest(data);
-        
-        // Refresh API akan mengambil kapasitas 0L
+        await apiClient.secureStorage.write(
+          key: 'active_reset_request_${userId}_$binId',
+          value: jsonEncode(data),
+        );
+        await apiClient.secureStorage.write(
+          key: 'active_reset_request_$userId',
+          value: jsonEncode(data),
+        );
         return resetEntity;
       }
       throw const BinException(
         'RESET_FAILED',
-        'Gagal mengajukan pengosongan tong',
+        'Gagal mengajukan pengosongan tempat sampah',
       );
     } on DioException catch (e) {
       final errorCode = e.response?.data?['error']?.toString();
@@ -681,11 +701,28 @@ class ApiBinRepository implements BinRepository {
   @override
   Future<BinResetEntity?> getActiveResetRequest(String userId) async {
     try {
+      // 1. Coba ambil status aktif langsung dari backend
+      try {
+        final response = await apiClient.dio.get('/bins/reset-request/status');
+        if (response.statusCode == 200 && response.data?['data'] is List) {
+          final List list = response.data['data'] as List;
+          final pending = list.cast<Map<String, dynamic>>().where(
+            (r) => (r['status'] ?? '').toString().toUpperCase() == 'PENDING',
+          );
+          if (pending.isNotEmpty) {
+            return _mapResetRequest(pending.first);
+          }
+        }
+      } catch (e) {
+        debugPrint('[getActiveResetRequest] Server fetch error, checking cache: $e');
+      }
+
+      // 2. Fallback ke cached request di safe storage jika offline
       final cachedStr = await apiClient.secureStorage.read(
         key: 'active_reset_request_$userId',
       );
       if (cachedStr != null) {
-        // Cek apakah tong-tempat sampah pengguna saat ini sudah kosong/dikirim ulang (< 25L)
+        // Cek apakah tempat sampah pengguna saat ini sudah kosong/dikirim ulang (< 25L)
         try {
           final bins = await getBinsByHousehold(userId);
           final bool isAnyFull = bins.any(
@@ -800,12 +837,21 @@ class ApiBinRepository implements BinRepository {
     double maxL = _parseDouble(
       json['maxCapacityLiter'] ?? json['maxCapacityL'] ?? json['maxCapacity'],
     );
+    // Normalisasi jika kapasitas tersimpan dalam m³ (< 1.0 m³), konversi ke Liter
+    if (maxL > 0 && maxL < 1.0) {
+      maxL = maxL * 1000.0;
+    }
     if (maxL <= 0) maxL = 25.0;
-    final double currentL = _parseDouble(
+
+    double currentL = _parseDouble(
       json['currentVolumeLiter'] ??
           json['currentVolumeL'] ??
           json['currentVolume'],
     );
+    // Normalisasi jika volume saat ini tersimpan dalam m³
+    if (currentL > 0 && currentL < 0.1 && maxL >= 5.0) {
+      currentL = currentL * 1000.0;
+    }
     final String qrSerial =
         (json['qrCode'] ?? json['qrSerial'] ?? json['code'] ?? '').toString();
 

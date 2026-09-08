@@ -9,39 +9,53 @@ import '../../../core/values/app_dimensions.dart';
 import '../../../routes/app_routes.dart';
 import '../../auth/controllers/auth_controller.dart';
 
-
 class PetugasPemilahanProfilView extends ConsumerStatefulWidget {
   const PetugasPemilahanProfilView({super.key});
 
   @override
-  ConsumerState<PetugasPemilahanProfilView> createState() => _PetugasPemilahanProfilViewState();
+  ConsumerState<PetugasPemilahanProfilView> createState() =>
+      _PetugasPemilahanProfilViewState();
 }
 
-class _PetugasPemilahanProfilViewState extends ConsumerState<PetugasPemilahanProfilView> {
+class _PetugasPemilahanProfilViewState
+    extends ConsumerState<PetugasPemilahanProfilView> {
   final ImagePicker _picker = ImagePicker();
   bool _isUploading = false;
   File? _localImage;
 
   Future<void> _pickAndUploadImage() async {
     try {
-      final XFile? image = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 70,
+      );
       if (image != null) {
         setState(() {
           _localImage = File(image.path);
           _isUploading = true;
         });
-        
-        final success = await ref.read(authProvider.notifier).uploadAvatar(image.path);
-        
+
+        final success = await ref
+            .read(authProvider.notifier)
+            .uploadAvatar(image.path);
+
         if (mounted) {
           setState(() => _isUploading = false);
           if (success) {
-            ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Foto profil berhasil diperbarui!'), backgroundColor: AppColors.primaryGreen),
+            ScaffoldMessenger.of(context).clearSnackBars();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Foto profil berhasil diperbarui!'),
+                backgroundColor: AppColors.primaryGreen,
+              ),
             );
           } else {
-            ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Gagal mengunggah foto.'), backgroundColor: AppColors.maroonRed),
+            ScaffoldMessenger.of(context).clearSnackBars();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Gagal mengunggah foto.'),
+                backgroundColor: AppColors.maroonRed,
+              ),
             );
           }
         }
@@ -55,12 +69,16 @@ class _PetugasPemilahanProfilViewState extends ConsumerState<PetugasPemilahanPro
     if (_localImage != null) {
       return Image.file(_localImage!, fit: BoxFit.cover, width: 80, height: 80);
     }
-    
+
     if (fotoPath == null || fotoPath.isEmpty) {
       return Center(
         child: Text(
           name.isNotEmpty ? name[0].toUpperCase() : 'P',
-          style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
+          style: const TextStyle(
+            fontSize: 32,
+            fontWeight: FontWeight.bold,
+            color: AppColors.primaryGreen,
+          ),
         ),
       );
     }
@@ -74,14 +92,22 @@ class _PetugasPemilahanProfilViewState extends ConsumerState<PetugasPemilahanPro
         errorWidget: (_, __, ___) => Center(
           child: Text(
             name.isNotEmpty ? name[0].toUpperCase() : 'P',
-            style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
+            style: const TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+              color: AppColors.primaryGreen,
+            ),
           ),
         ),
       );
     }
 
-    if (fotoPath.startsWith('/') || fotoPath.startsWith('file://') || fotoPath.contains(':\\')) {
-      final cleanPath = fotoPath.startsWith('file://') ? fotoPath.replaceFirst('file://', '') : fotoPath;
+    if (fotoPath.startsWith('/') ||
+        fotoPath.startsWith('file://') ||
+        fotoPath.contains(':\\')) {
+      final cleanPath = fotoPath.startsWith('file://')
+          ? fotoPath.replaceFirst('file://', '')
+          : fotoPath;
       final file = File(cleanPath);
       if (file.existsSync()) {
         return Image.file(file, fit: BoxFit.cover, width: 80, height: 80);
@@ -96,7 +122,11 @@ class _PetugasPemilahanProfilViewState extends ConsumerState<PetugasPemilahanPro
       errorWidget: (_, __, ___) => Center(
         child: Text(
           name.isNotEmpty ? name[0].toUpperCase() : 'P',
-          style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
+          style: const TextStyle(
+            fontSize: 32,
+            fontWeight: FontWeight.bold,
+            color: AppColors.primaryGreen,
+          ),
         ),
       ),
     );
@@ -108,7 +138,9 @@ class _PetugasPemilahanProfilViewState extends ConsumerState<PetugasPemilahanPro
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Keluar Akun'),
-        content: const Text('Apakah Anda yakin ingin keluar dari akun Petugas Pemilahan?'),
+        content: const Text(
+          'Apakah Anda yakin ingin keluar dari akun Petugas Pemilahan?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
@@ -119,10 +151,9 @@ class _PetugasPemilahanProfilViewState extends ConsumerState<PetugasPemilahanPro
               Navigator.of(ctx).pop();
               await ref.read(authProvider.notifier).logout();
               if (mounted) {
-                Navigator.of(context).pushNamedAndRemoveUntil(
-                  AppRoutes.login,
-                  (route) => false,
-                );
+                Navigator.of(
+                  context,
+                ).pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
               }
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.maroonRed),
@@ -142,7 +173,11 @@ class _PetugasPemilahanProfilViewState extends ConsumerState<PetugasPemilahanPro
       appBar: AppBar(
         title: const Text(
           'Profil & Pengaturan',
-          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18, color: AppColors.primaryGreen),
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 18,
+            color: AppColors.primaryGreen,
+          ),
         ),
         backgroundColor: Colors.white,
         foregroundColor: AppColors.primaryGreen,
@@ -180,12 +215,21 @@ class _PetugasPemilahanProfilViewState extends ConsumerState<PetugasPemilahanPro
                           height: 80,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: AppColors.primaryGreen.withValues(alpha: 0.15),
+                            color: AppColors.primaryGreen.withValues(
+                              alpha: 0.15,
+                            ),
                           ),
                           clipBehavior: Clip.antiAlias,
                           child: _isUploading
-                              ? const Center(child: CircularProgressIndicator(color: AppColors.primaryGreen))
-                              : _buildAvatar(user?.fotoProfil, user?.name ?? 'Petugas'),
+                              ? const Center(
+                                  child: CircularProgressIndicator(
+                                    color: AppColors.primaryGreen,
+                                  ),
+                                )
+                              : _buildAvatar(
+                                  user?.fotoProfil,
+                                  user?.name ?? 'Petugas',
+                                ),
                         ),
                         if (!_isUploading)
                           Container(
@@ -194,7 +238,11 @@ class _PetugasPemilahanProfilViewState extends ConsumerState<PetugasPemilahanPro
                               color: AppColors.primaryGreen,
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 14),
+                            child: const Icon(
+                              Icons.camera_alt_rounded,
+                              color: Colors.white,
+                              size: 14,
+                            ),
                           ),
                       ],
                     ),
@@ -202,18 +250,29 @@ class _PetugasPemilahanProfilViewState extends ConsumerState<PetugasPemilahanPro
                   const SizedBox(height: 12),
                   Text(
                     user?.name ?? 'Petugas Pemilahan',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.primaryGreen.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Text(
                       'PETUGAS PEMILAHAN RW',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primaryGreen,
+                      ),
                     ),
                   ),
                 ],
@@ -232,47 +291,74 @@ class _PetugasPemilahanProfilViewState extends ConsumerState<PetugasPemilahanPro
                   _infoTile(
                     Icons.phone_iphone_rounded,
                     'No. Telepon',
-                    user != null && user.phone.toString() != 'null' && user.phone.toString().isNotEmpty ? user.phone : '-',
+                    user != null &&
+                            user.phone.toString() != 'null' &&
+                            user.phone.toString().isNotEmpty
+                        ? user.phone
+                        : '-',
                   ),
                   const Divider(height: 1, indent: 56),
                   _infoTile(
                     Icons.map_rounded,
                     'Provinsi',
-                    user != null && user.provinsi.toString() != 'null' && user.provinsi.toString().isNotEmpty ? user.provinsi : '-',
+                    user != null &&
+                            user.provinsi.toString() != 'null' &&
+                            user.provinsi.toString().isNotEmpty
+                        ? user.provinsi
+                        : '-',
                   ),
                   const Divider(height: 1, indent: 56),
                   _infoTile(
                     Icons.location_city_rounded,
                     'Kota/Kabupaten',
-                    user != null && user.kota.toString() != 'null' && user.kota.toString().isNotEmpty ? user.kota : '-',
+                    user != null &&
+                            user.kota.toString() != 'null' &&
+                            user.kota.toString().isNotEmpty
+                        ? user.kota
+                        : '-',
                   ),
                   const Divider(height: 1, indent: 56),
                   _infoTile(
                     Icons.map_rounded,
                     'Kecamatan',
-                    user != null && user.kecamatan.toString() != 'null' && user.kecamatan.toString().isNotEmpty ? user.kecamatan : '-',
+                    user != null &&
+                            user.kecamatan.toString() != 'null' &&
+                            user.kecamatan.toString().isNotEmpty
+                        ? user.kecamatan
+                        : '-',
                   ),
                   const Divider(height: 1, indent: 56),
                   _infoTile(
                     Icons.map_outlined,
                     'Kelurahan',
-                    user != null && user.kelurahan.toString() != 'null' && user.kelurahan.toString().isNotEmpty ? user.kelurahan : '-',
+                    user != null &&
+                            user.kelurahan.toString() != 'null' &&
+                            user.kelurahan.toString().isNotEmpty
+                        ? user.kelurahan
+                        : '-',
                   ),
                   const Divider(height: 1, indent: 56),
                   _infoTile(
                     Icons.location_city_rounded,
                     'RW Penugasan',
-                    user != null && user.rw.toString() != 'null' && user.rw.toString().isNotEmpty ? user.rw : '-',
+                    user != null &&
+                            user.rw.toString() != 'null' &&
+                            user.rw.toString().isNotEmpty
+                        ? user.rw
+                        : '-',
                     bold: true,
                   ),
                   const Divider(height: 1, indent: 56),
                   _infoTile(
                     Icons.home_outlined,
                     'Alamat Lengkap',
-                    user != null && user.address.toString() != 'null' && user.address.toString().isNotEmpty ? user.address : '-',
+                    user != null &&
+                            user.address.toString() != 'null' &&
+                            user.address.toString().isNotEmpty
+                        ? user.address
+                        : '-',
                   ),
                 ],
-
               ),
             ),
             const SizedBox(height: AppDimensions.lg),
@@ -293,12 +379,34 @@ class _PetugasPemilahanProfilViewState extends ConsumerState<PetugasPemilahanPro
                         color: AppColors.primaryGreen.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(Icons.lock_reset_rounded, color: AppColors.primaryGreen, size: 20),
+                      child: const Icon(
+                        Icons.lock_reset_rounded,
+                        color: AppColors.primaryGreen,
+                        size: 20,
+                      ),
                     ),
-                    title: const Text('Ganti Kata Sandi', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                    subtitle: const Text('Ubah kata sandi akun Petugas Pemilahan', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                    trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textHint),
-                    onTap: () => Navigator.pushNamed(context, AppRoutes.petugasPemilahanGantiPassword),
+                    title: const Text(
+                      'Ganti Kata Sandi',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    subtitle: const Text(
+                      'Ubah kata sandi akun Petugas Pemilahan',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    trailing: const Icon(
+                      Icons.chevron_right_rounded,
+                      color: AppColors.textHint,
+                    ),
+                    onTap: () => Navigator.pushNamed(
+                      context,
+                      AppRoutes.petugasPemilahanGantiPassword,
+                    ),
                   ),
                   const Divider(height: 1, indent: 56),
 
@@ -310,11 +418,25 @@ class _PetugasPemilahanProfilViewState extends ConsumerState<PetugasPemilahanPro
                         color: AppColors.primaryBlue.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(Icons.info_outline_rounded, color: AppColors.primaryBlue, size: 20),
+                      child: const Icon(
+                        Icons.info_outline_rounded,
+                        color: AppColors.primaryBlue,
+                        size: 20,
+                      ),
                     ),
-                    title: const Text('Tentang Aplikasi', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                    trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textHint),
-                    onTap: () => Navigator.pushNamed(context, AppRoutes.tentang),
+                    title: const Text(
+                      'Tentang Aplikasi',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    trailing: const Icon(
+                      Icons.chevron_right_rounded,
+                      color: AppColors.textHint,
+                    ),
+                    onTap: () =>
+                        Navigator.pushNamed(context, AppRoutes.tentang),
                   ),
                   const Divider(height: 1, indent: 56),
 
@@ -326,9 +448,20 @@ class _PetugasPemilahanProfilViewState extends ConsumerState<PetugasPemilahanPro
                         color: AppColors.maroonRed.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(Icons.logout_rounded, color: AppColors.maroonRed, size: 20),
+                      child: const Icon(
+                        Icons.logout_rounded,
+                        color: AppColors.maroonRed,
+                        size: 20,
+                      ),
                     ),
-                    title: const Text('Keluar Akun', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.maroonRed)),
+                    title: const Text(
+                      'Keluar Akun',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: AppColors.maroonRed,
+                      ),
+                    ),
                     onTap: _confirmLogout,
                   ),
                 ],
@@ -362,10 +495,18 @@ class _PetugasPemilahanProfilViewState extends ConsumerState<PetugasPemilahanPro
     );
   }
 
-  Widget _infoTile(IconData icon, String label, String value, {bool bold = false}) {
+  Widget _infoTile(
+    IconData icon,
+    String label,
+    String value, {
+    bool bold = false,
+  }) {
     return ListTile(
       leading: Icon(icon, color: AppColors.textSecondary, size: 22),
-      title: Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+      title: Text(
+        label,
+        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+      ),
       subtitle: Text(
         value,
         style: TextStyle(
@@ -377,4 +518,3 @@ class _PetugasPemilahanProfilViewState extends ConsumerState<PetugasPemilahanPro
     );
   }
 }
-

@@ -23,6 +23,7 @@ class LocationPingState {
     this.errorMessage,
     this.detectedZoneArea,
     this.pendingOfflineCount = 0,
+    this.isGpsGlitching = false,
   });
 
   final bool isTracking;
@@ -35,6 +36,12 @@ class LocationPingState {
   final String? detectedZoneArea;
   final int pendingOfflineCount;
 
+  /// True saat backend mendeteksi GPS glitch (koordinat melenceng sesaat) dan
+  /// sedang dalam grace period 90 detik sebelum memvonis TERJEDA.
+  /// Backend menyisipkan entri PENDING_PAUSE di jedaLogs pada kondisi ini.
+  /// Status presensi utama tetap BERLANGSUNG — ini hanya sinyal peringatan ringan.
+  final bool isGpsGlitching;
+
   LocationPingState copyWith({
     bool? isTracking,
     double? lastLatitude,
@@ -45,6 +52,7 @@ class LocationPingState {
     String? errorMessage,
     String? detectedZoneArea,
     int? pendingOfflineCount,
+    bool? isGpsGlitching,
   }) {
     return LocationPingState(
       isTracking: isTracking ?? this.isTracking,
@@ -56,6 +64,7 @@ class LocationPingState {
       errorMessage: errorMessage ?? this.errorMessage,
       detectedZoneArea: detectedZoneArea ?? this.detectedZoneArea,
       pendingOfflineCount: pendingOfflineCount ?? this.pendingOfflineCount,
+      isGpsGlitching: isGpsGlitching ?? this.isGpsGlitching,
     );
   }
 }
@@ -83,7 +92,9 @@ class LocationPingNotifier extends StateNotifier<LocationPingState> {
       final savedStr = prefs.getString(_offlineStorageKey);
       if (savedStr != null && savedStr.isNotEmpty) {
         final List<dynamic> decoded = jsonDecode(savedStr);
-        _offlineQueue = decoded.map((e) => Map<String, dynamic>.from(e)).toList();
+        _offlineQueue = decoded
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList();
         if (mounted) {
           state = state.copyWith(pendingOfflineCount: _offlineQueue.length);
         }
@@ -124,12 +135,16 @@ class LocationPingNotifier extends StateNotifier<LocationPingState> {
             ? (item['inZoneSeconds'] as num).toInt()
             : _ref.read(kknLocationProvider).inZoneDurationSeconds;
         await repo.sendLocationPing(lat, lng, inZoneSeconds: inZoneSeconds);
-        debugPrint('[LocationPing] Flush berhasil: ($lat, $lng) durasi=${inZoneSeconds}s');
+        debugPrint(
+          '[LocationPing] Flush berhasil: ($lat, $lng) durasi=${inZoneSeconds}s',
+        );
       } catch (e) {
         // Jika jaringan gagal lagi saat flushing, kembalikan item yang tersisa ke antrean
         _offlineQueue.add(item);
         await _saveOfflineQueue();
-        debugPrint('[LocationPing] Flush gagal, ${_offlineQueue.length} item dikembalikan ke queue');
+        debugPrint(
+          '[LocationPing] Flush gagal, ${_offlineQueue.length} item dikembalikan ke queue',
+        );
         // Hentikan flush — tunggu ping berikutnya mencoba lagi
         break;
       }
@@ -146,13 +161,15 @@ class LocationPingNotifier extends StateNotifier<LocationPingState> {
       permission = await Geolocator.requestPermission();
     }
 
-    final hasPermission = permission == LocationPermission.whileInUse ||
+    final hasPermission =
+        permission == LocationPermission.whileInUse ||
         permission == LocationPermission.always;
 
     if (!hasPermission) {
       state = state.copyWith(
         permissionGranted: false,
-        errorMessage: 'Izin lokasi ditolak. Aktifkan izin lokasi untuk presensi.',
+        errorMessage:
+            'Izin lokasi ditolak. Aktifkan izin lokasi untuk presensi.',
       );
       return;
     }
@@ -214,9 +231,14 @@ class LocationPingNotifier extends StateNotifier<LocationPingState> {
 
       final repo = _ref.read(kknRepositoryProvider);
       final accumulated = _ref.read(kknLocationProvider).inZoneDurationSeconds;
-      final pingResponse = await repo.sendLocationPing(lat, lng, inZoneSeconds: accumulated);
+      final pingResponse = await repo.sendLocationPing(
+        lat,
+        lng,
+        inZoneSeconds: accumulated,
+      );
       final data = pingResponse['data'] as Map<String, dynamic>?;
-      final poskoArea = data?['poskoArea']?.toString() ?? data?['kelurahan']?.toString();
+      final poskoArea =
+          data?['poskoArea']?.toString() ?? data?['kelurahan']?.toString();
 
       if (mounted) {
         // [FIX B1] Jangan agresif matikan tracker.
@@ -224,24 +246,38 @@ class LocationPingNotifier extends StateNotifier<LocationPingState> {
         if (data == null) {
           return;
         }
-        
+
         // [FIX DURASI] Selalu sync durasi dari backend jika data mengandung
         // actualInZoneSeconds, terlepas dari ada/tidaknya activeScheduleId.
         // Sebelumnya sync hanya terjadi di blok `else` (saat activeScheduleId ada),
         // sehingga jika backend tidak mengembalikan field itu, timer mobile tidak
         // pernah dikoreksi → selisih durasi mobile vs backend.
-        if (data.containsKey('actualInZoneSeconds') && data['actualInZoneSeconds'] != null) {
+        if (data.containsKey('actualInZoneSeconds') &&
+            data['actualInZoneSeconds'] != null) {
           _ref.read(kknLocationProvider.notifier).syncWithPingData(data);
         }
 
         // Hanya matikan jika server bilang tidak ada jadwal DAN state lokal juga BUKAN berlangsung
-        if (!data.containsKey('activeScheduleId') || data['activeScheduleId'] == null) {
-          final localStatus = _ref.read(kknLocationProvider).activeActivity?['attendanceStatus']
-              ?.toString().toLowerCase() ?? '';
-          final localStatusKh = _ref.read(kknLocationProvider).activeActivity?['statusKehadiran']
-              ?.toString().toLowerCase() ?? '';
-          if (localStatus != 'berlangsung' && localStatusKh != 'berlangsung' && 
-              localStatus != 'terjeda' && localStatusKh != 'terjeda') {
+        if (!data.containsKey('activeScheduleId') ||
+            data['activeScheduleId'] == null) {
+          final localStatus =
+              _ref
+                  .read(kknLocationProvider)
+                  .activeActivity?['attendanceStatus']
+                  ?.toString()
+                  .toLowerCase() ??
+              '';
+          final localStatusKh =
+              _ref
+                  .read(kknLocationProvider)
+                  .activeActivity?['statusKehadiran']
+                  ?.toString()
+                  .toLowerCase() ??
+              '';
+          if (localStatus != 'berlangsung' &&
+              localStatusKh != 'berlangsung' &&
+              localStatus != 'terjeda' &&
+              localStatusKh != 'terjeda') {
             stopTracking();
             _ref.read(kknLocationProvider.notifier).stopTracking();
             return;
@@ -252,13 +288,37 @@ class LocationPingNotifier extends StateNotifier<LocationPingState> {
           _ref.read(kknLocationProvider.notifier).syncWithPingData(data);
         }
 
+        // [GRACE PERIOD] Deteksi PENDING_PAUSE dari jedaLogs backend.
+        // Backend menggunakan mekanisme grace period 90 detik sebelum memvonis TERJEDA.
+        // Jika GPS glitch terdeteksi, backend menyisipkan entri PENDING_PAUSE (confirmed: false)
+        // di jedaLogs TANPA mengubah attendanceStatus. Mobile membacanya untuk menampilkan
+        // peringatan ringan ke user bahwa sinyal GPS sedang tidak stabil.
+        bool hasGpsGlitch = false;
+        final jedaLogs = data['jedaLogs'];
+        if (jedaLogs is List) {
+          hasGpsGlitch = jedaLogs.any(
+            (log) =>
+                log is Map &&
+                log['type'] == 'PENDING_PAUSE' &&
+                log['confirmed'] == false,
+          );
+        }
+
         state = state.copyWith(
           lastLatitude: lat,
           lastLongitude: lng,
           lastPingTime: DateTime.now(),
           detectedZoneArea: poskoArea,
           errorMessage: null,
+          isGpsGlitching: hasGpsGlitch,
         );
+
+        if (hasGpsGlitch) {
+          debugPrint(
+            '[LocationPing] ⚠️ GPS glitch terdeteksi — backend dalam grace period, '
+            'status tetap BERLANGSUNG. PENDING_PAUSE aktif di jedaLogs.',
+          );
+        }
       }
     } catch (e) {
       // Ping gagal — kemungkinan tidak ada koneksi internet.
@@ -266,7 +326,9 @@ class LocationPingNotifier extends StateNotifier<LocationPingState> {
       // Durasi juga ikut disimpan agar backend mendapat nilai yang akurat
       // sesuai kondisi saat ping seharusnya terkirim, bukan saat flush.
       if (lat != 0 && lng != 0) {
-        final accumulated = _ref.read(kknLocationProvider).inZoneDurationSeconds;
+        final accumulated = _ref
+            .read(kknLocationProvider)
+            .inZoneDurationSeconds;
         _offlineQueue.add({
           'lat': lat,
           'lng': lng,
@@ -274,12 +336,15 @@ class LocationPingNotifier extends StateNotifier<LocationPingState> {
           'timestamp': DateTime.now().toIso8601String(),
         });
         await _saveOfflineQueue();
-        debugPrint('[LocationPing] Ping gagal, disimpan ke offline queue (${_offlineQueue.length} item, durasi: ${accumulated}s)');
+        debugPrint(
+          '[LocationPing] Ping gagal, disimpan ke offline queue (${_offlineQueue.length} item, durasi: ${accumulated}s)',
+        );
       }
 
       if (mounted) {
         state = state.copyWith(
-          errorMessage: 'Gagal mengirim lokasi. Akan dicoba saat sinyal kembali (${_offlineQueue.length} tertunda).',
+          errorMessage:
+              'Gagal mengirim lokasi. Akan dicoba saat sinyal kembali (${_offlineQueue.length} tertunda).',
         );
       }
     }
@@ -315,5 +380,5 @@ class LocationPingNotifier extends StateNotifier<LocationPingState> {
 
 final locationPingControllerProvider =
     StateNotifierProvider<LocationPingNotifier, LocationPingState>((ref) {
-  return LocationPingNotifier(ref);
-});
+      return LocationPingNotifier(ref);
+    });

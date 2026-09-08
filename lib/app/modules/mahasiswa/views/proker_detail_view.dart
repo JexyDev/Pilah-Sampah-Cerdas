@@ -10,13 +10,15 @@ import '../../../core/values/app_config.dart';
 // Provider
 // ─────────────────────────────────────────────────────────────────────────────
 
-final prokerDetailProvider =
-    FutureProvider.autoDispose.family<Map<String, dynamic>, String>((ref, id) async {
-  final repo = ref.read(kknRepositoryProvider);
-  final detail = await repo.getProgramKerjaDetail(id);
-  if (detail == null) throw Exception('Data program kerja tidak ditemukan.');
-  return detail;
-});
+final prokerDetailProvider = FutureProvider.autoDispose
+    .family<Map<String, dynamic>, String>((ref, id) async {
+      final repo = ref.read(kknRepositoryProvider);
+      final detail = await repo.getProgramKerjaDetail(id);
+      if (detail == null) {
+        throw Exception('Data program kerja tidak ditemukan.');
+      }
+      return detail;
+    });
 
 // ─────────────────────────────────────────────────────────────────────────────
 // View
@@ -40,7 +42,11 @@ class ProkerDetailView extends ConsumerWidget {
 
   String _formatRupiah(num? value) {
     if (value == null || value == 0) return '-';
-    final fmt = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+    final fmt = NumberFormat.currency(
+      locale: 'id_ID',
+      symbol: 'Rp ',
+      decimalDigits: 0,
+    );
     return fmt.format(value);
   }
 
@@ -64,9 +70,11 @@ class ProkerDetailView extends ConsumerWidget {
       final hariJalan = now.isBefore(mulai)
           ? 0
           : now.isAfter(selesai)
-              ? totalHari
-              : now.difference(mulai).inDays + 1;
-      final persen = totalHari > 0 ? (hariJalan / totalHari).clamp(0.0, 1.0) : 0.0;
+          ? totalHari
+          : now.difference(mulai).inDays + 1;
+      final persen = totalHari > 0
+          ? (hariJalan / totalHari).clamp(0.0, 1.0)
+          : 0.0;
       return (hari: hariJalan, totalHari: totalHari, persen: persen);
     } catch (_) {
       return (hari: 0, totalHari: 0, persen: 0.0);
@@ -113,20 +121,30 @@ class ProkerDetailView extends ConsumerWidget {
         ],
       ),
       body: state.when(
-        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryGreen)),
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: AppColors.primaryGreen),
+        ),
         error: (err, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.cloud_off_rounded, size: 52, color: AppColors.textSecondary),
+                const Icon(
+                  Icons.cloud_off_rounded,
+                  size: 52,
+                  color: AppColors.textSecondary,
+                ),
                 const SizedBox(height: 12),
-                Text(err.toString(), textAlign: TextAlign.center,
-                    style: const TextStyle(color: AppColors.textSecondary)),
+                Text(
+                  err.toString(),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: AppColors.textSecondary),
+                ),
                 const SizedBox(height: 16),
                 ElevatedButton.icon(
-                  onPressed: () => ref.invalidate(prokerDetailProvider(prokerId)),
+                  onPressed: () =>
+                      ref.invalidate(prokerDetailProvider(prokerId)),
                   icon: const Icon(Icons.refresh_rounded),
                   label: const Text('Coba Lagi'),
                 ),
@@ -140,46 +158,58 @@ class ProkerDetailView extends ConsumerWidget {
       floatingActionButton: state.whenOrNull(
         data: (data) {
           final pl = (data['statusPelaksanaan'] ?? '').toString().toUpperCase();
-          if (pl != 'SEDANG_BERJALAN' && pl != 'SEDANG_DILAKSANAKAN') return null;
+          if (pl != 'SEDANG_BERJALAN' && pl != 'SEDANG_DILAKSANAKAN') {
+            return null;
+          }
           return Column(
-              mainAxisAlignment: MainAxisAlignment.end,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                FloatingActionButton.extended(
-                  heroTag: 'fab_catat_hasil',
-                  backgroundColor: AppColors.primaryBlue,
-                  foregroundColor: Colors.white,
-                  icon: const Icon(Icons.eco_rounded),
-                  label: const Text('Catat Hasil', style: TextStyle(fontWeight: FontWeight.bold)),
-                  onPressed: () async {
-                    await Navigator.pushNamed(context, AppRoutes.catatPanen);
-                    ref.invalidate(prokerDetailProvider(prokerId));
-                  },
+            mainAxisAlignment: MainAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              FloatingActionButton.extended(
+                heroTag: 'fab_catat_hasil',
+                backgroundColor: AppColors.primaryBlue,
+                foregroundColor: Colors.white,
+                icon: const Icon(Icons.eco_rounded),
+                label: const Text(
+                  'Catat Hasil',
+                  style: TextStyle(fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(height: 12),
-                FloatingActionButton.extended(
-                  heroTag: 'fab_catat_pemanfaatan',
-                  backgroundColor: AppColors.primaryGreen,
-                  foregroundColor: Colors.white,
-                  icon: const Icon(Icons.add_rounded),
-                  label: const Text('Catat Pemanfaatan', style: TextStyle(fontWeight: FontWeight.bold)),
-                  onPressed: () async {
-                    await Navigator.pushNamed(
-                      context,
-                      AppRoutes.logbookPemanfaatan,
-                      arguments: {'prokerId': prokerId},
-                    );
-                    ref.invalidate(prokerDetailProvider(prokerId));
-                  },
+                onPressed: () async {
+                  await Navigator.pushNamed(context, AppRoutes.catatPanen);
+                  ref.invalidate(prokerDetailProvider(prokerId));
+                },
+              ),
+              const SizedBox(height: 12),
+              FloatingActionButton.extended(
+                heroTag: 'fab_catat_pemanfaatan',
+                backgroundColor: AppColors.primaryGreen,
+                foregroundColor: Colors.white,
+                icon: const Icon(Icons.add_rounded),
+                label: const Text(
+                  'Catat Pemanfaatan',
+                  style: TextStyle(fontWeight: FontWeight.bold),
                 ),
-              ],
-            );
+                onPressed: () async {
+                  await Navigator.pushNamed(
+                    context,
+                    AppRoutes.logbookPemanfaatan,
+                    arguments: {'prokerId': prokerId},
+                  );
+                  ref.invalidate(prokerDetailProvider(prokerId));
+                },
+              ),
+            ],
+          );
         },
       ),
     );
   }
 
-  Widget _buildContent(BuildContext context, WidgetRef ref, Map<String, dynamic> data) {
+  Widget _buildContent(
+    BuildContext context,
+    WidgetRef ref,
+    Map<String, dynamic> data,
+  ) {
     final judul = data['judul']?.toString() ?? '-';
     final kategori = data['kategori']?.toString() ?? '-';
     final waktu = data['waktuPelaksanaan']?.toString() ?? '';
@@ -256,7 +286,11 @@ class ProkerDetailView extends ConsumerWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 3)),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
         ],
       ),
       child: Column(
@@ -271,9 +305,14 @@ class ProkerDetailView extends ConsumerWidget {
                   color: AppColors.primaryGreen.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Text(kategori,
-                    style: const TextStyle(
-                        fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryGreen)),
+                child: Text(
+                  kategori,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primaryGreen,
+                  ),
+                ),
               ),
               const SizedBox(width: 8),
               Container(
@@ -287,26 +326,45 @@ class ProkerDetailView extends ConsumerWidget {
                   children: [
                     Icon(plIcon, size: 11, color: plColor),
                     const SizedBox(width: 4),
-                    Text(plLabel,
-                        style: TextStyle(
-                            fontSize: 11, fontWeight: FontWeight.bold, color: plColor)),
+                    Text(
+                      plLabel,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: plColor,
+                      ),
+                    ),
                   ],
                 ),
               ),
             ],
           ),
           const SizedBox(height: 10),
-          Text(judul,
-              style: const TextStyle(
-                  fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+          Text(
+            judul,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
           if (waktu.isNotEmpty) ...[
             const SizedBox(height: 6),
             Row(
               children: [
-                const Icon(Icons.calendar_month_rounded, size: 13, color: AppColors.textSecondary),
+                const Icon(
+                  Icons.calendar_month_rounded,
+                  size: 13,
+                  color: AppColors.textSecondary,
+                ),
                 const SizedBox(width: 4),
-                Text(waktu,
-                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                Text(
+                  waktu,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
               ],
             ),
           ],
@@ -316,11 +374,21 @@ class ProkerDetailView extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Hari ke-${progress.hari} dari ${progress.totalHari}',
-                    style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-                Text('${(progress.persen * 100).toStringAsFixed(0)}%',
-                    style: const TextStyle(
-                        fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryBlue)),
+                Text(
+                  'Hari ke-${progress.hari} dari ${progress.totalHari}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                Text(
+                  '${(progress.persen * 100).toStringAsFixed(0)}%',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primaryBlue,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 6),
@@ -330,7 +398,9 @@ class ProkerDetailView extends ConsumerWidget {
                 value: progress.persen,
                 minHeight: 7,
                 backgroundColor: AppColors.border,
-                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                  AppColors.primaryBlue,
+                ),
               ),
             ),
           ],
@@ -357,27 +427,56 @@ class ProkerDetailView extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Ringkasan Pemanfaatan',
-              style: TextStyle(
-                  fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+          const Text(
+            'Ringkasan Pemanfaatan',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
           const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(child: _buildStatTile('Total Entri', '$totalEntri sesi',
-                  Icons.list_alt_rounded, AppColors.primaryBlue)),
+              Expanded(
+                child: _buildStatTile(
+                  'Total Entri',
+                  '$totalEntri sesi',
+                  Icons.list_alt_rounded,
+                  AppColors.primaryBlue,
+                ),
+              ),
               const SizedBox(width: 10),
-              Expanded(child: _buildStatTile('Bahan Masuk', _formatKg(totalInput),
-                  Icons.input_rounded, const Color(0xFF7C3AED))),
+              Expanded(
+                child: _buildStatTile(
+                  'Bahan Masuk',
+                  _formatKg(totalInput),
+                  Icons.input_rounded,
+                  const Color(0xFF7C3AED),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 10),
           Row(
             children: [
-              Expanded(child: _buildStatTile('Total Hasil', _formatKg(totalOutput),
-                  Icons.eco_rounded, const Color(0xFF0D9488))),
+              Expanded(
+                child: _buildStatTile(
+                  'Total Hasil',
+                  _formatKg(totalOutput),
+                  Icons.eco_rounded,
+                  const Color(0xFF0D9488),
+                ),
+              ),
               const SizedBox(width: 10),
-              Expanded(child: _buildStatTile('Nilai Ekonomi', _formatRupiah(totalNilai),
-                  Icons.payments_rounded, AppColors.primaryGreen)),
+              Expanded(
+                child: _buildStatTile(
+                  'Nilai Ekonomi',
+                  _formatRupiah(totalNilai),
+                  Icons.payments_rounded,
+                  AppColors.primaryGreen,
+                ),
+              ),
             ],
           ),
         ],
@@ -385,7 +484,12 @@ class ProkerDetailView extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatTile(String label, String value, IconData icon, Color color) {
+  Widget _buildStatTile(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -408,13 +512,23 @@ class ProkerDetailView extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label,
-                    style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
                 const SizedBox(height: 2),
-                Text(value,
-                    style: TextStyle(
-                        fontSize: 12, fontWeight: FontWeight.bold, color: color),
-                    overflow: TextOverflow.ellipsis),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ],
             ),
           ),
@@ -436,9 +550,14 @@ class ProkerDetailView extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Per Teknologi',
-              style: TextStyle(
-                  fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+          const Text(
+            'Per Teknologi',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
           const SizedBox(height: 10),
           ...perTeknologi.map((t) {
             final item = t as Map<String, dynamic>;
@@ -460,27 +579,51 @@ class ProkerDetailView extends ConsumerWidget {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.science_rounded, size: 14, color: AppColors.primaryGreen),
+                      const Icon(
+                        Icons.science_rounded,
+                        size: 14,
+                        color: AppColors.primaryGreen,
+                      ),
                       const SizedBox(width: 6),
                       Expanded(
-                        child: Text(tek,
-                            style: const TextStyle(
-                                fontSize: 13, fontWeight: FontWeight.w600,
-                                color: AppColors.textPrimary)),
-                      ),
-                      Text('$count entri',
+                        child: Text(
+                          tek,
                           style: const TextStyle(
-                              fontSize: 11, color: AppColors.textSecondary)),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        '$count entri',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 6),
                   Wrap(
                     spacing: 12,
                     children: [
-                      _buildTeknologiChip('Masuk', _formatKg(input), const Color(0xFF7C3AED)),
-                      _buildTeknologiChip('Hasil', _formatKg(output), const Color(0xFF0D9488)),
+                      _buildTeknologiChip(
+                        'Masuk',
+                        _formatKg(input),
+                        const Color(0xFF7C3AED),
+                      ),
+                      _buildTeknologiChip(
+                        'Hasil',
+                        _formatKg(output),
+                        const Color(0xFF0D9488),
+                      ),
                       if (nilai > 0)
-                        _buildTeknologiChip('Nilai', _formatRupiah(nilai), AppColors.primaryGreen),
+                        _buildTeknologiChip(
+                          'Nilai',
+                          _formatRupiah(nilai),
+                          AppColors.primaryGreen,
+                        ),
                     ],
                   ),
                 ],
@@ -496,10 +639,18 @@ class ProkerDetailView extends ConsumerWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('$label: ', style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-        Text(value,
-            style: TextStyle(
-                fontSize: 11, fontWeight: FontWeight.bold, color: color)),
+        Text(
+          '$label: ',
+          style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
       ],
     );
   }
@@ -512,11 +663,18 @@ class ProkerDetailView extends ConsumerWidget {
       children: [
         const Padding(
           padding: EdgeInsets.only(bottom: 8),
-          child: Text('Riwayat Entri',
-              style: TextStyle(
-                  fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+          child: Text(
+            'Riwayat Entri',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
         ),
-        ...entries.map((e) => _buildEntriCard(context, e as Map<String, dynamic>)),
+        ...entries.map(
+          (e) => _buildEntriCard(context, e as Map<String, dynamic>),
+        ),
       ],
     );
   }
@@ -547,9 +705,10 @@ class ProkerDetailView extends ConsumerWidget {
         ),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 6,
-              offset: const Offset(0, 2)),
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Column(
@@ -563,15 +722,23 @@ class ProkerDetailView extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(tek,
-                        style: const TextStyle(
-                            fontSize: 13, fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary)),
+                    Text(
+                      tek,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
                     if (bahan != '-') ...[
                       const SizedBox(height: 2),
-                      Text(bahan,
-                          style: const TextStyle(
-                              fontSize: 11, color: AppColors.textSecondary)),
+                      Text(
+                        bahan,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
                     ],
                   ],
                 ),
@@ -581,25 +748,34 @@ class ProkerDetailView extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: statusColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: statusColor.withValues(alpha: 0.4)),
+                      border: Border.all(
+                        color: statusColor.withValues(alpha: 0.4),
+                      ),
                     ),
                     child: Text(
                       isPanen ? 'Hasil Tercatat' : 'Dalam Proses',
                       style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: statusColor),
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: statusColor,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(tanggal,
-                      style: const TextStyle(
-                          fontSize: 10, color: AppColors.textSecondary)),
+                  Text(
+                    tanggal,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -611,67 +787,101 @@ class ProkerDetailView extends ConsumerWidget {
             runSpacing: 6,
             children: [
               if (inputKg != null && inputKg > 0)
-                _buildMetricItem(Icons.input_rounded, 'Masuk', _formatKg(inputKg),
-                    const Color(0xFF7C3AED)),
+                _buildMetricItem(
+                  Icons.input_rounded,
+                  'Masuk',
+                  _formatKg(inputKg),
+                  const Color(0xFF7C3AED),
+                ),
               if (outputKg != null && outputKg > 0)
-                _buildMetricItem(Icons.eco_rounded, 'Hasil', _formatKg(outputKg),
-                    const Color(0xFF0D9488)),
+                _buildMetricItem(
+                  Icons.eco_rounded,
+                  'Hasil',
+                  _formatKg(outputKg),
+                  const Color(0xFF0D9488),
+                ),
               if (nilai != null && nilai > 0)
-                _buildMetricItem(Icons.payments_rounded, 'Nilai',
-                    _formatRupiah(nilai), AppColors.primaryGreen),
+                _buildMetricItem(
+                  Icons.payments_rounded,
+                  'Nilai',
+                  _formatRupiah(nilai),
+                  AppColors.primaryGreen,
+                ),
               if (rwName != null)
-                _buildMetricItem(Icons.location_on_rounded, 'RW', rwName,
-                    AppColors.primaryBlue),
-              ],
-            ),
-            // Foto thumbnail jika ada
-            if (fotoUrl != null && fotoUrl.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              GestureDetector(
-                onTap: () => showDialog(
-                  context: context,
-                  builder: (_) => Dialog(
-                    backgroundColor: Colors.transparent,
-                    insetPadding: const EdgeInsets.all(16),
-                    child: InteractiveViewer(
-                      child: Image.network(AppConfig.getImageUrl(fotoUrl), fit: BoxFit.contain),
+                _buildMetricItem(
+                  Icons.location_on_rounded,
+                  'RW',
+                  rwName,
+                  AppColors.primaryBlue,
+                ),
+            ],
+          ),
+          // Foto thumbnail jika ada
+          if (fotoUrl != null && fotoUrl.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            GestureDetector(
+              onTap: () => showDialog(
+                context: context,
+                builder: (_) => Dialog(
+                  backgroundColor: Colors.transparent,
+                  insetPadding: const EdgeInsets.all(16),
+                  child: InteractiveViewer(
+                    child: Image.network(
+                      AppConfig.getImageUrl(fotoUrl),
+                      fit: BoxFit.contain,
                     ),
                   ),
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.network(
-                    AppConfig.getImageUrl(fotoUrl),
-                    height: 100,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                      height: 60,
-                      color: AppColors.backgroundCanvas,
-                      child: const Center(
-                        child: Icon(Icons.broken_image_rounded,
-                            color: AppColors.textSecondary),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  AppConfig.getImageUrl(fotoUrl),
+                  height: 100,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    height: 60,
+                    color: AppColors.backgroundCanvas,
+                    child: const Center(
+                      child: Icon(
+                        Icons.broken_image_rounded,
+                        color: AppColors.textSecondary,
                       ),
                     ),
                   ),
                 ),
               ),
-            ],
+            ),
           ],
-        ),
-      );
-    }
+        ],
+      ),
+    );
+  }
 
-  Widget _buildMetricItem(IconData icon, String label, String value, Color color) {
+  Widget _buildMetricItem(
+    IconData icon,
+    String label,
+    String value,
+    Color color,
+  ) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, size: 12, color: color),
         const SizedBox(width: 4),
-        Text('$label: ', style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-        Text(value,
-            style: TextStyle(
-                fontSize: 11, fontWeight: FontWeight.bold, color: color)),
+        Text(
+          '$label: ',
+          style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
       ],
     );
   }
@@ -695,29 +905,33 @@ class ProkerDetailView extends ConsumerWidget {
               color: AppColors.primaryGreen.withValues(alpha: 0.08),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.recycling_rounded, size: 36, color: AppColors.primaryGreen),
+            child: const Icon(
+              Icons.recycling_rounded,
+              size: 36,
+              color: AppColors.primaryGreen,
+            ),
           ),
           const SizedBox(height: 12),
-          const Text('Belum ada catatan pemanfaatan',
-              style: TextStyle(
-                  fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+          const Text(
+            'Belum ada catatan pemanfaatan',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
           const SizedBox(height: 6),
           const Text(
             'Tap tombol "Catat Pemanfaatan" di bawah\nuntuk mulai mencatat kegiatan harian.',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.5),
+            style: TextStyle(
+              fontSize: 12,
+              color: AppColors.textSecondary,
+              height: 1.5,
+            ),
           ),
         ],
       ),
     );
   }
 }
-
-
-
-
-
-
-
-
-

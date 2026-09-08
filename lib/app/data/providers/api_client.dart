@@ -35,16 +35,17 @@ class ApiClient {
     dio.options.baseUrl = AppConfig.apiBaseUrl;
     dio.options.connectTimeout = const Duration(seconds: 15);
     dio.options.receiveTimeout = const Duration(seconds: 15);
-    dio.options.headers = {
-      'Content-Type': 'application/json',
-    };
+    dio.options.sendTimeout = const Duration(seconds: 15);
+    dio.options.headers = {'Content-Type': 'application/json'};
     dio.interceptors.add(OfflineCacheInterceptor());
     dio.interceptors.add(
       InterceptorsWrapper(
         // ── Inject access token ke setiap request ────────────────────────
         onRequest: (options, handler) async {
-          _cachedToken ??= await secureStorage.read(key: AppConfig.accessTokenKey);
-          
+          _cachedToken ??= await secureStorage.read(
+            key: AppConfig.accessTokenKey,
+          );
+
           if (_cachedToken != null && _cachedToken!.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $_cachedToken';
           }
@@ -70,11 +71,13 @@ class ApiClient {
           // ── Jika sudah ada proses refresh berjalan → antrekan request ini
           if (_isRefreshing) {
             final completer = Completer<Response>();
-            _pendingRequests.add(_PendingRequest(
-              requestOptions: e.requestOptions,
-              completer: completer,
-              handler: handler,
-            ));
+            _pendingRequests.add(
+              _PendingRequest(
+                requestOptions: e.requestOptions,
+                completer: completer,
+                handler: handler,
+              ),
+            );
             try {
               final response = await completer.future;
               return handler.resolve(response);
@@ -102,12 +105,14 @@ class ApiClient {
 
           try {
             // Gunakan instance Dio TERPISAH agar tidak terjebak interceptor
-            final refreshDio = Dio(BaseOptions(
-              baseUrl: AppConfig.apiBaseUrl,
-              connectTimeout: const Duration(seconds: 10),
-              receiveTimeout: const Duration(seconds: 10),
-              headers: {'Bypass-Tunnel-Reminder': 'true'},
-            ));
+            final refreshDio = Dio(
+              BaseOptions(
+                baseUrl: AppConfig.apiBaseUrl,
+                connectTimeout: const Duration(seconds: 10),
+                receiveTimeout: const Duration(seconds: 10),
+                headers: {'Bypass-Tunnel-Reminder': 'true'},
+              ),
+            );
 
             final refreshRes = await refreshDio.post(
               '/auth/refresh',
@@ -117,9 +122,11 @@ class ApiClient {
             if (refreshRes.statusCode == 200) {
               // Dukung format `{ "data": { "accessToken": "..." } }` atau `{ "accessToken": "..." }`
               final responseData = refreshRes.data['data'] ?? refreshRes.data;
-              
+
               if (responseData == null || responseData['accessToken'] == null) {
-                throw Exception('Token tidak ditemukan dalam response: ${refreshRes.data}');
+                throw Exception(
+                  'Token tidak ditemukan dalam response: ${refreshRes.data}',
+                );
               }
 
               newAccessToken = responseData['accessToken'] as String;
@@ -130,7 +137,7 @@ class ApiClient {
                 value: newAccessToken,
               );
               _cachedToken = newAccessToken; // UPDATE CACHE
-              
+
               final newRefreshToken = responseData['refreshToken']?.toString();
               if (newRefreshToken != null && newRefreshToken.isNotEmpty) {
                 await secureStorage.write(
@@ -142,13 +149,15 @@ class ApiClient {
               refreshSuccess = true;
             } else {
               // Refresh berhasil tapi statusCode bukan 200 → force logout
-              throw Exception('Refresh failed with status ${refreshRes.statusCode}');
+              throw Exception(
+                'Refresh failed with status ${refreshRes.statusCode}',
+              );
             }
           } catch (refreshErr, stackTrace) {
             // ── Refresh GAGAL → force logout ───────────────────────────
             debugPrint('[ApiClient] Refresh token failed: $refreshErr');
             debugPrint('[ApiClient] Stacktrace: $stackTrace');
-            
+
             _isRefreshing = false;
             _rejectPendingRequests();
             await _forceLogout();
@@ -169,7 +178,7 @@ class ApiClient {
               final retryRes = await dio.fetch(opts);
               return handler.resolve(retryRes);
             } catch (retryError) {
-              // Jika retry gagal karena error dari server/network (bukan token refresh yang gagal), 
+              // Jika retry gagal karena error dari server/network (bukan token refresh yang gagal),
               // lempar error tersebut ke caller, tanpa me-logout pengguna
               if (retryError is DioException) {
                 return handler.next(retryError);
@@ -189,7 +198,8 @@ class ApiClient {
 
   Future<void> _forceLogout() async {
     final now = DateTime.now();
-    if (_lastLogoutTime != null && now.difference(_lastLogoutTime!).inSeconds < 10) {
+    if (_lastLogoutTime != null &&
+        now.difference(_lastLogoutTime!).inSeconds < 10) {
       return; // Cegah eksekusi berulang / SnackBar spam
     }
     _lastLogoutTime = now;
@@ -208,11 +218,8 @@ class ApiClient {
     if (navState != null && navState.mounted) {
       // Hapus snackbar yang mungkin muncul sebelum logout agar tidak nyangkut/ngespam
       ScaffoldMessenger.of(navState.context).clearSnackBars();
-      
-      navState.pushNamedAndRemoveUntil(
-        AppRoutes.login,
-        (_) => false,
-      );
+
+      navState.pushNamedAndRemoveUntil(AppRoutes.login, (_) => false);
     }
   }
 
@@ -221,10 +228,12 @@ class ApiClient {
   void _resolvePendingRequests(String newToken) {
     for (final pending in _pendingRequests) {
       pending.requestOptions.headers['Authorization'] = 'Bearer $newToken';
-      dio.fetch(pending.requestOptions).then(
-        (response) => pending.completer.complete(response),
-        onError: (error) => pending.completer.completeError(error),
-      );
+      dio
+          .fetch(pending.requestOptions)
+          .then(
+            (response) => pending.completer.complete(response),
+            onError: (error) => pending.completer.completeError(error),
+          );
     }
     _pendingRequests.clear();
   }

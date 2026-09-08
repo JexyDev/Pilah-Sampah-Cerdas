@@ -45,10 +45,10 @@ class KknMapController extends StateNotifier<KknMapState> {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       final repo = _ref.read(kknRepositoryProvider);
-      
+
       // Fetch data wilayah kelompok dasar
       final data = await repo.getWilayahKelompok();
-      
+
       // Fetch Smart Multi-Zone (group zone data)
       GroupZoneData? groupZone;
       try {
@@ -62,13 +62,15 @@ class KknMapController extends StateNotifier<KknMapState> {
 
       if (data != null) {
         state = state.copyWith(
-          isLoading: false, 
+          isLoading: false,
           wilayahKelompok: data,
           groupZone: groupZone,
         );
       } else {
         state = state.copyWith(
-            isLoading: false, error: 'Data wilayah tidak ditemukan');
+          isLoading: false,
+          error: 'Data wilayah tidak ditemukan',
+        );
       }
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
@@ -76,7 +78,8 @@ class KknMapController extends StateNotifier<KknMapState> {
   }
 }
 
-final kknMapProvider =
-    StateNotifierProvider<KknMapController, KknMapState>((ref) {
+final kknMapProvider = StateNotifierProvider<KknMapController, KknMapState>((
+  ref,
+) {
   return KknMapController(ref);
 });

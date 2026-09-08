@@ -27,20 +27,25 @@ class CalibrateGpsUseCase {
   /// Menjalankan proses kalibrasi dan mengembalikan stream state.
   Stream<GpsCalibrationState> call() async* {
     // ── Fase 1: Cek GPS service ──────────────────────────────────────────
-    yield const GpsCalibrationState(status: GpsCalibrationStatus.checkingService);
+    yield const GpsCalibrationState(
+      status: GpsCalibrationStatus.checkingService,
+    );
 
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       yield const GpsCalibrationState(
         status: GpsCalibrationStatus.guide,
         guideActions: ['enable_gps_service'],
-        errorMessage: 'Layanan GPS tidak aktif. Aktifkan GPS di pengaturan perangkat.',
+        errorMessage:
+            'Layanan GPS tidak aktif. Aktifkan GPS di pengaturan perangkat.',
       );
       return;
     }
 
     // ── Fase 2: Cek permission ───────────────────────────────────────────
-    yield const GpsCalibrationState(status: GpsCalibrationStatus.checkingPermission);
+    yield const GpsCalibrationState(
+      status: GpsCalibrationStatus.checkingPermission,
+    );
 
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
@@ -51,7 +56,8 @@ class CalibrateGpsUseCase {
       yield const GpsCalibrationState(
         status: GpsCalibrationStatus.guide,
         guideActions: ['open_app_settings'],
-        errorMessage: 'Izin lokasi diblokir permanen. Buka pengaturan aplikasi untuk mengizinkan akses lokasi.',
+        errorMessage:
+            'Izin lokasi diblokir permanen. Buka pengaturan aplikasi untuk mengizinkan akses lokasi.',
       );
       return;
     }
@@ -67,7 +73,9 @@ class CalibrateGpsUseCase {
     }
 
     // ── Fase 3: Cek Precise Location ────────────────────────────────────
-    yield const GpsCalibrationState(status: GpsCalibrationStatus.checkingPrecision);
+    yield const GpsCalibrationState(
+      status: GpsCalibrationStatus.checkingPrecision,
+    );
 
     bool isPrecise = true;
     try {
@@ -83,7 +91,8 @@ class CalibrateGpsUseCase {
         status: GpsCalibrationStatus.guide,
         guideActions: ['enable_precise_location'],
         isPreciseLocation: false,
-        errorMessage: 'Lokasi Presisi (Precise Location) tidak aktif. Aktifkan di pengaturan izin aplikasi.',
+        errorMessage:
+            'Lokasi Presisi (Precise Location) tidak aktif. Aktifkan di pengaturan izin aplikasi.',
       );
       return;
     }
@@ -115,9 +124,14 @@ class CalibrateGpsUseCase {
     if (samples.isEmpty) {
       yield GpsCalibrationState(
         status: GpsCalibrationStatus.guide,
-        guideActions: const ['open_area', 'disable_battery_saver', 'wait_and_retest'],
+        guideActions: const [
+          'open_area',
+          'disable_battery_saver',
+          'wait_and_retest',
+        ],
         isPreciseLocation: isPrecise,
-        errorMessage: 'Tidak ada data GPS yang berhasil diambil dalam batas waktu.',
+        errorMessage:
+            'Tidak ada data GPS yang berhasil diambil dalam batas waktu.',
       );
       return;
     }
@@ -200,9 +214,7 @@ class CalibrateGpsUseCase {
 
   /// Memilih sampel terbaik berdasarkan akurasi terkecil.
   Position _selectBestSample(List<Position> samples) {
-    return samples.reduce(
-      (best, s) => s.accuracy < best.accuracy ? s : best,
-    );
+    return samples.reduce((best, s) => s.accuracy < best.accuracy ? s : best);
   }
 
   /// Membangun daftar aksi panduan yang relevan berdasarkan kondisi GPS.

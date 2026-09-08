@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-
 /// Palet warna resmi aplikasi â€” sesuai perombakan desain (Clean Design).
 /// Primary color adalah HIJAU ORGANIK (#2E7D32).
 /// Biru digunakan untuk sekunder/Anorganik.
@@ -16,16 +15,24 @@ class AppColors {
   static const Color primary = primaryGreen;
   static const Color primaryGreen = Color(0xFF009966); // Dari palette
   static const Color primaryGreenLight = Color(0xFFE8F5E9); // Soft Light Green
-  static const Color organicColor = Color(0xFF009966); // Green for organic waste
+  static const Color organicColor = Color(
+    0xFF009966,
+  ); // Green for organic waste
 
   // --- Non-Organic (orange/amber/yellow) ---
-  static const Color nonOrganicColor = Color(0xFFF59E0B); // Yellow for non-organic
+  static const Color nonOrganicColor = Color(
+    0xFFF59E0B,
+  ); // Yellow for non-organic
   static const Color nonOrganicBg = Color(0xFFFEF3C7); // Light yellow
 
   // --- Semantic ---
   static const Color dangerRed = Color(0xFFEF4444); // Modern tailwind red
-  static const Color maroonRed = Color(0xFF9F1239); // Rose 800 / Maroon Error Red
-  static const Color residuColor = Color(0xFF64748B); // Slate 500 / Abu-abu untuk Residu
+  static const Color maroonRed = Color(
+    0xFF9F1239,
+  ); // Rose 800 / Maroon Error Red
+  static const Color residuColor = Color(
+    0xFF64748B,
+  ); // Slate 500 / Abu-abu untuk Residu
   static const Color warningYellow = Color(0xFFF59E0B);
   static const Color warningOrange = Color(0xFFF97316);
   static const Color success = Color(0xFF10B981);
@@ -63,4 +70,3 @@ class AppColors {
   static const Color statusTervalidasi = Color(0xFF10B981);
   static const Color statusTervalidasiBg = Color(0xFFD1FAE5);
 }
-

@@ -59,8 +59,7 @@ class OtpInputWidgetState extends State<OtpInputWidget> {
   }
 
   /// Ambil nilai OTP saat ini.
-  String get currentValue =>
-      _controllers.map((c) => c.text).join();
+  String get currentValue => _controllers.map((c) => c.text).join();
 
   /// Reset semua kotak ke kosong.
   void clear() {
@@ -111,19 +110,19 @@ class OtpInputWidgetState extends State<OtpInputWidget> {
       fit: BoxFit.scaleDown,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(widget.length, (index) {
-        return Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: widget.length <= 6 ? 6 : 4,
-          ),
-          child: _OtpBox(
-            controller: _controllers[index],
-            focusNode: _focusNodes[index],
-            onChanged: (v) => _onChanged(v, index),
-            onKeyEvent: (e) => _onKeyEvent(e, index),
-          ),
-        );
-      }),
+        children: List.generate(widget.length, (index) {
+          return Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: widget.length <= 6 ? 6 : 4,
+            ),
+            child: _OtpBox(
+              controller: _controllers[index],
+              focusNode: _focusNodes[index],
+              onChanged: (v) => _onChanged(v, index),
+              onKeyEvent: (e) => _onKeyEvent(e, index),
+            ),
+          );
+        }),
       ),
     );
   }
@@ -158,9 +157,10 @@ class _OtpBoxState extends State<_OtpBox> with SingleTickerProviderStateMixin {
       vsync: this,
       duration: const Duration(milliseconds: 150),
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.06).animate(
-      CurvedAnimation(parent: _animController, curve: Curves.easeOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.06,
+    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
 
     widget.focusNode.addListener(_onFocusChange);
   }
@@ -200,8 +200,8 @@ class _OtpBoxState extends State<_OtpBox> with SingleTickerProviderStateMixin {
             color: _isFocused
                 ? AppColors.primaryGreen
                 : widget.controller.text.isNotEmpty
-                    ? AppColors.primaryGreen.withValues(alpha: 0.4)
-                    : const Color(0xFFDDE1E7),
+                ? AppColors.primaryGreen.withValues(alpha: 0.4)
+                : const Color(0xFFDDE1E7),
             width: _isFocused ? 2 : 1.5,
           ),
           boxShadow: _isFocused
@@ -242,4 +242,3 @@ class _OtpBoxState extends State<_OtpBox> with SingleTickerProviderStateMixin {
     );
   }
 }
-

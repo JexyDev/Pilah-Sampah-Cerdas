@@ -22,15 +22,31 @@ class CatatanKegiatanWargaView extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
-        title: const Text('Catatan Kegiatan Pemilahan Sampah', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18, color: Colors.white)),
+        titleSpacing: 0,
+        title: const FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            'Catatan Kegiatan Pemilahan',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+              color: Colors.white,
+            ),
+          ),
+        ),
         actions: [
           IconButton(
+            visualDensity: VisualDensity.compact,
             icon: const Icon(Icons.refresh_rounded),
             onPressed: () => ref.invalidate(wasteLogsProvider),
           ),
+          const SizedBox(width: 4),
         ],
       ),
-      body: logsAsync.when(skipLoadingOnReload: true, data: (logs) {
+      body: logsAsync.when(
+        skipLoadingOnReload: true,
+        data: (logs) {
           if (logs.isEmpty) {
             return const EmptyState(
               message: 'Belum ada catatan kegiatan warga.',
@@ -41,7 +57,8 @@ class CatatanKegiatanWargaView extends ConsumerWidget {
           // Group entries by Warga
           final Map<String, List<WasteLogEntity>> grouped = {};
           for (final log in logs) {
-            final key = '${log.wargaName ?? "Warga #${log.userId.substring(0, 6)}"} — ${log.wilayah ?? "RW 03"}';
+            final key =
+                '${log.wargaName ?? "Warga #${log.userId.substring(0, 6)}"} — ${log.wilayah ?? "RW 03"}';
             grouped.putIfAbsent(key, () => []).add(log);
           }
 
@@ -62,20 +79,39 @@ class CatatanKegiatanWargaView extends ConsumerWidget {
                   initiallyExpanded: true,
                   leading: const CircleAvatar(
                     backgroundColor: AppColors.primaryGreen,
-                    child: Icon(Icons.person_rounded, color: Colors.white, size: 20),
+                    child: Icon(
+                      Icons.person_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                   ),
                   title: Text(
                     citizenHeader,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
                   ),
-                  subtitle: Text('${citizenLogs.length} Aktivitas Pemilahan', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                  subtitle: Text(
+                    '${citizenLogs.length} Aktivitas Pemilahan',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
                   children: citizenLogs.map((entry) {
-                    final isOrganik = entry.wasteType.name.toLowerCase().contains('organ');
-                    final dateStr = DateFormat('dd MMM yyyy, HH:mm WIB').format(entry.createdAt);
+                    final isOrganik = entry.wasteType.name
+                        .toLowerCase()
+                        .contains('organ');
+                    final dateStr = DateFormat(
+                      'dd MMM yyyy, HH:mm WIB',
+                    ).format(entry.createdAt);
 
                     return Container(
                       decoration: const BoxDecoration(
-                        border: Border(top: BorderSide(color: Color(0xFFF1F5F9))),
+                        border: Border(
+                          top: BorderSide(color: Color(0xFFF1F5F9)),
+                        ),
                       ),
                       padding: const EdgeInsets.all(14),
                       child: Column(
@@ -84,14 +120,27 @@ class CatatanKegiatanWargaView extends ConsumerWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(dateStr, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textPrimary)),
+                              Text(
+                                dateStr,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
                               Chip(
-                                label: Text(isOrganik ? 'Organik' : 'Anorganik'),
-                                backgroundColor: isOrganik ? const Color(0xFFDCFCE7) : const Color(0xFFE0F2FE),
+                                label: Text(
+                                  isOrganik ? 'Organik' : 'Anorganik',
+                                ),
+                                backgroundColor: isOrganik
+                                    ? const Color(0xFFDCFCE7)
+                                    : const Color(0xFFE0F2FE),
                                 labelStyle: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
-                                  color: isOrganik ? const Color(0xFF166534) : const Color(0xFF075985),
+                                  color: isOrganik
+                                      ? const Color(0xFF166534)
+                                      : const Color(0xFF075985),
                                 ),
                                 padding: EdgeInsets.zero,
                               ),
@@ -100,16 +149,30 @@ class CatatanKegiatanWargaView extends ConsumerWidget {
                           const SizedBox(height: 6),
                           Row(
                             children: [
-                              const Icon(Icons.scale_rounded, size: 16, color: AppColors.textSecondary),
+                              const Icon(
+                                Icons.scale_rounded,
+                                size: 16,
+                                color: AppColors.textSecondary,
+                              ),
                               const SizedBox(width: 4),
-                              Text('Volume: ${entry.weightKg.toStringAsFixed(1)} Kg', style: const TextStyle(fontSize: 13)),
+                              Text(
+                                'Volume: ${entry.weightKg.toStringAsFixed(1)} Kg',
+                                style: const TextStyle(fontSize: 13),
+                              ),
                               const SizedBox(width: 16),
-                              const Icon(Icons.location_on_rounded, size: 16, color: AppColors.dangerRed),
+                              const Icon(
+                                Icons.location_on_rounded,
+                                size: 16,
+                                color: AppColors.dangerRed,
+                              ),
                               const SizedBox(width: 4),
                               Expanded(
                                 child: Text(
                                   'Titik Lokasi QR: ${entry.location ?? "-6.8915, 107.6107 (Coblong)"}',
-                                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textSecondary,
+                                  ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
@@ -118,17 +181,43 @@ class CatatanKegiatanWargaView extends ConsumerWidget {
                           const SizedBox(height: 8),
                           OutlinedButton.icon(
                             icon: const Icon(Icons.image_outlined, size: 16),
-                            label: const Text('Lihat Foto Bukti', style: TextStyle(fontSize: 12)),
+                            label: const Text(
+                              'Lihat Foto Bukti',
+                              style: TextStyle(fontSize: 12),
+                            ),
                             onPressed: () {
                               showDialog(
                                 context: context,
                                 builder: (ctx) => AlertDialog(
                                   title: const Text('Foto Bukti Setoran'),
-                                  content: (entry.photoUrl == null || entry.photoUrl!.isEmpty)
-                                      ? const SizedBox(height: 150, child: Center(child: Icon(Icons.image_not_supported_rounded, size: 80, color: Colors.grey)))
+                                  content:
+                                      (entry.photoUrl == null ||
+                                          entry.photoUrl!.isEmpty)
+                                      ? const SizedBox(
+                                          height: 150,
+                                          child: Center(
+                                            child: Icon(
+                                              Icons.image_not_supported_rounded,
+                                              size: 80,
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                        )
                                       : CachedNetworkImage(
-                                          imageUrl: AppConfig.getImageUrl(entry.photoUrl),
-                                          errorWidget: (_, __, ___) => const SizedBox(height: 150, child: Center(child: Icon(Icons.broken_image_rounded, size: 80, color: Colors.grey))),
+                                          imageUrl: AppConfig.getImageUrl(
+                                            entry.photoUrl,
+                                          ),
+                                          errorWidget: (_, __, ___) =>
+                                              const SizedBox(
+                                                height: 150,
+                                                child: Center(
+                                                  child: Icon(
+                                                    Icons.broken_image_rounded,
+                                                    size: 80,
+                                                    color: Colors.grey,
+                                                  ),
+                                                ),
+                                              ),
                                         ),
                                   actions: [
                                     TextButton(

@@ -8,6 +8,7 @@ import '../../../data/models/petugas_status_response.dart';
 import '../../../data/repositories/bin_repository.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../data/models/user_entity.dart';
+import '../../../core/values/app_config.dart';
 import '../../auth/controllers/auth_controller.dart';
 
 // ─── Bins Provider ────────────────────────────────────────────────────────────
@@ -150,7 +151,7 @@ class ScanFlowNotifier extends StateNotifier<ScanFlowState> {
         scanResult: result,
         currentStep: 3,
       );
-      
+
       // Panggil notifikasi latar belakang
       if (result.pointsAwarded > 0) {
         NotificationEngine().showPointsNotification(result.pointsAwarded);
@@ -167,13 +168,18 @@ class ScanFlowNotifier extends StateNotifier<ScanFlowState> {
   void updateAiDetectedType(WasteType newType) {
     if (state.aiResult != null) {
       final old = state.aiResult!;
+      final newDensity = newType == WasteType.organic
+          ? AppConfig.organicDensityKgPerLiter
+          : AppConfig.nonOrganicDensityKgPerLiter;
+      final newWeight = double.parse((old.volumeEstimate * newDensity).toStringAsFixed(2));
+
       final updated = AiDetectionEntity(
         detectedType: newType,
         volumeEstimate: old.volumeEstimate,
         isBlurry: old.isBlurry,
-        weightKg: old.weightKg,
+        weightKg: newWeight,
         confidence: old.confidence,
-        organicPercentage: old.organicPercentage,
+        organicPercentage: newType == WasteType.organic ? 0.95 : 0.05,
         estimatedPoints: old.estimatedPoints,
         requestId: old.requestId,
         evidencePhotoUrl: old.evidencePhotoUrl,
@@ -187,18 +193,17 @@ class ScanFlowNotifier extends StateNotifier<ScanFlowState> {
   void goToStep(int step) => state = state.copyWith(currentStep: step);
 }
 
-final scanFlowProvider = StateNotifierProvider.autoDispose<ScanFlowNotifier, ScanFlowState>(
-  (ref) {
-    final user = ref.watch(authProvider).user;
-    final userId = user?.id ?? '';
-    final householdId = user?.householdId ?? '';
-    return ScanFlowNotifier(
-      ref.watch(binRepositoryProvider),
-      userId,
-      householdId,
-    );
-  },
-);
+final scanFlowProvider =
+    StateNotifierProvider.autoDispose<ScanFlowNotifier, ScanFlowState>((ref) {
+      final user = ref.watch(authProvider).user;
+      final userId = user?.id ?? '';
+      final householdId = user?.householdId ?? '';
+      return ScanFlowNotifier(
+        ref.watch(binRepositoryProvider),
+        userId,
+        householdId,
+      );
+    });
 
 // ─── Aktivasi Tempat Sampah Provider ────────────────────────────────────────────────────
 
@@ -259,7 +264,9 @@ class AktivasiBinNotifier extends StateNotifier<AktivasiBinState> {
     try {
       final List<String> qrSerials = [];
       if (qrOrganik != null && qrOrganik.isNotEmpty) qrSerials.add(qrOrganik);
-      if (qrAnorganik != null && qrAnorganik.isNotEmpty) qrSerials.add(qrAnorganik);
+      if (qrAnorganik != null && qrAnorganik.isNotEmpty) {
+        qrSerials.add(qrAnorganik);
+      }
 
       final results = await _binRepository.activateBinsBatch(
         qrSerials: qrSerials,
@@ -277,7 +284,7 @@ class AktivasiBinNotifier extends StateNotifier<AktivasiBinState> {
           maxCapacityLiter: orgCapacity,
         );
       }
-      
+
       if (qrAnorganik != null && qrAnorganik.isNotEmpty) {
         await _binRepository.measureBin(
           qrCode: qrAnorganik,
@@ -297,7 +304,9 @@ class AktivasiBinNotifier extends StateNotifier<AktivasiBinState> {
 }
 
 final aktivasiBinProvider =
-    StateNotifierProvider.autoDispose<AktivasiBinNotifier, AktivasiBinState>((ref) {
+    StateNotifierProvider.autoDispose<AktivasiBinNotifier, AktivasiBinState>((
+      ref,
+    ) {
       return AktivasiBinNotifier(ref.watch(binRepositoryProvider));
     });
 
@@ -370,11 +379,10 @@ class ResetBinNotifier extends StateNotifier<ResetBinState> {
   void reset() => state = const ResetBinState();
 }
 
-final resetBinProvider = StateNotifierProvider.autoDispose<ResetBinNotifier, ResetBinState>(
-  (ref) {
-    return ResetBinNotifier(ref.watch(binRepositoryProvider));
-  },
-);
+final resetBinProvider =
+    StateNotifierProvider.autoDispose<ResetBinNotifier, ResetBinState>((ref) {
+      return ResetBinNotifier(ref.watch(binRepositoryProvider));
+    });
 
 // ─── Petugas Pengosongan Provider ──────────────────────────────────────────
 
@@ -406,8 +414,10 @@ class PetugasPengosonganState {
   }
 }
 
-class PetugasPengosonganNotifier extends StateNotifier<PetugasPengosonganState> {
-  PetugasPengosonganNotifier(this._repository) : super(const PetugasPengosonganState());
+class PetugasPengosonganNotifier
+    extends StateNotifier<PetugasPengosonganState> {
+  PetugasPengosonganNotifier(this._repository)
+    : super(const PetugasPengosonganState());
 
   final BinRepository _repository;
 
@@ -449,7 +459,10 @@ class PetugasPengosonganNotifier extends StateNotifier<PetugasPengosonganState> 
   }
 }
 
-final petugasPengosonganProvider = StateNotifierProvider.autoDispose<PetugasPengosonganNotifier, PetugasPengosonganState>((ref) {
-  return PetugasPengosonganNotifier(ref.watch(binRepositoryProvider));
-});
-
+final petugasPengosonganProvider =
+    StateNotifierProvider.autoDispose<
+      PetugasPengosonganNotifier,
+      PetugasPengosonganState
+    >((ref) {
+      return PetugasPengosonganNotifier(ref.watch(binRepositoryProvider));
+    });

@@ -6,6 +6,8 @@ import '../../notifikasi/controllers/notifikasi_controller.dart';
 import '../controllers/mahasiswa_notifikasi_controller.dart';
 import 'mahasiswa_poin_view.dart';
 import 'package:intl/intl.dart';
+import '../../../core/utils/input_sanitizer.dart';
+import '../../../routes/app_routes.dart';
 
 /// Halaman Notifikasi Khusus Mahasiswa KKN.
 /// Terpisah sepenuhnya dari Halaman Notifikasi Warga & Petugas.
@@ -13,10 +15,12 @@ class MahasiswaNotifikasiView extends ConsumerStatefulWidget {
   const MahasiswaNotifikasiView({super.key});
 
   @override
-  ConsumerState<MahasiswaNotifikasiView> createState() => _MahasiswaNotifikasiViewState();
+  ConsumerState<MahasiswaNotifikasiView> createState() =>
+      _MahasiswaNotifikasiViewState();
 }
 
-class _MahasiswaNotifikasiViewState extends ConsumerState<MahasiswaNotifikasiView> {
+class _MahasiswaNotifikasiViewState
+    extends ConsumerState<MahasiswaNotifikasiView> {
   String _selectedFilter = 'Semua';
   final List<String> _filters = [
     'Semua',
@@ -24,7 +28,7 @@ class _MahasiswaNotifikasiViewState extends ConsumerState<MahasiswaNotifikasiVie
     'Pengajuan Izin',
     'Ping Lokasi Posko',
     'Tempat Sampah Warga',
-    'Laporan Pemanfaatan & Ide Program'
+    'Laporan Pemanfaatan & Ide Program',
   ];
 
   @override
@@ -34,26 +38,52 @@ class _MahasiswaNotifikasiViewState extends ConsumerState<MahasiswaNotifikasiVie
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
-        title: const Text(
-          'Notifikasi KKN Mahasiswa',
-          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18, color: AppColors.textPrimary),
+        leadingWidth: 40,
+        titleSpacing: 0,
+        title: const FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            'Notifikasi KKN Mahasiswa',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+              color: AppColors.textPrimary,
+            ),
+          ),
         ),
-        backgroundColor: Colors.white,  shadowColor: Colors.black12, surfaceTintColor: Colors.transparent,
+        backgroundColor: Colors.white,
+        shadowColor: Colors.black12,
+        surfaceTintColor: Colors.transparent,
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
-        
+
         actions: [
           IconButton(
-            icon: const Icon(Icons.delete_sweep_rounded, color: AppColors.textPrimary),
+            visualDensity: VisualDensity.compact,
+            padding: const EdgeInsets.all(6),
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            icon: const Icon(
+              Icons.delete_sweep_rounded,
+              color: AppColors.textPrimary,
+            ),
             tooltip: 'Hapus Semua Notifikasi',
             onPressed: () async {
               final confirm = await showDialog<bool>(
                 context: context,
                 builder: (c) => AlertDialog(
                   title: const Text('Hapus Semua?'),
-                  content: const Text('Apakah Anda yakin ingin menghapus semua notifikasi?'),
+                  content: const Text(
+                    'Apakah Anda yakin ingin menghapus semua notifikasi?',
+                  ),
                   actions: [
-                    TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Batal')),
-                    TextButton(onPressed: () => Navigator.pop(c, true), child: const Text('Hapus')),
+                    TextButton(
+                      onPressed: () => Navigator.pop(c, false),
+                      child: const Text('Batal'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(c, true),
+                      child: const Text('Hapus'),
+                    ),
                   ],
                 ),
               );
@@ -64,7 +94,13 @@ class _MahasiswaNotifikasiViewState extends ConsumerState<MahasiswaNotifikasiVie
             },
           ),
           IconButton(
-            icon: const Icon(Icons.done_all_rounded, color: AppColors.textPrimary),
+            visualDensity: VisualDensity.compact,
+            padding: const EdgeInsets.all(6),
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            icon: const Icon(
+              Icons.done_all_rounded,
+              color: AppColors.textPrimary,
+            ),
             tooltip: 'Tandai Semua Dibaca',
             onPressed: () async {
               await ref.read(markReadProvider.notifier).markAllRead();
@@ -72,9 +108,16 @@ class _MahasiswaNotifikasiViewState extends ConsumerState<MahasiswaNotifikasiVie
             },
           ),
           IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: AppColors.textPrimary),
+            visualDensity: VisualDensity.compact,
+            padding: const EdgeInsets.all(6),
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            icon: const Icon(
+              Icons.refresh_rounded,
+              color: AppColors.textPrimary,
+            ),
             onPressed: () => ref.invalidate(mahasiswaNotificationsProvider),
           ),
+          const SizedBox(width: 4),
         ],
       ),
       body: Column(
@@ -91,6 +134,9 @@ class _MahasiswaNotifikasiViewState extends ConsumerState<MahasiswaNotifikasiVie
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: ChoiceChip(
+                      showCheckmark: false,
+                      visualDensity: VisualDensity.compact,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       label: Text(
                         filter,
                         style: TextStyle(
@@ -116,9 +162,12 @@ class _MahasiswaNotifikasiViewState extends ConsumerState<MahasiswaNotifikasiVie
           // ─── Body List Notifikasi ──────────────────────────────────────────
           Expanded(
             child: RefreshIndicator(
-              onRefresh: () async => ref.invalidate(mahasiswaNotificationsProvider),
+              onRefresh: () async =>
+                  ref.invalidate(mahasiswaNotificationsProvider),
               color: AppColors.primaryGreen,
-              child: notifAsync.when(skipLoadingOnReload: true, data: (list) {
+              child: notifAsync.when(
+                skipLoadingOnReload: true,
+                data: (list) {
                   // Filter berdasarkan kategori tab chip yang dipilih
                   final filteredList = list.where((n) {
                     if (_selectedFilter == 'Semua') return true;
@@ -126,19 +175,42 @@ class _MahasiswaNotifikasiViewState extends ConsumerState<MahasiswaNotifikasiVie
                     final titleLower = n.title.toLowerCase();
 
                     if (_selectedFilter == 'Poin KKN') {
-                      return typeUpper.contains('POIN') || titleLower.contains('poin');
+                      return typeUpper.contains('POIN') ||
+                          titleLower.contains('poin');
                     }
                     if (_selectedFilter == 'Pengajuan Izin') {
-                      return typeUpper.contains('IZIN') || titleLower.contains('dpl');
+                      return typeUpper.contains('IZIN') ||
+                          titleLower.contains('dpl');
                     }
                     if (_selectedFilter == 'Ping Lokasi Posko') {
-                      return typeUpper.contains('PRESENSI') || typeUpper.contains('GPS');
+                      return typeUpper.contains('PRESENSI') ||
+                          typeUpper.contains('GPS');
                     }
                     if (_selectedFilter == 'Tempat Sampah Warga') {
-                      return typeUpper.contains('AKTIVASI') || typeUpper.contains('BIN') || typeUpper.contains('KAPASITAS') || typeUpper.contains('PENUH') || titleLower.contains('bin') || titleLower.contains('aktivasi') || titleLower.contains('tempat sampah') || titleLower.contains('kapasitas');
+                      return typeUpper.contains('AKTIVASI') ||
+                          typeUpper.contains('BIN') ||
+                          typeUpper.contains('KAPASITAS') ||
+                          typeUpper.contains('PENUH') ||
+                          titleLower.contains('bin') ||
+                          titleLower.contains('aktivasi') ||
+                          titleLower.contains('tempat sampah') ||
+                          titleLower.contains('kapasitas');
                     }
-                    if (_selectedFilter == 'Laporan Pemanfaatan & Ide Program') {
-                      return typeUpper.contains('LAPORAN') || typeUpper.contains('PEMANFAATAN') || titleLower.contains('laporan') || titleLower.contains('pemanfaatan') || titleLower.contains('ide program');
+                    if (_selectedFilter ==
+                        'Laporan Pemanfaatan & Ide Program') {
+                      return typeUpper.contains('LAPORAN') ||
+                          typeUpper.contains('PEMANFAATAN') ||
+                          typeUpper.contains('KEGIATAN') ||
+                          typeUpper.contains('LOGBOOK') ||
+                          typeUpper.contains('PROKER') ||
+                          typeUpper.contains('PROGRAM') ||
+                          titleLower.contains('laporan') ||
+                          titleLower.contains('pemanfaatan') ||
+                          titleLower.contains('ide program') ||
+                          titleLower.contains('kegiatan') ||
+                          titleLower.contains('logbook') ||
+                          titleLower.contains('program kerja') ||
+                          titleLower.contains('proker');
                     }
                     return true;
                   }).toList();
@@ -148,21 +220,38 @@ class _MahasiswaNotifikasiViewState extends ConsumerState<MahasiswaNotifikasiVie
                       children: const [
                         SizedBox(height: 100),
                         Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.notifications_off_rounded, size: 56, color: AppColors.textHint),
-                              SizedBox(height: 12),
-                              Text(
-                                'Belum Ada Notifikasi Mahasiswa KKN',
-                                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                'Notifikasi persetujuan DPL & presensi akan muncul di sini',
-                                style: TextStyle(fontSize: 12, color: AppColors.textHint),
-                              ),
-                            ],
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 36),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.notifications_off_rounded,
+                                  size: 56,
+                                  color: AppColors.textHint,
+                                ),
+                                SizedBox(height: 12),
+                                Text(
+                                  'Belum Ada Notifikasi Mahasiswa KKN',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                                SizedBox(height: 6),
+                                Text(
+                                  'Notifikasi persetujuan DPL & presensi akan muncul di sini',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: AppColors.textHint,
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],
@@ -179,19 +268,38 @@ class _MahasiswaNotifikasiViewState extends ConsumerState<MahasiswaNotifikasiVie
                         item: item,
                         onTap: () async {
                           if (!item.isRead) {
-                            await ref.read(markReadProvider.notifier).markRead(item.id);
+                            await ref
+                                .read(markReadProvider.notifier)
+                                .markRead(item.id);
                             ref.invalidate(mahasiswaNotificationsProvider);
                           }
                           if (context.mounted) {
-                            if (item.type.toUpperCase() == 'POIN_KKN' || item.type.toUpperCase() == 'PUNISHMENT') {
+                            final typeU = item.type.toUpperCase();
+                            // ponytail: route by domain type; upgrade if backend provides dedicated deeplink uri in NotificationEntity.
+                            if (typeU == 'POIN_KKN' || typeU == 'PUNISHMENT') {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (_) => const MahasiswaPoinView(),
                                 ),
                               );
+                            } else if (typeU.contains('KEGIATAN') ||
+                                typeU.contains('LOGBOOK')) {
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.dataLogbookHarian,
+                              );
+                            } else if (typeU.contains('PROKER')) {
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.dataProker,
+                              );
                             } else {
-                              Navigator.pushNamed(context, '/detail-notifikasi', arguments: item);
+                              Navigator.pushNamed(
+                                context,
+                                '/detail-notifikasi',
+                                arguments: item,
+                              );
                             }
                           }
                         },
@@ -200,7 +308,9 @@ class _MahasiswaNotifikasiViewState extends ConsumerState<MahasiswaNotifikasiVie
                   );
                 },
                 loading: () => const Center(
-                  child: CircularProgressIndicator(color: AppColors.primaryGreen),
+                  child: CircularProgressIndicator(
+                    color: AppColors.primaryGreen,
+                  ),
                 ),
                 error: (err, _) => ListView(
                   children: [
@@ -208,14 +318,30 @@ class _MahasiswaNotifikasiViewState extends ConsumerState<MahasiswaNotifikasiVie
                     Center(
                       child: Column(
                         children: [
-                          const Icon(Icons.error_outline_rounded, size: 48, color: AppColors.dangerRed),
+                          const Icon(
+                            Icons.error_outline_rounded,
+                            size: 48,
+                            color: AppColors.dangerRed,
+                          ),
                           const SizedBox(height: 12),
-                          Text('Gagal Memuat Notifikasi: $err', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                          Text(
+                            'Gagal Memuat Notifikasi: $err',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
                           const SizedBox(height: 12),
                           ElevatedButton(
-                            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryGreen),
-                            onPressed: () => ref.invalidate(mahasiswaNotificationsProvider),
-                            child: const Text('Coba Lagi', style: TextStyle(color: Colors.white)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primaryGreen,
+                            ),
+                            onPressed: () =>
+                                ref.invalidate(mahasiswaNotificationsProvider),
+                            child: const Text(
+                              'Coba Lagi',
+                              style: TextStyle(color: Colors.white),
+                            ),
                           ),
                         ],
                       ),
@@ -232,10 +358,7 @@ class _MahasiswaNotifikasiViewState extends ConsumerState<MahasiswaNotifikasiVie
 }
 
 class _MahasiswaNotificationCard extends StatelessWidget {
-  const _MahasiswaNotificationCard({
-    required this.item,
-    required this.onTap,
-  });
+  const _MahasiswaNotificationCard({required this.item, required this.onTap});
 
   final NotificationEntity item;
   final VoidCallback onTap;
@@ -248,16 +371,23 @@ class _MahasiswaNotificationCard extends StatelessWidget {
     Color iconBg = AppColors.primaryGreen.withValues(alpha: 0.1);
 
     final type = item.type.toUpperCase();
-    if (type.contains('PEMANFAATAN') || type.contains('AI') || type.contains('LAPORAN')) {
+    if (type.contains('PEMANFAATAN') ||
+        type.contains('AI') ||
+        type.contains('LAPORAN')) {
       iconData = Icons.psychology_rounded;
       iconColor = const Color(0xFF8E24AA);
       iconBg = const Color(0xFF8E24AA).withValues(alpha: 0.12);
-    } else if (type.contains('POIN_KKN') || item.title.toLowerCase().contains('poin')) {
+    } else if (type.contains('POIN_KKN') ||
+        item.title.toLowerCase().contains('poin')) {
       iconData = Icons.stars_rounded;
       iconAsset = 'assets/icons/medal.png';
       iconColor = AppColors.warningOrange;
       iconBg = AppColors.warningOrange.withValues(alpha: 0.15);
-    } else if (type.contains('IZIN') || item.title.toLowerCase().contains('dpl') || type.contains('SAKIT') || item.title.toLowerCase().contains('sakit') || item.title.toLowerCase().contains('pengajuan')) {
+    } else if (type.contains('IZIN') ||
+        item.title.toLowerCase().contains('dpl') ||
+        type.contains('SAKIT') ||
+        item.title.toLowerCase().contains('sakit') ||
+        item.title.toLowerCase().contains('pengajuan')) {
       iconData = Icons.assignment_turned_in_rounded;
       iconAsset = 'assets/icons/submission.png';
       iconColor = AppColors.primaryBlueDark;
@@ -270,7 +400,9 @@ class _MahasiswaNotificationCard extends StatelessWidget {
       iconData = Icons.group_rounded;
       iconColor = AppColors.warningOrange;
       iconBg = AppColors.warningOrange.withValues(alpha: 0.1);
-    } else if (type.contains('WARGA') || type.contains('BIN') || type.contains('AKTIVASI')) {
+    } else if (type.contains('WARGA') ||
+        type.contains('BIN') ||
+        type.contains('AKTIVASI')) {
       iconData = Icons.qr_code_scanner_rounded;
       iconColor = AppColors.primaryGreen;
       iconBg = AppColors.primaryGreen.withValues(alpha: 0.1);
@@ -278,10 +410,14 @@ class _MahasiswaNotificationCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: item.isRead ? Colors.white : AppColors.primaryGreen.withValues(alpha: 0.04),
+        color: item.isRead
+            ? Colors.white
+            : AppColors.primaryGreen.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: item.isRead ? AppColors.border : AppColors.primaryGreen.withValues(alpha: 0.3),
+          color: item.isRead
+              ? AppColors.border
+              : AppColors.primaryGreen.withValues(alpha: 0.3),
         ),
         boxShadow: [
           BoxShadow(
@@ -304,10 +440,16 @@ class _MahasiswaNotificationCard extends StatelessWidget {
                 Container(
                   width: 42,
                   height: 42,
-                  decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(10)),
-                  child: iconAsset != null 
-                    ? Padding(padding: const EdgeInsets.all(10.0), child: Image.asset(iconAsset, color: iconColor))
-                    : Icon(iconData, color: iconColor, size: 22),
+                  decoration: BoxDecoration(
+                    color: iconBg,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: iconAsset != null
+                      ? Padding(
+                          padding: const EdgeInsets.all(10.0),
+                          child: Image.asset(iconAsset, color: iconColor),
+                        )
+                      : Icon(iconData, color: iconColor, size: 22),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -318,10 +460,12 @@ class _MahasiswaNotificationCard extends StatelessWidget {
                         children: [
                           Expanded(
                             child: Text(
-                              item.title,
+                              InputSanitizer.cleanSystemMessage(item.title),
                               style: TextStyle(
                                 fontSize: 13,
-                                fontWeight: item.isRead ? FontWeight.w600 : FontWeight.bold,
+                                fontWeight: item.isRead
+                                    ? FontWeight.w600
+                                    : FontWeight.bold,
                                 color: AppColors.textPrimary,
                               ),
                             ),
@@ -339,7 +483,7 @@ class _MahasiswaNotificationCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        item.desc,
+                        InputSanitizer.cleanSystemMessage(item.desc),
                         style: const TextStyle(
                           fontSize: 12,
                           color: AppColors.textSecondary,

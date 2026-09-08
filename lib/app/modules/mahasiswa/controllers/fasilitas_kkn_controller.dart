@@ -48,7 +48,7 @@ class FasilitasKknController extends StateNotifier<FasilitasKknState> {
     state = state.copyWith(isLoadingJenis: true);
     try {
       final repository = ref.read(kknRepositoryProvider);
-      
+
       final results = await Future.wait([
         repository.getJenisFasilitas(),
         repository.getWargaDampingan(),
@@ -100,7 +100,7 @@ class FasilitasKknController extends StateNotifier<FasilitasKknState> {
       log('Payload registerFasilitas: $payload');
 
       await repository.registerFasilitas(payload, imagePath: imagePath);
-      
+
       state = state.copyWith(isLoading: false);
       return true;
     } catch (e) {
@@ -112,6 +112,7 @@ class FasilitasKknController extends StateNotifier<FasilitasKknState> {
   }
 }
 
-final fasilitasKknProvider = StateNotifierProvider<FasilitasKknController, FasilitasKknState>((ref) {
-  return FasilitasKknController(ref);
-});
+final fasilitasKknProvider =
+    StateNotifierProvider<FasilitasKknController, FasilitasKknState>((ref) {
+      return FasilitasKknController(ref);
+    });

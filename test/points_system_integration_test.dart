@@ -5,11 +5,20 @@ import 'package:mobile_app_sampah/app/data/models/bin_entity.dart';
 
 void main() {
   group('Integrasi Sistem Poin Mobile dengan Kontrak Backend', () {
-    test('UserRole.fromApi mengenali role MAHASISWA_KKN, PETUGAS_RESIDU, dan WARGA', () {
-      expect(UserRoleExtension.fromApi('MAHASISWA_KKN'), equals(UserRole.mahasiswaKkn));
-      expect(UserRoleExtension.fromApi('PETUGAS_RESIDU'), equals(UserRole.petugasPemilahan));
-      expect(UserRoleExtension.fromApi('WARGA'), equals(UserRole.warga));
-    });
+    test(
+      'UserRole.fromApi mengenali role MAHASISWA_KKN, PETUGAS_RESIDU, dan WARGA',
+      () {
+        expect(
+          UserRoleExtension.fromApi('MAHASISWA_KKN'),
+          equals(UserRole.mahasiswaKkn),
+        );
+        expect(
+          UserRoleExtension.fromApi('PETUGAS_RESIDU'),
+          equals(UserRole.petugasPemilahan),
+        );
+        expect(UserRoleExtension.fromApi('WARGA'), equals(UserRole.warga));
+      },
+    );
 
     test('PointHistoryEntity memetakan reward poin transaksi backend', () {
       // 1. First-time login bonus Mahasiswa KKN (+20 poin)
@@ -34,7 +43,10 @@ void main() {
         createdAt: DateTime.now(),
       );
       expect(petugasReward.points, equals(15));
-      expect(petugasReward.description, contains('Reward validasi pengosongan'));
+      expect(
+        petugasReward.description,
+        contains('Reward validasi pengosongan'),
+      );
 
       // 3. Reward presensi masuk & kepulangan Mahasiswa KKN (+10 poin)
       final checkInReward = PointHistoryEntity(

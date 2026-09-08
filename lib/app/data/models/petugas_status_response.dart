@@ -2,10 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'petugas_entity.dart';
 
 class PetugasStatusResponse extends Equatable {
-  const PetugasStatusResponse({
-    required this.hasDefaultPetugas,
-    this.petugas,
-  });
+  const PetugasStatusResponse({required this.hasDefaultPetugas, this.petugas});
 
   final bool hasDefaultPetugas;
   final PetugasEntity? petugas;

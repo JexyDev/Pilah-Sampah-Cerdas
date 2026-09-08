@@ -55,40 +55,49 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
           _selectedDate = DateTime.parse(dateStr);
         } catch (_) {}
       }
-      _tanggalCtrl.text = "${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}";
-      
+      _tanggalCtrl.text =
+          "${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}";
+
       _waktuMulaiCtrl.text = data['waktuMulai'] ?? '';
       if (_waktuMulaiCtrl.text.isNotEmpty) {
         final parts = _waktuMulaiCtrl.text.split(':');
         if (parts.length >= 2) {
-          _startTime = TimeOfDay(hour: int.tryParse(parts[0]) ?? 0, minute: int.tryParse(parts[1]) ?? 0);
+          _startTime = TimeOfDay(
+            hour: int.tryParse(parts[0]) ?? 0,
+            minute: int.tryParse(parts[1]) ?? 0,
+          );
         }
       }
-      
+
       _waktuSelesaiCtrl.text = data['waktuSelesai'] ?? '';
       if (_waktuSelesaiCtrl.text.isNotEmpty) {
         final parts = _waktuSelesaiCtrl.text.split(':');
         if (parts.length >= 2) {
-          _endTime = TimeOfDay(hour: int.tryParse(parts[0]) ?? 0, minute: int.tryParse(parts[1]) ?? 0);
+          _endTime = TimeOfDay(
+            hour: int.tryParse(parts[0]) ?? 0,
+            minute: int.tryParse(parts[1]) ?? 0,
+          );
         }
       }
-      
+
       _lokasiCtrl.text = data['tempat'] ?? '';
       _deskripsiCtrl.text = data['deskripsi'] ?? '';
-      
+
       if (data['programKerjaId'] != null) {
         _selectedProkerId = data['programKerjaId'];
-      } else if (data['programKerja'] != null && data['programKerja']['id'] != null) {
+      } else if (data['programKerja'] != null &&
+          data['programKerja']['id'] != null) {
         _selectedProkerId = data['programKerja']['id'];
       }
-      
+
       if (data['fasilitasId'] != null) {
         _selectedFasilitasId = data['fasilitasId'];
       } else if (data['fasilitas'] != null && data['fasilitas']['id'] != null) {
         _selectedFasilitasId = data['fasilitas']['id'];
       }
     } else {
-      _tanggalCtrl.text = "${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}";
+      _tanggalCtrl.text =
+          "${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}";
     }
   }
 
@@ -216,8 +225,8 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
     final picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
-      firstDate: _isPastReport 
-          ? today.subtract(const Duration(days: 365)) 
+      firstDate: _isPastReport
+          ? today.subtract(const Duration(days: 365))
           : today.subtract(const Duration(days: 30)),
       lastDate: today.add(const Duration(hours: 23, minutes: 59)),
       builder: (context, child) {
@@ -312,14 +321,16 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
 
       if (widget.initialData != null) {
         await repo.editLogbookHarian(
-          widget.initialData!['id'], 
-          payload, 
-          imagePath: _selectedFiles.isNotEmpty ? _selectedFiles.first.path : null
+          widget.initialData!['id'],
+          payload,
+          imagePath: _selectedFiles.isNotEmpty
+              ? _selectedFiles.first.path
+              : null,
         );
       } else {
         await repo.submitLogbookHarian(
-          payload, 
-          imagePaths: _selectedFiles.map((f) => f.path).toList()
+          payload,
+          imagePaths: _selectedFiles.map((f) => f.path).toList(),
         );
       }
 
@@ -434,11 +445,19 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
         backgroundColor: AppColors.backgroundCanvas,
         appBar: AppBar(
           title: Text(
-            widget.initialData != null ? 'Edit Logbook' : (_isPastReport ? 'Input Logbook (Masa Lampau)' : 'Input Logbook Harian'),
+            widget.initialData != null
+                ? 'Edit Logbook'
+                : (_isPastReport
+                      ? 'Input Logbook (Masa Lampau)'
+                      : 'Input Logbook Harian'),
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
           ),
-          backgroundColor: _isPastReport ? AppColors.warningOrange.withValues(alpha: 0.1) : Colors.white,
-          foregroundColor: _isPastReport ? AppColors.warningOrange : AppColors.textPrimary,
+          backgroundColor: _isPastReport
+              ? AppColors.warningOrange.withValues(alpha: 0.1)
+              : Colors.white,
+          foregroundColor: _isPastReport
+              ? AppColors.warningOrange
+              : AppColors.textPrimary,
           elevation: 0,
           centerTitle: true,
           bottom: PreferredSize(
@@ -465,11 +484,17 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
                   child: SwitchListTile(
                     title: const Text(
                       'Mode Laporan Masa Lampau',
-                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
                     ),
                     subtitle: const Text(
                       'Aktifkan jika laporan sudah lewat batas toleransi waktu',
-                      style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                     value: _isPastReport,
                     activeThumbColor: AppColors.warningOrange,
@@ -631,7 +656,10 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
                         return GestureDetector(
                           onTap: () => _showProkerPicker(approvedProker),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
                             decoration: BoxDecoration(
                               color: AppColors.backgroundCanvas,
                               borderRadius: BorderRadius.circular(10),
@@ -643,10 +671,18 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
                                 Expanded(
                                   child: Text(
                                     _selectedProkerId != null
-                                        ? approvedProker.firstWhere(
-                                            (p) => p['id']?.toString() == _selectedProkerId,
-                                            orElse: () => {'judul': 'Pilih Proker (Jika ada)...'},
-                                          )['judul']?.toString() ?? 'Pilih Proker (Jika ada)...'
+                                        ? approvedProker
+                                                  .firstWhere(
+                                                    (p) =>
+                                                        p['id']?.toString() ==
+                                                        _selectedProkerId,
+                                                    orElse: () => {
+                                                      'judul':
+                                                          'Pilih Proker (Jika ada)...',
+                                                    },
+                                                  )['judul']
+                                                  ?.toString() ??
+                                              'Pilih Proker (Jika ada)...'
                                         : 'Tidak terkait proker',
                                     style: const TextStyle(
                                       fontSize: 14,
@@ -655,7 +691,10 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                                const Icon(Icons.arrow_drop_down_rounded, color: AppColors.textSecondary),
+                                const Icon(
+                                  Icons.arrow_drop_down_rounded,
+                                  color: AppColors.textSecondary,
+                                ),
                               ],
                             ),
                           ),
@@ -688,22 +727,35 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
                             return GestureDetector(
                               onTap: () => _showFasilitasPicker(list),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 14,
+                                ),
                                 decoration: BoxDecoration(
                                   color: AppColors.backgroundCanvas,
                                   borderRadius: BorderRadius.circular(10),
                                   border: Border.all(color: AppColors.border),
                                 ),
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Expanded(
                                       child: Text(
                                         _selectedFasilitasId != null
-                                            ? list.firstWhere(
-                                                (f) => f['id']?.toString() == _selectedFasilitasId,
-                                                orElse: () => {'nama': 'Pilih Fasilitas (Jika ada)...'},
-                                              )['nama']?.toString() ?? 'Pilih Fasilitas (Jika ada)...'
+                                            ? list
+                                                      .firstWhere(
+                                                        (f) =>
+                                                            f['id']
+                                                                ?.toString() ==
+                                                            _selectedFasilitasId,
+                                                        orElse: () => {
+                                                          'nama':
+                                                              'Pilih Fasilitas (Jika ada)...',
+                                                        },
+                                                      )['nama']
+                                                      ?.toString() ??
+                                                  'Pilih Fasilitas (Jika ada)...'
                                             : 'Tidak terkait fasilitas',
                                         style: const TextStyle(
                                           fontSize: 14,
@@ -712,7 +764,10 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
-                                    const Icon(Icons.arrow_drop_down_rounded, color: AppColors.textSecondary),
+                                    const Icon(
+                                      Icons.arrow_drop_down_rounded,
+                                      color: AppColors.textSecondary,
+                                    ),
                                   ],
                                 ),
                               ),
@@ -979,7 +1034,9 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
                             const Icon(Icons.send_rounded, size: 20),
                             const SizedBox(width: 10),
                             Text(
-                              widget.initialData != null ? 'Simpan Perubahan' : 'Kirim Logbook Harian',
+                              widget.initialData != null
+                                  ? 'Simpan Perubahan'
+                                  : 'Kirim Logbook Harian',
                               style: const TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.bold,
@@ -999,7 +1056,8 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
 
   Widget _buildHeaderBanner() {
     final isEdit = widget.initialData != null;
-    final statusApproval = widget.initialData?['statusApproval']?.toString().toUpperCase() ?? '';
+    final statusApproval =
+        widget.initialData?['statusApproval']?.toString().toUpperCase() ?? '';
     final catatanDpl = widget.initialData?['catatanDpl']?.toString() ?? '';
     final catatanKetua = widget.initialData?['catatanKetua']?.toString() ?? '';
 
@@ -1017,12 +1075,20 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
           children: [
             Row(
               children: [
-                Icon(Icons.rate_review_rounded, color: Colors.orange.shade700, size: 22),
+                Icon(
+                  Icons.rate_review_rounded,
+                  color: Colors.orange.shade700,
+                  size: 22,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     '⚠️ Logbook Perlu Direvisi',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange.shade800, fontSize: 14),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.orange.shade800,
+                      fontSize: 14,
+                    ),
                   ),
                 ),
               ],
@@ -1030,7 +1096,11 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
             const SizedBox(height: 6),
             Text(
               'DPL meminta perubahan pada logbook ini. Silakan perbaiki sesuai catatan, lalu simpan ulang.',
-              style: TextStyle(fontSize: 12, color: Colors.orange.shade800, height: 1.4),
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.orange.shade800,
+                height: 1.4,
+              ),
             ),
             if (catatanDpl.isNotEmpty) ...[
               const SizedBox(height: 10),
@@ -1047,10 +1117,21 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
                   children: [
                     Text(
                       'Catatan dari DPL:',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.orange.shade700),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange.shade700,
+                      ),
                     ),
                     const SizedBox(height: 4),
-                    Text(catatanDpl, style: const TextStyle(fontSize: 13, color: Colors.black87, height: 1.4)),
+                    Text(
+                      catatanDpl,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.black87,
+                        height: 1.4,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -1074,12 +1155,20 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
           children: [
             Row(
               children: [
-                Icon(Icons.cancel_rounded, color: Colors.red.shade700, size: 22),
+                Icon(
+                  Icons.cancel_rounded,
+                  color: Colors.red.shade700,
+                  size: 22,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     '❌ Logbook Ditolak oleh Ketua',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red.shade800, fontSize: 14),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red.shade800,
+                      fontSize: 14,
+                    ),
                   ),
                 ),
               ],
@@ -1087,7 +1176,11 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
             const SizedBox(height: 6),
             Text(
               'Ketua kelompok menolak logbook ini. Silakan perbaiki dan kirim ulang.',
-              style: TextStyle(fontSize: 12, color: Colors.red.shade800, height: 1.4),
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.red.shade800,
+                height: 1.4,
+              ),
             ),
             if (catatanKetua.isNotEmpty) ...[
               const SizedBox(height: 10),
@@ -1104,10 +1197,21 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
                   children: [
                     Text(
                       'Alasan penolakan Ketua:',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.red.shade700),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red.shade700,
+                      ),
                     ),
                     const SizedBox(height: 4),
-                    Text(catatanKetua, style: const TextStyle(fontSize: 13, color: Colors.black87, height: 1.4)),
+                    Text(
+                      catatanKetua,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.black87,
+                        height: 1.4,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -1129,18 +1233,32 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.hourglass_empty_rounded, color: Colors.amber.shade700, size: 22),
+            Icon(
+              Icons.hourglass_empty_rounded,
+              color: Colors.amber.shade700,
+              size: 22,
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Sedang Ditinjau oleh DPL',
-                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.amber.shade800, fontSize: 14)),
+                  Text(
+                    'Sedang Ditinjau oleh DPL',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.amber.shade800,
+                      fontSize: 14,
+                    ),
+                  ),
                   const SizedBox(height: 4),
                   Text(
                     'Logbook sedang dalam proses verifikasi DPL. Anda masih bisa mengubah isinya sebelum DPL merespons.',
-                    style: TextStyle(fontSize: 12, color: Colors.amber.shade800, height: 1.3),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.amber.shade800,
+                      height: 1.3,
+                    ),
                   ),
                 ],
               ),
@@ -1162,18 +1280,32 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.hourglass_top_rounded, color: Colors.blue.shade600, size: 22),
+            Icon(
+              Icons.hourglass_top_rounded,
+              color: Colors.blue.shade600,
+              size: 22,
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Menunggu Persetujuan Ketua',
-                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue.shade800, fontSize: 14)),
+                  Text(
+                    'Menunggu Persetujuan Ketua',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue.shade800,
+                      fontSize: 14,
+                    ),
+                  ),
                   const SizedBox(height: 4),
                   Text(
                     'Logbook sedang menunggu persetujuan Ketua Kelompok. Anda masih bisa melakukan perubahan.',
-                    style: TextStyle(fontSize: 12, color: Colors.blue.shade700, height: 1.3),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.blue.shade700,
+                      height: 1.3,
+                    ),
                   ),
                 ],
               ),
@@ -1189,12 +1321,18 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
       decoration: BoxDecoration(
         color: AppColors.primaryGreen.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.3)),
+        border: Border.all(
+          color: AppColors.primaryGreen.withValues(alpha: 0.3),
+        ),
       ),
       child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.info_outline_rounded, color: AppColors.primaryGreen, size: 24),
+          Icon(
+            Icons.info_outline_rounded,
+            color: AppColors.primaryGreen,
+            size: 24,
+          ),
           SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -1202,12 +1340,20 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
               children: [
                 Text(
                   'Catat Aktivitas Harian',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary, fontSize: 14),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                    fontSize: 14,
+                  ),
                 ),
                 SizedBox(height: 4),
                 Text(
                   'Laporan harian ini akan menjadi dasar penilaian kinerja individu maupun kelompok oleh DPL Anda.',
-                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.3),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                    height: 1.3,
+                  ),
                 ),
               ],
             ),
@@ -1318,21 +1464,38 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
                   Container(
                     width: 40,
                     height: 4,
-                    decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Row(
                       children: [
-                        const Text('Pilih Program Kerja', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                        const Text(
+                          'Pilih Program Kerja',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
                         const Spacer(),
                         GestureDetector(
                           onTap: () => Navigator.pop(ctx),
                           child: Container(
                             padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
-                            child: const Icon(Icons.close, size: 20, color: AppColors.textSecondary),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.close,
+                              size: 20,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
                         ),
                       ],
@@ -1350,19 +1513,25 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
                           id: null,
                           currentSelectedId: _selectedProkerId,
                           title: 'Tidak terkait proker',
-                          description: 'Logbook ini tidak berhubungan dengan program kerja manapun',
+                          description:
+                              'Logbook ini tidak berhubungan dengan program kerja manapun',
                           icon: Icons.link_off_rounded,
-                          onSelect: (id) => setState(() => _selectedProkerId = id),
+                          onSelect: (id) =>
+                              setState(() => _selectedProkerId = id),
                         ),
-                        ...prokerList.map((p) => _buildOptionItem(
-                          ctx: ctx,
-                          id: p['id']?.toString(),
-                          currentSelectedId: _selectedProkerId,
-                          title: p['judul']?.toString() ?? '-',
-                          description: 'Ketuk untuk mengaitkan logbook ini dengan program kerja tersebut',
-                          icon: Icons.work_outline_rounded,
-                          onSelect: (id) => setState(() => _selectedProkerId = id),
-                        )),
+                        ...prokerList.map(
+                          (p) => _buildOptionItem(
+                            ctx: ctx,
+                            id: p['id']?.toString(),
+                            currentSelectedId: _selectedProkerId,
+                            title: p['judul']?.toString() ?? '-',
+                            description:
+                                'Ketuk untuk mengaitkan logbook ini dengan program kerja tersebut',
+                            icon: Icons.work_outline_rounded,
+                            onSelect: (id) =>
+                                setState(() => _selectedProkerId = id),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -1397,21 +1566,38 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
                   Container(
                     width: 40,
                     height: 4,
-                    decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Row(
                       children: [
-                        const Text('Pilih Fasilitas Warga', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                        const Text(
+                          'Pilih Fasilitas Warga',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
                         const Spacer(),
                         GestureDetector(
                           onTap: () => Navigator.pop(ctx),
                           child: Container(
                             padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
-                            child: const Icon(Icons.close, size: 20, color: AppColors.textSecondary),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.close,
+                              size: 20,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
                         ),
                       ],
@@ -1429,19 +1615,26 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
                           id: null,
                           currentSelectedId: _selectedFasilitasId,
                           title: 'Tidak terkait fasilitas',
-                          description: 'Logbook ini tidak berhubungan dengan fasilitas warga manapun',
+                          description:
+                              'Logbook ini tidak berhubungan dengan fasilitas warga manapun',
                           icon: Icons.link_off_rounded,
-                          onSelect: (id) => setState(() => _selectedFasilitasId = id),
+                          onSelect: (id) =>
+                              setState(() => _selectedFasilitasId = id),
                         ),
-                        ...fasilitasList.map((f) => _buildOptionItem(
-                          ctx: ctx,
-                          id: f['id']?.toString(),
-                          currentSelectedId: _selectedFasilitasId,
-                          title: f['nama']?.toString() ?? '-',
-                          description: f['deskripsi']?.toString() ?? 'Ketuk untuk mengaitkan dengan fasilitas ini',
-                          icon: Icons.eco_rounded,
-                          onSelect: (id) => setState(() => _selectedFasilitasId = id),
-                        )),
+                        ...fasilitasList.map(
+                          (f) => _buildOptionItem(
+                            ctx: ctx,
+                            id: f['id']?.toString(),
+                            currentSelectedId: _selectedFasilitasId,
+                            title: f['nama']?.toString() ?? '-',
+                            description:
+                                f['deskripsi']?.toString() ??
+                                'Ketuk untuk mengaitkan dengan fasilitas ini',
+                            icon: Icons.eco_rounded,
+                            onSelect: (id) =>
+                                setState(() => _selectedFasilitasId = id),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -1477,7 +1670,9 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: isSelected ? const Color(0xFFE8F5E9) : const Color(0xFFF5F7FA),
+                color: isSelected
+                    ? const Color(0xFFE8F5E9)
+                    : const Color(0xFFF5F7FA),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
@@ -1519,7 +1714,9 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: isSelected ? AppColors.primaryGreen : Colors.grey.shade300,
+                  color: isSelected
+                      ? AppColors.primaryGreen
+                      : Colors.grey.shade300,
                   width: isSelected ? 6 : 1,
                 ),
               ),

@@ -45,28 +45,49 @@ class PemanfaatanProgramEntity extends Equatable {
     final rwObj = json['rw'] as Map<String, dynamic>?;
     final kelObj = rwObj?['kelurahan'] as Map<String, dynamic>?;
 
-    final bahanMasuk = (json['jumlahBahanMasukKg'] ?? json['volumeBahanBaku'] ?? 0);
+    final bahanMasuk =
+        (json['jumlahBahanMasukKg'] ?? json['volumeBahanBaku'] ?? 0);
     final hasilPanen = (json['jumlahHasilKg'] ?? json['hasil'] ?? 0);
 
     return PemanfaatanProgramEntity(
       id: json['id']?.toString() ?? '',
-      namaProgram: json['namaProgram']?.toString() ?? json['program']?.toString() ?? 'Program Pengolahan',
-      jenisProgram: json['jenisProgram']?.toString() ?? json['teknologi']?.toString() ?? 'Kompos',
+      namaProgram:
+          json['namaProgram']?.toString() ??
+          json['program']?.toString() ??
+          'Program Pengolahan',
+      jenisProgram:
+          json['jenisProgram']?.toString() ??
+          json['teknologi']?.toString() ??
+          'Kompos',
       kategoriBahan: json['kategoriBahan']?.toString() ?? 'ORGANIK',
-      jumlahBahanMasukKg: (bahanMasuk is num) ? bahanMasuk.toDouble() : double.tryParse(bahanMasuk.toString()) ?? 0.0,
-      jumlahHasilKg: (hasilPanen is num) ? hasilPanen.toDouble() : double.tryParse(hasilPanen.toString()) ?? 0.0,
-      unitHasil: json['unitHasil']?.toString() ?? json['unitBahanBaku']?.toString() ?? 'Kg',
+      jumlahBahanMasukKg: (bahanMasuk is num)
+          ? bahanMasuk.toDouble()
+          : double.tryParse(bahanMasuk.toString()) ?? 0.0,
+      jumlahHasilKg: (hasilPanen is num)
+          ? hasilPanen.toDouble()
+          : double.tryParse(hasilPanen.toString()) ?? 0.0,
+      unitHasil:
+          json['unitHasil']?.toString() ??
+          json['unitBahanBaku']?.toString() ??
+          'Kg',
       lokasiFasilitas: json['lokasiFasilitas']?.toString(),
       penanggungJawab: json['penanggungJawab']?.toString(),
       targetPenerimaManfaat: json['targetPenerimaManfaat']?.toString(),
-      nilaiEkonomiRp: json['nilaiEkonomiRp'] != null ? (json['nilaiEkonomiRp'] as num).toInt() : null,
+      nilaiEkonomiRp: json['nilaiEkonomiRp'] != null
+          ? (json['nilaiEkonomiRp'] as num).toInt()
+          : null,
       status: json['status']?.toString() ?? 'DISTRIBUSI',
       tanggalPencatatan: json['tanggalPencatatan'] != null
-          ? DateTime.tryParse(json['tanggalPencatatan'].toString()) ?? DateTime.now()
+          ? DateTime.tryParse(json['tanggalPencatatan'].toString()) ??
+                DateTime.now()
           : DateTime.now(),
       fotoDokumentasiUrl: json['fotoDokumentasiUrl']?.toString(),
-      rwId: json['rwId'] is int ? json['rwId'] : int.tryParse(json['rwId']?.toString() ?? '0') ?? 0,
-      rwName: rwObj?['name']?.toString() ?? (json['rwId'] != null ? 'RW ${json['rwId']}' : null),
+      rwId: json['rwId'] is int
+          ? json['rwId']
+          : int.tryParse(json['rwId']?.toString() ?? '0') ?? 0,
+      rwName:
+          rwObj?['name']?.toString() ??
+          (json['rwId'] != null ? 'RW ${json['rwId']}' : null),
       kelurahanName: kelObj?['name']?.toString(),
     );
   }
@@ -92,7 +113,13 @@ class PemanfaatanProgramEntity extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, namaProgram, jenisProgram, jumlahHasilKg, status];
+  List<Object?> get props => [
+    id,
+    namaProgram,
+    jenisProgram,
+    jumlahHasilKg,
+    status,
+  ];
 }
 
 /// Entitas kritik, saran, dan evaluasi kepuasan pemanfaatan warga
@@ -143,11 +170,16 @@ class FeedbackPemanfaatanEntity extends Equatable {
     return FeedbackPemanfaatanEntity(
       id: json['id']?.toString() ?? '',
       userId: json['userId']?.toString() ?? '',
-      wargaNama: json['wargaNama']?.toString() ?? userObj?['name']?.toString() ?? 'Warga',
+      wargaNama:
+          json['wargaNama']?.toString() ??
+          userObj?['name']?.toString() ??
+          'Warga',
       kategori: json['kategori']?.toString() ?? 'Pengolahan Kompos',
       judul: json['judul']?.toString() ?? '',
       isiKritikSaran: json['isiKritikSaran']?.toString() ?? '',
-      rating: ratingVal is int ? ratingVal : int.tryParse(ratingVal?.toString() ?? '5') ?? 5,
+      rating: ratingVal is int
+          ? ratingVal
+          : int.tryParse(ratingVal?.toString() ?? '5') ?? 5,
       status: json['status']?.toString() ?? 'MENUNGGU',
       tanggapan: json['tanggapan']?.toString(),
       ditanggapiOleh: json['ditanggapiOleh']?.toString(),
@@ -155,8 +187,12 @@ class FeedbackPemanfaatanEntity extends Equatable {
           ? DateTime.tryParse(json['ditanggapiPada'].toString())
           : null,
       fotoBuktiUrl: json['fotoBuktiUrl']?.toString(),
-      rwId: json['rwId'] is int ? json['rwId'] : int.tryParse(json['rwId']?.toString() ?? ''),
-      rwName: rwObj?['name']?.toString() ?? (json['rwId'] != null ? 'RW ${json['rwId']}' : null),
+      rwId: json['rwId'] is int
+          ? json['rwId']
+          : int.tryParse(json['rwId']?.toString() ?? ''),
+      rwName:
+          rwObj?['name']?.toString() ??
+          (json['rwId'] != null ? 'RW ${json['rwId']}' : null),
       kelurahanName: kelObj?['name']?.toString(),
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()

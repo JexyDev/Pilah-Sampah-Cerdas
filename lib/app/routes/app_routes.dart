@@ -34,7 +34,8 @@ class AppRoutes {
   static const String riwayatPetugasPemilahan = '/riwayat-petugas-pemilahan';
   static const String pemanfaatanSampah = '/pemanfaatan-sampah';
   static const String petugasPemilahan = '/petugas-pemilahan';
-  static const String petugasPemilahanGantiPassword = '/petugas-pemilahan/ganti-password';
+  static const String petugasPemilahanGantiPassword =
+      '/petugas-pemilahan/ganti-password';
   static const String editProfilMahasiswa = '/mahasiswa/edit-profil';
   static const String pengajuanIzin = '/mahasiswa/pengajuan-izin';
   static const String mahasiswaNotifikasi = '/mahasiswa/notifikasi';
@@ -44,7 +45,8 @@ class AppRoutes {
   static const String riwayatKkn = '/mahasiswa/riwayat';
   static const String registerPosko = '/mahasiswa/posko/register';
   static const String registerFasilitas = '/mahasiswa/fasilitas/register';
-  static const String pengajuanProgramKerja = '/mahasiswa/program-kerja/pengajuan';
+  static const String pengajuanProgramKerja =
+      '/mahasiswa/program-kerja/pengajuan';
   static const String riwayatProgramKerja = '/mahasiswa/program-kerja/riwayat';
   static const String riwayatPemanfaatan = '/mahasiswa/pemanfaatan/riwayat';
   static const String logbookPemanfaatan = '/mahasiswa/pemanfaatan/logbook';
@@ -55,9 +57,9 @@ class AppRoutes {
 
   // Halaman Data & Edit Logbook / Proker
   static const String dataLogbookHarian = '/mahasiswa/logbook-kkn/data';
-  static const String editLogbookKkn    = '/mahasiswa/logbook-kkn/edit';
-  static const String dataProker        = '/mahasiswa/program-kerja/data';
-  static const String editProgramKerja  = '/mahasiswa/program-kerja/edit';
-  static const String prokerDetail      = '/mahasiswa/program-kerja/detail';
+  static const String editLogbookKkn = '/mahasiswa/logbook-kkn/edit';
+  static const String dataProker = '/mahasiswa/program-kerja/data';
+  static const String editProgramKerja = '/mahasiswa/program-kerja/edit';
+  static const String prokerDetail = '/mahasiswa/program-kerja/detail';
+  static const String kelompokStikerQr = '/mahasiswa/kelompok-stiker-qr';
 }
-

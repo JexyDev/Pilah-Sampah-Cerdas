@@ -37,38 +37,51 @@ class KknDashboardData extends Equatable {
     final user = json['user'] as Map<String, dynamic>? ?? {};
     final mhs = json['mahasiswa'] as Map<String, dynamic>? ?? {};
     final stats = json['stats'] as Map<String, dynamic>? ?? {};
-    
-    final pointVal = (json['contributionPoints'] ??
-            json['points'] ??
-            json['pointKkn'] ??
-            json['totalPoints'] ??
-            stats['contributionPoints'] ??
-            stats['points'] ??
-            stats['pointKkn'] ??
-            stats['totalPoints'] ??
-            0) as num?;
 
-    final totalBins = (json['totalRegisteredBins'] ??
-            json['registeredBins'] ??
-            stats['totalRegisteredBins'] ??
-            stats['registeredBins'] ??
-            0) as num?;
+    final pointVal =
+        (json['contributionPoints'] ??
+                json['points'] ??
+                json['pointKkn'] ??
+                json['totalPoints'] ??
+                stats['contributionPoints'] ??
+                stats['points'] ??
+                stats['pointKkn'] ??
+                stats['totalPoints'] ??
+                0)
+            as num?;
 
-    final limit = (json['assignmentLimit'] ??
-            stats['assignmentLimit'] ??
-            0) as num?;
+    final totalBins =
+        (json['totalRegisteredBins'] ??
+                json['registeredBins'] ??
+                stats['totalRegisteredBins'] ??
+                stats['registeredBins'] ??
+                0)
+            as num?;
 
-    final quota = (json['remainingQuota'] ??
-            stats['remainingQuota'] ??
-            0) as num?;
+    final limit =
+        (json['assignmentLimit'] ?? stats['assignmentLimit'] ?? 0) as num?;
 
-    final progress = (json['progressPercentage'] ??
-            stats['progressPercentage'] ??
-            0.0) as num?;
+    final quota =
+        (json['remainingQuota'] ?? stats['remainingQuota'] ?? 0) as num?;
+
+    final progress =
+        (json['progressPercentage'] ?? stats['progressPercentage'] ?? 0.0)
+            as num?;
 
     return KknDashboardData(
-      nim: student['nim']?.toString() ?? mhs['nim']?.toString() ?? user['nim']?.toString() ?? json['nim']?.toString() ?? '',
-      jurusan: student['jurusan']?.toString() ?? mhs['jurusan']?.toString() ?? student['programStudi']?.toString() ?? user['programStudi']?.toString() ?? json['jurusan']?.toString() ?? '',
+      nim:
+          student['nim']?.toString() ??
+          mhs['nim']?.toString() ??
+          user['nim']?.toString() ??
+          json['nim']?.toString() ??
+          '',
+      jurusan:
+          student['jurusan']?.toString() ??
+          mhs['jurusan']?.toString() ??
+          student['programStudi']?.toString() ??
+          user['programStudi']?.toString() ??
+          json['jurusan']?.toString() ??
+          '',
       totalRegisteredBins: totalBins?.toInt() ?? 0,
       assignmentLimit: limit?.toInt() ?? 0,
       remainingQuota: quota?.toInt() ?? 0,
@@ -107,32 +120,43 @@ class WasteLogEntry extends Equatable {
     if (json['category'] is Map) {
       extractedCategory = json['category']['name']?.toString() ?? 'UNKNOWN';
     } else {
-      extractedCategory = json['category']?.toString() ?? 
-                          json['kategori']?.toString() ?? 
-                          json['wasteCategory']?.toString() ?? 
-                          json['wasteType']?.toString() ??
-                          json['type']?.toString() ?? 
-                          json['binType']?.toString() ?? 
-                          json['kategoriAktual']?.toString() ?? 
-                          json['kategori_aktual']?.toString() ?? 
-                          json['hasilKlasifikasiAi']?.toString() ?? 
-                          json['hasil_klasifikasi_ai']?.toString() ?? 
-                          'UNKNOWN';
+      extractedCategory =
+          json['category']?.toString() ??
+          json['kategori']?.toString() ??
+          json['wasteCategory']?.toString() ??
+          json['wasteType']?.toString() ??
+          json['type']?.toString() ??
+          json['binType']?.toString() ??
+          json['kategoriAktual']?.toString() ??
+          json['kategori_aktual']?.toString() ??
+          json['hasilKlasifikasiAi']?.toString() ??
+          json['hasil_klasifikasi_ai']?.toString() ??
+          'UNKNOWN';
     }
 
     // Ubah hasilKlasifikasiAi "organik" / "anorganik" menjadi huruf kapital awal agar konsisten
     if (extractedCategory.toLowerCase() == 'organik') {
       extractedCategory = 'Organik';
-    } else if (extractedCategory.toLowerCase() == 'anorganik' || extractedCategory.toLowerCase() == 'non_organic' || extractedCategory.toLowerCase() == 'non organik') {
+    } else if (extractedCategory.toLowerCase() == 'anorganik' ||
+        extractedCategory.toLowerCase() == 'non_organic' ||
+        extractedCategory.toLowerCase() == 'non organik') {
       extractedCategory = 'Non Organik';
     }
 
     return WasteLogEntry(
-      weightKg: (json['weightKg'] as num?)?.toDouble() ?? (json['berat'] as num?)?.toDouble() ?? 0.0,
+      weightKg:
+          (json['weightKg'] as num?)?.toDouble() ??
+          (json['berat'] as num?)?.toDouble() ??
+          0.0,
       category: extractedCategory,
-      aiConfidence: (json['aiConfidence'] as num?)?.toDouble() ?? (json['confidenceAi'] as num?)?.toDouble() ?? 0.0,
+      aiConfidence:
+          (json['aiConfidence'] as num?)?.toDouble() ??
+          (json['confidenceAi'] as num?)?.toDouble() ??
+          0.0,
       discrepancyStatus: json['discrepancyStatus']?.toString() ?? 'NONE',
-      createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '') ?? DateTime.now(),
+      createdAt:
+          DateTime.tryParse(json['createdAt']?.toString() ?? '') ??
+          DateTime.now(),
     );
   }
 
@@ -194,14 +218,17 @@ class WargaDampingan extends Equatable {
   int get totalActivities => backendTotalActivities ?? recentLogs.length;
 
   /// Jumlah pemilahan yang benar
-  int get correctCount => backendCorrectCount ?? recentLogs.where((l) => l.isCorrect).length;
+  int get correctCount =>
+      backendCorrectCount ?? recentLogs.where((l) => l.isCorrect).length;
 
   /// Jumlah pemilahan yang salah
-  int get incorrectCount => backendIncorrectCount ?? recentLogs.where((l) => !l.isCorrect).length;
+  int get incorrectCount =>
+      backendIncorrectCount ?? recentLogs.where((l) => !l.isCorrect).length;
 
   /// Persentase pemilahan benar (0–100)
   double get correctPercentage =>
-      apiCorrectPercentage ?? (totalActivities > 0 ? (correctCount / totalActivities) * 100 : 0.0);
+      apiCorrectPercentage ??
+      (totalActivities > 0 ? (correctCount / totalActivities) * 100 : 0.0);
 
   /// Persentase kesalahan (0–100)
   double get errorPercentage =>
@@ -218,13 +245,16 @@ class WargaDampingan extends Equatable {
   }
 
   factory WargaDampingan.fromJson(Map<String, dynamic> json) {
-    final logs = (json['recentLogs'] as List<dynamic>?)
+    final logs =
+        (json['recentLogs'] as List<dynamic>?)
             ?.map((e) => WasteLogEntry.fromJson(e as Map<String, dynamic>))
             .toList() ??
         [];
 
     String extractedBinId = json['binId']?.toString() ?? '';
-    if (extractedBinId.isEmpty && json['bin'] != null && json['bin']['qrCode'] != null) {
+    if (extractedBinId.isEmpty &&
+        json['bin'] != null &&
+        json['bin']['qrCode'] != null) {
       extractedBinId = json['bin']['qrCode'].toString();
     }
     if (extractedBinId.isEmpty) {
@@ -243,7 +273,10 @@ class WargaDampingan extends Equatable {
       for (final c in candidates) {
         if (c != null) {
           final str = c.toString().trim();
-          if (str.isNotEmpty && str.toLowerCase() != 'null' && str.toLowerCase() != 'undefined' && str != '0') {
+          if (str.isNotEmpty &&
+              str.toLowerCase() != 'null' &&
+              str.toLowerCase() != 'undefined' &&
+              str != '0') {
             return str;
           }
         }
@@ -266,14 +299,18 @@ class WargaDampingan extends Equatable {
         json['user']?['mahasiswaName'],
         json['user']?['didaftarkanOlehNama'],
         json['user']?['didaftarkanOleh'],
-        if (json['user']?['pendamping'] is Map) json['user']['pendamping']['name'],
-        if (json['user']?['mahasiswa'] is Map) json['user']['mahasiswa']['name'],
+        if (json['user']?['pendamping'] is Map)
+          json['user']['pendamping']['name'],
+        if (json['user']?['mahasiswa'] is Map)
+          json['user']['mahasiswa']['name'],
         if (json['user']?['student'] is Map) json['user']['student']['name'],
       ];
       for (final c in candidates) {
         if (c != null) {
           final str = c.toString().trim();
-          if (str.isNotEmpty && str.toLowerCase() != 'null' && str.toLowerCase() != 'undefined') {
+          if (str.isNotEmpty &&
+              str.toLowerCase() != 'null' &&
+              str.toLowerCase() != 'undefined') {
             return str;
           }
         }
@@ -281,13 +318,25 @@ class WargaDampingan extends Equatable {
       return '';
     }
 
-    final rawStatus = json['status']?.toString() ?? json['statusPendamping']?.toString() ?? json['status_pendamping']?.toString() ?? '';
-    final extractedWargaId = json['wargaId']?.toString() ?? json['id']?.toString() ?? '';
+    final rawStatus =
+        json['status']?.toString() ??
+        json['statusPendamping']?.toString() ??
+        json['status_pendamping']?.toString() ??
+        '';
+    final extractedWargaId =
+        json['wargaId']?.toString() ?? json['id']?.toString() ?? '';
 
     String parsedKecamatan = json['kecamatan']?.toString() ?? '';
     String parsedKelurahan = json['kelurahan']?.toString() ?? '';
-    String parsedRw = json['rw']?.toString() ?? json['rt_rw']?.toString() ?? json['rtRw']?.toString() ?? '';
-    String rawAddr = json['address']?.toString() ?? json['alamat']?.toString() ?? 'Alamat tidak diketahui';
+    String parsedRw =
+        json['rw']?.toString() ??
+        json['rt_rw']?.toString() ??
+        json['rtRw']?.toString() ??
+        '';
+    String rawAddr =
+        json['address']?.toString() ??
+        json['alamat']?.toString() ??
+        'Alamat tidak diketahui';
 
     // Fallback parsing from address string: "RW 01, Sadang Serang" or "Jl. A, RW 05, Kel. B"
     if (parsedRw.isEmpty && rawAddr.contains('RW')) {
@@ -316,28 +365,48 @@ class WargaDampingan extends Equatable {
         json['binOrganikQrCode'],
         json['organikQr'],
         json['organik_qr'],
-        if (json['binOrganik'] is Map) json['binOrganik']['qrCode'] ?? json['binOrganik']['qrSerial'] ?? json['binOrganik']['id'],
+        if (json['binOrganik'] is Map)
+          json['binOrganik']['qrCode'] ??
+              json['binOrganik']['qrSerial'] ??
+              json['binOrganik']['id'],
         if (json['binOrganik'] is String) json['binOrganik'],
-        if (json['organikBin'] is Map) json['organikBin']['qrCode'] ?? json['organikBin']['qrSerial'] ?? json['organikBin']['id'],
+        if (json['organikBin'] is Map)
+          json['organikBin']['qrCode'] ??
+              json['organikBin']['qrSerial'] ??
+              json['organikBin']['id'],
         if (json['organikBin'] is String) json['organikBin'],
         if (json['user'] is Map) ...[
           json['user']['binOrganikId'],
           json['user']['bin_organik_id'],
-          if (json['user']['binOrganik'] is Map) json['user']['binOrganik']['qrCode'] ?? json['user']['binOrganik']['qrSerial'] ?? json['user']['binOrganik']['id'],
+          if (json['user']['binOrganik'] is Map)
+            json['user']['binOrganik']['qrCode'] ??
+                json['user']['binOrganik']['qrSerial'] ??
+                json['user']['binOrganik']['id'],
           if (json['user']['binOrganik'] is String) json['user']['binOrganik'],
         ],
       ];
       for (final c in candidates) {
-        if (c != null && c.toString().trim().isNotEmpty && c.toString().toLowerCase() != 'null') {
+        if (c != null &&
+            c.toString().trim().isNotEmpty &&
+            c.toString().toLowerCase() != 'null') {
           return c.toString().trim();
         }
       }
-      final binsList = json['bins'] ?? json['user']?['bins'] ?? json['user']?['tempatSampah'];
+      final binsList =
+          json['bins'] ??
+          json['user']?['bins'] ??
+          json['user']?['tempatSampah'];
       if (binsList is List) {
         for (final b in binsList) {
           if (b is Map) {
-            final type = (b['binType'] ?? b['type'] ?? b['kategori'])?.toString().toUpperCase() ?? '';
-            if (type.contains('ORGANIC') && !type.contains('NON') && !type.contains('AN')) {
+            final type =
+                (b['binType'] ?? b['type'] ?? b['kategori'])
+                    ?.toString()
+                    .toUpperCase() ??
+                '';
+            if (type.contains('ORGANIC') &&
+                !type.contains('NON') &&
+                !type.contains('AN')) {
               final qr = (b['qrSerial'] ?? b['qrCode'] ?? b['id'])?.toString();
               if (qr != null && qr.isNotEmpty) return qr;
             }
@@ -361,31 +430,61 @@ class WargaDampingan extends Equatable {
         json['anorganikQr'],
         json['anorganik_qr'],
         json['anorganicQr'],
-        if (json['binAnorganik'] is Map) json['binAnorganik']['qrCode'] ?? json['binAnorganik']['qrSerial'] ?? json['binAnorganik']['id'],
+        if (json['binAnorganik'] is Map)
+          json['binAnorganik']['qrCode'] ??
+              json['binAnorganik']['qrSerial'] ??
+              json['binAnorganik']['id'],
         if (json['binAnorganik'] is String) json['binAnorganik'],
-        if (json['anorganikBin'] is Map) json['anorganikBin']['qrCode'] ?? json['anorganikBin']['qrSerial'] ?? json['anorganikBin']['id'],
+        if (json['anorganikBin'] is Map)
+          json['anorganikBin']['qrCode'] ??
+              json['anorganikBin']['qrSerial'] ??
+              json['anorganikBin']['id'],
         if (json['anorganikBin'] is String) json['anorganikBin'],
-        if (json['binAnorganic'] is Map) json['binAnorganic']['qrCode'] ?? json['binAnorganic']['qrSerial'] ?? json['binAnorganic']['id'],
-        if (json['binNonOrganic'] is Map) json['binNonOrganic']['qrCode'] ?? json['binNonOrganic']['qrSerial'] ?? json['binNonOrganic']['id'],
-        if (json['binNonOrganik'] is Map) json['binNonOrganik']['qrCode'] ?? json['binNonOrganik']['qrSerial'] ?? json['binNonOrganik']['id'],
+        if (json['binAnorganic'] is Map)
+          json['binAnorganic']['qrCode'] ??
+              json['binAnorganic']['qrSerial'] ??
+              json['binAnorganic']['id'],
+        if (json['binNonOrganic'] is Map)
+          json['binNonOrganic']['qrCode'] ??
+              json['binNonOrganic']['qrSerial'] ??
+              json['binNonOrganic']['id'],
+        if (json['binNonOrganik'] is Map)
+          json['binNonOrganik']['qrCode'] ??
+              json['binNonOrganik']['qrSerial'] ??
+              json['binNonOrganik']['id'],
         if (json['user'] is Map) ...[
           json['user']['binAnorganikId'],
           json['user']['bin_anorganik_id'],
-          if (json['user']['binAnorganik'] is Map) json['user']['binAnorganik']['qrCode'] ?? json['user']['binAnorganik']['qrSerial'] ?? json['user']['binAnorganik']['id'],
-          if (json['user']['binAnorganik'] is String) json['user']['binAnorganik'],
+          if (json['user']['binAnorganik'] is Map)
+            json['user']['binAnorganik']['qrCode'] ??
+                json['user']['binAnorganik']['qrSerial'] ??
+                json['user']['binAnorganik']['id'],
+          if (json['user']['binAnorganik'] is String)
+            json['user']['binAnorganik'],
         ],
       ];
       for (final c in candidates) {
-        if (c != null && c.toString().trim().isNotEmpty && c.toString().toLowerCase() != 'null') {
+        if (c != null &&
+            c.toString().trim().isNotEmpty &&
+            c.toString().toLowerCase() != 'null') {
           return c.toString().trim();
         }
       }
-      final binsList = json['bins'] ?? json['user']?['bins'] ?? json['user']?['tempatSampah'];
+      final binsList =
+          json['bins'] ??
+          json['user']?['bins'] ??
+          json['user']?['tempatSampah'];
       if (binsList is List) {
         for (final b in binsList) {
           if (b is Map) {
-            final type = (b['binType'] ?? b['type'] ?? b['kategori'])?.toString().toUpperCase() ?? '';
-            if (type.contains('NON') || type.contains('ANORGANIK') || type.contains('ANORGANIC')) {
+            final type =
+                (b['binType'] ?? b['type'] ?? b['kategori'])
+                    ?.toString()
+                    .toUpperCase() ??
+                '';
+            if (type.contains('NON') ||
+                type.contains('ANORGANIK') ||
+                type.contains('ANORGANIC')) {
               final qr = (b['qrSerial'] ?? b['qrCode'] ?? b['id'])?.toString();
               if (qr != null && qr.isNotEmpty) return qr;
             }
@@ -399,8 +498,13 @@ class WargaDampingan extends Equatable {
     String? parsedBinAnorganikId = extractBinAnorganikId();
 
     // Fallback: If binId contains multiple IDs separated by comma/slash/space
-    if ((parsedBinOrganikId == null || parsedBinAnorganikId == null) && extractedBinId.contains(RegExp(r'[,/|]'))) {
-      final parts = extractedBinId.split(RegExp(r'[,/|]')).map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+    if ((parsedBinOrganikId == null || parsedBinAnorganikId == null) &&
+        extractedBinId.contains(RegExp(r'[,/|]'))) {
+      final parts = extractedBinId
+          .split(RegExp(r'[,/|]'))
+          .map((s) => s.trim())
+          .where((s) => s.isNotEmpty)
+          .toList();
       if (parts.length >= 2) {
         parsedBinOrganikId ??= parts[0];
         parsedBinAnorganikId ??= parts[1];
@@ -412,7 +516,11 @@ class WargaDampingan extends Equatable {
       binId: extractedBinId,
       binOrganikId: parsedBinOrganikId,
       binAnorganikId: parsedBinAnorganikId,
-      wargaName: json['wargaName']?.toString() ?? json['name']?.toString() ?? json['warga_name']?.toString() ?? 'Warga',
+      wargaName:
+          json['wargaName']?.toString() ??
+          json['name']?.toString() ??
+          json['warga_name']?.toString() ??
+          'Warga',
       address: rawAddr,
       kecamatan: parsedKecamatan,
       kelurahan: parsedKelurahan,
@@ -421,30 +529,54 @@ class WargaDampingan extends Equatable {
       pendampingName: extractPendampingName(),
       status: rawStatus.isEmpty ? 'Aktif' : rawStatus,
       recentLogs: logs,
-      isActivated: (json['isActivated'] == true) ||
+      isActivated:
+          (json['isActivated'] == true) ||
           (json['is_activated'] == true) ||
           (json['status']?.toString().toUpperCase() == 'ACTIVATED') ||
           (json['status'] == 'ACTIVE_BOUND') ||
-          (json['binOrganikId'] != null && json['binOrganikId'].toString().trim().isNotEmpty),
-      role: json['role']?.toString().toUpperCase() ?? json['user']?['role']?.toString().toUpperCase() ?? 'WARGA',
-      totalPoints: (json['totalPoints'] as num?)?.toInt() ?? 
-                   (json['totalPoin'] as num?)?.toInt() ?? 
-                   (json['poin'] as num?)?.toInt() ?? 
-                   (json['user']?['totalPoints'] as num?)?.toInt() ??
-                   (json['user']?['poin'] as num?)?.toInt() ?? 
-                   0,
-      totalKg: (json['totalKg'] as num?)?.toDouble() ?? 
-               (json['totalWeightKg'] as num?)?.toDouble() ?? 
-               0.0,
-      apiCorrectPercentage: (json['complianceScore'] as num?)?.toDouble() ?? (json['correctPercentage'] as num?)?.toDouble(),
-      backendTotalActivities: (json['totalActivities'] as num?)?.toInt() ?? (json['totalSetoran'] as num?)?.toInt(),
-      backendCorrectCount: (json['correctCount'] as num?)?.toInt() ?? (json['benarCount'] as num?)?.toInt(),
-      backendIncorrectCount: (json['incorrectCount'] as num?)?.toInt() ?? (json['salahCount'] as num?)?.toInt(),
+          (json['binOrganikId'] != null &&
+              json['binOrganikId'].toString().trim().isNotEmpty),
+      role:
+          json['role']?.toString().toUpperCase() ??
+          json['user']?['role']?.toString().toUpperCase() ??
+          'WARGA',
+      totalPoints:
+          (json['totalPoints'] as num?)?.toInt() ??
+          (json['totalPoin'] as num?)?.toInt() ??
+          (json['poin'] as num?)?.toInt() ??
+          (json['user']?['totalPoints'] as num?)?.toInt() ??
+          (json['user']?['poin'] as num?)?.toInt() ??
+          0,
+      totalKg:
+          (json['totalKg'] as num?)?.toDouble() ??
+          (json['totalWeightKg'] as num?)?.toDouble() ??
+          0.0,
+      apiCorrectPercentage:
+          (json['complianceScore'] as num?)?.toDouble() ??
+          (json['correctPercentage'] as num?)?.toDouble(),
+      backendTotalActivities:
+          (json['totalActivities'] as num?)?.toInt() ??
+          (json['totalSetoran'] as num?)?.toInt(),
+      backendCorrectCount:
+          (json['correctCount'] as num?)?.toInt() ??
+          (json['benarCount'] as num?)?.toInt(),
+      backendIncorrectCount:
+          (json['incorrectCount'] as num?)?.toInt() ??
+          (json['salahCount'] as num?)?.toInt(),
     );
   }
 
   @override
-  List<Object?> get props => [wargaId, binId, wargaName, totalPoints, totalKg, mahasiswaId, pendampingName, status];
+  List<Object?> get props => [
+    wargaId,
+    binId,
+    wargaName,
+    totalPoints,
+    totalKg,
+    mahasiswaId,
+    pendampingName,
+    status,
+  ];
 }
 
 /// ─────────────────────────────────────────────────────────────────────────────
@@ -501,17 +633,18 @@ class RegisterWargaRequest {
   final int? familySize;
 
   Map<String, dynamic> toJson() {
-    final map = <String, dynamic>{
-      'phone': phone,
-      'password': password,
-    };
+    final map = <String, dynamic>{'phone': phone, 'password': password};
     if (name != null && name!.isNotEmpty) map['name'] = name;
     if (address != null && address!.isNotEmpty) map['address'] = address;
     if (qrCode != null && qrCode!.isNotEmpty) map['qrCode'] = qrCode;
     if (rwId != null && rwId!.isNotEmpty) map['rwId'] = rwId;
     if (rw != null && rw!.isNotEmpty) map['rw'] = rw;
-    if (kecamatan != null && kecamatan!.isNotEmpty) map['kecamatan'] = kecamatan;
-    if (kelurahan != null && kelurahan!.isNotEmpty) map['kelurahan'] = kelurahan;
+    if (kecamatan != null && kecamatan!.isNotEmpty) {
+      map['kecamatan'] = kecamatan;
+    }
+    if (kelurahan != null && kelurahan!.isNotEmpty) {
+      map['kelurahan'] = kelurahan;
+    }
     if (latitude != null) map['latitude'] = latitude;
     if (longitude != null) map['longitude'] = longitude;
     if (familySize != null) map['familySize'] = familySize;
@@ -573,7 +706,8 @@ class DplEntity extends Equatable {
   final List<String> kelompokBimbinganIds;
 
   /// Kode Unik DPL: DPL-[NIP]-[KODE_KELOMPOK] (A.9)
-  String get uniqueCode => 'DPL-$nip-${kelompokBimbinganIds.isNotEmpty ? kelompokBimbinganIds.first : "K01"}';
+  String get uniqueCode =>
+      'DPL-$nip-${kelompokBimbinganIds.isNotEmpty ? kelompokBimbinganIds.first : "K01"}';
 
   @override
   List<Object?> get props => [nip];
@@ -657,14 +791,32 @@ class KelompokMemberData extends Equatable {
       name: json['name']?.toString() ?? json['nama']?.toString() ?? 'Mahasiswa',
       jurusan: json['jurusan']?.toString() ?? json['prodi']?.toString() ?? '',
       fakultas: json['fakultas']?.toString() ?? '',
-      individualPoints: (json['individualPoints'] as num?)?.toInt() ?? (json['points'] as num?)?.toInt() ?? 0,
-      isLeader: json['isLeader'] as bool? ?? (json['role']?.toString().toUpperCase() == 'KETUA'),
-      statusPenugasanRw: json['statusPenugasanRw']?.toString() ?? json['assignedRw']?.toString() ?? json['rw']?.toString() ?? '-',
+      individualPoints:
+          (json['individualPoints'] as num?)?.toInt() ??
+          (json['points'] as num?)?.toInt() ??
+          0,
+      isLeader:
+          json['isLeader'] as bool? ??
+          (json['role']?.toString().toUpperCase() == 'KETUA'),
+      statusPenugasanRw:
+          json['statusPenugasanRw']?.toString() ??
+          json['assignedRw']?.toString() ??
+          json['rw']?.toString() ??
+          '-',
     );
   }
 
   @override
-  List<Object?> get props => [userId, nim, individualPoints, fakultas, isLeader, name, jurusan, statusPenugasanRw];
+  List<Object?> get props => [
+    userId,
+    nim,
+    individualPoints,
+    fakultas,
+    isLeader,
+    name,
+    jurusan,
+    statusPenugasanRw,
+  ];
 
   KelompokMemberData copyWith({
     String? userId,
@@ -721,20 +873,25 @@ class KelompokKknData extends Equatable {
   }
 
   factory KelompokKknData.fromJson(Map<String, dynamic> json) {
-    final membersList = (json['members'] as List<dynamic>? ?? json['anggota'] as List<dynamic>?)
+    final membersList =
+        (json['members'] as List<dynamic>? ?? json['anggota'] as List<dynamic>?)
             ?.map((e) => KelompokMemberData.fromJson(e as Map<String, dynamic>))
             .toList() ??
         [];
 
     String dpl = '';
-    
+
     // 1. Check if 'dpl' is an object containing the user's details
     if (json['dpl'] is Map) {
-      dpl = json['dpl']['name']?.toString() ?? json['dpl']['nama']?.toString() ?? '';
-    } 
+      dpl =
+          json['dpl']['name']?.toString() ??
+          json['dpl']['nama']?.toString() ??
+          '';
+    }
     // 2. Fallback to direct string properties
     if (dpl.isEmpty) {
-      dpl = (json['dpl'] is String ? json['dpl'] : null) ??
+      dpl =
+          (json['dpl'] is String ? json['dpl'] : null) ??
           json['dplNamaMentah']?.toString() ??
           json['dpl_nama_mentah']?.toString() ??
           json['dosenPembimbing']?.toString() ??
@@ -747,50 +904,84 @@ class KelompokKknData extends Equatable {
     }
     // 3. Check for 'dps' or 'dplObj' maps if still empty
     if (dpl.isEmpty && json['dps'] is Map) {
-      dpl = json['dps']['name']?.toString() ?? json['dps']['nama']?.toString() ?? '';
+      dpl =
+          json['dps']['name']?.toString() ??
+          json['dps']['nama']?.toString() ??
+          '';
     } else if (dpl.isEmpty && json['dplObj'] is Map) {
-      dpl = json['dplObj']['name']?.toString() ?? json['dplObj']['nama']?.toString() ?? '';
+      dpl =
+          json['dplObj']['name']?.toString() ??
+          json['dplObj']['nama']?.toString() ??
+          '';
     }
 
     if (dpl.isEmpty || dpl == 'null') dpl = '-';
 
     String nip = '-';
     String phone = '-';
-    
+
     // Parse nip
-    nip = json['dplNip']?.toString() ?? json['dpl']?['nip']?.toString() ?? json['dplObj']?['nip']?.toString() ?? '-';
-    
+    nip =
+        json['dplNip']?.toString() ??
+        json['dpl']?['nip']?.toString() ??
+        json['dplObj']?['nip']?.toString() ??
+        '-';
+
     // Parse phone (fallback logic provided by backend spec)
-    final rawPhone = json['dpl']?['phone'] ?? 
-                     json['dpl']?['nomorWa'] ?? 
-                     json['dplPhone'] ?? 
-                     json['dplObj']?['phone'] ?? 
-                     json['dplObj']?['nomorWa'];
+    final rawPhone =
+        json['dpl']?['phone'] ??
+        json['dpl']?['nomorWa'] ??
+        json['dplPhone'] ??
+        json['dplObj']?['phone'] ??
+        json['dplObj']?['nomorWa'];
     if (rawPhone != null && rawPhone.toString().trim().isNotEmpty) {
       phone = rawPhone.toString();
     }
 
     // Parse link Google Drive — support camelCase, snake_case, dan alias backend
-    final rawDrive = json['linkGoogleDrive']?.toString() ??
+    final rawDrive =
+        json['linkGoogleDrive']?.toString() ??
         json['urlGoogleDrive']?.toString() ??
         json['link_google_drive']?.toString();
-    final driveUrl = (rawDrive != null && rawDrive.trim().isNotEmpty) ? rawDrive.trim() : null;
+    final driveUrl = (rawDrive != null && rawDrive.trim().isNotEmpty)
+        ? rawDrive.trim()
+        : null;
 
     return KelompokKknData(
       groupId: json['groupId']?.toString() ?? json['id']?.toString() ?? '',
-      groupName: json['groupName']?.toString() ?? json['namaKelompok']?.toString() ?? json['nama']?.toString() ?? '-',
+      groupName:
+          json['groupName']?.toString() ??
+          json['namaKelompok']?.toString() ??
+          json['nama']?.toString() ??
+          '-',
       dosenPembimbing: dpl,
       dplNip: nip,
       dplPhone: phone,
-      poskoLocation: json['poskoLocation']?.toString() ?? json['lokasiPosko']?.toString() ?? json['kelurahan']?.toString() ?? '-',
-      totalGroupPoints: (json['totalGroupPoints'] as num?)?.toInt() ?? (json['totalPoints'] as num?)?.toInt() ?? 0,
+      poskoLocation:
+          json['poskoLocation']?.toString() ??
+          json['lokasiPosko']?.toString() ??
+          json['kelurahan']?.toString() ??
+          '-',
+      totalGroupPoints:
+          (json['totalGroupPoints'] as num?)?.toInt() ??
+          (json['totalPoints'] as num?)?.toInt() ??
+          0,
       members: membersList,
       linkGoogleDrive: driveUrl,
     );
   }
 
   @override
-  List<Object?> get props => [groupId, groupName, totalGroupPoints, members, dosenPembimbing, dplNip, dplPhone, linkGoogleDrive];
+  List<Object?> get props => [
+    groupId,
+    groupName,
+    totalGroupPoints,
+    members,
+    dosenPembimbing,
+    dplNip,
+    dplPhone,
+    linkGoogleDrive,
+  ];
 }
 
 /// ─────────────────────────────────────────────────────────────────────────────
@@ -817,25 +1008,35 @@ class DampakKelurahanData extends Equatable {
 
   factory DampakKelurahanData.fromJson(Map<String, dynamic> json) {
     return DampakKelurahanData(
-      kelurahanName: json['kelurahanName']?.toString() ?? json['kelurahan']?.toString() ?? json['rw']?.toString() ?? '-',
-      activeHouseholdsPercentage: (json['activeHouseholdsPercentage'] as num?)?.toDouble() ??
+      kelurahanName:
+          json['kelurahanName']?.toString() ??
+          json['kelurahan']?.toString() ??
+          json['rw']?.toString() ??
+          '-',
+      activeHouseholdsPercentage:
+          (json['activeHouseholdsPercentage'] as num?)?.toDouble() ??
           (json['persentaseAktif'] as num?)?.toDouble() ??
           (json['activeSortingPercentage'] as num?)?.toDouble() ??
           0.0,
-      totalWasteVolumeKg: (json['totalWasteVolumeKg'] as num?)?.toDouble() ??
+      totalWasteVolumeKg:
+          (json['totalWasteVolumeKg'] as num?)?.toDouble() ??
           (json['totalVolumeKg'] as num?)?.toDouble() ??
           (json['totalVolume'] as num?)?.toDouble() ??
           0.0,
-      organicVolumeKg: (json['organicVolumeKg'] as num?)?.toDouble() ??
+      organicVolumeKg:
+          (json['organicVolumeKg'] as num?)?.toDouble() ??
           (json['organicVolume'] as num?)?.toDouble() ??
           0.0,
-      nonOrganicVolumeKg: (json['nonOrganicVolumeKg'] as num?)?.toDouble() ??
+      nonOrganicVolumeKg:
+          (json['nonOrganicVolumeKg'] as num?)?.toDouble() ??
           (json['nonOrganicVolume'] as num?)?.toDouble() ??
           0.0,
-      totalHouseholdsRegistered: (json['totalHouseholdsRegistered'] as num?)?.toInt() ??
+      totalHouseholdsRegistered:
+          (json['totalHouseholdsRegistered'] as num?)?.toInt() ??
           (json['totalWarga'] as num?)?.toInt() ??
           0,
-      totalActiveBins: (json['totalActiveBins'] as num?)?.toInt() ??
+      totalActiveBins:
+          (json['totalActiveBins'] as num?)?.toInt() ??
           (json['totalBin'] as num?)?.toInt() ??
           0,
     );
@@ -843,14 +1044,14 @@ class DampakKelurahanData extends Equatable {
 
   @override
   List<Object?> get props => [
-        kelurahanName,
-        activeHouseholdsPercentage,
-        totalWasteVolumeKg,
-        organicVolumeKg,
-        nonOrganicVolumeKg,
-        totalHouseholdsRegistered,
-        totalActiveBins,
-      ];
+    kelurahanName,
+    activeHouseholdsPercentage,
+    totalWasteVolumeKg,
+    organicVolumeKg,
+    nonOrganicVolumeKg,
+    totalHouseholdsRegistered,
+    totalActiveBins,
+  ];
 }
 
 /// ─────────────────────────────────────────────────────────────────────────────
@@ -919,7 +1120,9 @@ class PoskoKknResponse extends Equatable {
 
   factory PoskoKknResponse.fromJson(Map<String, dynamic> json) {
     return PoskoKknResponse(
-      posko: json['posko'] != null ? PoskoKknData.fromJson(json['posko']) : null,
+      posko: json['posko'] != null
+          ? PoskoKknData.fromJson(json['posko'])
+          : null,
       isUserLeader: json['isUserLeader'] == true,
       kelompokId: json['kelompokId']?.toString() ?? '',
     );

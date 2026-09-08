@@ -15,7 +15,8 @@ class ProgramKerjaEntity {
   // Deteksi Usulan DPL dari pola JSON backend:
   // Proker buatan mahasiswa selalu diprefix '**Judul**\n\n' oleh backend KKN service.
   // Jika tidak ada prefix itu, judul & deskripsi yang dikembalikan API akan sama persis (buatan DPL).
-  bool get isUsulanDpl => judul != null && deskripsi.isNotEmpty && judul == deskripsi;
+  bool get isUsulanDpl =>
+      judul != null && deskripsi.isNotEmpty && judul == deskripsi;
 
   ProgramKerjaEntity({
     required this.id,
@@ -34,12 +35,18 @@ class ProgramKerjaEntity {
 
   factory ProgramKerjaEntity.fromJson(Map<String, dynamic> json) {
     final legacyStatus = json['status']?.toString() ?? 'BELUM_DISETUJUI';
-    
+
     // Resolve statusUsulan
-    String resolvedUsulan = json['statusUsulan']?.toString() ?? json['status_usulan']?.toString() ?? '';
+    String resolvedUsulan =
+        json['statusUsulan']?.toString() ??
+        json['status_usulan']?.toString() ??
+        '';
     if (resolvedUsulan.isEmpty) {
       final leg = legacyStatus.toUpperCase();
-      if (leg == 'DITERIMA' || leg == 'DISETUJUI' || leg == 'SEDANG_BERJALAN' || leg == 'SELESAI') {
+      if (leg == 'DITERIMA' ||
+          leg == 'DISETUJUI' ||
+          leg == 'SEDANG_BERJALAN' ||
+          leg == 'SELESAI') {
         resolvedUsulan = 'DISETUJUI';
       } else if (leg == 'DITOLAK' || leg == 'TIDAK_DISETUJUI') {
         resolvedUsulan = 'DITOLAK';
@@ -49,12 +56,17 @@ class ProgramKerjaEntity {
     }
 
     // Resolve statusPelaksanaan
-    String resolvedPelaksanaan = json['statusPelaksanaan']?.toString() ?? json['status_pelaksanaan']?.toString() ?? '';
+    String resolvedPelaksanaan =
+        json['statusPelaksanaan']?.toString() ??
+        json['status_pelaksanaan']?.toString() ??
+        '';
     if (resolvedPelaksanaan.isEmpty) {
       final leg = legacyStatus.toUpperCase();
       if (leg == 'SELESAI') {
         resolvedPelaksanaan = 'SELESAI';
-      } else if (leg == 'SEDANG_BERJALAN' || leg == 'SEDANG_DILAKSANAKAN' || leg == 'BERJALAN') {
+      } else if (leg == 'SEDANG_BERJALAN' ||
+          leg == 'SEDANG_DILAKSANAKAN' ||
+          leg == 'BERJALAN') {
         resolvedPelaksanaan = 'SEDANG_BERJALAN';
       } else {
         resolvedPelaksanaan = 'BELUM_MULAI';
@@ -63,18 +75,31 @@ class ProgramKerjaEntity {
 
     return ProgramKerjaEntity(
       id: json['id']?.toString() ?? '',
-      kelompokId: json['kelompokId']?.toString() ?? json['id_kelompok']?.toString() ?? '',
+      kelompokId:
+          json['kelompokId']?.toString() ??
+          json['id_kelompok']?.toString() ??
+          '',
       judul: json['judul']?.toString(),
       deskripsi: json['deskripsi']?.toString() ?? '',
       kategori: json['kategori']?.toString() ?? 'LAINNYA',
-      waktuPelaksanaan: json['waktuPelaksanaan']?.toString() ?? json['waktu_pelaksanaan']?.toString() ?? '-',
-      kebutuhanBiaya: double.tryParse(json['kebutuhanBiaya']?.toString() ?? json['kebutuhan_biaya']?.toString() ?? '0') ?? 0.0,
+      waktuPelaksanaan:
+          json['waktuPelaksanaan']?.toString() ??
+          json['waktu_pelaksanaan']?.toString() ??
+          '-',
+      kebutuhanBiaya:
+          double.tryParse(
+            json['kebutuhanBiaya']?.toString() ??
+                json['kebutuhan_biaya']?.toString() ??
+                '0',
+          ) ??
+          0.0,
       status: legacyStatus,
       statusUsulan: resolvedUsulan,
       statusPelaksanaan: resolvedPelaksanaan,
-      catatanDpl: json['catatanDpl']?.toString() ?? json['catatan_dpl']?.toString(),
-      createdAt: json['createdAt'] != null 
-          ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now() 
+      catatanDpl:
+          json['catatanDpl']?.toString() ?? json['catatan_dpl']?.toString(),
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
           : DateTime.now(),
     );
   }

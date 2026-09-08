@@ -61,7 +61,8 @@ class NetworkExceptionHelper {
 
         case DioExceptionType.unknown:
         default:
-          if (error.message != null && error.message!.contains('SocketException')) {
+          if (error.message != null &&
+              error.message!.contains('SocketException')) {
             return 'Tidak ada koneksi internet. Aktifkan paket data atau Wi-Fi.';
           }
           return 'Terjadi masalah jaringan yang tidak diketahui.';
@@ -69,13 +70,16 @@ class NetworkExceptionHelper {
     }
     if (error is Exception) {
       final str = error.toString();
-      if (str.contains('SocketException') || str.contains('Connection refused')) {
+      if (str.contains('SocketException') ||
+          str.contains('Connection refused')) {
         return 'Tidak ada koneksi internet atau server sedang mati.';
       }
       if (str.contains('TimeoutException')) {
         final msgMatch = RegExp(r'TimeoutException: (.+)').firstMatch(str);
         final customMsg = msgMatch?.group(1)?.trim();
-        if (customMsg != null && customMsg.isNotEmpty && !customMsg.startsWith('Future not completed')) {
+        if (customMsg != null &&
+            customMsg.isNotEmpty &&
+            !customMsg.startsWith('Future not completed')) {
           return customMsg;
         }
         return 'GPS atau koneksi ke server tidak merespons. Periksa koneksi internet & sinyal GPS, lalu coba lagi.';

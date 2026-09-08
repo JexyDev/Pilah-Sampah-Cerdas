@@ -28,11 +28,13 @@ class WilayahKelompokModel {
       tipeArea: json['tipeArea'] ?? 'RADIUS',
       polygonKoordinat: json['polygonKoordinat'] != null
           ? (json['polygonKoordinat'] as List)
-              .map((e) => {
+                .map(
+                  (e) => {
                     'lat': (e['lat'] as num).toDouble(),
                     'lng': (e['lng'] as num).toDouble(),
-                  })
-              .toList()
+                  },
+                )
+                .toList()
           : null,
       radiusMeters: json['radiusMeters'] != null
           ? (json['radiusMeters'] as num).toDouble()

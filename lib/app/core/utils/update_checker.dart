@@ -8,7 +8,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../values/app_config.dart';
 
 class UpdateChecker {
-  static String get _versionUrl => '${AppConfig.apiBaseUrl}/system/latest-release';
+  static String get _versionUrl =>
+      '${AppConfig.apiBaseUrl}/system/latest-release';
 
   static Future<void> checkForUpdate(BuildContext context) async {
     try {
@@ -23,13 +24,19 @@ class UpdateChecker {
 
       if (response.statusCode == 200 && response.data != null) {
         // Handle both direct object and nested 'data' object
-        final Map<String, dynamic> responseData = 
-            (response.data is Map<String, dynamic> && response.data['latestVersion'] == null && response.data['data'] != null)
-                ? response.data['data']
-                : response.data;
+        final Map<String, dynamic> responseData =
+            (response.data is Map<String, dynamic> &&
+                response.data['latestVersion'] == null &&
+                response.data['data'] != null)
+            ? response.data['data']
+            : response.data;
 
-        final latestVersion = responseData['latestVersion']?.toString() ?? responseData['version']?.toString();
-        final downloadUrl = responseData['downloadUrl']?.toString() ?? responseData['apkUrl']?.toString();
+        final latestVersion =
+            responseData['latestVersion']?.toString() ??
+            responseData['version']?.toString();
+        final downloadUrl =
+            responseData['downloadUrl']?.toString() ??
+            responseData['apkUrl']?.toString();
         final isForceUpdate = responseData['forceUpdate'] == true;
 
         if (latestVersion != null && downloadUrl != null) {
@@ -38,7 +45,12 @@ class UpdateChecker {
 
           if (_isUpdateAvailable(currentVersion, latestVersion)) {
             if (context.mounted) {
-              _showUpdateDialog(context, latestVersion, downloadUrl, isForceUpdate);
+              _showUpdateDialog(
+                context,
+                latestVersion,
+                downloadUrl,
+                isForceUpdate,
+              );
             }
           }
         }
@@ -51,11 +63,19 @@ class UpdateChecker {
 
   static bool _isUpdateAvailable(String current, String latest) {
     // Bersihkan dari build number (contoh 1.0.6+106 -> 1.0.6)
-    final cleanCurrent = current.split('+')[0].replaceAll(RegExp(r'[^0-9.]'), '');
+    final cleanCurrent = current
+        .split('+')[0]
+        .replaceAll(RegExp(r'[^0-9.]'), '');
     final cleanLatest = latest.split('+')[0].replaceAll(RegExp(r'[^0-9.]'), '');
 
-    List<int> currentParts = cleanCurrent.split('.').map((e) => int.tryParse(e) ?? 0).toList();
-    List<int> latestParts = cleanLatest.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+    List<int> currentParts = cleanCurrent
+        .split('.')
+        .map((e) => int.tryParse(e) ?? 0)
+        .toList();
+    List<int> latestParts = cleanLatest
+        .split('.')
+        .map((e) => int.tryParse(e) ?? 0)
+        .toList();
 
     for (int i = 0; i < 3; i++) {
       int c = i < currentParts.length ? currentParts[i] : 0;
@@ -118,14 +138,14 @@ class _UpdateDialogState extends State<_UpdateDialog> {
     });
 
     try {
-      // 1. Siapkan direktori penyimpanan menggunakan external storage (Android) 
+      // 1. Siapkan direktori penyimpanan menggunakan external storage (Android)
       // agar PackageInstaller memiliki akses baca yang lebih leluasa.
       Directory? dir;
       if (Platform.isAndroid) {
         dir = await getExternalStorageDirectory();
       }
       dir ??= await getTemporaryDirectory();
-      
+
       final savePath = '${dir.path}/update_v${widget.latestVersion}.apk';
 
       // 2. Download menggunakan Dio
@@ -137,7 +157,8 @@ class _UpdateDialogState extends State<_UpdateDialog> {
           if (total != -1) {
             setState(() {
               _progress = received / total;
-              _statusMessage = 'Mengunduh... ${(received / 1024 / 1024).toStringAsFixed(1)} MB / ${(total / 1024 / 1024).toStringAsFixed(1)} MB';
+              _statusMessage =
+                  'Mengunduh... ${(received / 1024 / 1024).toStringAsFixed(1)} MB / ${(total / 1024 / 1024).toStringAsFixed(1)} MB';
             });
           }
         },
@@ -150,7 +171,7 @@ class _UpdateDialogState extends State<_UpdateDialog> {
 
       // 3. Buka (Install) APK otomatis menggunakan open_filex dengan mime type eksplisit
       final result = await OpenFilex.open(
-        savePath, 
+        savePath,
         type: 'application/vnd.android.package-archive',
       );
       if (result.type != ResultType.done && mounted) {
@@ -176,7 +197,9 @@ class _UpdateDialogState extends State<_UpdateDialog> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Gagal mengunduh atau membuka file instalasi.')),
+          const SnackBar(
+            content: Text('Gagal mengunduh atau membuka file instalasi.'),
+          ),
         );
       }
     }
@@ -215,7 +238,9 @@ class _UpdateDialogState extends State<_UpdateDialog> {
             ),
           ElevatedButton(
             onPressed: _isDownloading ? null : _startDownload,
-            child: Text(_isDownloading ? 'Memproses...' : 'Update Sekarang (Auto)'),
+            child: Text(
+              _isDownloading ? 'Memproses...' : 'Update Sekarang (Auto)',
+            ),
           ),
         ],
       ),

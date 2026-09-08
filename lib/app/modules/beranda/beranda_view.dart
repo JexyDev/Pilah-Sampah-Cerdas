@@ -26,10 +26,7 @@ import '../mahasiswa/controllers/location_ping_controller.dart';
 /// Halaman beranda — sesuai desain:
 /// Header biru, avatar+nama+RW, stats card, Aksi Cepat, Riwayat.
 class BerandaView extends ConsumerStatefulWidget {
-  const BerandaView({
-    super.key,
-    this.onNavigateToHistory,
-  });
+  const BerandaView({super.key, this.onNavigateToHistory});
 
   final VoidCallback? onNavigateToHistory;
 
@@ -72,13 +69,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
           slivers: [
             // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Header Biru ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
             SliverToBoxAdapter(
-              child: _buildHeader(
-                context,
-                ref,
-                user,
-                isOnline,
-                unreadCount,
-              ),
+              child: _buildHeader(context, ref, user, isOnline, unreadCount),
             ),
 
             SliverPadding(
@@ -86,7 +77,9 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
                   // ──────────────── Stats Card ─────────────────────────────────
-                  totalPointsAsync.when(skipLoadingOnReload: true, data: (total) => _buildStatsCard(context, total),
+                  totalPointsAsync.when(
+                    skipLoadingOnReload: true,
+                    data: (total) => _buildStatsCard(context, total),
                     loading: () => const SkeletonLoading(
                       height: 100,
                       width: double.infinity,
@@ -126,7 +119,9 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                         ),
                       ),
                       TextButton(
-                        onPressed: () => Navigator.of(context).pushNamed(AppRoutes.kelolaBin),
+                        onPressed: () => Navigator.of(
+                          context,
+                        ).pushNamed(AppRoutes.kelolaBin),
                         child: const Text(
                           'Kelola',
                           style: TextStyle(
@@ -140,75 +135,88 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                   const SizedBox(height: 8),
                   Consumer(
                     builder: (context, ref, _) {
-                      return ref.watch(binsProvider).when(skipLoadingOnReload: true, data: (bins) {
-                          final activeBins = bins.where((bin) => bin.isActive).toList();
-                          if (activeBins.isEmpty) {
-                            return Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFFFBEB),
-                                border: Border.all(color: AppColors.warningYellow.withValues(alpha: 0.5)),
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: const Row(
-                                children: [
-                                  Icon(
-                                    Icons.warning_amber_rounded,
-                                    color: AppColors.warningYellow,
-                                    size: 28,
-                                  ),
-                                  SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Belum Aktivasi Tempat Sampah',
-                                          style: TextStyle(
-                                            color: AppColors.textPrimary,
-                                            fontWeight: FontWeight.w700,
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                        SizedBox(height: 2),
-                                        Text(
-                                          'Silakan ketuk "Kelola" untuk menambah.',
-                                          style: TextStyle(
-                                            color: AppColors.textSecondary,
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                      ],
+                      return ref
+                          .watch(binsProvider)
+                          .when(
+                            skipLoadingOnReload: true,
+                            data: (bins) {
+                              final activeBins = bins
+                                  .where((bin) => bin.isActive)
+                                  .toList();
+                              if (activeBins.isEmpty) {
+                                return Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFFFBEB),
+                                    border: Border.all(
+                                      color: AppColors.warningYellow.withValues(
+                                        alpha: 0.5,
+                                      ),
                                     ),
+                                    borderRadius: BorderRadius.circular(16),
                                   ),
-                                ],
-                              ),
-                            );
-                          }
-                          return SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            clipBehavior: Clip.none,
-                            child: Row(
-                              children: activeBins.map((bin) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(right: 12),
-                                  child: SizedBox(
-                                    width: MediaQuery.of(context).size.width * 0.42,
-                                    child: _BerandaBinCard(bin: bin),
+                                  child: const Row(
+                                    children: [
+                                      Icon(
+                                        Icons.warning_amber_rounded,
+                                        color: AppColors.warningYellow,
+                                        size: 28,
+                                      ),
+                                      SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Belum Aktivasi Tempat Sampah',
+                                              style: TextStyle(
+                                                color: AppColors.textPrimary,
+                                                fontWeight: FontWeight.w700,
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                            SizedBox(height: 2),
+                                            Text(
+                                              'Silakan ketuk "Kelola" untuk menambah.',
+                                              style: TextStyle(
+                                                color: AppColors.textSecondary,
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 );
-                              }).toList(),
+                              }
+                              return SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                clipBehavior: Clip.none,
+                                child: Row(
+                                  children: activeBins.map((bin) {
+                                    return Padding(
+                                      padding: const EdgeInsets.only(right: 12),
+                                      child: SizedBox(
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                            0.42,
+                                        child: _BerandaBinCard(bin: bin),
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              );
+                            },
+                            loading: () => const SizedBox(
+                              height: 80,
+                              child: Center(child: CircularProgressIndicator()),
                             ),
+                            error: (_, __) => const SizedBox.shrink(),
                           );
-                        },
-                        loading: () => const SizedBox(
-                          height: 80,
-                          child: Center(child: CircularProgressIndicator()),
-                        ),
-                        error: (_, __) => const SizedBox.shrink(),
-                      );
-                    }
+                    },
                   ),
 
                   const SizedBox(height: AppDimensions.lg),
@@ -223,7 +231,9 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                     ),
                   ),
                   const SizedBox(height: AppDimensions.sm),
-                  wasteLogsAsync.when(skipLoadingOnReload: true, data: (logs) => _buildStatistikSaya(context, logs),
+                  wasteLogsAsync.when(
+                    skipLoadingOnReload: true,
+                    data: (logs) => _buildStatistikSaya(context, logs),
                     loading: () => const SkeletonLoading(
                       height: 120,
                       width: double.infinity,
@@ -260,7 +270,9 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                   ),
                   const SizedBox(height: AppDimensions.sm),
 
-                  wasteLogsAsync.when(skipLoadingOnReload: true, data: (logs) => logs.isEmpty
+                  wasteLogsAsync.when(
+                    skipLoadingOnReload: true,
+                    data: (logs) => logs.isEmpty
                         ? _buildEmptyLogs(context)
                         : Column(
                             children: logs
@@ -327,8 +339,12 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
     final correctCount = logs.where((l) => l.isCorrect).length;
     final incorrectCount = totalActivities - correctCount;
 
-    final correctPercentage = totalActivities > 0 ? (correctCount / totalActivities) * 100 : 0.0;
-    final errorPercentage = totalActivities > 0 ? (incorrectCount / totalActivities) * 100 : 0.0;
+    final correctPercentage = totalActivities > 0
+        ? (correctCount / totalActivities) * 100
+        : 0.0;
+    final errorPercentage = totalActivities > 0
+        ? (incorrectCount / totalActivities) * 100
+        : 0.0;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -383,24 +399,36 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
           Builder(
             builder: (context) {
               final validLogs = logs.where((l) => l.aiConfidence > 0).toList();
-              final avgConfidence = validLogs.isNotEmpty 
-                  ? validLogs.map((l) => l.aiConfidence).reduce((a, b) => a + b) / validLogs.length 
+              final avgConfidence = validLogs.isNotEmpty
+                  ? validLogs
+                            .map((l) => l.aiConfidence)
+                            .reduce((a, b) => a + b) /
+                        validLogs.length
                   : 0.0;
-              final displayPercentage = avgConfidence > 1.0 ? avgConfidence : avgConfidence * 100;
-              
+              final displayPercentage = avgConfidence > 1.0
+                  ? avgConfidence
+                  : avgConfidence * 100;
+
               return Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
                     'Akurasi AI (Rata-rata)',
-                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                   Text(
-                    validLogs.isEmpty ? 'N/A' : '${displayPercentage.toStringAsFixed(1)}%',
+                    validLogs.isEmpty
+                        ? 'N/A'
+                        : '${displayPercentage.toStringAsFixed(1)}%',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
-                      color: validLogs.isEmpty ? AppColors.textHint : AppColors.primaryGreen,
+                      color: validLogs.isEmpty
+                          ? AppColors.textHint
+                          : AppColors.primaryGreen,
                     ),
                   ),
                 ],
@@ -415,18 +443,33 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
   Widget _buildHeaderAvatarImage(String? fotoPath) {
     if (fotoPath == null || fotoPath.isEmpty) {
       return const Center(
-        child: Icon(Icons.person_rounded, color: AppColors.primaryGreen, size: 28),
+        child: Icon(
+          Icons.person_rounded,
+          color: AppColors.primaryGreen,
+          size: 28,
+        ),
       );
     }
     if (fotoPath.startsWith('http://') || fotoPath.startsWith('https://')) {
       return CachedNetworkImage(
         imageUrl: fotoPath,
         fit: BoxFit.cover,
-        errorWidget: (_, __, ___) => const Center(child: Icon(Icons.person_rounded, color: AppColors.primaryGreen, size: 28)),
+        errorWidget: (_, __, ___) => const Center(
+          child: Icon(
+            Icons.person_rounded,
+            color: AppColors.primaryGreen,
+            size: 28,
+          ),
+        ),
       );
     }
-    if (fotoPath.startsWith('/') || fotoPath.startsWith('file://') || fotoPath.contains(':\\') || fotoPath.contains(':/')) {
-      final cleanPath = fotoPath.startsWith('file://') ? fotoPath.replaceFirst('file://', '') : fotoPath;
+    if (fotoPath.startsWith('/') ||
+        fotoPath.startsWith('file://') ||
+        fotoPath.contains(':\\') ||
+        fotoPath.contains(':/')) {
+      final cleanPath = fotoPath.startsWith('file://')
+          ? fotoPath.replaceFirst('file://', '')
+          : fotoPath;
       final file = File(cleanPath);
       if (file.existsSync()) {
         return Image.file(file, fit: BoxFit.cover);
@@ -435,7 +478,13 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
     return CachedNetworkImage(
       imageUrl: AppConfig.getImageUrl(fotoPath),
       fit: BoxFit.cover,
-      errorWidget: (_, __, ___) => const Center(child: Icon(Icons.person_rounded, color: AppColors.primaryGreen, size: 28)),
+      errorWidget: (_, __, ___) => const Center(
+        child: Icon(
+          Icons.person_rounded,
+          color: AppColors.primaryGreen,
+          size: 28,
+        ),
+      ),
     );
   }
 
@@ -503,7 +552,10 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                         ),
                         const SizedBox(width: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: AppColors.warningYellow,
                             borderRadius: BorderRadius.circular(4),
@@ -527,11 +579,20 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                 children: [
                   Container(
                     margin: const EdgeInsets.only(right: 12),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                      color: isOnline ? AppColors.primaryGreen.withValues(alpha: 0.1) : AppColors.dangerRed.withValues(alpha: 0.1),
+                      color: isOnline
+                          ? AppColors.primaryGreen.withValues(alpha: 0.1)
+                          : AppColors.dangerRed.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: isOnline ? AppColors.primaryGreen.withValues(alpha: 0.3) : AppColors.dangerRed.withValues(alpha: 0.3)),
+                      border: Border.all(
+                        color: isOnline
+                            ? AppColors.primaryGreen.withValues(alpha: 0.3)
+                            : AppColors.dangerRed.withValues(alpha: 0.3),
+                      ),
                     ),
                     child: Row(
                       children: [
@@ -540,11 +601,15 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                           height: 8,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: isOnline ? AppColors.primaryGreen : AppColors.dangerRed,
+                            color: isOnline
+                                ? AppColors.primaryGreen
+                                : AppColors.dangerRed,
                             boxShadow: [
                               if (isOnline)
                                 BoxShadow(
-                                  color: AppColors.primaryGreen.withValues(alpha: 0.4),
+                                  color: AppColors.primaryGreen.withValues(
+                                    alpha: 0.4,
+                                  ),
                                   blurRadius: 4,
                                   spreadRadius: 1,
                                 ),
@@ -557,58 +622,66 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
-                            color: isOnline ? AppColors.primaryGreen : AppColors.dangerRed,
+                            color: isOnline
+                                ? AppColors.primaryGreen
+                                : AppColors.dangerRed,
                           ),
                         ),
                       ],
                     ),
                   ),
                   GestureDetector(
-                    onTap: () => Navigator.of(context).pushNamed(AppRoutes.notifikasi),
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryGreen.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Image.asset(
-                          'assets/icons/notification.png',
-                          color: AppColors.primaryGreen,
-                        ),
-                      ),
-                    ),
-                    if (unreadCount > 0)
-                      Positioned(
-                        top: -4,
-                        right: -4,
-                        child: Container(
-                          padding: const EdgeInsets.all(3),
-                          constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
-                          decoration: const BoxDecoration(
-                            color: AppColors.dangerRed,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Text(
-                            unreadCount > 99 ? '99+' : '$unreadCount',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 9,
-                              fontWeight: FontWeight.w700,
+                    onTap: () =>
+                        Navigator.of(context).pushNamed(AppRoutes.notifikasi),
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryGreen.withValues(
+                              alpha: 0.1,
                             ),
-                            textAlign: TextAlign.center,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Image.asset(
+                              'assets/icons/notification.png',
+                              color: AppColors.primaryGreen,
+                            ),
                           ),
                         ),
-                      ),
-                  ],
-                ),
-              ),
-              ],
+                        if (unreadCount > 0)
+                          Positioned(
+                            top: -4,
+                            right: -4,
+                            child: Container(
+                              padding: const EdgeInsets.all(3),
+                              constraints: const BoxConstraints(
+                                minWidth: 18,
+                                minHeight: 18,
+                              ),
+                              decoration: const BoxDecoration(
+                                color: AppColors.dangerRed,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Text(
+                                unreadCount > 99 ? '99+' : '$unreadCount',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -616,6 +689,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
       ),
     );
   }
+
   String _getGreeting() {
     final h = DateTime.now().hour;
     if (h < 11) return 'Selamat Pagi,';
@@ -643,9 +717,12 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
         builder: (context, ref, _) {
           final dailyAsync = ref.watch(dailyPointsProvider);
           final daily = dailyAsync.maybeWhen(data: (v) => v, orElse: () => 0);
-          
+
           final rankAsync = ref.watch(userLeaderboardRankProvider);
-          final rankValue = rankAsync.maybeWhen(data: (r) => r, orElse: () => '-');
+          final rankValue = rankAsync.maybeWhen(
+            data: (r) => r,
+            orElse: () => '-',
+          );
 
           return Row(
             children: [
@@ -687,9 +764,13 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
         children: [
           Expanded(
             child: GestureDetector(
-              onTap: () => Navigator.of(context).pushNamed(AppRoutes.ukurKapasitas),
+              onTap: () =>
+                  Navigator.of(context).pushNamed(AppRoutes.ukurKapasitas),
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 18,
+                  horizontal: 16,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.primaryGreen,
                   borderRadius: BorderRadius.circular(16),
@@ -698,17 +779,13 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                       color: AppColors.primaryGreen.withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
-                    )
+                    ),
                   ],
                 ),
                 child: const Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      Icons.sensors_rounded,
-                      color: Colors.white,
-                      size: 28,
-                    ),
+                    Icon(Icons.sensors_rounded, color: Colors.white, size: 28),
                     SizedBox(height: 8),
                     Text(
                       'Aktivasi Sampah',
@@ -726,9 +803,13 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
           const SizedBox(width: 12),
           Expanded(
             child: GestureDetector(
-              onTap: () => Navigator.of(context).pushNamed(AppRoutes.kknAttendance),
+              onTap: () =>
+                  Navigator.of(context).pushNamed(AppRoutes.kknAttendance),
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 18,
+                  horizontal: 16,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
@@ -766,9 +847,14 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
             children: [
               Expanded(
                 child: GestureDetector(
-                  onTap: () => Navigator.of(context).pushNamed(AppRoutes.timbanganPemilahan),
+                  onTap: () => Navigator.of(
+                    context,
+                  ).pushNamed(AppRoutes.timbanganPemilahan),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 24,
+                      horizontal: 16,
+                    ),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
                         colors: [AppColors.dangerRed, Color(0xFFB91C1C)],
@@ -781,7 +867,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                           color: AppColors.dangerRed.withValues(alpha: 0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
-                        )
+                        ),
                       ],
                     ),
                     child: const Column(
@@ -813,156 +899,116 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
     }
 
     // Default: Warga
-    return Column(
+    return Row(
       children: [
-        // Primary CTA: Scan Tempat Sampah
-        GestureDetector(
-          onTap: isOnline
-              ? () => ScanGuard.handleScanNavigation(context, ref)
-              : null,
-          child: AnimatedOpacity(
-            opacity: isOnline ? 1.0 : 0.5,
-            duration: const Duration(milliseconds: 200),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppColors.primaryGreen, Color(0xFF15803D)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+        // Primary CTA: Scan Sampah
+        Expanded(
+          child: GestureDetector(
+            onTap: isOnline
+                ? () => ScanGuard.handleScanNavigation(context, ref)
+                : null,
+            child: AnimatedOpacity(
+              opacity: isOnline ? 1.0 : 0.5,
+              duration: const Duration(milliseconds: 200),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 16,
+                  horizontal: 12,
                 ),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primaryGreen.withValues(alpha: 0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 5),
-                  )
-                ],
-              ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.qr_code_scanner_rounded,
-                    color: Colors.white,
-                    size: 28,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppColors.primaryGreen, Color(0xFF15803D)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                  SizedBox(width: 12),
-                  Text(
-                    'Scan Sampah',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.3,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primaryGreen.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
                     ),
-                  ),
-                ],
+                  ],
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.qr_code_scanner_rounded,
+                      color: Colors.white,
+                      size: 22,
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      'Scan Sampah',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
         ),
-        const SizedBox(height: 12),
-        // Secondary Actions
-        Row(
-          children: [
-            Expanded(
-              child: GestureDetector(
-                onTap: isOnline
-                    ? () {
-                        Navigator.of(context).pushNamed(AppRoutes.resetBin);
-                      }
-                    : null,
-                child: AnimatedOpacity(
-                  opacity: isOnline ? 1.0 : 0.5,
-                  duration: const Duration(milliseconds: 200),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.grey.shade200, width: 1.5),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.03),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Image.asset(
-                          'assets/icons/waste.png',
-                          color: AppColors.primaryGreen,
-                          width: 20,
-                          height: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'Pengosongan',
-                          style: TextStyle(
-                            color: AppColors.textPrimary,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
+        const SizedBox(width: 12),
+        // Secondary CTA: Pengosongan
+        Expanded(
+          child: GestureDetector(
+            onTap: isOnline
+                ? () {
+                    Navigator.of(context).pushNamed(AppRoutes.resetBin);
+                  }
+                : null,
+            child: AnimatedOpacity(
+              opacity: isOnline ? 1.0 : 0.5,
+              duration: const Duration(milliseconds: 200),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 16,
+                  horizontal: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Colors.grey.shade200,
+                    width: 1.5,
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset(
+                      'assets/icons/waste.png',
+                      color: AppColors.primaryGreen,
+                      width: 20,
+                      height: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Pengosongan',
+                      style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: GestureDetector(
-                onTap: isOnline
-                    ? () => Navigator.of(context).pushNamed(AppRoutes.aspirasiWarga)
-                    : null,
-                child: AnimatedOpacity(
-                  opacity: isOnline ? 1.0 : 0.5,
-                  duration: const Duration(milliseconds: 200),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.grey.shade200, width: 1.5),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.03),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.forum_rounded,
-                          color: AppColors.primaryGreen,
-                          size: 20,
-                        ),
-                        SizedBox(width: 8),
-                        Text(
-                          'Kritik/Saran',
-                          style: TextStyle(
-                            color: AppColors.textPrimary,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ],
     );
@@ -1073,7 +1119,6 @@ class _RiwayatCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // final String displayLocation = ...; (reserved for future location display feature)
 
-
     final bool isOrganic = log.wasteType == WasteType.organic;
     final Color bgColor = isOrganic
         ? AppColors.organicColor
@@ -1136,7 +1181,9 @@ class _BerandaBinCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isOrganic = bin.binType == WasteType.organic;
-    final Color color = isOrganic ? AppColors.organicColor : AppColors.nonOrganicColor;
+    final Color color = isOrganic
+        ? AppColors.organicColor
+        : AppColors.nonOrganicColor;
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -1149,7 +1196,7 @@ class _BerandaBinCard extends StatelessWidget {
             color: color.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 4),
-          )
+          ),
         ],
       ),
       child: Column(
@@ -1158,14 +1205,24 @@ class _BerandaBinCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Image.asset('assets/icons/recycle-bin.png', color: color, width: 24, height: 24),
+              Image.asset(
+                'assets/icons/recycle-bin.png',
+                color: color,
+                width: 24,
+                height: 24,
+              ),
               if (bin.isResetPending)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.warningYellow.withValues(alpha: 0.18),
                     borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: AppColors.warningYellow.withValues(alpha: 0.5)),
+                    border: Border.all(
+                      color: AppColors.warningYellow.withValues(alpha: 0.5),
+                    ),
                   ),
                   child: const Text(
                     'MENUNGGU',
@@ -1181,7 +1238,9 @@ class _BerandaBinCard extends StatelessWidget {
                   width: 8,
                   height: 8,
                   decoration: BoxDecoration(
-                    color: bin.isActive ? AppColors.primaryGreen : AppColors.dangerRed,
+                    color: bin.isActive
+                        ? AppColors.primaryGreen
+                        : AppColors.dangerRed,
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -1214,8 +1273,6 @@ class _BerandaBinCard extends StatelessWidget {
   }
 }
 
-
-
 class _HorizontalBar extends StatelessWidget {
   const _HorizontalBar({
     required this.label,
@@ -1237,7 +1294,10 @@ class _HorizontalBar extends StatelessWidget {
           children: [
             Text(
               label,
-              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.textSecondary,
+              ),
             ),
             Text(
               '${percentage.toStringAsFixed(1)}%',
@@ -1263,4 +1323,3 @@ class _HorizontalBar extends StatelessWidget {
     );
   }
 }
-

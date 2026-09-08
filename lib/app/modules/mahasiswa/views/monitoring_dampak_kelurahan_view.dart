@@ -6,7 +6,9 @@ import '../../../data/providers/repository_providers.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../controllers/mahasiswa_controller.dart';
 
-final dampakelurahanProvider = FutureProvider.autoDispose<DampakKelurahanData>((ref) async {
+final dampakelurahanProvider = FutureProvider.autoDispose<DampakKelurahanData>((
+  ref,
+) async {
   final repo = ref.read(kknRepositoryProvider);
   return await repo.getDampakKelurahan();
 });
@@ -18,17 +20,25 @@ class MonitoringDampakKelurahanView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authProvider).user;
-    final kelurahanName = user?.kelurahan.isNotEmpty == true ? user!.kelurahan : '-';
+    final kelurahanName = user?.kelurahan.isNotEmpty == true
+        ? user!.kelurahan
+        : '-';
     final userRw = user?.rw.isNotEmpty == true ? user!.rw : '-';
     final dampakAsync = ref.watch(dampakelurahanProvider);
     final mhsState = ref.watch(mahasiswaControllerProvider);
     final totalWarga = mhsState.wargaList.length;
     final activeWarga = mhsState.wargaList.where((w) => w.isActivated).length;
-    final calcPercentage = totalWarga > 0 ? (activeWarga / totalWarga * 100) : 0.0;
+    final calcPercentage = totalWarga > 0
+        ? (activeWarga / totalWarga * 100)
+        : 0.0;
 
-    final kelDisplay = kelurahanName.toLowerCase().startsWith('kel') ? kelurahanName : 'Kel. $kelurahanName';
-    final rwDisplay = userRw != '-' ? (userRw.startsWith('RW') ? userRw : 'RW $userRw') : '';
-    final areaTitle = rwDisplay.isNotEmpty 
+    final kelDisplay = kelurahanName.toLowerCase().startsWith('kel')
+        ? kelurahanName
+        : 'Kel. $kelurahanName';
+    final rwDisplay = userRw != '-'
+        ? (userRw.startsWith('RW') ? userRw : 'RW $userRw')
+        : '';
+    final areaTitle = rwDisplay.isNotEmpty
         ? (kelurahanName != '-' ? '$rwDisplay • $kelDisplay' : rwDisplay)
         : (kelurahanName != '-' ? kelDisplay : 'Wilayah RW Dampingan');
 
@@ -71,7 +81,9 @@ class MonitoringDampakKelurahanView extends ConsumerWidget {
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(16),
-            child: dampakAsync.when(skipLoadingOnReload: true, data: (dampak) => Column(
+            child: dampakAsync.when(
+              skipLoadingOnReload: true,
+              data: (dampak) => Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // ── Banner Header RW ──────────────────────────────
@@ -136,7 +148,10 @@ class MonitoringDampakKelurahanView extends ConsumerWidget {
                               ),
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(20),
@@ -182,7 +197,11 @@ class MonitoringDampakKelurahanView extends ConsumerWidget {
                           children: [
                             Row(
                               children: [
-                                Icon(Icons.pie_chart_rounded, color: AppColors.primaryGreen, size: 20),
+                                Icon(
+                                  Icons.pie_chart_rounded,
+                                  color: AppColors.primaryGreen,
+                                  size: 20,
+                                ),
                                 SizedBox(width: 8),
                                 Text(
                                   'Tingkat Memilah Rumah Tangga RW',
@@ -194,7 +213,11 @@ class MonitoringDampakKelurahanView extends ConsumerWidget {
                                 ),
                               ],
                             ),
-                            Icon(Icons.verified_rounded, color: AppColors.primaryGreen, size: 18),
+                            Icon(
+                              Icons.verified_rounded,
+                              color: AppColors.primaryGreen,
+                              size: 18,
+                            ),
                           ],
                         ),
                         const SizedBox(height: 16),
@@ -228,16 +251,25 @@ class MonitoringDampakKelurahanView extends ConsumerWidget {
                         ClipRRect(
                           borderRadius: BorderRadius.circular(6),
                           child: LinearProgressIndicator(
-                            value: (calcPercentage > 0 ? calcPercentage : dampak.activeHouseholdsPercentage) / 100,
+                            value:
+                                (calcPercentage > 0
+                                    ? calcPercentage
+                                    : dampak.activeHouseholdsPercentage) /
+                                100,
                             minHeight: 10,
                             backgroundColor: AppColors.primaryGreenLight,
-                            valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryGreen),
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                              AppColors.primaryGreen,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           '$activeWarga dari $totalWarga rumah tangga binaan RW telah aktif memilah dari rumah.',
-                          style: const TextStyle(fontSize: 11, color: AppColors.textHint),
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textHint,
+                          ),
                         ),
                       ],
                     ),
@@ -266,7 +298,11 @@ class MonitoringDampakKelurahanView extends ConsumerWidget {
                       children: [
                         const Row(
                           children: [
-                            Icon(Icons.scale_rounded, color: AppColors.primaryBlue, size: 20),
+                            Icon(
+                              Icons.scale_rounded,
+                              color: AppColors.primaryBlue,
+                              size: 20,
+                            ),
                             SizedBox(width: 8),
                             Text(
                               'Total Volume Sampah Terpilah RW',
@@ -320,7 +356,11 @@ class MonitoringDampakKelurahanView extends ConsumerWidget {
                                   children: [
                                     const Row(
                                       children: [
-                                        Icon(Icons.eco_rounded, color: AppColors.organicColor, size: 16),
+                                        Icon(
+                                          Icons.eco_rounded,
+                                          color: AppColors.organicColor,
+                                          size: 16,
+                                        ),
                                         SizedBox(width: 4),
                                         Text(
                                           'Organik',
@@ -358,7 +398,11 @@ class MonitoringDampakKelurahanView extends ConsumerWidget {
                                   children: [
                                     const Row(
                                       children: [
-                                        Icon(Icons.category_rounded, color: AppColors.nonOrganicColor, size: 16),
+                                        Icon(
+                                          Icons.category_rounded,
+                                          color: AppColors.nonOrganicColor,
+                                          size: 16,
+                                        ),
                                         SizedBox(width: 4),
                                         Text(
                                           'Anorganik',
@@ -397,16 +441,26 @@ class MonitoringDampakKelurahanView extends ConsumerWidget {
                     decoration: BoxDecoration(
                       color: AppColors.primaryBlueLight,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.primaryBlue.withValues(alpha: 0.3)),
+                      border: Border.all(
+                        color: AppColors.primaryBlue.withValues(alpha: 0.3),
+                      ),
                     ),
                     child: const Row(
                       children: [
-                        Icon(Icons.info_outline_rounded, color: AppColors.primaryBlueDark, size: 20),
+                        Icon(
+                          Icons.info_outline_rounded,
+                          color: AppColors.primaryBlueDark,
+                          size: 20,
+                        ),
                         SizedBox(width: 10),
                         Expanded(
                           child: Text(
                             'Data dampak RW dihitung otomatis oleh sistem secara real-time berdasarkan rekapitulasi setoran & aktivasi warga di RW dampingan ini.',
-                            style: TextStyle(fontSize: 12, color: AppColors.primaryBlueDark, height: 1.4),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.primaryBlueDark,
+                              height: 1.4,
+                            ),
                           ),
                         ),
                       ],
@@ -418,7 +472,9 @@ class MonitoringDampakKelurahanView extends ConsumerWidget {
               loading: () => const Center(
                 child: Padding(
                   padding: EdgeInsets.all(32.0),
-                  child: CircularProgressIndicator(color: AppColors.primaryGreen),
+                  child: CircularProgressIndicator(
+                    color: AppColors.primaryGreen,
+                  ),
                 ),
               ),
               error: (err, _) => Center(
@@ -426,7 +482,11 @@ class MonitoringDampakKelurahanView extends ConsumerWidget {
                   padding: const EdgeInsets.all(24.0),
                   child: Column(
                     children: [
-                      const Icon(Icons.error_outline_rounded, color: AppColors.dangerRed, size: 48),
+                      const Icon(
+                        Icons.error_outline_rounded,
+                        color: AppColors.dangerRed,
+                        size: 48,
+                      ),
                       const SizedBox(height: 12),
                       Text(
                         'Gagal memuat statistik dampak RW: $err',
@@ -436,8 +496,13 @@ class MonitoringDampakKelurahanView extends ConsumerWidget {
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: () => ref.invalidate(dampakelurahanProvider),
-                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryGreen),
-                        child: const Text('Coba Lagi', style: TextStyle(color: Colors.white)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryGreen,
+                        ),
+                        child: const Text(
+                          'Coba Lagi',
+                          style: TextStyle(color: Colors.white),
+                        ),
                       ),
                     ],
                   ),

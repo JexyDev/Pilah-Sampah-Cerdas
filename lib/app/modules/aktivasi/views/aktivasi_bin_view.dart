@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../core/values/app_colors.dart';
@@ -34,6 +33,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
   bool _argsLoaded = false;
   bool _hasOrganic = false;
   bool _hasAnorganic = false;
+  DateTime? _lastStepChangeTime;
 
   @override
   void initState() {
@@ -47,10 +47,11 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_argsLoaded) {
-      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      final args =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
       _hasOrganic = args?['hasOrganic'] ?? false;
       _hasAnorganic = args?['hasAnorganic'] ?? false;
-      
+
       if (_hasOrganic && !_hasAnorganic) {
         _step = 2; // Langsung ke anorganik
       }
@@ -72,7 +73,9 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
           barrierDismissible: false,
           builder: (context) => AlertDialog(
             title: const Text('GPS Tidak Aktif'),
-            content: const Text('Silakan aktifkan GPS/Layanan Lokasi pada perangkat Anda untuk mencatat titik posisi tempat sampah.'),
+            content: const Text(
+              'Silakan aktifkan GPS/Layanan Lokasi pada perangkat Anda untuk mencatat titik posisi tempat sampah.',
+            ),
             actions: [
               TextButton(
                 onPressed: () {
@@ -100,9 +103,12 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
     if (permission == LocationPermission.deniedForever ||
         permission == LocationPermission.denied) {
       if (mounted && showDialogs) {
-        ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Akses lokasi diperlukan untuk mencatat titik posisi tempat sampah.'),
+            content: const Text(
+              'Akses lokasi diperlukan untuk mencatat titik posisi tempat sampah.',
+            ),
             backgroundColor: AppColors.dangerRed,
             action: SnackBarAction(
               label: 'Pengaturan',
@@ -121,7 +127,9 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
   String? _validateBinQr(String qr, int step) {
     final lower = qr.toLowerCase().trim();
 
-    if (lower.startsWith('http://') || lower.startsWith('https://') || lower.startsWith('www.')) {
+    if (lower.startsWith('http://') ||
+        lower.startsWith('https://') ||
+        lower.startsWith('www.')) {
       return 'QR Code tidak valid! Terdeteksi sebagai tautan web. Pastikan Anda memindai stiker QR Code fisik tempat sampah.';
     }
 
@@ -129,7 +137,8 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
       return 'Format QR Code terlalu pendek atau tidak valid.';
     }
 
-    final isAnorganicPattern = lower.contains('anorganik') ||
+    final isAnorganicPattern =
+        lower.contains('anorganik') ||
         lower.contains('anorg') ||
         lower.contains('non') ||
         lower.contains('an-org') ||
@@ -139,7 +148,8 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
         lower.contains('kertas') ||
         lower.contains('logam');
 
-    final isOrganicPattern = !isAnorganicPattern &&
+    final isOrganicPattern =
+        !isAnorganicPattern &&
         (lower.contains('organik') ||
             lower.contains('organ') ||
             lower.contains('org') ||
@@ -165,6 +175,12 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
   Future<bool> _onQrDetected(String qr) async {
     if (_bothBinsDetected) return false;
 
+    // Cooldown setelah step berubah — beri waktu user mengarahkan kamera ke QR berikutnya
+    if (_lastStepChangeTime != null &&
+        DateTime.now().difference(_lastStepChangeTime!) < const Duration(milliseconds: 1500)) {
+      return false;
+    }
+
     final detected = qr.trim();
     final error = _validateBinQr(detected, _step);
     if (error != null) {
@@ -179,22 +195,21 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
           _bothBinsDetected = true; // Selesai jika Anorganik sudah ada
         } else {
           _step = 2; // Lanjut ke scan Anorganik
+          _lastStepChangeTime = DateTime.now(); // Mulai cooldown
         }
       } else if (_step == 2) {
         _qrAnorganik = detected;
         _bothBinsDetected = true; // Kedua tempat sampah berhasil di-scan
       }
     });
-    
+
     return true;
   }
 
   void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppColors.dangerRed,
-      ),
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: AppColors.dangerRed),
     );
   }
 
@@ -207,8 +222,9 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
 
     final user = ref.read(authProvider).user;
     if (!mounted) return;
-    
-    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final double orgCapacity = args?['orgCapacity'] ?? 20.0;
     final double anorgCapacity = args?['anorgCapacity'] ?? 20.0;
 
@@ -224,7 +240,9 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
         lat = position.latitude;
         lng = position.longitude;
       } catch (e) {
-        debugPrint('[AktivasiBinScreen] Gagal mengambil lokasi GPS: $e. Menggunakan fallback.');
+        debugPrint(
+          '[AktivasiBinScreen] Gagal mengambil lokasi GPS: $e. Menggunakan fallback.',
+        );
       } finally {
         if (mounted) {
           setState(() => _localLoading = false);
@@ -261,13 +279,17 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
   String _mapError(String code, String? msg) {
     if (code == 'ALREADY_ACTIVATED' ||
         code.startsWith('BIN_ALREADY_USED') ||
-        (msg != null && (msg.contains('BIN_ALREADY_USED') || msg.contains('ALREADY_ACTIVATED')))) {
+        (msg != null &&
+            (msg.contains('BIN_ALREADY_USED') ||
+                msg.contains('ALREADY_ACTIVATED')))) {
       return 'QR Tempat Sampah ini sudah diaktivasi oleh warga lain.';
     }
-    
-    if (code == 'HOUSEHOLDS_NOT_FOUND' || 
-        code == 'HOUSEHOLD_REQUIRED' || 
-        (msg != null && (msg.contains('HOUSEHOLDS_NOT_FOUND') || msg.contains('HOUSEHOLD_REQUIRED')))) {
+
+    if (code == 'HOUSEHOLDS_NOT_FOUND' ||
+        code == 'HOUSEHOLD_REQUIRED' ||
+        (msg != null &&
+            (msg.contains('HOUSEHOLDS_NOT_FOUND') ||
+                msg.contains('HOUSEHOLD_REQUIRED')))) {
       return 'Akun Anda belum memiliki Rumah Tangga terdaftar. Harap hubungi Admin/Mahasiswa untuk pendaftaran rumah Anda terlebih dahulu.';
     }
 
@@ -290,7 +312,8 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
 
     ref.listen(aktivasiBinProvider, (prev, next) {
       if (next.errorCode != null && !next.isLoading) {
-        ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(_mapError(next.errorCode!, next.errorMessage)),
             backgroundColor: AppColors.dangerRed,
@@ -314,12 +337,16 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
     });
 
     if (aktivasiState.isLoading || _localLoading) {
-      final loadingMessage = _localLoading ? 'Mencari lokasi GPS tempat sampah...' : 'Mengaktivasi tempat sampah...';
+      final loadingMessage = _localLoading
+          ? 'Mencari lokasi GPS tempat sampah...'
+          : 'Mengaktivasi tempat sampah...';
       return Scaffold(body: AppLoading(message: loadingMessage));
     }
 
     if (aktivasiState.isSuccess) {
-      final int count = (_qrOrganik.isNotEmpty && _qrAnorganik.isNotEmpty) ? 2 : 1;
+      final int count = (_qrOrganik.isNotEmpty && _qrAnorganik.isNotEmpty)
+          ? 2
+          : 1;
       return _SuccessScreen(
         binCount: count,
         onBack: () {
@@ -333,7 +360,10 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+          icon: const Icon(
+            Icons.arrow_back_rounded,
+            color: AppColors.textPrimary,
+          ),
           onPressed: () => Navigator.maybePop(context),
         ),
         title: const Text(
@@ -399,8 +429,12 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: QrScannerWidget(
-                        hint: _step == 1 ? 'BIN-ORG-EF2072F0' : 'BIN-NON-EF2072F1',
-                        overlayColor: _step == 1 ? AppColors.organicColor : AppColors.nonOrganicColor,
+                        hint: _step == 1
+                            ? 'BIN-ORG-EF2072F0'
+                            : 'BIN-NON-EF2072F1',
+                        overlayColor: _step == 1
+                            ? AppColors.organicColor
+                            : AppColors.nonOrganicColor,
                         onQrDetected: _onQrDetected,
                       ),
                     ),
@@ -426,7 +460,9 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
                 ],
               ),
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
-              child: _bothBinsDetected ? _buildDetectedContent() : _buildScanPrompt(),
+              child: _bothBinsDetected
+                  ? _buildDetectedContent()
+                  : _buildScanPrompt(),
             ),
           ),
         ],
@@ -455,12 +491,12 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
         const SizedBox(height: 10),
         Text(
           _step == 1
-              ? (_hasAnorganic 
-                  ? 'Arahkan kamera ke Kode QR\npada Tempat Sampah Organik Anda' 
-                  : 'Langkah 1/2: Arahkan kamera ke Kode QR\npada Tempat Sampah Organik Anda')
-              : (_hasOrganic 
-                  ? 'Arahkan kamera ke Kode QR\npada Tempat Sampah Anorganik Anda' 
-                  : 'Langkah 2/2: Arahkan kamera ke Kode QR\npada Tempat Sampah Anorganik Anda'),
+              ? (_hasAnorganic
+                    ? 'Arahkan kamera ke Kode QR\npada Tempat Sampah Organik Anda'
+                    : 'Langkah 1/2: Arahkan kamera ke Kode QR\npada Tempat Sampah Organik Anda')
+              : (_hasOrganic
+                    ? 'Arahkan kamera ke Kode QR\npada Tempat Sampah Anorganik Anda'
+                    : 'Langkah 2/2: Arahkan kamera ke Kode QR\npada Tempat Sampah Anorganik Anda'),
           style: const TextStyle(
             fontSize: 14,
             color: AppColors.textSecondary,
@@ -496,8 +532,12 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
   }
 
   Widget _buildDetectedContent() {
-    final displayOrgId = _qrOrganik.length > 12 ? _qrOrganik.substring(_qrOrganik.length - 12) : _qrOrganik;
-    final displayNonId = _qrAnorganik.length > 12 ? _qrAnorganik.substring(_qrAnorganik.length - 12) : _qrAnorganik;
+    final displayOrgId = _qrOrganik.length > 12
+        ? _qrOrganik.substring(_qrOrganik.length - 12)
+        : _qrOrganik;
+    final displayNonId = _qrAnorganik.length > 12
+        ? _qrAnorganik.substring(_qrAnorganik.length - 12)
+        : _qrAnorganik;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -554,7 +594,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
           ),
           const SizedBox(height: 8),
         ],
-        
+
         if (_qrAnorganik.isNotEmpty) ...[
           // Info card Anorganik
           _buildInfoCard(
@@ -597,7 +637,10 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
             (_qrOrganik.isNotEmpty && _qrAnorganik.isNotEmpty)
                 ? 'Gunakan kedua tempat sampah ini untuk mengumpulkan poin\nsampah rumah tangga Anda.'
                 : 'Gunakan tempat sampah ini untuk mengumpulkan poin\nsampah rumah tangga Anda.',
-            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppColors.textSecondary,
+            ),
             textAlign: TextAlign.center,
           ),
         ),
@@ -605,7 +648,11 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
     );
   }
 
-  Widget _buildInfoCard({required String title, required String id, required Color color}) {
+  Widget _buildInfoCard({
+    required String title,
+    required String id,
+    required Color color,
+  }) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -618,10 +665,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
           Container(
             width: 8,
             height: 8,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
           const SizedBox(width: 8),
           Text(
@@ -660,12 +704,19 @@ class _SuccessScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+          icon: const Icon(
+            Icons.arrow_back_rounded,
+            color: AppColors.textPrimary,
+          ),
           onPressed: onBack,
         ),
         title: const Text(
           'Aktivasi Tempat Sampah',
-          style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700),
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
       backgroundColor: Colors.white,
@@ -690,9 +741,9 @@ class _SuccessScreen extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               Text(
-                binCount > 1 
-                  ? 'Kedua Tempat Sampah Berhasil Diaktivasi!' 
-                  : 'Tempat Sampah Berhasil Diaktivasi!',
+                binCount > 1
+                    ? 'Kedua Tempat Sampah Berhasil Diaktivasi!'
+                    : 'Tempat Sampah Berhasil Diaktivasi!',
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
@@ -702,10 +753,13 @@ class _SuccessScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                binCount > 1 
-                  ? 'Kedua tempat sampah Anda telah terhubung\ndengan akun rumah tangga.'
-                  : 'Tempat sampah Anda telah terhubung\ndengan akun rumah tangga.',
-                style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                binCount > 1
+                    ? 'Kedua tempat sampah Anda telah terhubung\ndengan akun rumah tangga.'
+                    : 'Tempat sampah Anda telah terhubung\ndengan akun rumah tangga.',
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),

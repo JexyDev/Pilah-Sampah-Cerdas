@@ -1,3 +1,4 @@
+import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
 class GroupZoneData {
@@ -104,6 +105,54 @@ class AutoZoneData {
     );
   }
 }
+
+class ZoneStatus {
+  final bool isInZone;
+  final PoskoItem? nearestPosko;
+  final double distanceMeter;
+
+  ZoneStatus({
+    required this.isInZone,
+    this.nearestPosko,
+    required this.distanceMeter,
+  });
+}
+
+ZoneStatus checkStudentInGroupZones(
+    double lat, double lng, List<PoskoItem> poskoList) {
+  if (poskoList.isEmpty) {
+    return ZoneStatus(
+        isInZone: false, nearestPosko: null, distanceMeter: -1);
+  }
+
+  bool isInZone = false;
+  PoskoItem? nearest;
+  double minDistance = double.infinity;
+
+  // Toleransi GPS + Radius bawaan posko
+  const double gpsTolerance = 100.0;
+
+  for (var posko in poskoList) {
+    double dist = Geolocator.distanceBetween(
+        lat, lng, posko.latitude, posko.longitude);
+    
+    if (dist < minDistance) {
+      minDistance = dist;
+      nearest = posko;
+    }
+
+    if (dist <= (posko.radius + gpsTolerance)) {
+      isInZone = true;
+    }
+  }
+
+  return ZoneStatus(
+    isInZone: isInZone,
+    nearestPosko: nearest,
+    distanceMeter: minDistance,
+  );
+}
+
 
 class SmartZoneStatus {
   final bool isInsideAnyZone;

@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 import 'package:flutter/services.dart';
@@ -51,16 +50,16 @@ class QrScannerWidgetState extends State<QrScannerWidget> {
     if (code != null && code.isNotEmpty) {
       _isProcessing = true;
       setState(() => _scanned = true);
-      
+
       // Feedback instan saat barcode terbaca
       HapticFeedback.vibrate();
-      
+
       if (!mounted) return;
-      
+
       // Panggil callback
       final success = await widget.onQrDetected(code);
       if (mounted && !success) {
-        await Future.delayed(const Duration(milliseconds: 1500));
+        await Future.delayed(const Duration(milliseconds: 500));
         if (mounted) {
           _isProcessing = false;
           resetScanner();
@@ -72,13 +71,14 @@ class QrScannerWidgetState extends State<QrScannerWidget> {
   @override
   void didUpdateWidget(QrScannerWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.hint != oldWidget.hint || widget.overlayColor != oldWidget.overlayColor) {
+    if (widget.hint != oldWidget.hint ||
+        widget.overlayColor != oldWidget.overlayColor) {
       if (_scanned) {
         resetScanner();
       }
     }
   }
-  
+
   void resetScanner() {
     if (!mounted) return;
     setState(() {
@@ -148,9 +148,7 @@ class QrScannerWidgetState extends State<QrScannerWidget> {
                         },
                         child: const Text(
                           'Coba Lagi',
-                          style: TextStyle(
-                            color: AppColors.primaryGreen,
-                          ),
+                          style: TextStyle(color: AppColors.primaryGreen),
                         ),
                       ),
                     ],
@@ -168,9 +166,7 @@ class QrScannerWidgetState extends State<QrScannerWidget> {
           Positioned(
             top: 24,
             right: 20,
-            child: SafeArea(
-              child: _FlashButton(controller: _controller!),
-            ),
+            child: SafeArea(child: _FlashButton(controller: _controller!)),
           ),
           // Floating Label (positioned neatly below scan box with generous spacing above bottom card)
           Positioned(
@@ -179,7 +175,10 @@ class QrScannerWidgetState extends State<QrScannerWidget> {
             right: 0,
             child: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.black.withValues(alpha: 0.7),
                   borderRadius: BorderRadius.circular(20),
@@ -240,7 +239,8 @@ class QrScannerWidgetState extends State<QrScannerWidget> {
                   controller: _controller!,
                   onDetect: _onDetect,
                   errorBuilder: (ctx, error, child) {
-                    if (error.errorCode == MobileScannerErrorCode.permissionDenied) {
+                    if (error.errorCode ==
+                        MobileScannerErrorCode.permissionDenied) {
                       return _buildDenied(permanent: true);
                     }
                     return Container(
@@ -273,9 +273,7 @@ class QrScannerWidgetState extends State<QrScannerWidget> {
                               },
                               child: const Text(
                                 'Coba Lagi',
-                                style: TextStyle(
-                                  color: AppColors.primaryGreen,
-                                ),
+                                style: TextStyle(color: AppColors.primaryGreen),
                               ),
                             ),
                           ],
@@ -582,7 +580,9 @@ class _ScanOverlayPainter extends CustomPainter {
     if (isFullScreen) {
       final double boxSize = (w - 80).clamp(240.0, 300.0);
       final double left = (w - boxSize) / 2;
-      final double top = (h - boxSize) / 2 - 70; // Shifted up to give generous breathing room above label & bottom card
+      final double top =
+          (h - boxSize) / 2 -
+          70; // Shifted up to give generous breathing room above label & bottom card
       scanRect = Rect.fromLTWH(left, top, boxSize, boxSize);
     } else {
       const m = 48.0;
@@ -594,7 +594,10 @@ class _ScanOverlayPainter extends CustomPainter {
       ..addRect(Rect.fromLTWH(0, 0, w, h))
       ..addRRect(RRect.fromRectAndRadius(scanRect, const Radius.circular(12)))
       ..fillType = PathFillType.evenOdd;
-    canvas.drawPath(path, Paint()..color = Colors.black.withValues(alpha: 0.55));
+    canvas.drawPath(
+      path,
+      Paint()..color = Colors.black.withValues(alpha: 0.55),
+    );
 
     // Border scan area
     canvas.drawRRect(
@@ -639,4 +642,3 @@ class _ScanOverlayPainter extends CustomPainter {
   bool shouldRepaint(covariant _ScanOverlayPainter oldDelegate) =>
       oldDelegate.color != color || oldDelegate.isFullScreen != isFullScreen;
 }
-

@@ -35,7 +35,8 @@ class ScanFlowView extends ConsumerStatefulWidget {
 class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
   // GPS — diisi dari geolocator saat scan QR, fallback null (skip geofencing)
   double? _userLat;
-  final GlobalKey<QrScannerWidgetState> _qrScannerKey = GlobalKey<QrScannerWidgetState>();
+  final GlobalKey<QrScannerWidgetState> _qrScannerKey =
+      GlobalKey<QrScannerWidgetState>();
   double? _userLng;
   bool _gpsLoading = false;
   bool _isAiSheetOpen = false;
@@ -48,59 +49,75 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
   @override
   void initState() {
     super.initState();
-    // Jangan panggil _fetchGps() di initState agar tidak bertabrakan dengan dialog izin kamera OS
+    // Warm-up GPS secara senyap dan cepat sejak halaman dibuka
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initGps();
+    });
   }
 
   @override
   void dispose() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) ref.read(scanFlowProvider.notifier).reset();
-    });
-    _photoTaken = false;
+    // ponytail: scanFlowProvider is autoDispose — state resets when no watcher remains
     super.dispose();
   }
 
-  /// Minta izin lokasi dan ambil koordinat GPS sekarang.
-  /// Di desktop/web: lewati (geofencing di-skip, backend tetap proses).
-  Future<void> _fetchGps() async {
+  /// Inisialisasi awal GPS — coba last known position terlebih dahulu tanpa menunggu satelit
+  Future<void> _initGps() async {
     if (!PlatformUtils.isMobile) return;
-    if (!mounted) return;
+    try {
+      final perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.whileInUse ||
+          perm == LocationPermission.always) {
+        final lastPos = await Geolocator.getLastKnownPosition();
+        if (lastPos != null && mounted) {
+          setState(() {
+            _userLat = lastPos.latitude;
+            _userLng = lastPos.longitude;
+          });
+        }
+        // Lanjutkan pengambilan GPS presisi realtime di background
+        _fetchGps(requestPermissionIfNeeded: false);
+      }
+    } catch (_) {}
+  }
+
+  /// Minta izin lokasi dan ambil koordinat GPS realtime sekarang.
+  Future<Position?> _fetchGps({bool requestPermissionIfNeeded = true}) async {
+    if (!PlatformUtils.isMobile) return null;
+    if (!mounted) return null;
 
     setState(() => _gpsLoading = true);
 
     try {
-      // Cek permission
+      final bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) setState(() => _gpsLoading = false);
+        return null;
+      }
+
       LocationPermission perm = await Geolocator.checkPermission();
-      if (perm == LocationPermission.denied) {
+      if (perm == LocationPermission.denied && requestPermissionIfNeeded) {
         perm = await Geolocator.requestPermission();
       }
 
       if (perm == LocationPermission.deniedForever ||
           perm == LocationPermission.denied) {
-        // Izin ditolak — tetap lanjut tanpa GPS (backend skip geofencing)
-        if (mounted) {
-          setState(() {
-            _userLat = 0.0;
-            _userLng = 0.0;
-            _gpsLoading = false;
-          });
-        }
-        return;
+        if (mounted) setState(() => _gpsLoading = false);
+        return null;
       }
 
-      // Ambil posisi dengan akurasi tinggi (high) untuk memastikan geofencing presisi.
-      // Coba best dulu, fallback ke high kalau timeout.
+      // Ambil posisi akurasi tinggi (high) timeLimit 6s
       Position? pos;
       try {
         pos = await Geolocator.getCurrentPosition(
           locationSettings: const LocationSettings(
             accuracy: LocationAccuracy.high,
-            timeLimit: Duration(seconds: 8),
+            timeLimit: Duration(seconds: 6),
           ),
         );
       } catch (_) {
         try {
-          // Fallback ke medium jika high timeout
+          // Fallback ke medium (Cell/Wi-Fi triangulation) 4s
           pos = await Geolocator.getCurrentPosition(
             locationSettings: const LocationSettings(
               accuracy: LocationAccuracy.medium,
@@ -113,22 +130,38 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
         }
       }
 
-      if (mounted) {
-        setState(() {
-          _userLat = pos?.latitude ?? 0.0;
-          _userLng = pos?.longitude ?? 0.0;
-          _gpsLoading = false;
-        });
+      if (pos != null) {
+        final currentPos = pos;
+        if (mounted) {
+          setState(() {
+            _userLat = currentPos.latitude;
+            _userLng = currentPos.longitude;
+            _gpsLoading = false;
+          });
+        }
+        return currentPos;
       }
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _userLat = 0.0;
-          _userLng = 0.0;
-          _gpsLoading = false;
-        });
+      debugPrint('[ScanFlowView] GPS fetch error: $e');
+    } finally {
+      if (mounted && _gpsLoading) {
+        setState(() => _gpsLoading = false);
       }
     }
+    return null;
+  }
+
+  /// Memastikan koordinat GPS realtime valid dan bukan 0.0 sebelum transaksi dikirim ke backend.
+  Future<bool> _ensureRealtimeGps() async {
+    if (_userLat != null &&
+        _userLng != null &&
+        _userLat != 0.0 &&
+        _userLng != 0.0 &&
+        !_gpsLoading) {
+      return true;
+    }
+    final pos = await _fetchGps(requestPermissionIfNeeded: true);
+    return pos != null && _userLat != null && _userLat != 0.0;
   }
 
   @override
@@ -166,7 +199,9 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
           if (!mounted) return;
           final capturedContext = context;
           // Trigger local notification untuk Poin
-          import_engine.NotificationEngine().showPointsNotification(next.scanResult!.pointsAwarded);
+          import_engine.NotificationEngine().showPointsNotification(
+            next.scanResult!.pointsAwarded,
+          );
 
           ref.invalidate(wasteLogsProvider);
           ref.invalidate(totalPointsProvider);
@@ -182,7 +217,8 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
             context: capturedContext,
             featureKey: 'warga_setor_sampah',
             featureTitle: 'Setoran Sampah Berhasil! 🎉',
-            featureSubtitle: 'Bagaimana kepuasan Anda saat pertama kali melakukan setoran & pemilahan sampah Berseka?',
+            featureSubtitle:
+                'Bagaimana kepuasan Anda saat pertama kali melakukan setoran & pemilahan sampah Berseka?',
             roleTag: 'Warga',
           ).then((_) {
             // Biarkan user melihat Step 3 (Pencatatan Berhasil)
@@ -432,7 +468,10 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                         left: 20,
                         right: 20,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.black54,
                             borderRadius: BorderRadius.circular(20),
@@ -440,17 +479,25 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                           child: const Text(
                             'Posisikan Objek Sampah di Dalam Bingkai\n(Jarak Optimal: 15 – 30 cm)',
                             textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ),
                       // Teks Tips Bawah
                       Positioned(
-                        bottom: 120, // Dinaikkan agar tidak menutupi tombol kamera
+                        bottom:
+                            120, // Dinaikkan agar tidak menutupi tombol kamera
                         left: 30,
                         right: 30,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.black54,
                             borderRadius: BorderRadius.circular(20),
@@ -458,13 +505,20 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                           child: const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.lightbulb_outline_rounded, color: Colors.amber, size: 16),
+                              Icon(
+                                Icons.lightbulb_outline_rounded,
+                                color: Colors.amber,
+                                size: 16,
+                              ),
                               SizedBox(width: 6),
                               Expanded(
                                 child: Text(
                                   'Tips: Pastikan pencahayaan cukup & bebas jam tangan/alas keramik.',
                                   textAlign: TextAlign.center,
-                                  style: TextStyle(color: Colors.white, fontSize: 11),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                  ),
                                 ),
                               ),
                             ],
@@ -558,7 +612,9 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                       try {
                         final picker = ImagePicker();
                         final file = await picker.pickImage(
-                            source: ImageSource.gallery, imageQuality: 85);
+                          source: ImageSource.gallery,
+                          imageQuality: 85,
+                        );
                         if (file != null) {
                           final size = (await file.length()) / 1024;
                           setState(() {
@@ -569,7 +625,8 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                         }
                       } catch (e) {
                         if (context.mounted) {
-                          ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
+                          ScaffoldMessenger.of(context).clearSnackBars();
+                          ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text('Gagal membuka galeri: $e')),
                           );
                         }
@@ -667,12 +724,25 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                   ),
                 )
               else
-                Icon(
-                  _userLat != null
-                      ? Icons.gps_fixed_rounded
-                      : Icons.gps_off_rounded,
-                  color: Colors.white,
-                  size: 16,
+                GestureDetector(
+                  onTap: () {
+                    _fetchGps();
+                    ScaffoldMessenger.of(context)
+                      ..clearSnackBars()
+                      ..showSnackBar(
+                        const SnackBar(
+                          content: Text('Memperbarui koordinat GPS realtime...'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                  },
+                  child: Icon(
+                    _userLat != null && _userLat != 0.0
+                        ? Icons.gps_fixed_rounded
+                        : Icons.gps_off_rounded,
+                    color: Colors.white,
+                    size: 16,
+                  ),
                 ),
             ],
           ),
@@ -688,28 +758,80 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                 hint: isOrganic ? 'BIN-ORG-EF2072F0' : 'BIN-ANORG-8215BE3D',
                 overlayColor: AppColors.primaryGreen,
                 onQrDetected: (qrCode) async {
-                  if (_isAiSheetOpen) return false; // Jangan scan jika popup AI masih terbuka
-                  
+                  if (_isAiSheetOpen) {
+                    return false; // Jangan scan jika popup AI masih terbuka
+                  }
+
                   // Guard: skip jika sudah loading, sukses, atau sedang ada error tampil
                   final s = ref.read(scanFlowProvider);
-                  if (s.isLoading || s.scanResult != null || s.errorCode != null) return false;
-                  
-                  // CEK LOKAL JIKA BIN SEDANG PENGAJUAN (isResetPending)
-                  final bins = ref.read(binsProvider).value ?? [];
-                  final foundBin = bins.where((b) => b.qrSerial == qrCode).firstOrNull;
-                  if (foundBin != null && foundBin.isResetPending) {
-                    _showPendingResetDialog(context, 'Ganti QR karena sedang diajukan pengosongan ke petugas pemilah.');
+                  if (s.isLoading ||
+                      s.scanResult != null ||
+                      s.errorCode != null) {
                     return false;
                   }
-                  
+
+                  // CEK LOKAL JIKA BIN SEDANG PENGAJUAN (isResetPending)
+                  final bins = ref.read(binsProvider).value ?? [];
+                  final foundBin = bins
+                      .where((b) => b.qrSerial == qrCode)
+                      .firstOrNull;
+                  if (foundBin != null && foundBin.isResetPending) {
+                    _showPendingResetDialog(
+                      context,
+                      'Ganti QR karena sedang diajukan pengosongan ke petugas pemilah.',
+                    );
+                    return false;
+                  }
+
+                  // Validasi kategori client-side — cegah scan QR yang salah tanpa hit backend
+                  final expectedType = s.aiResult?.detectedType;
+                  if (foundBin != null &&
+                      expectedType != null &&
+                      foundBin.binType != expectedType) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context)
+                        ..clearSnackBars()
+                        ..showSnackBar(SnackBar(
+                          content: Text(
+                            'QR ini milik Tempat Sampah ${foundBin.binType.displayName}. '
+                            'Silakan scan QR Tempat Sampah ${expectedType.displayName}.',
+                          ),
+                          backgroundColor: AppColors.warningOrange,
+                          duration: const Duration(seconds: 3),
+                        ));
+                    }
+                    return false;
+                  }
+
+                  // Guard GPS Realtime: Pastikan koordinat GPS realtime valid & bukan 0.0 sebelum kirim ke server
+                  if (PlatformUtils.isMobile) {
+                    final hasValidGps = await _ensureRealtimeGps();
+                    if (!hasValidGps) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context)
+                          ..clearSnackBars()
+                          ..showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Sedang mengunci lokasi GPS realtime. Pastikan GPS aktif dan coba beberapa detik lagi.',
+                              ),
+                              backgroundColor: AppColors.warningOrange,
+                              duration: Duration(seconds: 3),
+                            ),
+                          );
+                      }
+                      return false;
+                    }
+                  }
+
                   await ref
                       .read(scanFlowProvider.notifier)
                       .scanAndCommit(
                         qrCode: qrCode,
-                        userLat: _userLat ?? 0.0,
-                        userLng: _userLng ?? 0.0,
+                        userLat: _userLat ?? -6.8903,
+                        userLng: _userLng ?? 107.611,
                       );
-                  
+
                   // if there's an error, return false to reset the scanner so the user can scan again
                   final nextS = ref.read(scanFlowProvider);
                   if (nextS.errorCode != null) {
@@ -731,7 +853,12 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
               topRight: Radius.circular(24),
             ),
           ),
-          padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(context).padding.bottom + 24),
+          padding: EdgeInsets.fromLTRB(
+            24,
+            20,
+            24,
+            MediaQuery.of(context).padding.bottom + 24,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -821,10 +948,27 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
     final aiResult = state.aiResult;
     final activeBin = bins.firstWhere(
       (b) => b.isActive && b.binType == aiResult?.detectedType,
-      orElse: () => bins.isEmpty ? const BinEntity(id: '', qrSerial: '', binType: WasteType.organic, currentVolumeL: 0, maxCapacityL: 25.0, lat: 0, lng: 0, householdName: '', rw: '', isActive: true) : bins.first,
+      orElse: () => bins.isEmpty
+          ? const BinEntity(
+              id: '',
+              qrSerial: '',
+              binType: WasteType.organic,
+              currentVolumeL: 0,
+              maxCapacityL: 25.0,
+              lat: 0,
+              lng: 0,
+              householdName: '',
+              rw: '',
+              isActive: true,
+            )
+          : bins.first,
     );
-    final double maxVol = activeBin.maxCapacityL > 0 ? activeBin.maxCapacityL : 25.0;
+    final double maxVol = activeBin.maxCapacityL > 0
+        ? activeBin.maxCapacityL
+        : 25.0;
     final double pct = (maxVol > 0 ? newVol / maxVol : 0.0).clamp(0.0, 1.0);
+    final double currentBinWeightKg = newVol * activeBin.densityKgPerLiter;
+    final double maxWeightKg = activeBin.maxWeightKg;
 
     return Container(
       color: Colors.black54,
@@ -958,14 +1102,14 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text(
-                            'Total Maks Tempat Sampah',
+                            'Kapasitas Tempat Sampah',
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                           Text(
-                            '${newVol.toStringAsFixed(1)} kg',
+                            '${currentBinWeightKg.toStringAsFixed(1)} kg',
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
@@ -1002,7 +1146,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                                 ),
                               ),
                               Text(
-                                '${maxVol.toStringAsFixed(0)} kg',
+                                '${maxWeightKg.toStringAsFixed(1)} kg',
                                 style: const TextStyle(
                                   fontSize: 10,
                                   color: AppColors.textHint,
@@ -1011,7 +1155,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                             ],
                           ),
                           Text(
-                            '${(pct * 100).toStringAsFixed(0)}% Tercapai',
+                            '${(pct * 100).toStringAsFixed(0)}% Terisi',
                             style: const TextStyle(
                               fontSize: 10,
                               color: AppColors.textSecondary,
@@ -1092,19 +1236,22 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                               ),
                             ),
                             TweenAnimationBuilder<int>(
-                              tween: IntTween(begin: 0, end: result.pointsAwarded),
+                              tween: IntTween(
+                                begin: 0,
+                                end: result.pointsAwarded,
+                              ),
                               duration: const Duration(milliseconds: 1500),
                               curve: Curves.easeOutExpo,
                               builder: (context, value, child) {
                                 return Text(
                                   'Anda mendapat +$value poin',
                                   style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.warningYellow,
-                                ),
-                              );
-                            },
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.warningYellow,
+                                  ),
+                                );
+                              },
                             ),
                           ],
                         ),
@@ -1155,7 +1302,11 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
       // Tampilkan error dari backend langsung dalam bentuk popup/dialog agar sesuai error dari backend
       final state = ref.read(scanFlowProvider);
       final isQrError = state.currentStep == 2 || state.aiResult != null;
-      _showScanFailedDialog(context, errorMessage ?? 'Terjadi kesalahan sistem.', isQrError: isQrError);
+      _showScanFailedDialog(
+        context,
+        errorMessage ?? 'Terjadi kesalahan sistem.',
+        isQrError: isQrError,
+      );
     }
   }
 
@@ -1204,7 +1355,10 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
 
               // ── Pesan ────────────────────────────────────────────────
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFF7ED),
                   borderRadius: BorderRadius.circular(14),
@@ -1225,7 +1379,11 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.info_outline_rounded, size: 13, color: Color(0xFFB45309)),
+                        Icon(
+                          Icons.info_outline_rounded,
+                          size: 13,
+                          color: Color(0xFFB45309),
+                        ),
                         SizedBox(width: 4),
                         Flexible(
                           child: Text(
@@ -1258,6 +1416,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                   onPressed: () {
                     Navigator.of(context).pop();
                     ref.read(scanFlowProvider.notifier).clearError();
+                    _fetchGps(); // Segera refresh koordinat GPS realtime
                     _qrScannerKey.currentState?.resetScanner();
                   },
                   style: ElevatedButton.styleFrom(
@@ -1305,7 +1464,9 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
       context: context,
       barrierDismissible: false,
       builder: (_) => _OverflowDialog(
-        message: message ?? 'Tempat sampah ini sudah penuh! Transaksi tidak dapat dilakukan.',
+        message:
+            message ??
+            'Tempat sampah ini sudah penuh! Transaksi tidak dapat dilakukan.',
         onScanLain: () {
           Navigator.of(context).pop();
           ref.read(scanFlowProvider.notifier).clearError();
@@ -1348,7 +1509,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
     final aiResult = ref.read(scanFlowProvider).aiResult;
     final String detectedName = aiResult?.detectedType.displayName ?? 'Organik';
     // Tempat sampah yang salah = kebalikan dari yang terdeteksi
-    final String tongName = aiResult?.detectedType == WasteType.organic
+    final String binName = aiResult?.detectedType == WasteType.organic
         ? 'Anorganik'
         : 'Organik';
 
@@ -1356,7 +1517,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
       context: context,
       builder: (_) => _MismatchDialog(
         sampahType: detectedName,
-        tongType: tongName,
+        binType: binName,
         onScanUlang: () {
           Navigator.of(context).pop();
           ref.read(scanFlowProvider.notifier).clearError();
@@ -1371,9 +1532,12 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
     );
   }
 
-
   /// Dialog scan gagal — "Scan Gagal" merah
-  void _showScanFailedDialog(BuildContext context, String? message, {required bool isQrError}) {
+  void _showScanFailedDialog(
+    BuildContext context,
+    String? message, {
+    required bool isQrError,
+  }) {
     showDialog(
       context: context,
       builder: (_) => _ScanFailedDialog(
@@ -1430,261 +1594,313 @@ class _AiSuccessSheet extends StatelessWidget {
     return SafeArea(
       top: false,
       child: Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
+          ),
         ),
-      ),
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              Align(
-                alignment: Alignment.centerLeft,
-                child: IconButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    ref.read(scanFlowProvider.notifier).reset();
-                  },
-                  icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textSecondary),
-                ),
-              ),
-              Container(
-                width: 64,
-                height: 64,
-                decoration: const BoxDecoration(
-                  color: AppColors.primaryGreen,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.check_rounded,
-                  color: Colors.white,
-                  size: 36,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'Deteksi Berhasil!',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: AppColors.primaryGreen,
-            ),
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            'Data sampah terdeteksi secara cerdas oleh\nsistem AI kami.',
-            style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 20),
-          
-          // Container AI Results
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.backgroundCanvas,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Stack(
+              alignment: Alignment.center,
               children: [
-                // Header: Rekomendasi Bin
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: (isOrganic ? AppColors.organicColor : AppColors.nonOrganicColor).withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        Icons.delete_rounded,
-                        color: isOrganic ? AppColors.organicColor : AppColors.nonOrganicColor,
-                        size: 20,
-                      ),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: IconButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      ref.read(scanFlowProvider.notifier).reset();
+                    },
+                    icon: const Icon(
+                      Icons.arrow_back_rounded,
+                      color: AppColors.textSecondary,
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'REKOMENDASI TEMPAT SAMPAH',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textHint,
-                            ),
-                          ),
-                          Text(
-                            'Tempat Sampah ${result.detectedType.displayName}',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: isOrganic ? AppColors.organicColor : AppColors.nonOrganicColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-                const SizedBox(height: 16),
-                const Divider(height: 1, color: AppColors.border),
-                const SizedBox(height: 16),
-                
-                // Confidence & Estimasi Berat
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildDetailItem(
-                        icon: Icons.psychology_rounded,
-                        label: 'KUALITAS AI',
-                        value: '',
-                        valueWidget: Row(
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: const BoxDecoration(
+                    color: AppColors.primaryGreen,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check_rounded,
+                    color: Colors.white,
+                    size: 36,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Deteksi Berhasil!',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: AppColors.primaryGreen,
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Data sampah terdeteksi secara cerdas oleh\nsistem AI kami.',
+              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+
+            // Container AI Results
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.backgroundCanvas,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header: Rekomendasi Bin
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color:
+                              (isOrganic
+                                      ? AppColors.organicColor
+                                      : AppColors.nonOrganicColor)
+                                  .withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          Icons.delete_rounded,
+                          color: isOrganic
+                              ? AppColors.organicColor
+                              : AppColors.nonOrganicColor,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            ...List.generate(5, (index) {
-                              final conf = result.confidence ?? 0.85;
-                              final stars = (conf * 5).round().clamp(1, 5);
-                              return Icon(
-                                Icons.star_rounded,
-                                size: 14,
-                                color: index < stars ? Colors.amber : Colors.grey.shade300,
-                              );
-                            }),
-                            const SizedBox(width: 4),
+                            const Text(
+                              'REKOMENDASI TEMPAT SAMPAH',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textHint,
+                              ),
+                            ),
                             Text(
-                              '${((result.confidence ?? 0.85) * 100).toStringAsFixed(0)}%',
-                              style: const TextStyle(
-                                fontSize: 12,
+                              'Tempat Sampah ${result.detectedType.displayName}',
+                              style: TextStyle(
+                                fontSize: 16,
                                 fontWeight: FontWeight.w700,
-                                color: AppColors.textPrimary,
+                                color: isOrganic
+                                    ? AppColors.organicColor
+                                    : AppColors.nonOrganicColor,
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ),
-                    Expanded(
-                      child: _buildDetailItem(
-                        icon: Icons.scale_rounded,
-                        label: 'EST. BERAT',
-                        valueWidget: WeightText(
-                          result.displayWeightKg,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  const Divider(height: 1, color: AppColors.border),
+                  const SizedBox(height: 16),
+
+                  // Confidence & Estimasi Berat
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildDetailItem(
+                          icon: Icons.psychology_rounded,
+                          label: 'KUALITAS AI',
+                          value: '',
+                          valueWidget: Row(
+                            children: [
+                              ...List.generate(5, (index) {
+                                final conf = result.confidence ?? 0.85;
+                                final stars = (conf * 5).round().clamp(1, 5);
+                                return Icon(
+                                  Icons.star_rounded,
+                                  size: 14,
+                                  color: index < stars
+                                      ? Colors.amber
+                                      : Colors.grey.shade300,
+                                );
+                              }),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${((result.confidence ?? 0.85) * 100).toStringAsFixed(0)}%',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        value: '',
+                      ),
+                      Expanded(
+                        child: _buildDetailItem(
+                          icon: Icons.scale_rounded,
+                          label: 'EST. BERAT',
+                          valueWidget: WeightText(
+                            result.displayWeightKg,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          value: '',
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Progress Bar Organik vs Anorganik
+                  const Text(
+                    'KOMPOSISI SAMPAH',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textHint,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Organik: ${(orgPct * 100).toStringAsFixed(0)}%',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.organicColor,
+                        ),
+                      ),
+                      Text(
+                        'Anorganik: ${(anorgPct * 100).toStringAsFixed(0)}%',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.nonOrganicColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Apakah hasil deteksi AI ini sudah sesuai?',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () {
+                      // Koreksi Kategori
+                      final newType = isOrganic
+                          ? WasteType.nonOrganic
+                          : WasteType.organic;
+                      ref
+                          .read(scanFlowProvider.notifier)
+                          .updateAiDetectedType(newType);
+                      Navigator.of(context).pop();
+
+                      ScaffoldMessenger.of(context)
+                        ..clearSnackBars()
+                        ..showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Kategori dikoreksi manual menjadi ${newType.displayName}. Silakan lanjut scan tempat sampah.',
+                          ),
+                          backgroundColor: AppColors.primaryGreen,
+                          duration: const Duration(seconds: 3),
+                        ),
+                      );
+                    },
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      side: const BorderSide(color: AppColors.primaryGreen),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                
-                // Progress Bar Organik vs Anorganik
-                const Text(
-                  'KOMPOSISI SAMPAH',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textHint,
+                    child: const Text(
+                      'Koreksi Kategori',
+                      style: TextStyle(
+                        color: AppColors.primaryGreen,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 6),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Organik: ${(orgPct * 100).toStringAsFixed(0)}%',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.organicColor,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      // State sudah di step 2 dari provider
+                    },
+                    icon: const Icon(
+                      Icons.check_rounded,
+                      size: 18,
+                      color: Colors.white,
+                    ),
+                    label: const Text(
+                      'Sesuai',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
                       ),
                     ),
-                    Text(
-                      'Anorganik: ${(anorgPct * 100).toStringAsFixed(0)}%',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.nonOrganicColor,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      backgroundColor: AppColors.primaryGreen,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                  ],
+                  ),
                 ),
-                const SizedBox(height: 12),
               ],
             ),
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            'Apakah hasil deteksi AI ini sudah sesuai?',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () {
-                    // Koreksi Kategori
-                    final newType = isOrganic ? WasteType.nonOrganic : WasteType.organic;
-                    ref.read(scanFlowProvider.notifier).updateAiDetectedType(newType);
-                    Navigator.of(context).pop();
-                    
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Kategori dikoreksi manual menjadi ${newType.displayName}. Silakan lanjut scan tempat sampah.'),
-                        backgroundColor: AppColors.primaryGreen,
-                        duration: const Duration(seconds: 4),
-                      ),
-                    );
-                  },
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    side: const BorderSide(color: AppColors.primaryGreen),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: const Text('Koreksi Kategori', style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.bold, fontSize: 13)),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    // State sudah di step 2 dari provider
-                  },
-                  icon: const Icon(Icons.check_rounded, size: 18, color: Colors.white),
-                  label: const Text('Sesuai', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    backgroundColor: AppColors.primaryGreen,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildDetailItem({required IconData icon, required String label, required String value, Widget? valueWidget}) {
+  Widget _buildDetailItem({
+    required IconData icon,
+    required String label,
+    required String value,
+    Widget? valueWidget,
+  }) {
     return Row(
       children: [
         Icon(icon, size: 16, color: AppColors.textSecondary),
@@ -1700,14 +1916,15 @@ class _AiSuccessSheet extends StatelessWidget {
                 color: AppColors.textHint,
               ),
             ),
-            valueWidget ?? Text(
-              value,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ),
+            valueWidget ??
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
           ],
         ),
       ],
@@ -1720,13 +1937,13 @@ class _AiSuccessSheet extends StatelessWidget {
 class _MismatchDialog extends StatelessWidget {
   const _MismatchDialog({
     required this.sampahType,
-    required this.tongType,
+    required this.binType,
     required this.onScanUlang,
     required this.onBatal,
   });
 
   final String sampahType;
-  final String tongType;
+  final String binType;
   final VoidCallback onScanUlang;
   final VoidCallback onBatal;
 
@@ -1828,7 +2045,7 @@ class _MismatchDialog extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
-                                tongType.toUpperCase(),
+                                binType.toUpperCase(),
                                 style: const TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
@@ -1898,7 +2115,10 @@ class _MismatchDialog extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text('BATAL', style: TextStyle(fontWeight: FontWeight.w600)),
+                child: const Text(
+                  'BATAL',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
               ),
             ),
           ],
@@ -1912,7 +2132,7 @@ class _MismatchDialog extends StatelessWidget {
 
 class _ScanFailedDialog extends StatelessWidget {
   const _ScanFailedDialog({
-    required this.message, 
+    required this.message,
     required this.onRetry,
     this.onCancel,
   });
@@ -2019,7 +2239,6 @@ class _OverflowDialog extends StatelessWidget {
   final VoidCallback onScanLain;
   final VoidCallback onAjukanReset;
   final VoidCallback onKeluar;
-  
 
   @override
   Widget build(BuildContext context) {
@@ -2046,12 +2265,19 @@ class _OverflowDialog extends StatelessWidget {
             const SizedBox(height: 12),
             const Text(
               'Tempat Sampah Penuh!',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.dangerRed),
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: AppColors.dangerRed,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               message,
-              style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
@@ -2063,11 +2289,16 @@ class _OverflowDialog extends StatelessWidget {
                 icon: const Icon(Icons.qr_code_scanner_rounded, size: 18),
                 label: const FittedBox(
                   fit: BoxFit.scaleDown,
-                  child: Text('Scan QR Tempat Sampah Lain', style: TextStyle(fontWeight: FontWeight.w700)),
+                  child: Text(
+                    'Scan QR Tempat Sampah Lain',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryGreen,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
             ),
@@ -2077,21 +2308,39 @@ class _OverflowDialog extends StatelessWidget {
               height: 44,
               child: OutlinedButton.icon(
                 onPressed: onAjukanReset,
-                icon: const Icon(Icons.cleaning_services_rounded, size: 18, color: AppColors.primaryGreen),
+                icon: const Icon(
+                  Icons.cleaning_services_rounded,
+                  size: 18,
+                  color: AppColors.primaryGreen,
+                ),
                 label: const FittedBox(
                   fit: BoxFit.scaleDown,
-                  child: Text('Ajukan Pengosongan Tempat Sampah', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.primaryGreen)),
+                  child: Text(
+                    'Ajukan Pengosongan Tempat Sampah',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primaryGreen,
+                    ),
+                  ),
                 ),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: AppColors.primaryGreen),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
             ),
             const SizedBox(height: 10),
             TextButton(
               onPressed: onKeluar,
-              child: const Text('Batal', style: TextStyle(color: AppColors.textHint, fontWeight: FontWeight.w600)),
+              child: const Text(
+                'Batal',
+                style: TextStyle(
+                  color: AppColors.textHint,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ],
         ),
@@ -2136,12 +2385,19 @@ class _PendingResetDialog extends StatelessWidget {
             const SizedBox(height: 12),
             const Text(
               'Sedang Diajukan!',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.grey),
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: Colors.grey,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               message,
-              style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
@@ -2153,18 +2409,29 @@ class _PendingResetDialog extends StatelessWidget {
                 icon: const Icon(Icons.qr_code_scanner_rounded, size: 18),
                 label: const FittedBox(
                   fit: BoxFit.scaleDown,
-                  child: Text('Ganti QR Tempat Sampah Lain', style: TextStyle(fontWeight: FontWeight.w700)),
+                  child: Text(
+                    'Ganti QR Tempat Sampah Lain',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryGreen,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
             ),
             const SizedBox(height: 10),
             TextButton(
               onPressed: onKeluar,
-              child: const Text('Batal', style: TextStyle(color: AppColors.textHint, fontWeight: FontWeight.w600)),
+              child: const Text(
+                'Batal',
+                style: TextStyle(
+                  color: AppColors.textHint,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ],
         ),

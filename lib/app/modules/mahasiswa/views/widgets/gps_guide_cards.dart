@@ -51,7 +51,8 @@ class GpsGuideCards extends StatelessWidget {
         return _GuideCard(
           icon: Icons.location_off,
           title: 'Aktifkan GPS',
-          subtitle: 'GPS perangkat tidak aktif. Aktifkan dari panel notifikasi atau Pengaturan.',
+          subtitle:
+              'GPS perangkat tidak aktif. Aktifkan dari panel notifikasi atau Pengaturan.',
           actionLabel: 'Buka Pengaturan Lokasi',
           onAction: () => Geolocator.openLocationSettings(),
           color: Colors.red,
@@ -61,7 +62,8 @@ class GpsGuideCards extends StatelessWidget {
         return _GuideCard(
           icon: Icons.settings,
           title: 'Buka Pengaturan Aplikasi',
-          subtitle: 'Izin lokasi diblokir permanen. Buka pengaturan dan aktifkan kembali izin lokasi untuk aplikasi ini.',
+          subtitle:
+              'Izin lokasi diblokir permanen. Buka pengaturan dan aktifkan kembali izin lokasi untuk aplikasi ini.',
           actionLabel: 'Buka Pengaturan',
           onAction: () => Geolocator.openAppSettings(),
           color: Colors.red,
@@ -71,7 +73,8 @@ class GpsGuideCards extends StatelessWidget {
         return _GuideCard(
           icon: Icons.gps_fixed,
           title: 'Aktifkan Lokasi Presisi',
-          subtitle: 'Izin lokasi yang diberikan hanya perkiraan (approximate). Aktifkan "Precise Location" di pengaturan izin aplikasi.',
+          subtitle:
+              'Izin lokasi yang diberikan hanya perkiraan (approximate). Aktifkan "Precise Location" di pengaturan izin aplikasi.',
           actionLabel: 'Buka Pengaturan',
           onAction: () => Geolocator.openAppSettings(),
           color: Colors.orange,
@@ -81,7 +84,8 @@ class GpsGuideCards extends StatelessWidget {
         return const _GuideCard(
           icon: Icons.open_in_full,
           title: 'Pindah ke Area Terbuka',
-          subtitle: 'GPS lebih akurat di ruang terbuka tanpa halangan bangunan, pepohonan lebat, atau terowongan. Coba berpindah ke lokasi yang lebih terbuka.',
+          subtitle:
+              'GPS lebih akurat di ruang terbuka tanpa halangan bangunan, pepohonan lebat, atau terowongan. Coba berpindah ke lokasi yang lebih terbuka.',
           color: Colors.blueGrey,
         );
 
@@ -89,7 +93,8 @@ class GpsGuideCards extends StatelessWidget {
         return const _GuideCard(
           icon: Icons.battery_saver,
           title: 'Matikan Battery Saver',
-          subtitle: 'Mode hemat baterai dapat membatasi akurasi GPS. Matikan Battery Saver sementara saat melakukan presensi.',
+          subtitle:
+              'Mode hemat baterai dapat membatasi akurasi GPS. Matikan Battery Saver sementara saat melakukan presensi.',
           color: Colors.amber,
         );
 
@@ -97,7 +102,8 @@ class GpsGuideCards extends StatelessWidget {
         return _GuideCard(
           icon: Icons.refresh,
           title: 'Coba Lagi',
-          subtitle: 'GPS membutuhkan waktu beberapa detik untuk mengunci sinyal (cold start). Tunggu sebentar lalu coba kalibrasi ulang.',
+          subtitle:
+              'GPS membutuhkan waktu beberapa detik untuk mengunci sinyal (cold start). Tunggu sebentar lalu coba kalibrasi ulang.',
           actionLabel: 'Kalibrasi Ulang',
           onAction: onRetry,
           color: AppColors.primaryGreen,
@@ -107,7 +113,8 @@ class GpsGuideCards extends StatelessWidget {
         return _GuideCard(
           icon: Icons.lock_open,
           title: 'Izin Lokasi Diperlukan',
-          subtitle: 'Aplikasi memerlukan izin lokasi untuk menjalankan diagnostik GPS.',
+          subtitle:
+              'Aplikasi memerlukan izin lokasi untuk menjalankan diagnostik GPS.',
           actionLabel: 'Buka Pengaturan',
           onAction: () => Geolocator.openAppSettings(),
           color: Colors.orange,
@@ -178,7 +185,9 @@ class _GuideCard extends StatelessWidget {
                     onTap: onAction,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 5),
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
                       decoration: BoxDecoration(
                         color: color,
                         borderRadius: BorderRadius.circular(14),

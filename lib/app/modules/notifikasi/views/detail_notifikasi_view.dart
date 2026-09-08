@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
 import '../../../data/models/notification_entity.dart';
+import '../../../core/utils/input_sanitizer.dart';
 
 class DetailNotifikasiView extends StatelessWidget {
   const DetailNotifikasiView({super.key});
@@ -18,7 +19,9 @@ class DetailNotifikasiView extends StatelessWidget {
       case 'PENGAJUAN_DITOLAK':
         return const Color(0xFFFEE2E2); // Light Red
       default:
-        return AppColors.primaryGreen.withValues(alpha: 0.15); // Light Green untuk default
+        return AppColors.primaryGreen.withValues(
+          alpha: 0.15,
+        ); // Light Green untuk default
     }
   }
 
@@ -37,6 +40,7 @@ class DetailNotifikasiView extends StatelessWidget {
         return AppColors.primaryGreen; // Default ke tema utama
     }
   }
+
   Widget _buildIconWidget(String iconName, String type, Color iconColor) {
     final typeUpper = type.toUpperCase();
     if (typeUpper.contains('PUNISHMENT') || typeUpper.contains('PENALTI')) {
@@ -45,20 +49,33 @@ class DetailNotifikasiView extends StatelessWidget {
     if (iconName == 'star' || typeUpper == 'POIN_BERTAMBAH') {
       return Padding(
         padding: const EdgeInsets.all(12.0),
-        child: Image.asset('assets/icons/medal.png', color: iconColor, width: 64, height: 64),
+        child: Image.asset(
+          'assets/icons/medal.png',
+          color: iconColor,
+          width: 64,
+          height: 64,
+        ),
       );
     }
-    if (typeUpper.contains('PENGAJUAN') || iconName == 'local_shipping' || iconName == 'rule') {
+    if (typeUpper.contains('PENGAJUAN') ||
+        iconName == 'local_shipping' ||
+        iconName == 'rule') {
       return Padding(
         padding: const EdgeInsets.all(12.0),
-        child: Image.asset('assets/icons/submission.png', color: iconColor, width: 64, height: 64),
+        child: Image.asset(
+          'assets/icons/submission.png',
+          color: iconColor,
+          width: 64,
+          height: 64,
+        ),
       );
     }
     return Icon(_resolveIcon(iconName, type), color: iconColor, size: 64);
   }
 
   IconData _resolveIcon(String iconName, String type) {
-    if (type.toUpperCase().contains('PUNISHMENT') || type.toUpperCase().contains('PENALTI')) {
+    if (type.toUpperCase().contains('PUNISHMENT') ||
+        type.toUpperCase().contains('PENALTI')) {
       return Icons.warning_rounded;
     }
     switch (iconName) {
@@ -78,7 +95,8 @@ class DetailNotifikasiView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final item = ModalRoute.of(context)?.settings.arguments as NotificationEntity?;
+    final item =
+        ModalRoute.of(context)?.settings.arguments as NotificationEntity?;
 
     if (item == null) {
       return Scaffold(
@@ -91,9 +109,15 @@ class DetailNotifikasiView extends StatelessWidget {
       );
     }
 
-    final isPunishment = item.type.toUpperCase().contains('PUNISHMENT') || item.title.toUpperCase().contains('PENALTI');
-    final iconColor = isPunishment ? const Color(0xFFEF4444) : _resolveIconColor(item.type);
-    final iconBg = isPunishment ? const Color(0xFFFEE2E2) : _resolveIconBg(item.type);
+    final isPunishment =
+        item.type.toUpperCase().contains('PUNISHMENT') ||
+        item.title.toUpperCase().contains('PENALTI');
+    final iconColor = isPunishment
+        ? const Color(0xFFEF4444)
+        : _resolveIconColor(item.type);
+    final iconBg = isPunishment
+        ? const Color(0xFFFEE2E2)
+        : _resolveIconBg(item.type);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -110,7 +134,10 @@ class DetailNotifikasiView extends StatelessWidget {
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+          icon: const Icon(
+            Icons.arrow_back_rounded,
+            color: AppColors.textPrimary,
+          ),
           onPressed: () => Navigator.maybePop(context),
         ),
       ),
@@ -122,15 +149,12 @@ class DetailNotifikasiView extends StatelessWidget {
             const SizedBox(height: AppDimensions.xl),
             Container(
               padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: iconBg,
-                shape: BoxShape.circle,
-              ),
+              decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
               child: _buildIconWidget(item.icon, item.type, iconColor),
             ),
             const SizedBox(height: AppDimensions.xl),
             Text(
-              item.title,
+              InputSanitizer.cleanSystemMessage(item.title),
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 20,
@@ -141,10 +165,7 @@ class DetailNotifikasiView extends StatelessWidget {
             const SizedBox(height: AppDimensions.sm),
             Text(
               item.time,
-              style: const TextStyle(
-                fontSize: 13,
-                color: AppColors.textHint,
-              ),
+              style: const TextStyle(fontSize: 13, color: AppColors.textHint),
             ),
             const SizedBox(height: AppDimensions.xl),
             Container(
@@ -156,7 +177,7 @@ class DetailNotifikasiView extends StatelessWidget {
                 border: Border.all(color: AppColors.border),
               ),
               child: Text(
-                item.desc,
+                InputSanitizer.cleanSystemMessage(item.desc),
                 style: const TextStyle(
                   fontSize: 15,
                   height: 1.5,

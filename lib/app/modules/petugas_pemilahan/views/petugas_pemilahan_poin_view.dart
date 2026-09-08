@@ -18,17 +18,34 @@ class PetugasPemilahanPoinView extends ConsumerWidget {
     }
   }
 
+  String _sanitizeTitle(String? raw) {
+    if (raw == null || raw.isEmpty) return 'Timbangan Pemilahan';
+    return raw
+        .replaceAll(RegExp(r'Setoran\s+Manual\s+Residu', caseSensitive: false), 'Timbangan Pemilahan')
+        .replaceAll(RegExp(r'residu\s+global', caseSensitive: false), 'pemilahan')
+        .replaceAll(RegExp(r'\bresidu\b', caseSensitive: false), 'pemilahan')
+        .replaceAll(RegExp(r'\bResidu\b'), 'Pemilahan')
+        .replaceAll(RegExp(r'tong\s+sampah', caseSensitive: false), 'Tempat Sampah')
+        .replaceAll(RegExp(r'\btong\b', caseSensitive: false), 'Tempat Sampah');
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(petugasPemilahanControllerProvider);
+    final pointHistoryAsync = ref.watch(petugasPointHistoryProvider);
     final dashboard = state.dashboard;
 
     final int totalPoints = dashboard?.totalPoints ?? 0;
+    final pointItems = state.historyList.where((item) {
+      final points = (item['points'] ?? item['pointsEarned'] ?? 0).toInt();
+      return points > 0;
+    }).toList();
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
-        automaticallyImplyLeading: false,
+        automaticallyImplyLeading: Navigator.canPop(context),
+        foregroundColor: AppColors.primaryGreen,
         title: const Text('Poin & Performa', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18, color: AppColors.primaryGreen)),
       ),
       body: RefreshIndicator(
@@ -90,10 +107,13 @@ class PetugasPemilahanPoinView extends ConsumerWidget {
                         color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Text(
-                        'Insentif Dihitung Otomatis oleh Server Backend Admin',
-                        style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
-                        textAlign: TextAlign.center,
+                      child: const FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          'Poin Otomatis Diperoleh dari Timbangan & Validasi RW',
+                          style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+                          textAlign: TextAlign.center,
+                        ),
                       ),
                     ),
                   ],
@@ -123,10 +143,10 @@ class PetugasPemilahanPoinView extends ConsumerWidget {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    _buildPoinRuleRow(Icons.scale_rounded, 'Timbangan Dasar', '1 Kg = 1 Poin'),
-                    _buildPoinRuleRow(Icons.camera_alt_rounded, 'Bonus Foto Valid', '+5 Poin / Input'),
-                    _buildPoinRuleRow(Icons.verified_rounded, 'Penyelesaian Jadwal', '+10 Poin (100% Selesai)'),
-                    _buildPoinRuleRow(Icons.assessment_rounded, 'Bonus Mingguan', 'KPI Score x 1 Poin'),
+                    _buildPoinRuleRow(Icons.scale_rounded, 'Timbangan Sampah', '1 Kg = 2 Poin'),
+                    _buildPoinRuleRow(Icons.camera_alt_rounded, 'Bonus Foto Bukti Valid', '+10 Poin / Input'),
+                    _buildPoinRuleRow(Icons.check_circle_outline_rounded, 'Validasi Pengosongan RW', '+15 Poin / Pengajuan Warga'),
+                    _buildPoinRuleRow(Icons.event_available_rounded, 'Penyelesaian Jadwal RW', 'Bonus Insentif Harian'),
                   ],
                 ),
               ),
@@ -139,59 +159,150 @@ class PetugasPemilahanPoinView extends ConsumerWidget {
               ),
               const SizedBox(height: 10),
 
-              if (state.historyList.isEmpty)
-                const Center(
+              pointHistoryAsync.when(
+                data: (histories) {
+                  if (histories.isEmpty) {
+                    if (pointItems.isEmpty) {
+                      return const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(24.0),
+                          child: Text(
+                            'Belum ada riwayat perolehan poin yang tercatat.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: AppColors.textSecondary),
+                          ),
+                        ),
+                      );
+                    }
+                    return _buildPointFallbackList(pointItems);
+                  }
+
+                  return ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: histories.length,
+                    itemBuilder: (ctx, idx) {
+                      final item = histories[idx];
+                      final isPositive = item.points >= 0;
+
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 1,
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: isPositive
+                                ? AppColors.warningYellow.withValues(alpha: 0.15)
+                                : const Color(0xFFFEE2E2),
+                            child: Icon(
+                              isPositive
+                                  ? Icons.monetization_on_rounded
+                                  : Icons.warning_amber_rounded,
+                              color: isPositive
+                                  ? AppColors.warningYellow
+                                  : const Color(0xFFEF4444),
+                            ),
+                          ),
+                          title: Text(
+                            _sanitizeTitle(item.description),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
+                          subtitle: Text(
+                            _formatDateTime(item.createdAt.toIso8601String()),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          trailing: Text(
+                            isPositive ? '+${item.points} Pts' : '${item.points} Pts',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: isPositive
+                                  ? AppColors.primaryGreen
+                                  : const Color(0xFFEF4444),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+                loading: () => const Center(
                   child: Padding(
                     padding: EdgeInsets.all(24.0),
-                    child: Text('Belum ada log poin.', style: TextStyle(color: AppColors.textSecondary)),
+                    child: CircularProgressIndicator(color: AppColors.primaryGreen),
                   ),
-                )
-              else
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: state.historyList.length,
-                  itemBuilder: (ctx, idx) {
-                    final item = state.historyList[idx];
-                    // final rawWeight = item['actualWeightKg'] ?? item['weightKg'] ?? item['weight'] ?? 0.0;
-                    final points = (item['points'] ?? item['pointsEarned'] ?? 0).toInt();
-
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 10),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      elevation: 1,
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: AppColors.warningYellow.withValues(alpha: 0.15),
-                          child: const Icon(
-                            Icons.add_circle_outline,
-                            color: AppColors.warningYellow,
-                          ),
-                        ),
-                        title: Text(
-                          item['title']?.toString() ?? 'Timbangan Pemilahan',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                        ),
-                        subtitle: Text(
-                          _formatDateTime(item['timestamp']?.toString()),
-                          style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                        ),
-                        trailing: Text(
-                          '+$points Pts',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                            color: AppColors.primaryGreen,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
                 ),
+                error: (_, __) {
+                  if (pointItems.isNotEmpty) {
+                    return _buildPointFallbackList(pointItems);
+                  }
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(24.0),
+                      child: Text(
+                        'Belum ada riwayat perolehan poin yang tercatat.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: AppColors.textSecondary),
+                      ),
+                    ),
+                  );
+                },
+              ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildPointFallbackList(List<Map<String, dynamic>> pointItems) {
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: pointItems.length,
+      itemBuilder: (ctx, idx) {
+        final item = pointItems[idx];
+        final points = (item['points'] ?? item['pointsEarned'] ?? 0).toInt();
+
+        return Card(
+          margin: const EdgeInsets.only(bottom: 10),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          elevation: 1,
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: AppColors.warningYellow.withValues(alpha: 0.15),
+              child: const Icon(
+                Icons.monetization_on_rounded,
+                color: AppColors.warningYellow,
+              ),
+            ),
+            title: Text(
+              _sanitizeTitle(item['title']?.toString()),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
+            subtitle: Text(
+              _formatDateTime(item['timestamp']?.toString()),
+              style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+            ),
+            trailing: Text(
+              '+$points Pts',
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: AppColors.primaryGreen,
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -205,9 +316,16 @@ class PetugasPemilahanPoinView extends ConsumerWidget {
           Expanded(
             child: Text(title, style: const TextStyle(fontSize: 12, color: AppColors.primaryBlueDark)),
           ),
-          Text(
-            value,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primaryBlueDark),
+          const SizedBox(width: 8),
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: Text(
+                value,
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primaryBlueDark),
+              ),
+            ),
           ),
         ],
       ),

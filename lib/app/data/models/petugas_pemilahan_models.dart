@@ -59,23 +59,34 @@ class PetugasPemilahanDashboard extends Equatable {
   final double ketepatanWaktuScore;
   final double akurasiScore;
 
-  int get sisaJadwal => totalJadwal > sudahDiambil ? totalJadwal - sudahDiambil : 0;
+  int get sisaJadwal =>
+      totalJadwal > sudahDiambil ? totalJadwal - sudahDiambil : 0;
   bool get isApproved => whitelistStatus == WhitelistStatus.approved;
 
   factory PetugasPemilahanDashboard.fromJson(Map<String, dynamic> json) {
-    final double timeScore = (json['ketepatanWaktuScore'] as num?)?.toDouble() ?? 0.0;
+    final double timeScore =
+        (json['ketepatanWaktuScore'] as num?)?.toDouble() ?? 0.0;
     final double accScore = (json['akurasiScore'] as num?)?.toDouble() ?? 0.0;
     final double calculatedKpi = (0.6 * timeScore) + (0.4 * accScore);
 
     return PetugasPemilahanDashboard(
       petugasId: json['petugasId']?.toString() ?? '',
       name: json['name']?.toString() ?? 'Petugas Pemilahan',
-      assignedZone: json['assignedZone']?.toString() ?? json['rw']?.toString() ?? json['rtRw']?.toString() ?? '-',
-      whitelistStatus: WhitelistStatusExtension.fromApi(json['whitelistStatus']?.toString() ?? 'PENDING'),
-      accountStatus: json['accountStatus']?.toString() ?? 'PENDING',
+      assignedZone:
+          json['assignedZone']?.toString() ??
+          json['rw']?.toString() ??
+          json['rtRw']?.toString() ??
+          '-',
+      whitelistStatus: WhitelistStatusExtension.fromApi(
+        json['whitelistStatus']?.toString() ?? 'APPROVED',
+      ),
+      accountStatus: json['accountStatus']?.toString() ?? 'ACTIVE',
       totalJadwal: (json['totalJadwal'] as num?)?.toInt() ?? 0,
       sudahDiambil: (json['sudahDiambil'] as num?)?.toInt() ?? 0,
-      totalWeightKg: (json['todayWeightKg'] as num?)?.toDouble() ?? (json['totalWeightKg'] as num?)?.toDouble() ?? 0.0,
+      totalWeightKg:
+          (json['todayWeightKg'] as num?)?.toDouble() ??
+          (json['totalWeightKg'] as num?)?.toDouble() ??
+          0.0,
       monthlyWeightKg: (json['monthlyWeightKg'] as num?)?.toDouble() ?? 0.0,
       kpiScore: (json['kpiScore'] as num?)?.toDouble() ?? calculatedKpi,
       totalPoints: (json['totalPoints'] as num?)?.toInt() ?? 0,
@@ -86,17 +97,17 @@ class PetugasPemilahanDashboard extends Equatable {
 
   @override
   List<Object?> get props => [
-        petugasId,
-        name,
-        assignedZone,
-        whitelistStatus,
-        accountStatus,
-        totalJadwal,
-        sudahDiambil,
-        totalWeightKg,
-        monthlyWeightKg,
-        kpiScore,
-      ];
+    petugasId,
+    name,
+    assignedZone,
+    whitelistStatus,
+    accountStatus,
+    totalJadwal,
+    sudahDiambil,
+    totalWeightKg,
+    monthlyWeightKg,
+    kpiScore,
+  ];
 }
 
 /// Model Item Tempat Sampah dalam Jadwal Penjemputan Hilir
@@ -136,18 +147,38 @@ class PemilahanBinPickup extends Equatable {
   factory PemilahanBinPickup.fromJson(Map<String, dynamic> json) {
     return PemilahanBinPickup(
       binId: json['binId']?.toString() ?? json['id']?.toString() ?? '',
-      binCode: json['binCode']?.toString() ?? json['qrCode']?.toString() ?? 'BIN-PEMILAHAN',
-      wargaName: json['namaWarga']?.toString() ?? json['wargaName']?.toString() ?? json['user']?['name']?.toString() ?? 'Warga',
-      address: json['alamat']?.toString() ?? json['address']?.toString() ?? 'Jl. Raya Bojongsoang No. 12',
+      binCode:
+          json['binCode']?.toString() ??
+          json['qrCode']?.toString() ??
+          'BIN-PEMILAHAN',
+      wargaName:
+          json['namaWarga']?.toString() ??
+          json['wargaName']?.toString() ??
+          json['user']?['name']?.toString() ??
+          'Warga',
+      address:
+          json['alamat']?.toString() ??
+          json['address']?.toString() ??
+          'Jl. Raya Bojongsoang No. 12',
       kecamatan: json['kecamatan']?.toString() ?? '',
       kelurahan: json['kelurahan']?.toString() ?? '',
       rw: json['rw']?.toString() ?? json['rtRw']?.toString() ?? '',
-      volumePercentage: (json['volumePercent'] as num?)?.toDouble() ?? (json['volumePercentage'] as num?)?.toDouble() ?? 0.0,
-      isPickedUp: (json['isPickedUp'] as bool?) ?? (json['status']?.toString().toUpperCase() == 'PICKED_UP'),
-      lastPickedUpTime: DateTime.tryParse(json['lastPickedUpTime']?.toString() ?? ''),
+      volumePercentage:
+          (json['volumePercent'] as num?)?.toDouble() ??
+          (json['volumePercentage'] as num?)?.toDouble() ??
+          0.0,
+      isPickedUp:
+          (json['isPickedUp'] as bool?) ??
+          (json['status']?.toString().toUpperCase() == 'PICKED_UP'),
+      lastPickedUpTime: DateTime.tryParse(
+        json['lastPickedUpTime']?.toString() ?? '',
+      ),
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),
-      wasteCategory: json['kategori']?.toString() ?? json['wasteCategory']?.toString() ?? 'PEMILAHAN',
+      wasteCategory:
+          json['kategori']?.toString() ??
+          json['wasteCategory']?.toString() ??
+          'PEMILAHAN',
     );
   }
 
@@ -180,11 +211,13 @@ class PemilahanSubmitLog extends Equatable {
       actualWeightKg: (json['actualWeightKg'] as num?)?.toDouble() ?? 0.0,
       classification: json['classification']?.toString() ?? 'Pemilahan Non-B3',
       photoUrl: json['photoUrl']?.toString() ?? '',
-      submittedAt: (DateTime.tryParse(json['submittedAt']?.toString() ?? '') ?? DateTime.now()).toLocal(),
+      submittedAt:
+          (DateTime.tryParse(json['submittedAt']?.toString() ?? '') ??
+                  DateTime.now())
+              .toLocal(),
     );
   }
 
   @override
   List<Object?> get props => [id, binId, actualWeightKg, classification];
 }
-
