@@ -1483,6 +1483,19 @@ export class BinService {
       })
       .catch(() => {});
 
+    // Notifikasi ke petugas pemilah yang bertugas di RW tersebut
+    if (resolvedPetugasId) {
+      await prisma.notification
+        .create({
+          data: {
+            userId: resolvedPetugasId,
+            title: "Pengajuan Pengosongan Baru",
+            message: `Warga mengajukan pengosongan untuk ${binQr}. Silakan cek antrean pengajuan pada aplikasi.`,
+          },
+        })
+        .catch(() => {});
+    }
+
     return request;
   }
 
