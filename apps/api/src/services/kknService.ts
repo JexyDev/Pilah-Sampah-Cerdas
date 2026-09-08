@@ -2764,12 +2764,8 @@ export class KknService {
       }
     }
 
-    const startWibStr = new Date(targetStartDate.getTime() + 7 * 60 * 60 * 1000)
-      .toISOString()
-      .slice(0, 10);
-    const endWibStr = new Date(targetEndDate.getTime() + 7 * 60 * 60 * 1000)
-      .toISOString()
-      .slice(0, 10);
+    const startWibStr = new Date(targetStartDate.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const endWibStr = new Date(targetEndDate.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
     const startDate = new Date(`${startWibStr}T00:00:00+07:00`);
     const endDate = new Date(`${endWibStr}T23:59:59.999+07:00`);
 
