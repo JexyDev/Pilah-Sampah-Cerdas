@@ -332,12 +332,48 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
     }
   }
 
-  /// Klaim pengajuan pengosongan dari warga menggunakan endpoint tunggal.
+  /// Klaim pengajuan pengosongan dari warga menggunakan endpoint PUT /api/v1/bins/reset/:id/approve
+  /// Mendukung kontrak audit trail: emptyBinPhoto, scannedQrCode, latitude, longitude
   @override
-  Future<bool> claimPengajuanReset(String pengajuanId) async {
+  Future<bool> claimPengajuanReset(
+    String pengajuanId, {
+    String? emptyBinPhotoPath,
+    String? scannedQrCode,
+    double? latitude,
+    double? longitude,
+  }) async {
     try {
+      dynamic data;
+      if (emptyBinPhotoPath != null && emptyBinPhotoPath.isNotEmpty) {
+        final compressedPhotoPath = await ImageCompressor.compressImage(
+          emptyBinPhotoPath,
+          maxSizeBytes: 500 * 1024,
+          maxWidth: 1280,
+          maxHeight: 720,
+        );
+        data = FormData.fromMap({
+          'emptyBinPhoto': await MultipartFile.fromFile(
+            compressedPhotoPath,
+            filename: compressedPhotoPath.split(RegExp(r'[\\/]')).last,
+            contentType: MediaType('image', 'jpeg'),
+          ),
+          if (scannedQrCode != null && scannedQrCode.isNotEmpty)
+            'scannedQrCode': scannedQrCode,
+          if (latitude != null) 'latitude': latitude,
+          if (longitude != null) 'longitude': longitude,
+        });
+      } else if (scannedQrCode != null || latitude != null || longitude != null) {
+        data = {
+          if (scannedQrCode != null && scannedQrCode.isNotEmpty)
+            'scannedQrCode': scannedQrCode,
+          if (latitude != null) 'latitude': latitude,
+          if (longitude != null) 'longitude': longitude,
+        };
+      }
+
       final response = await apiClient.dio.put(
         ApiEndpoints.binsApproveReset(pengajuanId),
+        data: data,
       );
       return response.statusCode == 200 || response.statusCode == 201;
     } on DioException catch (e) {

@@ -20,8 +20,8 @@ class _PetugasNotificationViewState
   String _selectedFilter = 'Semua';
   final List<String> _filters = [
     'Semua',
-    'Input Timbangan',
-    'Notifikasi Pengangkutan & Penalti',
+    'Pengosongan Warga',
+    'Timbangan & Poin',
   ];
 
   @override
@@ -151,30 +151,26 @@ class _PetugasNotificationViewState
                     final typeUpper = n.type.toUpperCase();
                     final titleLower = n.title.toLowerCase();
 
-                    if (_selectedFilter == 'Input Timbangan') {
+                    if (_selectedFilter == 'Pengosongan Warga') {
+                      return typeUpper.contains('PENGOSONGAN') ||
+                          typeUpper.contains('PENGAJUAN') ||
+                          typeUpper.contains('RESET') ||
+                          typeUpper.contains('PENUH') ||
+                          typeUpper.contains('KRITIS') ||
+                          titleLower.contains('pengosongan') ||
+                          titleLower.contains('pengajuan') ||
+                          titleLower.contains('tempat sampah') ||
+                          titleLower.contains('kritis');
+                    }
+                    if (_selectedFilter == 'Timbangan & Poin') {
                       return typeUpper.contains('TIMBANGAN') ||
                           typeUpper.contains('PEMILAHAN') ||
+                          typeUpper.contains('POIN') ||
+                          typeUpper.contains('PUNISHMENT') ||
                           titleLower.contains('timbangan') ||
                           titleLower.contains('pemilahan') ||
-                          titleLower.contains('log') ||
-                          typeUpper.contains('POIN');
-                    }
-                    if (_selectedFilter ==
-                        'Notifikasi Pengangkutan & Penalti') {
-                      return typeUpper.contains('VIOLATION') ||
-                          typeUpper.contains('PENGANGKUTAN') ||
-                          titleLower.contains('pelanggaran') ||
-                          titleLower.contains('anomali') ||
-                          titleLower.contains('penalti') ||
-                          titleLower.contains('kpi') ||
-                          titleLower.contains('kinerja') ||
-                          titleLower.contains('pengangkutan') ||
-                          titleLower.contains('jadwal') ||
-                          typeUpper.contains('WHITELIST') ||
-                          typeUpper.contains('VERIFIKASI') ||
-                          titleLower.contains('whitelist') ||
-                          titleLower.contains('akun') ||
-                          titleLower.contains('tugas');
+                          titleLower.contains('poin') ||
+                          titleLower.contains('penalti');
                     }
                     return true;
                   }).toList();
@@ -206,7 +202,7 @@ class _PetugasNotificationViewState
                               ),
                               const SizedBox(height: 4),
                               const Text(
-                                'Konfirmasi log penimbangan & whitelist akan muncul di sini.',
+                                'Pengajuan pengosongan warga & log timbangan akan muncul di sini.',
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: AppColors.textSecondary,
@@ -236,14 +232,35 @@ class _PetugasNotificationViewState
                             );
                           }
                           if (context.mounted) {
-                            if (notif.type.toUpperCase() == 'POIN_BERTAMBAH' ||
-                                notif.type.toUpperCase() == 'POIN' ||
-                                notif.type.toUpperCase() == 'PUNISHMENT') {
+                            final typeU = notif.type.toUpperCase();
+                            final titleL = notif.title.toLowerCase();
+                            if (typeU.contains('PENGOSONGAN') ||
+                                typeU.contains('PENGAJUAN') ||
+                                typeU.contains('RESET') ||
+                                titleL.contains('pengosongan') ||
+                                titleL.contains('pengajuan')) {
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.pengajuanWarga,
+                              );
+                            } else if (typeU.contains('POIN') ||
+                                typeU.contains('PUNISHMENT') ||
+                                titleL.contains('poin') ||
+                                titleL.contains('penalti')) {
                               Navigator.pushNamed(context, AppRoutes.poin);
+                            } else if (typeU.contains('TIMBANGAN') ||
+                                typeU.contains('PENUH') ||
+                                typeU.contains('KRITIS') ||
+                                titleL.contains('timbangan') ||
+                                titleL.contains('kritis')) {
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.timbanganPemilahan,
+                              );
                             } else {
                               Navigator.pushNamed(
                                 context,
-                                '/detail-notifikasi',
+                                AppRoutes.detailNotifikasi,
                                 arguments: notif,
                               );
                             }
@@ -279,6 +296,15 @@ class _PetugasNotificationViewState
                                         'PUNISHMENT',
                                       )
                                       ? const Color(0xFFFEE2E2)
+                                      : (notif.type.toUpperCase().contains(
+                                              'PENGOSONGAN',
+                                            ) ||
+                                            notif.type.toUpperCase().contains(
+                                              'PENGAJUAN',
+                                            ))
+                                      ? AppColors.warningOrange.withValues(
+                                          alpha: 0.15,
+                                        )
                                       : (notif.icon == 'star' ||
                                             notif.type.toUpperCase() ==
                                                 'POIN_BERTAMBAH')
@@ -297,6 +323,17 @@ class _PetugasNotificationViewState
                                     ? const Icon(
                                         Icons.warning_amber_rounded,
                                         color: Color(0xFFEF4444),
+                                        size: 22,
+                                      )
+                                    : (notif.type.toUpperCase().contains(
+                                            'PENGOSONGAN',
+                                          ) ||
+                                          notif.type.toUpperCase().contains(
+                                            'PENGAJUAN',
+                                          ))
+                                    ? const Icon(
+                                        Icons.assignment_outlined,
+                                        color: AppColors.warningOrange,
                                         size: 22,
                                       )
                                     : notif.icon == 'star' ||

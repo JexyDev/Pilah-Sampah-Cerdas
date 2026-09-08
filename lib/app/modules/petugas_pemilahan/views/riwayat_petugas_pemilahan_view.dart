@@ -87,6 +87,22 @@ class _RiwayatPetugasPemilahanViewState
     return '-';
   }
 
+  String _sanitizeTitle(String? raw) {
+    if (raw == null || raw.isEmpty) return 'Timbangan Pemilahan';
+    if (raw.toLowerCase().contains('residu')) {
+      return raw
+          .replaceAll(RegExp(r'Setoran\s+Manual\s+Residu', caseSensitive: false), 'Timbangan Pemilahan')
+          .replaceAll(RegExp(r'\bResidu\b', caseSensitive: false), 'Pemilahan');
+    }
+    return raw;
+  }
+
+  String _sanitizeClassification(String? raw) {
+    if (raw == null || raw.isEmpty || raw == '-') return '-';
+    if (raw.toLowerCase() == 'residu') return 'Pemilahan';
+    return raw.replaceAll(RegExp(r'\bResidu\b', caseSensitive: false), 'Pemilahan');
+  }
+
   void _showDetailModal(Map<String, dynamic> item) {
     final rawDate =
         item['timestamp']?.toString() ??
@@ -123,9 +139,11 @@ class _RiwayatPetugasPemilahanViewState
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      item['title']?.toString() ??
-                          item['classification']?.toString() ??
-                          'Setoran Timbangan',
+                      _sanitizeTitle(
+                        item['title']?.toString() ??
+                            item['classification']?.toString() ??
+                            'Timbangan Pemilahan',
+                      ),
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
@@ -143,15 +161,22 @@ class _RiwayatPetugasPemilahanViewState
               ),
               _infoRow(
                 'Klasifikasi',
-                item['classification']?.toString() ??
-                    item['kategori']?.toString() ??
-                    item['type']?.toString() ??
-                    '-',
+                _sanitizeClassification(
+                  item['classification']?.toString() ??
+                      item['kategori']?.toString() ??
+                      item['type']?.toString() ??
+                      '-',
+                ),
               ),
               _infoRow(
                 'Status Server',
                 item['status']?.toString() ?? 'TERKIRIM',
               ),
+              if (item['points'] != null && (item['points'] as num) > 0)
+                _infoRow(
+                  'Poin Diperoleh',
+                  '+${item['points']} Pts',
+                ),
               const SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
@@ -364,11 +389,12 @@ class _RiwayatPetugasPemilahanViewState
                       itemCount: state.historyList.length,
                       itemBuilder: (ctx, index) {
                         final item = state.historyList[index];
-                        final title =
-                            item['title']?.toString() ??
-                            item['classification']?.toString() ??
-                            item['kategori']?.toString() ??
-                            'Setoran Timbangan';
+                        final title = _sanitizeTitle(
+                          item['title']?.toString() ??
+                              item['classification']?.toString() ??
+                              item['kategori']?.toString() ??
+                              'Timbangan Pemilahan',
+                        );
                         final subtitle = _resolveWargaName(item);
                         final address = _resolveAlamat(item);
                         final weight =

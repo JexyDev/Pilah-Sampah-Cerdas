@@ -10,6 +10,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 final Set<String> _petugasShownNotifIds = {};
 
+/// Sanitasi string agar istilah lama 'Residu' digantikan dengan 'Pemilahan'.
+String _sanitizePetugasText(String text) {
+  if (text.isEmpty) return text;
+  return text
+      .replaceAll(RegExp(r'Setoran\s+Manual\s+Residu', caseSensitive: false), 'Timbangan Pemilahan')
+      .replaceAll(RegExp(r'residu\s+global', caseSensitive: false), 'pemilahan')
+      .replaceAll(RegExp(r'timbangan\s+residu', caseSensitive: false), 'timbangan pemilahan')
+      .replaceAll(RegExp(r'\bresidu\b', caseSensitive: false), 'pemilahan')
+      .replaceAll(RegExp(r'\bResidu\b'), 'Pemilahan');
+}
+
 bool _isPetugasPemilahanNotification(NotificationEntity notif) {
   final type = notif.type.toUpperCase();
   final title = notif.title.toUpperCase();
@@ -23,7 +34,6 @@ bool _isPetugasPemilahanNotification(NotificationEntity notif) {
       type.contains('IZIN') ||
       type.contains('PRESENSI') ||
       type.contains('SETORAN_WARGA') ||
-      type.contains('RESET_BIN') ||
       title.contains('JEMPUT') ||
       title.contains('PENJEMPUTAN') ||
       title.contains('SETORAN WARGA') ||
@@ -32,37 +42,44 @@ bool _isPetugasPemilahanNotification(NotificationEntity notif) {
 
   if (isForbidden) return false;
 
-  // Petugas Pemilahan HANYA menerima notifikasi:
-  // 1. Input Timbangan Pemilahan (Ke RW/TPS3R)
-  // 2. Poin perolehan dari input timbangan
-  // 3. Verifikasi Whitelist Akun Petugas
-  // 4. Penalti, KPI, Kinerja, Jadwal Pengangkutan
+  // Petugas Pemilahan menerima notifikasi:
+  // 1. Pengajuan Pengosongan dari Warga & Tempat Sampah Kritis / Penuh di RW
+  // 2. Input Timbangan Pemilahan & Perolehan Poin
+  // 3. Verifikasi Akun / Whitelist
   final isPetugasTopic =
       type.contains('TIMBANGAN') ||
       type.contains('PEMILAHAN') ||
+      type.contains('PENGOSONGAN') ||
+      type.contains('PENGAJUAN') ||
+      type.contains('RESET') ||
+      type.contains('PENUH') ||
+      type.contains('KRITIS') ||
       type == 'POIN_PETUGAS' ||
       type == 'POIN_BERTAMBAH' ||
       type == 'PUNISHMENT' ||
-      type.contains('PENGANGKUTAN') ||
       type.contains('WHITELIST') ||
       type.contains('VERIFIKASI') ||
       type.contains('WELCOME_PETUGAS') ||
       title.contains('TIMBANGAN') ||
       title.contains('PEMILAHAN') ||
+      title.contains('PENGOSONGAN') ||
+      title.contains('PENGAJUAN') ||
+      title.contains('TEMPAT SAMPAH') ||
+      title.contains('KRITIS') ||
       title.contains('PETUGAS') ||
       title.contains('WHITELIST') ||
       title.contains('VERIFIKASI') ||
       title.contains('PENALTI') ||
       title.contains('KPI') ||
       title.contains('KINERJA') ||
-      title.contains('JADWAL PENGANGKUTAN') ||
-      title.contains('PENGANGKUTAN') ||
       desc.contains('TIMBANGAN') ||
       desc.contains('PEMILAHAN') ||
+      desc.contains('PENGOSONGAN') ||
+      desc.contains('PENGAJUAN') ||
+      desc.contains('TEMPAT SAMPAH') ||
       desc.contains('KPI') ||
       desc.contains('KINERJA') ||
-      desc.contains('LOG TIMBANGAN') ||
-      desc.contains('PENGANGKUTAN');
+      desc.contains('LOG TIMBANGAN');
 
   if (!isPetugasTopic) return false;
 
@@ -89,7 +106,7 @@ final petugasPemilahanNotificationsProvider =
         list = [];
       }
 
-      // Tambahkan riwayat poin (PointHistory) agar tampil di Notification Page sesuai instruksi user
+      // Tambahkan riwayat poin non-duplikat (PointHistory) agar tampil di Notification Page
       final prefs = await SharedPreferences.getInstance();
       final readList = prefs.getStringList('read_notifs_${userId}_$role') ?? [];
       final readSet = readList.toSet();
@@ -102,6 +119,13 @@ final petugasPemilahanNotificationsProvider =
 
         for (final ph in pointHistory) {
           if (ph.points != 0) {
+            // Hindari duplikasi: log timbangan sudah dibuatkan notifikasi resmi oleh server
+            final descLower = ph.description.toLowerCase();
+            if (descLower.contains('setoran timbangan') ||
+                descLower.contains('log timbangan')) {
+              continue;
+            }
+
             final notifId = 'point_${ph.id}';
             final isRead =
                 readSet.contains(notifId) ||
@@ -114,6 +138,7 @@ final petugasPemilahanNotificationsProvider =
                 );
 
             final isPunishment = ph.points < 0;
+            final cleanDesc = _sanitizePetugasText(ph.description);
 
             list.add(
               NotificationEntity(
@@ -122,8 +147,8 @@ final petugasPemilahanNotificationsProvider =
                 title: isPunishment
                     ? 'Penalti Pengurangan Poin'
                     : 'Poin Insentif Bertambah!',
-                desc: ph.description.isNotEmpty
-                    ? ph.description
+                desc: cleanDesc.isNotEmpty
+                    ? cleanDesc
                     : (isPunishment
                           ? 'Anda mendapatkan penalti ${ph.points} poin.'
                           : 'Anda mendapatkan tambahan +${ph.points} poin.'),
@@ -189,9 +214,11 @@ final petugasPemilahanNotificationsProvider =
             dt.millisecondsSinceEpoch <= markAllTimestamp ||
             LocalNotificationCacheService().isRead(userId, role, item.id, dt);
 
-        if (isReadLocally && !item.isRead) {
-          item = item.copyWith(isRead: true);
-        }
+        item = item.copyWith(
+          title: _sanitizePetugasText(item.title),
+          desc: _sanitizePetugasText(item.desc),
+          isRead: isReadLocally ? true : item.isRead,
+        );
         finalResult.add(item);
       }
 

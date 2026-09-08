@@ -122,7 +122,16 @@ class AppPages {
       case AppRoutes.petugasNotifikasi:
         return _buildRoute(const PetugasNotificationView(), settings);
       case AppRoutes.timbanganPemilahan:
-        return _buildRoute(const TimbanganPemilahanView(), settings);
+        final timbanganArgs = settings.arguments as Map<String, dynamic>?;
+        return _buildRoute(
+          TimbanganPemilahanView(
+            initialBinId: timbanganArgs?['binId'] as String?,
+            initialBinCode: timbanganArgs?['binCode'] as String?,
+            initialCategory: timbanganArgs?['category'] as String?,
+            initialWargaName: timbanganArgs?['wargaName'] as String?,
+          ),
+          settings,
+        );
       case AppRoutes.tentang:
         return _buildRoute(const TentangAplikasiView(), settings);
       case AppRoutes.kknAttendance:
@@ -163,6 +172,8 @@ class AppPages {
           ),
           settings,
         );
+      case AppRoutes.petugasPemilahan:
+        return _buildRoute(const DashboardView(), settings);
       case AppRoutes.riwayatPetugasPemilahan:
         return _buildRoute(const RiwayatPetugasPemilahanView(), settings);
       case AppRoutes.petugasPemilahanGantiPassword:

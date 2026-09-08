@@ -78,9 +78,9 @@ class PetugasPemilahanDashboard extends Equatable {
           json['rtRw']?.toString() ??
           '-',
       whitelistStatus: WhitelistStatusExtension.fromApi(
-        json['whitelistStatus']?.toString() ?? 'PENDING',
+        json['whitelistStatus']?.toString() ?? 'APPROVED',
       ),
-      accountStatus: json['accountStatus']?.toString() ?? 'PENDING',
+      accountStatus: json['accountStatus']?.toString() ?? 'ACTIVE',
       totalJadwal: (json['totalJadwal'] as num?)?.toInt() ?? 0,
       sudahDiambil: (json['sudahDiambil'] as num?)?.toInt() ?? 0,
       totalWeightKg:

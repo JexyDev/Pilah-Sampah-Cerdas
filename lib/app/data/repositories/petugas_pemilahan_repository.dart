@@ -45,6 +45,12 @@ abstract class PetugasPemilahanRepository {
   /// Ambil daftar pengajuan reset dari warga
   Future<List<Map<String, dynamic>>> getDaftarPengajuanWarga();
 
-  /// Terima / Klaim pengajuan reset tempat sampah dari Warga
-  Future<bool> claimPengajuanReset(String pengajuanId);
+  /// Terima / Klaim pengajuan reset tempat sampah dari Warga (Mendukung Audit Trail Strict Gatekeeper)
+  Future<bool> claimPengajuanReset(
+    String pengajuanId, {
+    String? emptyBinPhotoPath,
+    String? scannedQrCode,
+    double? latitude,
+    double? longitude,
+  });
 }

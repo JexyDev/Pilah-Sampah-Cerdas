@@ -12,11 +12,22 @@ import '../../../data/providers/repository_providers.dart';
 import '../../../data/services/location_service.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../shared/controllers/connectivity_controller.dart';
-import '../../shared/widgets/feature_rating_dialog.dart';
+import '../../shared/widgets/qr_scanner_widget.dart';
 import '../controllers/petugas_pemilahan_controller.dart';
 
 class TimbanganPemilahanView extends ConsumerStatefulWidget {
-  const TimbanganPemilahanView({super.key});
+  const TimbanganPemilahanView({
+    super.key,
+    this.initialBinId,
+    this.initialBinCode,
+    this.initialCategory,
+    this.initialWargaName,
+  });
+
+  final String? initialBinId;
+  final String? initialBinCode;
+  final String? initialCategory;
+  final String? initialWargaName;
 
   @override
   ConsumerState<TimbanganPemilahanView> createState() =>
@@ -28,6 +39,9 @@ class _TimbanganPemilahanViewState
   final _formKey = GlobalKey<FormState>();
   final _weightController = TextEditingController();
 
+  String? _activeBinId;
+  String? _activeBinCode;
+  String? _activeWargaName;
   String? _photoPath;
   Position? _currentLocation;
   String _selectedClassification = 'Organik';
@@ -50,6 +64,13 @@ class _TimbanganPemilahanViewState
   @override
   void initState() {
     super.initState();
+    _activeBinId = widget.initialBinId;
+    _activeBinCode = widget.initialBinCode;
+    _activeWargaName = widget.initialWargaName;
+    if (widget.initialCategory != null &&
+        _classifications.contains(widget.initialCategory)) {
+      _selectedClassification = widget.initialCategory!;
+    }
     _weightController.addListener(_calculatePoints);
     _loadDraft();
   }
@@ -138,7 +159,7 @@ class _TimbanganPemilahanViewState
           _isScanningAi = true;
         });
 
-        // ponytail: AI auto-classification and weight estimation. Fallback to manual entry if offline/timeout.
+        // ponytail: Auto-detect classification suggestion. Fallback silently to manual entry if offline/timeout.
         try {
           final user = ref.read(authProvider).user;
           final userId = user?.id ?? '';
@@ -150,31 +171,14 @@ class _TimbanganPemilahanViewState
             final category = aiResult.detectedType == WasteType.organic ? 'Organik' : 'Anorganik';
             setState(() {
               _selectedClassification = category;
-              _weightController.text = aiResult.displayWeightKg.toString();
+              if (_weightController.text.trim().isEmpty && aiResult.displayWeightKg > 0) {
+                _weightController.text = aiResult.displayWeightKg.toString();
+              }
             });
             _calculatePoints();
-            ScaffoldMessenger.of(context).clearSnackBars();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('AI terdeteksi: $category (${aiResult.displayWeightKg} Kg)'),
-                backgroundColor: AppColors.primaryGreen,
-                duration: const Duration(seconds: 2),
-              ),
-            );
           }
         } catch (e) {
-          debugPrint('[TimbanganPemilahan] AI Scan fallback: $e');
-          if (mounted) {
-            _calculatePoints();
-            ScaffoldMessenger.of(context).clearSnackBars();
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('AI tidak merespon. Silakan isi kategori & berat secara manual.'),
-                backgroundColor: AppColors.warningOrange,
-                duration: Duration(seconds: 3),
-              ),
-            );
-          }
+          debugPrint('[TimbanganPemilahan] Waste detect fallback: $e');
         } finally {
           if (mounted) {
             setState(() => _isScanningAi = false);
@@ -185,9 +189,71 @@ class _TimbanganPemilahanViewState
       if (!mounted) return;
       ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal mengambil foto: $e'), backgroundColor: AppColors.maroonRed),
+        SnackBar(
+          content: Text('Gagal mengambil foto: $e'),
+          backgroundColor: AppColors.maroonRed,
+          duration: const Duration(seconds: 3),
+        ),
       );
     }
+  }
+
+  Future<void> _scanBinQr() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.black,
+      builder: (ctx) => SafeArea(
+        child: SizedBox(
+          height: MediaQuery.of(context).size.height * 0.75,
+          child: Column(
+            children: [
+              AppBar(
+                title: const Text('Pindai QR Tempat Sampah Warga'),
+                backgroundColor: Colors.black,
+                foregroundColor: Colors.white,
+                leading: IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(ctx),
+                ),
+              ),
+              Expanded(
+                child: QrScannerWidget(
+                  isFullScreen: true,
+                  hint: 'Arahkan kamera ke kode QR tempat sampah warga',
+                  onQrDetected: (code) async {
+                    HapticFeedback.heavyImpact();
+                    if (mounted) {
+                      setState(() {
+                        _activeBinCode = code.trim();
+                        _activeBinId = code.trim();
+                        if (code.toUpperCase().contains('ORGANIK') || code.toUpperCase().contains('ORG')) {
+                          if (!code.toUpperCase().contains('ANORGANIK') && !code.toUpperCase().contains('ANORG')) {
+                            _selectedClassification = 'Organik';
+                          } else {
+                            _selectedClassification = 'Anorganik';
+                          }
+                        }
+                      });
+                      Navigator.pop(ctx);
+                      ScaffoldMessenger.of(context).clearSnackBars();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Target tempat sampah "$code" terpilih.'),
+                          backgroundColor: AppColors.primaryGreen,
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                    return true;
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _submitLog() async {
@@ -198,6 +264,7 @@ class _TimbanganPemilahanViewState
         const SnackBar(
           content: Text('Foto bukti timbangan pemilahan wajib diambil!'),
           backgroundColor: AppColors.maroonRed,
+          duration: Duration(seconds: 3),
         ),
       );
       return;
@@ -205,10 +272,12 @@ class _TimbanganPemilahanViewState
 
     final double? weight = double.tryParse(_weightController.text.trim().replaceAll(',', '.'));
     if (weight == null || weight <= 0 || weight > 500) {
-      ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Berat timbangan tidak valid (0.1 - 500 Kg)!'),
           backgroundColor: AppColors.maroonRed,
+          duration: Duration(seconds: 3),
         ),
       );
       return;
@@ -221,6 +290,7 @@ class _TimbanganPemilahanViewState
         const SnackBar(
           content: Text('Koneksi terputus. Data disimpan sebagai draft.'),
           backgroundColor: AppColors.maroonRed,
+          duration: Duration(seconds: 3),
         ),
       );
       return;
@@ -231,7 +301,7 @@ class _TimbanganPemilahanViewState
     final success = await ref
         .read(petugasPemilahanControllerProvider.notifier)
         .submitLog(
-          binId: 'GLOBAL_BIN_RT_RW',
+          binId: _activeBinId ?? 'GLOBAL_BIN_RT_RW',
           actualWeightKg: weight,
           classification: _selectedClassification,
           photoPath: _photoPath!,
@@ -244,16 +314,6 @@ class _TimbanganPemilahanViewState
     if (success && mounted) {
       await _showSuccessDialog(weight);
       if (mounted) {
-        // Rating dialog 1-5 bintang (hanya muncul 1x saat pertama kali berhasil input timbangan)
-        await showFeatureRatingOnceIfNeeded(
-          context: context,
-          featureKey: 'petugas_input_timbangan',
-          featureTitle: 'Input Timbangan Berhasil! ⭐',
-          featureSubtitle:
-              'Bagaimana kepuasan dan kemudahan Anda saat pertama kali melakukan input manual timbangan pemilahan?',
-          roleTag: 'Petugas Pemilahan',
-        );
-
         _clearDraft();
         _weightController.clear();
         setState(() {
@@ -273,7 +333,11 @@ class _TimbanganPemilahanViewState
           'Gagal menyimpan data timbangan.';
       ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errorMsg), backgroundColor: AppColors.maroonRed),
+        SnackBar(
+          content: Text(errorMsg),
+          backgroundColor: AppColors.maroonRed,
+          duration: const Duration(seconds: 3),
+        ),
       );
     }
   }
@@ -709,7 +773,7 @@ class _TimbanganPemilahanViewState
               ),
               const SizedBox(height: AppDimensions.lg),
 
-              // 1. Lokasi / Bin Global Info
+              // 1. Lokasi / Bin Info
               const Text('Target Penampungan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
               const SizedBox(height: 8),
               Container(
@@ -717,21 +781,55 @@ class _TimbanganPemilahanViewState
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(
+                    color: _activeBinCode != null ? AppColors.primaryGreen : AppColors.border,
+                    width: _activeBinCode != null ? 1.5 : 1.0,
+                  ),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.delete_sweep_rounded, color: AppColors.primaryGreen),
-                    SizedBox(width: 12),
+                    Icon(
+                      _activeBinCode != null ? Icons.qr_code_2_rounded : Icons.delete_sweep_rounded,
+                      color: AppColors.primaryGreen,
+                    ),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Tempat Sampah Pemilahan Global RW', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                          Text('Tercatat di Audit Trail Monitoring RW & DLH', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                          Text(
+                            _activeBinCode != null
+                                ? 'Tempat Sampah: $_activeBinCode'
+                                : 'Tempat Sampah Pemilahan Global RW',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                          ),
+                          Text(
+                            _activeBinCode != null
+                                ? 'Warga: ${_activeWargaName ?? "Dampingan RW"}'
+                                : 'Tercatat di Audit Trail Monitoring RW & DLH',
+                            style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                          ),
                         ],
                       ),
                     ),
+                    if (_activeBinCode != null)
+                      IconButton(
+                        tooltip: 'Ganti ke Global Bin',
+                        icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.textSecondary),
+                        onPressed: () {
+                          setState(() {
+                            _activeBinId = null;
+                            _activeBinCode = null;
+                            _activeWargaName = null;
+                          });
+                        },
+                      )
+                    else
+                      IconButton(
+                        tooltip: 'Pindai QR Tempat Sampah Warga',
+                        icon: const Icon(Icons.qr_code_scanner_rounded, size: 20, color: AppColors.primaryGreen),
+                        onPressed: _scanBinQr,
+                      ),
                   ],
                 ),
               ),
@@ -781,8 +879,8 @@ class _TimbanganPemilahanViewState
               ),
               const SizedBox(height: AppDimensions.lg),
 
-              // 4. Foto Timbangan (Kamera Langsung & AI Scan)
-              const Text('Foto Bukti Timbangan (AI Scan)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              // 4. Foto Bukti Timbangan Fisik
+              const Text('Foto Bukti Timbangan Fisik', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
               const SizedBox(height: 8),
               GestureDetector(
                 onTap: _isScanningAi ? null : _takePhoto,
@@ -832,7 +930,7 @@ class _TimbanganPemilahanViewState
                                         const Icon(Icons.location_on, color: AppColors.primaryGreen, size: 14),
                                         const SizedBox(width: 4),
                                         Text(
-                                          'GPS Tercatat: ${_currentLocation!.latitude.toStringAsFixed(4)}, ${_currentLocation!.longitude.toStringAsFixed(4)}',
+                                          'GPS: ${_currentLocation!.latitude.toStringAsFixed(4)}, ${_currentLocation!.longitude.toStringAsFixed(4)}',
                                           style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600),
                                         ),
                                       ],
@@ -849,7 +947,7 @@ class _TimbanganPemilahanViewState
                                         CircularProgressIndicator(color: Colors.white),
                                         SizedBox(height: 12),
                                         Text(
-                                          'Memindai sampah dengan AI...',
+                                          'Memproses bukti foto...',
                                           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
                                         ),
                                       ],
@@ -867,7 +965,7 @@ class _TimbanganPemilahanViewState
                                   CircularProgressIndicator(color: AppColors.primaryGreen),
                                   SizedBox(height: 12),
                                   Text(
-                                    'Memindai sampah dengan AI...',
+                                    'Memproses bukti foto...',
                                     style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.bold, fontSize: 13),
                                   ),
                                 ],
@@ -878,9 +976,9 @@ class _TimbanganPemilahanViewState
                               children: [
                                 Icon(Icons.camera_alt_rounded, size: 48, color: AppColors.primaryGreen),
                                 SizedBox(height: 8),
-                                Text('Ketuk untuk Ambil Foto Timbangan', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryGreen)),
+                                Text('Ambil Foto Bukti Timbangan Fisik', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryGreen)),
                                 SizedBox(height: 4),
-                                Text('AI otomatis mengklasifikasi & mengisi estimasi berat', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                                Text('Foto timbangan & sampah terpilah sebagai bukti audit', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
                               ],
                             ),
                 ),

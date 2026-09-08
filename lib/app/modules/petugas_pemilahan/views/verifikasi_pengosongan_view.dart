@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
+import '../../../data/services/location_service.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../shared/widgets/qr_scanner_widget.dart';
 import '../controllers/petugas_pemilahan_controller.dart';
@@ -29,6 +31,7 @@ class _VerifikasiPengosonganViewState extends ConsumerState<VerifikasiPengosonga
   String? _scannedQr;
   bool _isQrMatched = false;
   String? _emptyBinPhotoPath;
+  Position? _currentLocation;
   bool _isSubmitting = false;
 
   String get _pengajuanId => widget.pengajuan['id']?.toString() ?? '';
@@ -72,7 +75,7 @@ class _VerifikasiPengosonganViewState extends ConsumerState<VerifikasiPengosonga
               'QR tidak cocok! Terbaca: "$code". Diharapkan tempat sampah $_category milik $_wargaName ($_targetBinCode).',
             ),
             backgroundColor: AppColors.maroonRed,
-            duration: const Duration(seconds: 4),
+            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -90,8 +93,13 @@ class _VerifikasiPengosonganViewState extends ConsumerState<VerifikasiPengosonga
         maxHeight: 1080,
       );
       if (file != null && mounted) {
+        Position? loc;
+        try {
+          loc = await LocationService.instance.getCurrentLocation();
+        } catch (_) {}
         setState(() {
           _emptyBinPhotoPath = file.path;
+          _currentLocation = loc;
         });
       }
     } catch (e) {
@@ -101,6 +109,7 @@ class _VerifikasiPengosonganViewState extends ConsumerState<VerifikasiPengosonga
           SnackBar(
             content: Text('Gagal mengambil foto: $e'),
             backgroundColor: AppColors.maroonRed,
+            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -238,7 +247,13 @@ class _VerifikasiPengosonganViewState extends ConsumerState<VerifikasiPengosonga
 
     final ok = await ref
         .read(petugasPemilahanControllerProvider.notifier)
-        .claimPengajuanReset(_pengajuanId);
+        .claimPengajuanReset(
+          _pengajuanId,
+          emptyBinPhotoPath: _emptyBinPhotoPath,
+          scannedQrCode: _scannedQr,
+          latitude: _currentLocation?.latitude,
+          longitude: _currentLocation?.longitude,
+        );
 
     if (!mounted) return;
     setState(() => _isSubmitting = false);
@@ -256,6 +271,7 @@ class _VerifikasiPengosonganViewState extends ConsumerState<VerifikasiPengosonga
         SnackBar(
           content: Text(errorMsg ?? 'Gagal memproses verifikasi pengosongan.'),
           backgroundColor: AppColors.maroonRed,
+          duration: const Duration(seconds: 3),
         ),
       );
     }
@@ -266,6 +282,80 @@ class _VerifikasiPengosonganViewState extends ConsumerState<VerifikasiPengosonga
     final isOrganik = _category.toLowerCase().contains('organik') && !_category.toLowerCase().contains('anorganik');
     final categoryColor = isOrganik ? AppColors.primaryGreen : AppColors.primaryBlue;
 
+    // ─── TAHAP 1: SCANNER PENUH (FULL-SCREEN SCANNER) ────────────────────────
+    if (!_isQrMatched) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          title: const Text('Scan QR Tempat Sampah Warga'),
+          backgroundColor: Colors.black,
+          foregroundColor: Colors.white,
+          elevation: 0,
+        ),
+        body: Column(
+          children: [
+            // Target Info Header
+            Container(
+              width: double.infinity,
+              color: Colors.grey.shade900,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 18,
+                    backgroundColor: categoryColor.withValues(alpha: 0.25),
+                    child: Icon(
+                      isOrganik ? Icons.eco_rounded : Icons.recycling_rounded,
+                      color: categoryColor,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '$_wargaName ${_rtRw.isNotEmpty ? "($_rtRw)" : ""}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Target: ${_targetBinCode.isNotEmpty ? _targetBinCode : "Kode Tempat Sampah"} ($_category)',
+                          style: TextStyle(
+                            color: categoryColor,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Full screen camera QR scanner
+            Expanded(
+              child: QrScannerWidget(
+                key: _scannerKey,
+                onQrDetected: _handleQrDetected,
+                hint: 'Arahkan kamera ke stiker QR tempat sampah $_category ($_targetBinCode)',
+                isFullScreen: true,
+                overlayColor: categoryColor,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // ─── TAHAP 2: FOTO BUKTI KOSONG & KONFIRMASI ────────────────────────────
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
@@ -380,150 +470,125 @@ class _VerifikasiPengosonganViewState extends ConsumerState<VerifikasiPengosonga
             ),
             const SizedBox(height: AppDimensions.lg),
 
-            // 1. Verifikasi QR Tempat Sampah
-            Row(
+            // 1. Verifikasi QR Tempat Sampah (Selesai)
+            const Row(
               children: [
-                _buildStepBadge(1, _isQrMatched),
-                const SizedBox(width: 10),
-                const Expanded(
+                CircleAvatar(
+                  radius: 12,
+                  backgroundColor: AppColors.primaryGreen,
+                  child: Icon(Icons.check, size: 14, color: Colors.white),
+                ),
+                SizedBox(width: 10),
+                Expanded(
                   child: Text(
                     '1. Scan QR Tempat Sampah Warga',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary),
                   ),
                 ),
-                if (_isQrMatched)
-                  const Text(
-                    'Valid ✓',
-                    style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.bold, fontSize: 12),
-                  ),
+                Text(
+                  'Valid ✓',
+                  style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.bold, fontSize: 12),
+                ),
               ],
             ),
             const SizedBox(height: 10),
 
-            if (_isQrMatched)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryGreen.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.primaryGreen, width: 1.5),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: const BoxDecoration(
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.primaryGreen.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.primaryGreen, width: 1.5),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: const BoxDecoration(
+                          color: AppColors.primaryGreen,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.check_rounded, color: Colors.white, size: 16),
+                      ),
+                      const SizedBox(width: 10),
+                      const Expanded(
+                        child: Text(
+                          'QR Cocok & Terverifikasi!',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
                             color: AppColors.primaryGreen,
-                            shape: BoxShape.circle,
+                            fontSize: 13,
                           ),
-                          child: const Icon(Icons.check_rounded, color: Colors.white, size: 16),
                         ),
-                        const SizedBox(width: 10),
-                        const Expanded(
+                      ),
+                      InkWell(
+                        onTap: () {
+                          setState(() {
+                            _isQrMatched = false;
+                            _scannedQr = null;
+                          });
+                        },
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.primaryGreen),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.refresh_rounded, size: 13, color: AppColors.primaryGreen),
+                              SizedBox(width: 4),
+                              Text(
+                                'Pindai Ulang',
+                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.25)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.qr_code_2_rounded, size: 16, color: AppColors.primaryGreen),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Tempat Sampah: ',
+                          style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                        ),
+                        Expanded(
                           child: Text(
-                            'QR Cocok & Terverifikasi!',
-                            style: TextStyle(
+                            _scannedQr ?? _targetBinCode,
+                            style: const TextStyle(
+                              fontSize: 12,
                               fontWeight: FontWeight.bold,
-                              color: AppColors.primaryGreen,
-                              fontSize: 13,
+                              color: AppColors.textPrimary,
                             ),
-                          ),
-                        ),
-                        InkWell(
-                          onTap: () {
-                            setState(() {
-                              _isQrMatched = false;
-                              _scannedQr = null;
-                            });
-                          },
-                          borderRadius: BorderRadius.circular(8),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: AppColors.primaryGreen),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.refresh_rounded, size: 13, color: AppColors.primaryGreen),
-                                SizedBox(width: 4),
-                                Text(
-                                  'Pindai Ulang',
-                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
-                                ),
-                              ],
-                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.25)),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.qr_code_2_rounded, size: 16, color: AppColors.primaryGreen),
-                          const SizedBox(width: 8),
-                          const Text(
-                            'Tempat Sampah: ',
-                            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                          ),
-                          Expanded(
-                            child: Text(
-                              _scannedQr ?? _targetBinCode,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            else
-              Container(
-                height: 220,
-                decoration: BoxDecoration(
-                  color: Colors.black,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.border),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    QrScannerWidget(
-                      key: _scannerKey,
-                      onQrDetected: _handleQrDetected,
-                      hint: 'Arahkan kamera ke stiker QR tempat sampah $_category',
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
+            ),
             const SizedBox(height: AppDimensions.lg),
 
             // 2. Foto Bukti Tempat Sampah Kosong
@@ -676,35 +741,32 @@ class _VerifikasiPengosonganViewState extends ConsumerState<VerifikasiPengosonga
             width: double.infinity,
             height: 50,
             child: ElevatedButton.icon(
-              onPressed: _canSubmit ? _submitVerification : null,
+              onPressed: _canSubmit
+                  ? _submitVerification
+                  : (_emptyBinPhotoPath == null ? _takeEmptyBinPhoto : null),
               icon: _isSubmitting
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                   : Icon(
                       _canSubmit
                           ? Icons.verified_rounded
-                          : !_isQrMatched
-                              ? Icons.qr_code_scanner_rounded
-                              : Icons.camera_alt_outlined,
-                      color: _canSubmit ? Colors.white : Colors.grey.shade600,
+                          : Icons.camera_alt_outlined,
+                      color: Colors.white,
                     ),
               label: Text(
                 _isSubmitting
                     ? 'Memproses Pengosongan...'
-                    : !_isQrMatched
-                        ? '1. Scan QR Tempat Sampah Warga'
-                        : _emptyBinPhotoPath == null
-                            ? '2. Ambil Foto Tempat Sampah Kosong'
-                            : 'Konfirmasi Pengosongan Selesai',
-                style: TextStyle(
+                    : _emptyBinPhotoPath == null
+                        ? 'Ambil Foto Tempat Sampah Kosong'
+                        : 'Konfirmasi Pengosongan Selesai',
+                style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
-                  color: _canSubmit ? Colors.white : Colors.grey.shade600,
+                  color: Colors.white,
                 ),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: _canSubmit ? AppColors.primaryGreen : Colors.grey.shade400,
-                disabledBackgroundColor: Colors.grey.shade300,
-                elevation: _canSubmit ? 3 : 0,
+                backgroundColor: _canSubmit ? AppColors.primaryGreen : AppColors.primaryBlueDark,
+                elevation: 3,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),

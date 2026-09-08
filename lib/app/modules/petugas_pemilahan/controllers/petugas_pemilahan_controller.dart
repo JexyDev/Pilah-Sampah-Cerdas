@@ -330,11 +330,23 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
     }
   }
 
-  Future<bool> claimPengajuanReset(String pengajuanId) async {
+  Future<bool> claimPengajuanReset(
+    String pengajuanId, {
+    String? emptyBinPhotoPath,
+    String? scannedQrCode,
+    double? latitude,
+    double? longitude,
+  }) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       final repo = _ref.read(petugasPemilahanRepositoryProvider);
-      final ok = await repo.claimPengajuanReset(pengajuanId);
+      final ok = await repo.claimPengajuanReset(
+        pengajuanId,
+        emptyBinPhotoPath: emptyBinPhotoPath,
+        scannedQrCode: scannedQrCode,
+        latitude: latitude,
+        longitude: longitude,
+      );
       // Notifikasi dikonfirmasi oleh server via FCM — tidak simpan ke LocalCache
       // agar tidak terjadi duplikasi dengan notifikasi server.
       await refreshAll();

@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/values/app_colors.dart';
 
-/// Helper untuk menampilkan Rating Dialog (1-5 Bintang) hanya SATU KALI per fitur pertama kali berhasil.
+const String kGlobalAppRatedKey = 'has_rated_app_globally';
+
+/// Helper untuk menampilkan Rating Dialog (1-5 Bintang) hanya SATU KALI di seluruh siklus hidup aplikasi.
 Future<void> showFeatureRatingOnceIfNeeded({
   required BuildContext context,
   required String featureKey,
@@ -12,10 +14,15 @@ Future<void> showFeatureRatingOnceIfNeeded({
 }) async {
   try {
     final prefs = await SharedPreferences.getInstance();
-    final hasRated = prefs.getBool('has_rated_$featureKey') ?? false;
-    if (hasRated) return;
+    // 1. Cek flag global: Jika sudah pernah menilai/menutup dialog di fitur manapun, jangan muncul lagi!
+    final hasRatedGlobally = prefs.getBool(kGlobalAppRatedKey) ?? false;
+    if (hasRatedGlobally) return;
 
-    // Tandai sudah pernah menampilkan agar tidak pernah muncul lagi
+    final hasRatedFeature = prefs.getBool('has_rated_$featureKey') ?? false;
+    if (hasRatedFeature) return;
+
+    // Kunci langsung keduanya agar tidak pernah muncul lagi di sesi berikutnya
+    await prefs.setBool(kGlobalAppRatedKey, true);
     await prefs.setBool('has_rated_$featureKey', true);
 
     if (!context.mounted) return;
@@ -264,7 +271,12 @@ class _FeatureRatingDialogState extends State<FeatureRatingDialog> {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () async {
+                      final prefs = await SharedPreferences.getInstance();
+                      await prefs.setBool(kGlobalAppRatedKey, true);
+                      await prefs.setBool('has_rated_${widget.featureKey}', true);
+                      if (context.mounted) Navigator.pop(context);
+                    },
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.textSecondary,
                       side: const BorderSide(color: AppColors.border),
@@ -289,23 +301,29 @@ class _FeatureRatingDialogState extends State<FeatureRatingDialog> {
                         ? null
                         : () async {
                             setState(() => _isSubmitted = true);
-                            Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Terima kasih atas penilaian $_selectedRating bintang Anda! ⭐',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
+                            final prefs = await SharedPreferences.getInstance();
+                            await prefs.setBool(kGlobalAppRatedKey, true);
+                            await prefs.setBool('has_rated_${widget.featureKey}', true);
+                            if (context.mounted) {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).clearSnackBars();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Terima kasih atas penilaian $_selectedRating bintang Anda! ⭐',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  backgroundColor: AppColors.primaryGreen,
+                                  duration: const Duration(seconds: 3),
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
                                   ),
                                 ),
-                                backgroundColor: AppColors.primaryGreen,
-                                duration: const Duration(seconds: 3),
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                            );
+                              );
+                            }
                           },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryGreen,

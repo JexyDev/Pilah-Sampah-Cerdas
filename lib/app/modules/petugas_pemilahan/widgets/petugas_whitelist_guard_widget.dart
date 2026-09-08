@@ -21,18 +21,17 @@ class PetugasWhitelistGuardWidget extends StatelessWidget {
       margin: const EdgeInsets.all(AppDimensions.md),
       padding: const EdgeInsets.all(AppDimensions.lg),
       decoration: BoxDecoration(
-        color: isRejected ? AppColors.maroonRed : AppColors.warningYellow,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isRejected
               ? AppColors.maroonRed.withValues(alpha: 0.3)
-              : AppColors.warningYellow,
+              : AppColors.warningYellow.withValues(alpha: 0.4),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: (isRejected ? AppColors.maroonRed : AppColors.warningYellow)
-                .withValues(alpha: 0.08),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -44,12 +43,13 @@ class PetugasWhitelistGuardWidget extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: isRejected ? AppColors.maroonRed : AppColors.warningYellow,
+              color: (isRejected ? AppColors.maroonRed : AppColors.warningYellow)
+                  .withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
             child: Icon(
               isRejected ? Icons.cancel_outlined : Icons.hourglass_top_rounded,
-              color: isRejected ? AppColors.maroonRed : AppColors.warningYellow,
+              color: isRejected ? AppColors.maroonRed : AppColors.warningOrange,
               size: 40,
             ),
           ),
@@ -62,7 +62,7 @@ class PetugasWhitelistGuardWidget extends StatelessWidget {
             style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.bold,
-              color: isRejected ? AppColors.maroonRed : AppColors.warningYellow,
+              color: isRejected ? AppColors.maroonRed : AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 8),
@@ -85,7 +85,7 @@ class PetugasWhitelistGuardWidget extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: isRejected
                   ? AppColors.maroonRed
-                  : AppColors.warningYellow,
+                  : AppColors.primaryGreen,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
