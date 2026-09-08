@@ -3230,17 +3230,48 @@ export class KknService {
     });
     const completedScheduleIds = new Set(completedAttendances.map((a) => a.scheduleId));
 
+    // Cek apakah mahasiswa sudah memiliki sesi presensi yang SUDAH SELESAI / HADIR hari ini
+    const todayCompletedAttendance = await prisma.activityAttendance.findFirst({
+      where: {
+        studentId: { in: studentUserIds },
+        attendedAt: { gte: todayStart, lte: todayEnd },
+        OR: [
+          { checkOutAt: { not: null } },
+          {
+            status: {
+              in: ["HADIR", "HADIR_MEMENUHI", "HADIR_TIDAK_MEMENUHI", "SELESAI", "SELESAI_TELAT"],
+            },
+          },
+        ],
+      },
+      include: {
+        schedule: true,
+      },
+      orderBy: { attendedAt: "desc" },
+    });
+
     // 🎯 Filter jadwal aktif (spesifik kelompok KKN atau jadwal bersama/global tanpa kelompokId)
+    // Utamakan jadwal hari ini (todayStart s/d todayEnd)
     let activeSchedules: any[] = [];
     if (student?.kelompokId) {
       activeSchedules = await prisma.schedule.findMany({
         where: {
           OR: [{ kelompokId: student.kelompokId }, { kelompokId: null }],
-          date: { gte: yesterdayStart, lte: todayEnd },
+          date: { gte: todayStart, lte: todayEnd },
           isActive: true,
         },
         orderBy: { date: "asc" },
       });
+      if (activeSchedules.length === 0) {
+        activeSchedules = await prisma.schedule.findMany({
+          where: {
+            OR: [{ kelompokId: student.kelompokId }, { kelompokId: null }],
+            date: { gte: yesterdayStart, lte: todayEnd },
+            isActive: true,
+          },
+          orderBy: { date: "asc" },
+        });
+      }
     }
 
     // Fallback 1: Jika tidak ada jadwal spesifik kelompok, cari jadwal umum tanpa kelompokId
@@ -3248,22 +3279,41 @@ export class KknService {
       activeSchedules = await prisma.schedule.findMany({
         where: {
           kelompokId: null,
-          date: { gte: yesterdayStart, lte: todayEnd },
+          date: { gte: todayStart, lte: todayEnd },
           isActive: true,
         },
         orderBy: { date: "asc" },
       });
+      if (activeSchedules.length === 0) {
+        activeSchedules = await prisma.schedule.findMany({
+          where: {
+            kelompokId: null,
+            date: { gte: yesterdayStart, lte: todayEnd },
+            isActive: true,
+          },
+          orderBy: { date: "asc" },
+        });
+      }
     }
 
     // Fallback 2: Jika masih belum ada, cari seluruh jadwal aktif dalam rentang tanggal ini
     if (activeSchedules.length === 0) {
       activeSchedules = await prisma.schedule.findMany({
         where: {
-          date: { gte: yesterdayStart, lte: todayEnd },
+          date: { gte: todayStart, lte: todayEnd },
           isActive: true,
         },
         orderBy: { date: "asc" },
       });
+      if (activeSchedules.length === 0) {
+        activeSchedules = await prisma.schedule.findMany({
+          where: {
+            date: { gte: yesterdayStart, lte: todayEnd },
+            isActive: true,
+          },
+          orderBy: { date: "asc" },
+        });
+      }
     }
 
     // Filter out schedules that student has already completed/checked out
@@ -3281,7 +3331,17 @@ export class KknService {
 
     let activeSchedule: any = null;
     if (runningSession) {
-      activeSchedule = targetScheduleList.find((sch) => sch.id === runningSession.scheduleId);
+      activeSchedule =
+        targetScheduleList.find((sch) => sch.id === runningSession.scheduleId) ||
+        activeSchedules.find((sch) => sch.id === runningSession.scheduleId) ||
+        (await prisma.schedule.findUnique({ where: { id: runningSession.scheduleId } }));
+    } else if (todayCompletedAttendance) {
+      // 🎯 FIX CRITICAL: Jika mahasiswa sudah selesai checkout / hadir hari ini dan tidak ada sesi berjalan lain,
+      // PRIORITASKAN jadwal dan data kehadiran hari ini! Jangan jatuh ke jadwal kemarin atau jadwal lain yang ALPA!
+      activeSchedule =
+        todayCompletedAttendance.schedule ||
+        activeSchedules.find((sch) => sch.id === todayCompletedAttendance.scheduleId) ||
+        (await prisma.schedule.findUnique({ where: { id: todayCompletedAttendance.scheduleId } }));
     }
 
     const now = new Date();
@@ -3413,14 +3473,21 @@ export class KknService {
     }
 
     // Fetch attendance specific to activeSchedule
-    const attendanceForActiveSchedule = activeSchedule
-      ? await prisma.activityAttendance.findFirst({
-          where: {
-            studentId: { in: studentUserIds },
-            scheduleId: activeSchedule.id,
-          },
-        })
-      : null;
+    let attendanceForActiveSchedule =
+      runningSession ||
+      (todayCompletedAttendance && activeSchedule?.id === todayCompletedAttendance.scheduleId
+        ? todayCompletedAttendance
+        : null);
+
+    if (!attendanceForActiveSchedule && activeSchedule) {
+      attendanceForActiveSchedule = await prisma.activityAttendance.findFirst({
+        where: {
+          studentId: { in: studentUserIds },
+          scheduleId: activeSchedule.id,
+        },
+        orderBy: { attendedAt: "desc" },
+      });
+    }
 
     let attendanceStatus = "belum_absen";
     let isMemenuhiDurasi = false;
@@ -3595,8 +3662,8 @@ export class KknService {
         kelurahan: activeArea?.kelurahan?.name || "Coblong",
         latitude: schedLat,
         longitude: schedLng,
-        radiusMeter: activeSchedule.radius || 100,
-        radius: activeSchedule.radius || 100,
+        radiusMeter: activeSchedule.radius || 1500,
+        radius: activeSchedule.radius || 1500,
         targetDurationMinutes: finalTargetDurationMinutes,
         actualInZoneMinutes,
         actualInZoneSeconds,

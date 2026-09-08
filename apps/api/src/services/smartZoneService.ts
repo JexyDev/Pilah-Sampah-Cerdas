@@ -159,8 +159,7 @@ export class SmartZoneService {
       const pLng = Number(p.longitude);
       const isDuplicate = result.some(
         (existing) =>
-          existing.id === p.id ||
-          calculateDistance(existing.lat, existing.lng, pLat, pLng) < 25
+          existing.id === p.id || calculateDistance(existing.lat, existing.lng, pLat, pLng) < 25
       );
       if (!isDuplicate) {
         result.push({
@@ -192,8 +191,7 @@ export class SmartZoneService {
         const fLng = Number(f.longitude);
         const isDuplicate = result.some(
           (existing) =>
-            existing.id === f.id ||
-            calculateDistance(existing.lat, existing.lng, fLat, fLng) < 25
+            existing.id === f.id || calculateDistance(existing.lat, existing.lng, fLat, fLng) < 25
         );
         if (!isDuplicate) {
           result.push({
@@ -212,7 +210,12 @@ export class SmartZoneService {
     const unikomAlreadyInList = result.some(
       (existing) =>
         existing.id === UNIKOM_CENTRAL_ZONE.id ||
-        calculateDistance(existing.lat, existing.lng, UNIKOM_CENTRAL_ZONE.lat, UNIKOM_CENTRAL_ZONE.lng) < 25
+        calculateDistance(
+          existing.lat,
+          existing.lng,
+          UNIKOM_CENTRAL_ZONE.lat,
+          UNIKOM_CENTRAL_ZONE.lng
+        ) < 25
     );
     if (!unikomAlreadyInList) {
       result.push({
@@ -271,7 +274,16 @@ export class SmartZoneService {
     };
   }
 
+  private static lastGroupUpdate = new Map<string, number>();
+
   async updateGroupAutoPolygon(kelompokId: string): Promise<void> {
+    const last = SmartZoneService.lastGroupUpdate.get(kelompokId) || 0;
+    // Throttle to at most once every 5 minutes (300,000 ms) per group
+    if (Date.now() - last < 5 * 60 * 1000) {
+      return;
+    }
+    SmartZoneService.lastGroupUpdate.set(kelompokId, Date.now());
+
     try {
       const info = await this.computeGroupPolygon(kelompokId);
       if (!info) return;
