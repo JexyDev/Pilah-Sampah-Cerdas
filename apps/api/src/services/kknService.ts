@@ -2701,6 +2701,7 @@ export class KknService {
       radiusMeter: 500,
       totalGroupPoints,
       members,
+      linkGoogleDrive: group.linkGoogleDrive || null,
     };
   }
 
