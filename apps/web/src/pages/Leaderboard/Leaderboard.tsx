@@ -39,7 +39,6 @@ import {
 } from "recharts";
 import { useLeaderboardStore } from "../../store/useLeaderboardStore";
 import { useAuthStore } from "../../store/useAuthStore";
-import { BarChartRace } from "../../components/BarChartRace";
 import { AnalyticsOverviewBoard } from "../../components/analytics/AnalyticsOverviewBoard";
 import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
@@ -83,6 +82,7 @@ const getInitials = (name: string) => {
 const Leaderboard: React.FC = () => {
   const {
     users,
+    regions,
     rtRw,
     pengangkut,
     kknStudents,
@@ -194,6 +194,19 @@ const Leaderboard: React.FC = () => {
           subtitle: p.wilayah,
           points: p.totalPoints,
         }));
+      } else if (s1Tab === "kelurahan") {
+        raw = (regions || []).map((k: any, i: number) => {
+          const rawName = k.kelurahanName || k.name || `Kelurahan ${i + 1}`;
+          const formattedName = rawName.toLowerCase().startsWith("kel") ? rawName : `Kel. ${rawName}`;
+          return {
+            id: k.kelurahanId || k.id || `kel-${i}`,
+            rank: i + 1,
+            name: formattedName,
+            subtitle: k.kecamatanName ? (k.kecamatanName.toLowerCase().startsWith("kec") ? k.kecamatanName : `Kec. ${k.kecamatanName}`) : "Kec. Coblong",
+            extraInfo: k.totalRw ? `${k.totalRw} RW Terdaftar` : (k.totalKg ? `Total Tonase: ${k.totalKg} Kg` : undefined),
+            points: Number(k.totalPoints ?? k.totalKg ?? 0),
+          };
+        });
       }
     } else {
       if (s2Tab === "students") {
@@ -259,7 +272,7 @@ const Leaderboard: React.FC = () => {
 
       return sortOrder === "asc" ? comparison : -comparison;
     });
-  }, [system, s1Tab, s2Tab, users, rtRw, pengangkut, kknStudents, kknGroups, kknDpl, searchTerm, sortBy, sortOrder, isLurah, userKelurahan]);
+  }, [system, s1Tab, s2Tab, users, regions, rtRw, pengangkut, kknStudents, kknGroups, kknDpl, searchTerm, sortBy, sortOrder, isLurah, userKelurahan]);
 
   const totalPages = useMemo(() => {
     return Math.ceil(currentData.length / itemsPerPage);
@@ -303,6 +316,13 @@ const Leaderboard: React.FC = () => {
       nameHeader = "Nama Petugas";
       subtitleHeader = "Wilayah";
       pointsLabel = "Skor Komposit";
+    } else if (s1Tab === "kelurahan") {
+      pageTitle = "Peringkat Kelurahan";
+      pageSubtitle = "Akumulasi kepatuhan pemilahan sampah dan performa partisipasi tingkat kelurahan";
+      nameHeader = "Nama Kelurahan";
+      subtitleHeader = "Kecamatan";
+      extraInfoHeader = "Cakupan Wilayah";
+      pointsLabel = "Total Poin";
     }
   } else {
     if (s2Tab === "students") {
@@ -327,6 +347,20 @@ const Leaderboard: React.FC = () => {
       pointsLabel = "Rerata Poin";
     }
   }
+
+  const participantUnit = useMemo(() => {
+    if (system === "system1") {
+      if (s1Tab === "citizens") return "orang";
+      if (s1Tab === "rtrw") return "RW";
+      if (s1Tab === "pengangkut") return "petugas";
+      if (s1Tab === "kelurahan") return "kelurahan";
+    } else {
+      if (s2Tab === "students") return "mahasiswa";
+      if (s2Tab === "groups") return "kelompok";
+      if (s2Tab === "dpl") return "dosen";
+    }
+    return "peserta";
+  }, [system, s1Tab, s2Tab]);
 
   const toggleSort = (field: "rank" | "name" | "points" | "subtitle") => {
     if (sortBy === field) {
