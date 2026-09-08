@@ -118,6 +118,22 @@ export const presensiMandiriController = {
         .json({ success: true, message: "Check-out presensi mandiri berhasil.", data: result });
     } catch (error: any) {
       const msg: string = error.message ?? "INTERNAL_ERROR";
+      const isMinDuration =
+        error.code === "MINIMUM_DURATION_NOT_MET" ||
+        msg.includes("MINIMUM_DURATION_NOT_MET") ||
+        error.code === "EARLY_CHECKOUT_RESTRICTED" ||
+        msg.includes("EARLY_CHECKOUT_RESTRICTED");
+
+      if (isMinDuration) {
+        res.status(422).json({
+          success: false,
+          error: "MINIMUM_DURATION_NOT_MET",
+          message: error.message,
+          data: error.details || null,
+        });
+        return;
+      }
+
       const statusMap: Record<string, number> = {
         PRESENSI_NOT_FOUND: 404,
         ALREADY_CHECKED_OUT: 409,
