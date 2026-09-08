@@ -265,17 +265,17 @@ export const DashboardEksekutifKkn: React.FC = () => {
   }
 
   const summary = data?.summary || {
-    totalWilayah: { kelurahanCount: 6, rwCount: 22, label: "6 Kelurahan • 22 RW" },
-    totalKelompok: { count: 48, label: "48 Kelompok" },
-    totalMahasiswa: { count: 541, label: "541 Orang" },
-    totalDpl: { count: 32, label: "32 Dosen" },
+    totalWilayah: { kelurahanCount: 0, rwCount: 0, label: "0 Kelurahan • 0 RW" },
+    totalKelompok: { count: 0, label: "0 Kelompok" },
+    totalMahasiswa: { count: 0, label: "0 Orang" },
+    totalDpl: { count: 0, label: "0 Dosen" },
     rasioKehadiran: {
-      percentage: 78,
-      totalHours: 156,
+      percentage: 0,
+      totalHours: 0,
       targetHours: 200,
-      remainingHours: 44,
-      label: "78%",
-      sublabel: "156 dari target 200 jam",
+      remainingHours: 200,
+      label: "0%",
+      sublabel: "0 dari target 200 jam",
     },
   };
 
@@ -578,7 +578,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
             {/* Inner Center Text */}
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
               <span className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight leading-none">
-                {data?.distribusiSks?.totalMahasiswa || 541}
+                {data?.distribusiSks?.totalMahasiswa ?? 0}
               </span>
               <span className="text-[10px] text-slate-400 font-medium mt-0.5">
                 Mahasiswa
@@ -755,7 +755,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
                 <span className="text-[10px] font-semibold">Diusulkan</span>
               </div>
               <p className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">
-                {data?.statusProker?.diusulkan?.count || 126}
+                {data?.statusProker?.diusulkan?.count ?? 0}
               </p>
             </div>
 
@@ -766,7 +766,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
                 <span className="text-[10px] font-semibold">Disetujui</span>
               </div>
               <p className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">
-                {data?.statusProker?.disetujui?.count || 102}
+                {data?.statusProker?.disetujui?.count ?? 0}
               </p>
             </div>
 
@@ -777,7 +777,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
                 <span className="text-[9px] font-semibold truncate">Sedang Berjalan</span>
               </div>
               <p className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">
-                {data?.statusProker?.sedangDilaksanakan?.count || 74}
+                {data?.statusProker?.sedangDilaksanakan?.count ?? 0}
               </p>
             </div>
 
@@ -788,7 +788,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
                 <span className="text-[10px] font-semibold">Selesai</span>
               </div>
               <p className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">
-                {data?.statusProker?.selesai?.count || 28}
+                {data?.statusProker?.selesai?.count ?? 0}
               </p>
             </div>
           </div>
@@ -797,38 +797,38 @@ export const DashboardEksekutifKkn: React.FC = () => {
           <div className="space-y-1.5 pt-1">
             <div className="w-full h-4 rounded-md overflow-hidden flex bg-slate-100 dark:bg-slate-800">
               <div
-                style={{ width: `${data?.statusProker?.diusulkan?.percentage || 36}%` }}
+                style={{ width: `${data?.statusProker?.diusulkan?.percentage ?? 0}%` }}
                 className="bg-[#2dd4bf] h-full transition-all duration-500"
-                title={`Diusulkan: ${data?.statusProker?.diusulkan?.percentage || 36}%`}
+                title={`Diusulkan: ${data?.statusProker?.diusulkan?.percentage ?? 0}%`}
               />
               <div
-                style={{ width: `${data?.statusProker?.disetujui?.percentage || 29}%` }}
+                style={{ width: `${data?.statusProker?.disetujui?.percentage ?? 0}%` }}
                 className="bg-[#009966] h-full transition-all duration-500"
-                title={`Disetujui: ${data?.statusProker?.disetujui?.percentage || 29}%`}
+                title={`Disetujui: ${data?.statusProker?.disetujui?.percentage ?? 0}%`}
               />
               <div
-                style={{ width: `${data?.statusProker?.sedangDilaksanakan?.percentage || 21}%` }}
+                style={{ width: `${data?.statusProker?.sedangDilaksanakan?.percentage ?? 0}%` }}
                 className="bg-[#3b82f6] h-full transition-all duration-500"
-                title={`Sedang Dilaksanakan: ${data?.statusProker?.sedangDilaksanakan?.percentage || 21}%`}
+                title={`Sedang Dilaksanakan: ${data?.statusProker?.sedangDilaksanakan?.percentage ?? 0}%`}
               />
               <div
-                style={{ width: `${data?.statusProker?.selesai?.percentage || 8}%` }}
+                style={{ width: `${data?.statusProker?.selesai?.percentage ?? 0}%` }}
                 className="bg-[#a855f7] h-full transition-all duration-500"
-                title={`Selesai: ${data?.statusProker?.selesai?.percentage || 8}%`}
+                title={`Selesai: ${data?.statusProker?.selesai?.percentage ?? 0}%`}
               />
             </div>
 
             {/* Percentage labels under segments */}
             <div className="flex justify-between text-[11px] font-bold text-slate-600 dark:text-slate-400 px-1">
-              <span>{data?.statusProker?.diusulkan?.percentage || 36}%</span>
-              <span>{data?.statusProker?.disetujui?.percentage || 29}%</span>
-              <span>{data?.statusProker?.sedangDilaksanakan?.percentage || 21}%</span>
-              <span>{data?.statusProker?.selesai?.percentage || 8}%</span>
+              <span>{data?.statusProker?.diusulkan?.percentage ?? 0}%</span>
+              <span>{data?.statusProker?.disetujui?.percentage ?? 0}%</span>
+              <span>{data?.statusProker?.sedangDilaksanakan?.percentage ?? 0}%</span>
+              <span>{data?.statusProker?.selesai?.percentage ?? 0}%</span>
             </div>
           </div>
 
           <div className="text-right text-[11px] text-slate-400 font-medium">
-            Total Program Kerja: {data?.statusProker?.total || 350}
+            Total Program Kerja: {data?.statusProker?.total ?? 0}
           </div>
         </div>
 
@@ -865,7 +865,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
               {/* Inner Center Text */}
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                 <span className="text-xs font-black text-slate-900 dark:text-slate-100 leading-none">
-                  {data?.presensiMahasiswa?.percentageHadir || 85.4}%
+                  {data?.presensiMahasiswa?.percentageHadir ?? 0}%
                 </span>
                 <span className="text-[9px] text-slate-400 font-medium mt-0.5">
                   Hadir
@@ -906,17 +906,17 @@ export const DashboardEksekutifKkn: React.FC = () => {
             </div>
             <div className="text-right">
               <span className="text-sm font-black text-[#009966] dark:text-emerald-400">
-                {data?.rasioKehadiranTrend?.percentage || 78}%
+                {data?.rasioKehadiranTrend?.percentage ?? 0}%
               </span>
               <p className="text-[9.5px] text-slate-400">
-                {data?.rasioKehadiranTrend?.remainingHours || 44} Jam tersisa
+                {data?.rasioKehadiranTrend?.remainingHours ?? 200} Jam tersisa
               </p>
             </div>
           </div>
 
           <div className="flex items-baseline gap-2">
             <span className="text-base font-black text-slate-900 dark:text-slate-100 tracking-tight">
-              {data?.rasioKehadiranTrend?.currentAvgHours || 156} Jam / {data?.rasioKehadiranTrend?.targetHours || 200} Jam
+              {data?.rasioKehadiranTrend?.currentAvgHours ?? 0} Jam / {data?.rasioKehadiranTrend?.targetHours || 200} Jam
             </span>
           </div>
 
@@ -1012,7 +1012,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
               <div>
                 <p className="text-[9.5px] text-slate-400 font-semibold">Log Aktivitas Mahasiswa</p>
                 <p className="text-sm sm:text-base font-black text-slate-900 dark:text-slate-100">
-                  {data?.aktivitasTerkini?.totalLogMahasiswa?.toLocaleString("id-ID") || "4.286"}
+                  {(data?.aktivitasTerkini?.totalLogMahasiswa ?? 0).toLocaleString("id-ID")}
                 </p>
               </div>
             </div>
@@ -1024,7 +1024,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
               <div>
                 <p className="text-[9.5px] text-slate-400 font-semibold">Log Aktivitas DPL</p>
                 <p className="text-sm sm:text-base font-black text-slate-900 dark:text-slate-100">
-                  {data?.aktivitasTerkini?.totalLogDpl?.toLocaleString("id-ID") || "638"}
+                  {(data?.aktivitasTerkini?.totalLogDpl ?? 0).toLocaleString("id-ID")}
                 </p>
               </div>
             </div>
@@ -1045,8 +1045,8 @@ export const DashboardEksekutifKkn: React.FC = () => {
                   axisLine={{ stroke: "#e2e8f0" }}
                 />
                 <YAxis
-                  domain={[0, 1200]}
-                  ticks={[0, 300, 600, 900, 1200]}
+                  domain={[0, "auto"]}
+                  allowDecimals={false}
                   tick={{ fontSize: 9, fill: "#94a3b8" }}
                   tickLine={false}
                   axisLine={false}

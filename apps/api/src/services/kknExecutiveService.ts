@@ -23,14 +23,22 @@ export const kknExecutiveService = {
     // 1. Where clause helper
     const kelompokWhere: any = {};
     if (kelFilterNormalized) {
-      kelompokWhere.kelurahan = {
-        contains: kelFilterNormalized,
-        mode: "insensitive",
-      };
+      const isLebakGede = kelFilterNormalized.toLowerCase().replace(/\s+/g, "") === "lebakgede";
+      if (isLebakGede) {
+        kelompokWhere.OR = [
+          { kelurahan: { contains: "Lebak Gede", mode: "insensitive" } },
+          { kelurahan: { contains: "Lebakgede", mode: "insensitive" } },
+        ];
+      } else {
+        kelompokWhere.kelurahan = {
+          contains: kelFilterNormalized,
+          mode: "insensitive",
+        };
+      }
     }
 
-    // Ambil kelompok KKN sesuai filter
-    const kelompokList = await prisma.kelompokKkn.findMany({
+    // Ambil kelompok KKN sesuai filter kelurahan
+    let kelompokList = await prisma.kelompokKkn.findMany({
       where: kelompokWhere,
       select: {
         id: true,
@@ -41,20 +49,35 @@ export const kknExecutiveService = {
       },
     });
 
+    // Filter RW di memori jika ada filter RW
+    if (isFilteredRw) {
+      const rwNum = parseInt(rawRw.replace(/\D/g, ""), 10);
+      if (!isNaN(rwNum)) {
+        kelompokList = kelompokList.filter((k) => {
+          if (!Array.isArray(k.cakupanRw)) return false;
+          return k.cakupanRw.some((item) => {
+            const num = parseInt(String(item).replace(/\D/g, ""), 10);
+            return num === rwNum;
+          });
+        });
+      }
+    }
+
     const kelompokIds = kelompokList.map((k) => k.id);
 
     // 2. Total Kelompok
-    const totalKelompok = kelompokList.length > 0 ? kelompokList.length : 48;
+    const totalKelompok = kelompokList.length;
 
     // 3. Total DPL
     const uniqueDplIds = Array.from(new Set(kelompokList.map((k) => k.dplId).filter(Boolean))) as string[];
-    const totalDplCountDb = uniqueDplIds.length;
-    const totalDpl = isFilteredKel ? totalDplCountDb : (totalDplCountDb > 0 ? totalDplCountDb : 32);
+    const totalDpl = uniqueDplIds.length;
 
     // 4. Mahasiswa KKN
     const studentWhere: any = {};
     if (kelompokIds.length > 0) {
       studentWhere.kelompokId = { in: kelompokIds };
+    } else if (isFilteredKel || isFilteredRw) {
+      studentWhere.kelompokId = "__none__";
     }
 
     const students = await prisma.studentKkn.findMany({
@@ -71,23 +94,19 @@ export const kknExecutiveService = {
       },
     });
 
-    const totalMahasiswa = students.length > 0 ? students.length : 541;
+    const totalMahasiswa = students.length;
 
     // 5. Total Wilayah (Kelurahan & RW)
     const allKelurahans = ["Cipaganti", "Dago", "Lebakgede", "Lebak Siliwangi", "Sadang Serang", "Sekeloa"];
-    const kelurahanCount = isFilteredKel ? 1 : 6;
-    
-    // Hitung RW terjangkau
-    let rwCount = 22;
-    if (isFilteredKel) {
-      const distinctRws = new Set<string>();
-      kelompokList.forEach((k) => {
-        if (Array.isArray(k.cakupanRw)) {
-          k.cakupanRw.forEach((rw) => distinctRws.add(String(rw)));
-        }
-      });
-      rwCount = distinctRws.size > 0 ? distinctRws.size : 4;
-    }
+    const distinctRws = new Set<string>();
+    kelompokList.forEach((k) => {
+      if (Array.isArray(k.cakupanRw)) {
+        k.cakupanRw.forEach((rw) => distinctRws.add(String(rw)));
+      }
+    });
+
+    const kelurahanCount = isFilteredKel ? (kelompokList.length > 0 ? 1 : 0) : 6;
+    const rwCount = isFilteredRw ? (kelompokList.length > 0 ? 1 : 0) : distinctRws.size;
 
     // 6. Sebaran Program Studi Mahasiswa
     const prodiMap = new Map<string, number>();
@@ -114,22 +133,12 @@ export const kknExecutiveService = {
         ...top5,
         { name: "Program Studi Lainnya", count: remainingCount },
       ];
-    } else {
-      // Benchmark acuan jika filter tidak menghasilkan data
-      sebaranProdi = [
-        { name: "Teknik Komputer", count: 128 },
-        { name: "Sistem Informasi", count: 104 },
-        { name: "Manajemen", count: 86 },
-        { name: "Ilmu Komunikasi", count: 73 },
-        { name: "Desain Komunikasi Visual", count: 64 },
-        { name: "Program Studi Lainnya", count: 86 },
-      ];
     }
 
     // 7. Distribusi Beban SKS (10 SKS vs 20 SKS)
     // Standar acuan: 10 SKS (62%), 20 SKS MBKM (38%)
-    const sks10Count = Math.round(totalMahasiswa * 0.62);
-    const sks20Count = totalMahasiswa - sks10Count;
+    const sks10Count = totalMahasiswa > 0 ? Math.round(totalMahasiswa * 0.62) : 0;
+    const sks20Count = totalMahasiswa > 0 ? totalMahasiswa - sks10Count : 0;
     const distribusiSks = {
       totalMahasiswa,
       breakdown: [
@@ -137,14 +146,14 @@ export const kknExecutiveService = {
           sks: 10,
           label: "10 SKS",
           count: sks10Count,
-          percentage: 62,
+          percentage: totalMahasiswa > 0 ? 62 : 0,
           color: "#009966",
         },
         {
           sks: 20,
           label: "20 SKS",
           count: sks20Count,
-          percentage: 38,
+          percentage: totalMahasiswa > 0 ? 38 : 0,
           color: "#3b82f6",
         },
       ],
@@ -174,24 +183,15 @@ export const kknExecutiveService = {
     });
 
     students.forEach((s) => {
-      const kel = kelompokKelurahanMap.get(s.kelompokId || "") || "Dago";
-      if (mhsWilayahMap[kel] !== undefined) {
+      const kel = kelompokKelurahanMap.get(s.kelompokId || "");
+      if (kel && mhsWilayahMap[kel] !== undefined) {
         mhsWilayahMap[kel]++;
-      } else {
-        mhsWilayahMap["Dago"]++;
       }
     });
 
-    // Sesuaikan nilai jika data DB kosong atau terkonsentrasi
     const sebaranMahasiswaPerWilayah = Object.entries(mhsWilayahMap).map(([kelurahan, count]) => ({
       kelurahan,
-      count: count > 0 ? count : (
-        kelurahan === "Cipaganti" ? 92 :
-        kelurahan === "Dago" ? 88 :
-        kelurahan === "Lebakgede" ? 96 :
-        kelurahan === "Lebak Siliwangi" ? 84 :
-        kelurahan === "Sadang Serang" ? 91 : 90
-      ),
+      count,
     }));
 
     // 9. Sebaran DPL per Wilayah
@@ -222,16 +222,15 @@ export const kknExecutiveService = {
 
     const sebaranDplPerWilayah = Object.entries(dplWilayahMap).map(([kelurahan, set]) => ({
       kelurahan,
-      count: set.size > 0 ? set.size : (
-        kelurahan === "Lebakgede" ? 6 :
-        kelurahan === "Sekeloa" ? 6 : 5
-      ),
+      count: set.size,
     }));
 
     // 10. Status Program Kerja
     const prokerWhere: any = {};
     if (kelompokIds.length > 0) {
       prokerWhere.kelompokId = { in: kelompokIds };
+    } else if (isFilteredKel || isFilteredRw) {
+      prokerWhere.kelompokId = "__none__";
     }
 
     const prokerList = await prisma.programKerjaKkn.findMany({
@@ -261,27 +260,18 @@ export const kknExecutiveService = {
       }
     });
 
-    // Normalisasi angka proker jika total belum terdistribusi penuh
-    const totalProkerCalc = prokerList.length;
-    const totalProker = totalProkerCalc > 20 ? totalProkerCalc : 350;
-    if (totalProkerCalc <= 20) {
-      prokerDiusulkan = 126;
-      prokerDisetujui = 102;
-      prokerSedangBerjalan = 74;
-      prokerSelesai = 28;
-    }
-
-    const pctDiusulkan = Math.round((prokerDiusulkan / totalProker) * 100);
-    const pctDisetujui = Math.round((prokerDisetujui / totalProker) * 100);
-    const pctSedangBerjalan = Math.round((prokerSedangBerjalan / totalProker) * 100);
-    const pctSelesai = 100 - pctDiusulkan - pctDisetujui - pctSedangBerjalan;
+    const totalProker = prokerList.length;
+    const pctDiusulkan = totalProker > 0 ? Math.round((prokerDiusulkan / totalProker) * 100) : 0;
+    const pctDisetujui = totalProker > 0 ? Math.round((prokerDisetujui / totalProker) * 100) : 0;
+    const pctSedangBerjalan = totalProker > 0 ? Math.round((prokerSedangBerjalan / totalProker) * 100) : 0;
+    const pctSelesai = totalProker > 0 ? Math.max(0, 100 - pctDiusulkan - pctDisetujui - pctSedangBerjalan) : 0;
 
     const statusProker = {
       total: totalProker,
       diusulkan: { count: prokerDiusulkan, percentage: pctDiusulkan },
       disetujui: { count: prokerDisetujui, percentage: pctDisetujui },
       sedangDilaksanakan: { count: prokerSedangBerjalan, percentage: pctSedangBerjalan },
-      selesai: { count: prokerSelesai, percentage: Math.max(0, pctSelesai) },
+      selesai: { count: prokerSelesai, percentage: pctSelesai },
     };
 
     // 11. Presensi Mahasiswa
@@ -289,6 +279,8 @@ export const kknExecutiveService = {
     const attendanceWhere: any = {};
     if (studentUserIds.length > 0) {
       attendanceWhere.studentId = { in: studentUserIds };
+    } else if (isFilteredKel || isFilteredRw) {
+      attendanceWhere.studentId = "__none__";
     }
 
     const attendanceStats = await prisma.activityAttendance.groupBy({
@@ -304,7 +296,7 @@ export const kknExecutiveService = {
 
     attendanceStats.forEach((st) => {
       const s = (st.status || "").toUpperCase();
-      if (s.includes("HADIR") || s === "BERLANGSUNG") {
+      if (s.includes("HADIR") || s === "BERLANGSUNG" || s === "SELESAI") {
         hadirCount += st._count.id;
       } else if (s === "IZIN") {
         izinCount += st._count.id;
@@ -316,85 +308,182 @@ export const kknExecutiveService = {
     });
 
     const totalAttendanceSample = hadirCount + izinCount + sakitCount + alpaCount;
-    // Map ke persentase presensi mahasiswa
-    let pctHadir = 85.4;
-    let finalHadir = 462;
-    let finalIzin = 28;
-    let finalSakit = 17;
-    let finalAlpa = 34;
 
-    if (totalAttendanceSample > 50) {
-      // Hitung persentase real
-      const rawPctHadir = (hadirCount / totalAttendanceSample) * 100;
-      pctHadir = Math.round(rawPctHadir * 10) / 10;
-      // Normalisasi skala per mahasiswa aktif (541)
+    let finalHadir = 0;
+    let finalIzin = 0;
+    let finalSakit = 0;
+    let finalAlpa = 0;
+    let pctHadir = 0;
+    let pctIzin = 0;
+    let pctSakit = 0;
+    let pctAlpa = 0;
+
+    if (totalAttendanceSample > 0 && totalMahasiswa > 0) {
       finalHadir = Math.round((hadirCount / totalAttendanceSample) * totalMahasiswa);
       finalIzin = Math.round((izinCount / totalAttendanceSample) * totalMahasiswa);
       finalSakit = Math.round((sakitCount / totalAttendanceSample) * totalMahasiswa);
-      finalAlpa = totalMahasiswa - finalHadir - finalIzin - finalSakit;
+      finalAlpa = Math.max(0, totalMahasiswa - finalHadir - finalIzin - finalSakit);
+
+      pctIzin = Math.round((finalIzin / totalMahasiswa) * 1000) / 10;
+      pctSakit = Math.round((finalSakit / totalMahasiswa) * 1000) / 10;
+      pctAlpa = Math.round((finalAlpa / totalMahasiswa) * 1000) / 10;
+      pctHadir = Math.round((100 - pctIzin - pctSakit - pctAlpa) * 10) / 10;
     }
 
     const presensiMahasiswa = {
       percentageHadir: pctHadir,
       breakdown: [
         { label: "Hadir", count: finalHadir, percentage: pctHadir, color: "#009966" },
-        { label: "Izin", count: finalIzin, percentage: 5.2, color: "#f97316" },
-        { label: "Sakit", count: finalSakit, percentage: 3.1, color: "#eab308" },
-        { label: "Tanpa Keterangan", count: finalAlpa, percentage: 6.3, color: "#64748b" },
+        { label: "Izin", count: finalIzin, percentage: pctIzin, color: "#f97316" },
+        { label: "Sakit", count: finalSakit, percentage: pctSakit, color: "#eab308" },
+        { label: "Tanpa Keterangan", count: finalAlpa, percentage: pctAlpa, color: "#64748b" },
       ],
     };
 
     // 12. Rasio Kehadiran terhadap Target 200 Jam
-    // Akumulasi jam riil
+    // Akumulasi jam riil (ActivityAttendance + PresensiMandiri)
     const totalMinutesAgg = await prisma.activityAttendance.aggregate({
       where: attendanceWhere,
       _sum: { actualInZoneMinutes: true },
     });
 
-    const totalHoursRaw = (totalMinutesAgg._sum.actualInZoneMinutes || 0) / 60;
-    const avgHoursPerStudent = totalMahasiswa > 0 ? Math.round(totalHoursRaw / totalMahasiswa) : 156;
-    const currentAvgHours = avgHoursPerStudent > 20 && avgHoursPerStudent <= 200 ? avgHoursPerStudent : 156;
+    const mandiriWhere: any = {};
+    if (studentUserIds.length > 0) {
+      mandiriWhere.studentId = { in: studentUserIds };
+    } else if (isFilteredKel || isFilteredRw) {
+      mandiriWhere.studentId = "__none__";
+    }
+
+    const totalMandiriAgg = await prisma.presensiMandiri.aggregate({
+      where: mandiriWhere,
+      _sum: { durasiMenit: true },
+    });
+
+    const totalActualMinutes = (totalMinutesAgg._sum.actualInZoneMinutes || 0) + (totalMandiriAgg._sum.durasiMenit || 0);
+    const totalHoursRaw = totalActualMinutes / 60;
+    const currentAvgHours = totalMahasiswa > 0 ? Math.round(totalHoursRaw / totalMahasiswa) : 0;
     const targetHours = 200;
     const rasioPercentage = Math.round((currentAvgHours / targetHours) * 100);
     const remainingHours = Math.max(0, targetHours - currentAvgHours);
+
+    // Weekly Trends: 8-week KKN period (August - October 2026)
+    const weeklyDefs = [
+      { week: "M1", start: new Date("2026-08-12T00:00:00Z"), end: new Date("2026-08-18T23:59:59Z") },
+      { week: "M2", start: new Date("2026-08-19T00:00:00Z"), end: new Date("2026-08-25T23:59:59Z") },
+      { week: "M3", start: new Date("2026-08-26T00:00:00Z"), end: new Date("2026-09-01T23:59:59Z") },
+      { week: "M4", start: new Date("2026-09-02T00:00:00Z"), end: new Date("2026-09-08T23:59:59Z") },
+      { week: "M5", start: new Date("2026-09-09T00:00:00Z"), end: new Date("2026-09-15T23:59:59Z") },
+      { week: "M6", start: new Date("2026-09-16T00:00:00Z"), end: new Date("2026-09-22T23:59:59Z") },
+      { week: "M7", start: new Date("2026-09-23T00:00:00Z"), end: new Date("2026-09-29T23:59:59Z") },
+      { week: "M8", start: new Date("2026-09-30T00:00:00Z"), end: new Date("2026-10-06T23:59:59Z") },
+    ];
+
+    const weeklyAttendances = await prisma.activityAttendance.findMany({
+      where: attendanceWhere,
+      select: { attendedAt: true, actualInZoneMinutes: true },
+    });
+
+    let runningMinutes = 0;
+    const weeklyTrends = weeklyDefs.map((w) => {
+      const weekMins = weeklyAttendances
+        .filter((a) => a.attendedAt >= w.start && a.attendedAt <= w.end)
+        .reduce((sum, curr) => sum + (curr.actualInZoneMinutes || 0), 0);
+      runningMinutes += weekMins;
+      const avgH = totalMahasiswa > 0 ? Math.round(runningMinutes / totalMahasiswa / 60) : 0;
+      return {
+        week: w.week,
+        avgHours: avgH,
+        target: 200,
+      };
+    });
 
     const rasioKehadiranTrend = {
       currentAvgHours,
       targetHours,
       percentage: rasioPercentage,
       remainingHours,
-      weeklyTrends: [
-        { week: "M1", avgHours: 25, target: 200 },
-        { week: "M2", avgHours: 52, target: 200 },
-        { week: "M3", avgHours: 64, target: 200 },
-        { week: "M4", avgHours: 80, target: 200 },
-        { week: "M5", avgHours: 98, target: 200 },
-        { week: "M6", avgHours: 124, target: 200 },
-        { week: "M7", avgHours: 142, target: 200 },
-        { week: "M8", avgHours: currentAvgHours, target: 200 },
-      ],
+      weeklyTrends,
     };
 
     // 13. Aktivitas Terkini (Log Mahasiswa & DPL)
+    const logMhsWhere: any = {};
+    if (kelompokIds.length > 0) {
+      logMhsWhere.kelompokId = { in: kelompokIds };
+    } else if (isFilteredKel || isFilteredRw) {
+      logMhsWhere.kelompokId = "__none__";
+    }
+
+    const logDplWhere: any = {};
+    if (kelompokIds.length > 0) {
+      logDplWhere.kelompokId = { in: kelompokIds };
+    } else if (isFilteredKel || isFilteredRw) {
+      logDplWhere.kelompokId = "__none__";
+    }
+
     const countLogMhs = await prisma.logbookKkn.count({
-      where: kelompokIds.length > 0 ? { kelompokId: { in: kelompokIds } } : undefined,
+      where: logMhsWhere,
     });
     const countLogDpl = await prisma.logbookDpl.count({
-      where: kelompokIds.length > 0 ? { kelompokId: { in: kelompokIds } } : undefined,
+      where: logDplWhere,
     });
 
-    const totalLogMahasiswa = countLogMhs > 100 ? countLogMhs : 4286;
-    const totalLogDpl = countLogDpl > 20 ? countLogDpl : 638;
+    const totalLogMahasiswa = countLogMhs;
+    const totalLogDpl = countLogDpl;
 
-    const aktivitasChartData = [
-      { date: "2 Sep", mahasiswa: 350, dpl: 45 },
-      { date: "3 Sep", mahasiswa: 580, dpl: 72 },
-      { date: "4 Sep", mahasiswa: 620, dpl: 68 },
-      { date: "5 Sep", mahasiswa: 710, dpl: 85 },
-      { date: "6 Sep", mahasiswa: 790, dpl: 90 },
-      { date: "7 Sep", mahasiswa: 740, dpl: 80 },
-      { date: "8 Sep", mahasiswa: 890, dpl: 98 },
-    ];
+    // Real 7-day activities (2 Sep - 8 Sep 2026)
+    const sevenDays: { dateStr: string; label: string; start: Date; end: Date }[] = [];
+    const monthsShort = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(2026, 8, 8 - i);
+      const dayNum = d.getDate();
+      const monthStr = monthsShort[d.getMonth()];
+      const dateIso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(dayNum).padStart(2, "0")}`;
+      const start = new Date(`${dateIso}T00:00:00.000Z`);
+      const end = new Date(`${dateIso}T23:59:59.999Z`);
+      sevenDays.push({
+        dateStr: dateIso,
+        label: `${dayNum} ${monthStr}`,
+        start,
+        end,
+      });
+    }
+
+    const rangeStart = sevenDays[0].start;
+    const rangeEnd = sevenDays[sevenDays.length - 1].end;
+
+    const [recentMhsLogs, recentDplLogs] = await Promise.all([
+      prisma.logbookKkn.findMany({
+        where: {
+          ...logMhsWhere,
+          tanggalKegiatan: { gte: rangeStart, lte: rangeEnd },
+        },
+        select: { tanggalKegiatan: true },
+      }),
+      prisma.logbookDpl.findMany({
+        where: {
+          ...logDplWhere,
+          tanggal: { gte: rangeStart, lte: rangeEnd },
+        },
+        select: { tanggal: true },
+      }),
+    ]);
+
+    const aktivitasChartData = sevenDays.map((day) => {
+      const mhsCount = recentMhsLogs.filter((l) => {
+        const dStr = new Date(l.tanggalKegiatan).toISOString().slice(0, 10);
+        return dStr === day.dateStr;
+      }).length;
+      const dplCount = recentDplLogs.filter((l) => {
+        const dStr = new Date(l.tanggal).toISOString().slice(0, 10);
+        return dStr === day.dateStr;
+      }).length;
+      return {
+        date: day.label,
+        mahasiswa: mhsCount,
+        dpl: dplCount,
+      };
+    });
 
     const aktivitasTerkini = {
       totalLogMahasiswa,
@@ -402,39 +491,28 @@ export const kknExecutiveService = {
       chartData: aktivitasChartData,
     };
 
-    // 14. Lini Masa Terkini
-    const liniMasaTerkini = [
-      {
-        id: "1",
-        title: "Pelaksanaan Program Kerja",
-        dateRange: "Berjalan • 1-20 Sep 2026",
-        status: "Sedang Berlangsung",
-        badgeType: "active",
+    // 14. Lini Masa Terkini (Real query dari tabel timeline_kkn)
+    const dbTimelines = await prisma.timelineKkn.findMany({
+      where: {
+        fase: { not: "Pra-Kegiatan" },
       },
-      {
-        id: "2",
-        title: "Monitoring & Evaluasi",
-        dateRange: "15 Sep 2026",
-        status: "Akan Datang",
-        badgeType: "upcoming",
-      },
-      {
-        id: "3",
-        title: "Penilaian Akhir",
-        dateRange: "22-25 Sep 2026",
-        status: "Akan Datang",
-        badgeType: "upcoming",
-      },
-      {
-        id: "4",
-        title: "Laporan & Penutupan",
-        dateRange: "29 Sep 2026",
-        status: "Akan Datang",
-        badgeType: "upcoming",
-      },
-    ];
+      orderBy: { startDate: "asc" },
+      take: 4,
+    });
 
-    // 15. Perhatian Pimpinan (Alert Items)
+    const liniMasaTerkini = dbTimelines.map((t) => {
+      const isActive = t.statusPelaksanaan === "SEDANG_BERJALAN";
+      const isCompleted = t.statusPelaksanaan === "SELESAI";
+      return {
+        id: t.id,
+        title: t.kegiatanUtama,
+        dateRange: `${t.tahapMinggu} • ${t.tanggal}`,
+        status: isActive ? "Sedang Berlangsung" : isCompleted ? "Selesai" : "Akan Datang",
+        badgeType: isActive ? "active" : isCompleted ? "completed" : "upcoming",
+      };
+    });
+
+    // 15. Perhatian Pimpinan (Real alerts dari database)
     const countAlpaDb = await prisma.activityAttendance.count({
       where: { ...attendanceWhere, status: "ALPA" },
     });
@@ -442,25 +520,59 @@ export const kknExecutiveService = {
       where: { ...prokerWhere, status: "BELUM_DISETUJUI" },
     });
 
+    // Hitung real kelompok di bawah rasio 70%
+    const kelompokWithAtt = await prisma.kelompokKkn.findMany({
+      where: kelompokWhere,
+      select: {
+        id: true,
+        schedules: {
+          select: {
+            attendances: {
+              select: { status: true },
+            },
+          },
+        },
+      },
+    });
+
+    let under70Count = 0;
+    kelompokWithAtt.forEach((k) => {
+      let totalAtt = 0;
+      let hadirAtt = 0;
+      k.schedules.forEach((s) => {
+        s.attendances.forEach((a) => {
+          totalAtt++;
+          const st = (a.status || "").toUpperCase();
+          if (st.includes("HADIR") || st === "BERLANGSUNG" || st === "SELESAI") {
+            hadirAtt++;
+          }
+        });
+      });
+      const ratio = totalAtt > 0 ? (hadirAtt / totalAtt) * 100 : 0;
+      if (ratio < 70) {
+        under70Count++;
+      }
+    });
+
     const perhatianPimpinan = [
       {
         id: "alpa",
-        count: countAlpaDb > 0 ? countAlpaDb : 34,
-        title: `${countAlpaDb > 0 ? countAlpaDb : 34} mahasiswa tanpa keterangan`,
+        count: countAlpaDb,
+        title: `${countAlpaDb} mahasiswa tanpa keterangan`,
         type: "danger",
         link: "/monitoring-kegiatan/presensi?filter=alpa",
       },
       {
         id: "proker_pending",
-        count: countPendingProkerDb > 0 ? countPendingProkerDb : 24,
-        title: `${countPendingProkerDb > 0 ? countPendingProkerDb : 24} program belum disetujui`,
+        count: countPendingProkerDb,
+        title: `${countPendingProkerDb} program belum disetujui`,
         type: "warning",
         link: "/pelaksanaan/program-kerja?status=BELUM_DISETUJUI",
       },
       {
         id: "low_attendance_group",
-        count: 7,
-        title: "7 kelompok di bawah rasio 70%",
+        count: under70Count,
+        title: `${under70Count} kelompok di bawah rasio 70%`,
         type: "warning",
         link: "/monitoring-kegiatan/laporan-presensi?filter=under70",
       },
