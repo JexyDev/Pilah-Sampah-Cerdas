@@ -662,6 +662,16 @@ class _QtyButton extends StatelessWidget {
   }
 }
 
+IconData _resolveProductIcon(int codePoint) {
+  if (codePoint == Icons.kitchen.codePoint) return Icons.kitchen;
+  if (codePoint == Icons.set_meal.codePoint) return Icons.set_meal;
+  if (codePoint == Icons.clean_hands.codePoint) return Icons.clean_hands;
+  if (codePoint == Icons.water_drop.codePoint) return Icons.water_drop;
+  if (codePoint == Icons.shopping_bag.codePoint) return Icons.shopping_bag;
+  if (codePoint == Icons.bolt.codePoint) return Icons.bolt;
+  return Icons.inventory_2_outlined;
+}
+
 class _ProductIcon extends StatelessWidget {
   const _ProductIcon({required this.codePoint, required this.size});
   final int codePoint;
@@ -670,7 +680,7 @@ class _ProductIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Icon(
-      IconData(codePoint, fontFamily: 'MaterialIcons'),
+      _resolveProductIcon(codePoint),
       size: size,
       color: AppColors.primaryGreen,
     );

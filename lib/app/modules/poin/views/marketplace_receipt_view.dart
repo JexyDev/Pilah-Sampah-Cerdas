@@ -122,7 +122,7 @@ class MarketplaceReceiptView extends StatelessWidget {
                       ),
 
                       // Zigzag separator
-                      _ReceiptDivider(color: const Color(0xFF009966)),
+                      const _ReceiptDivider(color: Color(0xFF009966)),
 
                       Padding(
                         padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
@@ -220,7 +220,7 @@ class MarketplaceReceiptView extends StatelessWidget {
                               value: DateFormat('HH:mm:ss')
                                   .format(firstOrder.createdAt),
                             ),
-                            _ReceiptRow(
+                            const _ReceiptRow(
                               label: 'Status',
                               value: '⏳ Menunggu Klaim',
                               valueColor: AppColors.warningYellow,

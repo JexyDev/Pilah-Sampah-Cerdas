@@ -208,7 +208,7 @@ final marketplaceOrdersProvider = StateNotifierProvider<
 );
 
 // ─── Cart State ──────────────────────────────────────────────────────────────
-/// Map<productId, quantity> — hanya in-memory, tidak perlu disimpan.
+/// `Map<productId, quantity>` — hanya in-memory, tidak perlu disimpan.
 class CartNotifier extends StateNotifier<Map<String, int>> {
   CartNotifier() : super({});
 
