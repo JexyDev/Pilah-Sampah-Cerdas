@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../routes/app_routes.dart';
+import '../../../data/models/bin_entity.dart';
+import '../../scan/controllers/scan_controller.dart';
 
 class UkurKapasitasView extends ConsumerStatefulWidget {
   const UkurKapasitasView({super.key});
@@ -17,6 +19,10 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
 
   // Selected shape: 'tabung' (Keranjang Bulat) atau 'kotak' (Bak Kotak)
   String _selectedShape = 'tabung';
+
+  // Target kategori wadah yang didaftarkan: 'organic', 'non_organic', atau 'both'
+  String _targetCategory = 'both';
+  bool _argsLoaded = false;
 
   // Toggle apakah ukuran Organik & Anorganik identik (Default: true)
   bool _sameSizeForBoth = true;
@@ -34,23 +40,152 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
   final TextEditingController _anorgPanjangCtrl = TextEditingController();
   final TextEditingController _anorgLebarCtrl = TextEditingController();
 
+  // Index preset ukuran default yang dipilih (0: Kecil, 1: Sedang/Standar, 2: Besar, 3: Jumbo, -1: Kustom)
+  int _orgPresetIndex = 1;
+  int _anorgPresetIndex = 1;
+  bool _isApplyingPreset = false;
+
+  int get _currentPresetIndex {
+    final bool isBoth = _targetCategory == 'both';
+    final bool isOrgActive = !isBoth || _sameSizeForBoth || _activeBinTab == 0;
+    return isOrgActive ? _orgPresetIndex : _anorgPresetIndex;
+  }
+
+  static const List<_BinPreset> _roundPresets = [
+    _BinPreset(label: 'Kecil', capacity: 10.0, d: 23, t: 24),
+    _BinPreset(label: 'Sedang', capacity: 20.0, d: 29, t: 30),
+    _BinPreset(label: 'Besar', capacity: 40.0, d: 36, t: 39),
+    _BinPreset(label: 'Jumbo', capacity: 60.0, d: 40, t: 48),
+  ];
+
+  static const List<_BinPreset> _boxPresets = [
+    _BinPreset(label: 'Kecil', capacity: 12.0, p: 25, l: 20, t: 24),
+    _BinPreset(label: 'Sedang', capacity: 25.0, p: 40, l: 25, t: 25),
+    _BinPreset(label: 'Besar', capacity: 50.0, p: 40, l: 35, t: 36),
+    _BinPreset(label: 'Jumbo', capacity: 70.0, p: 45, l: 35, t: 45),
+  ];
+
+  void _applyPresetByIndex(int index, {required String shape, bool updateBoth = true}) {
+    if (index < 0) return;
+    final presets = shape == 'tabung' ? _roundPresets : _boxPresets;
+    if (index >= presets.length) return;
+    final p = presets[index];
+
+    final isAnorgTab = !_sameSizeForBoth && _activeBinTab == 1;
+
+    _isApplyingPreset = true;
+    try {
+      if (isAnorgTab) {
+        _anorgPresetIndex = index;
+      } else {
+        _orgPresetIndex = index;
+        if (updateBoth) {
+          _anorgPresetIndex = index;
+        }
+      }
+
+      if (shape == 'tabung') {
+        if (isAnorgTab) {
+          _anorgDiameterCtrl.text = p.d.toStringAsFixed(0);
+          _anorgTinggiCtrl.text = p.t.toStringAsFixed(0);
+        } else {
+          _diameterCtrl.text = p.d.toStringAsFixed(0);
+          _tinggiCtrl.text = p.t.toStringAsFixed(0);
+          if (updateBoth) {
+            _anorgDiameterCtrl.text = p.d.toStringAsFixed(0);
+            _anorgTinggiCtrl.text = p.t.toStringAsFixed(0);
+          }
+        }
+      } else {
+        if (isAnorgTab) {
+          _anorgPanjangCtrl.text = p.p.toStringAsFixed(0);
+          _anorgLebarCtrl.text = p.l.toStringAsFixed(0);
+          _anorgTinggiCtrl.text = p.t.toStringAsFixed(0);
+        } else {
+          _panjangCtrl.text = p.p.toStringAsFixed(0);
+          _lebarCtrl.text = p.l.toStringAsFixed(0);
+          _tinggiCtrl.text = p.t.toStringAsFixed(0);
+          if (updateBoth) {
+            _anorgPanjangCtrl.text = p.p.toStringAsFixed(0);
+            _anorgLebarCtrl.text = p.l.toStringAsFixed(0);
+            _anorgTinggiCtrl.text = p.t.toStringAsFixed(0);
+          }
+        }
+      }
+    } finally {
+      _isApplyingPreset = false;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
-    // Tambahkan listener agar estimasi kapasitas terhitung live saat mengetik
-    _diameterCtrl.addListener(_onDimensionChanged);
-    _tinggiCtrl.addListener(_onDimensionChanged);
-    _panjangCtrl.addListener(_onDimensionChanged);
-    _lebarCtrl.addListener(_onDimensionChanged);
+    // Inisialisasi controller dengan preset default: Sedang (Standar)
+    _applyPresetByIndex(1, shape: _selectedShape, updateBoth: true);
 
-    _anorgDiameterCtrl.addListener(_onDimensionChanged);
-    _anorgTinggiCtrl.addListener(_onDimensionChanged);
-    _anorgPanjangCtrl.addListener(_onDimensionChanged);
-    _anorgLebarCtrl.addListener(_onDimensionChanged);
+    // Tambahkan listener agar jika dimensi diedit manual, preset index dilepas (-1) dan estimasi terhitung live
+    _diameterCtrl.addListener(_onOrgDimensionChanged);
+    _tinggiCtrl.addListener(_onOrgDimensionChanged);
+    _panjangCtrl.addListener(_onOrgDimensionChanged);
+    _lebarCtrl.addListener(_onOrgDimensionChanged);
+
+    _anorgDiameterCtrl.addListener(_onAnorgDimensionChanged);
+    _anorgTinggiCtrl.addListener(_onAnorgDimensionChanged);
+    _anorgPanjangCtrl.addListener(_onAnorgDimensionChanged);
+    _anorgLebarCtrl.addListener(_onAnorgDimensionChanged);
   }
 
-  void _onDimensionChanged() {
+  void _onOrgDimensionChanged() {
+    if (_isApplyingPreset) return;
+    if (_orgPresetIndex >= 0) {
+      final presets = _selectedShape == 'tabung' ? _roundPresets : _boxPresets;
+      if (_orgPresetIndex < presets.length) {
+        final p = presets[_orgPresetIndex];
+        final bool stillMatches = _selectedShape == 'tabung'
+            ? _diameterCtrl.text == p.d.toStringAsFixed(0) &&
+                _tinggiCtrl.text == p.t.toStringAsFixed(0)
+            : _panjangCtrl.text == p.p.toStringAsFixed(0) &&
+                _lebarCtrl.text == p.l.toStringAsFixed(0) &&
+                _tinggiCtrl.text == p.t.toStringAsFixed(0);
+        if (!stillMatches) {
+          _orgPresetIndex = -1;
+        }
+      }
+    }
     if (mounted) setState(() {});
+  }
+
+  void _onAnorgDimensionChanged() {
+    if (_isApplyingPreset) return;
+    if (_anorgPresetIndex >= 0) {
+      final presets = _selectedShape == 'tabung' ? _roundPresets : _boxPresets;
+      if (_anorgPresetIndex < presets.length) {
+        final p = presets[_anorgPresetIndex];
+        final bool stillMatches = _selectedShape == 'tabung'
+            ? _anorgDiameterCtrl.text == p.d.toStringAsFixed(0) &&
+                _anorgTinggiCtrl.text == p.t.toStringAsFixed(0)
+            : _anorgPanjangCtrl.text == p.p.toStringAsFixed(0) &&
+                _anorgLebarCtrl.text == p.l.toStringAsFixed(0) &&
+                _anorgTinggiCtrl.text == p.t.toStringAsFixed(0);
+        if (!stillMatches) {
+          _anorgPresetIndex = -1;
+        }
+      }
+    }
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_argsLoaded) {
+      final args =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      if (args != null && args['targetType'] != null) {
+        _targetCategory = args['targetType'].toString();
+      }
+      _argsLoaded = true;
+    }
   }
 
   @override
@@ -67,8 +202,36 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
     super.dispose();
   }
 
-  // ponytail: hardcoded 2 wadah shapes (Round & Box) with asset loader and vector fallback.
-  double _calculateCapacity({
+  // ponytail: standard preset capacity is prioritized for UI consistency; raw formula fallback for manual custom inputs.
+  double _getCapacityFor({
+    required bool isOrganik,
+    required String shape,
+  }) {
+    final bool isBoth = _targetCategory == 'both';
+    final bool usePrimaryCtrl = !isBoth || _sameSizeForBoth || isOrganik;
+
+    final presetIdx = usePrimaryCtrl ? _orgPresetIndex : _anorgPresetIndex;
+    final presets = shape == 'tabung' ? _roundPresets : _boxPresets;
+
+    if (presetIdx >= 0 && presetIdx < presets.length) {
+      return presets[presetIdx].capacity;
+    }
+
+    final dCtrl = usePrimaryCtrl ? _diameterCtrl : _anorgDiameterCtrl;
+    final tCtrl = usePrimaryCtrl ? _tinggiCtrl : _anorgTinggiCtrl;
+    final pCtrl = usePrimaryCtrl ? _panjangCtrl : _anorgPanjangCtrl;
+    final lCtrl = usePrimaryCtrl ? _lebarCtrl : _anorgLebarCtrl;
+
+    return _calculateRawCapacity(
+      shape: shape,
+      dCtrl: dCtrl,
+      tCtrl: tCtrl,
+      pCtrl: pCtrl,
+      lCtrl: lCtrl,
+    );
+  }
+
+  double _calculateRawCapacity({
     required String shape,
     required TextEditingController dCtrl,
     required TextEditingController tCtrl,
@@ -89,44 +252,50 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
   }
 
   void _submit() {
-    final orgVol = _calculateCapacity(
-      shape: _selectedShape,
-      dCtrl: _diameterCtrl,
-      tCtrl: _tinggiCtrl,
-      pCtrl: _panjangCtrl,
-      lCtrl: _lebarCtrl,
-    );
+    final bool isOrgOnly = _targetCategory == 'organic';
+    final bool isNonOrgOnly = _targetCategory == 'non_organic';
 
-    double anorgVol = orgVol;
-    if (!_sameSizeForBoth) {
-      anorgVol = _calculateCapacity(
-        shape: _selectedShape,
-        dCtrl: _anorgDiameterCtrl,
-        tCtrl: _anorgTinggiCtrl,
-        pCtrl: _anorgPanjangCtrl,
-        lCtrl: _anorgLebarCtrl,
-      );
+    double orgVol = 0.0;
+    double anorgVol = 0.0;
+
+    if (isOrgOnly) {
+      orgVol = _getCapacityFor(isOrganik: true, shape: _selectedShape);
+      if (orgVol <= 0.0) {
+        _showError('Mohon isi ukuran dimensi Tempat Sampah Organik');
+        return;
+      }
+    } else if (isNonOrgOnly) {
+      anorgVol = _getCapacityFor(isOrganik: false, shape: _selectedShape);
+      if (anorgVol <= 0.0) {
+        _showError('Mohon isi ukuran dimensi Tempat Sampah Anorganik');
+        return;
+      }
+    } else {
+      orgVol = _getCapacityFor(isOrganik: true, shape: _selectedShape);
+      anorgVol = _sameSizeForBoth
+          ? orgVol
+          : _getCapacityFor(isOrganik: false, shape: _selectedShape);
+
+      if (orgVol <= 0.0) {
+        _showError('Mohon isi ukuran dimensi Tempat Sampah Organik');
+        return;
+      }
+      if (!_sameSizeForBoth && anorgVol <= 0.0) {
+        _showError('Mohon isi ukuran dimensi Tempat Sampah Anorganik');
+        return;
+      }
     }
 
-    if (orgVol <= 0.0) {
-      _showError('Mohon isi ukuran dimensi Tempat Sampah Organik');
-      return;
-    }
-    if (!_sameSizeForBoth && anorgVol <= 0.0) {
-      _showError('Mohon isi ukuran dimensi Tempat Sampah Anorganik');
-      return;
-    }
-
-    // Lanjut ke aktivasi (scan barcode).
-    // Pertama kali wajib 2: hasOrganic = false & hasAnorganic = false mewajibkan scan keduanya.
+    // Lanjut ke aktivasi barcode (sesuai mode pilihan warga: 1 atau 2 tempat sampah)
     Navigator.pushReplacementNamed(
       context,
       AppRoutes.aktivasiBin,
       arguments: {
+        'targetType': _targetCategory,
         'orgCapacity': orgVol,
         'anorgCapacity': anorgVol,
-        'hasOrganic': false,
-        'hasAnorganic': false,
+        'hasOrganic': isNonOrgOnly,
+        'hasAnorganic': isOrgOnly,
       },
     );
   }
@@ -266,6 +435,16 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
   // LANGKAH 1: PILIH BENTUK TEMPAT SAMPAH (KERANJANG BULAT & BAK KOTAK)
   // ═══════════════════════════════════════════════════════════════════════════
   Widget _buildStep1() {
+    final binsAsync = ref.watch(binsProvider);
+    final bins = binsAsync.value ?? [];
+    final hasOrganic = bins.any(
+      (b) => b.binType == WasteType.organic && b.isActive,
+    );
+    final hasNonOrganic = bins.any(
+      (b) => b.binType == WasteType.nonOrganic && b.isActive,
+    );
+    final isPostOnboarding = hasOrganic && hasNonOrganic;
+
     return Column(
       children: [
         Expanded(
@@ -274,6 +453,11 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (isPostOnboarding)
+                  _buildTargetCategorySelector()
+                else
+                  _buildOnboardingNotice(),
+
                 const Text(
                   'Pilih bentuk tempat sampah',
                   style: TextStyle(
@@ -395,7 +579,11 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
     final bool isSelected = _selectedShape == id;
 
     return GestureDetector(
-      onTap: () => setState(() => _selectedShape = id),
+      onTap: () => setState(() {
+        _selectedShape = id;
+        final targetIdx = _currentPresetIndex >= 0 ? _currentPresetIndex : 1;
+        _applyPresetByIndex(targetIdx, shape: id, updateBoth: true);
+      }),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(16),
@@ -495,23 +683,278 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
     );
   }
 
+  Widget _buildTargetCategorySelector() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.tune_rounded, color: AppColors.primaryGreen, size: 20),
+              SizedBox(width: 8),
+              Text(
+                'Pilih Kategori Tempat Sampah',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Anda sudah memiliki Tempat Sampah aktif. Anda bebas memilih untuk menambah 1 wadah atau sepasang.',
+            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildCategoryChip(
+                  label: 'Organik (1)',
+                  value: 'organic',
+                  color: AppColors.organicColor,
+                  icon: Icons.eco_rounded,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildCategoryChip(
+                  label: 'Anorganik (1)',
+                  value: 'non_organic',
+                  color: AppColors.nonOrganicColor,
+                  icon: Icons.category_rounded,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildCategoryChip(
+                  label: 'Keduanya (2)',
+                  value: 'both',
+                  color: AppColors.primaryGreen,
+                  icon: Icons.all_inclusive_rounded,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryChip({
+    required String label,
+    required String value,
+    required Color color,
+    required IconData icon,
+  }) {
+    final bool isSelected = _targetCategory == value;
+    return GestureDetector(
+      onTap: () => setState(() => _targetCategory = value),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? color.withValues(alpha: 0.12) : const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? color : const Color(0xFFE2E8F0),
+            width: isSelected ? 1.8 : 1.0,
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 20, color: isSelected ? color : AppColors.textSecondary),
+            const SizedBox(height: 4),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                  color: isSelected ? color : AppColors.textSecondary,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOnboardingNotice() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.primaryGreenLight,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.3)),
+      ),
+      child: const Row(
+        children: [
+          Icon(Icons.info_outline_rounded, color: AppColors.primaryGreen, size: 20),
+          SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Aktivasi Awal: Wajib mendaftarkan sepasang Tempat Sampah (Organik & Anorganik) untuk memulai pemilahan.',
+              style: TextStyle(fontSize: 12, color: AppColors.textPrimary),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPresetSizeSelector() {
+    final presets = _selectedShape == 'tabung' ? _roundPresets : _boxPresets;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.straighten_rounded,
+                color: AppColors.primaryGreen,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'Ukuran Standar (Tinggal Pilih)',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                'Kecil ➔ Besar',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey.shade500,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Pilih ukuran umum tempat sampah di bawah ini:',
+            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: List.generate(presets.length, (idx) {
+              final p = presets[idx];
+              final isSelected = _currentPresetIndex == idx;
+              return Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    right: idx < presets.length - 1 ? 6 : 0,
+                  ),
+                  child: InkWell(
+                    onTap: () {
+                      setState(() {
+                        _applyPresetByIndex(
+                          idx,
+                          shape: _selectedShape,
+                          updateBoth: _sameSizeForBoth,
+                        );
+                      });
+                    },
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 10,
+                        horizontal: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? AppColors.primaryGreen.withValues(alpha: 0.12)
+                            : const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: isSelected
+                              ? AppColors.primaryGreen
+                              : const Color(0xFFCBD5E1),
+                          width: isSelected ? 1.8 : 1.0,
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            p.label,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: isSelected
+                                  ? FontWeight.bold
+                                  : FontWeight.w600,
+                              color: isSelected
+                                  ? AppColors.primaryGreen
+                                  : AppColors.textPrimary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            p.capacityLabel,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: isSelected
+                                  ? AppColors.primaryGreen
+                                  : AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
   // LANGKAH 2: DATA UKURAN
   // ═══════════════════════════════════════════════════════════════════════════
   Widget _buildStep2() {
+    final bool isOrgOnly = _targetCategory == 'organic';
+    final bool isBoth = _targetCategory == 'both';
+
     // Tentukan controller yang sedang aktif
-    final bool isOrgActive = _sameSizeForBoth || _activeBinTab == 0;
+    final bool isOrgActive = !isBoth || _sameSizeForBoth || _activeBinTab == 0;
     final dCtrl = isOrgActive ? _diameterCtrl : _anorgDiameterCtrl;
     final tCtrl = isOrgActive ? _tinggiCtrl : _anorgTinggiCtrl;
     final pCtrl = isOrgActive ? _panjangCtrl : _anorgPanjangCtrl;
     final lCtrl = isOrgActive ? _lebarCtrl : _anorgLebarCtrl;
 
-    final double currentCapacity = _calculateCapacity(
+    final double currentCapacity = _getCapacityFor(
+      isOrganik: isOrgActive,
       shape: _selectedShape,
-      dCtrl: dCtrl,
-      tCtrl: tCtrl,
-      pCtrl: pCtrl,
-      lCtrl: lCtrl,
     );
 
     final String diagramImagePath = _selectedShape == 'tabung'
@@ -557,69 +1000,126 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
                 ),
                 const SizedBox(height: 16),
 
-                // Opsi Dual-Bin Berseka: Ukuran sama atau terpisah
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.tune_rounded, color: AppColors.primaryGreen, size: 20),
-                      const SizedBox(width: 10),
-                      const Expanded(
-                        child: Text(
-                          'Ukuran sama untuk Organik & Anorganik',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
+                // Opsi Dual-Bin Berseka: Ukuran sama atau terpisah (jika mode both)
+                if (isBoth) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.tune_rounded, color: AppColors.primaryGreen, size: 20),
+                        const SizedBox(width: 10),
+                        const Expanded(
+                          child: Text(
+                            'Ukuran sama untuk Organik & Anorganik',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
                           ),
                         ),
-                      ),
-                      Switch(
-                        value: _sameSizeForBoth,
-                        activeThumbColor: AppColors.primaryGreen,
-                        activeTrackColor: AppColors.primaryGreenLight,
-                        onChanged: (val) {
-                          setState(() {
-                            _sameSizeForBoth = val;
-                            if (val) _activeBinTab = 0;
-                          });
-                        },
-                      ),
-                    ],
+                        Switch(
+                          value: _sameSizeForBoth,
+                          activeThumbColor: AppColors.primaryGreen,
+                          activeTrackColor: AppColors.primaryGreenLight,
+                          onChanged: (val) {
+                            setState(() {
+                              _sameSizeForBoth = val;
+                              if (val) {
+                                _activeBinTab = 0;
+                                _anorgPresetIndex = _orgPresetIndex;
+                              }
+                            });
+                          },
+                        ),
+                      ],
+                    ),
                   ),
-                ),
 
-                if (!_sameSizeForBoth) ...[
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildBinTabButton(
-                          title: 'Organik (Hijau)',
-                          isSelected: _activeBinTab == 0,
-                          activeColor: AppColors.organicColor,
-                          onTap: () => setState(() => _activeBinTab = 0),
+                  if (!_sameSizeForBoth) ...[
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildBinTabButton(
+                            title: 'Organik (Hijau)',
+                            isSelected: _activeBinTab == 0,
+                            activeColor: AppColors.organicColor,
+                            onTap: () => setState(() => _activeBinTab = 0),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _buildBinTabButton(
-                          title: 'Anorganik (Kuning)',
-                          isSelected: _activeBinTab == 1,
-                          activeColor: AppColors.nonOrganicColor,
-                          onTap: () => setState(() => _activeBinTab = 1),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _buildBinTabButton(
+                            title: 'Anorganik (Kuning)',
+                            isSelected: _activeBinTab == 1,
+                            activeColor: AppColors.nonOrganicColor,
+                            onTap: () => setState(() => _activeBinTab = 1),
+                          ),
                         ),
+                      ],
+                    ),
+                  ],
+                ] else ...[
+                  // Single bin mode banner
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: isOrgOnly
+                          ? AppColors.organicColor.withValues(alpha: 0.1)
+                          : AppColors.nonOrganicColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: isOrgOnly
+                            ? AppColors.organicColor.withValues(alpha: 0.4)
+                            : AppColors.nonOrganicColor.withValues(alpha: 0.4),
                       ),
-                    ],
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          isOrgOnly ? Icons.eco_rounded : Icons.category_rounded,
+                          color: isOrgOnly
+                              ? AppColors.organicColor
+                              : AppColors.nonOrganicColor,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            isOrgOnly
+                                ? 'Kategori: Tempat Sampah Organik (Hijau)'
+                                : 'Kategori: Tempat Sampah Anorganik (Kuning)',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: isOrgOnly
+                                  ? AppColors.organicColor
+                                  : AppColors.nonOrganicColor,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
-
-                const SizedBox(height: 18),
+                const SizedBox(height: 16),
+                _buildPresetSizeSelector(),
+                const SizedBox(height: 16),
+                const Text(
+                  'Atau sesuaikan ukuran detail manual (cm):',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 10),
 
                 // Form Input Dimensi sesuai bentuk wadah
                 if (_selectedShape == 'tabung') ...[
@@ -713,9 +1213,11 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
                                 color: AppColors.primaryGreen,
                               ),
                             ),
-                            const Text(
-                              'Dihitung otomatis dari ukuran',
-                              style: TextStyle(
+                            Text(
+                              _currentPresetIndex >= 0
+                                  ? 'Sesuai ukuran standar (${currentCapacity.toStringAsFixed(currentCapacity.truncateToDouble() == currentCapacity ? 0 : 1)} liter)'
+                                  : 'Dihitung otomatis dari ukuran manual',
+                              style: const TextStyle(
                                 fontSize: 11,
                                 color: AppColors.textSecondary,
                               ),
@@ -1108,4 +1610,25 @@ class _BinDimensionDiagramPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _BinDimensionDiagramPainter oldDelegate) =>
       oldDelegate.shape != shape;
+}
+
+class _BinPreset {
+  final String label;
+  final double capacity;
+  final double d;
+  final double t;
+  final double p;
+  final double l;
+
+  const _BinPreset({
+    required this.label,
+    required this.capacity,
+    this.d = 0,
+    this.t = 0,
+    this.p = 0,
+    this.l = 0,
+  });
+
+  String get capacityLabel =>
+      '${capacity.toStringAsFixed(capacity.truncateToDouble() == capacity ? 0 : 1)} L';
 }

@@ -109,6 +109,20 @@ class UserEntity extends Equatable {
     );
   }
 
+  /// Format tampilan RW rapi mendukung multi-RW (misal: "04, 09, 10")
+  String get formattedRw {
+    if (rw.isEmpty || rw == '-') return '-';
+    final matches = RegExp(r'\d+').allMatches(rw);
+    if (matches.isNotEmpty) {
+      final numbers = matches
+          .map((m) => m.group(0)!.padLeft(2, '0'))
+          .toSet()
+          .toList();
+      return numbers.join(', ');
+    }
+    return rw;
+  }
+
   @override
   List<Object?> get props => [
     id,

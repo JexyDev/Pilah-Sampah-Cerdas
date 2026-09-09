@@ -31,6 +31,10 @@ class ApiClient {
     _cachedToken = null;
   }
 
+  void setToken(String token) {
+    _cachedToken = token;
+  }
+
   ApiClient({required this.dio, required this.secureStorage}) {
     dio.options.baseUrl = AppConfig.apiBaseUrl;
     dio.options.connectTimeout = const Duration(seconds: 15);
@@ -42,6 +46,22 @@ class ApiClient {
       InterceptorsWrapper(
         // ── Inject access token ke setiap request ────────────────────────
         onRequest: (options, handler) async {
+          // Jangan inject atau baca token untuk endpoint autentikasi publik
+          final path = options.path;
+          final isPublicAuth = path.contains('/auth/login') ||
+              path.contains('/auth/register') ||
+              path.contains('/auth/request-otp') ||
+              path.contains('/auth/verify-otp') ||
+              path.contains('/auth/refresh') ||
+              path.contains('/auth/forgot-password') ||
+              path.contains('/auth/reset-password') ||
+              path.contains('/system/latest-release') ||
+              path.contains('/app-version');
+
+          if (isPublicAuth) {
+            return handler.next(options);
+          }
+
           _cachedToken ??= await secureStorage.read(
             key: AppConfig.accessTokenKey,
           );
@@ -61,10 +81,21 @@ class ApiClient {
             return handler.next(e);
           }
 
-          // Hindari infinite loop: jangan refresh kalau request ini sendiri
-          // adalah endpoint refresh/login
+          // Hindari refresh/force logout jika endpoint adalah alur autentikasi publik
           final path = e.requestOptions.path;
-          if (path.contains('/auth/refresh') || path.contains('/auth/login')) {
+          if (path.contains('/auth/') && !path.contains('/auth/me')) {
+            return handler.next(e);
+          }
+
+          // Abaikan 401 jika berasal dari request dengan token lama yang sudah digantikan sesi baru
+          final requestAuth =
+              e.requestOptions.headers['Authorization']?.toString();
+          if (_cachedToken != null &&
+              requestAuth != null &&
+              requestAuth != 'Bearer $_cachedToken') {
+            debugPrint(
+              '[ApiClient] Mengabaikan 401 dari request kadaluarsa yang sudah digantikan oleh sesi baru.',
+            );
             return handler.next(e);
           }
 
@@ -154,13 +185,26 @@ class ApiClient {
               );
             }
           } catch (refreshErr, stackTrace) {
-            // ── Refresh GAGAL → force logout ───────────────────────────
+            // ── Refresh GAGAL ──────────────────────────────────────────
             debugPrint('[ApiClient] Refresh token failed: $refreshErr');
             debugPrint('[ApiClient] Stacktrace: $stackTrace');
 
             _isRefreshing = false;
             _rejectPendingRequests();
-            await _forceLogout();
+
+            // Hanya force logout jika server eksplisit memberikan status 401 atau 403.
+            // Jika karena jaringan (Timeout, Offline, 502/503/504), JANGAN logout paksa!
+            bool isExplicitAuthFailure = false;
+            if (refreshErr is DioException) {
+              final status = refreshErr.response?.statusCode;
+              if (status == 401 || status == 403) {
+                isExplicitAuthFailure = true;
+              }
+            }
+
+            if (isExplicitAuthFailure) {
+              await _forceLogout();
+            }
             return handler.next(e);
           }
 

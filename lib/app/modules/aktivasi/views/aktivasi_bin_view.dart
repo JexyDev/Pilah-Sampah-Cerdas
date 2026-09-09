@@ -25,6 +25,7 @@ class AktivasiBinView extends ConsumerStatefulWidget {
 
 class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
   int _step = 1; // 1 = Organik, 2 = Anorganik
+  String _targetType = 'both'; // 'organic', 'non_organic', 'both'
   String _qrOrganik = '';
   String _qrAnorganik = '';
   bool _bothBinsDetected = false;
@@ -52,11 +53,20 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
       _hasOrganic = args?['hasOrganic'] ?? false;
       _hasAnorganic = args?['hasAnorganic'] ?? false;
 
-      if (_hasOrganic && !_hasAnorganic) {
-        _step = 2; // Langsung ke anorganik
+      if (args != null && args['targetType'] != null) {
+        _targetType = args['targetType'].toString();
+      } else if (_hasOrganic && !_hasAnorganic) {
+        _targetType = 'non_organic';
+      } else if (!_hasOrganic && _hasAnorganic) {
+        _targetType = 'organic';
+      } else {
+        _targetType = 'both';
       }
-      if (_hasOrganic && _hasAnorganic) {
-        _bothBinsDetected = true; // Gak perlu scan lagi
+
+      if (_targetType == 'non_organic') {
+        _step = 2; // Langsung ke anorganik
+      } else {
+        _step = 1;
       }
       _argsLoaded = true;
     }
@@ -189,17 +199,25 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
     }
 
     setState(() {
-      if (_step == 1) {
+      if (_targetType == 'organic') {
         _qrOrganik = detected;
-        if (_hasAnorganic) {
-          _bothBinsDetected = true; // Selesai jika Anorganik sudah ada
-        } else {
-          _step = 2; // Lanjut ke scan Anorganik
-          _lastStepChangeTime = DateTime.now(); // Mulai cooldown
-        }
-      } else if (_step == 2) {
+        _bothBinsDetected = true;
+      } else if (_targetType == 'non_organic') {
         _qrAnorganik = detected;
-        _bothBinsDetected = true; // Kedua tempat sampah berhasil di-scan
+        _bothBinsDetected = true;
+      } else {
+        if (_step == 1) {
+          _qrOrganik = detected;
+          if (_hasAnorganic) {
+            _bothBinsDetected = true; // Selesai jika Anorganik sudah ada
+          } else {
+            _step = 2; // Lanjut ke scan Anorganik
+            _lastStepChangeTime = DateTime.now(); // Mulai cooldown
+          }
+        } else if (_step == 2) {
+          _qrAnorganik = detected;
+          _bothBinsDetected = true; // Kedua tempat sampah berhasil di-scan
+        }
       }
     });
 
@@ -407,7 +425,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
                           TextButton.icon(
                             onPressed: () => setState(() {
                               _bothBinsDetected = false;
-                              _step = _hasOrganic ? 2 : 1;
+                              _step = _targetType == 'non_organic' ? 2 : 1;
                               _qrOrganik = '';
                               _qrAnorganik = '';
                             }),
@@ -490,13 +508,13 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
         ),
         const SizedBox(height: 10),
         Text(
-          _step == 1
-              ? (_hasAnorganic
-                    ? 'Arahkan kamera ke Kode QR\npada Tempat Sampah Organik Anda'
-                    : 'Langkah 1/2: Arahkan kamera ke Kode QR\npada Tempat Sampah Organik Anda')
-              : (_hasOrganic
-                    ? 'Arahkan kamera ke Kode QR\npada Tempat Sampah Anorganik Anda'
-                    : 'Langkah 2/2: Arahkan kamera ke Kode QR\npada Tempat Sampah Anorganik Anda'),
+          _targetType == 'organic'
+              ? 'Arahkan kamera ke Kode QR\npada Tempat Sampah Organik Anda'
+              : _targetType == 'non_organic'
+                  ? 'Arahkan kamera ke Kode QR\npada Tempat Sampah Anorganik Anda'
+                  : (_step == 1
+                      ? 'Langkah 1/2: Arahkan kamera ke Kode QR\npada Tempat Sampah Organik Anda'
+                      : 'Langkah 2/2: Arahkan kamera ke Kode QR\npada Tempat Sampah Anorganik Anda'),
           style: const TextStyle(
             fontSize: 14,
             color: AppColors.textSecondary,
@@ -509,7 +527,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
           'atau masukkan ID tempat sampah secara manual di atas',
           style: TextStyle(fontSize: 12, color: AppColors.textHint),
         ),
-        if (_step == 2 && !_hasOrganic) ...[
+        if (_targetType == 'both' && _step == 2) ...[
           const SizedBox(height: 16),
           TextButton.icon(
             onPressed: () {
@@ -571,7 +589,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
             GestureDetector(
               onTap: () => setState(() {
                 _bothBinsDetected = false;
-                _step = _hasOrganic ? 2 : 1;
+                _step = _targetType == 'non_organic' ? 2 : 1;
                 _qrOrganik = '';
                 _qrAnorganik = '';
               }),

@@ -473,17 +473,7 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                           (user?.rw != null &&
                                   user!.rw.isNotEmpty &&
                                   user.rw != '-')
-                              ? () {
-                                  final matches = RegExp(
-                                    r'\d+',
-                                  ).allMatches(user.rw);
-                                  if (matches.isNotEmpty) {
-                                    return matches
-                                        .map((m) => m.group(0)!.padLeft(2, '0'))
-                                        .join(', ');
-                                  }
-                                  return user.rw;
-                                }()
+                              ? user.formattedRw
                               : '-',
                         ),
                         _divider(),
