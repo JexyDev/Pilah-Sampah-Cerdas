@@ -1214,7 +1214,7 @@ export const MahasiswaPresensiMobile: React.FC = () => {
           <div className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 text-center">
             {primaryKegiatan?.canCheckoutNow === false && primaryKegiatan?.earliestCheckoutTimeString ? (
               <p className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold leading-relaxed">
-                ⏳ Presensi pulang minimal dibuka pukul <b>{primaryKegiatan.earliestCheckoutTimeString}</b> (30 menit sebelum jam selesai kegiatan).
+                ⏳ Presensi pulang dibuka setelah target <b>{primaryKegiatan.durasiWajibMenit || 240} menit</b> tercapai atau mulai pukul <b>{primaryKegiatan.earliestCheckoutTimeString}</b>.
               </p>
             ) : (
               <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">

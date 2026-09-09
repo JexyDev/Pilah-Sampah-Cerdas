@@ -1882,6 +1882,17 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
     const studentId = "mhs-early-check";
     const scheduleId = "sch-early-check";
 
+    beforeEach(() => {
+      vi.mocked(configService.getRuleEngineConfigs).mockResolvedValue({
+        attendanceMinDurationHours: 4,
+        attendanceMinDurationMinutes: 0,
+        attendanceMinDurationSeconds: 0,
+        attendanceGeofenceBufferMeters: 100,
+        attendanceGeofenceInvalidationHours: 2,
+      } as any);
+      vi.mocked(prisma.studentLocation.findMany).mockResolvedValue([]);
+    });
+
     it("should reject checkout when current time is more than 30 minutes before schedule end time", async () => {
       // System time is 11:00 WIB (from beforeEach)
       vi.mocked(prisma.schedule.findUnique).mockResolvedValue({
@@ -1915,6 +1926,49 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
           minutesRemaining: 270,
         }),
       });
+    });
+
+    it("should allow checkout before schedule end time if target duration is met (>= 240 mins)", async () => {
+      // System time is 11:00 WIB, schedule ends at 16:00 WIB (H-30 is 15:30 WIB)
+      // Mahasiswa already has 240 minutes in zone (durasi target terpenuhi)
+      vi.mocked(prisma.schedule.findUnique).mockResolvedValue({
+        id: scheduleId,
+        title: "Kegiatan Harian KKN",
+        time: "08:00 - 16:00 WIB",
+        date: new Date("2026-09-03"),
+      } as any);
+
+      vi.mocked(prisma.activityAttendance.findFirst).mockResolvedValue({
+        id: "att-early-target-met",
+        studentId,
+        scheduleId,
+        status: "BERLANGSUNG",
+        attendedAt: new Date("2026-09-03T00:00:00.000Z"), // 07:00 WIB (4 jam lalu)
+        actualInZoneMinutes: 240,
+        checkOutAt: null,
+      } as any);
+
+      (prisma.activityAttendance.update as any).mockImplementation(async ({ data }: any) => {
+        return {
+          id: "att-early-target-met",
+          studentId,
+          scheduleId,
+          status: data.status,
+          attendedAt: new Date("2026-09-03T00:00:00.000Z"),
+          checkOutAt: new Date(),
+          schedule: { id: scheduleId, title: "Kegiatan Harian KKN" },
+          student: { id: studentId, name: "Mahasiswa Rajin", studentProfile: { nim: "10120001" } },
+        } as any;
+      });
+
+      const res = await service.checkOutAttendance({
+        studentId,
+        scheduleId,
+      });
+
+      expect(res.success).toBe(true);
+      expect(res.data.status).toBe("HADIR_MEMENUHI");
+      expect(res.data.isMemenuhiDurasi).toBe(true);
     });
 
     it("should allow checkout when current time is within 30 minutes of schedule end time", async () => {
