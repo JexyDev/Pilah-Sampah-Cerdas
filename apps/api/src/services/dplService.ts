@@ -2928,6 +2928,13 @@ export const dplService = {
     statusPenilaian?: "BELUM_DINILAI" | "SEDANG_DINILAI" | "SUDAH_DINILAI",
     statusPelaksanaan?: string
   ) => {
+    const normRole = String(role || "").toUpperCase();
+    if (normRole === "PEMIMPIN" || normRole === "PIMPINAN") {
+      throw new Error(
+        "FORBIDDEN_ROLE: Role Pimpinan hanya memiliki akses View-Only dan tidak dapat menginput/mengubah penilaian."
+      );
+    }
+
     if (skorPenilaian < 0 || skorPenilaian > 100) {
       throw new Error("Skor penilaian harus berada di rentang 0-100");
     }
