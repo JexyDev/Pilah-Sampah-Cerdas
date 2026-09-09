@@ -6007,6 +6007,17 @@ export class KknAttendanceService {
       let totalMarkedAlpha = 0;
       let totalBypassed = 0;
 
+      // 2.b Ambil konfigurasi override hari kerja kelompok jika ada
+      let groupWorkdaysOverride: Record<string, number[]> = {};
+      try {
+        const rawOverride = await configService.getConfig("kkn_group_workdays_override");
+        if (rawOverride) {
+          groupWorkdaysOverride = JSON.parse(rawOverride);
+        }
+      } catch {
+        groupWorkdaysOverride = {};
+      }
+
       for (const sched of schedules) {
         // Guard 1: Cek apakah jadwal ini sudah di-skip di level jadwal (oleh Ketua/DPL)
         // Ini mencegah seluruh kelompok mendapat ALPA jika jadwalnya memang dikosongkan.
@@ -6020,6 +6031,15 @@ export class KknAttendanceService {
         );
         if (isScheduleSkipped) {
           continue;
+        }
+
+        // Guard 3: Cek override hari kerja khusus kelompok (0: Minggu, 1: Senin, ..., 6: Sabtu)
+        if (sched.kelompokId && groupWorkdaysOverride[sched.kelompokId]) {
+          const allowedDays = groupWorkdaysOverride[sched.kelompokId];
+          if (Array.isArray(allowedDays) && !allowedDays.includes(dayOfWeek)) {
+            // Hari ini bukan hari kerja resmi kelompok tersebut (jadwal libur rutin)
+            continue;
+          }
         }
 
         const students = sched.kelompok?.students || [];

@@ -1455,21 +1455,49 @@ export const MahasiswaPresensiMobile: React.FC = () => {
                     {item.durasiJedaMenit && item.durasiJedaMenit > 0 ? ` • Jeda: ${item.durasiJedaFormatted || `${item.durasiJedaMenit}m`}` : ""}
                   </p>
                 </div>
-                <span
-                  className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase shrink-0 ${
-                    item.statusPresensi === "TIDAK_ADA_KEGIATAN" || item.status === "TIDAK_ADA_KEGIATAN"
-                      ? "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                      : (item.jamPulang || item.checkOutAt)
-                      ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-                      : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
-                  }`}
-                >
-                  {item.statusPresensi === "TIDAK_ADA_KEGIATAN" || item.status === "TIDAK_ADA_KEGIATAN"
-                    ? "Tidak Ada Kegiatan"
-                    : (item.jamPulang || item.checkOutAt)
-                    ? "Selesai"
-                    : "Sedang Aktif"}
-                </span>
+                {(() => {
+                  const st = String(item.statusPresensi || item.status || "").toUpperCase();
+                  if (st === "TIDAK_ADA_KEGIATAN" || st === "SKIP_KEGIATAN") {
+                    return (
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase shrink-0 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                        Tidak Ada Kegiatan
+                      </span>
+                    );
+                  }
+                  if (st === "ALPA" || st === "ALPHA") {
+                    return (
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase shrink-0 bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300">
+                        Tanpa Keterangan
+                      </span>
+                    );
+                  }
+                  if (st === "IZIN") {
+                    return (
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase shrink-0 bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300">
+                        Izin
+                      </span>
+                    );
+                  }
+                  if (st === "SAKIT") {
+                    return (
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase shrink-0 bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300">
+                        Sakit
+                      </span>
+                    );
+                  }
+                  if (item.jamPulang || item.checkOutAt || st === "SELESAI" || st === "HADIR_MEMENUHI" || st === "HADIR") {
+                    return (
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase shrink-0 bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                        Selesai
+                      </span>
+                    );
+                  }
+                  return (
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase shrink-0 bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                      Sedang Aktif
+                    </span>
+                  );
+                })()}
               </div>
             ))}
           </div>

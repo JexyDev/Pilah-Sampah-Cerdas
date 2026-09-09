@@ -330,6 +330,18 @@ export const scheduleService = {
       const dateStr = targetDateStr || wibNow.toISOString().slice(0, 10);
       const startOfDay = new Date(`${dateStr}T00:00:00+07:00`);
       const endOfDay = new Date(`${dateStr}T23:59:59.999+07:00`);
+      const dayOfWeek = new Date(`${dateStr}T00:00:00Z`).getUTCDay();
+
+      // Ambil override hari kerja kelompok jika ada
+      let groupWorkdaysOverride: Record<string, number[]> = {};
+      try {
+        const rawOverride = await configService.getConfig("kkn_group_workdays_override");
+        if (rawOverride) {
+          groupWorkdaysOverride = JSON.parse(rawOverride);
+        }
+      } catch {
+        groupWorkdaysOverride = {};
+      }
 
       // Fetch all KKN groups with Posko info
       const groups = await prisma.kelompokKkn.findMany({
@@ -494,6 +506,11 @@ export const scheduleService = {
         }
 
         try {
+          const isGroupOffDay =
+            groupWorkdaysOverride[group.id] &&
+            Array.isArray(groupWorkdaysOverride[group.id]) &&
+            !groupWorkdaysOverride[group.id].includes(dayOfWeek);
+
           await prisma.schedule.create({
             data: {
               title: `Kegiatan Harian ${poskoName}`,
@@ -506,6 +523,10 @@ export const scheduleService = {
               radius: poskoRadius,
               kelompokId: group.id,
               isActive: true,
+              statusKegiatan: isGroupOffDay ? "TIDAK_ADA_KEGIATAN" : "AKTIF",
+              detailSkip: isGroupOffDay
+                ? { alasan: "Jadwal libur rutin kelompok (Off-day)", by: "AUTO_SYSTEM" }
+                : undefined,
             },
           });
           createdCount++;
