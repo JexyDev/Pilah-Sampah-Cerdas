@@ -143,5 +143,13 @@ jobs:
             sudo systemctl reload nginx || true
 
             echo "=== 6. Health Check ==="
-            curl -fsS http://localhost:3000/api/v1/health || { echo "Backend health check failed"; exit 1; }
+            echo "Waiting for backend initialization..."
+            for attempt in {1..10}; do
+              if curl -fsS http://127.0.0.1:3000/api/v1/health >/dev/null 2>&1; then
+                echo "Backend healthy on attempt $attempt"
+                break
+              fi
+              sleep 2
+            done
+            curl -fsS http://127.0.0.1:3000/api/v1/health || { echo "Backend health check failed"; exit 1; }
             echo "Staging deployment successfully completed!"
