@@ -52,6 +52,9 @@ class ApiAuthRepository implements AuthRepository {
         debugPrint('[DEBUG LOGIN] userMap keys=${userMap.keys.toList()}');
         debugPrint('[DEBUG LOGIN] userMap=$userMap');
 
+        // Segera perbarui in-memory token cache agar request berikutnya langsung memakai token baru
+        apiClient.setToken(accessToken);
+
         // Simpan token ke secure storage
         await Future.wait([
           secureStorage.write(
@@ -200,6 +203,9 @@ class ApiAuthRepository implements AuthRepository {
         final accessToken = data['accessToken'] as String;
         final refreshToken = data['refreshToken'] as String;
 
+        // Segera perbarui in-memory token cache
+        apiClient.setToken(accessToken);
+
         // Simpan token ke secure storage
         await Future.wait([
           secureStorage.write(
@@ -294,6 +300,9 @@ class ApiAuthRepository implements AuthRepository {
         final accessToken = data['accessToken'] as String;
         final refreshToken = data['refreshToken'] as String;
 
+        // Segera perbarui in-memory token cache
+        apiClient.setToken(accessToken);
+
         // Simpan token ke secure storage secara paralel
         await Future.wait([
           secureStorage.write(
@@ -359,6 +368,7 @@ class ApiAuthRepository implements AuthRepository {
     } catch (_) {
       // Tetap lanjut logout lokal meskipun network gagal
     } finally {
+      apiClient.clearTokenCache();
       await Future.wait([
         secureStorage.delete(key: AppConfig.accessTokenKey),
         secureStorage.delete(key: AppConfig.refreshTokenKey),
@@ -454,6 +464,7 @@ class ApiAuthRepository implements AuthRepository {
 
       if (response.statusCode == 200) {
         final newAccessToken = response.data['data']['accessToken'] as String;
+        apiClient.setToken(newAccessToken);
         await secureStorage.write(
           key: AppConfig.accessTokenKey,
           value: newAccessToken,

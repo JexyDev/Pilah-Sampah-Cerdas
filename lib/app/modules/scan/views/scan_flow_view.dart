@@ -1588,8 +1588,10 @@ class _AiSuccessSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isOrganic = result.detectedType == WasteType.organic;
-    final double orgPct = result.organicPercentage ?? (isOrganic ? 0.85 : 0.15);
-    final double anorgPct = 1.0 - orgPct;
+    // Nilai murni dari model AI tanpa fallback angka buatan/dummy
+    final double orgPct =
+        (result.organicPercentage as num?)?.toDouble() ?? (isOrganic ? 1.0 : 0.0);
+    final double anorgPct = (1.0 - orgPct).clamp(0.0, 1.0);
 
     return SafeArea(
       top: false,
@@ -1728,8 +1730,9 @@ class _AiSuccessSheet extends StatelessWidget {
                           valueWidget: Row(
                             children: [
                               ...List.generate(5, (index) {
-                                final conf = result.confidence ?? 0.85;
-                                final stars = (conf * 5).round().clamp(1, 5);
+                                final double conf =
+                                    (result.confidence as num?)?.toDouble() ?? 0.0;
+                                final stars = (conf * 5).round().clamp(0, 5);
                                 return Icon(
                                   Icons.star_rounded,
                                   size: 14,
@@ -1740,7 +1743,7 @@ class _AiSuccessSheet extends StatelessWidget {
                               }),
                               const SizedBox(width: 4),
                               Text(
-                                '${((result.confidence ?? 0.85) * 100).toStringAsFixed(0)}%',
+                                '${(((result.confidence as num?)?.toDouble() ?? 0.0) * 100).toStringAsFixed(0)}%',
                                 style: const TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w700,

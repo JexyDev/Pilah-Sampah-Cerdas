@@ -16,7 +16,14 @@ final pengajuanIzinCountProvider = FutureProvider.autoDispose<int>((ref) async {
   try {
     final repo = ref.read(kknRepositoryProvider);
     final list = await repo.getPengajuanIzin();
-    return list.length;
+    final approvedList = list.where((item) {
+      if (item is Map<String, dynamic>) {
+        final status = (item['status'] ?? '').toString().toUpperCase();
+        return status == 'APPROVED' || status == 'DISETUJUI';
+      }
+      return true;
+    }).toList();
+    return approvedList.length;
   } catch (e) {
     return 0;
   }

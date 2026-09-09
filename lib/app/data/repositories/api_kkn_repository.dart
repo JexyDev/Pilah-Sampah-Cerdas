@@ -328,6 +328,8 @@ class ApiKknRepository implements KknRepository {
         totalDurasiDalamZonaMenit: totalMenit,
         accumulatedSeconds: accumulatedSeconds,
         alasan: 'Presensi Selesai (Pulang)',
+        deskripsiKegiatan: deskripsiKegiatan,
+        fotoPath: fotoPath,
       );
       return response;
     } catch (e) {

@@ -81,8 +81,10 @@ class KelolaBinView extends ConsumerWidget {
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: ElevatedButton(
-            onPressed: () =>
-                Navigator.of(context).pushNamed(AppRoutes.ukurKapasitas),
+            onPressed: () => _onTambahBinPressed(
+              context,
+              binsAsync.value ?? [],
+            ),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryGreen,
               foregroundColor: Colors.white,
@@ -104,6 +106,164 @@ class KelolaBinView extends ConsumerWidget {
       ),
     );
   }
+
+  void _onTambahBinPressed(BuildContext context, List<BinEntity> bins) {
+    final hasOrganic = bins.any(
+      (b) => b.binType == WasteType.organic && b.isActive,
+    );
+    final hasNonOrganic = bins.any(
+      (b) => b.binType == WasteType.nonOrganic && b.isActive,
+    );
+    final isPostOnboarding = hasOrganic && hasNonOrganic;
+
+    if (!isPostOnboarding) {
+      Navigator.of(context).pushNamed(AppRoutes.ukurKapasitas);
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      backgroundColor: Colors.white,
+      builder: (sheetCtx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Tambah Tempat Sampah Baru',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Pilih kategori Tempat Sampah yang ingin Anda daftarkan:',
+                style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: 16),
+              _buildOptionTile(
+                context: context,
+                sheetCtx: sheetCtx,
+                title: 'Tempat Sampah Organik (1 Wadah)',
+                subtitle: 'Khusus sampah basah, sisa makanan, dan kompos',
+                color: AppColors.organicColor,
+                icon: Icons.eco_rounded,
+                targetType: 'organic',
+              ),
+              const SizedBox(height: 10),
+              _buildOptionTile(
+                context: context,
+                sheetCtx: sheetCtx,
+                title: 'Tempat Sampah Anorganik (1 Wadah)',
+                subtitle: 'Khusus sampah plastik, botol, kertas, dan daur ulang',
+                color: AppColors.nonOrganicColor,
+                icon: Icons.category_rounded,
+                targetType: 'non_organic',
+              ),
+              const SizedBox(height: 10),
+              _buildOptionTile(
+                context: context,
+                sheetCtx: sheetCtx,
+                title: 'Sepasang Tempat Sampah (2 Wadah)',
+                subtitle: 'Daftarkan 1 Organik dan 1 Anorganik sekaligus',
+                color: AppColors.primaryGreen,
+                icon: Icons.all_inclusive_rounded,
+                targetType: 'both',
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOptionTile({
+    required BuildContext context,
+    required BuildContext sheetCtx,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required IconData icon,
+    required String targetType,
+  }) {
+    return InkWell(
+      onTap: () {
+        Navigator.pop(sheetCtx);
+        Navigator.of(context).pushNamed(
+          AppRoutes.ukurKapasitas,
+          arguments: {'targetType': targetType},
+        );
+      },
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+          color: color.withValues(alpha: 0.05),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 22),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: color,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 14,
+              color: AppColors.textHint,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _BinCardLarge extends StatelessWidget {
@@ -111,12 +271,59 @@ class _BinCardLarge extends StatelessWidget {
   final BinEntity bin;
   final UserEntity? user;
 
+  String _getDisplayStatus(BinEntity bin) {
+    if (!bin.isActive) {
+      return 'NON AKTIF (Dinonaktifkan di Web)';
+    }
+    if (bin.isResetPending) {
+      return 'DIAJUKAN PENGOSONGAN';
+    }
+    final raw = bin.backendStatus.toUpperCase();
+    if (raw == 'RUSAK' || raw == 'BROKEN' || raw == 'PERBAIKAN') {
+      return 'PERBAIKAN';
+    }
+    if (raw == 'NORMAL' || raw == 'AMAN') {
+      return 'AMAN';
+    }
+    if (raw == 'SEDANG') {
+      return 'SEDANG';
+    }
+    if (raw == 'PENUH') {
+      return 'PENUH';
+    }
+    // Sesuai Web (STATUS KAPASITAS: AMAN < 70%, SEDANG 70-90%, PENUH > 90%)
+    if (bin.capacityPercent > 0.90) {
+      return 'PENUH';
+    } else if (bin.capacityPercent >= 0.70) {
+      return 'SEDANG';
+    }
+    return 'AMAN';
+  }
+
+  Color _getDisplayStatusColor(String status) {
+    switch (status) {
+      case 'AMAN':
+        return AppColors.primaryGreen;
+      case 'SEDANG':
+      case 'DIAJUKAN PENGOSONGAN':
+        return AppColors.warningYellow;
+      case 'PENUH':
+      case 'PERBAIKAN':
+      case 'NON AKTIF (Dinonaktifkan di Web)':
+      default:
+        return AppColors.dangerRed;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isOrganic = bin.binType == WasteType.organic;
     final color = isOrganic
         ? AppColors.organicColor
         : AppColors.nonOrganicColor;
+    final displayStatus = _getDisplayStatus(bin);
+    final statusColor = _getDisplayStatusColor(displayStatus);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -164,7 +371,7 @@ class _BinCardLarge extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      'Kapasitas Maksimal: ${bin.maxWeightKg.toStringAsFixed(1)} kg (${bin.maxCapacityL.toStringAsFixed(0)} L)',
+                      'Kapasitas Maksimal: ${bin.maxCapacityL.toStringAsFixed(0)} Liter (Est. ${bin.maxWeightKg.toStringAsFixed(1)} kg)',
                       style: const TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 12,
@@ -181,29 +388,9 @@ class _BinCardLarge extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          !bin.isActive
-                              ? 'NON AKTIF (Dinonaktifkan di Web)'
-                              : bin.isResetPending
-                              ? 'DIAJUKAN PENGOSONGAN'
-                              : (bin.backendStatus.isNotEmpty
-                                    ? bin.backendStatus
-                                          .replaceAll('_', ' ')
-                                          .toUpperCase()
-                                    : 'AKTIF'),
+                          displayStatus,
                           style: TextStyle(
-                            color: !bin.isActive
-                                ? AppColors.dangerRed
-                                : bin.isResetPending
-                                ? AppColors.warningYellow
-                                : ((bin.backendStatus.toUpperCase() ==
-                                              'ACTIVE_BOUND' ||
-                                          bin.backendStatus.toUpperCase() ==
-                                              'AKTIF' ||
-                                          bin.backendStatus.toUpperCase() ==
-                                              'NORMAL' ||
-                                          bin.backendStatus.isEmpty)
-                                      ? AppColors.primaryGreen
-                                      : AppColors.dangerRed),
+                            color: statusColor,
                             fontWeight: FontWeight.w700,
                             fontSize: 12,
                           ),
@@ -233,7 +420,7 @@ class _BinCardLarge extends StatelessWidget {
           Text(
             bin.isResetPending
                 ? 'Pengajuan pengosongan sedang diproses'
-                : '${(bin.capacityPercent * 100).toStringAsFixed(0)}% terisi — ${bin.currentWeightKg.toStringAsFixed(1)} kg / ${bin.maxWeightKg.toStringAsFixed(1)} kg',
+                : '${(bin.capacityPercent * 100).toStringAsFixed(0)}% terisi — ${bin.currentVolumeL.toStringAsFixed(0)} / ${bin.maxCapacityL.toStringAsFixed(0)} L (Est. ${bin.currentWeightKg.toStringAsFixed(1)} / ${bin.maxWeightKg.toStringAsFixed(1)} kg)',
             style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
           ),
         ],
