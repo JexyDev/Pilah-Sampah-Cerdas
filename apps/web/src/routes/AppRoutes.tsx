@@ -58,6 +58,8 @@ const InputSetoranManual = React.lazy(() => import("../pages/InputSetoranManual/
 const IdeDaurUlang = React.lazy(() => import("../pages/IdeDaurUlang/IdeDaurUlang"));
 const TentangAplikasi = React.lazy(() => import("../pages/TentangAplikasi/TentangAplikasi"));
 const PanduanPage = React.lazy(() => import("../pages/Panduan/PanduanPage"));
+const AnalisisKknPage = React.lazy(() => import("../pages/AnalisisSistem/AnalisisKknPage"));
+const AnalisisTataKelolaPage = React.lazy(() => import("../pages/AnalisisSistem/AnalisisTataKelolaPage"));
 const DplDashboardPage = React.lazy(() => import("../pages/dpl/DplDashboardPage"));
 const LandingPage = React.lazy(() => import("../pages/LandingPage/LandingPage"));
 const ImportSurveiKkn = React.lazy(() => import("../pages/SuperUser/ImportSurveiKkn"));
@@ -670,6 +672,24 @@ const AppRoutes: React.FC = () => {
         <Route path="/master-data/rukun-warga" element={<Navigate to="/wilayah/rw" replace />} />
         <Route path="/master-rw" element={<Navigate to="/wilayah/rw" replace />} />
         <Route path="/wilayah/rukun-warga" element={<Navigate to="/wilayah/rw" replace />} />
+        <Route
+          path="/analisis-sistem/kkn"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PIMPINAN", "PANITIA_TASKFORCE"]}>
+              <AnalisisKknPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/analisis-sistem/tata-kelola-sampah"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PIMPINAN", "PANITIA_TASKFORCE"]}>
+              <AnalisisTataKelolaPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/analisis-sistem/tata-kelola" element={<Navigate to="/analisis-sistem/tata-kelola-sampah" replace />} />
+        <Route path="/tata-kelola-sampah" element={<Navigate to="/analisis-sistem/tata-kelola-sampah" replace />} />
         <Route
           path="/dashboard-dpl"
           element={
