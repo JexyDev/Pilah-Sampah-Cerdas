@@ -1,30 +1,40 @@
-## 📝 Deskripsi Perubahan
-Jelaskan secara ringkas perubahan yang dilakukan pada Pull Request ini:
-*   Apa masalah yang diselesaikan?
-*   Bagaimana pendekatan teknis yang diambil?
+## 📝 Deskripsi Perubahan (Mobile)
+Jelaskan perubahan pada aplikasi Flutter BERSEKA ini:
+* **Fitur / Bug yang diselesaikan:**
+* **Pendekatan teknis:**
+* **Issue / Tiket terkait:**
+
+---
 
 ## 📌 Jenis Perubahan
-Pilih salah satu (berikan tanda `[x]`):
-- [ ] `feat` (Penambahan fitur baru)
-- [ ] `fix` (Perbaikan bug)
-- [ ] `docs` (Perubahan dokumentasi)
-- [ ] `style` (Perubahan formatting/estetika, tidak mengubah logika)
-- [ ] `refactor` (Restrukturisasi kode tanpa mengubah fungsionalitas)
-- [ ] `perf` (Peningkatan performa)
-- [ ] `test` (Penambahan/koreksi unit test)
-- [ ] `chore` (Update build tools, flutter packages, dll)
+- [ ] `feat`: Fitur mobile baru
+- [ ] `fix`: Perbaikan bug UI / Logic / State
+- [ ] `docs`: Pembaruan dokumentasi / AGENTS.md
+- [ ] `refactor`: Restrukturisasi kode tanpa ubah fungsi
+- [ ] `perf`: Optimasi rendering, memori, atau networking
+- [ ] `test`: Penambahan unit test / widget test
+- [ ] `chore`: Update pub packages, Gradle, atau CI/CD pipeline
 
-## 🎯 Komponen Target (Branch `mobile`)
-Pull Request ini mempengaruhi komponen mana? (berikan tanda `[x]`):
-- [ ] `Flutter Mobile App` (`mobile/`)
+---
 
-## ✅ Daftar Periksa (Checklist)
-Pastikan semua poin ini sudah terpenuhi sebelum mengajukan review:
-- [ ] Pesan commit sudah mengikuti standar di `docs/commit_message_id.md`.
-- [ ] Kode sudah melewati pengujian lokal dan tidak ada syntax error.
-- [ ] Linter sudah dijalankan (`flutter analyze`) dengan 0 issues.
-- [ ] Perubahan UI sudah dicocokkan dengan acuan visual / sampel tampilan.
-- [ ] Kode tidak merusak kompatibilitas fitur yang sudah ada (*No Breaking Changes*).
+## 🚀 Alur Rilis & Target Testing
+- [ ] **Staging Test:** APK diuji dengan API `https://staging.berseka.id` (Artifact: `berseka-staging-arm64-v8a.apk`)
+- [ ] **Production Release:** Target API `https://berseka.id` (Artifact: `berseka-release-arm64-v8a.apk`)
 
-## 📷 Cuplikan Layar / Screenshot (Jika Ada)
-Tempel screenshot/GIF rekaman layar di sini jika ada perubahan pada antarmuka visual Aplikasi Mobile.
+---
+
+## ✅ Checklist Standar ISO & Quality Control Mobile
+Wajib dipenuhi sebelum mengajukan review:
+- [ ] **Static Analysis Clean:** `flutter analyze --no-fatal-warnings` lolos tanpa error (0 issues).
+- [ ] **Unit Tests:** `flutter test` lulus semua.
+- [ ] **Konfigurasi API Dinamis:** Menggunakan `AppConfig.apiBaseUrl` (tidak hardcode URL API).
+- [ ] **Standar Terminologi:** Bebas dari kata 'tong' / 'tong sampah', wajib gunakan 'Tempat Sampah'.
+- [ ] **Standar Identitas:** Tidak menggunakan NIK. Menggunakan No. Telepon (+62).
+- [ ] **Anti-Dummy Policy:** Tidak ada hardcoded mock data di view tanpa label indikator yang jelas.
+- [ ] **Penyimpanan Aman:** Token JWT disimpan aman via `SafeStorage`.
+- [ ] **Keamanan:** Tidak ada keystore password atau private key yang ter-commit.
+
+---
+
+## 📱 Cuplikan Layar / Demo (Wajib untuk perubahan UI)
+Tempel screenshot tampilan UI atau GIF rekaman layar di sini.
