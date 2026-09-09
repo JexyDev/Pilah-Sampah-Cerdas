@@ -184,7 +184,7 @@ model User {
   requestedResets       BinResetRequest[]        @relation("RequestedResets")
   reviewedResets        BinResetRequest[]        @relation("ReviewedResets")
   assignedResets        BinResetRequest[]        @relation("ResetRequestPetugas")
-  role                  Role                     @relation(fields: [roleId], references: [id])
+  role                  Role?                    @relation(fields: [roleId], references: [id])
   rw                    Rw?                      @relation(fields: [rwId], references: [id])
   rt                    Rt?                      @relation(fields: [rtId], references: [id])
   petugasProfile        PetugasResidu?
