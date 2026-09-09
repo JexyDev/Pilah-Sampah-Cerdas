@@ -177,7 +177,28 @@ router.post("/students/:studentId/assess", dplScopeMiddleware, dplController.ass
  *       200:
  *         description: Keputusan berhasil disimpan
  */
-router.post("/approvals/:requestId/decide", dplScopeMiddleware, dplController.decideLeaveRequest);
+/**
+ * Guard khusus: Role Pimpinan (PIMPINAN / PEMIMPIN) hanya memiliki hak akses Read-Only
+ * dan DILARANG KERAS mengeksekusi mutasi approval/penolakan izin mahasiswa.
+ */
+export const disallowPimpinanLeaveMutation = (req: any, res: any, next: any) => {
+  const role = String(req.user?.role || "").toUpperCase();
+  if (["PIMPINAN", "PEMIMPIN"].some((r) => role.includes(r))) {
+    res.status(403).json({
+      error: "FORBIDDEN",
+      message: "Role Pimpinan hanya memiliki hak akses Read-Only dan tidak berwenang mengambil keputusan izin/sakit.",
+    });
+    return;
+  }
+  next();
+};
+
+router.post(
+  "/approvals/:requestId/decide",
+  dplScopeMiddleware,
+  disallowPimpinanLeaveMutation,
+  dplController.decideLeaveRequest
+);
 router.post(
   [
     "/approvals/:requestId/cancel-decide",
@@ -185,6 +206,7 @@ router.post(
     "/approvals/:requestId/override-hadir",
   ],
   dplScopeMiddleware,
+  disallowPimpinanLeaveMutation,
   dplController.decideCancelLeaveRequest
 );
 router.put(
@@ -194,6 +216,7 @@ router.put(
     "/approvals/:requestId/override-hadir",
   ],
   dplScopeMiddleware,
+  disallowPimpinanLeaveMutation,
   dplController.decideCancelLeaveRequest
 );
 

@@ -99,8 +99,11 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
         return ["Monitoring Kegiatan", "Presensi"];
       case "/monitoring-kegiatan/pengajuan-izin":
       case "/ajuan-absensi":
-      case "/validasi-absensi":
-        return ["Monitoring Kegiatan", "Pengajuan Izin/Sakit"];
+      case "/validasi-absensi": {
+        const role = String(user?.peran || (user as any)?.role || "").toUpperCase();
+        const isPimpinan = ["PEMIMPIN", "PIMPINAN"].includes(role);
+        return ["Monitoring Kegiatan", isPimpinan ? "Riwayat Izin/Sakit" : "Pengajuan Izin/Sakit"];
+      }
       case "/pelaksanaan/program-kerja":
       case "/program-kerja-kkn":
       case "/program-kerja":
