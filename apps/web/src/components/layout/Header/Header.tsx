@@ -70,8 +70,16 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
 
   // EYD & KBBI Indonesian Standard Page Breadcrumb Titles
   const getBreadcrumbItems = (pathname: string, search: string = ""): string[] => {
+    if (pathname === "/analisis-sistem/kkn") {
+      return ["Analisis Sistem", "Kuliah Kerja Nyata"];
+    }
+
+    if (pathname === "/analisis-sistem/tata-kelola-sampah" || pathname === "/analisis-sistem/tata-kelola") {
+      return ["Analisis Sistem", "Tata Kelola Sampah"];
+    }
+
     if (pathname === "/dashboard-kkn") {
-      return ["Dasbor KKN"];
+      return ["Dasbor", "Kuliah Kerja Nyata"];
     }
 
     if (pathname === "/manajemen-ekosistem-kkn" || pathname === "/pelaksanaan/kelompok") {

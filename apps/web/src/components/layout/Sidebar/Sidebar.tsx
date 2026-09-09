@@ -32,6 +32,8 @@ import {
   Shield,
   Sliders,
   GraduationCap,
+  Activity,
+  BarChart3,
 } from "lucide-react";
 
 import { Link, NavLink, useLocation } from "react-router-dom";
@@ -783,6 +785,21 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
       header: "PROGRAM KKN",
       items: [
         {
+          to: "/analisis-sistem/kkn",
+          icon: Activity,
+          label: "Analisis Sistem",
+          allowed: [
+            "DEVELOPER",
+            "SUPER_USER",
+            "ADMIN_DLH",
+            "PANITIA_TASKFORCE",
+            "PIMPINAN",
+            "PEMIMPIN",
+            "DPL",
+            "DOSEN_PEMBIMBING",
+          ] as UserRole[],
+        },
+        {
           to: "/dasbor?tab=kkn",
           icon: GraduationCap,
           label: "Dasbor Eksekutif KKN",
@@ -1105,6 +1122,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     {
       header: "TATA KELOLA SAMPAH",
       items: [
+        {
+          to: "/analisis-sistem/tata-kelola-sampah",
+          icon: BarChart3,
+          label: "Analisis Sistem",
+          resource: "monitoring_sampah",
+          allowed: [
+            "DEVELOPER",
+            "SUPER_USER",
+            "ADMIN_DLH",
+            "CAMAT",
+            "LURAH",
+            "RW",
+            "PANITIA_TASKFORCE",
+            "PIMPINAN",
+          ] as UserRole[],
+        },
         {
           to: "/monitoring-wilayah",
           icon: MapPin,
