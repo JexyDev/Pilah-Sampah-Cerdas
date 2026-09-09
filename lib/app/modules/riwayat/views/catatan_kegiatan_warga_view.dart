@@ -22,19 +22,26 @@ class CatatanKegiatanWargaView extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
-        title: const Text(
-          'Catatan Kegiatan Pemilahan Sampah',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 18,
-            color: Colors.white,
+        titleSpacing: 0,
+        title: const FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            'Catatan Kegiatan Pemilahan',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+              color: Colors.white,
+            ),
           ),
         ),
         actions: [
           IconButton(
+            visualDensity: VisualDensity.compact,
             icon: const Icon(Icons.refresh_rounded),
             onPressed: () => ref.invalidate(wasteLogsProvider),
           ),
+          const SizedBox(width: 4),
         ],
       ),
       body: logsAsync.when(

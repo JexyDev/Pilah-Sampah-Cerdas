@@ -42,7 +42,12 @@ class InputSanitizer {
       '',
     );
 
-    // 4. Bersihkan spasi ganda dan trim
+    // 4. Penggantian istilah lama agar konsisten "Tempat Sampah"
+    cleaned = cleaned
+        .replaceAll(RegExp(r'tong\s+sampah', caseSensitive: false), 'Tempat Sampah')
+        .replaceAll(RegExp(r'\btong\b', caseSensitive: false), 'Tempat Sampah');
+
+    // 5. Bersihkan spasi ganda dan trim
     cleaned = cleaned.replaceAll(RegExp(r'\s{2,}'), ' ').trim();
 
     return cleaned;

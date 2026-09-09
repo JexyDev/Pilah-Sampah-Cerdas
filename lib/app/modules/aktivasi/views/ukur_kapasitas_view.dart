@@ -1,9 +1,8 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
-import '../../../core/values/app_config.dart';
 import '../../../routes/app_routes.dart';
-import '../../scan/controllers/scan_controller.dart';
 
 class UkurKapasitasView extends ConsumerStatefulWidget {
   const UkurKapasitasView({super.key});
@@ -13,85 +12,128 @@ class UkurKapasitasView extends ConsumerStatefulWidget {
 }
 
 class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
-  // State for Organic Bin
-  String _organicMode = 'Standar';
-  String _organicStandardSize = '25';
-  final TextEditingController _orgPanjangCtrl = TextEditingController();
-  final TextEditingController _orgLebarCtrl = TextEditingController();
-  final TextEditingController _orgTinggiCtrl = TextEditingController();
+  // Step navigation: 1 = Pilih bentuk, 2 = Data ukuran
+  int _currentStep = 1;
 
-  // State for Non-Organic Bin
-  String _nonOrganicMode = 'Standar';
-  String _nonOrganicStandardSize = '25';
-  final TextEditingController _nonOrgPanjangCtrl = TextEditingController();
-  final TextEditingController _nonOrgLebarCtrl = TextEditingController();
-  final TextEditingController _nonOrgTinggiCtrl = TextEditingController();
+  // Selected shape: 'tabung' (Keranjang Bulat) atau 'kotak' (Bak Kotak)
+  String _selectedShape = 'tabung';
 
-  final List<String> _standardSizes = ['10', '20', '25', '40', '60', '120'];
-  bool _isLoading = false;
-  bool _activateOrganic = true;
-  bool _activateAnorganic = true;
-  bool _isInit = false;
+  // Toggle apakah ukuran Organik & Anorganik identik (Default: true)
+  bool _sameSizeForBoth = true;
+  int _activeBinTab = 0; // 0 = Organik, 1 = Anorganik (jika _sameSizeForBoth == false)
 
-  void _submit() async {
-    if (!_activateOrganic && !_activateAnorganic) {
-      _showError('Pilih minimal satu jenis tempat sampah untuk diaktivasi.');
+  // Controllers untuk wadah utama (atau Organik)
+  final TextEditingController _diameterCtrl = TextEditingController();
+  final TextEditingController _tinggiCtrl = TextEditingController();
+  final TextEditingController _panjangCtrl = TextEditingController();
+  final TextEditingController _lebarCtrl = TextEditingController();
+
+  // Controllers terpisah untuk wadah Anorganik (jika ukurannya berbeda)
+  final TextEditingController _anorgDiameterCtrl = TextEditingController();
+  final TextEditingController _anorgTinggiCtrl = TextEditingController();
+  final TextEditingController _anorgPanjangCtrl = TextEditingController();
+  final TextEditingController _anorgLebarCtrl = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Tambahkan listener agar estimasi kapasitas terhitung live saat mengetik
+    _diameterCtrl.addListener(_onDimensionChanged);
+    _tinggiCtrl.addListener(_onDimensionChanged);
+    _panjangCtrl.addListener(_onDimensionChanged);
+    _lebarCtrl.addListener(_onDimensionChanged);
+
+    _anorgDiameterCtrl.addListener(_onDimensionChanged);
+    _anorgTinggiCtrl.addListener(_onDimensionChanged);
+    _anorgPanjangCtrl.addListener(_onDimensionChanged);
+    _anorgLebarCtrl.addListener(_onDimensionChanged);
+  }
+
+  void _onDimensionChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _diameterCtrl.dispose();
+    _tinggiCtrl.dispose();
+    _panjangCtrl.dispose();
+    _lebarCtrl.dispose();
+
+    _anorgDiameterCtrl.dispose();
+    _anorgTinggiCtrl.dispose();
+    _anorgPanjangCtrl.dispose();
+    _anorgLebarCtrl.dispose();
+    super.dispose();
+  }
+
+  // ponytail: hardcoded 2 wadah shapes (Round & Box) with asset loader and vector fallback.
+  double _calculateCapacity({
+    required String shape,
+    required TextEditingController dCtrl,
+    required TextEditingController tCtrl,
+    required TextEditingController pCtrl,
+    required TextEditingController lCtrl,
+  }) {
+    if (shape == 'tabung') {
+      final d = double.tryParse(dCtrl.text) ?? 0.0;
+      final t = double.tryParse(tCtrl.text) ?? 0.0;
+      final r = d / 2.0;
+      return (math.pi * r * r * t) / 1000.0; // cm3 to liter
+    } else {
+      final p = double.tryParse(pCtrl.text) ?? 0.0;
+      final l = double.tryParse(lCtrl.text) ?? 0.0;
+      final t = double.tryParse(tCtrl.text) ?? 0.0;
+      return (p * l * t) / 1000.0;
+    }
+  }
+
+  void _submit() {
+    final orgVol = _calculateCapacity(
+      shape: _selectedShape,
+      dCtrl: _diameterCtrl,
+      tCtrl: _tinggiCtrl,
+      pCtrl: _panjangCtrl,
+      lCtrl: _lebarCtrl,
+    );
+
+    double anorgVol = orgVol;
+    if (!_sameSizeForBoth) {
+      anorgVol = _calculateCapacity(
+        shape: _selectedShape,
+        dCtrl: _anorgDiameterCtrl,
+        tCtrl: _anorgTinggiCtrl,
+        pCtrl: _anorgPanjangCtrl,
+        lCtrl: _anorgLebarCtrl,
+      );
+    }
+
+    if (orgVol <= 0.0) {
+      _showError('Mohon isi ukuran dimensi Tempat Sampah Organik');
+      return;
+    }
+    if (!_sameSizeForBoth && anorgVol <= 0.0) {
+      _showError('Mohon isi ukuran dimensi Tempat Sampah Anorganik');
       return;
     }
 
-    // Validasi input manual jika dipilih
-    if (_activateOrganic && _organicMode == 'Manual') {
-      if (_orgPanjangCtrl.text.isEmpty ||
-          _orgLebarCtrl.text.isEmpty ||
-          _orgTinggiCtrl.text.isEmpty) {
-        _showError('Mohon lengkapi dimensi manual Tempat Sampah Organik');
-        return;
-      }
-    }
-    if (_activateAnorganic && _nonOrganicMode == 'Manual') {
-      if (_nonOrgPanjangCtrl.text.isEmpty ||
-          _nonOrgLebarCtrl.text.isEmpty ||
-          _nonOrgTinggiCtrl.text.isEmpty) {
-        _showError('Mohon lengkapi dimensi manual Tempat Sampah Anorganik');
-        return;
-      }
-    }
-
-    setState(() => _isLoading = true);
-
-    if (!mounted) return;
-    setState(() => _isLoading = false);
-
-    double parseCapacity(String mode, String standardSize, TextEditingController p, TextEditingController l, TextEditingController t, bool isOrganic) {
-      if (mode == 'Standar') {
-        final kg = double.tryParse(standardSize.replaceAll(' KG', '').replaceAll(' Kg', '')) ?? 25.0;
-        final density = isOrganic ? AppConfig.organicDensityKgPerLiter : AppConfig.nonOrganicDensityKgPerLiter;
-        return kg / density; // Convert Kg ke Liter (agar entitas Bin yang dikalikan densityKgPerLiter kembali tepat jadi Kg)
-      }
-      final double pp = double.tryParse(p.text) ?? 0.0;
-      final double ll = double.tryParse(l.text) ?? 0.0;
-      final double tt = double.tryParse(t.text) ?? 0.0;
-      return (pp * ll * tt) / 1000.0; // cm3 to Liter
-    }
-
-    final orgCap = _activateOrganic ? parseCapacity(_organicMode, _organicStandardSize, _orgPanjangCtrl, _orgLebarCtrl, _orgTinggiCtrl, true) : 0.0;
-    final anorgCap = _activateAnorganic ? parseCapacity(_nonOrganicMode, _nonOrganicStandardSize, _nonOrgPanjangCtrl, _nonOrgLebarCtrl, _nonOrgTinggiCtrl, false) : 0.0;
-
-    // Lanjut ke aktivasi (scan barcode)
+    // Lanjut ke aktivasi (scan barcode).
+    // Pertama kali wajib 2: hasOrganic = false & hasAnorganic = false mewajibkan scan keduanya.
     Navigator.pushReplacementNamed(
-      context, 
+      context,
       AppRoutes.aktivasiBin,
       arguments: {
-        'orgCapacity': orgCap,
-        'anorgCapacity': anorgCap,
-        'hasOrganic': !_activateOrganic, // Ini berarti kebalikan dari yang diaktifkan, artinya = true jika tidak dicentang (karena sudah punya)
-        'hasAnorganic': !_activateAnorganic,
+        'orgCapacity': orgVol,
+        'anorgCapacity': anorgVol,
+        'hasOrganic': false,
+        'hasAnorganic': false,
       },
     );
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
         backgroundColor: AppColors.dangerRed,
@@ -99,64 +141,26 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
     );
   }
 
-  @override
-  void dispose() {
-    _orgPanjangCtrl.dispose();
-    _orgLebarCtrl.dispose();
-    _orgTinggiCtrl.dispose();
-    _nonOrgPanjangCtrl.dispose();
-    _nonOrgLebarCtrl.dispose();
-    _nonOrgTinggiCtrl.dispose();
-    super.dispose();
+  bool _hasUnsavedChanges() {
+    return _diameterCtrl.text.isNotEmpty ||
+        _tinggiCtrl.text.isNotEmpty ||
+        _panjangCtrl.text.isNotEmpty ||
+        _lebarCtrl.text.isNotEmpty;
   }
 
   @override
   Widget build(BuildContext context) {
-    final myBins = ref.watch(binsProvider).value ?? [];
-    final bool isFirstTime = myBins.isEmpty;
-
-    if (!_isInit) {
-      _activateOrganic = true;
-      _activateAnorganic = true;
-      _isInit = true;
-    }
-
-    // Jika first time, paksa centang dua-duanya
-    if (isFirstTime) {
-      _activateOrganic = true;
-      _activateAnorganic = true;
-    }
-
-    bool hasUnsavedChanges() {
-      if (_organicMode == 'Manual') {
-        if (_orgPanjangCtrl.text.isNotEmpty ||
-            _orgLebarCtrl.text.isNotEmpty ||
-            _orgTinggiCtrl.text.isNotEmpty) {
-          return true;
-        }
-      } else {
-        if (_organicStandardSize != '25') return true;
-      }
-      
-      if (_nonOrganicMode == 'Manual') {
-        if (_nonOrgPanjangCtrl.text.isNotEmpty ||
-            _nonOrgLebarCtrl.text.isNotEmpty ||
-            _nonOrgTinggiCtrl.text.isNotEmpty) {
-          return true;
-        }
-      } else {
-        if (_nonOrganicStandardSize != '25') return true;
-      }
-      
-      return false;
-    }
-
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
-        
-        if (!hasUnsavedChanges()) {
+
+        if (_currentStep == 2) {
+          setState(() => _currentStep = 1);
+          return;
+        }
+
+        if (!_hasUnsavedChanges()) {
           if (context.mounted) Navigator.pop(context);
           return;
         }
@@ -166,8 +170,8 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
           builder: (context) {
             return AlertDialog(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: const Text('Batalkan Pengukuran?', style: TextStyle(fontWeight: FontWeight.bold)),
-              content: const Text('Perubahan ini akan terhapus jika Anda keluar dari halaman ini.'),
+              title: const Text('Batalkan Registrasi?', style: TextStyle(fontWeight: FontWeight.bold)),
+              content: const Text('Perubahan data ukuran ini akan terhapus jika Anda keluar.'),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
@@ -191,240 +195,917 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
         }
       },
       child: Scaffold(
-      backgroundColor: AppColors.backgroundCanvas,
-      appBar: AppBar(
-        title: const Text('Ukur Kapasitas Tempat Sampah'),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'Masukkan ukuran atau dimensi fisik dari tempat sampah Anda sebelum mengaktifkan barcode.',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 14,
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Card Organik
-            Padding(
-              padding: const EdgeInsets.only(bottom: 20),
-              child: _buildBinCard(
-                title: 'Tempat Sampah Organik (Hijau)',
-                color: AppColors.organicColor,
-                isChecked: _activateOrganic,
-                onChecked: isFirstTime ? null : (val) {
-                  setState(() => _activateOrganic = val ?? false);
-                },
-                mode: _organicMode,
-                  onModeChanged: (val) => setState(() => _organicMode = val!),
-                  standardSize: _organicStandardSize,
-                  onStandardSizeChanged: (val) => setState(() => _organicStandardSize = val!),
-                  pCtrl: _orgPanjangCtrl,
-                lCtrl: _orgLebarCtrl,
-                tCtrl: _orgTinggiCtrl,
-              ),
-            ),
-
-            // Card Anorganik
-            Padding(
-              padding: const EdgeInsets.only(bottom: 32),
-              child: _buildBinCard(
-                title: 'Tempat Sampah Anorganik (Kuning)',
-                color: AppColors.nonOrganicColor,
-                isChecked: _activateAnorganic,
-                onChecked: isFirstTime ? null : (val) {
-                  setState(() => _activateAnorganic = val ?? false);
-                },
-                mode: _nonOrganicMode,
-                  onModeChanged: (val) => setState(() => _nonOrganicMode = val!),
-                  standardSize: _nonOrganicStandardSize,
-                  onStandardSizeChanged: (val) => setState(() => _nonOrganicStandardSize = val!),
-                  pCtrl: _nonOrgPanjangCtrl,
-                lCtrl: _nonOrgLebarCtrl,
-                tCtrl: _nonOrgTinggiCtrl,
-              ),
-            ),
-
-            ElevatedButton(
-              onPressed: _isLoading ? null : () => _submit(),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryGreen,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+        backgroundColor: AppColors.backgroundCanvas,
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+            onPressed: () {
+              if (_currentStep == 2) {
+                setState(() => _currentStep = 1);
+              } else {
+                Navigator.pop(context);
+              }
+            },
+          ),
+          title: Row(
+            children: [
+              const Icon(Icons.eco_rounded, color: AppColors.primaryGreen, size: 22),
+              const SizedBox(width: 8),
+              Text(
+                _currentStep == 1 ? 'Registrasi Tempat Sampah' : 'Data Ukuran',
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 17,
                 ),
               ),
-              child: _isLoading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : const Text(
-                      'Simpan & Lanjut Aktivasi',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
+            ],
+          ),
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(24),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Langkah $_currentStep dari 2',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primaryGreen,
                     ),
+                  ),
+                  const SizedBox(height: 4),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: _currentStep == 1 ? 0.5 : 1.0,
+                      backgroundColor: const Color(0xFFE2E8F0),
+                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryGreen),
+                      minHeight: 4,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 40),
-          ],
+          ),
+        ),
+        body: SafeArea(
+          top: false,
+          bottom: false,
+          child: _currentStep == 1 ? _buildStep1() : _buildStep2(),
         ),
       ),
-    ),
     );
   }
 
-  Widget _buildBinCard({
-    required String title,
-    required Color color,
-    required bool isChecked,
-    ValueChanged<bool?>? onChecked,
-    required String mode,
-    required ValueChanged<String?> onModeChanged,
-    required String standardSize,
-    required ValueChanged<String?> onStandardSizeChanged,
-    required TextEditingController pCtrl,
-    required TextEditingController lCtrl,
-    required TextEditingController tCtrl,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Checkbox(
-                value: isChecked,
-                onChanged: onChecked,
-                activeColor: color,
-              ),
-              Icon(Icons.delete_outline, color: color),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: color,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          if (isChecked) ...[
-            const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: RadioListTile<String>(
-                  title: const Text('Standar', style: TextStyle(fontSize: 13)),
-                  value: 'Standar',
-                  // ignore: deprecated_member_use
-                  groupValue: mode,
-                  // ignore: deprecated_member_use
-                  onChanged: onModeChanged,
-                  contentPadding: EdgeInsets.zero,
-                  activeColor: color,
-                ),
-              ),
-              Expanded(
-                child: RadioListTile<String>(
-                  title: const Text('Manual (Dimensi)', style: TextStyle(fontSize: 13)),
-                  value: 'Manual',
-                  // ignore: deprecated_member_use
-                  groupValue: mode,
-                  // ignore: deprecated_member_use
-                  onChanged: onModeChanged,
-                  contentPadding: EdgeInsets.zero,
-                  activeColor: color,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          if (mode == 'Standar')
-            DropdownButtonFormField<String>(
-              initialValue: standardSize,
-              decoration: InputDecoration(
-                labelText: 'Ukuran Kapasitas (kg)',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              ),
-              items: _standardSizes
-                  .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                  .toList(),
-              onChanged: onStandardSizeChanged,
-            )
-          else
-            Row(
+  // ═══════════════════════════════════════════════════════════════════════════
+  // LANGKAH 1: PILIH BENTUK TEMPAT SAMPAH (KERANJANG BULAT & BAK KOTAK)
+  // ═══════════════════════════════════════════════════════════════════════════
+  Widget _buildStep1() {
+    return Column(
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: pCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: 'P (cm)',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                    ),
+                const Text(
+                  'Pilih bentuk tempat sampah',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                    letterSpacing: -0.3,
                   ),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextField(
-                    controller: lCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: 'L (cm)',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                    ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Pilih bentuk fisik tempat sampah yang akan didaftarkan ke sistem.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textSecondary,
                   ),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextField(
-                    controller: tCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: 'T (cm)',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
+                const SizedBox(height: 24),
+
+                // Kartu 1: Keranjang Bulat / Tabung
+                _buildShapeCard(
+                  id: 'tabung',
+                  title: 'Keranjang Bulat',
+                  subtitle: 'Untuk keranjang atau wadah tempat sampah berbentuk bulat / silinder',
+                  imagePath: 'assets/step_1/diagram_bulat.jpg',
+                  color: const Color(0xFFD97706),
+                ),
+                const SizedBox(height: 16),
+
+                // Kartu 2: Bak Kotak
+                _buildShapeCard(
+                  id: 'kotak',
+                  title: 'Bak Kotak',
+                  subtitle: 'Untuk bak atau tempat sampah berbentuk kotak / balok',
+                  imagePath: 'assets/step_1/wadah_kotak.png',
+                  color: const Color(0xFF475569),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // Footer slogan & Tombol Lanjutkan dengan SafeArea agar tidak nabrak navbar HP
+        SafeArea(
+          top: false,
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, -4),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.eco_rounded, color: AppColors.primaryGreen, size: 16),
+                    SizedBox(width: 6),
+                    Text(
+                      'Bersama untuk lingkungan yang lebih bersih',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textSecondary,
                       ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => setState(() => _currentStep = 2),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryGreen,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      elevation: 1,
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Lanjutkan',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 18),
+                      ],
                     ),
                   ),
                 ),
               ],
             ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildShapeCard({
+    required String id,
+    required String title,
+    required String subtitle,
+    required String imagePath,
+    required Color color,
+  }) {
+    final bool isSelected = _selectedShape == id;
+
+    return GestureDetector(
+      onTap: () => setState(() => _selectedShape = id),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: isSelected ? AppColors.primaryGreen : const Color(0xFFE2E8F0),
+            width: isSelected ? 2.2 : 1.2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: isSelected
+                  ? AppColors.primaryGreen.withValues(alpha: 0.1)
+                  : Colors.black.withValues(alpha: 0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
           ],
-        ],
+        ),
+        child: Row(
+          children: [
+            // Ilustrasi wadah: Background putih bersih, zoom fokus ke wadah agar tajam & proporsional
+            Container(
+              width: 84,
+              height: 84,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: isSelected
+                      ? AppColors.primaryGreen
+                      : const Color(0xFFE2E8F0),
+                  width: isSelected ? 2.0 : 1.2,
+                ),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Transform.scale(
+                scale: 1.45,
+                alignment: const Alignment(0, -0.22),
+                child: Image.asset(
+                  imagePath,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Center(
+                    child: CustomPaint(
+                      size: const Size(60, 60),
+                      painter: _BinShapePainter(shape: id, primaryColor: color),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: isSelected ? AppColors.primaryGreen : AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                      height: 1.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isSelected ? AppColors.primaryGreen : Colors.transparent,
+                border: Border.all(
+                  color: isSelected ? AppColors.primaryGreen : const Color(0xFFCBD5E1),
+                  width: 2,
+                ),
+              ),
+              child: isSelected
+                  ? const Icon(Icons.check, size: 16, color: Colors.white)
+                  : null,
+            ),
+          ],
+        ),
       ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // LANGKAH 2: DATA UKURAN
+  // ═══════════════════════════════════════════════════════════════════════════
+  Widget _buildStep2() {
+    // Tentukan controller yang sedang aktif
+    final bool isOrgActive = _sameSizeForBoth || _activeBinTab == 0;
+    final dCtrl = isOrgActive ? _diameterCtrl : _anorgDiameterCtrl;
+    final tCtrl = isOrgActive ? _tinggiCtrl : _anorgTinggiCtrl;
+    final pCtrl = isOrgActive ? _panjangCtrl : _anorgPanjangCtrl;
+    final lCtrl = isOrgActive ? _lebarCtrl : _anorgLebarCtrl;
+
+    final double currentCapacity = _calculateCapacity(
+      shape: _selectedShape,
+      dCtrl: dCtrl,
+      tCtrl: tCtrl,
+      pCtrl: pCtrl,
+      lCtrl: lCtrl,
+    );
+
+    final String diagramImagePath = _selectedShape == 'tabung'
+        ? 'assets/step_2/wadah_bulat.jpg'
+        : 'assets/step_2/wadah_kotak.jpg';
+
+    return Column(
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Ilustrasi Diagram Dimensi Wadah dengan Panah (Load gambar asset dengan fallback vektor)
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.03),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: SizedBox(
+                      height: 180,
+                      child: Image.asset(
+                        diagramImagePath,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) => CustomPaint(
+                          size: const Size(220, 140),
+                          painter: _BinDimensionDiagramPainter(shape: _selectedShape),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Opsi Dual-Bin Berseka: Ukuran sama atau terpisah
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.tune_rounded, color: AppColors.primaryGreen, size: 20),
+                      const SizedBox(width: 10),
+                      const Expanded(
+                        child: Text(
+                          'Ukuran sama untuk Organik & Anorganik',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ),
+                      Switch(
+                        value: _sameSizeForBoth,
+                        activeThumbColor: AppColors.primaryGreen,
+                        activeTrackColor: AppColors.primaryGreenLight,
+                        onChanged: (val) {
+                          setState(() {
+                            _sameSizeForBoth = val;
+                            if (val) _activeBinTab = 0;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+
+                if (!_sameSizeForBoth) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildBinTabButton(
+                          title: 'Organik (Hijau)',
+                          isSelected: _activeBinTab == 0,
+                          activeColor: AppColors.organicColor,
+                          onTap: () => setState(() => _activeBinTab = 0),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _buildBinTabButton(
+                          title: 'Anorganik (Kuning)',
+                          isSelected: _activeBinTab == 1,
+                          activeColor: AppColors.nonOrganicColor,
+                          onTap: () => setState(() => _activeBinTab = 1),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+
+                const SizedBox(height: 18),
+
+                // Form Input Dimensi sesuai bentuk wadah
+                if (_selectedShape == 'tabung') ...[
+                  _buildDimensionField(
+                    label: 'Diameter (cm)',
+                    hint: 'Contoh: 40',
+                    controller: dCtrl,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildDimensionField(
+                    label: 'Tinggi (cm)',
+                    hint: 'Contoh: 50',
+                    controller: tCtrl,
+                  ),
+                ] else ...[
+                  _buildDimensionField(
+                    label: 'Panjang (cm)',
+                    hint: 'Contoh: 45',
+                    controller: pCtrl,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildDimensionField(
+                    label: 'Lebar (cm)',
+                    hint: 'Contoh: 35',
+                    controller: lCtrl,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildDimensionField(
+                    label: 'Tinggi (cm)',
+                    hint: 'Contoh: 75',
+                    controller: tCtrl,
+                  ),
+                ],
+
+                const SizedBox(height: 18),
+
+                // Kartu Realtime Estimasi Kapasitas
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryGreenLight,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: AppColors.primaryGreen.withValues(alpha: 0.25),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primaryGreen.withValues(alpha: 0.15),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.view_in_ar_rounded,
+                          color: AppColors.primaryGreen,
+                          size: 30,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Estimasi kapasitas',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              currentCapacity > 0
+                                  ? '${currentCapacity.toStringAsFixed(currentCapacity.truncateToDouble() == currentCapacity ? 0 : 1)} liter'
+                                  : '0 liter',
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.primaryGreen,
+                              ),
+                            ),
+                            const Text(
+                              'Dihitung otomatis dari ukuran',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        ),
+
+        // Action bar bawah: "Ubah bentuk" & "Simpan Tempat Sampah" dengan SafeArea responsif
+        SafeArea(
+          top: false,
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, -4),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: OutlinedButton(
+                    onPressed: () => setState(() => _currentStep = 1),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      side: const BorderSide(color: Color(0xFFCBD5E1), width: 1.5),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      backgroundColor: Colors.white,
+                    ),
+                    child: const Text(
+                      'Ubah bentuk',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 3,
+                  child: ElevatedButton(
+                    onPressed: _submit,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryGreen,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 1,
+                    ),
+                    child: const Text(
+                      'Simpan Tempat Sampah',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBinTabButton({
+    required String title,
+    required bool isSelected,
+    required Color activeColor,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? activeColor.withValues(alpha: 0.12) : Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isSelected ? activeColor : const Color(0xFFE2E8F0),
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            title,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: isSelected ? activeColor : AppColors.textSecondary,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDimensionField({
+    required String label,
+    required String hint,
+    required TextEditingController controller,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 6),
+        TextField(
+          controller: controller,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
+            suffixText: 'cm',
+            suffixStyle: const TextStyle(
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+            ),
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.primaryGreen, width: 1.8),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
 
+// ═════════════════════════════════════════════════════════════════════════════
+// CUSTOM PAINTERS FALLBACK: DIGUNAKAN JIKA ASET GAMBAR BELUM DITARUH
+// ═════════════════════════════════════════════════════════════════════════════
 
+/// Ikon representasi visual bentuk di Step 1
+class _BinShapePainter extends CustomPainter {
+  final String shape;
+  final Color primaryColor;
+
+  _BinShapePainter({required this.shape, required this.primaryColor});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final fillPaint = Paint()
+      ..color = primaryColor
+      ..style = PaintingStyle.fill;
+
+    final borderPaint = Paint()
+      ..color = primaryColor.withValues(alpha: 0.8)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
+
+    if (shape == 'tabung') {
+      // Keranjang bulat / ember silinder
+      final path = Path();
+      path.moveTo(size.width * 0.18, size.height * 0.25);
+      path.lineTo(size.width * 0.28, size.height * 0.85);
+      path.quadraticBezierTo(
+        size.width * 0.5,
+        size.height * 0.95,
+        size.width * 0.72,
+        size.height * 0.85,
+      );
+      path.lineTo(size.width * 0.82, size.height * 0.25);
+      path.close();
+      canvas.drawPath(path, fillPaint);
+
+      // Rim atas
+      final oval = Rect.fromCenter(
+        center: Offset(size.width * 0.5, size.height * 0.25),
+        width: size.width * 0.65,
+        height: size.height * 0.18,
+      );
+      canvas.drawOval(
+        oval,
+        Paint()
+          ..color = primaryColor.withValues(alpha: 0.6)
+          ..style = PaintingStyle.fill,
+      );
+      canvas.drawOval(oval, borderPaint);
+    } else {
+      // Bak kotak dengan tutup flap
+      final body = Path();
+      body.moveTo(size.width * 0.22, size.height * 0.38);
+      body.lineTo(size.width * 0.28, size.height * 0.88);
+      body.quadraticBezierTo(size.width * 0.5, size.height * 0.92, size.width * 0.72, size.height * 0.88);
+      body.lineTo(size.width * 0.78, size.height * 0.38);
+      body.close();
+      canvas.drawPath(body, fillPaint);
+
+      // Tutup atas
+      final lid = Path();
+      lid.moveTo(size.width * 0.18, size.height * 0.38);
+      lid.lineTo(size.width * 0.32, size.height * 0.18);
+      lid.lineTo(size.width * 0.68, size.height * 0.18);
+      lid.lineTo(size.width * 0.82, size.height * 0.38);
+      lid.close();
+      canvas.drawPath(
+        lid,
+        Paint()
+          ..color = primaryColor.withValues(alpha: 0.75)
+          ..style = PaintingStyle.fill,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _BinShapePainter oldDelegate) =>
+      oldDelegate.shape != shape || oldDelegate.primaryColor != primaryColor;
+}
+
+/// Diagram dimensi dengan panah di Step 2 (fallback jika gambar diagram belum ditaruh)
+class _BinDimensionDiagramPainter extends CustomPainter {
+  final String shape;
+
+  _BinDimensionDiagramPainter({required this.shape});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const arrowColor = Color(0xFF0284C7); // Biru petunjuk panah
+    final arrowPaint = Paint()
+      ..color = arrowColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.6;
+
+    final dashPaint = Paint()
+      ..color = arrowColor.withValues(alpha: 0.4)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+
+    final bodyPaint = Paint()
+      ..color = shape == 'tabung' ? const Color(0xFFD97706) : const Color(0xFF475569)
+      ..style = PaintingStyle.fill;
+
+    if (shape == 'tabung') {
+      // 1. Gambar silinder wadah bulat
+      final binPath = Path();
+      binPath.moveTo(size.width * 0.32, size.height * 0.35);
+      binPath.lineTo(size.width * 0.38, size.height * 0.90);
+      binPath.quadraticBezierTo(size.width * 0.5, size.height * 0.96, size.width * 0.62, size.height * 0.90);
+      binPath.lineTo(size.width * 0.68, size.height * 0.35);
+      binPath.close();
+      canvas.drawPath(binPath, bodyPaint);
+
+      final rim = Rect.fromCenter(
+        center: Offset(size.width * 0.5, size.height * 0.35),
+        width: size.width * 0.36,
+        height: size.height * 0.16,
+      );
+      canvas.drawOval(rim, Paint()..color = const Color(0xFFB45309));
+
+      // 2. Panah Horizontal: "Diameter"
+      final topY = size.height * 0.16;
+      final leftX = size.width * 0.32;
+      final rightX = size.width * 0.68;
+
+      canvas.drawLine(Offset(leftX, topY), Offset(leftX, size.height * 0.35), dashPaint);
+      canvas.drawLine(Offset(rightX, topY), Offset(rightX, size.height * 0.35), dashPaint);
+
+      _drawDoubleArrow(canvas, Offset(leftX, topY), Offset(rightX, topY), arrowPaint);
+      _drawText(canvas, 'Diameter', Offset(size.width * 0.5, topY - 14), arrowColor);
+
+      // 3. Panah Vertikal: "Tinggi"
+      final arrowSideX = size.width * 0.78;
+      final bottomY = size.height * 0.92;
+
+      canvas.drawLine(Offset(rightX, size.height * 0.35), Offset(arrowSideX, size.height * 0.35), dashPaint);
+      canvas.drawLine(Offset(size.width * 0.62, bottomY), Offset(arrowSideX, bottomY), dashPaint);
+
+      _drawDoubleArrow(canvas, Offset(arrowSideX, size.height * 0.35), Offset(arrowSideX, bottomY), arrowPaint);
+      _drawText(canvas, 'Tinggi', Offset(arrowSideX + 22, (size.height * 0.35 + bottomY) / 2), arrowColor);
+    } else {
+      // 1. Gambar bak kotak
+      final binPath = Path();
+      binPath.moveTo(size.width * 0.35, size.height * 0.40);
+      binPath.lineTo(size.width * 0.38, size.height * 0.90);
+      binPath.lineTo(size.width * 0.62, size.height * 0.90);
+      binPath.lineTo(size.width * 0.65, size.height * 0.40);
+      binPath.close();
+      canvas.drawPath(binPath, bodyPaint);
+
+      // Tutup flap atas
+      final flapPath = Path();
+      flapPath.moveTo(size.width * 0.32, size.height * 0.40);
+      flapPath.lineTo(size.width * 0.42, size.height * 0.28);
+      flapPath.lineTo(size.width * 0.58, size.height * 0.28);
+      flapPath.lineTo(size.width * 0.68, size.height * 0.40);
+      flapPath.close();
+      canvas.drawPath(flapPath, Paint()..color = const Color(0xFF334155));
+
+      // 2. Panah Panjang & Lebar di atas
+      final topY = size.height * 0.16;
+      final leftX = size.width * 0.32;
+      final rightX = size.width * 0.68;
+
+      canvas.drawLine(Offset(leftX, topY), Offset(leftX, size.height * 0.40), dashPaint);
+      canvas.drawLine(Offset(rightX, topY), Offset(rightX, size.height * 0.40), dashPaint);
+
+      _drawDoubleArrow(canvas, Offset(leftX, topY), Offset(rightX, topY), arrowPaint);
+      _drawText(canvas, 'Panjang / Lebar', Offset(size.width * 0.5, topY - 14), arrowColor);
+
+      // 3. Panah Tinggi di samping
+      final sideX = size.width * 0.78;
+      final bottomY = size.height * 0.90;
+
+      canvas.drawLine(Offset(size.width * 0.65, size.height * 0.40), Offset(sideX, size.height * 0.40), dashPaint);
+      canvas.drawLine(Offset(size.width * 0.62, bottomY), Offset(sideX, bottomY), dashPaint);
+
+      _drawDoubleArrow(canvas, Offset(sideX, size.height * 0.40), Offset(sideX, bottomY), arrowPaint);
+      _drawText(canvas, 'Tinggi', Offset(sideX + 22, (size.height * 0.40 + bottomY) / 2), arrowColor);
+    }
+  }
+
+  void _drawDoubleArrow(Canvas canvas, Offset start, Offset end, Paint paint) {
+    canvas.drawLine(start, end, paint);
+    const arrowSize = 4.5;
+
+    final isHorizontal = (start.dy - end.dy).abs() < (start.dx - end.dx).abs();
+
+    if (isHorizontal) {
+      canvas.drawLine(start, Offset(start.dx + arrowSize, start.dy - arrowSize), paint);
+      canvas.drawLine(start, Offset(start.dx + arrowSize, start.dy + arrowSize), paint);
+      canvas.drawLine(end, Offset(end.dx - arrowSize, end.dy - arrowSize), paint);
+      canvas.drawLine(end, Offset(end.dx - arrowSize, end.dy + arrowSize), paint);
+    } else {
+      canvas.drawLine(start, Offset(start.dx - arrowSize, start.dy + arrowSize), paint);
+      canvas.drawLine(start, Offset(start.dx + arrowSize, start.dy + arrowSize), paint);
+      canvas.drawLine(end, Offset(end.dx - arrowSize, end.dy - arrowSize), paint);
+      canvas.drawLine(end, Offset(end.dx + arrowSize, end.dy - arrowSize), paint);
+    }
+  }
+
+  void _drawText(Canvas canvas, String text, Offset center, Color color) {
+    final textSpan = TextSpan(
+      text: text,
+      style: TextStyle(
+        color: color,
+        fontSize: 11,
+        fontWeight: FontWeight.w700,
+      ),
+    );
+    final textPainter = TextPainter(
+      text: textSpan,
+      textAlign: TextAlign.center,
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+    textPainter.paint(
+      canvas,
+      Offset(center.dx - textPainter.width / 2, center.dy - textPainter.height / 2),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _BinDimensionDiagramPainter oldDelegate) =>
+      oldDelegate.shape != shape;
+}

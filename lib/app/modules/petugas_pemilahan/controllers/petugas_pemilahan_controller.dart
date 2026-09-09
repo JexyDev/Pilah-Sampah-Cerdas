@@ -1,10 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/network_exception_helper.dart';
 import '../../../data/models/petugas_pemilahan_models.dart';
+import '../../../data/models/point_history_entity.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../data/services/local_notification_cache_service.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../services/petugas_pemilahan_fcm_service.dart';
+import 'petugas_pemilahan_notifikasi_controller.dart';
 
 class PetugasPemilahanState {
   const PetugasPemilahanState({
@@ -136,6 +138,8 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
         });
 
     _fetchHistoryFresh(repo);
+    _ref.invalidate(petugasPemilahanNotificationsProvider);
+    _ref.invalidate(petugasPointHistoryProvider);
   }
 
   Future<void> _fetchHistoryFresh(var repo) async {
@@ -265,8 +269,12 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
 
       // 2. Filter Type
       final points = (item['points'] ?? item['pointsEarned'] ?? 0).toInt();
+      final isTaskHistory = item['type'] == 'PENGAJUAN_RESET' ||
+          item['type'] == 'SETORAN_MANUAL' ||
+          item['type'] == 'PELANGGARAN';
+
       if (type == 'NON_POIN') {
-        return points == 0;
+        return isTaskHistory || points == 0;
       } else if (type == 'POIN') {
         return points > 0;
       }
@@ -367,4 +375,17 @@ final petugasPemilahanControllerProvider =
       ref,
     ) {
       return PetugasPemilahanNotifier(ref);
+    });
+
+/// Provider riwayat poin khusus Petugas Pemilahan dari point ledger resmi backend
+final petugasPointHistoryProvider =
+    FutureProvider<List<PointHistoryEntity>>((ref) async {
+      final user = ref.watch(authProvider).user;
+      if (user == null) return [];
+      try {
+        final repo = ref.watch(wasteLogRepositoryProvider);
+        return await repo.getPointHistoryByUser(user.id);
+      } catch (_) {
+        return [];
+      }
     });

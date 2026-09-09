@@ -424,12 +424,15 @@ class _WargaAspirasiViewState extends ConsumerState<WargaAspirasiView> {
                         strokeWidth: 2.5,
                       ),
                     )
-                  : const Text(
-                      'Kirim Kritik & Saran',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
+                  : const FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        'Kirim Kritik & Saran',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
             ),

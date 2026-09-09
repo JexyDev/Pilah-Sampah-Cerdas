@@ -52,12 +52,21 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
         backgroundColor: AppColors.primaryGreen,
         foregroundColor: Colors.white,
         elevation: 0,
-        title: const Text(
-          'Notifikasi Warga',
-          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+        leadingWidth: 40,
+        titleSpacing: 0,
+        title: const FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            'Notifikasi Warga',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+          ),
         ),
         actions: [
           IconButton(
+            visualDensity: VisualDensity.compact,
+            padding: const EdgeInsets.all(6),
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
             icon: const Icon(Icons.delete_sweep_rounded, color: Colors.white),
             tooltip: 'Hapus Semua Notifikasi',
             onPressed: markState.isLoading
@@ -89,6 +98,9 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
                   },
           ),
           IconButton(
+            visualDensity: VisualDensity.compact,
+            padding: const EdgeInsets.all(6),
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
             icon: const Icon(Icons.done_all_rounded, color: Colors.white),
             tooltip: 'Tandai Semua Dibaca',
             onPressed: markState.isLoading
@@ -99,9 +111,13 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
                   },
           ),
           IconButton(
+            visualDensity: VisualDensity.compact,
+            padding: const EdgeInsets.all(6),
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
             icon: const Icon(Icons.refresh_rounded, color: Colors.white),
             onPressed: () => ref.invalidate(wargaNotificationsProvider),
           ),
+          const SizedBox(width: 4),
         ],
       ),
       body: Column(
@@ -118,6 +134,9 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: ChoiceChip(
+                      showCheckmark: false,
+                      visualDensity: VisualDensity.compact,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       label: Text(
                         filter,
                         style: TextStyle(
@@ -219,32 +238,38 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
                       children: const [
                         SizedBox(height: 100),
                         Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.notifications_off_rounded,
-                                size: 56,
-                                color: AppColors.textHint,
-                              ),
-                              SizedBox(height: 12),
-                              Text(
-                                'Belum Ada Notifikasi Warga',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                'Notifikasi setoran, poin, & pengajuan akan muncul di sini',
-                                style: TextStyle(
-                                  fontSize: 12,
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 36),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.notifications_off_rounded,
+                                  size: 56,
                                   color: AppColors.textHint,
                                 ),
-                              ),
-                            ],
+                                SizedBox(height: 12),
+                                Text(
+                                  'Belum Ada Notifikasi Warga',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                                SizedBox(height: 6),
+                                Text(
+                                  'Notifikasi setoran, poin, & pengajuan akan muncul di sini',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: AppColors.textHint,
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],

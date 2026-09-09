@@ -33,6 +33,8 @@ import 'app/modules/petugas_pemilahan/controllers/petugas_pemilahan_notifikasi_c
 import 'app/modules/auth/controllers/auth_controller.dart';
 import 'app/data/services/local_notification_cache_service.dart';
 import 'app/data/services/firebase_notification_service.dart';
+import 'app/modules/mahasiswa/views/data_logbook_harian_view.dart';
+import 'app/modules/mahasiswa/views/data_proker_view.dart';
 
 /// Global navigator key â€” digunakan oleh Dio Interceptor untuk
 /// force-navigate ke Login saat sesi habis (refresh token expired).
@@ -41,45 +43,47 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 /// Background message handler â€” harus top-level function (bukan method class).
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  debugPrint(
-    '[FCM Background] ${message.notification?.title}: ${message.notification?.body}',
-  );
-  if (message.notification != null) {
+  final title = message.notification?.title ??
+      message.data['title']?.toString() ??
+      'Notifikasi Baru';
+  final body = message.notification?.body ??
+      message.data['body']?.toString() ??
+      message.data['desc']?.toString() ??
+      message.data['message']?.toString() ??
+      '';
+
+  debugPrint('[FCM Background] $title: $body');
+
+  try {
+    final type = message.data['type']?.toString() ?? 'SYSTEM';
+    String role = message.data['role']?.toString() ?? 'WARGA';
+    String userId = message.data['userId']?.toString() ?? 'system';
+
     try {
-      final title = message.notification?.title ?? 'Notifikasi Baru';
-      final body = message.notification?.body ?? '';
-      final type = message.data['type'] ?? 'SYSTEM';
+      const storage = SafeStorage();
+      final userData = await storage.read(key: AppConfig.userDataKey);
+      if (userData != null) {
+        final decoded = jsonDecode(userData);
+        userId = decoded['id']?.toString() ?? userId;
+        role = (decoded['role'] ??
+                decoded['userRole'] ??
+                decoded['roleName'] ??
+                role)
+            .toString()
+            .toUpperCase();
+      }
+    } catch (_) {}
 
-      String role = message.data['role'] ?? 'WARGA';
-      String userId = message.data['userId'] ?? 'system';
-
-      try {
-        const storage = SafeStorage();
-        final userData = await storage.read(key: AppConfig.userDataKey);
-        if (userData != null) {
-          final decoded = jsonDecode(userData);
-          userId = decoded['id']?.toString() ?? userId;
-          role =
-              (decoded['role'] ??
-                      decoded['userRole'] ??
-                      decoded['roleName'] ??
-                      role)
-                  .toString()
-                  .toUpperCase();
-        }
-      } catch (_) {}
-
-      await FirebaseNotificationService().saveNotification(
-        userId: userId,
-        role: role,
-        title: title,
-        desc: body,
-        type: type,
-        id: message.data['notificationId']?.toString() ?? message.messageId,
-      );
-    } catch (e) {
-      debugPrint('[FCM Background] Save error: $e');
-    }
+    await FirebaseNotificationService().saveNotification(
+      userId: userId,
+      role: role,
+      title: title,
+      desc: body,
+      type: type,
+      id: message.data['notificationId']?.toString() ?? message.messageId,
+    );
+  } catch (e) {
+    debugPrint('[FCM Background] Save error: $e');
   }
 }
 
@@ -212,13 +216,19 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
             ref.invalidate(dailyPointsProvider);
             ref.invalidate(binsProvider);
             debugPrint('-> Warga providers invalidated in background.');
+          } else if (event == 'REFRESH_KEGIATAN_MAHASISWA') {
+            ref.invalidate(riwayatKknControllerProvider);
+            ref.invalidate(logbookListProvider);
+            ref.invalidate(mahasiswaNotificationsProvider);
+            debugPrint('-> Mahasiswa kegiatan providers invalidated.');
+          } else if (event == 'REFRESH_PROKER_MAHASISWA') {
+            ref.invalidate(prokerDataListProvider);
+            ref.invalidate(mahasiswaNotificationsProvider);
+            debugPrint('-> Mahasiswa proker providers invalidated.');
           } else if (event == 'REFRESH_IZIN_MAHASISWA' ||
               event == 'REFRESH_POIN_MAHASISWA' ||
-              event == 'REFRESH_KEGIATAN_MAHASISWA' ||
               event == 'REFRESH_PRESENSI_MAHASISWA') {
-            // Import untuk ini belum tentu ada di main.dart, jadi lebih baik
-            // biarkan mahasiswa controller merefresh via rute jika perlu,
-            // atau tambahkan import-nya (saya pakai fallback aman tanpa import tambahan)
+            ref.invalidate(mahasiswaNotificationsProvider);
             debugPrint('-> Mahasiswa providers refresh event received: $event');
           } else if (event == 'MULTI_POSKO_UPDATED') {
             debugPrint(
@@ -312,6 +322,13 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
           ref.invalidate(binsProvider);
         } else if (event == 'BIN_EMPTIED' || event == 'RESET_APPROVED') {
           ref.invalidate(binsProvider);
+        } else if (event == 'REFRESH_KEGIATAN_MAHASISWA') {
+          ref.invalidate(riwayatKknControllerProvider);
+          ref.invalidate(logbookListProvider);
+          ref.invalidate(mahasiswaNotificationsProvider);
+        } else if (event == 'REFRESH_PROKER_MAHASISWA') {
+          ref.invalidate(prokerDataListProvider);
+          ref.invalidate(mahasiswaNotificationsProvider);
         }
       });
 
@@ -362,6 +379,28 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
     }
 
     if (role == 'MAHASISWA_KKN' || role == 'MAHASISWA') {
+      final type = (message.data['type'] ?? '').toString().toUpperCase();
+      final logbookId = (message.data['logbookId'] ?? message.data['entityId'])?.toString();
+      final prokerId = (message.data['prokerId'] ?? message.data['entityId'])?.toString();
+
+      // ponytail: direct deep-link into edit/detail screen based on payload id; upgrade to full deep-link router if modal sheets needed.
+      if (type == 'KEGIATAN_REVISI' && logbookId != null && logbookId.isNotEmpty) {
+        navigatorKey.currentState?.pushNamed(
+          AppRoutes.editLogbookKkn,
+          arguments: {'id': logbookId},
+        );
+        return;
+      } else if (type == 'KEGIATAN_DISETUJUI') {
+        navigatorKey.currentState?.pushNamed(AppRoutes.dataLogbookHarian);
+        return;
+      } else if (type == 'PROKER_DISETUJUI' && prokerId != null && prokerId.isNotEmpty) {
+        navigatorKey.currentState?.pushNamed(
+          AppRoutes.prokerDetail,
+          arguments: {'id': prokerId},
+        );
+        return;
+      }
+
       navigatorKey.currentState?.pushNamed(AppRoutes.mahasiswaNotifikasi);
     } else if (role == 'PETUGAS_RESIDU' || role == 'PETUGAS_PEMILAHAN') {
       navigatorKey.currentState?.pushNamed(AppRoutes.petugasNotifikasi);

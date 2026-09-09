@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
+import '../../../data/providers/repository_providers.dart';
 import '../../../data/services/location_service.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../shared/widgets/qr_scanner_widget.dart';
@@ -45,20 +46,79 @@ class _VerifikasiPengosonganViewState extends ConsumerState<VerifikasiPengosonga
   bool get _canSubmit => _isQrMatched && _emptyBinPhotoPath != null && !_isSubmitting;
 
   Future<bool> _handleQrDetected(String code) async {
-    final cleanScanned = code.trim().toLowerCase();
-    final cleanTarget = _targetBinCode.trim().toLowerCase();
-    final cleanTargetId = _targetBinId.trim().toLowerCase();
+    final rawScanned = code.trim();
+    if (rawScanned.isEmpty) return false;
 
-    // ponytail: dynamic QR matching. Checks exact bin code, id, or contained URL token.
-    final bool isMatch = cleanScanned.isNotEmpty &&
-        (cleanScanned == cleanTarget ||
-            (cleanTarget.isNotEmpty && cleanScanned.contains(cleanTarget)) ||
-            (cleanTargetId.isNotEmpty && cleanScanned == cleanTargetId));
+    // Normalisasi: decode URL jika barcode/QR berupa link web
+    String normalize(String s) {
+      var t = s.trim().toLowerCase();
+      if (t.startsWith('http://') || t.startsWith('https://')) {
+        try {
+          final uri = Uri.parse(t);
+          final q = uri.queryParameters['qr'] ??
+              uri.queryParameters['code'] ??
+              uri.queryParameters['bin'] ??
+              uri.queryParameters['data'];
+          if (q != null && q.isNotEmpty) return q.toLowerCase();
+          if (uri.pathSegments.isNotEmpty) {
+            return uri.pathSegments.last.toLowerCase();
+          }
+        } catch (_) {}
+      }
+      return t;
+    }
+
+    final cleanScanned = normalize(rawScanned);
+    final cleanTarget = normalize(_targetBinCode);
+    final cleanTargetId = normalize(_targetBinId);
+
+    final strippedScanned = cleanScanned.replaceAll(RegExp(r'[^a-z0-9]'), '');
+    final strippedTarget = cleanTarget.replaceAll(RegExp(r'[^a-z0-9]'), '');
+    final strippedTargetId = cleanTargetId.replaceAll(RegExp(r'[^a-z0-9]'), '');
+
+    // ponytail: dynamic QR matching. Checks exact bin code, id, bi-directional contains, or stripped alphanumeric.
+    bool isMatch = cleanScanned == cleanTarget ||
+        cleanScanned == cleanTargetId ||
+        (cleanTarget.isNotEmpty &&
+            (cleanScanned.contains(cleanTarget) || cleanTarget.contains(cleanScanned))) ||
+        (cleanTargetId.isNotEmpty &&
+            (cleanScanned.contains(cleanTargetId) || cleanTargetId.contains(cleanScanned))) ||
+        (strippedTarget.isNotEmpty && strippedScanned == strippedTarget) ||
+        (strippedTargetId.isNotEmpty && strippedScanned == strippedTargetId);
+
+    // Jika belum cocok dan target berupa UUID, lookup tempat sampah fisik via API
+    if (!isMatch && _targetBinId.isNotEmpty) {
+      try {
+        final bin = await ref.read(binRepositoryProvider).getBinByQrSerial(rawScanned);
+        if (bin != null &&
+            (bin.id.toLowerCase() == cleanTargetId ||
+                bin.id.toLowerCase() == cleanTarget ||
+                bin.qrSerial.toLowerCase() == cleanTarget)) {
+          isMatch = true;
+        }
+      } catch (_) {}
+    }
+
+    // Fallback toleran kategori: jika _targetBinCode adalah UUID / tidak ada serial, cek kesesuaian kategori
+    if (!isMatch && strippedTarget.length >= 20) {
+      final isOrgTarget = _category.toLowerCase().contains('organik') &&
+          !_category.toLowerCase().contains('anorganik');
+      final isOrgScanned = (cleanScanned.contains('org') || cleanScanned.contains('ogn')) &&
+          !cleanScanned.contains('anorg') &&
+          !cleanScanned.contains('agn');
+      final isAnorgScanned = cleanScanned.contains('anorg') ||
+          cleanScanned.contains('agn') ||
+          cleanScanned.contains('non');
+
+      if ((isOrgTarget && isOrgScanned) || (!isOrgTarget && isAnorgScanned)) {
+        isMatch = true;
+      }
+    }
 
     if (isMatch) {
       HapticFeedback.heavyImpact();
       setState(() {
-        _scannedQr = code.trim();
+        _scannedQr = rawScanned;
         _isQrMatched = true;
       });
       return true;
@@ -752,16 +812,19 @@ class _VerifikasiPengosonganViewState extends ConsumerState<VerifikasiPengosonga
                           : Icons.camera_alt_outlined,
                       color: Colors.white,
                     ),
-              label: Text(
-                _isSubmitting
-                    ? 'Memproses Pengosongan...'
-                    : _emptyBinPhotoPath == null
-                        ? 'Ambil Foto Tempat Sampah Kosong'
-                        : 'Konfirmasi Pengosongan Selesai',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  color: Colors.white,
+              label: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  _isSubmitting
+                      ? 'Memproses Pengosongan...'
+                      : _emptyBinPhotoPath == null
+                          ? 'Ambil Foto Tempat Sampah Kosong'
+                          : 'Konfirmasi Pengosongan Selesai',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Colors.white,
+                  ),
                 ),
               ),
               style: ElevatedButton.styleFrom(

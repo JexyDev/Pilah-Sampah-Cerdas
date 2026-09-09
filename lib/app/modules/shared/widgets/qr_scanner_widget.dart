@@ -59,7 +59,7 @@ class QrScannerWidgetState extends State<QrScannerWidget> {
       // Panggil callback
       final success = await widget.onQrDetected(code);
       if (mounted && !success) {
-        await Future.delayed(const Duration(milliseconds: 1500));
+        await Future.delayed(const Duration(milliseconds: 500));
         if (mounted) {
           _isProcessing = false;
           resetScanner();

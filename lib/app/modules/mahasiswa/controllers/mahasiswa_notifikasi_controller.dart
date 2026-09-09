@@ -30,7 +30,12 @@ bool _isMahasiswaNotification(NotificationEntity notif) {
   if (isForbidden) return false;
 
   // Wajib cocok dengan salah satu kategori Mahasiswa KKN
+  // ponytail: substring match covers backend enum types; upgrade to explicit enum mapping if payload schema diverges.
   final isMahasiswaTopic =
+      type.contains('KEGIATAN') ||
+      type.contains('LOGBOOK') ||
+      type.contains('REVISI') ||
+      type.contains('SETUJU') ||
       type.contains('PEMANFAATAN') ||
       type.contains('AI') ||
       type.contains('LAPORAN') ||
@@ -55,6 +60,9 @@ bool _isMahasiswaNotification(NotificationEntity notif) {
       type.contains('KRITIS') ||
       type.contains('KAPASITAS') ||
       type.contains('RESET_BIN') ||
+      title.contains('KEGIATAN') ||
+      title.contains('LOGBOOK') ||
+      title.contains('REVISI') ||
       title.contains('PEMANFAATAN') ||
       title.contains('AI') ||
       title.contains('AKTIVASI') ||

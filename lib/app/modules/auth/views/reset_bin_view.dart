@@ -170,7 +170,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
             ScaffoldMessenger.of(context).clearSnackBars();
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Pengajuan pengosongan berhasil dikirim ke Petugas Pemilah RW Anda! Menunggu verifikasi.'),
+                content: Text('Pengajuan pengosongan berhasil dikirim ke Petugas Pemilah! Menunggu verifikasi.'),
                 backgroundColor: AppColors.primaryGreen,
                 behavior: SnackBarBehavior.floating,
                 duration: Duration(seconds: 4),
@@ -231,10 +231,6 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
   Widget _buildPetugasSection(PetugasPengosonganState petugasState, UserEntity? user) {
     final activePetugas = petugasState.statusResponse?.petugas;
     final listPetugas = petugasState.petugasWilayah;
-    final rawRw = user?.rw.trim() ?? '';
-    final rwText = rawRw.isNotEmpty
-        ? (rawRw.toUpperCase().startsWith('RW') ? rawRw : 'RW $rawRw')
-        : 'Wilayah Anda';
 
     if (_selectedPetugasId == null) {
       if (activePetugas != null) {
@@ -256,25 +252,14 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
-              const Icon(Icons.person_pin_circle_rounded, color: AppColors.primaryGreen, size: 20),
-              const SizedBox(width: 8),
+              Icon(Icons.person_pin_circle_rounded, color: AppColors.primaryGreen, size: 20),
+              SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Petugas Pemilah ($rwText)',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryGreen.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: const Text(
-                  'Dinamis RW',
-                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
+                  'Petugas Pemilah',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary),
                 ),
               ),
             ],
@@ -330,9 +315,9 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                         activePetugas.name.isNotEmpty ? activePetugas.name : 'Petugas Pemilah',
                         style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                       ),
-                      Text(
-                        'Petugas terdaftar untuk $rwText',
-                        style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                      const Text(
+                        'Petugas Pemilah terdaftar',
+                        style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
                       ),
                     ],
                   ),
@@ -340,9 +325,9 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
               ],
             ),
           ] else ...[
-            Text(
-              'Belum ada Petugas Pemilah terdaftar di $rwText. Pengajuan akan diteruskan ke antrean RW otomatis.',
-              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, fontStyle: FontStyle.italic),
+            const Text(
+              'Belum ada Petugas Pemilah terdaftar. Pengajuan akan diteruskan ke antrean Petugas Pemilah otomatis.',
+              style: TextStyle(fontSize: 12, color: AppColors.textSecondary, fontStyle: FontStyle.italic),
             ),
           ],
         ],
@@ -814,7 +799,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
           const SizedBox(height: AppDimensions.sm),
           Text(
             isPending
-                ? 'Foto bukti tempat sampah penuh berhasil dikirimkan ke Petugas Pemilah RW Anda. Mohon tunggu verifikasi oleh petugas.'
+                ? 'Foto bukti tempat sampah penuh berhasil dikirimkan ke Petugas Pemilah. Mohon tunggu verifikasi oleh Petugas Pemilah.'
                 : 'Tempat sampah berhasil dikosongkan dan siap digunakan kembali.',
             style: Theme.of(context).textTheme.bodySmall,
             textAlign: TextAlign.center,

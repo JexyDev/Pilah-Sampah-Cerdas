@@ -7,6 +7,7 @@ import '../controllers/mahasiswa_notifikasi_controller.dart';
 import 'mahasiswa_poin_view.dart';
 import 'package:intl/intl.dart';
 import '../../../core/utils/input_sanitizer.dart';
+import '../../../routes/app_routes.dart';
 
 /// Halaman Notifikasi Khusus Mahasiswa KKN.
 /// Terpisah sepenuhnya dari Halaman Notifikasi Warga & Petugas.
@@ -37,12 +38,18 @@ class _MahasiswaNotifikasiViewState
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
-        title: const Text(
-          'Notifikasi KKN Mahasiswa',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 18,
-            color: AppColors.textPrimary,
+        leadingWidth: 40,
+        titleSpacing: 0,
+        title: const FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            'Notifikasi KKN Mahasiswa',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+              color: AppColors.textPrimary,
+            ),
           ),
         ),
         backgroundColor: Colors.white,
@@ -52,6 +59,9 @@ class _MahasiswaNotifikasiViewState
 
         actions: [
           IconButton(
+            visualDensity: VisualDensity.compact,
+            padding: const EdgeInsets.all(6),
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
             icon: const Icon(
               Icons.delete_sweep_rounded,
               color: AppColors.textPrimary,
@@ -84,6 +94,9 @@ class _MahasiswaNotifikasiViewState
             },
           ),
           IconButton(
+            visualDensity: VisualDensity.compact,
+            padding: const EdgeInsets.all(6),
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
             icon: const Icon(
               Icons.done_all_rounded,
               color: AppColors.textPrimary,
@@ -95,12 +108,16 @@ class _MahasiswaNotifikasiViewState
             },
           ),
           IconButton(
+            visualDensity: VisualDensity.compact,
+            padding: const EdgeInsets.all(6),
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
             icon: const Icon(
               Icons.refresh_rounded,
               color: AppColors.textPrimary,
             ),
             onPressed: () => ref.invalidate(mahasiswaNotificationsProvider),
           ),
+          const SizedBox(width: 4),
         ],
       ),
       body: Column(
@@ -117,6 +134,9 @@ class _MahasiswaNotifikasiViewState
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: ChoiceChip(
+                      showCheckmark: false,
+                      visualDensity: VisualDensity.compact,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       label: Text(
                         filter,
                         style: TextStyle(
@@ -180,9 +200,17 @@ class _MahasiswaNotifikasiViewState
                         'Laporan Pemanfaatan & Ide Program') {
                       return typeUpper.contains('LAPORAN') ||
                           typeUpper.contains('PEMANFAATAN') ||
+                          typeUpper.contains('KEGIATAN') ||
+                          typeUpper.contains('LOGBOOK') ||
+                          typeUpper.contains('PROKER') ||
+                          typeUpper.contains('PROGRAM') ||
                           titleLower.contains('laporan') ||
                           titleLower.contains('pemanfaatan') ||
-                          titleLower.contains('ide program');
+                          titleLower.contains('ide program') ||
+                          titleLower.contains('kegiatan') ||
+                          titleLower.contains('logbook') ||
+                          titleLower.contains('program kerja') ||
+                          titleLower.contains('proker');
                     }
                     return true;
                   }).toList();
@@ -192,32 +220,38 @@ class _MahasiswaNotifikasiViewState
                       children: const [
                         SizedBox(height: 100),
                         Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.notifications_off_rounded,
-                                size: 56,
-                                color: AppColors.textHint,
-                              ),
-                              SizedBox(height: 12),
-                              Text(
-                                'Belum Ada Notifikasi Mahasiswa KKN',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                'Notifikasi persetujuan DPL & presensi akan muncul di sini',
-                                style: TextStyle(
-                                  fontSize: 12,
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 36),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.notifications_off_rounded,
+                                  size: 56,
                                   color: AppColors.textHint,
                                 ),
-                              ),
-                            ],
+                                SizedBox(height: 12),
+                                Text(
+                                  'Belum Ada Notifikasi Mahasiswa KKN',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                                SizedBox(height: 6),
+                                Text(
+                                  'Notifikasi persetujuan DPL & presensi akan muncul di sini',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: AppColors.textHint,
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],
@@ -240,13 +274,25 @@ class _MahasiswaNotifikasiViewState
                             ref.invalidate(mahasiswaNotificationsProvider);
                           }
                           if (context.mounted) {
-                            if (item.type.toUpperCase() == 'POIN_KKN' ||
-                                item.type.toUpperCase() == 'PUNISHMENT') {
+                            final typeU = item.type.toUpperCase();
+                            // ponytail: route by domain type; upgrade if backend provides dedicated deeplink uri in NotificationEntity.
+                            if (typeU == 'POIN_KKN' || typeU == 'PUNISHMENT') {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (_) => const MahasiswaPoinView(),
                                 ),
+                              );
+                            } else if (typeU.contains('KEGIATAN') ||
+                                typeU.contains('LOGBOOK')) {
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.dataLogbookHarian,
+                              );
+                            } else if (typeU.contains('PROKER')) {
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.dataProker,
                               );
                             } else {
                               Navigator.pushNamed(

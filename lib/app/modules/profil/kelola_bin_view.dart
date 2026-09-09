@@ -55,6 +55,7 @@ class KelolaBinView extends ConsumerWidget {
                   SizedBox(height: 16),
                   Text(
                     'Belum ada tempat sampah terdaftar.',
+                    textAlign: TextAlign.center,
                     style: TextStyle(color: AppColors.textSecondary),
                   ),
                 ],
@@ -91,9 +92,12 @@ class KelolaBinView extends ConsumerWidget {
               ),
               elevation: 0,
             ),
-            child: const Text(
-              'Tambah Tempat Sampah Baru',
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+            child: const FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                'Tambah Tempat Sampah Baru',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+              ),
             ),
           ),
         ),
