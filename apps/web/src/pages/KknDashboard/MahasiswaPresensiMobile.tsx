@@ -758,12 +758,30 @@ export const MahasiswaPresensiMobile: React.FC = () => {
           }
         } catch (officialErr: any) {
           console.warn("[Check-Out] Selesai kegiatan resmi warning/fallback:", officialErr);
+          const errResp = officialErr?.response?.data;
+          const errCode = errResp?.error || errResp?.code;
+          const errMsg = errResp?.message || "";
+
           if (
             officialErr?.response?.status === 422 ||
-            officialErr?.response?.data?.code === "EARLY_CHECKOUT_RESTRICTED"
+            errCode === "EARLY_CHECKOUT_RESTRICTED"
           ) {
             showToast.error(
-              officialErr.response?.data?.message || "Belum dapat presensi pulang. Minimal 30 menit sebelum jam pulang."
+              errMsg || "Belum dapat presensi pulang. Minimal 30 menit sebelum jam pulang."
+            );
+            setIsSubmitting(false);
+            return;
+          }
+
+          if (
+            errCode === "OUT_OF_GEOFENCE" ||
+            errMsg.includes("OUT_OF_GEOFENCE")
+          ) {
+            // Bersihkan prefix teknis 'OUT_OF_GEOFENCE:' jika ada
+            const cleanMsg = errMsg.replace(/^OUT_OF_GEOFENCE:\s*/, "");
+            showToast.error(
+              cleanMsg || "Gagal check-out: Posisi Anda berada di luar area posko KKN. Presensi pulang wajib dilakukan di area posko sebelum meninggalkan lokasi.",
+              { duration: 7000 }
             );
             setIsSubmitting(false);
             return;
@@ -1640,11 +1658,19 @@ export const MahasiswaPresensiMobile: React.FC = () => {
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-sm w-full p-5 shadow-2xl space-y-4 animate-scale-in">
             {(() => {
               const targetMins = primaryKegiatan?.durasiWajibMenit || 240;
-              const currentMins =
-                primaryKegiatan?.actualInZoneMinutes ||
-                (typeof liveInZoneSecs === "number" && liveInZoneSecs > 0
-                  ? Math.floor(liveInZoneSecs / 60)
-                  : 0);
+              // Ekstrak menit dari elapsedTime (format HH:mm:ss)
+              let elapsedMinutes = 0;
+              if (elapsedTime && typeof elapsedTime === "string" && elapsedTime.includes(":")) {
+                const parts = elapsedTime.split(":").map(Number);
+                if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+                  elapsedMinutes = parts[0] * 60 + parts[1];
+                }
+              }
+
+              const liveMins = typeof liveInZoneSecs === "number" && liveInZoneSecs > 0 ? Math.floor(liveInZoneSecs / 60) : 0;
+              const dbMins = Number(primaryKegiatan?.actualInZoneMinutes) || 0;
+              // Ambil nilai maksimal yang terbukti berjalan agar handal terhadap Safari background tab
+              const currentMins = Math.max(dbMins, liveMins, elapsedMinutes);
               const isTargetMet = currentMins >= targetMins;
 
               return (
