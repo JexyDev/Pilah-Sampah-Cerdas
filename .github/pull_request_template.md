@@ -1,32 +1,53 @@
 ## 📝 Deskripsi Perubahan
 Jelaskan secara ringkas perubahan yang dilakukan pada Pull Request ini:
-*   Apa masalah yang diselesaikan?
-*   Bagaimana pendekatan teknis yang diambil?
+* **Masalah yang diselesaikan:**
+* **Pendekatan teknis:**
+* **Tiket / Issue terkait:**
+
+---
 
 ## 📌 Jenis Perubahan
-Pilih salah satu (berikan tanda `[x]`):
-- [ ] `feat` (Penambahan fitur baru)
-- [ ] `fix` (Perbaikan bug)
-- [ ] `docs` (Perubahan dokumentasi)
-- [ ] `style` (Perubahan formatting/estetika, tidak mengubah logika)
-- [ ] `refactor` (Restrukturisasi kode tanpa mengubah fungsionalitas)
-- [ ] `perf` (Peningkatan performa)
-- [ ] `test` (Penambahan/koreksi unit test)
-- [ ] `chore` (Update build tools, npm packages, dll)
+Pilih yang sesuai (berikan tanda `[x]`):
+- [ ] `feat`: Penambahan fitur baru
+- [ ] `fix`: Perbaikan bug
+- [ ] `docs`: Perubahan atau penambahan dokumentasi
+- [ ] `style`: Formatting / estetika kode tanpa perubahan logika
+- [ ] `refactor`: Restrukturisasi kode tanpa merubah fungsionalitas
+- [ ] `perf`: Optimalisasi performa sistem
+- [ ] `test`: Penambahan atau pembaruan unit test
+- [ ] `chore`: Konfigurasi CI/CD, build tools, dependencies
 
-## 🎯 Komponen Target (Branch `main`)
-Pull Request ini mempengaruhi komponen mana? (berikan tanda `[x]`):
-- [ ] `Backend API` (`apps/api`)
-- [ ] `Web Dashboard` (`apps/web`)
-- [ ] `Database / Monorepo Shared` (`database/`, `docs/`, `scripts/`)
+---
 
-## ✅ Daftar Periksa (Checklist)
-Pastikan semua poin ini sudah terpenuhi sebelum mengajukan review:
-- [ ] Pesan commit sudah mengikuti standar di `docs/commit_message_id.md`.
-- [ ] Kode sudah melewati pengujian lokal dan tidak ada syntax error.
-- [ ] Type-check dan Linter sudah dijalankan (`npx tsc --noEmit` / `npm run lint`) tanpa error.
-- [ ] Dokumentasi terkait (jika ada) sudah diperbarui di folder `docs/`.
-- [ ] Kode tidak merusak kompatibilitas fitur yang sudah ada (*No Breaking Changes*).
+## 🎯 Target Cabang & Lingkungan (Branching SOP)
+Pilih jalur integrasi PR ini (berikan tanda `[x]`):
+- [ ] `feat/...` / `fix/...` ➡️ `development` (Integrasi kode baru lokal/dev)
+- [ ] `development` ➡️ `staging` (Deploy otomatis ke **https://staging.berseka.id**)
+- [ ] `staging` ➡️ `main` (Deploy otomatis ke **https://berseka.id** / Production)
+
+---
+
+## 📦 Komponen Terdampak
+- [ ] `apps/api` (Backend Express & Prisma ORM)
+- [ ] `apps/web` (Frontend React Dashboard)
+- [ ] `mobile` (Flutter Client)
+- [ ] `ci/cd` (GitHub Actions Workflows)
+- [ ] `docs` (Dokumentasi & Guideline)
+
+---
+
+## ✅ Checklist Standar ISO & Quality Control (QC)
+Wajib dicek sebelum mengajukan review dan merge:
+- [ ] **Type Check Backend:** `cd apps/api && npx tsc --noEmit` lolos (0 error).
+- [ ] **Type Check Web:** `cd apps/web && npx tsc --noEmit` lolos (0 error).
+- [ ] **Prisma Check:** Migrasi tidak menyebabkan data loss pada tabel inti (`pengguna`, `kehadiran_kegiatan`, `kelompok_kkn`).
+- [ ] **Standar Istilah:** Tidak menggunakan kata 'tong' / 'tong sampah', selalu menggunakan 'Tempat Sampah'.
+- [ ] **Standar Identitas:** Tidak menggunakan NIK. Menggunakan No. Telepon (+62).
+- [ ] **Standar Data:** Tidak menyertakan hardcoded data dummy statis tanpa status indicator yang jelas.
+- [ ] **Security:** Tidak ada credentials, private keys, atau database password yang ter-commit.
+- [ ] **Commit Message:** Mengikuti standar Conventional Commits (`feat(scope): ...`, `fix(scope): ...`).
+
+---
 
 ## 📷 Cuplikan Layar / Screenshot (Jika Ada)
-Tempel screenshot/GIF rekaman layar di sini jika ada perubahan pada antarmuka visual Web Dashboard.
+Tempel tangkapan layar antarmuka atau log hasil test di sini jika relevan.

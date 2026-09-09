@@ -1,0 +1,155 @@
+name: BERSEKA CI/CD — Staging Deployment
+
+on:
+  push:
+    branches:
+      - staging
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'scratch/**'
+      - '.agent/**'
+      - '.gitignore'
+      - 'mobile/**'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate TypeScript & Code Integrity
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Monorepo Dependencies
+        run: npm ci --prefer-offline 2>/dev/null || npm install --legacy-peer-deps
+
+      - name: Generate Prisma Client
+        run: npm run prisma:generate
+
+      - name: Type Check Backend API (apps/api)
+        run: cd apps/api && npx tsc --noEmit
+
+      - name: Type Check Web Dashboard (apps/web)
+        run: cd apps/web && npx tsc --noEmit
+
+  deploy:
+    name: Deploy to Staging VPS
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: validate
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: 'apps/web/package-lock.json'
+
+      - name: Build & Package Frontend Web
+        run: |
+          cd apps/web
+          npm ci --prefer-offline --no-audit 2>/dev/null || npm install --silent --legacy-peer-deps
+          VITE_API_BASE_URL=/api/v1 npm run build
+          test -f dist/index.html || { echo "Build failed: dist/index.html missing"; exit 1; }
+          tar -czf dist.tar.gz -C dist .
+
+      - name: Install sshpass
+        run: |
+          if ! command -v sshpass &> /dev/null; then
+            sudo apt-get install -y --no-install-recommends sshpass 2>/dev/null || (sudo apt-get update -qq && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends sshpass)
+          fi
+
+      - name: Upload Frontend Archive to Staging VPS
+        env:
+          VPS_HOST: ${{ secrets.STAGING_VPS_HOST }}
+          VPS_USER: ${{ secrets.STAGING_VPS_USERNAME }}
+          VPS_PASS: ${{ secrets.STAGING_VPS_PASSWORD }}
+        run: |
+          sshpass -p "$VPS_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=3 -o PreferredAuthentications=password -o PubkeyAuthentication=no "$VPS_USER@$VPS_HOST" "cat > /tmp/frontend-dist.tar.gz" < apps/web/dist.tar.gz
+
+      - name: Update Backend & Deploy Web on Staging VPS
+        env:
+          VPS_HOST: ${{ secrets.STAGING_VPS_HOST }}
+          VPS_USER: ${{ secrets.STAGING_VPS_USERNAME }}
+          VPS_PASS: ${{ secrets.STAGING_VPS_PASSWORD }}
+        run: |
+          sshpass -p "$VPS_PASS" ssh -T -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=3 -o PreferredAuthentications=password -o PubkeyAuthentication=no "$VPS_USER@$VPS_HOST" "VPS_PASS='$VPS_PASS' bash -s" << 'EOF'
+            set -e
+            export PATH=$PATH:/usr/local/bin:/usr/bin
+
+            echo "=== 1. Pulling Latest Code from Git on Staging ==="
+            REPO_DIR=/home/maker/Pilah-Sampah-Cerdas-staging
+            cd "$REPO_DIR" || { echo "Directory $REPO_DIR not found"; exit 1; }
+
+            git config extra.http.ipresolve 4 2>/dev/null || true
+            for i in 1 2 3; do
+              git fetch --depth=1 origin staging && break || sleep 3
+            done || echo "WARNING: git fetch timed out, continuing..."
+
+            git reset --hard origin/staging 2>/dev/null || true
+
+            echo "=== 2. Updating Backend (apps/api) ==="
+            cd "$REPO_DIR"
+            npm install --silent --legacy-peer-deps --prefer-offline 2>/dev/null || true
+            cd "$REPO_DIR/apps/api"
+            npx prisma generate
+            npx prisma migrate deploy || true
+            npm run build
+
+            echo "=== 3. Reloading PM2 Backend Staging ==="
+            pm2 reload psc-backend-staging 2>/dev/null || pm2 restart psc-backend-staging 2>/dev/null || pm2 start dist/index.js --name psc-backend-staging --cwd "$REPO_DIR/apps/api"
+            pm2 save || true
+            pm2 status psc-backend-staging
+
+            echo "=== 4. Deploying Frontend Web to Nginx ==="
+            mkdir -p /var/www/staging-web/dist/downloads
+            if [ -f /tmp/frontend-dist.tar.gz ]; then
+              APK_NAME="berseka-staging-arm64-v8a.apk"
+              if [ -f "/var/www/staging-web/dist/downloads/$APK_NAME" ]; then
+                cp "/var/www/staging-web/dist/downloads/$APK_NAME" "/tmp/$APK_NAME"
+              fi
+
+              tar -xzf /tmp/frontend-dist.tar.gz -C /var/www/staging-web/dist/
+              mkdir -p /var/www/staging-web/dist/downloads
+
+              if [ -f "/tmp/$APK_NAME" ]; then
+                cp "/tmp/$APK_NAME" "/var/www/staging-web/dist/downloads/$APK_NAME"
+                rm -f "/tmp/$APK_NAME"
+              fi
+              rm -f /tmp/frontend-dist.tar.gz
+            fi
+
+            test -f /var/www/staging-web/dist/index.html || { echo "Staging frontend missing index.html"; exit 1; }
+
+            echo "=== 5. Reloading Nginx ==="
+            sudo systemctl reload nginx || true
+
+            echo "=== 6. Health Check ==="
+            echo "Waiting for backend initialization..."
+            for attempt in {1..10}; do
+              if curl -fsS http://127.0.0.1:3000/api/v1/health >/dev/null 2>&1; then
+                echo "Backend healthy on attempt $attempt"
+                break
+              fi
+              sleep 2
+            done
+            curl -fsS http://127.0.0.1:3000/api/v1/health || { echo "Backend health check failed"; exit 1; }
+            echo "Staging deployment successfully completed!"
