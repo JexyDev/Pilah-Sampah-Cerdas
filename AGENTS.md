@@ -23,18 +23,49 @@
 
 ---
 
-## 🛡️ SOP INTEGRASI FITUR & API DENGAN TIM BACKEND (LAN OFFICE NETWORK)
+## 🚀 ALUR TESTING STAGING & RELEASE MOBILE (CI/CD WORKFLOW)
 
-Jika tim Mobile membutuhkan endpoint API baru yang belum rilis di server produksi:
-1. **Jalur Testing Lokal (Local Host Integration)**:
-   - Hubungkan aplikasi Flutter ke backend lokal developer di kantor menggunakan IP LAN kantor (`192.168.1.43`):
+Setiap build aplikasi Android ditangani otomatis oleh GitHub Actions Pipeline:
+
+### 1. Lingkungan & Server Target
+| Lingkungan | Target API URL | Output Nama APK | Lokasi Download |
+|---|---|---|---|
+| **Lokal (Dev)** | `http://localhost:3000` atau IP LAN | Build lokal debug | Di perangkat dev |
+| **Staging** | `https://staging.berseka.id` | `berseka-staging-arm64-v8a.apk` | `https://staging.berseka.id/downloads/berseka-staging-arm64-v8a.apk` |
+| **Production** | `https://berseka.id` | `berseka-release-arm64-v8a.apk` | `https://berseka.id/downloads/berseka-release-arm64-v8a.apk` |
+
+### 2. Prosedur Build APK Staging untuk QA/Testing
+1. Buka tab **Actions** di GitHub repository.
+2. Pilih workflow **"BERSEKA Mobile — CI/CD Pipeline"**.
+3. Klik **Run workflow**:
+   - Branch: `mobile`
+   - Target Environment: pilih **`staging`**
+4. CI akan mengompilasi APK dengan `--dart-define=API_BASE_URL=https://staging.berseka.id` dan mengunggahnya ke server staging.
+5. Tim QA/QC langsung mengunduh dan menguji APK tanpa risiko merusak database produksi.
+
+### 3. Prosedur Rilis APK Production
+- Jalankan workflow dengan Target Environment **`production`** (atau push commit ke branch `mobile`).
+- APK otomatis terpasang ke halaman download `https://berseka.id`.
+
+---
+
+## 🛡️ SOP INTEGRASI FITUR & API DENGAN TIM BACKEND
+
+Jika tim Mobile membutuhkan endpoint API baru:
+1. **Jalur Server Staging (Rekomendasi Utama)**:
+   - Hubungkan ke backend staging:
      ```bash
-     flutter run --dart-define=API_BASE_URL=http://192.168.1.43:3000
+     flutter run --dart-define=API_BASE_URL=https://staging.berseka.id
      ```
-2. **Jalur Mock Response (Client-Side Stubbing)**:
-   - Jika pengujian UI mendesak dan komputer backend tidak terhubung, gunakan mock response pada repository/provider Dart dengan menyertakan badge visual `[Belum Terhubung API]` sesuai aturan Anti-Dummy.
-3. **Sinkronisasi Spesifikasi API**:
-   - Selalu rujuk `docs/API_MOBILE_DOCUMENTATION.md` atau repositori `main` sebagai acuan tunggal struktur JSON. Dilarang keras mengarang nama field JSON tanpa kesepakatan dengan backend.
+2. **Jalur Testing Lokal (Local Host Integration)**:
+   - Hubungkan ke backend lokal developer di jaringan kantor:
+     ```bash
+     flutter run --dart-define=API_BASE_URL=http://<IP_KOMPUTER_BACKEND>:3000
+     ```
+3. **Jalur Mock Response (Client-Side Stubbing)**:
+   - Jika pengujian UI mendesak dan backend belum tersedia di staging, gunakan mock response pada repository/provider Dart dengan menyertakan badge visual `[Belum Terhubung API]` sesuai aturan Anti-Dummy.
+4. **Sinkronisasi Spesifikasi API**:
+   - Selalu rujuk `apps/api/src/` pada branch `staging` atau `main` sebagai acuan tunggal struktur JSON. Dilarang mengarang nama field JSON tanpa kesepakatan dengan backend.
 
 ---
 
@@ -45,17 +76,15 @@ Jika tim Mobile membutuhkan endpoint API baru yang belum rilis di server produks
 
 ---
 
-## 2. 🛑 ATURAN MEMBACA & MEMATUHI ATURAN DI `.agent/` (ANTI-HALUSINASI)
+## 2. 🛑 ATURAN ANTI-HALUSINASI & ISOLASI REPOSITORI
 
-Sebelum membuat atau mengubah kode/dokumentasi, AI Agent WAJIB membaca dan mematuhi aturan (*rules*), alur kerja (*workflows*), dan *skills* yang ada pada folder [.agent/](.agent/).
+### 🔄 ALUR WAJIB SINKRONISASI API BACKEND (`staging`/`main`):
+1. **PULL TERBARU:** Sebelum mengerjakan fitur baru, pastikan membaca Prisma schema dan controller backend terbaru di branch `staging`/`main`.
+2. **ACUAN TUNGGAL API BACKEND:** AI Agent di mobile **WAJIB membaca spesifikasi API, controller Express, dan Prisma schema** sebagai sumber kebenaran tunggal untuk endpoint API, parameter request, dan format response JSON. Dilarang keras mengasumsikan format API tanpa memverifikasi langsung.
 
-### 🔄 ALUR WAJIB SINKRONISASI API BACKEND (`main` BRANCH):
-1. **PULL TERBARU DARI MAIN:** Setiap kali AI Agent atau developer menerima prompt / mengerjakan fitur di folder `mobile`, Agent WAJIB menyarankan/memastikan untuk melakukan `git pull origin main` pada folder `main` terlebih dahulu agar acuan skema API dan backend selalu dalam kondisi paling terbaru.
-2. **ACUAN TUNGGAL API BACKEND (`main`):** AI Agent di mobile **WAJIB membaca spesifikasi API, controller Express, dan Prisma schema dari folder `main`** (`apps/api/src/` atau `main/docs/`) sebagai sumber kebenaran tunggal untuk endpoint API, parameter request, dan format response JSON. Dilarang keras mengasumsikan format API tanpa memverifikasi langsung dari kode backend `main`.
-
-### 🛡️ PRINSIP ANTI-HALUSINASI & ISOLASI REPOSITORI:
-1. 🚫 **ISOLASI REPOSITORI (STRICT ISOLATION):** Repositori `mobile` ini khusus dikembangkan untuk Aplikasi Client Mobile Flutter. AI Agent yang bekerja di folder/branch `mobile` **DILARANG KERAS** menyentuh, membuat, atau mengubah file/folder Monorepo `main` (`apps/api`, `apps/web`, `prisma/`, `main/`, dll). Perubahan backend/web dikelola secara terpisah pada repositori `main` (branch `main`).
-2. **DILARANG MENGARANG (NO HALLUCINATED LOGIC/ENDPOINTS):** Jangan pernah mengarang skema data, endpoint API, path file, atau nama komponen yang tidak terverifikasi langsung di codebase. Selalu lakukan `view_file` or `grep_search` pada file sumber me-referensi backend.
+### 🛡️ PRINSIP ISOLASI:
+1. 🚫 **ISOLASI REPOSITORI (STRICT ISOLATION):** Branch `mobile` khusus dikembangkan untuk Aplikasi Client Mobile Flutter. AI Agent yang bekerja di `mobile` **DILARANG KERAS** memodifikasi file backend/web monorepo (`apps/api`, `apps/web`).
+2. **DILARANG MENGARANG (NO HALLUCINATED LOGIC/ENDPOINTS):** Jangan pernah mengarang skema data, endpoint API, path file, atau nama komponen yang tidak terverifikasi.
 3. **DILARANG DATA DUMMY TANPA LABEL:** Jangan menanamkan data dummy/hardcode yang seolah-olah data asli backend.
 4. **PATUHI ATURAN KATA 'TEMPAT SAMPAH':** **DILARANG** menggunakan kata 'tong' atau 'tong sampah' pada UI/dokumentasi. Selalu gunakan **'Tempat Sampah'**.
 5. **CEK KOMPILASI KODE:** Setiap perubahan kode Dart WAJIB dites secara lokal dengan `flutter analyze` dan dipastikan **0 Error (Clean Compilation)**.
