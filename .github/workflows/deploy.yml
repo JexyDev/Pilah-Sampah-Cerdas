@@ -19,6 +19,16 @@ on:
       - 'scratch/**'
       - '.gitignore'
       - 'LICENSE'
+  workflow_dispatch:
+    inputs:
+      target_env:
+        description: 'Target Environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
 
 jobs:
   validate:
@@ -56,11 +66,30 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     needs: validate
-    if: github.event_name == 'push' && github.ref == 'refs/heads/mobile'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
 
     steps:
       - name: Checkout Mobile Code
         uses: actions/checkout@v4
+
+      - name: Determine Target Environment
+        id: set-env
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TARGET="${{ github.event.inputs.target_env }}"
+          else
+            TARGET="production"
+          fi
+          echo "target=$TARGET" >> $GITHUB_OUTPUT
+          if [ "$TARGET" = "staging" ]; then
+            echo "api_base=https://staging.berseka.id" >> $GITHUB_OUTPUT
+            echo "apk_name=berseka-staging-arm64-v8a.apk" >> $GITHUB_OUTPUT
+            echo "dest_dir=/var/www/staging-web/dist/downloads" >> $GITHUB_OUTPUT
+          else
+            echo "api_base=https://berseka.id" >> $GITHUB_OUTPUT
+            echo "apk_name=berseka-release-arm64-v8a.apk" >> $GITHUB_OUTPUT
+            echo "dest_dir=/var/www/html/downloads" >> $GITHUB_OUTPUT
+          fi
 
       - name: Setup Java 17
         uses: actions/setup-java@v4
@@ -127,18 +156,20 @@ jobs:
 
       - name: Generate Dynamic Semantic Version
         run: |
-          # Base version X.Y
           BASE_VERSION="1.1"
-          # Calculate patch number based on github run number offset
           OFFSET=1264
           PATCH_NUM=$((${{ github.run_number }} - OFFSET))
           if [ $PATCH_NUM -lt 0 ]; then PATCH_NUM=0; fi
           VERSION_NAME="$BASE_VERSION.$PATCH_NUM"
           echo "APP_VERSION=$VERSION_NAME" >> $GITHUB_ENV
 
-      - name: Build Android Release APK (Universal Build)
+      - name: Build Android Release APK
         run: |
-          flutter build apk --release --build-name=${{ env.APP_VERSION }} --build-number=${{ github.run_number }} --android-skip-build-dependency-validation
+          flutter build apk --release \
+            --dart-define=API_BASE_URL=${{ steps.set-env.outputs.api_base }} \
+            --build-name=${{ env.APP_VERSION }} \
+            --build-number=${{ github.run_number }} \
+            --android-skip-build-dependency-validation
           ls -lah build/app/outputs/flutter-apk/
 
       - name: Install sshpass
@@ -147,49 +178,41 @@ jobs:
 
       - name: Deploy APK to VPS & Update Web Download Page
         env:
-          VPS_HOST: ${{ secrets.VPS_HOST }}
-          VPS_USER: ${{ secrets.VPS_USERNAME }}
-          VPS_PASS: ${{ secrets.VPS_PASSWORD }}
-          CI_SECRET: ${{ secrets.CI_SECRET || 'berseka-ci-secret' }}
+          TARGET_ENV: ${{ steps.set-env.outputs.target }}
+          PROD_HOST: ${{ secrets.VPS_HOST }}
+          PROD_USER: ${{ secrets.VPS_USERNAME }}
+          PROD_PASS: ${{ secrets.VPS_PASSWORD }}
+          STG_HOST: ${{ secrets.STAGING_VPS_HOST }}
+          STG_USER: ${{ secrets.STAGING_VPS_USERNAME }}
+          STG_PASS: ${{ secrets.STAGING_VPS_PASSWORD }}
+          APK_NAME: ${{ steps.set-env.outputs.apk_name }}
+          DEST_DIR: ${{ steps.set-env.outputs.dest_dir }}
         run: |
           APK_FILE="build/app/outputs/flutter-apk/app-release.apk"
           if [ ! -f "$APK_FILE" ]; then
             APK_FILE=$(find build/app/outputs/flutter-apk/ -name "*.apk" | head -n 1)
           fi
 
-          echo "Uploading $APK_FILE to VPS..."
-          sshpass -p "$VPS_PASS" scp -o StrictHostKeyChecking=no "$APK_FILE" "$VPS_USER@$VPS_HOST:berseka-release-arm64-v8a.apk"
+          if [ "$TARGET_ENV" = "staging" ]; then
+            VPS_HOST="$STG_HOST"
+            VPS_USER="$STG_USER"
+            VPS_PASS="$STG_PASS"
+          else
+            VPS_HOST="$PROD_HOST"
+            VPS_USER="$PROD_USER"
+            VPS_PASS="$PROD_PASS"
+          fi
 
-          sshpass -p "$VPS_PASS" ssh -T -o StrictHostKeyChecking=no "$VPS_USER@$VPS_HOST" "VPS_PASS='$VPS_PASS' CI_SECRET='$CI_SECRET' bash -s" << 'EOF'
+          echo "Uploading $APK_FILE to $VPS_HOST as $APK_NAME..."
+          sshpass -p "$VPS_PASS" scp -o StrictHostKeyChecking=no "$APK_FILE" "$VPS_USER@$VPS_HOST:$APK_NAME"
+
+          sshpass -p "$VPS_PASS" ssh -T -o StrictHostKeyChecking=no "$VPS_USER@$VPS_HOST" "VPS_PASS='$VPS_PASS' APK_NAME='$APK_NAME' DEST_DIR='$DEST_DIR' bash -s" << 'EOF'
             set -e
-            TMP_APK="$HOME/berseka-release-arm64-v8a.apk"
-            echo "=== 1. Deploying APK to Nginx Static & API Downloads ==="
-            echo "$VPS_PASS" | sudo -S mkdir -p /var/www/html/downloads /var/www/pilah-sampah-cerdas/frontend/dist/downloads /home/maker/Pilah-Sampah-Cerdas/apps/api/uploads
-
-            echo "$VPS_PASS" | sudo -S cp "$TMP_APK" /var/www/html/downloads/berseka-release-arm64-v8a.apk
-            echo "$VPS_PASS" | sudo -S cp "$TMP_APK" /var/www/pilah-sampah-cerdas/frontend/dist/downloads/berseka-release-arm64-v8a.apk
-            echo "$VPS_PASS" | sudo -S cp "$TMP_APK" /home/maker/Pilah-Sampah-Cerdas/apps/api/uploads/berseka-release-arm64-v8a.apk
-
-            echo "$VPS_PASS" | sudo -S chown -R www-data:www-data /var/www/html/downloads
-            echo "$VPS_PASS" | sudo -S chmod 644 /var/www/html/downloads/berseka-release-arm64-v8a.apk
+            TMP_APK="$HOME/$APK_NAME"
+            echo "=== Deploying APK to $DEST_DIR ==="
+            sudo mkdir -p "$DEST_DIR"
+            sudo cp "$TMP_APK" "$DEST_DIR/$APK_NAME"
+            sudo chmod 644 "$DEST_DIR/$APK_NAME"
             rm -f "$TMP_APK"
-
-            echo "=== 2. Updating Release Info in Database API ==="
-            FILE_SIZE=$(stat -c%s "/home/maker/Pilah-Sampah-Cerdas/apps/api/uploads/berseka-release-arm64-v8a.apk" 2>/dev/null || echo "26004512")
-            
-            curl -s -X POST "http://localhost:3000/api/v1/system/publish-release" \
-              -H "Content-Type: application/json" \
-              -H "x-ci-secret: $CI_SECRET" \
-              -d "{
-                \"latestVersion\": \"${{ env.APP_VERSION }}\",
-                \"version\": \"${{ env.APP_VERSION }}\",
-                \"buildNumber\": ${{ github.run_number }},
-                \"releaseNotes\": \"Auto-build CI/CD universal APK v${{ env.APP_VERSION }} (Build ${{ github.run_number }}), pembaruan performa, dan sinkronisasi real-time.\",
-                \"downloadUrl\": \"/downloads/berseka-release-arm64-v8a.apk\",
-                \"apkUrl\": \"/downloads/berseka-release-arm64-v8a.apk\",
-                \"fileSizeBytes\": $FILE_SIZE,
-                \"forceUpdate\": false
-              }" || echo "Publish release notification sent"
-
-            echo "=== Mobile APK CI/CD Deployment Successfully Completed! ==="
+            echo "APK successfully published to $DEST_DIR/$APK_NAME"
           EOF
