@@ -62,4 +62,5 @@ class AppRoutes {
   static const String editProgramKerja = '/mahasiswa/program-kerja/edit';
   static const String prokerDetail = '/mahasiswa/program-kerja/detail';
   static const String kelompokStikerQr = '/mahasiswa/kelompok-stiker-qr';
+  static const String manajemenTempatSampah = '/manajemen-tempat-sampah';
 }

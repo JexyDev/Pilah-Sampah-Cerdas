@@ -30,6 +30,7 @@ class ApiEndpoints {
   // Bin & Waste
   static const String binsMy = '/bins/my';
   static const String binsMyBins = '/bins/my-bins';
+  static const String binsAll = '/bins'; // Admin: semua bins
   static const String binsScan = '/bins/scan';
   static const String binsActivate = '/bins/activate';
   static const String binsMeasure = '/bins/measure';
