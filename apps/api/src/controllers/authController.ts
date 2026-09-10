@@ -6,9 +6,12 @@ import { prisma } from "../lib/prisma.js";
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
+import fs from "fs";
+import path from "path";
 import { Request, Response } from "express";
 import { z } from "zod";
 import { authService } from "../services/authService.js";
+import { authRepository } from "../repositories/authRepository.js";
 import { clearLoginAttempts } from "../middlewares/rateLimiter.js";
 import { strongPasswordSchema } from "../utils/passwordValidator.js";
 
@@ -21,6 +24,47 @@ function normalizePhone(phone: string): string {
   if (p.startsWith("08")) p = "+62" + p.slice(1);
   else if (p.startsWith("62") && !p.startsWith("+")) p = "+" + p;
   return p;
+}
+
+/**
+ * Hapus file fisik avatar lama di disk server secara aman.
+ * Melindungi dari path traversal, URL eksternal, dan asset default sistem.
+ */
+function deletePhysicalAvatarFile(avatarPath?: string | null): void {
+  if (!avatarPath || typeof avatarPath !== "string") return;
+  // 1. Pastikan berkas berada di dalam folder /uploads dan bukan URL eksternal (Unsplash, CDN, dsb)
+  if (!avatarPath.startsWith("/uploads/")) return;
+
+  const filename = path.basename(avatarPath);
+
+  // 2. Proteksi asset bersama sistem (dilarang menghapus avatar default/placeholder)
+  if (
+    filename === "default-avatar.png" ||
+    filename.startsWith("default-") ||
+    filename.includes("placeholder")
+  ) {
+    return;
+  }
+
+  // 3. Resolusi multi-lingkungan (VPS PM2 cwd vs root monorepo dev)
+  const candidateDirs = [
+    path.resolve(process.cwd(), "uploads"),
+    path.resolve(process.cwd(), "apps/api/uploads"),
+    path.resolve(__dirname, "../uploads"),
+    path.resolve(__dirname, "../../uploads"),
+  ];
+
+  for (const dir of candidateDirs) {
+    try {
+      const fullPath = path.join(dir, filename);
+      if (fullPath.startsWith(dir) && fs.existsSync(fullPath)) {
+        fs.unlinkSync(fullPath);
+        break;
+      }
+    } catch (err) {
+      console.error("[Storage Cleanup] Gagal menghapus berkas avatar lama:", err);
+    }
+  }
 }
 
 // Validation Schemas
@@ -582,8 +626,17 @@ export class AuthController {
         return;
       }
 
+      const userId = req.user.userId;
+      const existingUser = await authRepository.findUserById(userId);
+      const oldAvatarPath = existingUser?.fotoProfil;
+
       const filePath = `/uploads/${req.file.filename}`;
-      await authService.updateProfile(req.user.userId, undefined, undefined, undefined, filePath);
+      await authService.updateProfile(userId, undefined, undefined, undefined, filePath);
+
+      // Hapus berkas fisik avatar lama setelah database berhasil diperbarui
+      if (oldAvatarPath) {
+        deletePhysicalAvatarFile(oldAvatarPath);
+      }
 
       res.status(200).json({
         success: true,
@@ -615,7 +668,15 @@ export class AuthController {
         return;
       }
 
+      const existingUser = await authRepository.findUserById(userId);
+      const oldAvatarPath = existingUser?.fotoProfil;
+
       await authService.updateProfile(userId, undefined, undefined, undefined, null);
+
+      // Hapus berkas fisik avatar lama setelah database berhasil diperbarui
+      if (oldAvatarPath) {
+        deletePhysicalAvatarFile(oldAvatarPath);
+      }
 
       res.status(200).json({
         success: true,
