@@ -977,7 +977,7 @@ const WargaDashboard: React.FC = () => {
 
       {/* Leaderboard Full Width Section */}
       <div className="w-full">
-        <LeaderboardWidget />
+        <LeaderboardWidget mode="sampah" />
       </div>
 
       {/* ================= MODALS ================= */}
@@ -2600,7 +2600,7 @@ const Dashboard: React.FC = () => {
 
       {/* === Monitoring Leaderboard Section === */}
       <div className="w-full relative z-10">
-        <LeaderboardWidget />
+        <LeaderboardWidget mode="sampah" />
       </div>
 
       {/* === Central Operational Lists & Activity === */}
