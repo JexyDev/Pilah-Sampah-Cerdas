@@ -91,6 +91,14 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       return ["Survei", "Detail Survei"];
     }
 
+    // Breadcrumb untuk /monitoring-pengelolaan/fasilitas dengan filter jenis
+    if (pathname === "/monitoring-pengelolaan/fasilitas" || pathname === "/pengelolaan-sampah" || pathname === "/pemanfaatan-sampah") {
+      const params = new URLSearchParams(search);
+      const jenis = params.get("jenis");
+      if (jenis === "bank_sampah") return ["Pemanfaatan & Dampak", "Bank Sampah"];
+      return ["Monitoring Pengelolaan", "Fasilitas"];
+    }
+
     switch (pathname) {
       case "/dasbor":
       case "/dashboard":
@@ -107,8 +115,11 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
         return ["Monitoring Kegiatan", "Presensi"];
       case "/monitoring-kegiatan/pengajuan-izin":
       case "/ajuan-absensi":
-      case "/validasi-absensi":
-        return ["Monitoring Kegiatan", "Pengajuan Izin/Sakit"];
+      case "/validasi-absensi": {
+        const role = String(user?.peran || (user as any)?.role || "").toUpperCase();
+        const isPimpinan = ["PEMIMPIN", "PIMPINAN"].includes(role);
+        return ["Monitoring Kegiatan", isPimpinan ? "Riwayat Izin/Sakit" : "Pengajuan Izin/Sakit"];
+      }
       case "/pelaksanaan/program-kerja":
       case "/program-kerja-kkn":
       case "/program-kerja":
@@ -136,7 +147,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       case "/hasil-survei/evaluasi-dan-dampak":
       case "/evaluasi-dampak-kkn":
       case "/evaluasi-dampak":
-        return ["Hasil Survei", "Evaluasi dan Dampak"];
+        return ["Pemanfaatan & Dampak", "Evaluasi & Dampak"];
       case "/penilaian/mahasiswa":
       case "/penilaian-kkn/individu":
       case "/penilaian-kkn/mahasiswa":
@@ -237,10 +248,6 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
         return ["Dashboard KKN"];
       case "/residu-portal":
         return ["Dashboard Petugas Residu"];
-      case "/monitoring-pengelolaan/fasilitas":
-      case "/pengelolaan-sampah":
-      case "/pemanfaatan-sampah":
-        return ["Monitoring Pengelolaan", "Fasilitas"];
       case "/pelaksanaan/posko":
       case "/posko-kkn":
       case "/posko":

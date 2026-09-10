@@ -1,9 +1,11 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { assertNotProduction } from '../tools/safety_guard.cjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
+  assertNotProduction('seed_users.ts');
   const passwordHash = await bcrypt.hash('password123', 10);
 
   const roles = ["ADMIN", "PETUGAS_KELURAHAN", "PETUGAS_RW", "PETUGAS_RT", "WARGA"];

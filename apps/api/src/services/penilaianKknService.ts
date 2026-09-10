@@ -975,7 +975,7 @@ export const penilaianKknService = {
             orderBy: { nim: "asc" },
           },
           programKerja: {
-            orderBy: { createdAt: "asc" },
+            orderBy: { updatedAt: "desc" },
           },
           penilaianMahasiswa: true,
         },
@@ -1003,8 +1003,24 @@ export const penilaianKknService = {
     }
 
     const kelompokList = kelompokRecords.map((k: any, index: number) => {
+      const prokers: any[] = k.programKerja || [];
+      // Prioritaskan kategori LAPORAN_AKHIR yang memiliki link/lampiran
       const primaryProker =
-        k.programKerja?.find((p: any) => p.kategori === "LAPORAN_AKHIR") || k.programKerja?.[0];
+        prokers.find(
+          (p: any) =>
+            p.kategori?.toUpperCase() === "LAPORAN_AKHIR" &&
+            Boolean(p.linkGoogleDrive || p.attachmentFile)
+        ) ||
+        prokers.find((p: any) => p.kategori?.toUpperCase() === "LAPORAN_AKHIR") ||
+        prokers.find(
+          (p: any) =>
+            p.deskripsi?.toLowerCase().includes("laporan akhir") &&
+            Boolean(p.linkGoogleDrive || p.attachmentFile)
+        ) ||
+        prokers.find((p: any) => Boolean(p.linkGoogleDrive || p.attachmentFile)) ||
+        prokers[0] ||
+        null;
+
       let parsedAspek: any = null;
       if (primaryProker?.aspekPenilaian) {
         if (typeof primaryProker.aspekPenilaian === "string") {
@@ -1058,7 +1074,7 @@ export const penilaianKknService = {
         ? `Laporan Akhir KKN: ${primaryProker.deskripsi}`
         : `Laporan Akhir KKN Tematik Coblong - ${groupName}`;
 
-      const fileUrl = primaryProker?.linkGoogleDrive || null;
+      const fileUrl = primaryProker?.linkGoogleDrive || primaryProker?.attachmentFile || null;
       const fileName = fileUrl ? `Laporan_Akhir_${groupName.replace(/\s+/g, "_")}.pdf` : null;
 
       let statusTelaah: "DISETUJUI" | "PERLU_REVISI" | "MENUNGGU_TELAAH" | "BELUM_UNGGAH" =
@@ -1120,6 +1136,7 @@ export const penilaianKknService = {
         dplId: k.dplId || k.dpl?.id || null,
         totalAnggota: (k.students || []).length,
         students: studentsMapped,
+        penilaianMahasiswa: k.penilaianMahasiswa || [],
         judulLaporan,
         fileUrl,
         fileName,
@@ -1142,8 +1159,28 @@ export const penilaianKknService = {
 
     const studentsFlat: any[] = [];
     kelompokList.forEach((k: any) => {
+      const penList: any[] = k.penilaianMahasiswa || [];
       if (Array.isArray(k.students)) {
         k.students.forEach((st: any) => {
+          const studentUserId = st.studentId;
+          const studentPen = penList.find((p: any) => p.studentId === studentUserId);
+          const studentLaporanScore =
+            studentPen && studentPen.skorDplLaporanAkhir > 0
+              ? Number(studentPen.skorDplLaporanAkhir)
+              : k.nilaiAkhir !== null
+                ? Number(k.nilaiAkhir)
+                : null;
+
+          const isStudentAssessed = studentLaporanScore !== null && studentLaporanScore > 0;
+
+          let studentPredikat = "Belum Dinilai";
+          if (studentLaporanScore !== null) {
+            if (studentLaporanScore >= 85) studentPredikat = "A (Sangat Baik)";
+            else if (studentLaporanScore >= 75) studentPredikat = "B (Baik)";
+            else if (studentLaporanScore >= 65) studentPredikat = "C (Cukup)";
+            else studentPredikat = "D (Kurang)";
+          }
+
           studentsFlat.push({
             studentId: st.studentId,
             nim: st.nim,
@@ -1157,12 +1194,12 @@ export const penilaianKknService = {
             judulLaporan: k.judulLaporan,
             fileUrl: k.fileUrl,
             fileName: k.fileName,
-            status: k.status,
+            status: isStudentAssessed ? "Sudah Dinilai" : "Belum Dinilai",
             statusTelaah: k.statusTelaah,
-            nilai: k.nilaiAkhir,
-            predikat: k.predikat,
+            nilai: studentLaporanScore,
+            predikat: studentPredikat,
             rubrikScores: k.rubrikScores,
-            catatan: k.catatanUmum,
+            catatan: studentPen?.catatanDpl || k.catatanUmum,
             submittedAt: k.submittedAt,
             updatedAt: k.updatedAt,
           });
@@ -1214,6 +1251,13 @@ export const penilaianKknService = {
       fileUrl?: string;
     }
   ) => {
+    const normRole = String(evaluatorRole || "").toUpperCase();
+    if (normRole === "PEMIMPIN" || normRole === "PIMPINAN") {
+      throw new Error(
+        "FORBIDDEN_ROLE: Role Pimpinan hanya memiliki akses View-Only dan tidak dapat menginput/mengubah penilaian."
+      );
+    }
+
     const kelompok = await prisma.kelompokKkn.findUnique({
       where: { id: kelompokId },
       include: {
@@ -1287,6 +1331,7 @@ export const penilaianKknService = {
 
     // Sync score to all students in this kelompok
     const studentUserIds = kelompok.students.map((s) => s.userId).filter(Boolean);
+    const oldGroupScore = primaryProker?.skorPenilaian ? Number(primaryProker.skorPenilaian) : 0;
 
     await Promise.all(
       kelompok.students.map(async (st) => {
@@ -1311,7 +1356,17 @@ export const penilaianKknService = {
         const currentSkorDplLogbook = existing?.skorDplLogbook ?? 0;
         const currentSkorDplAnalisis = existing?.skorDplAnalisis ?? 0;
         const currentSkorDplOutput = existing?.skorDplOutput ?? 0;
-        const currentSkorDplLaporanAkhir = finalScore;
+        
+        // Pertahankan nilai esai individual jika DPL sudah menyesuaikannya secara spesifik
+        const hasCustomIndividualScore =
+          existing &&
+          existing.skorDplLaporanAkhir > 0 &&
+          oldGroupScore > 0 &&
+          existing.skorDplLaporanAkhir !== oldGroupScore;
+
+        const currentSkorDplLaporanAkhir = hasCustomIndividualScore
+          ? existing.skorDplLaporanAkhir
+          : finalScore;
 
         const subtotalDpl = Number(
           (
@@ -1333,7 +1388,7 @@ export const penilaianKknService = {
             studentId: st.userId,
             kelompokId: kelompok.id,
             dplId: evaluatorId || kelompok.dplId || undefined,
-            skorDplLaporanAkhir: finalScore,
+            skorDplLaporanAkhir: currentSkorDplLaporanAkhir,
             skorDplPerencanaan: currentSkorDplPerencanaan,
             skorDplKontribusi: currentSkorDplKontribusi,
             skorDplLogbook: currentSkorDplLogbook,
@@ -1347,7 +1402,7 @@ export const penilaianKknService = {
           },
           update: {
             dplId: evaluatorId || kelompok.dplId || undefined,
-            skorDplLaporanAkhir: finalScore,
+            skorDplLaporanAkhir: currentSkorDplLaporanAkhir,
             subtotalDpl,
             nilaiAkhir,
             kategoriNilai,
@@ -1421,6 +1476,13 @@ export const penilaianKknService = {
     score: number,
     catatan?: string
   ) => {
+    const normRole = String(evaluatorRole || "").toUpperCase();
+    if (normRole === "PEMIMPIN" || normRole === "PIMPINAN") {
+      throw new Error(
+        "FORBIDDEN_ROLE: Role Pimpinan hanya memiliki akses View-Only dan tidak dapat menginput/mengubah penilaian."
+      );
+    }
+
     if (typeof score !== "number" || isNaN(score) || score < 0 || score > 100) {
       throw new Error("Skor penilaian laporan akhir harus berada di rentang 0 sampai 100");
     }
@@ -1510,6 +1572,35 @@ export const penilaianKknService = {
         status: StatusPenilaianKkn.TERSIMPAN,
       },
     });
+
+    if (kelompokId) {
+      try {
+        const prokers = await prisma.programKerjaKkn.findMany({
+          where: { kelompokId },
+          orderBy: { updatedAt: "desc" },
+        });
+
+        const primaryProker =
+          prokers.find((p) => p.kategori?.toUpperCase() === "LAPORAN_AKHIR") ||
+          prokers.find((p) => p.deskripsi?.toLowerCase().includes("laporan akhir")) ||
+          prokers[0];
+
+        if (primaryProker) {
+          await prisma.programKerjaKkn.update({
+            where: { id: primaryProker.id },
+            data: {
+              statusPenilaian: "DISETUJUI",
+              status: "SELESAI",
+              skorPenilaian: primaryProker.skorPenilaian ?? finalScore,
+              reviewedById: dplId || undefined,
+              reviewedAt: new Date(),
+            },
+          });
+        }
+      } catch (err: any) {
+        console.warn("[penilaianKknService.saveLaporanAkhirScore] Sync primary proker warning:", err?.message);
+      }
+    }
 
     return {
       studentId,

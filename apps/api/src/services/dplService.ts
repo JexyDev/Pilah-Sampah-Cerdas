@@ -1705,6 +1705,12 @@ export const dplService = {
    * 5. Notifikasi / Alert DPL (Hanya Pengajuan Izin dari Mahasiswa Dampingan DPL)
    */
   getAlerts: async (dplUserId: string, role?: string) => {
+    // Role Pimpinan hanya memantau rekap eksekutif dan tidak memiliki tugas verifikasi harian
+    const normalizedRole = getRoleString(role);
+    if (normalizedRole.includes("PIMPINAN") || normalizedRole.includes("PEMIMPIN")) {
+      return { pendingApprovalsCount: 0, pendingRequests: [] };
+    }
+
     // 1. Auto-eskalasi pengajuan izin yang PENDING lebih dari 24 jam ke Panitia Task Force
     // BUGFIX: Scope auto-eskalasi hanya ke mahasiswa kelompok DPL ini, bukan seluruh sistem
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -1885,8 +1891,14 @@ export const dplService = {
     dplUserId: string,
     requestId: string,
     status: "APPROVED" | "REJECTED" | "ESCALATED",
-    rejectionReason?: string
+    rejectionReason?: string,
+    role?: string
   ) => {
+    const normalizedRole = getRoleString(role);
+    if (normalizedRole.includes("PIMPINAN") || normalizedRole.includes("PEMIMPIN")) {
+      throw new Error("FORBIDDEN_READ_ONLY");
+    }
+
     const req = await prisma.studentLeaveRequest.findUnique({
       where: { id: requestId },
       include: {
@@ -2022,8 +2034,14 @@ export const dplService = {
     dplUserId: string,
     requestId: string,
     action: "APPROVE_HADIR" | "REJECT_CANCEL",
-    note?: string
+    note?: string,
+    role?: string
   ) => {
+    const normalizedRole = getRoleString(role);
+    if (normalizedRole.includes("PIMPINAN") || normalizedRole.includes("PEMIMPIN")) {
+      throw new Error("FORBIDDEN_READ_ONLY");
+    }
+
     const req = await prisma.studentLeaveRequest.findUnique({
       where: { id: requestId },
       include: {
@@ -2928,6 +2946,13 @@ export const dplService = {
     statusPenilaian?: "BELUM_DINILAI" | "SEDANG_DINILAI" | "SUDAH_DINILAI",
     statusPelaksanaan?: string
   ) => {
+    const normRole = String(role || "").toUpperCase();
+    if (normRole === "PEMIMPIN" || normRole === "PIMPINAN") {
+      throw new Error(
+        "FORBIDDEN_ROLE: Role Pimpinan hanya memiliki akses View-Only dan tidak dapat menginput/mengubah penilaian."
+      );
+    }
+
     if (skorPenilaian < 0 || skorPenilaian > 100) {
       throw new Error("Skor penilaian harus berada di rentang 0-100");
     }

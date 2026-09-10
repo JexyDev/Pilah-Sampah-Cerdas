@@ -3,14 +3,12 @@ import bcrypt from 'bcryptjs';
 import XLSX from 'xlsx';
 import path from 'path';
 import fs from 'fs';
+import { assertNotProduction } from '../src/utils/vpsSafetyGuard.js';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  if (process.env.NODE_ENV === "production" && process.env.ALLOW_PROD_SEED !== "true") {
-    console.error("⛔ SEED BLOCKED: Executing seed scripts in production environment is prohibited to protect real VPS data.");
-    process.exit(1);
-  }
+  assertNotProduction("seed-complete-master-data.ts");
 
   console.log("🚀 INJECTING REAL MASTER DATA PENGGUNA (ALL 12 ROLES)...\n");
 

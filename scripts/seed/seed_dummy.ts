@@ -1,8 +1,10 @@
 import { PrismaClient } from '@prisma/client';
+import { assertNotProduction } from '../tools/safety_guard.cjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
+  assertNotProduction('seed_dummy.ts');
   console.log('🌱 Memulai seeding dummy data...');
 
   // 1. Dapatkan / Buat User Warga dan Admin (Berdasarkan seed_users.ts)

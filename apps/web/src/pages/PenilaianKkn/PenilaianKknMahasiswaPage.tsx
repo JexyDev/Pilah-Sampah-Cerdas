@@ -15,6 +15,7 @@ import {
   Loader2,
   GraduationCap,
   Edit3,
+  Eye,
   CheckCircle2,
   Award,
   Users,
@@ -185,8 +186,9 @@ const getPredikatBadgeClass = (predikat: string): string => {
 export const PenilaianKknMahasiswaPage: React.FC = () => {
   const { user } = useAuthStore();
   const rawRole = String(user?.peran || (user as any)?.role || "").toUpperCase();
-  const isMplUser = rawRole === "MPL" || rawRole === "MITRA_PENDAMPING_LAPANGAN";
-  const isDplUser = rawRole === "DPL" || rawRole === "DOSEN_PEMBIMBING";
+  const isPimpinan = rawRole === "PIMPINAN" || rawRole === "PEMIMPIN";
+  const isMplUser = !isPimpinan && (rawRole === "MPL" || rawRole === "MITRA_PENDAMPING_LAPANGAN");
+  const isDplUser = !isPimpinan && (rawRole === "DPL" || rawRole === "DOSEN_PEMBIMBING");
 
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
@@ -477,6 +479,11 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
 
   // Save Penilaian to Database
   const handleSave = async () => {
+    if (isPimpinan) {
+      toast.error("Role Pimpinan hanya memiliki akses View-Only dan tidak dapat menyimpan penilaian");
+      return;
+    }
+
     if (!activeStudent) {
       toast.error("Pilih mahasiswa terlebih dahulu");
       return;
@@ -530,10 +537,17 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
       {/* Header Halaman */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2.5">
-            <Award className="text-[#009966] w-6 h-6 shrink-0" />
-            <span>Penilaian Individu Mahasiswa KKN</span>
-          </h1>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2.5">
+              <Award className="text-[#009966] w-6 h-6 shrink-0" />
+              <span>Penilaian Individu Mahasiswa KKN</span>
+            </h1>
+            {isPimpinan && (
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300">
+                Mode Pemantauan: View-Only
+              </span>
+            )}
+          </div>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
             Komposisi terintegrasi: <strong className="text-emerald-700 dark:text-emerald-400">50% Dosen Pendamping (DPL)</strong> + <strong className="text-sky-700 dark:text-sky-400">50% Mitra Lapangan (MPL)</strong>
           </p>
@@ -545,7 +559,29 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
             <span>Portal Penilai: Mitra Pendamping Lapangan (MPL Kelurahan)</span>
           </div>
         )}
+
+        {isPimpinan && (
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs font-bold">
+            <AlertCircle size={16} />
+            <span>Portal Pemantauan Eksekutif</span>
+          </div>
+        )}
       </div>
+
+      {isPimpinan && (
+        <div className="p-3.5 bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-2xl flex items-center justify-between gap-3 text-xs text-amber-800 dark:text-amber-300">
+          <div className="flex items-center gap-2.5">
+            <AlertCircle size={18} className="shrink-0 text-amber-600 dark:text-amber-400" />
+            <div>
+              <strong className="block font-bold text-[13px]">Mode Akses Pemantauan Eksekutif (View-Only)</strong>
+              <span>Sebagai Pimpinan, Anda memiliki hak akses pemantauan terhadap seluruh data penilaian mahasiswa KKN tanpa hak mengubah maupun menyimpan nilai.</span>
+            </div>
+          </div>
+          <span className="px-3 py-1 rounded-full text-[11px] font-extrabold bg-amber-200/60 dark:bg-amber-900/60 text-amber-950 dark:text-amber-200 border border-amber-300 shrink-0">
+            VIEW-ONLY
+          </span>
+        </div>
+      )}
 
       {/* Metric Cards KPI */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3.5">
@@ -799,10 +835,14 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => handleOpenModal(s)}
-                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#009966] hover:bg-[#008055] text-white shadow-2xs transition cursor-pointer"
+                          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                            isPimpinan
+                              ? "border border-emerald-600 text-emerald-700 dark:text-emerald-400 bg-white hover:bg-emerald-50 dark:bg-slate-900 dark:hover:bg-emerald-950/40 shadow-2xs"
+                              : "bg-[#009966] hover:bg-[#008055] text-white shadow-2xs"
+                          }`}
                         >
-                          <Edit3 size={12} />
-                          <span>{isMplUser ? "Nilai Lapangan" : "Beri Nilai"}</span>
+                          {isPimpinan ? <Eye size={12} /> : <Edit3 size={12} />}
+                          <span>{isPimpinan ? "Lihat Rincian" : isMplUser ? "Nilai Lapangan" : "Beri Nilai"}</span>
                         </button>
                       </td>
                     </tr>
@@ -845,7 +885,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                 </div>
                 <div>
                   <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">
-                    Form Penilaian Individu Mahasiswa
+                    {isPimpinan ? "Rincian Penilaian Individu Mahasiswa" : "Form Penilaian Individu Mahasiswa"}
                   </h2>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
                     Komposisi Transparan 50% Dosen Pembimbing Lapangan + 50% Mitra Kelurahan
@@ -884,6 +924,16 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
 
             {/* Modal Body (Scrollable) */}
             <div className="overflow-y-auto p-5 sm:p-6 space-y-5">
+              {isPimpinan && (
+                <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 rounded-xl flex items-start gap-2.5 text-xs text-amber-800 dark:text-amber-300">
+                  <AlertCircle size={16} className="shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+                  <div>
+                    <strong className="block font-bold">Mode Akses View-Only</strong>
+                    <span>Sebagai Pimpinan, Anda melihat rincian penilaian dalam mode pemantauan murni. Seluruh formulir penilaian dikunci.</span>
+                  </div>
+                </div>
+              )}
+
               {/* Student Detail Banner */}
               <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-slate-200/70 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-3.5 min-w-0">
@@ -995,10 +1045,11 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                                     type="number"
                                     min={0}
                                     max={100}
+                                    disabled={isPimpinan}
                                     value={val}
                                     onChange={(e) => handleScoreChange(aspek.key, e.target.value)}
                                     placeholder="0"
-                                    className="w-10 text-center text-xs font-black text-slate-900 dark:text-slate-100 bg-transparent focus:outline-none"
+                                    className="w-10 text-center text-xs font-black text-slate-900 dark:text-slate-100 bg-transparent focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                                   />
                                   <span className="text-[10px] text-slate-400 font-medium">/ 100</span>
                                 </div>
@@ -1035,10 +1086,11 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                     </label>
                     <textarea
                       rows={3}
+                      disabled={isPimpinan}
                       value={formScores.catatanMitra}
                       onChange={(e) => setFormScores((prev) => ({ ...prev, catatanMitra: e.target.value }))}
                       placeholder="Tuliskan apresiasi, catatan keaktifan, atau masukan dari kelurahan untuk mahasiswa..."
-                      className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 rounded-2xl p-3.5 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none transition resize-none"
+                      className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 rounded-2xl p-3.5 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none transition resize-none disabled:opacity-60 disabled:cursor-not-allowed"
                     />
                   </div>
                 </div>
@@ -1086,10 +1138,11 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                                     type="number"
                                     min={0}
                                     max={100}
+                                    disabled={isPimpinan}
                                     value={val}
                                     onChange={(e) => handleScoreChange(aspek.key, e.target.value)}
                                     placeholder="0"
-                                    className="w-10 text-center text-xs font-black text-slate-900 dark:text-slate-100 bg-transparent focus:outline-none"
+                                    className="w-10 text-center text-xs font-black text-slate-900 dark:text-slate-100 bg-transparent focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                                   />
                                   <span className="text-[10px] text-slate-400 font-medium">/ 100</span>
                                 </div>
@@ -1126,10 +1179,11 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                     </label>
                     <textarea
                       rows={3}
+                      disabled={isPimpinan}
                       value={formScores.catatanDpl}
                       onChange={(e) => setFormScores((prev) => ({ ...prev, catatanDpl: e.target.value }))}
                       placeholder="Tuliskan catatan apresiasi, evaluasi akademik, atau rekomendasi untuk mahasiswa..."
-                      className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-[#009966]/20 focus:border-[#009966] rounded-2xl p-3.5 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none transition resize-none"
+                      className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-[#009966]/20 focus:border-[#009966] rounded-2xl p-3.5 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none transition resize-none disabled:opacity-60 disabled:cursor-not-allowed"
                     />
                   </div>
                 </div>
@@ -1139,36 +1193,57 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
             {/* Modal Footer */}
             <div className="px-5 sm:px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex items-center justify-between">
               <div className="text-xs text-slate-500">
-                Menyimpan nilai sebagai: <strong className="text-slate-800 dark:text-slate-200 font-bold">{evaluatorTab === "MPL" ? "Mitra Lapangan (MPL)" : "Dosen Pembimbing (DPL)"}</strong>
+                {isPimpinan ? (
+                  <span>Akses Pemantauan: <strong className="text-slate-800 dark:text-slate-200 font-bold">Pimpinan / Eksekutif</strong></span>
+                ) : (
+                  <span>Menyimpan nilai sebagai: <strong className="text-slate-800 dark:text-slate-200 font-bold">{evaluatorTab === "MPL" ? "Mitra Lapangan (MPL)" : "Dosen Pembimbing (DPL)"}</strong></span>
+                )}
               </div>
 
               <div className="flex items-center gap-2.5">
-                <button
-                  type="button"
-                  onClick={handleCloseModal}
-                  className="px-4 py-2.5 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
-                >
-                  Batal
-                </button>
+                {isPimpinan ? (
+                  <>
+                    <span className="px-3 py-1.5 rounded-xl text-xs font-extrabold bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300">
+                      Mode Pemantauan (View-Only)
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleCloseModal}
+                      className="px-5 py-2.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer"
+                    >
+                      Tutup
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleCloseModal}
+                      className="px-4 py-2.5 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                    >
+                      Batal
+                    </button>
 
-                <button
-                  type="button"
-                  disabled={saving}
-                  onClick={handleSave}
-                  className="px-5 py-2.5 rounded-xl text-xs font-bold bg-[#009966] hover:bg-[#008055] text-white shadow-sm transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
-                >
-                  {saving ? (
-                    <>
-                      <Loader2 size={14} className="animate-spin" />
-                      <span>Menyimpan...</span>
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 size={14} />
-                      <span>Simpan Penilaian</span>
-                    </>
-                  )}
-                </button>
+                    <button
+                      type="button"
+                      disabled={saving}
+                      onClick={handleSave}
+                      className="px-5 py-2.5 rounded-xl text-xs font-bold bg-[#009966] hover:bg-[#008055] text-white shadow-sm transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                    >
+                      {saving ? (
+                        <>
+                          <Loader2 size={14} className="animate-spin" />
+                          <span>Menyimpan...</span>
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 size={14} />
+                          <span>Simpan Penilaian</span>
+                        </>
+                      )}
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>

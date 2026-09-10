@@ -36,6 +36,7 @@ import {
   penilaianKknApiService,
   type LaporanAkhirItem,
 } from "../../services/penilaianKknApiService";
+import { useAuthStore } from "../../store/useAuthStore";
 import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
 import {
@@ -43,14 +44,19 @@ import {
   formatKelompokName,
   formatProdiName,
 } from "../../utils/textFormatter";
-import { sortStudentsRoster } from "../../utils/sortUtils";
+import { sortStudentsRoster, sortKelompokList } from "../../utils/sortUtils";
 
 export const PenilaianLaporanAkhirPage: React.FC = () => {
+  const { user } = useAuthStore();
+  const rawRole = String(user?.peran || (user as any)?.role || "").toUpperCase();
+  const isPimpinan = rawRole === "PIMPINAN" || rawRole === "PEMIMPIN";
+
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
   const [students, setStudents] = useState<LaporanAkhirItem[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [filterKelompok, setFilterKelompok] = useState<string>("ALL");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 10;
 
@@ -75,6 +81,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
     rekomendasi: 100,
   });
   const [catatanInput, setCatatanInput] = useState<string>("");
+  const [applyToGroup, setApplyToGroup] = useState<boolean>(true);
 
   // Load Data from Backend
   const fetchData = async () => {
@@ -130,6 +137,15 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
     fetchData();
   }, []);
 
+  // Unique Kelompok options dynamically fetched from real DB data
+  const uniqueKelompokList = useMemo(() => {
+    const setK = new Set<string>();
+    students.forEach((s) => {
+      if (s.kelompok && s.kelompok !== "-") setK.add(s.kelompok);
+    });
+    return sortKelompokList(Array.from(setK), (k) => k);
+  }, [students]);
+
   // Filtered Data with Natural Roster Sorting
   const filteredStudents = useMemo(() => {
     const filtered = students.filter((s) => {
@@ -146,7 +162,9 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
         (statusFilter === "SUDAH" && s.status === "Sudah Dinilai") ||
         (statusFilter === "BELUM" && s.status === "Belum Dinilai");
 
-      return matchSearch && matchStatus;
+      const matchKelompok = filterKelompok === "ALL" || s.kelompok === filterKelompok;
+
+      return matchSearch && matchStatus && matchKelompok;
     });
 
     return sortStudentsRoster(filtered, {
@@ -154,7 +172,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
       getName: (s) => s.nama,
       getNim: (s) => s.nim,
     });
-  }, [students, searchQuery, statusFilter]);
+  }, [students, searchQuery, statusFilter, filterKelompok]);
 
   // Statistics Calculation
   const totalMahasiswa = students.length;
@@ -173,7 +191,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, statusFilter]);
+  }, [searchQuery, statusFilter, filterKelompok]);
 
   // Open Assessment Modal (Rincian Penilaian Laporan Akhir)
   const handleOpenAssessment = (student: LaporanAkhirItem, editMode: boolean = false) => {
@@ -182,7 +200,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
       return;
     }
     setSelectedStudent(student);
-    setIsEditMode(editMode || student.status === "Belum Dinilai");
+    setIsEditMode(!isPimpinan && (editMode || student.status === "Belum Dinilai"));
     const currentScore = student.nilai ?? (student.rubrikScores ? Math.round((student.rubrikScores.sistematika + student.rubrikScores.analisis + (student.rubrikScores.dampak || student.rubrikScores.output || 85) + (student.rubrikScores.rekomendasi || student.rubrikScores.refleksi || 85)) / 4) : 85);
     setScoreInput(currentScore);
     setAspectScores({
@@ -192,6 +210,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
       rekomendasi: student.rubrikScores?.rekomendasi ?? student.rubrikScores?.refleksi ?? currentScore,
     });
     setCatatanInput(student.catatan || "");
+    setApplyToGroup(true);
     setIsAssessmentModalOpen(true);
   };
 
@@ -215,6 +234,10 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
 
   // Save Score Assessment
   const handleSaveScore = async () => {
+    if (isPimpinan) {
+      toast.error("Role Pimpinan hanya memiliki akses View-Only dan tidak dapat menyimpan penilaian laporan");
+      return;
+    }
     if (!selectedStudent) return;
     if (isNaN(scoreInput) || scoreInput < 0 || scoreInput > 100) {
       toast.error("Nilai harus berupa angka di rentang 0 - 100");
@@ -223,28 +246,67 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
 
     setSaving(true);
     try {
-      await penilaianKknApiService.saveLaporanAkhirScore(
-        selectedStudent.studentId,
-        scoreInput,
-        catatanInput
-      );
+      if (applyToGroup && selectedStudent.kelompokId) {
+        // Simpan via endpoint kelompok untuk mensinkronkan proker kelompok dan seluruh anggota
+        await penilaianKknApiService.saveLaporanAkhirKelompokScore(
+          selectedStudent.kelompokId,
+          {
+            statusTelaah: "DISETUJUI",
+            rubrikScores: {
+              sistematika: aspectScores.sistematika,
+              analisis: aspectScores.analisis,
+              output: aspectScores.dampak,
+              refleksi: aspectScores.rekomendasi,
+            },
+            catatanUmum: catatanInput,
+            judulLaporan: selectedStudent.judulLaporan,
+            fileUrl: selectedStudent.fileUrl || undefined,
+          }
+        );
 
-      // Local optimistic update
-      setStudents((prev) =>
-        prev.map((s) =>
-          s.studentId === selectedStudent.studentId
-            ? {
-                ...s,
-                status: "Sudah Dinilai",
-                nilai: scoreInput,
-                rubrikScores: aspectScores,
-                catatan: catatanInput,
-              }
-            : s
-        )
-      );
+        // Optimistic update untuk seluruh anggota kelompok ini
+        setStudents((prev) =>
+          prev.map((s) =>
+            s.kelompokId === selectedStudent.kelompokId
+              ? {
+                  ...s,
+                  status: "Sudah Dinilai",
+                  nilai: scoreInput,
+                  rubrikScores: aspectScores,
+                  catatan: catatanInput,
+                }
+              : s
+          )
+        );
 
-      toast.success(`Nilai laporan akhir untuk ${selectedStudent.nama} berhasil disimpan!`);
+        toast.success(
+          `Nilai laporan akhir kelompok ${selectedStudent.kelompok} berhasil disimpan untuk seluruh anggota!`
+        );
+      } else {
+        await penilaianKknApiService.saveLaporanAkhirScore(
+          selectedStudent.studentId,
+          scoreInput,
+          catatanInput
+        );
+
+        // Local optimistic update
+        setStudents((prev) =>
+          prev.map((s) =>
+            s.studentId === selectedStudent.studentId
+              ? {
+                  ...s,
+                  status: "Sudah Dinilai",
+                  nilai: scoreInput,
+                  rubrikScores: aspectScores,
+                  catatan: catatanInput,
+                }
+              : s
+          )
+        );
+
+        toast.success(`Nilai laporan akhir untuk ${selectedStudent.nama} berhasil disimpan!`);
+      }
+
       setIsAssessmentModalOpen(false);
     } catch (err: any) {
       console.error("Gagal menyimpan nilai laporan:", err);
@@ -474,10 +536,52 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
 
   return (
     <div className="p-4 md:p-6 space-y-5 text-slate-800 dark:text-slate-100 max-w-[1400px] mx-auto min-h-screen">
+      {/* Header Halaman */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2.5">
+              <Award className="text-[#009966] w-6 h-6 shrink-0" />
+              <span>Penilaian Laporan Akhir KKN</span>
+            </h1>
+            {isPimpinan && (
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300">
+                Mode Pemantauan: View-Only
+              </span>
+            )}
+          </div>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Evaluasi akademik dan telaah laporan akhir pelaksanaan program KKN tematik mahasiswa
+          </p>
+        </div>
+
+        {isPimpinan && (
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs font-bold">
+            <AlertCircle size={16} />
+            <span>Portal Pemantauan Eksekutif</span>
+          </div>
+        )}
+      </div>
+
+      {isPimpinan && (
+        <div className="p-3.5 bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-2xl flex items-center justify-between gap-3 text-xs text-amber-800 dark:text-amber-300">
+          <div className="flex items-center gap-2.5">
+            <AlertCircle size={18} className="shrink-0 text-amber-600 dark:text-amber-400" />
+            <div>
+              <strong className="block font-bold text-[13px]">Mode Akses Pemantauan Eksekutif (View-Only)</strong>
+              <span>Sebagai Pimpinan, Anda memiliki hak akses pemantauan terhadap seluruh berkas dan telaah laporan akhir KKN tanpa hak mengubah maupun menyimpan nilai.</span>
+            </div>
+          </div>
+          <span className="px-3 py-1 rounded-full text-[11px] font-extrabold bg-amber-200/60 dark:bg-amber-900/60 text-amber-950 dark:text-amber-200 border border-amber-300 shrink-0">
+            VIEW-ONLY
+          </span>
+        </div>
+      )}
+
       {/* Top Section: Header, Subtitle, Search/Filter & KPI Summary Cards */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         {/* Left: Search & Filter */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-wrap">
           {/* Search Box */}
           <div className="relative min-w-[260px] sm:min-w-[280px]">
             <Search
@@ -491,6 +595,27 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#009966]/20 focus:border-[#009966] transition shadow-2xs placeholder:text-slate-400"
             />
+          </div>
+
+          {/* Filter Kelompok Dropdown */}
+          <div className="relative">
+            <select
+              value={filterKelompok}
+              onChange={(e) => setFilterKelompok(e.target.value)}
+              className="w-full sm:w-auto px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#009966]/20 focus:border-[#009966] transition shadow-2xs cursor-pointer appearance-none pr-9"
+            >
+              <option value="ALL">Semua Kelompok ({uniqueKelompokList.length})</option>
+              {uniqueKelompokList.map((k) => (
+                <option key={k} value={k}>
+                  {k}
+                </option>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+              <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+              </svg>
+            </div>
           </div>
 
           {/* Filter Status Dropdown */}
@@ -714,6 +839,15 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
                             <AlertCircle size={13} />
                             <span>Belum Ada File</span>
                           </button>
+                        ) : isPimpinan ? (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenAssessment(item, false)}
+                            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border border-[#009966] text-[#009966] bg-white hover:bg-emerald-50 dark:bg-slate-900 dark:hover:bg-emerald-950/30 transition cursor-pointer w-28 shadow-2xs"
+                          >
+                            <Eye size={14} />
+                            <span>Lihat Rincian</span>
+                          </button>
                         ) : (
                           <button
                             type="button"
@@ -764,7 +898,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100">
-                    {isEditMode ? "Formulir Penilaian Laporan Akhir" : "Rincian Penilaian Laporan Akhir"}
+                    {isPimpinan ? "Rincian Penilaian Laporan Akhir" : isEditMode ? "Formulir Penilaian Laporan Akhir" : "Rincian Penilaian Laporan Akhir"}
                   </h3>
                   <p className="text-xs text-slate-500 mt-0.5">
                     Evaluasi akademik dan capaian laporan akhir KKN tematik
@@ -782,6 +916,19 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
 
             {/* Modal Body */}
             <div className="p-5 sm:p-6 overflow-y-auto space-y-5">
+              {/* Alert View-Only untuk Role Pimpinan */}
+              {isPimpinan && (
+                <div className="p-3.5 bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/80 rounded-2xl flex items-start gap-2.5 text-xs text-blue-800 dark:text-blue-300 animate-in fade-in">
+                  <Eye className="shrink-0 mt-0.5 text-blue-600 dark:text-blue-400" size={16} />
+                  <div>
+                    <span className="font-bold block">Mode Pemantauan Eksekutif (View-Only)</span>
+                    <span className="opacity-90 leading-relaxed">
+                      Anda sedang melihat rincian penilaian laporan akhir dalam mode pemantauan. Hak pengisian nilai hanya dimiliki oleh Dosen Pembimbing Lapangan (DPL).
+                    </span>
+                  </div>
+                </div>
+              )}
+
               {/* Metadata Mahasiswa (Card Info) */}
               <div className="bg-slate-50/70 dark:bg-slate-800/40 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-2.5 text-xs">
                 <div className="flex justify-between items-center">
@@ -874,10 +1021,10 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
                     type="number"
                     min={0}
                     max={100}
-                    disabled={!isEditMode}
+                    disabled={!isEditMode || isPimpinan}
                     value={aspectScores.sistematika}
                     onChange={(e) => handleAspectChange("sistematika", Number(e.target.value))}
-                    className="w-20 sm:w-24 px-2.5 py-2 text-center font-bold text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#009966] disabled:bg-slate-50/80 disabled:text-slate-900 dark:disabled:text-slate-100"
+                    className="w-20 sm:w-24 px-2.5 py-2 text-center font-bold text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#009966] disabled:bg-slate-50/80 disabled:text-slate-900 dark:disabled:text-slate-100 disabled:cursor-not-allowed"
                   />
                 </div>
 
@@ -895,10 +1042,10 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
                     type="number"
                     min={0}
                     max={100}
-                    disabled={!isEditMode}
+                    disabled={!isEditMode || isPimpinan}
                     value={aspectScores.analisis}
                     onChange={(e) => handleAspectChange("analisis", Number(e.target.value))}
-                    className="w-20 sm:w-24 px-2.5 py-2 text-center font-bold text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#009966] disabled:bg-slate-50/80 disabled:text-slate-900 dark:disabled:text-slate-100"
+                    className="w-20 sm:w-24 px-2.5 py-2 text-center font-bold text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#009966] disabled:bg-slate-50/80 disabled:text-slate-900 dark:disabled:text-slate-100 disabled:cursor-not-allowed"
                   />
                 </div>
 
@@ -916,10 +1063,10 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
                     type="number"
                     min={0}
                     max={100}
-                    disabled={!isEditMode}
+                    disabled={!isEditMode || isPimpinan}
                     value={aspectScores.dampak}
                     onChange={(e) => handleAspectChange("dampak", Number(e.target.value))}
-                    className="w-20 sm:w-24 px-2.5 py-2 text-center font-bold text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#009966] disabled:bg-slate-50/80 disabled:text-slate-900 dark:disabled:text-slate-100"
+                    className="w-20 sm:w-24 px-2.5 py-2 text-center font-bold text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#009966] disabled:bg-slate-50/80 disabled:text-slate-900 dark:disabled:text-slate-100 disabled:cursor-not-allowed"
                   />
                 </div>
 
@@ -937,10 +1084,10 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
                     type="number"
                     min={0}
                     max={100}
-                    disabled={!isEditMode}
+                    disabled={!isEditMode || isPimpinan}
                     value={aspectScores.rekomendasi}
                     onChange={(e) => handleAspectChange("rekomendasi", Number(e.target.value))}
-                    className="w-20 sm:w-24 px-2.5 py-2 text-center font-bold text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#009966] disabled:bg-slate-50/80 disabled:text-slate-900 dark:disabled:text-slate-100"
+                    className="w-20 sm:w-24 px-2.5 py-2 text-center font-bold text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#009966] disabled:bg-slate-50/80 disabled:text-slate-900 dark:disabled:text-slate-100 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -952,19 +1099,40 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
                 </label>
                 <textarea
                   rows={3}
-                  disabled={!isEditMode}
+                  disabled={!isEditMode || isPimpinan}
                   placeholder="Berikan masukan atau catatan konstruktif untuk laporan mahasiswa..."
                   value={catatanInput}
                   onChange={(e) => setCatatanInput(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#009966]/20 focus:border-[#009966] resize-none placeholder:text-slate-400 disabled:bg-slate-50/80"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#009966]/20 focus:border-[#009966] resize-none placeholder:text-slate-400 disabled:bg-slate-50/80 disabled:cursor-not-allowed"
                 />
               </div>
+
+              {/* Opsi Terapkan ke Seluruh Anggota Kelompok */}
+              {isEditMode && selectedStudent?.kelompokId && (
+                <div className="p-3 bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/40 rounded-xl flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    id="applyToGroupCheckbox"
+                    checked={applyToGroup}
+                    onChange={(e) => setApplyToGroup(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded text-[#009966] focus:ring-[#009966] border-slate-300 dark:border-slate-600 cursor-pointer"
+                  />
+                  <label htmlFor="applyToGroupCheckbox" className="text-xs text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+                    <span className="font-bold text-emerald-800 dark:text-emerald-300 block">
+                      Terapkan nilai ini untuk semua anggota kelompok ({selectedStudent.kelompok || "Kelompok"})
+                    </span>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-0.5">
+                      Karena Laporan Akhir bersifat komunal (kelompok), mencentang ini akan otomatis mengisi nilai laporan akhir untuk seluruh anggota kelompok sekaligus. Hilangkan centang jika Anda hanya ingin memberikan nilai khusus untuk mahasiswa ini.
+                    </span>
+                  </label>
+                </div>
+              )}
             </div>
 
             {/* Footer Modal */}
             <div className="p-4 sm:p-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between gap-3">
               <div>
-                {!isEditMode && (
+                {(!isEditMode || isPimpinan) && (
                   <button
                     type="button"
                     onClick={handlePrintEvaluation}
@@ -977,7 +1145,21 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-2.5">
-                {!isEditMode ? (
+                {isPimpinan ? (
+                  <>
+                    <span className="text-[11px] font-semibold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-3 py-1.5 rounded-xl border border-blue-200 dark:border-blue-800 flex items-center gap-1.5">
+                      <Eye size={13} />
+                      <span>Mode Pemantauan (View-Only)</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsAssessmentModalOpen(false)}
+                      className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer"
+                    >
+                      Tutup
+                    </button>
+                  </>
+                ) : !isEditMode ? (
                   <>
                     <button
                       type="button"

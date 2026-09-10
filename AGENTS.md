@@ -81,6 +81,24 @@ Dokumen ini adalah instruksi operasional wajib untuk semua AI coding assistant (
 
 ---
 
+## 🛡️ ATURAN PERLINDUNGAN DATABASE VPS & DATA GOVERNANCE (ANTI-DUMMY SEED POLICY)
+Database VPS (`157.10.252.252` / `psc_db`) berisi data operasional riil yang telah dimodifikasi secara manual (khususnya data **Mahasiswa KKN**, **Presensi Mandiri**, **Jadwal**, **Posko KKN**, dan **Akun Pengguna**). Untuk menjaga integritas data riil ini, diberlakukan aturan mutlak:
+
+1. **Dilarang Keras Menjalankan Seeder / Bulk-Insert Dummy ke VPS**:
+   - Dilarang keras mengeksekusi skrip seeder apa pun (`scripts/seed/*`, `apps/api/scripts/seed-*`, `bulk-insert-kkn.ts`, dll.) dengan target database produksi atau VPS.
+   - Semua skrip seeder lokal wajib dilindungi modul `vpsSafetyGuard` yang secara otomatis memutus koneksi dan mematikan proses (`process.exit(1)`) jika mendeteksi host/IP VPS atau `NODE_ENV=production`.
+2. **Larangan Eksekusi Skrip Injeksi/Mutasi Liar via SSH**:
+   - Skrip di `scripts/vps/` hanya boleh digunakan untuk *read-only monitoring*, *audit*, atau *database backup dump*.
+   - Dilarang menjalankan skrip injeksi data atau raw SQL mutasi (`INSERT`, `UPDATE`, `DELETE`, `TRUNCATE`) langsung ke VPS tanpa persetujuan eksplisit dan tanpa Golden Backup.
+3. **Pemberlakuan Golden Backup Sebelum Intervensi**:
+   - Sebelum melakukan pemeliharaan database apa pun di VPS, wajib melakukan backup dump terlebih dahulu melalui `npm run db:sync-vps` atau `npm run backup:full`.
+4. **Larangan Auto-Seed pada Runtime Aplikasi di VPS**:
+   - Fitur in-app auto-seed (seperti di linimasa KKN) dilarang aktif di lingkungan produksi (`NODE_ENV=production`).
+5. **Dilarang Menjalankan `prisma db push` di VPS**:
+   - Di lingkungan VPS, hanya diizinkan menjalankan `npx prisma migrate deploy`. Dilarang keras memakai `prisma db push` karena dapat mereset atau merusak struktur dan data tabel yang sudah ada.
+
+---
+
 ## 📋 CHECKLIST SEBELUM PUSH / BUAT PR
 ```text
 [ ] Backend TypeScript lolos: cd apps/api && npx tsc --noEmit (0 error)
@@ -88,6 +106,7 @@ Dokumen ini adalah instruksi operasional wajib untuk semua AI coding assistant (
 [ ] Prisma Client up-to-date: npm run prisma:generate
 [ ] Tidak ada kata 'tong' di seluruh string UI baru
 [ ] Tidak ada hardcoded credentials atau password di dalam kode
+[ ] Tidak ada skrip seeder / bulk-insert yang menargetkan host VPS tanpa vpsSafetyGuard
 [ ] Branch target PR sesuai hirarki: feat/fix -> development -> staging -> main
 [ ] Review perubahan disampaikan dan dikonfirmasi oleh pengguna
 ```

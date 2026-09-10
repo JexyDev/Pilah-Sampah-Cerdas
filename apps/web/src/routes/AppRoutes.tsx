@@ -835,12 +835,15 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/master-data/jenis-tempat-sampah"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "DEVELOPER", "PANITIA_TASKFORCE", "RW"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "DEVELOPER", "PANITIA_TASKFORCE", "RW", "CAMAT", "LURAH", "PETUGAS_RESIDU", "MAHASISWA_KKN", "PIMPINAN", "WARGA"]}>
               <MasterPresetTempatSampahPage />
             </ProtectedRoute>
           }
         />
         <Route
+          path="/monitoring-pengelolaan/jenis-tempat-sampah"
+          element={<Navigate to="/master-data/jenis-tempat-sampah" replace />}
+        />
           path="/master-data/preset-tempat-sampah"
           element={<Navigate to="/master-data/jenis-tempat-sampah" replace />}
         />
@@ -1162,7 +1165,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/monitoring-pemilahan/penyetoran-sampah"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "PIMPINAN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING", "MAHASISWA_KKN", "WARGA", "DEVELOPER"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING", "MAHASISWA_KKN", "WARGA", "DEVELOPER"]}>
               <SetorSampah />
             </ProtectedRoute>
           }
@@ -1170,7 +1173,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/penyetoran-sampah"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "PIMPINAN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING", "MAHASISWA_KKN", "WARGA", "DEVELOPER"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING", "MAHASISWA_KKN", "WARGA", "DEVELOPER"]}>
               <SetorSampah />
             </ProtectedRoute>
           }
