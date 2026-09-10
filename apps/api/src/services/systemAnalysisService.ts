@@ -9,6 +9,14 @@
 
 import { prisma } from "../lib/prisma.js";
 
+// Global safe serializer for PostgreSQL BigInt values (e.g. COUNT(*) results)
+if (typeof (BigInt.prototype as any).toJSON !== "function") {
+  (BigInt.prototype as any).toJSON = function () {
+    const intVal = Number(this);
+    return Number.isSafeInteger(intVal) ? intVal : this.toString();
+  };
+}
+
 export const systemAnalysisService = {
   /**
    * Sub-Sistem KKN: 5 Pilar Operasional
@@ -619,9 +627,12 @@ Aturan:
             try {
               console.log("[AI Autonomous SQL Query]:", rawSql);
               const rows: any = await prisma.$queryRawUnsafe(rawSql);
+              const safeSerialized = JSON.stringify(Array.isArray(rows) ? rows.slice(0, 50) : [rows], (_, v) =>
+                typeof v === "bigint" ? (Number.isSafeInteger(Number(v)) ? Number(v) : v.toString()) : v
+              );
               dynamicSqlResult = {
                 sql: rawSql,
-                rows: Array.isArray(rows) ? rows.slice(0, 50) : [rows],
+                rows: JSON.parse(safeSerialized),
               };
             } catch (queryErr: any) {
               console.warn("[AI SQL Execution Warning]:", queryErr.message);
@@ -637,11 +648,15 @@ Aturan:
     // ─── 3. TIER 3: FINAL SYNTHESIS GROUNDING ───
     let sqlContextText = "";
     if (dynamicSqlResult.rows && dynamicSqlResult.rows.length > 0) {
+      const formattedRows = JSON.stringify(dynamicSqlResult.rows, (_, v) =>
+        typeof v === "bigint" ? (Number.isSafeInteger(Number(v)) ? Number(v) : v.toString()) : v,
+        2
+      );
       sqlContextText = `
 [HASIL QUERY DATABASE OTOMATIS BERDASARKAN PERTANYAAN USER]
 Query SQL: ${dynamicSqlResult.sql}
 Data Hasil Query (${dynamicSqlResult.rows.length} baris):
-${JSON.stringify(dynamicSqlResult.rows, null, 2)}
+${formattedRows}
       `.trim();
     }
 
@@ -692,7 +707,7 @@ ${sqlContextText}
       return {
         reply: assistantMessage,
         isBlocked: false,
-        model: "BERSEKA AI (Full Database Access)",
+        model: "BERSEKA AI",
         sqlExecuted: dynamicSqlResult.sql || null,
       };
     } catch (apiError: any) {
@@ -701,7 +716,7 @@ ${sqlContextText}
       return {
         reply: `Berdasarkan penelusuran data langsung dari database Berseka:\n\n${dplEntitySummary || contextSummary}\n\n(Catatan: Tanggapan disajikan langsung dari kompilasi database server Berseka).`,
         isBlocked: false,
-        model: "BERSEKA AI (Server Direct)",
+        model: "BERSEKA AI",
       };
     }
   },
