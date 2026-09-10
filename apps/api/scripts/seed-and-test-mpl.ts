@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { assertNotProduction } from "../src/utils/vpsSafetyGuard.js";
 
 const prisma = new PrismaClient();
 
@@ -13,6 +14,7 @@ const KELURAHANS = [
 ];
 
 async function main() {
+  assertNotProduction("seed-and-test-mpl.ts");
   console.log("=== 1. ENSURE ROLE 'MPL' EXISTS ===");
   let mplRole = await prisma.role.findFirst({
     where: {

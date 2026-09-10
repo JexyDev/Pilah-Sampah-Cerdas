@@ -9,6 +9,7 @@ import path from 'path';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import XLSX from 'xlsx';
+import { assertNotProduction } from '../src/utils/vpsSafetyGuard.js';
 
 const prisma = new PrismaClient();
 
@@ -69,6 +70,8 @@ export const REAL_DPL_LIST = [
 ];
 
 async function main() {
+  assertNotProduction("seed-kkn-excel-complete.ts");
+
   console.log("==================================================");
   console.log("🚀 MEMULAI IMPORT SEEDER DATA KKN LENGKAP (docs/raw_new_data.xlsx)");
   console.log("==================================================\n");
