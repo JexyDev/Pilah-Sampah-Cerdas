@@ -465,8 +465,8 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                             ),
                             Center(
                               child: Container(
-                                width: 280,
-                                height: 280,
+                                width: (MediaQuery.of(context).size.width * 0.75).clamp(200.0, 280.0),
+                                height: (MediaQuery.of(context).size.width * 0.75).clamp(200.0, 280.0),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(16),
@@ -479,8 +479,8 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                       // Bingkai Border Putih solid
                       Center(
                         child: Container(
-                          width: 280,
-                          height: 280,
+                          width: (MediaQuery.of(context).size.width * 0.75).clamp(200.0, 280.0),
+                          height: (MediaQuery.of(context).size.width * 0.75).clamp(200.0, 280.0),
                           decoration: BoxDecoration(
                             border: Border.all(color: Colors.white, width: 2),
                             borderRadius: BorderRadius.circular(16),

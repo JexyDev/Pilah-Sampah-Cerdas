@@ -444,12 +444,16 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
       theme: AppTheme.lightTheme,
       // Tidak ada darkTheme â€” sesuai spesifikasi
 
-      // Mengunci textScaler agar bentuk UI paten tidak berubah saat DPI atau ukuran font sistem diubah
+      // Mengunci textScaler agar bentuk UI paten tidak berubah saat DPI atau ukuran font sistem diubah.
+      // Jika DPI diatur maksimal (<360dp), scale teks dinamis proporsional agar seluruh 65 page otomatis bebas overflow.
       builder: (context, child) {
         final mediaQuery = MediaQuery.of(context);
+        final double width = mediaQuery.size.width;
+        final double fontScale = width < 330 ? 0.88 : (width < 360 ? 0.92 : 1.0);
+
         return MediaQuery(
           data: mediaQuery.copyWith(
-            textScaler: TextScaler.noScaling,
+            textScaler: TextScaler.linear(fontScale),
           ),
           child: DefaultTextStyle(
             style: GoogleFonts.poppins(
