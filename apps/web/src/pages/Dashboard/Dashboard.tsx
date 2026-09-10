@@ -1643,6 +1643,7 @@ const Dashboard: React.FC = () => {
   const [weeks, setWeeks] = useState(8);
   const [locations, setLocations] = useState<any[]>([]);
   const [showComplianceModal, setShowComplianceModal] = useState(false);
+  const [showCompositionDetail, setShowCompositionDetail] = useState(false);
   const [selectedBinForDetail, setSelectedBinForDetail] = useState<any | null>(null);
   const [deleteBinConfirm, setDeleteBinConfirm] = useState<any | null>(null);
 
