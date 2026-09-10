@@ -164,6 +164,8 @@ jobs:
             fi
             echo "Executing Prisma Migration Deploy..."
             npx prisma migrate deploy
+            echo "=== 2.5. Synchronizing Student SKS Data ==="
+            FORCE_ALLOW_VPS_MUTATION=I_UNDERSTAND_THE_RISKS_OVERWRITE_VPS npx tsx scripts/sync-student-sks.ts --commit || echo "Sync SKS failed, continuing..."
             npm run build
 
             echo "=== 3. Reloading PM2 Backend ==="
