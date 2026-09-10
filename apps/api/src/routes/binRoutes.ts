@@ -134,6 +134,35 @@ router.get("/my-bins", authMiddleware, binController.getMyBins);
  *         description: Berhasil mendapatkan daftar tempat sampah
  */
 router.get("/my", authMiddleware, binController.getMyBins);
+
+/**
+ * @swagger
+ * /api/v1/bins/presets/tabung:
+ *   get:
+ *     summary: Mengambil daftar template ukuran untuk tempat sampah berbentuk tabung
+ *     tags: [Bins]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil mengambil preset tempat sampah tabung
+ */
+router.get("/presets/tabung", authMiddleware, binController.getPresetsTabung);
+
+/**
+ * @swagger
+ * /api/v1/bins/presets/kotak:
+ *   get:
+ *     summary: Mengambil daftar template ukuran untuk tempat sampah berbentuk kotak
+ *     tags: [Bins]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil mengambil preset tempat sampah kotak
+ */
+router.get("/presets/kotak", authMiddleware, binController.getPresetsKotak);
+
 /**
  * @swagger
  * /api/v1/bins/kelurahans:

@@ -10,6 +10,10 @@ import { Request, Response } from "express";
 import { z } from "zod";
 import { binService } from "../services/binService.js";
 import { generateNextQrCode } from "../utils/qrGenerator.js";
+import {
+  PRESET_TEMPAT_SAMPAH_TABUNG,
+  PRESET_TEMPAT_SAMPAH_KOTAK,
+} from "../constants/binPresets.js";
 
 const scanSchema = z.object({
   qrCode: z.string().min(1, "QR Code diperlukan"),
@@ -1843,6 +1847,28 @@ export class BinController {
         });
       }
     }
+  }
+
+  /**
+   * Mengambil daftar template ukuran untuk tempat sampah berbentuk tabung
+   */
+  async getPresetsTabung(_req: Request, res: Response): Promise<void> {
+    res.status(200).json({
+      status: "success",
+      message: "Berhasil mengambil preset tempat sampah tabung",
+      data: PRESET_TEMPAT_SAMPAH_TABUNG,
+    });
+  }
+
+  /**
+   * Mengambil daftar template ukuran untuk tempat sampah berbentuk kotak
+   */
+  async getPresetsKotak(_req: Request, res: Response): Promise<void> {
+    res.status(200).json({
+      status: "success",
+      message: "Berhasil mengambil preset tempat sampah kotak",
+      data: PRESET_TEMPAT_SAMPAH_KOTAK,
+    });
   }
 }
 
