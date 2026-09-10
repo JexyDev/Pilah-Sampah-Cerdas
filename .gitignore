@@ -75,7 +75,9 @@ deploy_*.cjs
 check_*.js
 sync_*.js
 scripts/vps/
-scripts/tools/
+scripts/tools/*
+!scripts/tools/safety_guard.cjs
+!scripts/tools/sync_db_from_vps.cjs
 *.tmp.*
 
 # Logs & Temporary files

@@ -3,6 +3,7 @@ import path from 'path';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import XLSX from 'xlsx';
+import { assertNotProduction } from '../src/utils/vpsSafetyGuard.js';
 
 const prisma = new PrismaClient();
 
@@ -62,6 +63,8 @@ export interface SkippedRow {
 }
 
 async function main() {
+  assertNotProduction('bulk-insert-kkn.ts');
+
   const args = process.argv.slice(2);
   const filePathArg = args.find(a => !a.startsWith('--'));
   const isCommit = args.includes('--commit');

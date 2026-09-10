@@ -987,11 +987,13 @@ export const timelineKknService = {
   getAll: async (params: TimelineQueryParams, userId?: string, userRole?: string) => {
     const role = (userRole || "").toUpperCase();
 
-    // Inisialisasi data bawaan jika database masih kosong sama sekali
+    // Inisialisasi data bawaan hanya jika di lingkungan development lokal dan tabel masih kosong
     try {
-      const count = await prisma.timelineKkn.count();
-      if (count === 0) {
-        await timelineKknService.seedDefaultCoblong();
+      if (process.env.NODE_ENV !== "production") {
+        const count = await prisma.timelineKkn.count();
+        if (count === 0) {
+          await timelineKknService.seedDefaultCoblong();
+        }
       }
     } catch (e: any) {
       console.warn("[timelineKknService.getAll] auto-seed warning:", e?.message || e);
@@ -1621,6 +1623,10 @@ export const timelineKknService = {
    * Seed acuan default Coblong jika diperlukan
    */
   seedDefaultCoblong: async (forceReplace = false) => {
+    if (process.env.NODE_ENV === "production" && forceReplace) {
+      throw new Error("⛔ DILARANG: Reset/force replace linimasa di lingkungan produksi VPS dilarang untuk melindungi data riil.");
+    }
+
     if (forceReplace) {
       await prisma.timelineKkn.deleteMany({
         where: { kelompokId: null },
