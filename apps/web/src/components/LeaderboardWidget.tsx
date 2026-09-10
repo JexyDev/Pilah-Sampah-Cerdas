@@ -186,7 +186,11 @@ const ColumnCard: React.FC<ColumnCardProps> = ({
 };
 
 
-export const LeaderboardWidget: React.FC = () => {
+export interface LeaderboardWidgetProps {
+  mode?: "all" | "sampah" | "kkn";
+}
+
+export const LeaderboardWidget: React.FC<LeaderboardWidgetProps> = ({ mode = "all" }) => {
   // Real DB state (starts empty, filled from API)
   const [wargaList, setWargaList] = useState<LeaderboardItem[]>([]);
   const [petugasList, setPetugasList] = useState<LeaderboardItem[]>([]);
@@ -368,9 +372,10 @@ export const LeaderboardWidget: React.FC = () => {
 
   return (
     <div className="space-y-6 w-full">
-
-      {/* ----------------- TOP SECTION: 2 BAR CHARTS ----------------- */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      {mode !== "kkn" && (
+        <>
+          {/* ----------------- TOP SECTION: 2 BAR CHARTS ----------------- */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         
         {/* Chart 1: Kepatuhan Pemilahan */}
         <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-xs space-y-4">
@@ -586,58 +591,62 @@ export const LeaderboardWidget: React.FC = () => {
           />
         </div>
       </div>
+        </>
+      )}
 
       {/* Top 10 Akademik & Pendampingan */}
-      <div className="space-y-3 pt-1">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-xl bg-emerald-700 text-white shadow-xs">
-            <GraduationCap size={16} />
+      {mode !== "sampah" && (
+        <div className="space-y-3 pt-1">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 rounded-xl bg-emerald-700 text-white shadow-xs">
+              <GraduationCap size={16} />
+            </div>
+            <div>
+              <h3 className="font-extrabold text-[15px] text-slate-800 dark:text-slate-100 tracking-tight leading-tight">
+                Top 10 Akademik &amp; Pendampingan
+              </h3>
+              <p className="text-[11px] text-slate-500 leading-none mt-0.5">
+                Ranking dan performa peserta dari ekosistem pendampingan mahasiswa.
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="font-extrabold text-[15px] text-slate-800 dark:text-slate-100 tracking-tight leading-tight">
-              Top 10 Akademik &amp; Pendampingan
-            </h3>
-            <p className="text-[11px] text-slate-500 leading-none mt-0.5">
-              Ranking dan performa peserta dari ekosistem pendampingan mahasiswa.
-            </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 items-stretch min-w-0">
+            {/* 1. Top 10 Mahasiswa */}
+            <ColumnCard
+              title="Top 10 Mahasiswa"
+              icon={<GraduationCap size={14} />}
+              iconBg="bg-emerald-600"
+              barColor="#10b981"
+              items={mahasiswaList}
+              maxPoints={mahasiswaList[0]?.points || 0}
+              linkTo="/peringkat?system=system2&tab=students"
+            />
+
+            {/* 2. Top 10 Kelompok Mahasiswa */}
+            <ColumnCard
+              title="Top 10 Kelompok Mahasiswa"
+              icon={<Users size={14} />}
+              iconBg="bg-emerald-600"
+              barColor="#10b981"
+              items={kelompokList}
+              maxPoints={kelompokList[0]?.points || 0}
+              linkTo="/peringkat?system=system2&tab=groups"
+            />
+
+            {/* 3. Top 10 Dosen Pendamping Lapangan (DPL) */}
+            <ColumnCard
+              title="Top 10 Dosen Pendamping Lapangan (DPL)"
+              icon={<Award size={14} />}
+              iconBg="bg-teal-600"
+              barColor="#10b981"
+              items={dplList}
+              maxPoints={dplList[0]?.points || 0}
+              linkTo="/peringkat?system=system2&tab=dpl"
+            />
           </div>
         </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 items-stretch min-w-0">
-          {/* 1. Top 10 Mahasiswa */}
-          <ColumnCard
-            title="Top 10 Mahasiswa"
-            icon={<GraduationCap size={14} />}
-            iconBg="bg-emerald-600"
-            barColor="#10b981"
-            items={mahasiswaList}
-            maxPoints={mahasiswaList[0]?.points || 0}
-            linkTo="/peringkat?system=system2&tab=students"
-          />
-
-          {/* 2. Top 10 Kelompok Mahasiswa */}
-          <ColumnCard
-            title="Top 10 Kelompok Mahasiswa"
-            icon={<Users size={14} />}
-            iconBg="bg-emerald-600"
-            barColor="#10b981"
-            items={kelompokList}
-            maxPoints={kelompokList[0]?.points || 0}
-            linkTo="/peringkat?system=system2&tab=groups"
-          />
-
-          {/* 3. Top 10 Dosen Pendamping Lapangan (DPL) */}
-          <ColumnCard
-            title="Top 10 Dosen Pendamping Lapangan (DPL)"
-            icon={<Award size={14} />}
-            iconBg="bg-teal-600"
-            barColor="#10b981"
-            items={dplList}
-            maxPoints={dplList[0]?.points || 0}
-            linkTo="/peringkat?system=system2&tab=dpl"
-          />
-        </div>
-      </div>
+      )}
     </div>
   );
 };
