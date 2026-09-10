@@ -2752,12 +2752,12 @@ export const DashboardEksekutifKkn: React.FC = () => {
                   </span>
                   <span className="text-slate-400 text-xs">•</span>
                   <span className="text-xs font-semibold text-slate-300">
-                    Akumulasi Alpa ≥ 3 Hari
+                    Akumulasi Tanpa Keterangan ≥ 3 Hari
                   </span>
                 </div>
                 <h3 className="text-lg font-black text-white flex items-center gap-2">
                   <AlertTriangle size={20} className="text-rose-400" />
-                  <span>Daftar Mahasiswa Alpa Kritis</span>
+                  <span>Daftar Mahasiswa Tanpa Keterangan Kritis</span>
                 </h3>
               </div>
               <button
@@ -2775,7 +2775,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 p-3.5 rounded-2xl">
                   <p className="text-[10.5px] font-bold text-rose-700 dark:text-rose-300 uppercase tracking-wider">
-                    Mahasiswa Alpa Kritis (≥ 3x)
+                    Mahasiswa Tanpa Keterangan Kritis (≥ 3x)
                   </p>
                   <p className="text-xl font-black text-rose-600 dark:text-rose-400 mt-1">
                     {data?.criticalAlpaStudents?.length || 0} <span className="text-xs font-semibold text-slate-500">Mahasiswa</span>
@@ -2787,19 +2787,19 @@ export const DashboardEksekutifKkn: React.FC = () => {
 
                 <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 p-3.5 rounded-2xl">
                   <p className="text-[10.5px] font-bold text-amber-700 dark:text-amber-300 uppercase tracking-wider">
-                    Mahasiswa Pernah Alpa (≥ 1x)
+                    Mahasiswa Pernah Tanpa Keterangan (≥ 1x)
                   </p>
                   <p className="text-xl font-black text-amber-600 dark:text-amber-400 mt-1">
                     {data?.perhatianPimpinan?.find(a => a.id === "alpa")?.metadata?.uniqueStudentsEverAlpa ?? 0} <span className="text-xs font-semibold text-slate-500">Mahasiswa</span>
                   </p>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                    Termasuk yang hanya alpa 1-2 kali
+                    Termasuk yang hanya tanpa keterangan 1-2 kali
                   </p>
                 </div>
 
                 <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3.5 rounded-2xl">
                   <p className="text-[10.5px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                    Total Kejadian Log Alpa
+                    Total Kejadian Log Tanpa Keterangan
                   </p>
                   <p className="text-xl font-black text-slate-800 dark:text-slate-100 mt-1">
                     {data?.perhatianPimpinan?.find(a => a.id === "alpa")?.metadata?.totalAlpaLogs ?? 0} <span className="text-xs font-semibold text-slate-500">Log Kasus</span>
@@ -2868,14 +2868,14 @@ export const DashboardEksekutifKkn: React.FC = () => {
                         <th className="py-2.5 px-3.5">Program Studi</th>
                         <th className="py-2.5 px-3.5">Kelompok & Wilayah</th>
                         <th className="py-2.5 px-3.5">DPL Pengampu</th>
-                        <th className="py-2.5 px-3.5 text-center">Akumulasi Alpa</th>
+                        <th className="py-2.5 px-3.5 text-center">Akumulasi Tanpa Keterangan</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                       {paginatedCriticalAlpaStudents.length === 0 ? (
                         <tr>
                           <td colSpan={6} className="py-8 text-center text-slate-400 text-xs">
-                            Tidak ditemukan mahasiswa alpa kritis dengan parameter pencarian tersebut.
+                            Tidak ditemukan mahasiswa tanpa keterangan kritis dengan parameter pencarian tersebut.
                           </td>
                         </tr>
                       ) : (
@@ -2923,7 +2923,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
                               </td>
                               <td className="py-2.5 px-3.5 text-center">
                                 <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-black bg-rose-100 text-rose-700 dark:bg-rose-950/80 dark:text-rose-300 border border-rose-300 dark:border-rose-800">
-                                  {st.alpaCount} Hari Alpa
+                                  {st.alpaCount} Hari Tanpa Keterangan
                                 </span>
                               </td>
                             </tr>

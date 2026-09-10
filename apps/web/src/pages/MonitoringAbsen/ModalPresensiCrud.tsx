@@ -71,7 +71,7 @@ const STATUS_OPTIONS = [
   { value: "TERJEDA", label: "Terjeda" },
   { value: "IZIN", label: "Izin (Disetujui)" },
   { value: "SAKIT", label: "Sakit (Disetujui)" },
-  { value: "ALPHA", label: "Alpa / Tanpa Keterangan" },
+  { value: "ALPHA", label: "Tanpa Keterangan" },
   { value: "TIDAK_ADA_KEGIATAN", label: "Tidak Ada Kegiatan" },
 ];
 
