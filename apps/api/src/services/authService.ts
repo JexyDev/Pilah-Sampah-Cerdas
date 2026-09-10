@@ -67,41 +67,48 @@ export class AuthService {
       isPasswordValid = false;
     }
 
-    // Fallback: cek jika password tersimpan plaintext atau mahasiswa memasukkan NIM / No HP / Password Default
+    // Fallback: cek jika password tersimpan plaintext atau mahasiswa baru belum ganti password
     const anyUser = user as any;
     const userRole = user.role?.name || "";
     if (!isPasswordValid) {
-      const studentNim = anyUser.studentProfile?.nim ? String(anyUser.studentProfile.nim).trim() : "";
-      const userPhone = user.phone ? String(user.phone).trim() : "";
-      const cleanUserPhone = userPhone.replace(/[^\d]/g, "");
+      const isBcryptHash = typeof user.password === "string" && user.password.startsWith("$2");
       const cleanInputPassword = String(password).trim();
+      const studentNim = anyUser.studentProfile?.nim ? String(anyUser.studentProfile.nim).trim() : "";
 
-      const acceptedFallbacks = [
-        user.password, // Plaintext match
-        studentNim, // NIM mahasiswa
-        userPhone, // +628xxx
-        cleanUserPhone, // 628xxx
-        cleanUserPhone.startsWith("62") ? "0" + cleanUserPhone.slice(2) : "", // 08xxx
-        "PilahSampah2026!",
-        "password123",
-        "berseka2026",
-        "12345678",
-        "123456",
-        "admin123",
-        "kkn2026",
-      ].filter(Boolean);
+      // 1. Akun legacy plaintext: jika password di DB plaintext dan cocok persis dengan input
+      if (!isBcryptHash && user.password === password) {
+        isPasswordValid = true;
+        try {
+          const newHashed = await hashPassword(password);
+          await prisma.user.update({ where: { id: user.id }, data: { password: newHashed } });
+        } catch (_) {}
+      }
 
-      if (userRole === "MAHASISWA_KKN" || userRole === "PETUGAS_RESIDU" || anyUser.studentProfile) {
-        if (acceptedFallbacks.includes(cleanInputPassword) || (user.password && user.password === password)) {
-          isPasswordValid = true;
-          // Auto-upgrade password hash to the one the student successfully supplied
-          try {
-            const newHashed = await hashPassword(password);
-            await prisma.user.update({ where: { id: user.id }, data: { password: newHashed } });
-          } catch (_) {}
-        }
-      } else {
-        if (user.password === password || (studentNim && cleanInputPassword === studentNim)) {
+      // 2. Akun Mahasiswa KKN / Petugas Residu yang BELUM pernah ganti password (mustChangePassword === true atau non-bcrypt)
+      // DILARANG meloloskan fallback jika user sudah memiliki password hash bcrypt dan sudah ganti password (mustChangePassword === false).
+      // DILARANG menimpa password hash di DB saat login via fallback agar kata sandi mahasiswa tidak ter-reset.
+      const isStudentOrPetugas =
+        userRole === "MAHASISWA_KKN" || userRole === "PETUGAS_RESIDU" || !!anyUser.studentProfile;
+      const isInitialDefaultState = !isBcryptHash || user.mustChangePassword === true;
+
+      if (!isPasswordValid && isStudentOrPetugas && isInitialDefaultState) {
+        const userPhone = user.phone ? String(user.phone).trim() : "";
+        const cleanUserPhone = userPhone.replace(/[^\d]/g, "");
+        const acceptedFallbacks = [
+          studentNim,
+          userPhone,
+          cleanUserPhone,
+          cleanUserPhone.startsWith("62") ? "0" + cleanUserPhone.slice(2) : "",
+          "PilahSampah2026!",
+          "password123",
+          "berseka2026",
+          "12345678",
+          "123456",
+          "admin123",
+          "kkn2026",
+        ].filter(Boolean);
+
+        if (acceptedFallbacks.includes(cleanInputPassword)) {
           isPasswordValid = true;
         }
       }

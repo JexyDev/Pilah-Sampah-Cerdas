@@ -295,4 +295,55 @@ describe("AuthService - registerWarga security", () => {
       ).rejects.toThrow("WRONG_OLD_PASSWORD");
     });
   });
+
+  describe("AuthService - Login Fallback & Password Reset Prevention", () => {
+    it("should reject login with NIM/default password if Mahasiswa KKN has already changed password (mustChangePassword=false)", async () => {
+      const mockUser = {
+        id: "mhs-1",
+        phone: "+6281234567890",
+        password: "$2a$10$realCustomPasswordHash",
+        mustChangePassword: false,
+        status: "Aktif",
+        role: { name: "MAHASISWA_KKN" },
+        studentProfile: { nim: "10123001" },
+      };
+
+      vi.mocked(authRepository.findUserByPhone).mockResolvedValue(mockUser as any);
+      vi.mocked(comparePassword).mockResolvedValue(false);
+
+      await expect(
+        authService.login("+6281234567890", "10123001")
+      ).rejects.toThrow("WRONG_PASSWORD");
+
+      await expect(
+        authService.login("+6281234567890", "password123")
+      ).rejects.toThrow("WRONG_PASSWORD");
+
+      // Verify prisma.user.update is NEVER called to overwrite password
+      expect(prisma.user.update).not.toHaveBeenCalled();
+    });
+
+    it("should allow initial login with NIM if Mahasiswa KKN has mustChangePassword=true, without overwriting password in DB", async () => {
+      const mockUser = {
+        id: "mhs-2",
+        phone: "+6281234567891",
+        password: "$2a$10$defaultPasswordHash",
+        mustChangePassword: true,
+        status: "Aktif",
+        role: { name: "MAHASISWA_KKN" },
+        studentProfile: { nim: "10123002" },
+      };
+
+      vi.mocked(authRepository.findUserByPhone).mockResolvedValue(mockUser as any);
+      vi.mocked(comparePassword).mockResolvedValue(false);
+      vi.mocked(prisma.user.update).mockClear();
+
+      const result = await authService.login("+6281234567891", "10123002");
+
+      expect(result).toBeDefined();
+      expect(result.user.id).toBe("mhs-2");
+      // Must NOT overwrite password in database!
+      expect(prisma.user.update).not.toHaveBeenCalled();
+    });
+  });
 });
