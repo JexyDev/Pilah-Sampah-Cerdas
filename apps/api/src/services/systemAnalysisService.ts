@@ -451,7 +451,12 @@ export const systemAnalysisService = {
    * AI Console Chat for System Analysis
    * Autonomous Text-to-SQL Engine + Full Database Visibility
    */
-  async queryAiChat(prompt: string, contextType: "kkn" | "tata-kelola" = "kkn", kelompokId?: string) {
+  async queryAiChat(
+    prompt: string,
+    contextType: "kkn" | "tata-kelola" = "kkn",
+    kelompokId?: string,
+    history: Array<{ role: "user" | "assistant"; content: string }> = []
+  ) {
     const cleanPrompt = prompt.trim();
     if (!cleanPrompt) {
       throw new Error("Prompt pertanyaan tidak boleh kosong.");
@@ -571,6 +576,15 @@ ${dplEntitySummary}
 
     if (hfToken) {
       try {
+        let historyContextText = "";
+        if (history && history.length > 0) {
+          const recentTurns = history.slice(-4);
+          historyContextText = `
+Riwayat percakapan sebelumnya:
+${recentTurns.map((h) => `${h.role === "user" ? "Pengguna" : "Asisten"}: ${h.content.slice(0, 300)}`).join("\n")}
+          `.trim();
+        }
+
         const sqlGenPrompt = `
 Kamu adalah SQL Analyst PostgreSQL untuk sistem terintegrasi Berseka.
 Berikut daftar tabel utama dalam database PostgreSQL Berseka:
@@ -589,11 +603,12 @@ Berikut daftar tabel utama dalam database PostgreSQL Berseka:
 13. kelurahan (id UUID, nama TEXT)
 14. rw (id INT, nomor TEXT, id_kelurahan UUID)
 
-Tugasmu:
-Buat SATU query SQL PostgreSQL (hanya SELECT) untuk mengambil data spesifik guna menjawab pertanyaan pengguna berikut:
+${historyContextText ? `${historyContextText}\n\n` : ""}Tugasmu:
+Buat SATU query SQL PostgreSQL (hanya SELECT) untuk mengambil data spesifik guna menjawab pertanyaan terkini pengguna berikut:
 Pertanyaan: "${cleanPrompt}"
 
 Aturan:
+- Pahami konteks dari riwayat percakapan sebelumnya jika pertanyaan menggunakan kata ganti seperti "mereka", "dia", "posko tersebut", dsb.
 - HANYA keluarkan kode SQL SELECT saja, tanpa backtick, tanpa format markdown, tanpa kata pembuka/penutup.
 - Jangan gunakan INSERT, UPDATE, DELETE, DROP, ALTER, TRUNCATE, dsb.
 - Gunakan LIMIT 50.
@@ -667,8 +682,9 @@ Kamu memiliki visibilitas dan akses PENUH ke seluruh database sistem (KKN, DPL, 
 PRINSIP & ATURAN KERJA:
 1. SEMUA pertanyaan pengguna harus dijawab secara tuntas, informatif, dan solutif. Tidak ada sensor atau penolakan topik selama dapat dijawab dengan data sistem.
 2. Ketika pengguna (khususnya Pimpinan/Eksekutif) menanyakan "siapa" atau meminta daftar pihak yang belum/sudah menyelesaikan kewajiban (seperti DPL yang belum mengisi logbook, DPL yang belum memverifikasi logbook mahasiswa, DPL yang belum input nilai, mahasiswa alpa, dsb), SEBUTKAN NAMA-NAMA INDIVIDU, DOSEN, POSKO, DAN KELURAHAN SECARA JELAS DAN TRANSPARAN berdasarkan data di bawah.
-3. Gunakan Bahasa Indonesia yang sopan, lugas, profesional, dan berbobot eksekutif.
-4. Sajikan jawaban dalam bentuk ringkasan eksekutif, diikuti poin-poin daftar nama/data yang rapi.
+3. Ingat konteks dari percakapan sebelumnya untuk menjawab pertanyaan lanjutan secara konsisten.
+4. Gunakan Bahasa Indonesia yang sopan, lugas, profesional, dan berbobot eksekutif.
+5. Sajikan jawaban dalam bentuk ringkasan eksekutif, diikuti poin-poin daftar nama/data yang rapi.
 
 ${contextSummary}
 
@@ -676,6 +692,13 @@ ${sqlContextText}
     `.trim();
 
     try {
+      const sanitizedHistory = (history || [])
+        .slice(-8)
+        .map((h) => ({
+          role: h.role,
+          content: h.content,
+        }));
+
       const response = await fetch("https://router.huggingface.co/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -686,6 +709,7 @@ ${sqlContextText}
           model: hfModel,
           messages: [
             { role: "system", content: systemInstruction },
+            ...sanitizedHistory,
             { role: "user", content: cleanPrompt },
           ],
           max_tokens: 1500,
