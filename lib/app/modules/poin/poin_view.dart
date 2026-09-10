@@ -682,15 +682,19 @@ class _PoinHistoryItem extends StatelessWidget {
                       color: AppColors.textHint,
                     ),
                     const SizedBox(width: 4),
-                    Text(
-                      DateFormat(
-                        'd MMM yyyy • HH:mm',
-                        'id_ID',
-                      ).format(item.createdAt.toLocal()),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textHint,
-                        fontWeight: FontWeight.w500,
+                    Flexible(
+                      child: Text(
+                        DateFormat(
+                          'd MMM yyyy • HH:mm',
+                          'id_ID',
+                        ).format(item.createdAt.toLocal()),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textHint,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],

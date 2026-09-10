@@ -221,15 +221,17 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
               Consumer(
                 builder: (context, ref, child) {
                   final isOnline = ref.watch(isOnlineProvider);
+                  final isCompact = MediaQuery.of(context).size.width < 360;
                   return Container(
-                    margin: const EdgeInsets.only(right: 12),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    margin: EdgeInsets.only(right: isCompact ? 8 : 12),
+                    padding: EdgeInsets.symmetric(horizontal: isCompact ? 6 : 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: isOnline ? AppColors.primaryGreen.withValues(alpha: 0.1) : AppColors.maroonRed.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: isOnline ? AppColors.primaryGreen.withValues(alpha: 0.3) : AppColors.maroonRed.withValues(alpha: 0.3)),
                     ),
                     child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
                           width: 8,
@@ -247,15 +249,17 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                             ],
                           ),
                         ),
-                        const SizedBox(width: 6),
-                        Text(
-                          isOnline ? 'Online' : 'Offline',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: isOnline ? AppColors.primaryGreen : AppColors.maroonRed,
+                        if (!isCompact) ...[
+                          const SizedBox(width: 6),
+                          Text(
+                            isOnline ? 'Online' : 'Offline',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: isOnline ? AppColors.primaryGreen : AppColors.maroonRed,
+                            ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   );

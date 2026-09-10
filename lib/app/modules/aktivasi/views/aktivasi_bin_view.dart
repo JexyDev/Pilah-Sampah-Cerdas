@@ -737,15 +737,19 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
               ),
             ),
             const SizedBox(width: 8),
-            const Text(
-              'Tempat Sampah Siap Diaktivasi!',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: AppColors.primaryGreen,
+            const Expanded(
+              child: Text(
+                'Tempat Sampah Siap Diaktivasi!',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primaryGreen,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
-            const Spacer(),
+            const SizedBox(width: 8),
             GestureDetector(
               onTap: () => setState(() {
                 _bothBinsDetected = false;
@@ -791,12 +795,15 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
           child: ElevatedButton.icon(
             onPressed: _onAktivasi,
             icon: const Icon(Icons.sensors_rounded, size: 18),
-            label: const Text(
-              'AKTIVASI TEMPAT SAMPAH',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.5,
+            label: const FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                'AKTIVASI TEMPAT SAMPAH',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                ),
               ),
             ),
             style: ElevatedButton.styleFrom(

@@ -971,14 +971,17 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                 ),
               ),
               const SizedBox(height: 4),
-              Text(
-                steps[idx],
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: current ? FontWeight.w600 : FontWeight.w400,
-                  color: current ? AppColors.primaryGreen : AppColors.textHint,
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  steps[idx],
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: current ? FontWeight.w600 : FontWeight.w400,
+                    color: current ? AppColors.primaryGreen : AppColors.textHint,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
               ),
             ],
           ),
@@ -1778,30 +1781,34 @@ class _AiSuccessSheet extends StatelessWidget {
                             icon: Icons.psychology_rounded,
                             label: 'KUALITAS AI',
                             value: '',
-                            valueWidget: Row(
-                              children: [
-                                ...List.generate(5, (index) {
-                                  final double conf =
-                                      (result.confidence as num?)?.toDouble() ?? 0.0;
-                                  final stars = (conf * 5).round().clamp(0, 5);
-                                  return Icon(
-                                    Icons.star_rounded,
-                                    size: 14,
-                                    color: index < stars
-                                        ? Colors.amber
-                                        : Colors.grey.shade300,
-                                  );
-                                }),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '${(((result.confidence as num?)?.toDouble() ?? 0.0) * 100).toStringAsFixed(0)}%',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.textPrimary,
+                            valueWidget: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Row(
+                                children: [
+                                  ...List.generate(5, (index) {
+                                    final double conf =
+                                        (result.confidence as num?)?.toDouble() ?? 0.0;
+                                    final stars = (conf * 5).round().clamp(0, 5);
+                                    return Icon(
+                                      Icons.star_rounded,
+                                      size: 14,
+                                      color: index < stars
+                                          ? Colors.amber
+                                          : Colors.grey.shade300,
+                                    );
+                                  }),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${(((result.confidence as num?)?.toDouble() ?? 0.0) * 100).toStringAsFixed(0)}%',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.textPrimary,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -1907,12 +1914,15 @@ class _AiSuccessSheet extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text(
-                        'Koreksi Kategori',
-                        style: TextStyle(
-                          color: AppColors.primaryGreen,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
+                      child: const FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          'Koreksi Kategori',
+                          style: TextStyle(
+                            color: AppColors.primaryGreen,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
                         ),
                       ),
                     ),
@@ -1929,12 +1939,15 @@ class _AiSuccessSheet extends StatelessWidget {
                         size: 18,
                         color: Colors.white,
                       ),
-                      label: const Text(
-                        'Sesuai',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
+                      label: const FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          'Sesuai',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
                         ),
                       ),
                       style: ElevatedButton.styleFrom(

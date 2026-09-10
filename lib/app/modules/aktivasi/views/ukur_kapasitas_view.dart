@@ -382,12 +382,16 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
             children: [
               const Icon(Icons.eco_rounded, color: AppColors.primaryGreen, size: 22),
               const SizedBox(width: 8),
-              Text(
-                _currentStep == 1 ? 'Registrasi Tempat Sampah' : 'Data Ukuran',
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 17,
+              Flexible(
+                child: Text(
+                  _currentStep == 1 ? 'Registrasi Tempat Sampah' : 'Data Ukuran',
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 17,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
