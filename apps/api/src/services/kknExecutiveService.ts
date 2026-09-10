@@ -655,6 +655,9 @@ export const kknExecutiveService = {
         kategori: l.kategori || "Bimbingan Lapangan",
         tempat: l.tempat || "Posko KKN",
         deskripsi: l.deskripsi || "",
+        durasiMenit: l.durasiMenit ?? 120,
+        waktuMulai: l.waktuMulai || null,
+        waktuSelesai: l.waktuSelesai || null,
       })),
     };
 
