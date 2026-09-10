@@ -786,8 +786,8 @@ export const kknExecutiveService = {
         id: "alpa",
         count: countCriticalAlpaStudents,
         unit: "Mahasiswa",
-        title: `${countCriticalAlpaStudents} Mahasiswa Alpa Kritis (≥ 3 Hari)`,
-        subtitle: `${countCriticalAlpaStudents} mahasiswa akumulasi alpa tinggi (dari ${totalAlpaLogs} total log insiden), butuh evaluasi DPL`,
+        title: `${countCriticalAlpaStudents} Mahasiswa Tanpa Keterangan Kritis (≥ 3 Hari)`,
+        subtitle: `${countCriticalAlpaStudents} mahasiswa akumulasi tanpa keterangan tinggi (dari ${totalAlpaLogs} total log insiden), butuh evaluasi DPL`,
         type: "danger",
         link: "/monitoring-kegiatan/presensi?filter=critical_alpa",
         metadata: {
@@ -960,10 +960,10 @@ export const kknExecutiveService = {
     const wsAlert = XLSX.utils.aoa_to_sheet(alertRows);
     XLSX.utils.book_append_sheet(wb, wsAlert, "Perhatian Pimpinan");
 
-    // Sheet 5: Rincian Mahasiswa Alpa Kritis
+    // Sheet 5: Rincian Mahasiswa Tanpa Keterangan Kritis
     if (data.criticalAlpaStudents && data.criticalAlpaStudents.length > 0) {
       const criticalMhsRows = [
-        ["NIM", "NAMA MAHASISWA", "PROGRAM STUDI", "KELOMPOK", "KELURAHAN", "DPL PENGAMPU", "NO TELEPON", "JUMLAH ALPA"],
+        ["NIM", "NAMA MAHASISWA", "PROGRAM STUDI", "KELOMPOK", "KELURAHAN", "DPL PENGAMPU", "NO TELEPON", "JUMLAH TANPA KETERANGAN"],
         ...data.criticalAlpaStudents.map((m: any) => [
           m.nim,
           m.name,
@@ -976,7 +976,7 @@ export const kknExecutiveService = {
         ]),
       ];
       const wsCritical = XLSX.utils.aoa_to_sheet(criticalMhsRows);
-      XLSX.utils.book_append_sheet(wb, wsCritical, "Mahasiswa Alpa Kritis");
+      XLSX.utils.book_append_sheet(wb, wsCritical, "Mahasiswa Tanpa Keterangan");
     }
 
     return XLSX.write(wb, { type: "buffer", bookType: "xlsx" });

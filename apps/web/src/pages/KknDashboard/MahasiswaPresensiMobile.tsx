@@ -969,7 +969,7 @@ export const MahasiswaPresensiMobile: React.FC = () => {
               </div>
               <p className="text-[11px] text-slate-500 leading-relaxed">
                 Alasan: "{primaryKegiatan.keteranganSkip || "Tidak ada kegiatan pada hari ini"}". Anda tidak
-                diwajibkan melakukan presensi dan tidak dikenakan sanksi Alpa.
+                diwajibkan melakukan presensi dan tidak dikenakan sanksi Tanpa Keterangan.
               </p>
             </div>
           )}
