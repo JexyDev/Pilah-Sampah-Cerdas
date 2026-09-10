@@ -818,6 +818,23 @@ export class KknController {
     }
   }
 
+  async getLaporanAkhirMe(req: Request, res: Response) {
+    try {
+      const userId = req.user?.userId || (req.user as any)?.id || "";
+      const data = await kknService.getLaporanAkhirMe(userId);
+      res.status(200).json({
+        success: true,
+        message: data
+          ? "Data laporan akhir kelompok berhasil dimuat"
+          : "Belum ada laporan akhir yang diunggah",
+        data,
+      });
+    } catch (error: any) {
+      console.error("[KknController] getLaporanAkhirMe error:", error);
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
   async getProgramKerjaById(req: Request, res: Response) {
     try {
       const userId = req.user?.userId || (req.user as any)?.id || "";

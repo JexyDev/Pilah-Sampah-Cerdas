@@ -75,6 +75,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
     rekomendasi: 100,
   });
   const [catatanInput, setCatatanInput] = useState<string>("");
+  const [applyToGroup, setApplyToGroup] = useState<boolean>(true);
 
   // Load Data from Backend
   const fetchData = async () => {
@@ -192,6 +193,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
       rekomendasi: student.rubrikScores?.rekomendasi ?? student.rubrikScores?.refleksi ?? currentScore,
     });
     setCatatanInput(student.catatan || "");
+    setApplyToGroup(true);
     setIsAssessmentModalOpen(true);
   };
 
@@ -223,28 +225,67 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
 
     setSaving(true);
     try {
-      await penilaianKknApiService.saveLaporanAkhirScore(
-        selectedStudent.studentId,
-        scoreInput,
-        catatanInput
-      );
+      if (applyToGroup && selectedStudent.kelompokId) {
+        // Simpan via endpoint kelompok untuk mensinkronkan proker kelompok dan seluruh anggota
+        await penilaianKknApiService.saveLaporanAkhirKelompokScore(
+          selectedStudent.kelompokId,
+          {
+            statusTelaah: "DISETUJUI",
+            rubrikScores: {
+              sistematika: aspectScores.sistematika,
+              analisis: aspectScores.analisis,
+              output: aspectScores.dampak,
+              refleksi: aspectScores.rekomendasi,
+            },
+            catatanUmum: catatanInput,
+            judulLaporan: selectedStudent.judulLaporan,
+            fileUrl: selectedStudent.fileUrl || undefined,
+          }
+        );
 
-      // Local optimistic update
-      setStudents((prev) =>
-        prev.map((s) =>
-          s.studentId === selectedStudent.studentId
-            ? {
-                ...s,
-                status: "Sudah Dinilai",
-                nilai: scoreInput,
-                rubrikScores: aspectScores,
-                catatan: catatanInput,
-              }
-            : s
-        )
-      );
+        // Optimistic update untuk seluruh anggota kelompok ini
+        setStudents((prev) =>
+          prev.map((s) =>
+            s.kelompokId === selectedStudent.kelompokId
+              ? {
+                  ...s,
+                  status: "Sudah Dinilai",
+                  nilai: scoreInput,
+                  rubrikScores: aspectScores,
+                  catatan: catatanInput,
+                }
+              : s
+          )
+        );
 
-      toast.success(`Nilai laporan akhir untuk ${selectedStudent.nama} berhasil disimpan!`);
+        toast.success(
+          `Nilai laporan akhir kelompok ${selectedStudent.kelompok} berhasil disimpan untuk seluruh anggota!`
+        );
+      } else {
+        await penilaianKknApiService.saveLaporanAkhirScore(
+          selectedStudent.studentId,
+          scoreInput,
+          catatanInput
+        );
+
+        // Local optimistic update
+        setStudents((prev) =>
+          prev.map((s) =>
+            s.studentId === selectedStudent.studentId
+              ? {
+                  ...s,
+                  status: "Sudah Dinilai",
+                  nilai: scoreInput,
+                  rubrikScores: aspectScores,
+                  catatan: catatanInput,
+                }
+              : s
+          )
+        );
+
+        toast.success(`Nilai laporan akhir untuk ${selectedStudent.nama} berhasil disimpan!`);
+      }
+
       setIsAssessmentModalOpen(false);
     } catch (err: any) {
       console.error("Gagal menyimpan nilai laporan:", err);

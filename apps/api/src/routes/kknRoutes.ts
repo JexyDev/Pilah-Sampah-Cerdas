@@ -798,6 +798,12 @@ router.put(
 );
 
 router.get(
+  "/laporan-akhir/me",
+  authMiddleware,
+  kknController.getLaporanAkhirMe
+);
+
+router.get(
   ["/program-kerja", "/proker"],
   authMiddleware,
   roleMiddleware([

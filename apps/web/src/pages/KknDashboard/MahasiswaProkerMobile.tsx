@@ -109,6 +109,11 @@ const KATEGORI_OPTIONS = [
     desc: "Penyuluhan kesadaran lingkungan kepada warga sekitar.",
   },
   {
+    value: "LAPORAN_AKHIR",
+    label: "Laporan Akhir KKN",
+    desc: "Dokumen resmi Laporan Akhir KKN kelompok & tautan berkas telaah DPL.",
+  },
+  {
     value: "Lainnya",
     label: "Lainnya",
     desc: "Kategori program kerja KKN lainnya di luar daftar di atas.",
@@ -276,6 +281,11 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
 
     if (!formDeskripsi.trim()) {
       showToast.error("Deskripsi program kerja wajib diisi!");
+      return;
+    }
+
+    if (formKategori === "LAPORAN_AKHIR" && !formLinkDrive.trim() && !formAttachmentFile) {
+      showToast.error("Harap sertakan Tautan Google Drive atau Berkas PDF untuk Laporan Akhir!");
       return;
     }
 
@@ -1029,10 +1039,24 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
                     onClick={() => setIsKategoriPickerOpen(true)}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-800 dark:text-slate-100 flex items-center justify-between font-medium cursor-pointer hover:border-emerald-500 transition text-left"
                   >
-                    <span>{formKategori || "Pilih Kategori Kegiatan"}</span>
+                    <span>
+                      {KATEGORI_OPTIONS.find((k) => k.value === formKategori)?.label || formKategori || "Pilih Kategori Kegiatan"}
+                    </span>
                     <ChevronDown size={16} className="text-slate-400" />
                   </button>
                 </div>
+
+                {formKategori === "LAPORAN_AKHIR" && (
+                  <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700/60 rounded-xl flex items-start gap-2.5 text-xs text-emerald-900 dark:text-emerald-200">
+                    <Sparkles size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-bold">Dokumen Resmi Laporan Akhir KKN Kelompok</p>
+                      <p className="text-[11px] text-emerald-700 dark:text-emerald-300 mt-0.5">
+                        Tautan Google Drive atau berkas PDF yang Anda lampirkan di bawah akan otomatis terhubung ke DPL pada modul Penilaian Laporan Akhir.
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">

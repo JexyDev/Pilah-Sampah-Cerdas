@@ -24,6 +24,7 @@ import { evaluateSortingStatus } from "../utils/sortingEvaluation.js";
 export function normalizeProkerKategori(kategori?: string | null): string {
   if (!kategori) return "Lainnya";
   const raw = kategori.trim().toUpperCase();
+  if (raw.includes("LAPORAN") || raw.includes("AKHIR")) return "LAPORAN_AKHIR";
   if (raw.includes("PEMILAHAN") || raw.includes("PILAH")) return "Pemilahan";
   if (raw.includes("PENGANGKUTAN") || raw.includes("ANGKUT")) return "Pengangkutan";
   if (raw.includes("PENGOLAHAN") || raw.includes("OLAH")) return "Pengolahan";
@@ -4441,6 +4442,149 @@ export class KknService {
       })),
       createdAt: proker.createdAt.toISOString(),
       updatedAt: proker.updatedAt.toISOString(),
+    };
+  }
+
+  async getLaporanAkhirMe(userId: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        studentProfile: {
+          include: {
+            kelompok: {
+              include: {
+                dpl: { select: { id: true, name: true, phone: true, nip: true } },
+                programKerja: {
+                  orderBy: { updatedAt: "desc" },
+                  include: {
+                    student: {
+                      include: { user: { select: { id: true, name: true } } },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!user) throw new Error("User tidak ditemukan");
+    const student = user.studentProfile;
+    const kelompok = student?.kelompok;
+    if (!kelompok) {
+      return null;
+    }
+
+    const prokers = kelompok.programKerja || [];
+    // Prioritaskan kategori LAPORAN_AKHIR yang memiliki tautan/lampiran
+    const laporanProker =
+      prokers.find(
+        (p) =>
+          p.kategori?.toUpperCase() === "LAPORAN_AKHIR" &&
+          Boolean(p.linkGoogleDrive || p.attachmentFile)
+      ) ||
+      prokers.find((p) => p.kategori?.toUpperCase() === "LAPORAN_AKHIR") ||
+      prokers.find(
+        (p) =>
+          p.deskripsi?.toLowerCase().includes("laporan akhir") &&
+          Boolean(p.linkGoogleDrive || p.attachmentFile)
+      ) ||
+      null;
+
+    if (!laporanProker) {
+      return null;
+    }
+
+    const parsed = parseProkerDeskripsi(laporanProker.deskripsi);
+    let parsedAspek: any = null;
+    if (laporanProker.aspekPenilaian) {
+      if (typeof laporanProker.aspekPenilaian === "string") {
+        try {
+          parsedAspek = JSON.parse(laporanProker.aspekPenilaian);
+        } catch {
+          parsedAspek = null;
+        }
+      } else if (typeof laporanProker.aspekPenilaian === "object") {
+        parsedAspek = laporanProker.aspekPenilaian;
+      }
+    }
+
+    const rubrikScores = {
+      sistematika: Number(
+        parsedAspek?.rubrikScores?.sistematika ??
+          parsedAspek?.sistematika ??
+          (laporanProker.skorPenilaian ? Number(laporanProker.skorPenilaian) : 85)
+      ),
+      analisis: Number(
+        parsedAspek?.rubrikScores?.analisis ??
+          parsedAspek?.analisis ??
+          (laporanProker.skorPenilaian ? Number(laporanProker.skorPenilaian) : 85)
+      ),
+      output: Number(
+        parsedAspek?.rubrikScores?.output ??
+          parsedAspek?.output ??
+          (laporanProker.skorPenilaian ? Number(laporanProker.skorPenilaian) : 85)
+      ),
+      refleksi: Number(
+        parsedAspek?.rubrikScores?.refleksi ??
+          parsedAspek?.refleksi ??
+          (laporanProker.skorPenilaian ? Number(laporanProker.skorPenilaian) : 85)
+      ),
+    };
+
+    const fileUrl = laporanProker.linkGoogleDrive || laporanProker.attachmentFile || null;
+    const isGoogleDrive = Boolean(fileUrl && fileUrl.includes("drive.google.com"));
+    const scoreVal =
+      laporanProker.skorPenilaian !== null && laporanProker.skorPenilaian !== undefined
+        ? Number(laporanProker.skorPenilaian)
+        : null;
+
+    let statusTelaah = "MENUNGGU_TELAAH";
+    if (!fileUrl) {
+      statusTelaah = "BELUM_UNGGAH";
+    } else if (laporanProker.statusPenilaian === "DISETUJUI") {
+      statusTelaah = "DISETUJUI";
+    } else if (laporanProker.statusPenilaian === "PERLU_REVISI") {
+      statusTelaah = "PERLU_REVISI";
+    } else if (scoreVal !== null) {
+      statusTelaah = "DISETUJUI";
+    }
+
+    let predikat = "Belum Dinilai";
+    if (scoreVal !== null) {
+      if (scoreVal >= 85) predikat = "A (Sangat Baik)";
+      else if (scoreVal >= 75) predikat = "B (Baik)";
+      else if (scoreVal >= 65) predikat = "C (Cukup)";
+      else predikat = "D (Kurang)";
+    }
+
+    return {
+      id: laporanProker.id,
+      kelompokId: kelompok.id,
+      namaKelompok: kelompok.name,
+      judul: parsed.judul || `Laporan Akhir KKN - ${kelompok.name}`,
+      deskripsi: parsed.deskripsi || laporanProker.deskripsi,
+      kategori: "LAPORAN_AKHIR",
+      fileUrl,
+      fileName: fileUrl ? `Laporan_Akhir_${kelompok.name.replace(/\s+/g, "_")}.pdf` : null,
+      isGoogleDrive,
+      pengunggah: {
+        nama: laporanProker.student?.user?.name || "Mahasiswa KKN",
+        nim: laporanProker.student?.nim || "-",
+      },
+      dpl: {
+        id: kelompok.dpl?.id,
+        nama: kelompok.dpl?.name,
+        nip: kelompok.dpl?.nip,
+      },
+      statusTelaah,
+      nilaiAkhir: scoreVal,
+      predikat,
+      rubrikScores,
+      catatanDpl: laporanProker.evaluasiDpl || laporanProker.catatanDpl || "",
+      submittedAt: laporanProker.createdAt.toISOString(),
+      updatedAt: laporanProker.updatedAt.toISOString(),
     };
   }
 
