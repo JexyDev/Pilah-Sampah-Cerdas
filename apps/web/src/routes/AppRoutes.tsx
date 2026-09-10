@@ -77,6 +77,7 @@ const PenilaianKknMahasiswaPage = React.lazy(() => import("../pages/PenilaianKkn
 const PenilaianLaporanAkhirPage = React.lazy(() => import("../pages/PenilaianKkn/PenilaianLaporanAkhirPage"));
 const MasterPanduanPage = React.lazy(() => import("../pages/MasterData/MasterPanduanPage"));
 const MasterKegiatanSampahPage = React.lazy(() => import("../pages/MasterData/MasterKegiatanSampahPage"));
+const MasterPresetTempatSampahPage = React.lazy(() => import("../pages/MasterData/MasterPresetTempatSampahPage"));
 const LogbookKknPage = React.lazy(() => import("../pages/dpl/LogbookKknPage"));
 const LogAktivitasDpl = React.lazy(() => import("../pages/dpl/LogAktivitasDpl"));
 const KurasiLandingPage = React.lazy(() => import("../pages/SuperUser/KurasiLandingPage"));
@@ -830,6 +831,26 @@ const AppRoutes: React.FC = () => {
               <MasterKegiatanSampahPage />
             </ProtectedRoute>
           }
+        />
+        <Route
+          path="/master-data/jenis-tempat-sampah"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "DEVELOPER", "PANITIA_TASKFORCE", "RW"]}>
+              <MasterPresetTempatSampahPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/master-data/preset-tempat-sampah"
+          element={<Navigate to="/master-data/jenis-tempat-sampah" replace />}
+        />
+        <Route
+          path="/jenis-tempat-sampah"
+          element={<Navigate to="/master-data/jenis-tempat-sampah" replace />}
+        />
+        <Route
+          path="/preset-tempat-sampah"
+          element={<Navigate to="/master-data/jenis-tempat-sampah" replace />}
         />
         <Route
           path="/ajuan-absensi"

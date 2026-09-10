@@ -1829,7 +1829,16 @@ const Dashboard: React.FC = () => {
     return <TaskforceDashboardPage />;
   }
 
-  // Khusus Pimpinan (atau Super User/Dev) jika sub-dashboard KKN aktif
+  // Khusus Pimpinan: langsung tampilkan Dasbor Eksekutif KKN tanpa switcher Tata Kelola Sampah
+  if (isPimpinan) {
+    return (
+      <div className="space-y-6">
+        <DashboardEksekutifKkn />
+      </div>
+    );
+  }
+
+  // Khusus Super User / Developer jika sub-dashboard KKN aktif
   if (canAccessKknSub && activeSubTab === "kkn") {
     return (
       <div className="space-y-6">
