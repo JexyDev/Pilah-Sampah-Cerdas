@@ -676,7 +676,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/analisis-sistem/kkn"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PIMPINAN", "PANITIA_TASKFORCE"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "PIMPINAN", "PEMIMPIN", "PANITIA_TASKFORCE"]}>
               <AnalisisKknPage />
             </ProtectedRoute>
           }
