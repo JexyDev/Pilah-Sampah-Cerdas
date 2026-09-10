@@ -365,6 +365,7 @@ model StudentKkn {
   isAssessed        Boolean      @default(false) @map("sudah_dinilai")
   isKetua           Boolean      @default(false) @map("is_ketua")
   jenjangPendidikan String?      @map("jenjang_pendidikan")
+  sks               Int?         @default(0) @map("konversi_sks")
   kelompok          KelompokKkn? @relation(fields: [kelompokId], references: [id])
   mpl               User?        @relation("MplStudent", fields: [mplId], references: [id])
   user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -374,6 +375,7 @@ model StudentKkn {
   @@index([kelompokId])
   @@index([mplId])
   @@index([assignedRwId])
+  @@index([sks])
   @@map("mahasiswa_kkn")
 }
 

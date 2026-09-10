@@ -22,6 +22,8 @@ export interface PaginationProps {
   itemsPerPageOptions?: number[];
   className?: string;
   compact?: boolean;
+  itemLabel?: string;
+  showQuickJump?: boolean;
 }
 
 export const Pagination: React.FC<PaginationProps> = ({
@@ -34,7 +36,10 @@ export const Pagination: React.FC<PaginationProps> = ({
   itemsPerPageOptions = [10, 25, 50, 100],
   className = "",
   compact = false,
+  itemLabel = "data",
+  showQuickJump = false,
 }) => {
+  const [jumpPage, setJumpPage] = React.useState("");
   const safeTotalPages = Math.max(1, totalPages || 1);
   const safeCurrentPage = Math.min(Math.max(1, currentPage), safeTotalPages);
 
@@ -144,7 +149,7 @@ export const Pagination: React.FC<PaginationProps> = ({
                 </option>
               ))}
             </select>
-            <span className="text-slate-500 dark:text-slate-400">data per halaman</span>
+            <span className="text-slate-500 dark:text-slate-400">{itemLabel} per halaman</span>
           </>
         )}
       </div>
@@ -159,7 +164,7 @@ export const Pagination: React.FC<PaginationProps> = ({
             </span>{" "}
             dari{" "}
             <span className="font-extrabold text-emerald-700 dark:text-emerald-400">
-              {totalItems} data
+              {totalItems.toLocaleString("id-ID")} {itemLabel}
             </span>
           </span>
         )}
@@ -225,6 +230,33 @@ export const Pagination: React.FC<PaginationProps> = ({
           >
             <ChevronRight size={16} />
           </button>
+
+          {/* Quick Jump Input */}
+          {showQuickJump && safeTotalPages > 5 && (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const p = parseInt(jumpPage, 10);
+                if (!isNaN(p) && p >= 1 && p <= safeTotalPages) {
+                  onPageChange(p);
+                  setJumpPage("");
+                }
+              }}
+              className="hidden lg:flex items-center gap-1.5 ml-1.5 pl-2 border-l border-slate-200 dark:border-slate-700 text-xs text-slate-500 dark:text-slate-400"
+            >
+              <span>Ke:</span>
+              <input
+                type="number"
+                min={1}
+                max={safeTotalPages}
+                value={jumpPage}
+                onChange={(e) => setJumpPage(e.target.value)}
+                placeholder={String(safeCurrentPage)}
+                className="w-12 px-1.5 py-1 text-center font-bold text-slate-800 dark:text-slate-100 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500/40 focus:outline-none"
+                title={`Ketik nomor halaman (1-${safeTotalPages}) lalu tekan Enter`}
+              />
+            </form>
+          )}
         </div>
       </div>
     </div>

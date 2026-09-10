@@ -53,6 +53,7 @@ import { dplService, type GroupSummary } from "../../services/dplService";
 import { sortKelompokList, sortChronologicalList } from "../../utils/sortUtils";
 import { resolveImageUrl } from "../../utils/imageUrl";
 import { downloadImageFile } from "../../utils/photoUtils";
+import { Pagination } from "../../components/common/Pagination";
 
 // Helper Format Tanggal
 const formatDateShort = (dateStr: string): string => {
@@ -389,7 +390,7 @@ export const LogbookKknPage: React.FC = () => {
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10;
+  const [pageSize, setPageSize] = useState(10);
 
   // Modal Detail & Validasi Mahasiswa State
   const [selectedItemDetail, setSelectedItemDetail] = useState<LogbookMahasiswaItem | null>(null);
@@ -526,10 +527,19 @@ export const LogbookKknPage: React.FC = () => {
 
   // Pagination Logic
   const totalPages = Math.max(1, Math.ceil(filteredLogbooks.length / pageSize));
+  const safeCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
+
+  // Auto-sync currentPage if totalPages shrinks due to search/filter
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
+
   const paginatedLogbooks = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
+    const start = (safeCurrentPage - 1) * pageSize;
     return filteredLogbooks.slice(start, start + pageSize);
-  }, [filteredLogbooks, currentPage, pageSize]);
+  }, [filteredLogbooks, safeCurrentPage, pageSize]);
 
   // Pending logbooks on current active page
   const paginatedPendingLogbooks = useMemo(() => {
@@ -1494,52 +1504,22 @@ export const LogbookKknPage: React.FC = () => {
             </div>
 
             {/* Bottom Pagination Bar */}
-            <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
-              <div>
-                Menampilkan{" "}
-                <span className="font-semibold text-slate-800 dark:text-slate-200">
-                  {filteredLogbooks.length === 0 ? 0 : (currentPage - 1) * pageSize + 1}-
-                  {Math.min(currentPage * pageSize, filteredLogbooks.length)}
-                </span>{" "}
-                dari{" "}
-                <span className="font-semibold text-slate-800 dark:text-slate-200">
-                  {filteredLogbooks.length}
-                </span>{" "}
-                aktivitas
-              </div>
-
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-slate-600 dark:text-slate-300"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
-                  <button
-                    key={pageNum}
-                    onClick={() => setCurrentPage(pageNum)}
-                    className={`w-7 h-7 rounded-lg text-xs font-semibold transition-all ${
-                      currentPage === pageNum
-                        ? "bg-emerald-600 text-white shadow-xs"
-                        : "border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300"
-                    }`}
-                  >
-                    {pageNum}
-                  </button>
-                ))}
-
-                <button
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                  className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-slate-600 dark:text-slate-300"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
+            {filteredLogbooks.length > 0 && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={filteredLogbooks.length}
+                itemsPerPage={pageSize}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={(newSize) => {
+                  setPageSize(newSize);
+                  setCurrentPage(1);
+                }}
+                itemsPerPageOptions={[10, 25, 50, 100]}
+                itemLabel="aktivitas"
+                showQuickJump={true}
+              />
+            )}
           </div>
         </div>
       </div>

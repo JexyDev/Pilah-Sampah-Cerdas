@@ -92,6 +92,15 @@ const checkRouteActive = (
     const tempatSampahAliases = ["/monitoring-pengelolaan/tempat-sampah", "/master-data/manajemen-tempat-sampah"];
     if (tempatSampahAliases.includes(tPath) && tempatSampahAliases.includes(cPath)) return true;
 
+    const jenisTempatSampahAliases = [
+      "/master-data/jenis-tempat-sampah",
+      "/master-data/preset-tempat-sampah",
+      "/monitoring-pengelolaan/jenis-tempat-sampah",
+      "/jenis-tempat-sampah",
+      "/preset-tempat-sampah",
+    ];
+    if (jenisTempatSampahAliases.includes(tPath) && jenisTempatSampahAliases.includes(cPath)) return true;
+
     const penyetoranAliases = ["/monitoring-pemilahan/penyetoran-sampah", "/penyetoran-sampah", "/setor-sampah", "/setor"];
     if (penyetoranAliases.includes(tPath) && penyetoranAliases.includes(cPath)) return true;
 
@@ -808,8 +817,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             "SUPER_USER",
             "ADMIN_DLH",
             "PANITIA_TASKFORCE",
-            "PIMPINAN",
-            "PEMIMPIN",
           ] as UserRole[],
         },
         {
@@ -940,7 +947,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             },
             {
               to: "/monitoring-kegiatan/pengajuan-izin",
-              label: "Verifikasi Izin/Sakit",
+              label: isPimpinan ? "Riwayat Izin/Sakit" : "Verifikasi Izin/Sakit",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
@@ -1187,6 +1194,25 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "PETUGAS_RESIDU",
                 "PANITIA_TASKFORCE",
                 "MAHASISWA_KKN",
+                "PIMPINAN",
+                "PEMIMPIN",
+              ] as UserRole[],
+            },
+            {
+              to: "/master-data/jenis-tempat-sampah",
+              label: "Jenis & Preset Ukuran",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "PETUGAS_RESIDU",
+                "PANITIA_TASKFORCE",
+                "MAHASISWA_KKN",
+                "PIMPINAN",
+                "WARGA",
               ] as UserRole[],
             },
             {
@@ -1224,12 +1250,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             "WARGA",
             "MAHASISWA_KKN",
             "PANITIA_TASKFORCE",
-            "PIMPINAN",
           ] as UserRole[],
           children: [
             {
               to: "/monitoring-pemilahan/penyetoran-sampah",
               label: "Pemilahan",
+              resource: "monitoring_sampah",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
@@ -1239,7 +1265,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "RW",
                 "PETUGAS_RESIDU",
                 "WARGA",
-                "PIMPINAN",
                 "PANITIA_TASKFORCE",
                 "MAHASISWA_KKN",
               ] as UserRole[],
@@ -1256,7 +1281,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "LURAH",
                 "RW",
                 "PANITIA_TASKFORCE",
-                "PIMPINAN",
                 "PETUGAS_RESIDU",
               ] as UserRole[],
             },
@@ -1273,7 +1297,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "RW",
                 "PETUGAS_RESIDU",
                 "PANITIA_TASKFORCE",
-                "PIMPINAN",
               ] as UserRole[],
             },
             {
@@ -1291,7 +1314,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "PETUGAS_RESIDU",
                 "MAHASISWA_KKN",
                 "PANITIA_TASKFORCE",
-                "PIMPINAN",
                 "WARGA",
               ] as UserRole[],
               children: [
@@ -1308,7 +1330,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                     "PETUGAS_RESIDU",
                     "MAHASISWA_KKN",
                     "PANITIA_TASKFORCE",
-                    "PIMPINAN",
                     "WARGA",
                   ] as UserRole[],
                 },
@@ -1325,7 +1346,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                     "PETUGAS_RESIDU",
                     "MAHASISWA_KKN",
                     "PANITIA_TASKFORCE",
-                    "PIMPINAN",
                   ] as UserRole[],
                 },
                 {
@@ -1339,7 +1359,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                     "LURAH",
                     "RW",
                     "PANITIA_TASKFORCE",
-                    "PIMPINAN",
                   ] as UserRole[],
                 },
                 {
@@ -1352,7 +1371,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                     "CAMAT",
                     "LURAH",
                     "PANITIA_TASKFORCE",
-                    "PIMPINAN",
                   ] as UserRole[],
                 },
               ],
@@ -1412,21 +1430,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "MAHASISWA_KKN",
               ] as UserRole[],
             },
-            {
-              to: "/pengangkutan-residu",
-              label: "Residu",
-              allowed: [
-                "DEVELOPER",
-                "SUPER_USER",
-                "ADMIN_DLH",
-                "CAMAT",
-                "LURAH",
-                "RW",
-                "PETUGAS_RESIDU",
-                "PIMPINAN",
-                "PANITIA_TASKFORCE",
-              ] as UserRole[],
-            },
+            // NOTE: Menu Residu di-hide sementara karena fitur belum diperlukan
+            // {
+            //   to: "/pengangkutan-residu",
+            //   label: "Residu",
+            //   allowed: [
+            //     "DEVELOPER",
+            //     "SUPER_USER",
+            //     "ADMIN_DLH",
+            //     "CAMAT",
+            //     "LURAH",
+            //     "RW",
+            //     "PETUGAS_RESIDU",
+            //     "PIMPINAN",
+            //     "PANITIA_TASKFORCE",
+            //   ] as UserRole[],
+            // },
             {
               to: "/monitoring-pengelolaan/fasilitas?jenis=bank_sampah",
               label: "Bank Sampah",
@@ -1495,6 +1514,23 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             { to: "/wilayah/kelurahan", label: "Kelurahan" },
             { to: "/wilayah/rw", label: "Rukun Warga" },
           ],
+        },
+        {
+          to: "/master-data/jenis-tempat-sampah",
+          icon: Trash2,
+          label: "Jenis Tempat Sampah",
+          allowed: [
+            "DEVELOPER",
+            "SUPER_USER",
+            "ADMIN_DLH",
+            "CAMAT",
+            "LURAH",
+            "RW",
+            "PETUGAS_RESIDU",
+            "PANITIA_TASKFORCE",
+            "MAHASISWA_KKN",
+            "PIMPINAN",
+          ] as UserRole[],
         },
         {
           type: "group",
@@ -1638,7 +1674,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 className="w-12 h-12 rounded-2xl bg-[#f2f8f4] dark:bg-emerald-950/60 border border-[#035941]/20 dark:border-emerald-700/30 flex items-center justify-center p-1.5 shadow-sm hover:scale-105 transition-all cursor-pointer"
               >
                 <img
-                  src="/app-logo.png"
+                  src="/logos/berseka/berseka-logo-bg-transparent.png"
                   alt="BERSEKA Logo"
                   className="w-full h-full object-contain"
                 />
@@ -1686,25 +1722,25 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           /* Render Full Sidebar */
           <div className="relative z-10 flex flex-col h-full justify-between overflow-hidden">
             {/* Top Brand Logo Header Section */}
-            <div className="pt-4 pb-4 px-3.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between relative overflow-hidden bg-white dark:bg-slate-900 shrink-0">
+            <div className="pt-4 pb-4 px-3.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-center relative overflow-hidden bg-white dark:bg-slate-900 shrink-0">
               {/* ponytail: FallingLeavesBackground di-hide sesuai permintaan */}
               {/* <FallingLeavesBackground /> */}
               <Link
                 to="/dasbor"
                 onClick={handleMobileItemClick}
-                className="flex items-center gap-3 group cursor-pointer relative z-10 px-1 text-left min-w-0 flex-1"
+                className="flex items-center justify-center group cursor-pointer relative z-10 w-full text-center"
               >
                 <img
                   src="/app-logo.png"
                   alt="BERSEKA Logo"
-                  className="h-10 sm:h-11 w-auto object-contain transition-all duration-300 group-hover:scale-105 shrink-0"
+                  className="h-10 sm:h-11 w-auto object-contain transition-all duration-300 group-hover:scale-105"
                 />
               </Link>
               {/* Mobile Close Button */}
               <button
                 type="button"
                 onClick={onClose}
-                className="lg:hidden w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center transition cursor-pointer shrink-0 ml-2"
+                className="lg:hidden absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center transition cursor-pointer z-20"
                 title="Tutup Menu"
               >
                 <X size={18} />

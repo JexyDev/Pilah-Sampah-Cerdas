@@ -255,11 +255,12 @@ export const dashboardController = {
 
   getKknExecutiveDashboard: async (req: Request, res: Response) => {
     try {
-      const { kelurahan, rw, periode } = req.query;
+      const { kelurahan, rw, periode, kelompok } = req.query;
       const data = await kknExecutiveService.getExecutiveDashboard({
         kelurahan: kelurahan as string,
         rw: rw as string,
         periode: periode as string,
+        kelompok: kelompok as string,
       });
       res.status(200).json({
         success: true,
@@ -276,11 +277,12 @@ export const dashboardController = {
 
   exportKknExecutiveReport: async (req: Request, res: Response) => {
     try {
-      const { kelurahan, rw, periode } = req.query;
+      const { kelurahan, rw, periode, kelompok } = req.query;
       const buffer = await kknExecutiveService.exportExecutiveReport({
         kelurahan: kelurahan as string,
         rw: rw as string,
         periode: periode as string,
+        kelompok: kelompok as string,
       });
       res.setHeader(
         "Content-Type",
