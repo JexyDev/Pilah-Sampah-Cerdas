@@ -1214,6 +1214,13 @@ export const penilaianKknService = {
       fileUrl?: string;
     }
   ) => {
+    const normRole = String(evaluatorRole || "").toUpperCase();
+    if (normRole === "PEMIMPIN" || normRole === "PIMPINAN") {
+      throw new Error(
+        "FORBIDDEN_ROLE: Role Pimpinan hanya memiliki akses View-Only dan tidak dapat menginput/mengubah penilaian."
+      );
+    }
+
     const kelompok = await prisma.kelompokKkn.findUnique({
       where: { id: kelompokId },
       include: {
@@ -1421,6 +1428,13 @@ export const penilaianKknService = {
     score: number,
     catatan?: string
   ) => {
+    const normRole = String(evaluatorRole || "").toUpperCase();
+    if (normRole === "PEMIMPIN" || normRole === "PIMPINAN") {
+      throw new Error(
+        "FORBIDDEN_ROLE: Role Pimpinan hanya memiliki akses View-Only dan tidak dapat menginput/mengubah penilaian."
+      );
+    }
+
     if (typeof score !== "number" || isNaN(score) || score < 0 || score > 100) {
       throw new Error("Skor penilaian laporan akhir harus berada di rentang 0 sampai 100");
     }
