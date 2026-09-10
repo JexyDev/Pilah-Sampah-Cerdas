@@ -1137,6 +1137,9 @@ export const DashboardEksekutifKkn: React.FC = () => {
               </BarChart>
             </ResponsiveContainer>
           </div>
+          <p className="text-center text-[10.5px] text-slate-400 font-medium mt-1">
+            Sumbu X: Nomor Wilayah (1 - 6) • Sumbu Y: Jumlah Mahasiswa (Orang)
+          </p>
 
           {/* Keterangan Nomor Wilayah (1 = Cipaganti, 2 = Dago, dst) */}
           <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800">
@@ -1774,6 +1777,19 @@ export const DashboardEksekutifKkn: React.FC = () => {
                 style={{ width: `${Math.min(100, Math.max(0, data?.resumeDpl?.persentaseKeaktifan ?? 0))}%` }}
               />
             </div>
+
+            {/* Rincian DPL Sudah Buat Log vs Belum Buat Log */}
+            <div className="grid grid-cols-2 gap-2 pt-0.5">
+              <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200/70 dark:border-emerald-800/40 text-[10.5px]">
+                <span className="font-bold text-emerald-800 dark:text-emerald-300">Sudah Buat Log</span>
+                <span className="font-black text-emerald-700 dark:text-emerald-300">{data?.resumeDpl?.dplAktifCount ?? 0} DPL</span>
+              </div>
+              <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/70 dark:border-amber-800/40 text-[10.5px]">
+                <span className="font-bold text-amber-800 dark:text-amber-300">Belum Buat Log</span>
+                <span className="font-black text-amber-700 dark:text-amber-300">{data?.resumeDpl?.dplBelumAktifCount ?? 0} DPL</span>
+              </div>
+            </div>
+
             <div className="grid grid-cols-3 gap-2 pt-1 text-center">
               <div className="p-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
                 <p className="text-[9px] text-slate-400 font-semibold">Log Bimbingan</p>
