@@ -58,6 +58,7 @@ import { useNavigate, Link } from "react-router-dom";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
 import { dplService, type GroupSummary, type StudentDetail } from "../../services/dplService";
+import LeaderboardWidget from "../../components/LeaderboardWidget";
 
 interface KknExecutiveData {
   lastUpdated: string;
@@ -2181,6 +2182,11 @@ export const DashboardEksekutifKkn: React.FC = () => {
             </table>
           </div>
         )}
+      </div>
+
+      {/* 5B.2 TOP 10 AKADEMIK & PENDAMPINGAN */}
+      <div className="w-full">
+        <LeaderboardWidget mode="kkn" />
       </div>
 
       {/* Row 4: Daftar Kelompok KKN & DPL Pengampu (Dengan Search & Multi-Filter Standar Eksekutif) */}
