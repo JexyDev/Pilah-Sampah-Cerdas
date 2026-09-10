@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/values/app_assets.dart';
 import '../../core/values/app_colors.dart';
@@ -167,13 +168,16 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
                   }
                 }
               : null,
-          child: Icon(
-            role == UserRole.petugasPemilahan
-                ? Icons.scale_rounded
-                : Icons.qr_code_scanner_rounded,
-            color: Colors.white,
-            size: 26,
-          ),
+          child: role == UserRole.petugasPemilahan
+              ? const Icon(Icons.scale_rounded, color: Colors.white, size: 26)
+              : Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: SvgPicture.asset(
+                    'assets/logo_aisah/SVG/AISAH-logo-white.svg',
+                    width: 24,
+                    height: 24,
+                  ),
+                ),
         ),
       ),
     );

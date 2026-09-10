@@ -99,4 +99,7 @@ flutter:
     - assets/images/
     - assets/logo/
     - assets/step_1/
+    - assets/logo_aisah/PNG/
+    - assets/logo_aisah/SVG/
+    - assets/step_1/
     - assets/step_2/

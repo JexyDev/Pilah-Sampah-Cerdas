@@ -28,7 +28,8 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
 
   // Toggle apakah ukuran Organik & Anorganik identik (Default: true)
   bool _sameSizeForBoth = true;
-  int _activeBinTab = 0; // 0 = Organik, 1 = Anorganik (jika _sameSizeForBoth == false)
+  int _activeBinTab =
+      0; // 0 = Organik, 1 = Anorganik (jika _sameSizeForBoth == false)
 
   // Controllers untuk wadah utama (atau Organik)
   final TextEditingController _diameterCtrl = TextEditingController();
@@ -46,7 +47,7 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
   int _orgPresetIndex = 1;
   int _anorgPresetIndex = 1;
   bool _isApplyingPreset = false;
-
+  bool _showCustomSizeForm = false;
   int get _currentPresetIndex {
     final bool isBoth = _targetCategory == 'both';
     final bool isOrgActive = !isBoth || _sameSizeForBoth || _activeBinTab == 0;
@@ -58,7 +59,11 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
   List<BinPresetEntity> _boxPresets = [];
   bool _isLoadingPresets = true;
 
-  void _applyPresetByIndex(int index, {required String shape, bool updateBoth = true}) {
+  void _applyPresetByIndex(
+    int index, {
+    required String shape,
+    bool updateBoth = true,
+  }) {
     if (index < 0) return;
     final presets = shape == 'tabung' ? _roundPresets : _boxPresets;
     if (index >= presets.length) return;
@@ -131,7 +136,7 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
     final repo = ref.read(binRepositoryProvider);
     final tabung = await repo.getBinPresetsTabung();
     final kotak = await repo.getBinPresetsKotak();
-    
+
     if (mounted) {
       setState(() {
         _roundPresets = tabung;
@@ -141,7 +146,11 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
       // Set default preset index 1 (or 0 if length is < 2)
       final defaultIdx = tabung.length > 1 ? 1 : (tabung.isNotEmpty ? 0 : -1);
       if (defaultIdx >= 0) {
-        _applyPresetByIndex(defaultIdx, shape: _selectedShape, updateBoth: true);
+        _applyPresetByIndex(
+          defaultIdx,
+          shape: _selectedShape,
+          updateBoth: true,
+        );
       }
     }
   }
@@ -154,10 +163,10 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
         final p = presets[_orgPresetIndex];
         final bool stillMatches = _selectedShape == 'tabung'
             ? _diameterCtrl.text == p.d.toStringAsFixed(0) &&
-                _tinggiCtrl.text == p.t.toStringAsFixed(0)
+                  _tinggiCtrl.text == p.t.toStringAsFixed(0)
             : _panjangCtrl.text == p.p.toStringAsFixed(0) &&
-                _lebarCtrl.text == p.l.toStringAsFixed(0) &&
-                _tinggiCtrl.text == p.t.toStringAsFixed(0);
+                  _lebarCtrl.text == p.l.toStringAsFixed(0) &&
+                  _tinggiCtrl.text == p.t.toStringAsFixed(0);
         if (!stillMatches) {
           _orgPresetIndex = -1;
         }
@@ -174,10 +183,10 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
         final p = presets[_anorgPresetIndex];
         final bool stillMatches = _selectedShape == 'tabung'
             ? _anorgDiameterCtrl.text == p.d.toStringAsFixed(0) &&
-                _anorgTinggiCtrl.text == p.t.toStringAsFixed(0)
+                  _anorgTinggiCtrl.text == p.t.toStringAsFixed(0)
             : _anorgPanjangCtrl.text == p.p.toStringAsFixed(0) &&
-                _anorgLebarCtrl.text == p.l.toStringAsFixed(0) &&
-                _anorgTinggiCtrl.text == p.t.toStringAsFixed(0);
+                  _anorgLebarCtrl.text == p.l.toStringAsFixed(0) &&
+                  _anorgTinggiCtrl.text == p.t.toStringAsFixed(0);
         if (!stillMatches) {
           _anorgPresetIndex = -1;
         }
@@ -214,10 +223,7 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
   }
 
   // ponytail: standard preset capacity is prioritized for UI consistency; raw formula fallback for manual custom inputs.
-  double _getCapacityFor({
-    required bool isOrganik,
-    required String shape,
-  }) {
+  double _getCapacityFor({required bool isOrganik, required String shape}) {
     final bool isBoth = _targetCategory == 'both';
     final bool usePrimaryCtrl = !isBoth || _sameSizeForBoth || isOrganik;
 
@@ -314,10 +320,7 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
   void _showError(String message) {
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppColors.dangerRed,
-      ),
+      SnackBar(content: Text(message), backgroundColor: AppColors.dangerRed),
     );
   }
 
@@ -349,13 +352,23 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
           context: context,
           builder: (context) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: const Text('Batalkan Registrasi?', style: TextStyle(fontWeight: FontWeight.bold)),
-              content: const Text('Perubahan data ukuran ini akan terhapus jika Anda keluar.'),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: const Text(
+                'Batalkan Registrasi?',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              content: const Text(
+                'Perubahan data ukuran ini akan terhapus jika Anda keluar.',
+              ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Lanjutkan Edit', style: TextStyle(color: AppColors.textSecondary)),
+                  child: const Text(
+                    'Lanjutkan Edit',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
@@ -391,10 +404,14 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
           ),
           title: Row(
             children: [
-              const Icon(Icons.eco_rounded, color: AppColors.primaryGreen, size: 22),
+              const Icon(
+                Icons.eco_rounded,
+                color: AppColors.primaryGreen,
+                size: 22,
+              ),
               const SizedBox(width: 8),
               Text(
-                _currentStep == 1 ? 'Registrasi Tempat Sampah' : 'Data Ukuran',
+                _currentStep == 1 ? 'Aktivasi Tempat Sampah' : 'Data Ukuran',
                 style: const TextStyle(
                   color: AppColors.textPrimary,
                   fontWeight: FontWeight.w700,
@@ -424,7 +441,9 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
                     child: LinearProgressIndicator(
                       value: _currentStep == 1 ? 0.5 : 1.0,
                       backgroundColor: const Color(0xFFE2E8F0),
-                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryGreen),
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        AppColors.primaryGreen,
+                      ),
                       minHeight: 4,
                     ),
                   ),
@@ -438,13 +457,14 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
           bottom: false,
           child: _isLoadingPresets
               ? const Center(
-                  child: CircularProgressIndicator(color: AppColors.primaryGreen),
+                  child: CircularProgressIndicator(
+                    color: AppColors.primaryGreen,
+                  ),
                 )
               : (_currentStep == 1 ? _buildStep1() : _buildStep2()),
         ),
       ),
     );
-
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -497,8 +517,9 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
                 _buildShapeCard(
                   id: 'tabung',
                   title: 'Keranjang Bulat',
-                  subtitle: 'Untuk keranjang atau wadah tempat sampah berbentuk bulat / silinder',
-                  imagePath: 'assets/step_1/diagram_bulat.jpg',
+                  subtitle:
+                      'Untuk keranjang atau wadah tempat sampah berbentuk bulat / silinder',
+                  imagePath: 'assets/step_1/tempat-sampah-bulat-bg-white.png',
                   color: const Color(0xFFD97706),
                 ),
                 const SizedBox(height: 16),
@@ -507,7 +528,8 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
                 _buildShapeCard(
                   id: 'kotak',
                   title: 'Bak Kotak',
-                  subtitle: 'Untuk bak atau tempat sampah berbentuk kotak / balok',
+                  subtitle:
+                      'Untuk bak atau tempat sampah berbentuk kotak / balok',
                   imagePath: 'assets/step_1/wadah_kotak.png',
                   color: const Color(0xFF475569),
                 ),
@@ -537,7 +559,11 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
                 const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.eco_rounded, color: AppColors.primaryGreen, size: 16),
+                    Icon(
+                      Icons.eco_rounded,
+                      color: AppColors.primaryGreen,
+                      size: 16,
+                    ),
                     SizedBox(width: 6),
                     Text(
                       'Bersama untuk lingkungan yang lebih bersih',
@@ -557,7 +583,9 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryGreen,
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                       elevation: 1,
                     ),
                     child: const Row(
@@ -572,7 +600,11 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
                           ),
                         ),
                         SizedBox(width: 8),
-                        Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 18),
+                        Icon(
+                          Icons.arrow_forward_rounded,
+                          color: Colors.white,
+                          size: 18,
+                        ),
                       ],
                     ),
                   ),
@@ -607,7 +639,9 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: isSelected ? AppColors.primaryGreen : const Color(0xFFE2E8F0),
+            color: isSelected
+                ? AppColors.primaryGreen
+                : const Color(0xFFE2E8F0),
             width: isSelected ? 2.2 : 1.2,
           ),
           boxShadow: [
@@ -623,23 +657,12 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
         child: Row(
           children: [
             // Ilustrasi wadah: Background putih bersih, zoom fokus ke wadah agar tajam & proporsional
-            Container(
+            SizedBox(
               width: 84,
               height: 84,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: isSelected
-                      ? AppColors.primaryGreen
-                      : const Color(0xFFE2E8F0),
-                  width: isSelected ? 2.0 : 1.2,
-                ),
-              ),
-              clipBehavior: Clip.antiAlias,
               child: Transform.scale(
-                scale: 1.45,
-                alignment: const Alignment(0, -0.22),
+                scale: 1.25,
+                alignment: const Alignment(0, -0.1),
                 child: Image.asset(
                   imagePath,
                   fit: BoxFit.cover,
@@ -662,7 +685,9 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: isSelected ? AppColors.primaryGreen : AppColors.textPrimary,
+                      color: isSelected
+                          ? AppColors.primaryGreen
+                          : AppColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -685,7 +710,9 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
                 shape: BoxShape.circle,
                 color: isSelected ? AppColors.primaryGreen : Colors.transparent,
                 border: Border.all(
-                  color: isSelected ? AppColors.primaryGreen : const Color(0xFFCBD5E1),
+                  color: isSelected
+                      ? AppColors.primaryGreen
+                      : const Color(0xFFCBD5E1),
                   width: 2,
                 ),
               ),
@@ -779,7 +806,9 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
         decoration: BoxDecoration(
-          color: isSelected ? color.withValues(alpha: 0.12) : const Color(0xFFF8FAFC),
+          color: isSelected
+              ? color.withValues(alpha: 0.12)
+              : const Color(0xFFF8FAFC),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? color : const Color(0xFFE2E8F0),
@@ -788,7 +817,11 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
         ),
         child: Column(
           children: [
-            Icon(icon, size: 20, color: isSelected ? color : AppColors.textSecondary),
+            Icon(
+              icon,
+              size: 20,
+              color: isSelected ? color : AppColors.textSecondary,
+            ),
             const SizedBox(height: 4),
             FittedBox(
               fit: BoxFit.scaleDown,
@@ -815,11 +848,17 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
       decoration: BoxDecoration(
         color: AppColors.primaryGreenLight,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.3)),
+        border: Border.all(
+          color: AppColors.primaryGreen.withValues(alpha: 0.3),
+        ),
       ),
       child: const Row(
         children: [
-          Icon(Icons.info_outline_rounded, color: AppColors.primaryGreen, size: 20),
+          Icon(
+            Icons.info_outline_rounded,
+            color: AppColors.primaryGreen,
+            size: 20,
+          ),
           SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -852,15 +891,16 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
                 size: 20,
               ),
               const SizedBox(width: 8),
-              const Text(
-                'Ukuran Standar (Tinggal Pilih)',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+              Expanded(
+                child: const Text(
+                  'Ukuran Standar',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ),
-              const Spacer(),
               Text(
                 'Kecil ➔ Besar',
                 style: TextStyle(
@@ -987,7 +1027,10 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
               children: [
                 // Ilustrasi Diagram Dimensi Wadah dengan Panah (Load gambar asset dengan fallback vektor)
                 Container(
-                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 16,
+                    horizontal: 16,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(20),
@@ -1006,10 +1049,13 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
                       child: Image.asset(
                         diagramImagePath,
                         fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) => CustomPaint(
-                          size: const Size(220, 140),
-                          painter: _BinDimensionDiagramPainter(shape: _selectedShape),
-                        ),
+                        errorBuilder: (context, error, stackTrace) =>
+                            CustomPaint(
+                              size: const Size(220, 140),
+                              painter: _BinDimensionDiagramPainter(
+                                shape: _selectedShape,
+                              ),
+                            ),
                       ),
                     ),
                   ),
@@ -1019,7 +1065,10 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
                 // Opsi Dual-Bin Berseka: Ukuran sama atau terpisah (jika mode both)
                 if (isBoth) ...[
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(14),
@@ -1027,7 +1076,11 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.tune_rounded, color: AppColors.primaryGreen, size: 20),
+                        const Icon(
+                          Icons.tune_rounded,
+                          color: AppColors.primaryGreen,
+                          size: 20,
+                        ),
                         const SizedBox(width: 10),
                         const Expanded(
                           child: Text(
@@ -1084,7 +1137,10 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
                 ] else ...[
                   // Single bin mode banner
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: isOrgOnly
                           ? AppColors.organicColor.withValues(alpha: 0.1)
@@ -1099,7 +1155,9 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
                     child: Row(
                       children: [
                         Icon(
-                          isOrgOnly ? Icons.eco_rounded : Icons.category_rounded,
+                          isOrgOnly
+                              ? Icons.eco_rounded
+                              : Icons.category_rounded,
                           color: isOrgOnly
                               ? AppColors.organicColor
                               : AppColors.nonOrganicColor,
@@ -1127,47 +1185,72 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
                 const SizedBox(height: 16),
                 _buildPresetSizeSelector(),
                 const SizedBox(height: 16),
-                const Text(
-                  'Atau sesuaikan ukuran detail manual (cm):',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
+                ElevatedButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _showCustomSizeForm = !_showCustomSizeForm;
+                    });
+                  },
+                  icon: Icon(
+                    _showCustomSizeForm ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+                    size: 18,
+                  ),
+                  label: const Text('Custom'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: AppColors.primaryGreen,
+                    elevation: 0,
+                    side: const BorderSide(color: AppColors.primaryGreen),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 10),
 
-                // Form Input Dimensi sesuai bentuk wadah
-                if (_selectedShape == 'tabung') ...[
-                  _buildDimensionField(
-                    label: 'Diameter (cm)',
-                    hint: 'Contoh: 40',
-                    controller: dCtrl,
+                if (_showCustomSizeForm) ...[
+                  const Text(
+                    'Atau sesuaikan ukuran detail manual (cm):',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
-                  const SizedBox(height: 12),
-                  _buildDimensionField(
-                    label: 'Tinggi (cm)',
-                    hint: 'Contoh: 50',
-                    controller: tCtrl,
-                  ),
-                ] else ...[
-                  _buildDimensionField(
-                    label: 'Panjang (cm)',
-                    hint: 'Contoh: 45',
-                    controller: pCtrl,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildDimensionField(
-                    label: 'Lebar (cm)',
-                    hint: 'Contoh: 35',
-                    controller: lCtrl,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildDimensionField(
-                    label: 'Tinggi (cm)',
-                    hint: 'Contoh: 75',
-                    controller: tCtrl,
-                  ),
+                  const SizedBox(height: 10),
+
+                  // Form Input Dimensi sesuai bentuk wadah
+                  if (_selectedShape == 'tabung') ...[
+                    _buildDimensionField(
+                      label: 'Diameter (cm)',
+                      hint: 'Contoh: 40',
+                      controller: dCtrl,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildDimensionField(
+                      label: 'Tinggi (cm)',
+                      hint: 'Contoh: 50',
+                      controller: tCtrl,
+                    ),
+                  ] else ...[
+                    _buildDimensionField(
+                      label: 'Panjang (cm)',
+                      hint: 'Contoh: 45',
+                      controller: pCtrl,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildDimensionField(
+                      label: 'Lebar (cm)',
+                      hint: 'Contoh: 35',
+                      controller: lCtrl,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildDimensionField(
+                      label: 'Tinggi (cm)',
+                      hint: 'Contoh: 75',
+                      controller: tCtrl,
+                    ),
+                  ],
                 ],
 
                 const SizedBox(height: 18),
@@ -1193,7 +1276,9 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.primaryGreen.withValues(alpha: 0.15),
+                              color: AppColors.primaryGreen.withValues(
+                                alpha: 0.15,
+                              ),
                               blurRadius: 6,
                               offset: const Offset(0, 2),
                             ),
@@ -1273,8 +1358,13 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
                     onPressed: () => setState(() => _currentStep = 1),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      side: const BorderSide(color: Color(0xFFCBD5E1), width: 1.5),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      side: const BorderSide(
+                        color: Color(0xFFCBD5E1),
+                        width: 1.5,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       backgroundColor: Colors.white,
                     ),
                     child: const Text(
@@ -1295,7 +1385,9 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryGreen,
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       elevation: 1,
                     ),
                     child: const Text(
@@ -1328,7 +1420,9 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? activeColor.withValues(alpha: 0.12) : Colors.white,
+          color: isSelected
+              ? activeColor.withValues(alpha: 0.12)
+              : Colors.white,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isSelected ? activeColor : const Color(0xFFE2E8F0),
@@ -1380,7 +1474,10 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
             ),
             filled: true,
             fillColor: Colors.white,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
@@ -1391,7 +1488,10 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.primaryGreen, width: 1.8),
+              borderSide: const BorderSide(
+                color: AppColors.primaryGreen,
+                width: 1.8,
+              ),
             ),
           ),
         ),
@@ -1455,7 +1555,12 @@ class _BinShapePainter extends CustomPainter {
       final body = Path();
       body.moveTo(size.width * 0.22, size.height * 0.38);
       body.lineTo(size.width * 0.28, size.height * 0.88);
-      body.quadraticBezierTo(size.width * 0.5, size.height * 0.92, size.width * 0.72, size.height * 0.88);
+      body.quadraticBezierTo(
+        size.width * 0.5,
+        size.height * 0.92,
+        size.width * 0.72,
+        size.height * 0.88,
+      );
       body.lineTo(size.width * 0.78, size.height * 0.38);
       body.close();
       canvas.drawPath(body, fillPaint);
@@ -1501,7 +1606,9 @@ class _BinDimensionDiagramPainter extends CustomPainter {
       ..strokeWidth = 1.0;
 
     final bodyPaint = Paint()
-      ..color = shape == 'tabung' ? const Color(0xFFD97706) : const Color(0xFF475569)
+      ..color = shape == 'tabung'
+          ? const Color(0xFFD97706)
+          : const Color(0xFF475569)
       ..style = PaintingStyle.fill;
 
     if (shape == 'tabung') {
@@ -1509,7 +1616,12 @@ class _BinDimensionDiagramPainter extends CustomPainter {
       final binPath = Path();
       binPath.moveTo(size.width * 0.32, size.height * 0.35);
       binPath.lineTo(size.width * 0.38, size.height * 0.90);
-      binPath.quadraticBezierTo(size.width * 0.5, size.height * 0.96, size.width * 0.62, size.height * 0.90);
+      binPath.quadraticBezierTo(
+        size.width * 0.5,
+        size.height * 0.96,
+        size.width * 0.62,
+        size.height * 0.90,
+      );
       binPath.lineTo(size.width * 0.68, size.height * 0.35);
       binPath.close();
       canvas.drawPath(binPath, bodyPaint);
@@ -1526,21 +1638,57 @@ class _BinDimensionDiagramPainter extends CustomPainter {
       final leftX = size.width * 0.32;
       final rightX = size.width * 0.68;
 
-      canvas.drawLine(Offset(leftX, topY), Offset(leftX, size.height * 0.35), dashPaint);
-      canvas.drawLine(Offset(rightX, topY), Offset(rightX, size.height * 0.35), dashPaint);
+      canvas.drawLine(
+        Offset(leftX, topY),
+        Offset(leftX, size.height * 0.35),
+        dashPaint,
+      );
+      canvas.drawLine(
+        Offset(rightX, topY),
+        Offset(rightX, size.height * 0.35),
+        dashPaint,
+      );
 
-      _drawDoubleArrow(canvas, Offset(leftX, topY), Offset(rightX, topY), arrowPaint);
-      _drawText(canvas, 'Diameter', Offset(size.width * 0.5, topY - 14), arrowColor);
+      _drawDoubleArrow(
+        canvas,
+        Offset(leftX, topY),
+        Offset(rightX, topY),
+        arrowPaint,
+      );
+      _drawText(
+        canvas,
+        'Diameter',
+        Offset(size.width * 0.5, topY - 14),
+        arrowColor,
+      );
 
       // 3. Panah Vertikal: "Tinggi"
       final arrowSideX = size.width * 0.78;
       final bottomY = size.height * 0.92;
 
-      canvas.drawLine(Offset(rightX, size.height * 0.35), Offset(arrowSideX, size.height * 0.35), dashPaint);
-      canvas.drawLine(Offset(size.width * 0.62, bottomY), Offset(arrowSideX, bottomY), dashPaint);
+      canvas.drawLine(
+        Offset(rightX, size.height * 0.35),
+        Offset(arrowSideX, size.height * 0.35),
+        dashPaint,
+      );
+      canvas.drawLine(
+        Offset(size.width * 0.62, bottomY),
+        Offset(arrowSideX, bottomY),
+        dashPaint,
+      );
 
-      _drawDoubleArrow(canvas, Offset(arrowSideX, size.height * 0.35), Offset(arrowSideX, bottomY), arrowPaint);
-      _drawText(canvas, 'Tinggi', Offset(arrowSideX + 22, (size.height * 0.35 + bottomY) / 2), arrowColor);
+      _drawDoubleArrow(
+        canvas,
+        Offset(arrowSideX, size.height * 0.35),
+        Offset(arrowSideX, bottomY),
+        arrowPaint,
+      );
+      _drawText(
+        canvas,
+        'Tinggi',
+        Offset(arrowSideX + 22, (size.height * 0.35 + bottomY) / 2),
+        arrowColor,
+      );
     } else {
       // 1. Gambar bak kotak
       final binPath = Path();
@@ -1565,21 +1713,57 @@ class _BinDimensionDiagramPainter extends CustomPainter {
       final leftX = size.width * 0.32;
       final rightX = size.width * 0.68;
 
-      canvas.drawLine(Offset(leftX, topY), Offset(leftX, size.height * 0.40), dashPaint);
-      canvas.drawLine(Offset(rightX, topY), Offset(rightX, size.height * 0.40), dashPaint);
+      canvas.drawLine(
+        Offset(leftX, topY),
+        Offset(leftX, size.height * 0.40),
+        dashPaint,
+      );
+      canvas.drawLine(
+        Offset(rightX, topY),
+        Offset(rightX, size.height * 0.40),
+        dashPaint,
+      );
 
-      _drawDoubleArrow(canvas, Offset(leftX, topY), Offset(rightX, topY), arrowPaint);
-      _drawText(canvas, 'Panjang / Lebar', Offset(size.width * 0.5, topY - 14), arrowColor);
+      _drawDoubleArrow(
+        canvas,
+        Offset(leftX, topY),
+        Offset(rightX, topY),
+        arrowPaint,
+      );
+      _drawText(
+        canvas,
+        'Panjang / Lebar',
+        Offset(size.width * 0.5, topY - 14),
+        arrowColor,
+      );
 
       // 3. Panah Tinggi di samping
       final sideX = size.width * 0.78;
       final bottomY = size.height * 0.90;
 
-      canvas.drawLine(Offset(size.width * 0.65, size.height * 0.40), Offset(sideX, size.height * 0.40), dashPaint);
-      canvas.drawLine(Offset(size.width * 0.62, bottomY), Offset(sideX, bottomY), dashPaint);
+      canvas.drawLine(
+        Offset(size.width * 0.65, size.height * 0.40),
+        Offset(sideX, size.height * 0.40),
+        dashPaint,
+      );
+      canvas.drawLine(
+        Offset(size.width * 0.62, bottomY),
+        Offset(sideX, bottomY),
+        dashPaint,
+      );
 
-      _drawDoubleArrow(canvas, Offset(sideX, size.height * 0.40), Offset(sideX, bottomY), arrowPaint);
-      _drawText(canvas, 'Tinggi', Offset(sideX + 22, (size.height * 0.40 + bottomY) / 2), arrowColor);
+      _drawDoubleArrow(
+        canvas,
+        Offset(sideX, size.height * 0.40),
+        Offset(sideX, bottomY),
+        arrowPaint,
+      );
+      _drawText(
+        canvas,
+        'Tinggi',
+        Offset(sideX + 22, (size.height * 0.40 + bottomY) / 2),
+        arrowColor,
+      );
     }
   }
 
@@ -1590,26 +1774,54 @@ class _BinDimensionDiagramPainter extends CustomPainter {
     final isHorizontal = (start.dy - end.dy).abs() < (start.dx - end.dx).abs();
 
     if (isHorizontal) {
-      canvas.drawLine(start, Offset(start.dx + arrowSize, start.dy - arrowSize), paint);
-      canvas.drawLine(start, Offset(start.dx + arrowSize, start.dy + arrowSize), paint);
-      canvas.drawLine(end, Offset(end.dx - arrowSize, end.dy - arrowSize), paint);
-      canvas.drawLine(end, Offset(end.dx - arrowSize, end.dy + arrowSize), paint);
+      canvas.drawLine(
+        start,
+        Offset(start.dx + arrowSize, start.dy - arrowSize),
+        paint,
+      );
+      canvas.drawLine(
+        start,
+        Offset(start.dx + arrowSize, start.dy + arrowSize),
+        paint,
+      );
+      canvas.drawLine(
+        end,
+        Offset(end.dx - arrowSize, end.dy - arrowSize),
+        paint,
+      );
+      canvas.drawLine(
+        end,
+        Offset(end.dx - arrowSize, end.dy + arrowSize),
+        paint,
+      );
     } else {
-      canvas.drawLine(start, Offset(start.dx - arrowSize, start.dy + arrowSize), paint);
-      canvas.drawLine(start, Offset(start.dx + arrowSize, start.dy + arrowSize), paint);
-      canvas.drawLine(end, Offset(end.dx - arrowSize, end.dy - arrowSize), paint);
-      canvas.drawLine(end, Offset(end.dx + arrowSize, end.dy - arrowSize), paint);
+      canvas.drawLine(
+        start,
+        Offset(start.dx - arrowSize, start.dy + arrowSize),
+        paint,
+      );
+      canvas.drawLine(
+        start,
+        Offset(start.dx + arrowSize, start.dy + arrowSize),
+        paint,
+      );
+      canvas.drawLine(
+        end,
+        Offset(end.dx - arrowSize, end.dy - arrowSize),
+        paint,
+      );
+      canvas.drawLine(
+        end,
+        Offset(end.dx + arrowSize, end.dy - arrowSize),
+        paint,
+      );
     }
   }
 
   void _drawText(Canvas canvas, String text, Offset center, Color color) {
     final textSpan = TextSpan(
       text: text,
-      style: TextStyle(
-        color: color,
-        fontSize: 11,
-        fontWeight: FontWeight.w700,
-      ),
+      style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w700),
     );
     final textPainter = TextPainter(
       text: textSpan,
@@ -1619,7 +1831,10 @@ class _BinDimensionDiagramPainter extends CustomPainter {
     textPainter.layout();
     textPainter.paint(
       canvas,
-      Offset(center.dx - textPainter.width / 2, center.dy - textPainter.height / 2),
+      Offset(
+        center.dx - textPainter.width / 2,
+        center.dy - textPainter.height / 2,
+      ),
     );
   }
 
@@ -1627,5 +1842,3 @@ class _BinDimensionDiagramPainter extends CustomPainter {
   bool shouldRepaint(covariant _BinDimensionDiagramPainter oldDelegate) =>
       oldDelegate.shape != shape;
 }
-
-

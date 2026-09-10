@@ -53,7 +53,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
     final wasteLogsAsync = ref.watch(wasteLogsProvider);
     final bool isOnline = ref.watch(isOnlineProvider);
     final int unreadCount = ref.watch(wargaUnreadNotificationCountProvider);
-
+    final hasActiveBin = ref.watch(binsProvider).value?.any((bin) => bin.isActive) ?? false;
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       body: RefreshIndicator(
@@ -227,7 +227,8 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                   ),
 
 
-                  const SizedBox(height: AppDimensions.lg),
+                  if (hasActiveBin) ...[
+                    const SizedBox(height: AppDimensions.lg),
 
                   // ─── Statistik Saya ──────────────────────────────────────────
                   const Text(
@@ -315,6 +316,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                       onButtonPressed: () => ref.invalidate(wasteLogsProvider),
                     ),
                   ),
+                  ],
                   const SizedBox(height: 80),
                 ]),
               ),

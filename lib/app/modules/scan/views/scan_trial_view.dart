@@ -7,6 +7,8 @@ import '../../../data/models/bin_entity.dart';
 import '../../../routes/app_routes.dart';
 import '../../scan/controllers/scan_controller.dart';
 import '../../shared/widgets/inline_camera_widget.dart';
+import 'package:image_picker/image_picker.dart';
+import '../../shared/controllers/connectivity_controller.dart';
 
 /// Halaman Scan AI Trial — khusus untuk Warga yang belum aktivasi Tempat Sampah (Guest Mode).
 ///
@@ -23,12 +25,21 @@ class _ScanTrialViewState extends ConsumerState<ScanTrialView> {
   // 0 = kamera, 1 = loading AI, 2 = hasil
   int _step = 0;
   String _capturedImagePath = '';
+  double _compressedKB = 0.0;
+  bool _photoTaken = false;
   AiDetectionEntity? _aiResult;
   String? _errorMessage;
 
   Future<void> _onImageCaptured(String path, double sizeKB) async {
     setState(() {
       _capturedImagePath = path;
+      _compressedKB = sizeKB;
+      _photoTaken = true;
+    });
+  }
+
+  Future<void> _startDetection() async {
+    setState(() {
       _step = 1;
       _errorMessage = null;
     });
@@ -36,7 +47,7 @@ class _ScanTrialViewState extends ConsumerState<ScanTrialView> {
     try {
       await ref
           .read(scanFlowProvider.notifier)
-          .detectWaste(imagePath: path);
+          .detectWaste(imagePath: _capturedImagePath);
 
       final scanState = ref.read(scanFlowProvider);
 
@@ -46,6 +57,7 @@ class _ScanTrialViewState extends ConsumerState<ScanTrialView> {
         setState(() {
           _errorMessage = scanState.errorMessage ?? 'Deteksi gagal. Coba lagi.';
           _step = 0;
+          _photoTaken = false;
         });
         return;
       }
@@ -54,11 +66,13 @@ class _ScanTrialViewState extends ConsumerState<ScanTrialView> {
         _aiResult = scanState.aiResult;
         _step = 2;
       });
-    } catch (e) {
+    } catch (e, stack) {
+      debugPrint('[ScanTrialView] Error deteksi AI: $e\n$stack');
       if (!mounted) return;
       setState(() {
         _errorMessage = 'Gagal menghubungi server AI. Periksa koneksi Anda.';
         _step = 0;
+        _photoTaken = false;
       });
     }
   }
@@ -68,6 +82,7 @@ class _ScanTrialViewState extends ConsumerState<ScanTrialView> {
     setState(() {
       _step = 0;
       _capturedImagePath = '';
+      _photoTaken = false;
       _aiResult = null;
       _errorMessage = null;
     });
@@ -75,50 +90,100 @@ class _ScanTrialViewState extends ConsumerState<ScanTrialView> {
 
   @override
   Widget build(BuildContext context) {
+    // Watch provider agar state tidak otomatis di-dispose saat async gap
+    ref.watch(scanFlowProvider);
+    final isOnline = ref.watch(isOnlineProvider);
+
     return Scaffold(
-      backgroundColor: AppColors.backgroundCanvas,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'Uji Coba Deteksi AI',
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.w700,
-            fontSize: 17,
-          ),
-        ),
-        centerTitle: false,
-      ),
-      body: Column(
-        children: [
-          // Banner trial mode
-          _TrialModeBanner(),
-          Expanded(
-            child: _buildBody(),
-          ),
-        ],
-      ),
+      backgroundColor: _step == 0 || _step == 1
+          ? const Color(0xFF1C1C1E) // Dark background for camera and loading
+          : AppColors.backgroundCanvas,
+      appBar: _step == 1
+          ? AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.close_rounded, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              ),
+              title: const Text(
+                'Analisis AI',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                ),
+              ),
+              centerTitle: true,
+            )
+          : _step == 2
+          ? AppBar(
+              backgroundColor: Colors.white,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(
+                  Icons.arrow_back_rounded,
+                  color: AppColors.textPrimary,
+                ),
+                onPressed: () => Navigator.pop(context),
+              ),
+              title: const Text(
+                'Uji Coba Deteksi AI',
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 17,
+                ),
+              ),
+              centerTitle: false,
+            )
+          : null, // Step 0 camera uses its own top bar
+      body: _step == 0
+          ? _buildCameraStep(isOnline)
+          : _step == 1
+          ? _buildLoadingStep()
+          : Column(
+              children: [
+                // Banner trial mode
+                _TrialModeBanner(),
+                Expanded(child: _buildResultStep()),
+              ],
+            ),
     );
   }
 
-  Widget _buildBody() {
-    if (_step == 0) return _buildCameraStep();
-    if (_step == 1) return _buildLoadingStep();
-    return _buildResultStep();
-  }
-
   // ─── Step 0: Kamera ──────────────────────────────────────────────────────────
-  Widget _buildCameraStep() {
+  Widget _buildCameraStep(bool isOnline) {
     return Column(
       children: [
+        SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+            child: Row(
+              children: [
+                IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close_rounded, color: Colors.white),
+                ),
+                const Expanded(
+                  child: Text(
+                    'Foto Sampah (Uji Coba)',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const SizedBox(width: 48),
+              ],
+            ),
+          ),
+        ),
         if (_errorMessage != null)
           Container(
-            margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: AppColors.dangerRed.withValues(alpha: 0.08),
@@ -129,8 +194,11 @@ class _ScanTrialViewState extends ConsumerState<ScanTrialView> {
             ),
             child: Row(
               children: [
-                const Icon(Icons.error_outline_rounded,
-                    color: AppColors.dangerRed, size: 18),
+                const Icon(
+                  Icons.error_outline_rounded,
+                  color: AppColors.dangerRed,
+                  size: 18,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -145,40 +213,237 @@ class _ScanTrialViewState extends ConsumerState<ScanTrialView> {
             ),
           ),
         Expanded(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Ambil Foto Sampah',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              InlineCameraWidget(onImageCaptured: _onImageCaptured),
+              if (!_photoTaken)
+                IgnorePointer(
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      // Overlay background transparan
+                      ColorFiltered(
+                        colorFilter: ColorFilter.mode(
+                          Colors.black.withValues(alpha: 0.5),
+                          BlendMode.srcOut,
+                        ),
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Container(
+                              decoration: const BoxDecoration(
+                                color: Colors.black,
+                                backgroundBlendMode: BlendMode.dstOut,
+                              ),
+                            ),
+                            Center(
+                              child: Container(
+                                width: 280,
+                                height: 280,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Bingkai Border Putih solid
+                      Center(
+                        child: Container(
+                          width: 280,
+                          height: 280,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.white, width: 2),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                      ),
+                      // Teks Panduan Atas
+                      Positioned(
+                        top: 40,
+                        left: 20,
+                        right: 20,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Text(
+                            'Posisikan Objek Sampah di Dalam Bingkai\n(Jarak Optimal: 15 – 30 cm)',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Teks Tips Bawah
+                      Positioned(
+                        bottom:
+                            120, // Dinaikkan agar tidak menutupi tombol kamera
+                        left: 30,
+                        right: 30,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.lightbulb_outline_rounded,
+                                color: Colors.amber,
+                                size: 16,
+                              ),
+                              SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  'Tips: Pastikan pencahayaan cukup & bebas jam tangan/alas keramik.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Arahkan kamera ke sampah, lalu tekan tombol capture. AI akan mendeteksi jenis sampahnya.',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
-                    height: 1.4,
-                  ),
+            ],
+          ),
+        ),
+        Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
+            ),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 36),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _photoTaken ? 'Foto Siap - Kirim ke AI' : 'Ambil Foto Sampah',
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
                 ),
-                const SizedBox(height: 12),
-                Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: InlineCameraWidget(
-                      onImageCaptured: _onImageCaptured,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                _photoTaken
+                    ? 'Foto berhasil diambil (${_compressedKB.toStringAsFixed(0)} KB).\nTap "Deteksi Sampah" untuk analisis AI.'
+                    : 'Ambil foto sampah langsung dari kamera dari jarak dekat (tidak boleh terlalu jauh)\natau pilih dari galeri.',
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 18),
+              if (!isOnline)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.dangerRed.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Text(
+                    'Koneksi internet diperlukan.',
+                    style: TextStyle(color: AppColors.dangerRed, fontSize: 13),
+                    textAlign: TextAlign.center,
+                  ),
+                )
+              else if (_photoTaken)
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton.icon(
+                    onPressed: _startDetection,
+                    icon: const Icon(Icons.psychology_rounded, size: 20),
+                    label: const Text(
+                      'Deteksi Sampah',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryGreen,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                )
+              else
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      try {
+                        final picker = ImagePicker();
+                        final file = await picker.pickImage(
+                          source: ImageSource.gallery,
+                          imageQuality: 85,
+                        );
+                        if (file != null) {
+                          final size = (await file.length()) / 1024;
+                          setState(() {
+                            _capturedImagePath = file.path;
+                            _compressedKB = size;
+                            _photoTaken = true;
+                          });
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).clearSnackBars();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Gagal membuka galeri: $e')),
+                          );
+                        }
+                      }
+                    },
+                    icon: const Icon(Icons.photo_library_rounded, size: 20),
+                    label: const Text(
+                      'Pilih dari Galeri',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primaryGreen,
+                      side: const BorderSide(color: AppColors.primaryGreen),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
-              ],
-            ),
+            ],
           ),
         ),
       ],
@@ -189,58 +454,74 @@ class _ScanTrialViewState extends ConsumerState<ScanTrialView> {
   Widget _buildLoadingStep() {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.symmetric(horizontal: 40),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Preview foto yang diambil
-            if (_capturedImagePath.isNotEmpty)
-              Container(
-                height: 200,
-                width: double.infinity,
-                margin: const EdgeInsets.only(bottom: 24),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 10,
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: Image.file(
-                    File(_capturedImagePath),
-                    fit: BoxFit.cover,
-                  ),
-                ),
+            // Ikon Kamera AI
+            Container(
+              width: 90,
+              height: 90,
+              decoration: BoxDecoration(
+                color: const Color(0xFF2C2C2E),
+                borderRadius: BorderRadius.circular(24),
               ),
-            const SizedBox(
-              width: 52,
-              height: 52,
-              child: CircularProgressIndicator(
-                strokeWidth: 3,
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryGreen),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Icon(
+                    Icons.camera_alt_rounded,
+                    size: 80,
+                    color: Colors.white.withValues(alpha: 0.05),
+                  ),
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryGreen.withValues(alpha: 0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.psychology_rounded,
+                      color: AppColors.primaryGreen,
+                      size: 26,
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 32),
             const Text(
-              'Sedang Menganalisis...',
+              'Menganalisis Sampah...',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+                color: Colors.white,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             const Text(
-              'Model AI sedang memproses gambar sampah Anda. Mohon tunggu sebentar.',
+              'AI sedang mendeteksi jenis dan berat\nsampah dari foto Anda.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13,
-                color: AppColors.textSecondary,
+                color: Colors.white54,
                 height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 48),
+            // Progress Bar
+            SizedBox(
+              width: 220,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: const LinearProgressIndicator(
+                  minHeight: 4,
+                  backgroundColor: Colors.white12,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    AppColors.primaryGreen,
+                  ),
+                ),
               ),
             ),
           ],
@@ -255,153 +536,287 @@ class _ScanTrialViewState extends ConsumerState<ScanTrialView> {
     if (result == null) return const SizedBox.shrink();
 
     final isOrganic = result.detectedType == WasteType.organic;
-    final typeColor = isOrganic ? AppColors.primaryGreen : AppColors.primaryBlue;
-    final typeLabel = isOrganic ? 'Organik' : 'Anorganik';
-    final typeIcon = isOrganic ? Icons.eco_rounded : Icons.recycling_rounded;
-    final confidencePercent = ((result.confidence ?? 0) * 100).toStringAsFixed(1);
-    final weightKg = result.displayWeightKg.toStringAsFixed(2);
-    final estimatedPts = result.estimatedPoints ?? 0;
+    final double orgPct =
+        (result.organicPercentage as num?)?.toDouble() ??
+        (isOrganic ? 1.0 : 0.0);
+    final double anorgPct = (1.0 - orgPct).clamp(0.0, 1.0);
 
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
+      ),
+      padding: const EdgeInsets.all(24),
+      child: SingleChildScrollView(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Header hasil
-            Row(
+            Stack(
+              alignment: Alignment.center,
               children: [
                 Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: typeColor.withValues(alpha: 0.12),
+                  width: 64,
+                  height: 64,
+                  decoration: const BoxDecoration(
+                    color: AppColors.primaryGreen,
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(typeIcon, color: typeColor, size: 28),
+                  child: const Icon(
+                    Icons.check_rounded,
+                    color: Colors.white,
+                    size: 36,
+                  ),
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+              ],
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Deteksi Berhasil!',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: AppColors.primaryGreen,
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Data sampah terdeteksi secara cerdas oleh\nsistem AI kami.',
+              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+
+            // Container AI Results
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.backgroundCanvas,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header: Rekomendasi Bin
+                  Row(
                     children: [
-                      const Text(
-                        'Hasil Deteksi AI',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                          fontWeight: FontWeight.w500,
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color:
+                              (isOrganic
+                                      ? AppColors.organicColor
+                                      : AppColors.nonOrganicColor)
+                                  .withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          Icons.delete_rounded,
+                          color: isOrganic
+                              ? AppColors.organicColor
+                              : AppColors.nonOrganicColor,
+                          size: 20,
                         ),
                       ),
-                      Text(
-                        'Sampah $typeLabel',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          color: typeColor,
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'REKOMENDASI TEMPAT SAMPAH',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textHint,
+                              ),
+                            ),
+                            Text(
+                              'Tempat Sampah ${result.detectedType.displayName}',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: isOrganic
+                                    ? AppColors.organicColor
+                                    : AppColors.nonOrganicColor,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
-                ),
-              ],
-            ),
+                  const SizedBox(height: 16),
+                  const Divider(height: 1, color: AppColors.border),
+                  const SizedBox(height: 16),
 
-            const SizedBox(height: 20),
-
-            // Foto preview kecil
-            if (_capturedImagePath.isNotEmpty)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(14),
-                child: Image.file(
-                  File(_capturedImagePath),
-                  height: 180,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                ),
-              ),
-
-            const SizedBox(height: 16),
-
-            // Stats cards
-            Row(
-              children: [
-                _StatChip(
-                  label: 'Akurasi AI',
-                  value: '$confidencePercent%',
-                  icon: Icons.analytics_rounded,
-                  color: AppColors.primaryGreen,
-                ),
-                const SizedBox(width: 10),
-                _StatChip(
-                  label: 'Est. Berat',
-                  value: '${weightKg} kg',
-                  icon: Icons.scale_rounded,
-                  color: AppColors.warningOrange,
-                ),
-                const SizedBox(width: 10),
-                _StatChip(
-                  label: 'Est. Poin',
-                  value: '+$estimatedPts',
-                  icon: Icons.stars_rounded,
-                  color: AppColors.warningYellow,
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 20),
-
-            // Info: data tidak tersimpan
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.warningOrange.withValues(alpha: 0.06),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppColors.warningOrange.withValues(alpha: 0.25),
-                ),
-              ),
-              child: const Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.info_outline_rounded,
-                      color: AppColors.warningOrange, size: 18),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'Data ini hanya untuk uji coba. Hasil deteksi tidak tersimpan ke sistem dan tidak menghasilkan poin.',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.warningOrange,
-                        height: 1.4,
+                  // Confidence & Estimasi Berat
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildDetailItem(
+                          icon: Icons.psychology_rounded,
+                          label: 'KUALITAS AI',
+                          value: '',
+                          valueWidget: Row(
+                            children: [
+                              ...List.generate(5, (index) {
+                                final double conf =
+                                    (result.confidence as num?)?.toDouble() ??
+                                    0.0;
+                                final stars = (conf * 5).round().clamp(0, 5);
+                                return Icon(
+                                  Icons.star_rounded,
+                                  size: 14,
+                                  color: index < stars
+                                      ? Colors.amber
+                                      : Colors.grey.shade300,
+                                );
+                              }),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${(((result.confidence as num?)?.toDouble() ?? 0.0) * 100).toStringAsFixed(0)}%',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
+                      Expanded(
+                        child: _buildDetailItem(
+                          icon: Icons.scale_rounded,
+                          label: 'EST. BERAT',
+                          valueWidget: Text(
+                            '${result.displayWeightKg.toStringAsFixed(2)} KG',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          value: '',
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Progress Bar Organik vs Anorganik
+                  const Text(
+                    'KOMPOSISI SAMPAH',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textHint,
                     ),
                   ),
+                  const SizedBox(height: 6),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Organik: ${(orgPct * 100).toStringAsFixed(0)}%',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.organicColor,
+                        ),
+                      ),
+                      Text(
+                        'Anorganik: ${(anorgPct * 100).toStringAsFixed(0)}%',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.nonOrganicColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
                 ],
               ),
             ),
+            const SizedBox(height: 16),
 
-            const SizedBox(height: 20),
+            // Info: data tidak tersimpan
+            // Container(
+            //   padding: const EdgeInsets.all(14),
+            //   decoration: BoxDecoration(
+            //     color: AppColors.warningOrange.withValues(alpha: 0.06),
+            //     borderRadius: BorderRadius.circular(12),
+            //     border: Border.all(
+            //       color: AppColors.warningOrange.withValues(alpha: 0.25),
+            //     ),
+            //   ),
+            //   child: const Row(
+            //     crossAxisAlignment: CrossAxisAlignment.start,
+            //     children: [
+            //       Icon(Icons.info_outline_rounded,
+            //           color: AppColors.warningOrange, size: 18),
+            //       SizedBox(width: 10),
+            //       Expanded(
+            //         child: Text(
+            //           'Data ini hanya untuk uji coba. Hasil deteksi tidak tersimpan ke sistem dan tidak menghasilkan poin.',
+            //           style: TextStyle(
+            //             fontSize: 12,
+            //             color: AppColors.warningOrange,
+            //             height: 1.4,
+            //           ),
+            //         ),
+            //       ),
+            //     ],
+            //   ),
+            // ),
+            // const SizedBox(height: 16),
 
             // CTA Gabung Komunitas
             _GabungKomunitasCta(),
-
-            const SizedBox(height: 16),
-
-            // Tombol coba lagi
-            Center(
-              child: TextButton.icon(
-                onPressed: _reset,
-                icon: const Icon(Icons.refresh_rounded, size: 18),
-                label: const Text('Coba Lagi dengan Foto Baru'),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.textSecondary,
-                ),
-              ),
-            ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildDetailItem({
+    required IconData icon,
+    required String label,
+    required String value,
+    Widget? valueWidget,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: AppColors.textSecondary),
+        const SizedBox(width: 6),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textHint,
+              ),
+            ),
+            valueWidget ??
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -429,63 +844,6 @@ class _TrialModeBanner extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ─── Stat Chip ─────────────────────────────────────────────────────────────────
-class _StatChip extends StatelessWidget {
-  const _StatChip({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.color,
-  });
-
-  final String label;
-  final String value;
-  final IconData icon;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withValues(alpha: 0.18)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 6,
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 20),
-            const SizedBox(height: 6),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
-                color: color,
-              ),
-            ),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 10,
-                color: AppColors.textSecondary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -533,20 +891,14 @@ class _GabungKomunitasCta extends StatelessWidget {
           const SizedBox(height: 8),
           const Text(
             'Aktifkan Tempat Sampah pintarmu agar setiap kontribusimu dihitung, poinmu terkumpul, dan lingkunganmu semakin bersih!',
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 13,
-              height: 1.4,
-            ),
+            style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
           ),
           const SizedBox(height: 14),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () => Navigator.pushNamed(
-                context,
-                AppRoutes.ukurKapasitas,
-              ),
+              onPressed: () =>
+                  Navigator.pushNamed(context, AppRoutes.ukurKapasitas),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: AppColors.primaryGreen,
@@ -558,10 +910,7 @@ class _GabungKomunitasCta extends StatelessWidget {
               ),
               child: const Text(
                 'Gabung Sekarang →',
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 14,
-                ),
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
               ),
             ),
           ),
