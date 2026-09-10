@@ -190,7 +190,50 @@ class ApiBinRepository implements BinRepository {
     }
   }
 
-  // ─── Get Bin by QR Serial ─────────────────────────────────────────────────
+  // ─── Admin: Get All Bins (GET /bins) ─────────────────────────────────────
+  // Digunakan oleh halaman Manajemen Tempat Sampah.
+  // Response: list raw JSON dari BinController.getAllBins di backend.
+
+  @override
+  Future<List<Map<String, dynamic>>> getAdminBins({
+    String? search,
+    String? status,
+    String? areaId,
+    String? categoryId,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (search != null && search.isNotEmpty) queryParams['search'] = search;
+      if (status != null && status.isNotEmpty) queryParams['status'] = status;
+      if (areaId != null && areaId.isNotEmpty) queryParams['areaId'] = areaId;
+      if (categoryId != null && categoryId.isNotEmpty) {
+        queryParams['categoryId'] = categoryId;
+      }
+
+      final response = await apiClient.dio.get(
+        ApiEndpoints.binsAll,
+        queryParameters: queryParams.isEmpty ? null : queryParams,
+      );
+
+      if (response.statusCode == 200) {
+        final rawData = response.data['data'];
+        if (rawData is List) {
+          return rawData.cast<Map<String, dynamic>>();
+        }
+      }
+      return [];
+    } on DioException catch (e) {
+      throw BinException(
+        'NETWORK_ERROR',
+        'Gagal memuat data tempat sampah: ${e.message}',
+      );
+    } catch (e) {
+      if (e is BinException) rethrow;
+      throw BinException('UNKNOWN_ERROR', 'Terjadi kesalahan sistem: $e');
+    }
+  }
+
+
   // Pakai GET /bins/my lalu cari yang cocok — tidak ada endpoint by QR serial.
 
   @override

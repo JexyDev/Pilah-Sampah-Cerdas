@@ -62,6 +62,7 @@ import '../modules/mahasiswa/views/riwayat_pemanfaatan_view.dart';
 
 /// Peta route terpusat untuk MaterialApp.
 import '../modules/profil/views/ketersediaan_qr_view.dart';
+import '../modules/manajemen_tempat_sampah/views/manajemen_tempat_sampah_view.dart';
 
 class AppPages {
   AppPages._();
@@ -243,6 +244,9 @@ class AppPages {
           ProkerDetailView(prokerId: detailArgs['id'] as String),
           settings,
         );
+
+      case AppRoutes.manajemenTempatSampah:
+        return _buildRoute(const ManajemenTempatlSampahView(), settings);
 
       default:
         return _buildRoute(const _NotFoundScreen(), settings);

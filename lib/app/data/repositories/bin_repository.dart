@@ -11,6 +11,14 @@ abstract class BinRepository {
   /// Ambil tempat sampah milik user/rumah tangga tertentu.
   Future<List<BinEntity>> getBinsByHousehold(String householdId);
 
+  /// Ambil semua bins untuk admin (GET /bins) dengan filter opsional.
+  Future<List<Map<String, dynamic>>> getAdminBins({
+    String? search,
+    String? status,
+    String? areaId,
+    String? categoryId,
+  });
+
   /// Ambil tempat sampah yang belum terpakai (status PRINTED)
   Future<List<dynamic>> getAllQrBins({String? categoryId});
 
