@@ -35,6 +35,8 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
   bool _hasOrganic = false;
   bool _hasAnorganic = false;
   DateTime? _lastStepChangeTime;
+  DateTime? _lastErrorTime;
+  String? _lastErrorMessage;
 
   @override
   void initState() {
@@ -149,7 +151,10 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
 
     final isAnorganicPattern =
         lower.contains('anorganik') ||
+        lower.contains('anorganic') ||
         lower.contains('anorg') ||
+        lower.contains('agn') ||
+        lower.contains('ano') ||
         lower.contains('non') ||
         lower.contains('an-org') ||
         lower.contains('non-org') ||
@@ -161,21 +166,34 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
     final isOrganicPattern =
         !isAnorganicPattern &&
         (lower.contains('organik') ||
+            lower.contains('organic') ||
             lower.contains('organ') ||
+            lower.contains('ogn') ||
             lower.contains('org') ||
             lower.contains('kompos') ||
             lower.contains('basah'));
 
-    if (step == 1) {
+    if (_targetType == 'organic') {
       if (isAnorganicPattern) {
-        return 'QR Code terdeteksi sebagai Tempat Sampah ANORGANIK. Harap scan tempat sampah ORGANIK (Hijau) terlebih dahulu.';
+        return 'QR Code terdeteksi sebagai Tempat Sampah ANORGANIK. Harap scan tempat sampah ORGANIK (Warna Hijau).';
       }
-    } else if (step == 2) {
+    } else if (_targetType == 'non_organic') {
       if (isOrganicPattern) {
-        return 'QR Code terdeteksi sebagai Tempat Sampah ORGANIK. Harap scan tempat sampah ANORGANIK (Kuning).';
+        return 'QR Code terdeteksi sebagai Tempat Sampah ORGANIK. Harap scan tempat sampah ANORGANIK (Warna Kuning).';
       }
-      if (qr.trim().toUpperCase() == _qrOrganik.trim().toUpperCase()) {
-        return 'QR Code Tempat Sampah Anorganik tidak boleh sama dengan QR Code Organik!';
+    } else {
+      // Mode 'both' (Sepasang Tempat Sampah)
+      if (step == 1) {
+        if (isAnorganicPattern) {
+          return 'QR Code terdeteksi sebagai Tempat Sampah ANORGANIK.\n\nHarap scan barcode pada Tempat Sampah ORGANIK (Warna Hijau) terlebih dahulu untuk Tahap 1.';
+        }
+      } else if (step == 2) {
+        if (isOrganicPattern) {
+          return 'QR Code terdeteksi sebagai Tempat Sampah ORGANIK.\n\nHarap scan barcode pada Tempat Sampah ANORGANIK (Warna Kuning) untuk Tahap 2.';
+        }
+        if (qr.trim().toUpperCase() == _qrOrganik.trim().toUpperCase()) {
+          return 'QR Code Tempat Sampah Anorganik tidak boleh sama dengan QR Code Organik!';
+        }
       }
     }
 
@@ -195,6 +213,8 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
     final error = _validateBinQr(detected, _step);
     if (error != null) {
       _showErrorSnackBar(error);
+      // ponytail: throttle camera scanner loop when pointing at invalid QR
+      await Future.delayed(const Duration(milliseconds: 1500));
       return false;
     }
 
@@ -225,9 +245,25 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
   }
 
   void _showErrorSnackBar(String message) {
+    final now = DateTime.now();
+    // ponytail: suppress duplicate snackbar within 3s window to prevent spam
+    if (_lastErrorTime != null &&
+        _lastErrorMessage == message &&
+        now.difference(_lastErrorTime!) < const Duration(seconds: 3)) {
+      return;
+    }
+    _lastErrorTime = now;
+    _lastErrorMessage = message;
+
+    if (!mounted) return;
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: AppColors.dangerRed),
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppColors.dangerRed,
+        duration: const Duration(seconds: 3),
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 
@@ -463,6 +499,9 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
           SafeArea(
             top: false,
             child: Container(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.sizeOf(context).height * 0.58,
+              ),
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.only(
@@ -477,10 +516,13 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
                   ),
                 ],
               ),
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
-              child: _bothBinsDetected
-                  ? _buildDetectedContent()
-                  : _buildScanPrompt(),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+              child: SingleChildScrollView(
+                physics: const ClampingScrollPhysics(),
+                child: _bothBinsDetected
+                    ? _buildDetectedContent()
+                    : _buildScanPrompt(),
+              ),
             ),
           ),
         ],
@@ -489,6 +531,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
   }
 
   Widget _buildScanPrompt() {
+    final isBoth = _targetType == 'both';
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -500,35 +543,74 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
             borderRadius: BorderRadius.circular(2),
           ),
         ),
-        const SizedBox(height: 16),
-        const Icon(
-          Icons.qr_code_scanner_rounded,
-          color: AppColors.primaryGreen,
-          size: 32,
-        ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 14),
         Text(
           _targetType == 'organic'
-              ? 'Arahkan kamera ke Kode QR\npada Tempat Sampah Organik Anda'
+              ? 'Scan QR Tempat Sampah Organik'
               : _targetType == 'non_organic'
-                  ? 'Arahkan kamera ke Kode QR\npada Tempat Sampah Anorganik Anda'
+                  ? 'Scan QR Tempat Sampah Anorganik'
                   : (_step == 1
-                      ? 'Langkah 1/2: Arahkan kamera ke Kode QR\npada Tempat Sampah Organik Anda'
-                      : 'Langkah 2/2: Arahkan kamera ke Kode QR\npada Tempat Sampah Anorganik Anda'),
-          style: const TextStyle(
-            fontSize: 14,
-            color: AppColors.textSecondary,
-            height: 1.5,
+                      ? 'Tahap 1: Scan Tempat Sampah Organik'
+                      : 'Tahap 2: Scan Tempat Sampah Anorganik'),
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: _targetType == 'non_organic' || (isBoth && _step == 2)
+                ? AppColors.nonOrganicColor
+                : AppColors.organicColor,
           ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 4),
+        Text(
+          _targetType == 'organic'
+              ? 'Arahkan kamera ke Kode QR fisik pada Tempat Sampah Organik (Hijau)'
+              : _targetType == 'non_organic'
+                  ? 'Arahkan kamera ke Kode QR fisik pada Tempat Sampah Anorganik (Kuning)'
+                  : (_step == 1
+                      ? 'Wajib scan barcode Tempat Sampah ORGANIK (Hijau) terlebih dahulu'
+                      : 'Lanjutkan scan barcode Tempat Sampah ANORGANIK (Kuning)'),
+          style: const TextStyle(
+            fontSize: 12,
+            color: AppColors.textSecondary,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        if (isBoth) ...[
+          const SizedBox(height: 14),
+          _buildStepCard(
+            title: '1. Tempat Sampah Organik',
+            subtitle: _qrOrganik.isNotEmpty
+                ? 'Terpindai: ${_qrOrganik.length > 16 ? _qrOrganik.substring(_qrOrganik.length - 16) : _qrOrganik}'
+                : (_step == 1
+                    ? 'Arahkan kamera ke stiker Organik (Hijau)'
+                    : 'Menunggu pemindaian'),
+            color: AppColors.organicColor,
+            icon: Icons.eco_rounded,
+            isCompleted: _qrOrganik.isNotEmpty,
+            isActive: _step == 1 && _qrOrganik.isEmpty,
+          ),
+          const SizedBox(height: 8),
+          _buildStepCard(
+            title: '2. Tempat Sampah Anorganik',
+            subtitle: _qrAnorganik.isNotEmpty
+                ? 'Terpindai: ${_qrAnorganik.length > 16 ? _qrAnorganik.substring(_qrAnorganik.length - 16) : _qrAnorganik}'
+                : (_step == 2
+                    ? 'Arahkan kamera ke stiker Anorganik (Kuning)'
+                    : 'Menunggu tahap 1 (Organik) selesai'),
+            color: AppColors.nonOrganicColor,
+            icon: Icons.category_rounded,
+            isCompleted: _qrAnorganik.isNotEmpty,
+            isActive: _step == 2 && _qrAnorganik.isEmpty,
+          ),
+        ],
+        const SizedBox(height: 10),
         const Text(
           'atau masukkan ID tempat sampah secara manual di atas',
-          style: TextStyle(fontSize: 12, color: AppColors.textHint),
+          style: TextStyle(fontSize: 11, color: AppColors.textHint),
         ),
-        if (_targetType == 'both' && _step == 2) ...[
-          const SizedBox(height: 16),
+        if (isBoth && _step == 2) ...[
+          const SizedBox(height: 12),
           TextButton.icon(
             onPressed: () {
               setState(() {
@@ -538,14 +620,98 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
                 _bothBinsDetected = false;
               });
             },
-            icon: const Icon(Icons.refresh_rounded, color: AppColors.dangerRed),
+            icon: const Icon(Icons.refresh_rounded, color: AppColors.dangerRed, size: 16),
             label: const Text(
               'Ulangi Pemindaian dari Awal',
-              style: TextStyle(color: AppColors.dangerRed),
+              style: TextStyle(color: AppColors.dangerRed, fontSize: 12),
             ),
           ),
         ],
       ],
+    );
+  }
+
+  Widget _buildStepCard({
+    required String title,
+    required String subtitle,
+    required Color color,
+    required IconData icon,
+    required bool isCompleted,
+    required bool isActive,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: isCompleted
+            ? color.withValues(alpha: 0.08)
+            : (isActive ? color.withValues(alpha: 0.04) : const Color(0xFFF7F8FA)),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isCompleted || isActive ? color : Colors.grey.shade300,
+          width: isActive ? 1.5 : 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: (isCompleted || isActive ? color : Colors.grey.shade400).withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              isCompleted ? Icons.check_rounded : icon,
+              color: isCompleted || isActive ? color : Colors.grey.shade500,
+              size: 16,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: isCompleted || isActive ? color : AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isCompleted
+                        ? AppColors.textPrimary
+                        : (isActive ? color : AppColors.textHint),
+                    fontWeight: isCompleted ? FontWeight.w600 : FontWeight.normal,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (isActive)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Text(
+                'SCAN INI',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -577,15 +743,19 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
               ),
             ),
             const SizedBox(width: 8),
-            const Text(
-              'Tempat Sampah Siap Diaktivasi!',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: AppColors.primaryGreen,
+            const Expanded(
+              child: Text(
+                'Tempat Sampah Siap Diaktivasi!',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primaryGreen,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
-            const Spacer(),
+            const SizedBox(width: 8),
             GestureDetector(
               onTap: () => setState(() {
                 _bothBinsDetected = false;
@@ -631,12 +801,15 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
           child: ElevatedButton.icon(
             onPressed: _onAktivasi,
             icon: const Icon(Icons.sensors_rounded, size: 18),
-            label: const Text(
-              'AKTIVASI TEMPAT SAMPAH',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.5,
+            label: const FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                'AKTIVASI TEMPAT SAMPAH',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                ),
               ),
             ),
             style: ElevatedButton.styleFrom(
@@ -686,21 +859,29 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
             decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
           const SizedBox(width: 8),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: color,
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: color,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-          const Spacer(),
-          Text(
-            id,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              id,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
@@ -739,59 +920,62 @@ class _SuccessScreen extends StatelessWidget {
       ),
       backgroundColor: Colors.white,
       body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 80,
-                height: 80,
-                decoration: const BoxDecoration(
-                  color: AppColors.primaryGreen,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.check_rounded,
-                  color: Colors.white,
-                  size: 44,
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                binCount > 1
-                    ? 'Kedua Tempat Sampah Berhasil Diaktivasi!'
-                    : 'Tempat Sampah Berhasil Diaktivasi!',
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primaryGreen,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                binCount > 1
-                    ? 'Kedua tempat sampah Anda telah terhubung\ndengan akun rumah tangga.'
-                    : 'Tempat sampah Anda telah terhubung\ndengan akun rumah tangga.',
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: AppColors.textSecondary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: onBack,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryGreen,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: const BoxDecoration(
+                    color: AppColors.primaryGreen,
+                    shape: BoxShape.circle,
                   ),
-                  child: const Text('Kembali ke Beranda'),
+                  child: const Icon(
+                    Icons.check_rounded,
+                    color: Colors.white,
+                    size: 44,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 20),
+                Text(
+                  binCount > 1
+                      ? 'Kedua Tempat Sampah Berhasil Diaktivasi!'
+                      : 'Tempat Sampah Berhasil Diaktivasi!',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primaryGreen,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  binCount > 1
+                      ? 'Kedua tempat sampah Anda telah terhubung\ndengan akun rumah tangga.'
+                      : 'Tempat sampah Anda telah terhubung\ndengan akun rumah tangga.',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: onBack,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryGreen,
+                    ),
+                    child: const Text('Kembali ke Beranda'),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -72,12 +72,56 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
 
   final Ref _ref;
 
+  /// Filter defensif client-side agar jadwal penjemputan hanya mencakup RW & Kelurahan petugas
+  List<PemilahanBinPickup> _filterJadwalByRw(
+    List<PemilahanBinPickup> rawList,
+    String? targetRw,
+    String? targetKelurahan,
+  ) {
+    if ((targetRw == null || targetRw.isEmpty || targetRw == '-') &&
+        (targetKelurahan == null || targetKelurahan.isEmpty || targetKelurahan == '-')) {
+      return rawList;
+    }
+
+    return rawList.where((item) {
+      final matchesRw = item.matchesRw(targetRw);
+      final matchesKel = item.matchesKelurahan(targetKelurahan);
+      return matchesRw && matchesKel;
+    }).toList();
+  }
+
+  /// Filter defensif client-side agar daftar pengajuan warga hanya mencakup RW petugas
+  List<Map<String, dynamic>> _filterPengajuanByRw(
+    List<Map<String, dynamic>> rawList,
+    String? targetRw,
+  ) {
+    if (targetRw == null || targetRw.isEmpty || targetRw == '-') {
+      return rawList;
+    }
+    final cleanTarget = targetRw.replaceAll(RegExp(r'[^\d]'), '');
+    return rawList.where((item) {
+      final itemRw = item['rtRw']?.toString() ?? item['rw']?.toString() ?? '';
+      if (itemRw.isEmpty) return true;
+      final cleanItem = itemRw.replaceAll(RegExp(r'[^\d]'), '');
+      if (cleanTarget.isNotEmpty && cleanItem.isNotEmpty) {
+        return cleanItem == cleanTarget;
+      }
+      return itemRw.toLowerCase().contains(targetRw.toLowerCase().trim());
+    }).toList();
+  }
+
   Future<void> refreshAll() async {
     final repo = _ref.read(petugasPemilahanRepositoryProvider);
+    final user = _ref.read(authProvider).user;
+    final userRw = user?.rw.trim();
+    final userKelurahan = user?.kelurahan.trim();
 
-    // 1. Load from cache first
+    // 1. Load from cache first (dengan filter defensif wilayah)
     final cachedDash = await repo.getCachedDashboard();
-    final cachedJadwal = await repo.getCachedJadwalHarian();
+    final cachedJadwalRaw = await repo.getCachedJadwalHarian();
+    final cachedJadwal = cachedJadwalRaw != null
+        ? _filterJadwalByRw(cachedJadwalRaw, userRw, userKelurahan)
+        : null;
     final cachedHistoryRaw = await repo.getCachedHistory();
 
     final cachedHistory = cachedHistoryRaw != null
@@ -98,7 +142,7 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
       state = state.copyWith(isLoading: true, clearError: true);
     }
 
-    // 2. Fetch fresh from network progressively
+    // 2. Fetch fresh from network progressively dengan parameter wilayah petugas
     repo
         .getDashboard()
         .then((dash) {
@@ -113,10 +157,11 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
         });
 
     repo
-        .getJadwalHarian()
+        .getJadwalHarian(kelurahan: userKelurahan, rw: userRw)
         .then((jadwal) {
           if (mounted) {
-            state = state.copyWith(jadwalList: jadwal, isLoading: false);
+            final filtered = _filterJadwalByRw(jadwal, userRw, userKelurahan);
+            state = state.copyWith(jadwalList: filtered, isLoading: false);
           }
         })
         .catchError((_) {
@@ -125,12 +170,13 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
           }
         });
 
-    // Fetch Daftar Pengajuan Warga
+    // Fetch Daftar Pengajuan Warga dengan filter RW petugas
     repo
         .getDaftarPengajuanWarga()
         .then((pengajuan) {
           if (mounted) {
-            state = state.copyWith(pengajuanList: pengajuan, isLoading: false);
+            final filtered = _filterPengajuanByRw(pengajuan, userRw);
+            state = state.copyWith(pengajuanList: filtered, isLoading: false);
           }
         })
         .catchError((_) {
@@ -164,9 +210,16 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
 
   Future<void> fetchJadwal({String? kelurahan, String? rw}) async {
     try {
+      final user = _ref.read(authProvider).user;
+      final effectiveKelurahan = kelurahan ?? user?.kelurahan;
+      final effectiveRw = rw ?? user?.rw;
       final repo = _ref.read(petugasPemilahanRepositoryProvider);
-      final list = await repo.getJadwalHarian(kelurahan: kelurahan, rw: rw);
-      state = state.copyWith(jadwalList: list);
+      final list = await repo.getJadwalHarian(
+        kelurahan: effectiveKelurahan,
+        rw: effectiveRw,
+      );
+      final filtered = _filterJadwalByRw(list, effectiveRw, effectiveKelurahan);
+      state = state.copyWith(jadwalList: filtered);
     } catch (e) {
       state = state.copyWith(
         errorMessage: NetworkExceptionHelper.getErrorMessage(e),

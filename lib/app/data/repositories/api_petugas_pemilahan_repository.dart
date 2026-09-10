@@ -109,9 +109,9 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
         queryParameters: queryParams,
       );
       if (response.statusCode == 200 && response.data != null) {
-        final List<dynamic> list = response.data is Map<String, dynamic>
-            ? (response.data['data'] as List<dynamic>? ?? [])
-            : (response.data as List<dynamic>? ?? []);
+        final List<dynamic> list = response.data is Map
+            ? ((response.data as Map)['data'] as List<dynamic>? ?? [])
+            : (response.data is List ? (response.data as List<dynamic>) : []);
 
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString(_cacheKeyJadwal, jsonEncode(list));

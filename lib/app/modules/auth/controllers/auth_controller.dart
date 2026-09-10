@@ -7,6 +7,8 @@ import '../../../data/repositories/notification_repository.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../data/services/notification_engine.dart';
 import '../../notifikasi/controllers/notifikasi_controller.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../../../core/values/app_config.dart';
 import '../../mahasiswa/controllers/kkn_location_controller.dart';
 
 /// State autentikasi.
@@ -403,7 +405,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<bool> uploadAvatar(String imagePath) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
+      final oldFoto = state.user?.fotoProfil;
       await _authRepository.uploadAvatar(imagePath);
+      // Evict cache foto lama agar memory dan disk cache tidak menumpuk
+      if (oldFoto != null && oldFoto.isNotEmpty) {
+        CachedNetworkImage.evictFromCache(AppConfig.getImageUrl(oldFoto));
+      }
       // Immediately update state user's fotoProfil so Profile & Dashboard top bar update live without logout
       if (state.user != null) {
         state = state.copyWith(
@@ -428,7 +435,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<bool> deleteAvatar() async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
+      final oldFoto = state.user?.fotoProfil;
       await _authRepository.deleteAvatar();
+      // Evict cache foto lama agar bersih dari memori & storage lokal
+      if (oldFoto != null && oldFoto.isNotEmpty) {
+        CachedNetworkImage.evictFromCache(AppConfig.getImageUrl(oldFoto));
+      }
       if (state.user != null) {
         state = state.copyWith(
           user: state.user!.copyWith(fotoProfil: ''),

@@ -374,13 +374,18 @@ class ProkerDetailView extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Hari ke-${progress.hari} dari ${progress.totalHari}',
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: AppColors.textSecondary,
+                Expanded(
+                  child: Text(
+                    'Hari ke-${progress.hari} dari ${progress.totalHari}',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                const SizedBox(width: 8),
                 Text(
                   '${(progress.persen * 100).toStringAsFixed(0)}%',
                   style: const TextStyle(

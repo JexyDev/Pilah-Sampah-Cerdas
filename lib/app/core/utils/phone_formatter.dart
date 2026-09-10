@@ -18,36 +18,18 @@ class PhoneFormatter {
     String phone = raw.trim().replaceAll(RegExp(r'[^\d\+]'), '');
     if (phone.isEmpty) return phone;
 
-    // Check if it's likely a NIM. NIMs are 8-16 digits and usually don't start with 08.
-    String digitsOnly = phone.replaceAll('+', '');
-    bool isNimLength = digitsOnly.length >= 8 && digitsOnly.length <= 16;
-    bool isPhoneNumberPrefix =
-        digitsOnly.startsWith('08') ||
-        digitsOnly.startsWith('628') ||
-        (digitsOnly.startsWith('8') &&
-            digitsOnly.length >= 9 &&
-            digitsOnly.length <= 14);
-
-    if (isNimLength && !isPhoneNumberPrefix) {
-      return phone; // Return NIM as-is
-    }
-
-    // 2. Normalisasi format ke +62
-    if (phone.startsWith('0')) {
-      phone = '+62${phone.substring(1)}';
-    } else if (phone.startsWith('62')) {
-      phone = '+$phone';
-    } else if (phone.startsWith('8')) {
-      phone = '+62$phone';
-    } else if (phone.startsWith('+62') || phone.startsWith('+')) {
-      // Biarkan
-    } else {
-      // Kemungkinan ini adalah NIM (misal: 130119...) atau format lain.
-      // Kita kembalikan as-is saja agar tidak rusak, biar backend yang validasi.
+    // 2. Normalisasi format ke +62 murni nomor telepon (tanpa deteksi NIM)
+    if (phone.startsWith('+62')) {
       return phone;
+    } else if (phone.startsWith('0')) {
+      return '+62${phone.substring(1)}';
+    } else if (phone.startsWith('62')) {
+      return '+$phone';
+    } else if (phone.startsWith('+')) {
+      return phone;
+    } else {
+      return '+62$phone';
     }
-
-    return phone;
   }
 
   /// Memformat input untuk tampilan awal di UI (dari format internasional kembali ke format lokal '08').

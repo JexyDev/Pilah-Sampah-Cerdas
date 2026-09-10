@@ -43,8 +43,7 @@ class ResponsiveUtils {
 
 enum ScreenSize { compact, medium, large, tablet }
 
-/// Widget yang menampilkan layout berbeda berdasarkan ukuran layar.
-/// Otomatis switch ke NavigationRail di tablet (≥600dp).
+/// Widget yang memastikan bentuk mobile tetap paten terlepas dari DPI ponsel.
 class ResponsiveLayout extends StatelessWidget {
   const ResponsiveLayout({
     super.key,
@@ -57,13 +56,6 @@ class ResponsiveLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth >= AppDimensions.largeWidth) {
-          return tablet;
-        }
-        return mobile;
-      },
-    );
+    return mobile;
   }
 }

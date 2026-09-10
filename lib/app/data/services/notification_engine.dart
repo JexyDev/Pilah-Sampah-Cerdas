@@ -325,6 +325,42 @@ class NotificationEngine {
     }
   }
 
+  // ponytail: Local trigger when bin reset is completed by petugas
+  Future<void> showResetCompletedNotification({String? binName}) async {
+    try {
+      const AndroidNotificationDetails androidDetails =
+          AndroidNotificationDetails(
+            'reset_channel',
+            'Pengosongan Tempat Sampah',
+            channelDescription:
+                'Notifikasi status pengosongan tempat sampah selesai',
+            importance: Importance.max,
+            priority: Priority.high,
+            icon: '@mipmap/ic_launcher',
+            color: Color(0xFF10B981),
+          );
+      const NotificationDetails platformDetails = NotificationDetails(
+        android: androidDetails,
+      );
+
+      const title = 'Tempat Sampah Telah Dikosongkan! 🗑️';
+      final body = binName != null && binName.isNotEmpty
+          ? 'Tempat sampah $binName Anda telah selesai dikosongkan oleh petugas. Kapasitas kembali 0%.'
+          : 'Tempat sampah Anda telah selesai dikosongkan oleh petugas. Kapasitas kembali 0% dan siap digunakan kembali.';
+
+      await _flutterLocalNotificationsPlugin.show(
+        id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
+        title: title,
+        body: body,
+        notificationDetails: platformDetails,
+      );
+    } catch (e) {
+      debugPrint(
+        '[NotificationEngine] Failed to show reset completed notification: $e',
+      );
+    }
+  }
+
   Future<void> showSubmitLogTimbanganNotification({
     required double weightKg,
     required String type,

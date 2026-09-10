@@ -382,12 +382,16 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
             children: [
               const Icon(Icons.eco_rounded, color: AppColors.primaryGreen, size: 22),
               const SizedBox(width: 8),
-              Text(
-                _currentStep == 1 ? 'Registrasi Tempat Sampah' : 'Data Ukuran',
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 17,
+              Flexible(
+                child: Text(
+                  _currentStep == 1 ? 'Registrasi Tempat Sampah' : 'Data Ukuran',
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 17,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -523,12 +527,17 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
                   children: [
                     Icon(Icons.eco_rounded, color: AppColors.primaryGreen, size: 16),
                     SizedBox(width: 6),
-                    Text(
-                      'Bersama untuk lingkungan yang lebih bersih',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.textSecondary,
+                    Flexible(
+                      child: Text(
+                        'Bersama untuk lingkungan yang lebih bersih',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textSecondary,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
@@ -536,23 +545,27 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
                 const SizedBox(height: 12),
                 SizedBox(
                   width: double.infinity,
+                  height: 50,
                   child: ElevatedButton(
                     onPressed: () => setState(() => _currentStep = 2),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryGreen,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       elevation: 1,
                     ),
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
-                          'Lanjutkan',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            'Lanjutkan',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                         SizedBox(width: 8),
@@ -836,15 +849,19 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
                 size: 20,
               ),
               const SizedBox(width: 8),
-              const Text(
-                'Ukuran Standar (Tinggal Pilih)',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+              const Expanded(
+                child: Text(
+                  'Ukuran Standar (Tinggal Pilih)',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 6),
               Text(
                 'Kecil ➔ Besar',
                 style: TextStyle(
@@ -915,14 +932,17 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 2),
-                          Text(
-                            p.capacityLabel,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                              color: isSelected
-                                  ? AppColors.primaryGreen
-                                  : AppColors.textSecondary,
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              p.capacityLabel,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                                color: isSelected
+                                    ? AppColors.primaryGreen
+                                    : AppColors.textSecondary,
+                              ),
                             ),
                           ),
                         ],
@@ -1253,41 +1273,53 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
               children: [
                 Expanded(
                   flex: 2,
-                  child: OutlinedButton(
-                    onPressed: () => setState(() => _currentStep = 1),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      side: const BorderSide(color: Color(0xFFCBD5E1), width: 1.5),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      backgroundColor: Colors.white,
-                    ),
-                    child: const Text(
-                      'Ubah bentuk',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
+                  child: SizedBox(
+                    height: 50,
+                    child: OutlinedButton(
+                      onPressed: () => setState(() => _currentStep = 1),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                        side: const BorderSide(color: Color(0xFFCBD5E1), width: 1.5),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        backgroundColor: Colors.white,
+                      ),
+                      child: const FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          'Ubah bentuk',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(
                   flex: 3,
-                  child: ElevatedButton(
-                    onPressed: _submit,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryGreen,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      elevation: 1,
-                    ),
-                    child: const Text(
-                      'Simpan Tempat Sampah',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
+                  child: SizedBox(
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: _submit,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryGreen,
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 1,
+                      ),
+                      child: const FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          'Simpan Tempat Sampah',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                   ),

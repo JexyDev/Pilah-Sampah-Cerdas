@@ -47,69 +47,78 @@ class _TentangAplikasiViewState extends State<TentangAplikasiView> {
         centerTitle: true,
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Image.asset(
-                  'assets/logo/BersekaNew-logo-text-bg-transparent.png',
-                  height: 100,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => const Icon(
-                    Icons.eco_rounded,
-                    size: 80,
-                    color: AppColors.primaryGreen,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: IntrinsicHeight(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Image.asset(
+                          'assets/logo/BersekaNew-logo-text-bg-transparent.png',
+                          height: 100,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) => const Icon(
+                            Icons.eco_rounded,
+                            size: 80,
+                            color: AppColors.primaryGreen,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 28),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.grey.shade200),
+                        ),
+                        child: const Text(
+                          'BERSEKA adalah platform digital manajemen persampahan cerdas. Aplikasi ini dirancang untuk mempermudah partisipasi warga dalam memilah sampah, membantu petugas dalam pengelolaan sampah terintegrasi, dan memonitor data timbulan sampah secara real-time demi mewujudkan lingkungan yang lebih sehat dan asri.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 14,
+                            height: 1.5,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        _version,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textHint,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '© ${DateTime.now().year} Universitas Komputer Indonesia.\nAll Rights Reserved.',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textHint,
+                          height: 1.4,
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                    ],
                   ),
                 ),
               ),
-              const SizedBox(height: 28),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.shade200),
-                ),
-                child: const Text(
-                  'BERSEKA adalah platform digital manajemen persampahan cerdas. Aplikasi ini dirancang untuk mempermudah partisipasi warga dalam memilah sampah, membantu petugas dalam pengelolaan sampah terintegrasi, dan memonitor data timbulan sampah secara real-time demi mewujudkan lingkungan yang lebih sehat dan asri.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    height: 1.5,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ),
-              const Spacer(),
-              Text(
-                _version,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textHint,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '© ${DateTime.now().year} Universitas Komputer Indonesia.\nAll Rights Reserved.',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textHint,
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 32),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );

@@ -87,6 +87,18 @@ final wargaNotificationsProvider = FutureProvider<List<NotificationEntity>>((
         title.contains('BUANG SAMPAH') ||
         title.contains('PENGINGAT') ||
         type.contains('REMINDER');
+    // ponytail: Pengosongan dan reset tempat sampah wajib selalu masuk ke Warga
+    final isPengosonganNotice =
+        title.contains('PENGOSONGAN') ||
+        title.contains('DIKOSONGKAN') ||
+        title.contains('PENGAJUAN') ||
+        title.contains('DISETUJUI') ||
+        desc.contains('DIKOSONGKAN') ||
+        desc.contains('PENGOSONGAN') ||
+        desc.contains('MERESET') ||
+        desc.contains('FOTO BUKTI') ||
+        type.contains('PENGOSONGAN') ||
+        type.contains('RESET');
     final isForbidden =
         type.contains('JEMPUT') ||
         type.contains('PENGANGKUTAN') ||
@@ -114,7 +126,7 @@ final wargaNotificationsProvider = FutureProvider<List<NotificationEntity>>((
         desc.contains('PRESENSI GEOFENCE') ||
         desc.contains('AKUN PETUGAS');
 
-    if (!isWargaReminder && isForbidden) continue;
+    if (!isWargaReminder && !isPengosonganNotice && isForbidden) continue;
     if (notif.id == 'seed-notif-1' || desc.contains('ORG004520')) continue;
 
     // Deduplikasi
