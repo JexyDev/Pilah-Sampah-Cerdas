@@ -38,6 +38,7 @@ import {
   XCircle,
   AlertCircle,
   SlidersHorizontal,
+  Phone,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -138,9 +139,30 @@ interface KknExecutiveData {
   perhatianPimpinan: Array<{
     id: string;
     count: number;
+    unit?: string;
     title: string;
+    subtitle?: string;
     type: string;
     link: string;
+    metadata?: {
+      criticalStudentsCount?: number;
+      totalAlpaLogs?: number;
+      uniqueStudentsEverAlpa?: number;
+    };
+  }>;
+  criticalAlpaStudents?: Array<{
+    id: string;
+    userId: string;
+    name: string;
+    nim: string;
+    jurusan: string;
+    kelompokId: string | null;
+    kelompokName: string;
+    kelurahan: string;
+    dplName: string;
+    dplPhone: string | null;
+    phone: string | null;
+    alpaCount: number;
   }>;
   resumeDpl?: {
     totalDpl: number;
@@ -164,8 +186,10 @@ interface KknExecutiveData {
   filterOptions: {
     periodeOptions: Array<{ value: string; label: string }>;
     kelurahanOptions: Array<{ value: string; label: string }>;
+    kelompokOptions?: Array<{ value: string; label: string; kelurahan?: string }>;
     selectedKelurahan: string;
     selectedRw: string;
+    selectedKelompok?: string;
     selectedPeriode: string;
   };
 }
@@ -212,6 +236,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
   const [selectedPeriode, setSelectedPeriode] = useState("2026");
   const [selectedKelurahan, setSelectedKelurahan] = useState("Semua Kelurahan");
   const [selectedRw, setSelectedRw] = useState("Semua RW");
+  const [selectedKelompok, setSelectedKelompok] = useState("Semua Kelompok");
 
   // Data & loading states
   const [data, setData] = useState<KknExecutiveData | null>(null);
@@ -232,6 +257,13 @@ export const DashboardEksekutifKkn: React.FC = () => {
   const [groupStudentSearchQuery, setGroupStudentSearchQuery] = useState("");
   const [groupStudentPage, setGroupStudentPage] = useState(1);
   const MODAL_STUDENTS_PER_PAGE = 8;
+
+  // Modal Detail Mahasiswa Alpa Kritis (Peringatan Dini)
+  const [showCriticalAlpaModal, setShowCriticalAlpaModal] = useState(false);
+  const [criticalAlpaSearchQuery, setCriticalAlpaSearchQuery] = useState("");
+  const [criticalAlpaFilterKelompok, setCriticalAlpaFilterKelompok] = useState("ALL");
+  const [criticalAlpaPage, setCriticalAlpaPage] = useState(1);
+  const CRITICAL_ALPA_PER_PAGE = 8;
 
   // Ambil data master RW dari /areas/rw
   useEffect(() => {
@@ -298,6 +330,73 @@ export const DashboardEksekutifKkn: React.FC = () => {
     }
   }, [selectedKelurahan, rwOptions, selectedRw]);
 
+  // Filter Kelompok dinamis: disaring berdasarkan kelurahan jika kelurahan dipilih
+  const kelompokOptions = useMemo(() => {
+    if (data?.filterOptions?.kelompokOptions && data.filterOptions.kelompokOptions.length > 0) {
+      if (!isKelurahanSelected) {
+        return data.filterOptions.kelompokOptions.map((k) => k.value);
+      }
+      const targetKel = selectedKelurahan.toLowerCase().replace(/\s+/g, "");
+      const filtered = data.filterOptions.kelompokOptions.filter((k) => {
+        if (!k.kelurahan) return true;
+        const kName = k.kelurahan.toLowerCase().replace(/\s+/g, "");
+        return kName.includes(targetKel) || targetKel.includes(kName);
+      });
+      const names = filtered.map((k) => k.value).filter((v) => v !== "Semua Kelompok");
+      return ["Semua Kelompok", ...names];
+    }
+    if (groups && groups.length > 0) {
+      let list = groups;
+      if (isKelurahanSelected) {
+        const targetKel = selectedKelurahan.toLowerCase().replace(/\s+/g, "");
+        list = list.filter((g) => {
+          const kName = (g.kelurahan || "").toLowerCase().replace(/\s+/g, "");
+          return kName.includes(targetKel) || targetKel.includes(kName);
+        });
+      }
+      const sorted = Array.from(new Set(list.map((g) => g.name).filter(Boolean))).sort();
+      return ["Semua Kelompok", ...sorted];
+    }
+    return ["Semua Kelompok"];
+  }, [data?.filterOptions?.kelompokOptions, groups, selectedKelurahan, isKelurahanSelected]);
+
+  // Reset selectedKelompok jika kelurahan berganti dan kelompok lama tidak lagi valid
+  useEffect(() => {
+    if (selectedKelompok !== "Semua Kelompok" && !kelompokOptions.includes(selectedKelompok)) {
+      setSelectedKelompok("Semua Kelompok");
+    }
+  }, [selectedKelurahan, kelompokOptions, selectedKelompok]);
+
+  // Filtered Critical Alpa Students untuk Modal
+  const filteredCriticalAlpaStudents = useMemo(() => {
+    const list = data?.criticalAlpaStudents || [];
+    return list.filter((st) => {
+      const matchKelompok =
+        criticalAlpaFilterKelompok === "ALL" ||
+        st.kelompokName.toLowerCase() === criticalAlpaFilterKelompok.toLowerCase() ||
+        st.kelompokId === criticalAlpaFilterKelompok;
+
+      if (!matchKelompok) return false;
+
+      if (!criticalAlpaSearchQuery.trim()) return true;
+      const q = criticalAlpaSearchQuery.toLowerCase();
+      return (
+        st.name.toLowerCase().includes(q) ||
+        st.nim.toLowerCase().includes(q) ||
+        st.jurusan.toLowerCase().includes(q) ||
+        st.kelompokName.toLowerCase().includes(q) ||
+        st.kelurahan.toLowerCase().includes(q) ||
+        st.dplName.toLowerCase().includes(q)
+      );
+    });
+  }, [data?.criticalAlpaStudents, criticalAlpaFilterKelompok, criticalAlpaSearchQuery]);
+
+  const totalCriticalAlpaPages = Math.ceil(filteredCriticalAlpaStudents.length / CRITICAL_ALPA_PER_PAGE) || 1;
+  const paginatedCriticalAlpaStudents = useMemo(() => {
+    const start = (criticalAlpaPage - 1) * CRITICAL_ALPA_PER_PAGE;
+    return filteredCriticalAlpaStudents.slice(start, start + CRITICAL_ALPA_PER_PAGE);
+  }, [filteredCriticalAlpaStudents, criticalAlpaPage]);
+
   const fetchData = async (isSilent = false) => {
     try {
       if (!isSilent) setLoading(true);
@@ -310,6 +409,9 @@ export const DashboardEksekutifKkn: React.FC = () => {
       }
       if (selectedRw && selectedRw !== "Semua RW" && selectedRw !== "ALL") {
         params.rw = selectedRw;
+      }
+      if (selectedKelompok && selectedKelompok !== "Semua Kelompok" && selectedKelompok !== "ALL") {
+        params.kelompok = selectedKelompok;
       }
 
       const res = await api.get("/dashboard/kkn-executive", { params });
@@ -533,7 +635,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, [selectedPeriode, selectedKelurahan, selectedRw]);
+  }, [selectedPeriode, selectedKelurahan, selectedRw, selectedKelompok]);
 
   // Periodic auto-refresh every 60 seconds
   useEffect(() => {
@@ -541,7 +643,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
       fetchData(true);
     }, 60000);
     return () => clearInterval(timer);
-  }, [selectedPeriode, selectedKelurahan, selectedRw]);
+  }, [selectedPeriode, selectedKelurahan, selectedRw, selectedKelompok]);
 
   // Handle Export Excel
   const handleExport = async () => {
@@ -551,6 +653,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
       if (selectedPeriode) params.periode = selectedPeriode;
       if (selectedKelurahan && selectedKelurahan !== "Semua Kelurahan") params.kelurahan = selectedKelurahan;
       if (selectedRw && selectedRw !== "Semua RW") params.rw = selectedRw;
+      if (selectedKelompok && selectedKelompok !== "Semua Kelompok") params.kelompok = selectedKelompok;
 
       const res = await api.get("/dashboard/kkn-executive/export", {
         params,
@@ -672,6 +775,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
                   onChange={(e) => {
                     setSelectedKelurahan(e.target.value);
                     setSelectedRw("Semua RW");
+                    setSelectedKelompok("Semua Kelompok");
                   }}
                   aria-label="Filter Kelurahan"
                   className="bg-transparent outline-none cursor-pointer pr-2 text-xs font-bold text-slate-700 dark:text-slate-200"
@@ -717,6 +821,25 @@ export const DashboardEksekutifKkn: React.FC = () => {
                       </option>
                     ))
                   )}
+                </select>
+              </div>
+            </div>
+
+            {/* Kelompok Dropdown */}
+            <div className="relative">
+              <div className="flex items-center gap-2 bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-2xs">
+                <Users size={14} className="text-purple-600 shrink-0" />
+                <select
+                  value={selectedKelompok}
+                  onChange={(e) => setSelectedKelompok(e.target.value)}
+                  aria-label="Filter Kelompok KKN"
+                  className="bg-transparent outline-none cursor-pointer pr-2 text-xs font-bold text-slate-700 dark:text-slate-200 max-w-[170px] truncate"
+                >
+                  {kelompokOptions.map((kel) => (
+                    <option key={kel} value={kel}>
+                      {kel}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -851,18 +974,36 @@ export const DashboardEksekutifKkn: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           {(data?.perhatianPimpinan || []).map((alert, idx) => {
             const isDanger = alert.type === "danger";
-            const isRejected = alert.id === "rejected_proker";
+            const isAlpa = alert.id === "alpa";
+            const isRejected = alert.id === "rejected_proker" || alert.id === "proker_ditolak";
             const isUnder60 = alert.id === "low_attendance_group" || alert.id === "low_proker_group";
+
+            const unitLabel = alert.unit || (
+              isAlpa
+                ? "Mahasiswa"
+                : isRejected
+                ? "Proker Ditolak"
+                : alert.id === "proker_pending"
+                ? "Proker"
+                : isUnder60
+                ? "Kelompok"
+                : "Entitas"
+            );
 
             return (
               <button
                 key={alert.id || idx}
                 type="button"
                 onClick={() => {
-                  if (alert.id === "low_attendance_group") {
+                  if (alert.id === "alpa") {
+                    setShowCriticalAlpaModal(true);
+                    setCriticalAlpaSearchQuery("");
+                    setCriticalAlpaFilterKelompok("ALL");
+                    setCriticalAlpaPage(1);
+                  } else if (alert.id === "low_attendance_group") {
                     setAttendanceFilter("UNDER_60");
                     const el = document.getElementById("section-kelompok-kkn");
                     if (el) el.scrollIntoView({ behavior: "smooth" });
@@ -881,8 +1022,9 @@ export const DashboardEksekutifKkn: React.FC = () => {
                     ? "border-orange-200 dark:border-orange-900/50 hover:border-orange-400"
                     : "border-amber-200 dark:border-amber-900/50 hover:border-amber-400"
                 }`}
+                title={alert.subtitle || alert.title}
               >
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2.5 min-w-0">
                   <div
                     className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
                       isDanger || isRejected
@@ -892,8 +1034,10 @@ export const DashboardEksekutifKkn: React.FC = () => {
                         : "bg-amber-100 text-amber-600 dark:bg-amber-950 dark:text-amber-400"
                     }`}
                   >
-                    {isDanger ? (
+                    {isAlpa ? (
                       <Users size={16} />
+                    ) : isDanger ? (
+                      <AlertCircle size={16} />
                     ) : isRejected ? (
                       <XCircle size={16} />
                     ) : isUnder60 ? (
@@ -902,7 +1046,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
                       <FileCheck2 size={16} />
                     )}
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <div className="flex items-baseline gap-1.5">
                       <span
                         className={`text-lg font-black ${
@@ -915,11 +1059,11 @@ export const DashboardEksekutifKkn: React.FC = () => {
                       >
                         {alert.count}
                       </span>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                        {isDanger ? "Kasus" : isRejected ? "Proker Ditolak" : "Entitas"}
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">
+                        {unitLabel}
                       </span>
                     </div>
-                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-200 leading-snug">
+                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-200 leading-snug line-clamp-2">
                       {alert.title.replace(/^\d+\s*/, "")}
                     </p>
                   </div>
@@ -927,7 +1071,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
 
                 <ChevronRight
                   size={15}
-                  className="text-slate-300 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-transform group-hover:translate-x-0.5 shrink-0 ml-2"
+                  className="text-slate-300 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-transform group-hover:translate-x-0.5 shrink-0 ml-1.5"
                 />
               </button>
             );
@@ -957,8 +1101,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
               >
                 <XAxis
                   type="number"
-                  domain={[0, 150]}
-                  ticks={[0, 50, 100, 150]}
+                  domain={[0, (dataMax: number) => Math.max(150, Math.ceil(dataMax * 1.15))]}
                   tick={{ fontSize: 10, fill: "#94a3b8" }}
                   tickLine={false}
                   axisLine={{ stroke: "#e2e8f0" }}
@@ -2569,6 +2712,256 @@ export const DashboardEksekutifKkn: React.FC = () => {
                 type="button"
                 onClick={() => setSelectedGroupForDetail(null)}
                 className="px-5 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 font-bold text-xs rounded-xl transition cursor-pointer"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Detail Mahasiswa Alpa Kritis (Peringatan Dini) */}
+      {showCriticalAlpaModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
+            {/* Header Modal */}
+            <div className="flex justify-between items-start px-6 py-4 bg-gradient-to-r from-rose-900 via-slate-900 to-slate-900 text-white shrink-0">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-400/30 text-[10.5px] font-extrabold uppercase tracking-wider">
+                    Peringatan Dini Presensi Lapangan
+                  </span>
+                  <span className="text-slate-400 text-xs">•</span>
+                  <span className="text-xs font-semibold text-slate-300">
+                    Akumulasi Alpa ≥ 3 Hari
+                  </span>
+                </div>
+                <h3 className="text-lg font-black text-white flex items-center gap-2">
+                  <AlertTriangle size={20} className="text-rose-400" />
+                  <span>Daftar Mahasiswa Alpa Kritis</span>
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCriticalAlpaModal(false)}
+                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/20 text-white/80 hover:text-white transition cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Body with Scroll */}
+            <div className="p-5 sm:p-6 overflow-y-auto space-y-4 flex-1">
+              {/* Context Summary Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 p-3.5 rounded-2xl">
+                  <p className="text-[10.5px] font-bold text-rose-700 dark:text-rose-300 uppercase tracking-wider">
+                    Mahasiswa Alpa Kritis (≥ 3x)
+                  </p>
+                  <p className="text-xl font-black text-rose-600 dark:text-rose-400 mt-1">
+                    {data?.criticalAlpaStudents?.length || 0} <span className="text-xs font-semibold text-slate-500">Mahasiswa</span>
+                  </p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    Memerlukan pembimbingan & evaluasi DPL segera
+                  </p>
+                </div>
+
+                <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 p-3.5 rounded-2xl">
+                  <p className="text-[10.5px] font-bold text-amber-700 dark:text-amber-300 uppercase tracking-wider">
+                    Mahasiswa Pernah Alpa (≥ 1x)
+                  </p>
+                  <p className="text-xl font-black text-amber-600 dark:text-amber-400 mt-1">
+                    {data?.perhatianPimpinan?.find(a => a.id === "alpa")?.metadata?.uniqueStudentsEverAlpa ?? 0} <span className="text-xs font-semibold text-slate-500">Mahasiswa</span>
+                  </p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    Termasuk yang hanya alpa 1-2 kali
+                  </p>
+                </div>
+
+                <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3.5 rounded-2xl">
+                  <p className="text-[10.5px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    Total Kejadian Log Alpa
+                  </p>
+                  <p className="text-xl font-black text-slate-800 dark:text-slate-100 mt-1">
+                    {data?.perhatianPimpinan?.find(a => a.id === "alpa")?.metadata?.totalAlpaLogs ?? 0} <span className="text-xs font-semibold text-slate-500">Log Kasus</span>
+                  </p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    Akumulasi record presensi lapangan
+                  </p>
+                </div>
+              </div>
+
+              {/* Filter & Search Bar */}
+              <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center justify-between">
+                <div className="relative flex-1">
+                  <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={criticalAlpaSearchQuery}
+                    onChange={(e) => {
+                      setCriticalAlpaSearchQuery(e.target.value);
+                      setCriticalAlpaPage(1);
+                    }}
+                    placeholder="Cari nama mahasiswa, NIM, prodi, kelompok, atau DPL..."
+                    className="w-full pl-9 pr-8 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 placeholder:text-slate-400 outline-none focus:border-rose-500 dark:focus:border-rose-400 transition"
+                  />
+                  {criticalAlpaSearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setCriticalAlpaSearchQuery("")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200">
+                    <Filter size={13} className="text-slate-400 shrink-0" />
+                    <select
+                      value={criticalAlpaFilterKelompok}
+                      onChange={(e) => {
+                        setCriticalAlpaFilterKelompok(e.target.value);
+                        setCriticalAlpaPage(1);
+                      }}
+                      className="bg-transparent outline-none cursor-pointer text-xs font-semibold max-w-[180px] truncate"
+                    >
+                      <option value="ALL">Semua Kelompok</option>
+                      {Array.from(new Set((data?.criticalAlpaStudents || []).map((s) => s.kelompokName))).map((kName) => (
+                        <option key={kName} value={kName}>
+                          {kName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Table of Critical Alpa Students */}
+              <div className="border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden bg-white dark:bg-slate-900">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-bold uppercase text-[10px]">
+                      <tr>
+                        <th className="py-2.5 px-3.5 text-center w-12">No</th>
+                        <th className="py-2.5 px-3.5">Mahasiswa</th>
+                        <th className="py-2.5 px-3.5">Program Studi</th>
+                        <th className="py-2.5 px-3.5">Kelompok & Wilayah</th>
+                        <th className="py-2.5 px-3.5">DPL Pengampu</th>
+                        <th className="py-2.5 px-3.5 text-center">Akumulasi Alpa</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                      {paginatedCriticalAlpaStudents.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="py-8 text-center text-slate-400 text-xs">
+                            Tidak ditemukan mahasiswa alpa kritis dengan parameter pencarian tersebut.
+                          </td>
+                        </tr>
+                      ) : (
+                        paginatedCriticalAlpaStudents.map((st, idx) => {
+                          const rowNum = (criticalAlpaPage - 1) * CRITICAL_ALPA_PER_PAGE + idx + 1;
+                          return (
+                            <tr key={st.id || idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
+                              <td className="py-2.5 px-3.5 text-center font-bold text-slate-400">
+                                {rowNum}
+                              </td>
+                              <td className="py-2.5 px-3.5">
+                                <p className="font-bold text-slate-900 dark:text-slate-100 leading-tight">
+                                  {st.name}
+                                </p>
+                                <p className="text-[11px] text-slate-400 font-mono mt-0.5">
+                                  NIM: {st.nim}
+                                </p>
+                              </td>
+                              <td className="py-2.5 px-3.5 text-slate-600 dark:text-slate-300 font-medium">
+                                {st.jurusan}
+                              </td>
+                              <td className="py-2.5 px-3.5">
+                                <p className="font-semibold text-slate-800 dark:text-slate-200">
+                                  {st.kelompokName}
+                                </p>
+                                <p className="text-[11px] text-slate-400">
+                                  Kel. {st.kelurahan}
+                                </p>
+                              </td>
+                              <td className="py-2.5 px-3.5">
+                                <p className="font-semibold text-slate-700 dark:text-slate-300">
+                                  {st.dplName}
+                                </p>
+                                {st.dplPhone && (
+                                  <a
+                                    href={`https://wa.me/${st.dplPhone.replace(/\D/g, "")}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-[10.5px] text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 mt-0.5"
+                                  >
+                                    <Phone size={10} />
+                                    <span>{st.dplPhone}</span>
+                                  </a>
+                                )}
+                              </td>
+                              <td className="py-2.5 px-3.5 text-center">
+                                <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-black bg-rose-100 text-rose-700 dark:bg-rose-950/80 dark:text-rose-300 border border-rose-300 dark:border-rose-800">
+                                  {st.alpaCount} Hari Alpa
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination Controls */}
+                {totalCriticalAlpaPages > 1 && (
+                  <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50 dark:bg-slate-800/60 border-t border-slate-200 dark:border-slate-700 text-xs text-slate-500">
+                    <span>
+                      Menampilkan {Math.min((criticalAlpaPage - 1) * CRITICAL_ALPA_PER_PAGE + 1, filteredCriticalAlpaStudents.length)} -{" "}
+                      {Math.min(criticalAlpaPage * CRITICAL_ALPA_PER_PAGE, filteredCriticalAlpaStudents.length)} dari{" "}
+                      {filteredCriticalAlpaStudents.length} Mahasiswa
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        disabled={criticalAlpaPage === 1}
+                        onClick={() => setCriticalAlpaPage((p) => Math.max(1, p - 1))}
+                        className="p-1 rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-40 hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer"
+                      >
+                        <ChevronLeft size={14} />
+                      </button>
+                      <span className="font-bold text-slate-700 dark:text-slate-300 px-2">
+                        {criticalAlpaPage} / {totalCriticalAlpaPages}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={criticalAlpaPage === totalCriticalAlpaPages}
+                        onClick={() => setCriticalAlpaPage((p) => Math.min(totalCriticalAlpaPages, p + 1))}
+                        className="p-1 rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-40 hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer"
+                      >
+                        <ChevronRight size={14} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-between px-6 py-3.5 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-800 shrink-0">
+              <Link
+                to="/monitoring-kegiatan/presensi?filter=alpa"
+                className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
+              >
+                <span>Buka Modul Monitoring Presensi Lapangan</span>
+                <ChevronRight size={14} />
+              </Link>
+              <button
+                type="button"
+                onClick={() => setShowCriticalAlpaModal(false)}
+                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition cursor-pointer"
               >
                 Tutup
               </button>

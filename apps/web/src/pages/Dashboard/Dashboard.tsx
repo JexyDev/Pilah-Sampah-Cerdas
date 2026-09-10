@@ -1844,7 +1844,7 @@ const Dashboard: React.FC = () => {
             }`}
           >
             <GraduationCap size={15} />
-            <span>Sub-Dasbor Eksekutif KKN</span>
+            <span>Dasbor Eksekutif KKN</span>
           </button>
           <button
             onClick={() => setSearchParams({ tab: "sampah" })}
@@ -1946,7 +1946,7 @@ const Dashboard: React.FC = () => {
             }`}
           >
             <GraduationCap size={15} />
-            <span>Sub-Dasbor Eksekutif KKN</span>
+            <span>Dasbor Eksekutif KKN</span>
           </button>
           <button
             onClick={() => setSearchParams({ tab: "sampah" })}
@@ -2605,10 +2605,11 @@ const Dashboard: React.FC = () => {
 
       {/* === Central Operational Lists & Activity === */}
       <div className="px-1 pt-2 text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">
-        Data Operasional &amp; Sesi Pengguna
+        {isPimpinan ? "Sesi Pengguna Sistem" : "Data Operasional & Sesi Pengguna"}
       </div>
       <div className="grid grid-cols-12 gap-6 relative z-10">
-        {/* Data Tempat Sampah Terbaru */}
+        {/* Data Tempat Sampah Terbaru (Dihapus dari Dasbor Pimpinan - Dialihkan ke menu Tempat Sampah) */}
+        {!isPimpinan && (
         <div className="col-span-12 lg:col-span-6 bg-white dark:bg-slate-900 shadow-sm rounded-3xl p-6 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
           <div className="flex justify-between items-center mb-5 pb-3 border-b border-slate-200 dark:border-slate-800">
             <div className="flex items-center gap-2.5">
@@ -2760,9 +2761,10 @@ const Dashboard: React.FC = () => {
             </table>
           </div>
         </div>
+        )}
 
         {/* Sesi Pengguna Aktif Card */}
-        <div className="col-span-12 lg:col-span-6 bg-white dark:bg-slate-900 shadow-sm rounded-3xl p-6 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
+        <div className={`col-span-12 ${isPimpinan ? "lg:col-span-12" : "lg:col-span-6"} bg-white dark:bg-slate-900 shadow-sm rounded-3xl p-6 border border-slate-200 dark:border-slate-800 flex flex-col justify-between`}>
           <div>
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-center gap-3">
