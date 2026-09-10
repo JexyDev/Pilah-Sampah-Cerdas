@@ -1621,6 +1621,38 @@ export class BinService {
         .catch(() => {});
     }
 
+    // Kirim FCM Push Notification ke perangkat Warga jika token tersedia
+    if (request.user?.fcmToken) {
+      let pushTitle = "Pemberitahuan Pengosongan";
+      let pushBody = `Status pengajuan tempat sampah ${request.bin?.qrCode || ""} telah diperbarui.`;
+
+      if (status === "APPROVED" || status === "COMPLETED") {
+        pushTitle = "Tempat Sampah Dikosongkan! 🗑️";
+        pushBody = `Tempat sampah ${request.bin?.qrCode || ""} telah berhasil diverifikasi dan dikosongkan.`;
+      } else if (status === "REJECTED") {
+        pushTitle = "Pengajuan Ditolak";
+        pushBody = `Foto bukti pengosongan tempat sampah ${request.bin?.qrCode || ""} ditolak oleh petugas. Silakan ajukan kembali.`;
+      } else if (status === "ON_PROGRESS") {
+        pushTitle = "Pengangkutan Sedang Berlangsung 🚛";
+        pushBody = `Petugas sedang menuju lokasi Anda untuk mengosongkan tempat sampah ${request.bin?.qrCode || ""}.`;
+      }
+
+      await notificationIntegrationService
+        .sendPushNotification(
+          request.user.fcmToken,
+          pushTitle,
+          pushBody,
+          "RESET_REQUEST_REVIEWED",
+          {
+            event: "RESET_REQUEST_REVIEWED",
+            requestId: request.id,
+            binId: request.binId,
+            status,
+          }
+        )
+        .catch((err) => console.error("[FCM reviewResetRequest] Error sending push:", err));
+    }
+
     // Log to Audit Trail
     await prisma.auditTrail
       .create({
