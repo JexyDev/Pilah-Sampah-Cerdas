@@ -1638,7 +1638,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 className="w-12 h-12 rounded-2xl bg-[#f2f8f4] dark:bg-emerald-950/60 border border-[#035941]/20 dark:border-emerald-700/30 flex items-center justify-center p-1.5 shadow-sm hover:scale-105 transition-all cursor-pointer"
               >
                 <img
-                  src="/app-logo.png"
+                  src="/logos/berseka/berseka-logo-bg-transparent.png"
                   alt="BERSEKA Logo"
                   className="w-full h-full object-contain"
                 />
@@ -1686,25 +1686,25 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           /* Render Full Sidebar */
           <div className="relative z-10 flex flex-col h-full justify-between overflow-hidden">
             {/* Top Brand Logo Header Section */}
-            <div className="pt-4 pb-4 px-3.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between relative overflow-hidden bg-white dark:bg-slate-900 shrink-0">
+            <div className="pt-4 pb-4 px-3.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-center relative overflow-hidden bg-white dark:bg-slate-900 shrink-0">
               {/* ponytail: FallingLeavesBackground di-hide sesuai permintaan */}
               {/* <FallingLeavesBackground /> */}
               <Link
                 to="/dasbor"
                 onClick={handleMobileItemClick}
-                className="flex items-center gap-3 group cursor-pointer relative z-10 px-1 text-left min-w-0 flex-1"
+                className="flex items-center justify-center group cursor-pointer relative z-10 w-full text-center"
               >
                 <img
                   src="/app-logo.png"
                   alt="BERSEKA Logo"
-                  className="h-10 sm:h-11 w-auto object-contain transition-all duration-300 group-hover:scale-105 shrink-0"
+                  className="h-10 sm:h-11 w-auto object-contain transition-all duration-300 group-hover:scale-105"
                 />
               </Link>
               {/* Mobile Close Button */}
               <button
                 type="button"
                 onClick={onClose}
-                className="lg:hidden w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center transition cursor-pointer shrink-0 ml-2"
+                className="lg:hidden absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center transition cursor-pointer z-20"
                 title="Tutup Menu"
               >
                 <X size={18} />
