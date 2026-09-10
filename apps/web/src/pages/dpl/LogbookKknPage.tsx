@@ -527,10 +527,19 @@ export const LogbookKknPage: React.FC = () => {
 
   // Pagination Logic
   const totalPages = Math.max(1, Math.ceil(filteredLogbooks.length / pageSize));
+  const safeCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
+
+  // Auto-sync currentPage if totalPages shrinks due to search/filter
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
+
   const paginatedLogbooks = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
+    const start = (safeCurrentPage - 1) * pageSize;
     return filteredLogbooks.slice(start, start + pageSize);
-  }, [filteredLogbooks, currentPage, pageSize]);
+  }, [filteredLogbooks, safeCurrentPage, pageSize]);
 
   // Pending logbooks on current active page
   const paginatedPendingLogbooks = useMemo(() => {

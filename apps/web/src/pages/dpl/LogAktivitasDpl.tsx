@@ -308,6 +308,13 @@ export const LogAktivitasDpl: React.FC = () => {
     fetchActivityLogs();
   }, [searchQuery, selectedGroupFilter, selectedCategoryFilter, selectedPekanFilter, currentPage, pageSize]);
 
+  // Auto-sync currentPage jika totalPages berkurang akibat filter
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
+
   // File Upload Handlers
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
