@@ -1,0 +1,4274 @@
+[
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "Amelya Rizqi Rachmadani",
+    "nim": "21224027",
+    "phone": "082115280051",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "Novia Sri Wahyuni",
+    "nim": "21224165",
+    "phone": "083897917262",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "Rizka Rahma Kamila",
+    "nim": "21224029",
+    "phone": "083844209035",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "Zahra Puteri Qintara",
+    "nim": "21224017",
+    "phone": "08979745547",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "Aldrin Juandika",
+    "nim": "21224031",
+    "phone": "081511722253",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "NAAILA RIZKY KURNIAWAN",
+    "nim": "21224040",
+    "phone": "081803930324",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "Ahmad Shadiq",
+    "nim": "21224005",
+    "phone": "08978123352",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "Rika Yuseliana",
+    "nim": "21224037",
+    "phone": "083823067530",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "Kesya Putri Fibrianto",
+    "nim": "21224012",
+    "phone": "081386759563",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "Juan Morgan Pakpahan",
+    "nim": "21224036",
+    "phone": "0895388814138",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "MUHAMMAD RENDI ANSARI",
+    "nim": "21224019",
+    "phone": "081563500163",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "Reynaldi Pasha Nugraha",
+    "nim": "21224009",
+    "phone": "089516528208",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "Dimas Aditiya",
+    "nim": "21224042",
+    "phone": "084898521015",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "Dwi Anggeria Maulana",
+    "nim": "21224041",
+    "phone": "085759973751",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "Bunga Sefrizanti",
+    "nim": "21224164",
+    "phone": "083839324380",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "EVANIA SALSABILA",
+    "nim": "21224026",
+    "phone": "08886002536",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "Nanda Puspita Dewi",
+    "nim": "21224028",
+    "phone": "0895700887431",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "Anindia Geisya Lauria",
+    "nim": "21224004",
+    "phone": "085189951204",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "Laila Nazifa Sanjaya",
+    "nim": "21224008",
+    "phone": "085759177652",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "Virginia Putri Andeida",
+    "nim": "21224018",
+    "phone": "085189951218",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "Riky wildan hepyliyadi",
+    "nim": "21224011",
+    "phone": "08985506581",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "Saepul anwar",
+    "nim": "21224034",
+    "phone": "08561404113",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "DEVITASARI",
+    "nim": "21224030",
+    "phone": "085769680649",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "Maryam Agatha Islami",
+    "nim": "21224010",
+    "phone": "087717774587",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "risa marseliana",
+    "nim": "21224022",
+    "phone": "081511687598",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "Rajnan khairul akhyar",
+    "nim": "21224175",
+    "phone": "081220505575",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "Cicy Fauzzyah Rifqi Iskandar Sunu Saranani",
+    "nim": "21224003",
+    "phone": "081323194418",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "Ana Alailla",
+    "nim": "21224166",
+    "phone": "089506697457",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "Salma Fauziyyah Firdaus",
+    "nim": "21224007",
+    "phone": "085797295168",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "Lukman Hakim",
+    "nim": "21224176",
+    "phone": "082119092783",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "Mesya siti nuralia",
+    "nim": "21224002",
+    "phone": "082219712650",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "Melisa Febrianty Effendi",
+    "nim": "21224038",
+    "phone": "089646841703",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "Bilhaqqi Kitabullah",
+    "nim": "21224024",
+    "phone": "083849025045",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "Muhamad Rizkal Jatnika",
+    "nim": "21224001",
+    "phone": "0895617526772",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "Mochamad mir’an kholid",
+    "nim": "21224039",
+    "phone": "081321384239",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "M Ghassan Rabbani H",
+    "nim": "21225023",
+    "phone": "08990054657",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "Rio Islami Pasha",
+    "nim": "21224020",
+    "phone": "085872823913",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "Devan Elka Raihansyah",
+    "nim": "21224025",
+    "phone": "08973142285",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "Darrell Rafif Rizky Ramadhan",
+    "nim": "21224033",
+    "phone": "08818366327",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "Yazdaniar Alfaathir",
+    "nim": "21224014",
+    "phone": "0895370305522",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "Giandhika Bambang Supriatna",
+    "nim": "21224006",
+    "phone": "081395481402",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "Muhammad Rachil Tri Gusti",
+    "nim": "21224021",
+    "phone": "081219521365",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Dago",
+    "rw": "RW 1, 2, 7, 8",
+    "nama": "kaesya Prasetya gandhi",
+    "nim": "21224035",
+    "phone": "087775676469",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "Ivana Agustin Ragil Ayomi",
+    "nim": "21224072",
+    "phone": "082195176008",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "Gaberiela Br Bangun",
+    "nim": "21224074",
+    "phone": "08817877256",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "Vera Cornelia",
+    "nim": "21224059",
+    "phone": "082158665230",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "Devina Mutiara Aghisna",
+    "nim": "21224077",
+    "phone": "081224790197",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "Afifatul khasanah",
+    "nim": "21224050",
+    "phone": "087754486452",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "Sofia Dafa Fadhilah",
+    "nim": "21224048",
+    "phone": "085174164181",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "Annisa Octavia",
+    "nim": "21224056",
+    "phone": "085795181569",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "Naira Azzahra",
+    "nim": "21224081",
+    "phone": "081917113086",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "Dewi Azra Tami",
+    "nim": "21224173",
+    "phone": "083890542228",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "Salwa Nur Fadilah",
+    "nim": "21224065",
+    "phone": "0895358490228",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "Salma Nur Fadilah",
+    "nim": "21224064",
+    "phone": "085846160400",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "Melinda",
+    "nim": "21224057",
+    "phone": "08987830220",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "Ester Intan Sinurat",
+    "nim": "21224083",
+    "phone": "083895345440",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "Nadiya Nur Fauziyah",
+    "nim": "21224080",
+    "phone": "081313804028",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "Hirani Zahra Febriyanti",
+    "nim": "21224079",
+    "phone": "081324831783",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "Nasya Destianti",
+    "nim": "21224053",
+    "phone": "085795533802",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "Cantika Putri Felisha",
+    "nim": "21224073",
+    "phone": "0859113375004",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "Naillah Izzaf Rahadatul Aissy Gultom",
+    "nim": "21224063",
+    "phone": "081319030001",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "Farhan Musthopa",
+    "nim": "21224044",
+    "phone": "081223670035",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "sultan nurzamzam",
+    "nim": "21224884",
+    "phone": "081320760468",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "Alma Sri Maharani",
+    "nim": "21224060",
+    "phone": "085722154395",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "Rasyidah wardani",
+    "nim": "21224070",
+    "phone": "08996064729",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "Eva Nurmah Salsabilla",
+    "nim": "21224055",
+    "phone": "08889368346",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "virgi triharyandri",
+    "nim": "21224058",
+    "phone": "088291330000",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "Maranatha Jaya Nainggolan",
+    "nim": "21224046",
+    "phone": "082118971151",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "Livia Dhayang Rifani",
+    "nim": "21224061",
+    "phone": "085158668915",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "Rizki Maulana",
+    "nim": "21224078",
+    "phone": "08211500633",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "Muhammad Novan Maulana",
+    "nim": "21224075",
+    "phone": "082119393893",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "Rafliano Putra Purnama",
+    "nim": "21224067",
+    "phone": "089525033833",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "Ariq Ghassan Fadhillah",
+    "nim": "21224047",
+    "phone": "085795196508",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "Muhammad Rizqi Ramadhani",
+    "nim": "21224174",
+    "phone": "08995125554",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "AMPRI PRINGGO W",
+    "nim": "21224052",
+    "phone": "082258665540",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "Ahmad Faisal",
+    "nim": "21224049",
+    "phone": "083851785523",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "Ailsha Azka SN",
+    "nim": "21224062",
+    "phone": "088706317498",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "Fani Andini",
+    "nim": "21224043",
+    "phone": "082318183722",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "Sukma Cahaya M",
+    "nim": "21224066",
+    "phone": "088220934370",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "Maylia Kristiviani S",
+    "nim": "21224068",
+    "phone": "082319283427",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "Willyam Immanuel",
+    "nim": "21224051",
+    "phone": "0857975191",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "Annisa Rafa",
+    "nim": "21224082",
+    "phone": "085863001647",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "Azwal Dimas Ardani",
+    "nim": "21224071",
+    "phone": "083156658230",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Dago",
+    "rw": "RW 3, 5, dan 6",
+    "nama": "Rafli Nugroho",
+    "nim": "21224069",
+    "phone": "08987974285",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "NAZWAIASHA ASYURA",
+    "nim": "21224169",
+    "phone": "083116984764",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "Dewan Noel Jonatan S",
+    "nim": "21224110",
+    "phone": "081282645771",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "Didan Nugraha",
+    "nim": "21224085",
+    "phone": "081224153036",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "Najma Mutiara Jasmine",
+    "nim": "21224115",
+    "phone": "0881022832251",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "Olivia Pebrianti Sihombing",
+    "nim": "21224120",
+    "phone": "087827619437",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "Litan Mardian Saparini",
+    "nim": "21224177",
+    "phone": "083148289991",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "Sianipar Rianti Debora",
+    "nim": "21224121",
+    "phone": "087711796723",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "Rosinta Hutauruk",
+    "nim": "21224090",
+    "phone": "082120844233",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "Dea Syafira",
+    "nim": "21224122",
+    "phone": "087717192033",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "Desi Rahmawati",
+    "nim": "21224107",
+    "phone": "082111139288",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "ghevania ramadhani",
+    "nim": "21224096",
+    "phone": "085703177882",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "Suci Alpi Yanti",
+    "nim": "21224100",
+    "phone": "089507903585",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "Nabila Cecillia Putri",
+    "nim": "21224124",
+    "phone": "082353630640",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "Nabilul Kafi",
+    "nim": "21224112",
+    "phone": "085189951112",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "Melly Amelia",
+    "nim": "21224118",
+    "phone": "081311800184",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "FERDI RIZKY RAMADHAN",
+    "nim": "21224101",
+    "phone": "081220625671",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "Andhika Putra",
+    "nim": "21224117",
+    "phone": "082240299206",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "Muhammad Faiz Gunawan",
+    "nim": "21224087",
+    "phone": "081293136429",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "Natasha Greciella Rahma Zahira",
+    "nim": "21224106",
+    "phone": "089678280308",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "Reihan Razaka Permana",
+    "nim": "21224092",
+    "phone": "087717798568",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "Hafidz Dwi Putra",
+    "nim": "21224111",
+    "phone": "081462216348",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "Vallent Ferdinand",
+    "nim": "21224167",
+    "phone": "087715776714",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "Abyan putra",
+    "nim": "21224109",
+    "phone": "082116321702",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "DIMAS ABIMANYU",
+    "nim": "21224094",
+    "phone": "082176610429",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "Lutfi Bahtiar",
+    "nim": "21224104",
+    "phone": "083165567309",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "Fira sabrina setiawan putri",
+    "nim": "21224091",
+    "phone": "085351014171",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "Varel Yosephin",
+    "nim": "21224099",
+    "phone": "083101438384",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "Marcellino Gerrard",
+    "nim": "21224093",
+    "phone": "0895422514414",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "Imanuel Steven Djauhari",
+    "nim": "21224089",
+    "phone": "085945315016",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "Ananda Daffa Fauzan Hendayana",
+    "nim": "21224097",
+    "phone": "085624036958",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "Farrel Aulia daniswara",
+    "nim": "21222088",
+    "phone": "081547620005",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "Wanda Shaumia Muthmainnah",
+    "nim": "21224113",
+    "phone": "089604552149",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "Trimay sarah",
+    "nim": "21224095",
+    "phone": "08131675694",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "Adinda Aulia",
+    "nim": "21224084",
+    "phone": "089517043643",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "Robyansyah",
+    "nim": "21224116",
+    "phone": "082297452725",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "Fadhil Ghoufar",
+    "nim": "21224168",
+    "phone": "085755975220",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "Nayla Irdiana Pratiwi",
+    "nim": "21224108",
+    "phone": "081224533255",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "Alfira Ramadhaniar Diniyati",
+    "nim": "21224123",
+    "phone": "082246474166",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "Muhammad Reyhan Abdulgani",
+    "nim": "21224119",
+    "phone": "085692830244",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "Tubagus Azman Pauzan",
+    "nim": "21224098",
+    "phone": "085155375885",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "Fadhilah Aisya Nabila",
+    "nim": "21224088",
+    "phone": "081276236978",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Dago",
+    "rw": "RW 4, 9, dan 10",
+    "nama": "AKBAR",
+    "nim": "21224114",
+    "phone": "085757487725",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 4 Dago",
+    "rw": "RW 11,12, dan 13",
+    "nama": "NABIL RAHMA PUTRA SUHENDI",
+    "nim": "21224903",
+    "phone": "081775467166",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 4 Dago",
+    "rw": "RW 11,12, dan 13",
+    "nama": "Ahmad Morenno suliawan",
+    "nim": "21224148",
+    "phone": "081293072550",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 4 Dago",
+    "rw": "RW 11,12, dan 13",
+    "nama": "Ester Hasianna",
+    "nim": "21224146",
+    "phone": "082219556950",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 4 Dago",
+    "rw": "RW 11,12, dan 13",
+    "nama": "Bellamida amanda putri",
+    "nim": "21224158",
+    "phone": "081372526217",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 4 Dago",
+    "rw": "RW 11,12, dan 13",
+    "nama": "YESSIKA VITRIA WATI",
+    "nim": "21224157",
+    "phone": "085654051690",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 4 Dago",
+    "rw": "RW 11,12, dan 13",
+    "nama": "Ilyas daud sirojul huda",
+    "nim": "21224149",
+    "phone": "081394934993",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 4 Dago",
+    "rw": "RW 11,12, dan 13",
+    "nama": "JAENUDIN SOPIYAN SANI",
+    "nim": "21224170",
+    "phone": "083874417569",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 4 Dago",
+    "rw": "RW 11,12, dan 13",
+    "nama": "bani haykal permana",
+    "nim": "21224142",
+    "phone": "083824585228",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 4 Dago",
+    "rw": "RW 11,12, dan 13",
+    "nama": "RAYHAN DEANCARINDA SUPARDI",
+    "nim": "21224132",
+    "phone": "081931712757",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 4 Dago",
+    "rw": "RW 11,12, dan 13",
+    "nama": "Naufal Rabani",
+    "nim": "21224153",
+    "phone": "085934462167",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 4 Dago",
+    "rw": "RW 11,12, dan 13",
+    "nama": "Launa Shafa Nadira",
+    "nim": "21224145",
+    "phone": "082128014219",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 4 Dago",
+    "rw": "RW 11,12, dan 13",
+    "nama": "Shofia Afiyatunnisa",
+    "nim": "21224171",
+    "phone": "089636456272",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 4 Dago",
+    "rw": "RW 11,12, dan 13",
+    "nama": "NUR SYIFA MARYAM",
+    "nim": "21224143",
+    "phone": "082126490757",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 4 Dago",
+    "rw": "RW 11,12, dan 13",
+    "nama": "Hasna Putri Fadhilah",
+    "nim": "21224138",
+    "phone": "0881022108729",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 4 Dago",
+    "rw": "RW 11,12, dan 13",
+    "nama": "Rafly Isyandie",
+    "nim": "21224140",
+    "phone": "082246461248",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 4 Dago",
+    "rw": "RW 11,12, dan 13",
+    "nama": "janet nur afifah",
+    "nim": "21224152",
+    "phone": "0881023218517",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 4 Dago",
+    "rw": "RW 11,12, dan 13",
+    "nama": "Ajeng Eka Rahmawati",
+    "nim": "21224154",
+    "phone": "0895703172150",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 4 Dago",
+    "rw": "RW 11,12, dan 13",
+    "nama": "Najhani Farhatani Ats Tsaniyah",
+    "nim": "21224144",
+    "phone": "082126329827",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 4 Dago",
+    "rw": "RW 11,12, dan 13",
+    "nama": "Sofie Aprilia Putri",
+    "nim": "21224151",
+    "phone": "085722573334",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 4 Dago",
+    "rw": "RW 11,12, dan 13",
+    "nama": "Zahra Akhrian Widiani",
+    "nim": "21224125",
+    "phone": "0895338661228",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 4 Dago",
+    "rw": "RW 11,12, dan 13",
+    "nama": "Raji Rafsanjani",
+    "nim": "21224155",
+    "phone": "085722401125",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 4 Dago",
+    "rw": "RW 11,12, dan 13",
+    "nama": "Ajang Gunawan",
+    "nim": "21224130",
+    "phone": "081292690092",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 4 Dago",
+    "rw": "RW 11,12, dan 13",
+    "nama": "Septian Muhammad Saputra",
+    "nim": "21224134",
+    "phone": "082218910613",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 4 Dago",
+    "rw": "RW 11,12, dan 13",
+    "nama": "bintang syahruuramadhan",
+    "nim": "21224137",
+    "phone": "081214421750",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 4 Dago",
+    "rw": "RW 11,12, dan 13",
+    "nama": "Nayla Malva Manika",
+    "nim": "21224128",
+    "phone": "087735522636",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 4 Dago",
+    "rw": "RW 11,12, dan 13",
+    "nama": "Meisya Triphosa",
+    "nim": "21224129",
+    "phone": "085862845702",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 4 Dago",
+    "rw": "RW 11,12, dan 13",
+    "nama": "Revitha Lestari",
+    "nim": "21224160",
+    "phone": "081224793817",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 4 Dago",
+    "rw": "RW 11,12, dan 13",
+    "nama": "Vira Nazwa Rianti",
+    "nim": "21224136",
+    "phone": "085603679106",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 4 Dago",
+    "rw": "RW 11,12, dan 13",
+    "nama": "Ghaida Nur Qolbi",
+    "nim": "21224172",
+    "phone": "081220084181",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 4 Dago",
+    "rw": "RW 11,12, dan 13",
+    "nama": "Vanka Aulia Alfanda",
+    "nim": "21224135",
+    "phone": "082120101043",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 4 Dago",
+    "rw": "RW 11,12, dan 13",
+    "nama": "Enjel Cheriyl Ruitha",
+    "nim": "21224150",
+    "phone": "085759336603",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 4 Dago",
+    "rw": "RW 11,12, dan 13",
+    "nama": "DIKI HERDIANA",
+    "nim": "21224133",
+    "phone": "085864421367",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 4 Dago",
+    "rw": "RW 11,12, dan 13",
+    "nama": "HAGIA SOPHIA PUTRI SHANDY",
+    "nim": "21224126",
+    "phone": "081285394545",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 4 Dago",
+    "rw": "RW 11,12, dan 13",
+    "nama": "Lexa Indriyani Sitorus",
+    "nim": "21224127",
+    "phone": "085212928423",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 4 Dago",
+    "rw": "RW 11,12, dan 13",
+    "nama": "Muhammad Ihsan Muttaqien",
+    "nim": "21224802",
+    "phone": "082219910112",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 4 Dago",
+    "rw": "RW 11,12, dan 13",
+    "nama": "ARVIA ARDHIVA MAHARANI",
+    "nim": "21224141",
+    "phone": "0882002534835",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 4 Dago",
+    "rw": "RW 11,12, dan 13",
+    "nama": "Ajeng Nur Fatimah",
+    "nim": "21224161",
+    "phone": "082262872564",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Lebak Gede",
+    "rw": "RW 1, 12, dan 13",
+    "nama": "PAGUH SANTOSO",
+    "nim": "10420053",
+    "phone": "085283427117",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 1 Lebak Gede",
+    "rw": "RW 1, 12, dan 13",
+    "nama": "Steven Cornelius",
+    "nim": "51923209",
+    "phone": "082215880071",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 1 Lebak Gede",
+    "rw": "RW 1, 12, dan 13",
+    "nama": "Dewi Handayani",
+    "nim": "31624009",
+    "phone": "0895622055669",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 1 Lebak Gede",
+    "rw": "RW 1, 12, dan 13",
+    "nama": "Harun arrosyd",
+    "nim": "10524003",
+    "phone": "081809679880",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 1 Lebak Gede",
+    "rw": "RW 1, 12, dan 13",
+    "nama": "Hana Husniyah",
+    "nim": "63824012",
+    "phone": "082130567689",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 1 Lebak Gede",
+    "rw": "RW 1, 12, dan 13",
+    "nama": "Ahmad Faiz arfan",
+    "nim": "10323009",
+    "phone": "082360763837",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Lebak Gede",
+    "rw": "RW 1, 12, dan 13",
+    "nama": "Raja Maudia Farhan",
+    "nim": "13022002",
+    "phone": "081276746732",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 1 Lebak Gede",
+    "rw": "RW 1, 12, dan 13",
+    "nama": "Ananda Fityan Syakur",
+    "nim": "10123024",
+    "phone": "083159700340",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 1 Lebak Gede",
+    "rw": "RW 1, 12, dan 13",
+    "nama": "Arif Hardyansyah",
+    "nim": "10123042",
+    "phone": "081235533185",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 1 Lebak Gede",
+    "rw": "RW 1, 12, dan 13",
+    "nama": "Tias Nurrohman Hidayat",
+    "nim": "10123053",
+    "phone": "081383827707",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 1 Lebak Gede",
+    "rw": "RW 1, 12, dan 13",
+    "nama": "Maulana Saputra",
+    "nim": "10123064",
+    "phone": "088222143008",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 1 Lebak Gede",
+    "rw": "RW 1, 12, dan 13",
+    "nama": "Mufti Alhamdani",
+    "nim": "10123080",
+    "phone": "085199218729",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 1 Lebak Gede",
+    "rw": "RW 1, 12, dan 13",
+    "nama": "Randy Fawwaz Aditya",
+    "nim": "10123106",
+    "phone": "085718105773",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 2 Lebak Gede",
+    "rw": "RW14,4, dan 7",
+    "nama": "Subhan Kurnia Rohman",
+    "nim": "21124038",
+    "phone": "089675367080",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 2 Lebak Gede",
+    "rw": "RW14,4, dan 7",
+    "nama": "Naufal Nashshar Fahlevy",
+    "nim": "10423026",
+    "phone": "08882340292",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 2 Lebak Gede",
+    "rw": "RW14,4, dan 7",
+    "nama": "Mochammad Mujib Abdillah",
+    "nim": "44324064",
+    "phone": "082130925558",
+    "sks": 17
+  },
+  {
+    "kelompok": "Kelompok 2 Lebak Gede",
+    "rw": "RW14,4, dan 7",
+    "nama": "Siti Selma Artanti",
+    "nim": "41824064",
+    "phone": "082120971897",
+    "sks": 13
+  },
+  {
+    "kelompok": "Kelompok 2 Lebak Gede",
+    "rw": "RW14,4, dan 7",
+    "nama": "Muhammad ervan daffa wardana",
+    "nim": "10523072",
+    "phone": "083839706455",
+    "sks": 14
+  },
+  {
+    "kelompok": "Kelompok 2 Lebak Gede",
+    "rw": "RW14,4, dan 7",
+    "nama": "Septian muqtiyana",
+    "nim": "10523161",
+    "phone": "085117604737",
+    "sks": 14
+  },
+  {
+    "kelompok": "Kelompok 2 Lebak Gede",
+    "rw": "RW14,4, dan 7",
+    "nama": "Aldha Febriyani",
+    "nim": "10524011",
+    "phone": "081292888274",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 2 Lebak Gede",
+    "rw": "RW14,4, dan 7",
+    "nama": "Nabil Al-Ghifari",
+    "nim": "63824016",
+    "phone": "089612144030",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 2 Lebak Gede",
+    "rw": "RW14,4, dan 7",
+    "nama": "Rahil Septian",
+    "nim": "10323018",
+    "phone": "083821737676",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Lebak Gede",
+    "rw": "RW14,4, dan 7",
+    "nama": "Muhammad Murfid Nurhadi",
+    "nim": "10123014",
+    "phone": "081394784696",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 2 Lebak Gede",
+    "rw": "RW14,4, dan 7",
+    "nama": "Rizky Nugraha Kadar",
+    "nim": "10123039",
+    "phone": "08983743989",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 2 Lebak Gede",
+    "rw": "RW14,4, dan 7",
+    "nama": "Fikri Taufiqurrahman Suryaman",
+    "nim": "10123044",
+    "phone": "081770459643",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 2 Lebak Gede",
+    "rw": "RW14,4, dan 7",
+    "nama": "Yusuf Ardiansyah",
+    "nim": "10123056",
+    "phone": "081221999138",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 2 Lebak Gede",
+    "rw": "RW14,4, dan 7",
+    "nama": "Surya Muhammad Atallah",
+    "nim": "10123065",
+    "phone": "081221610620",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 2 Lebak Gede",
+    "rw": "RW14,4, dan 7",
+    "nama": "Rangga Arya Daffa Putra Kusdiana",
+    "nim": "10123081",
+    "phone": "081224026414",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 3 Lebak Gede",
+    "rw": "RW 8,9,11 dan 10",
+    "nama": "Fakhry Arief Rahman",
+    "nim": "11024006",
+    "phone": "083111296074",
+    "sks": 18
+  },
+  {
+    "kelompok": "Kelompok 3 Lebak Gede",
+    "rw": "RW 8,9,11 dan 10",
+    "nama": "Nauval Dzikri Gofari",
+    "nim": "44324041",
+    "phone": "083896685944",
+    "sks": 17
+  },
+  {
+    "kelompok": "Kelompok 3 Lebak Gede",
+    "rw": "RW 8,9,11 dan 10",
+    "nama": "Khansa Zulfa Nurhaibah",
+    "nim": "41823074",
+    "phone": "085794226717",
+    "sks": 14
+  },
+  {
+    "kelompok": "Kelompok 3 Lebak Gede",
+    "rw": "RW 8,9,11 dan 10",
+    "nama": "Muhammad Ikram Fathan Yasmkn",
+    "nim": "10523076",
+    "phone": "085872214755",
+    "sks": 14
+  },
+  {
+    "kelompok": "Kelompok 3 Lebak Gede",
+    "rw": "RW 8,9,11 dan 10",
+    "nama": "Sucipto Makalalag",
+    "nim": "10523193",
+    "phone": "0895806307527",
+    "sks": 14
+  },
+  {
+    "kelompok": "Kelompok 3 Lebak Gede",
+    "rw": "RW 8,9,11 dan 10",
+    "nama": "Alif Muhammad Rama Jungjunan",
+    "nim": "10924003",
+    "phone": "083190777713",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Lebak Gede",
+    "rw": "RW 8,9,11 dan 10",
+    "nama": "ilham fathurrahman",
+    "nim": "13022018",
+    "phone": "085624208958",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 3 Lebak Gede",
+    "rw": "RW 8,9,11 dan 10",
+    "nama": "Yoan Ready Syavera",
+    "nim": "10123015",
+    "phone": "081953171433",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 3 Lebak Gede",
+    "rw": "RW 8,9,11 dan 10",
+    "nama": "Rikza Danan Irdian",
+    "nim": "10123040",
+    "phone": "082123419510",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 3 Lebak Gede",
+    "rw": "RW 8,9,11 dan 10",
+    "nama": "Adira Radzan Badriana",
+    "nim": "10123047",
+    "phone": "081221909802",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 3 Lebak Gede",
+    "rw": "RW 8,9,11 dan 10",
+    "nama": "Arby Azhali",
+    "nim": "52124001",
+    "phone": "082215325293",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 3 Lebak Gede",
+    "rw": "RW 8,9,11 dan 10",
+    "nama": "Muhammad Rifqi Adiyuwana",
+    "nim": "10123057",
+    "phone": "081210820209",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 4 Lebak Gede",
+    "rw": "RW 2,3,15",
+    "nama": "Farhan Ramadhan Riyadhul Hanan",
+    "nim": "10422038",
+    "phone": "087747934281",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 4 Lebak Gede",
+    "rw": "RW 2,3,15",
+    "nama": "Okan Dwi Ramdani",
+    "nim": "52024013",
+    "phone": "089699945266",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 4 Lebak Gede",
+    "rw": "RW 2,3,15",
+    "nama": "Chandra Nur Mulyani",
+    "nim": "31624019",
+    "phone": "0895338789991",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 4 Lebak Gede",
+    "rw": "RW 2,3,15",
+    "nama": "Najwa Intan Putri Permata",
+    "nim": "41823031",
+    "phone": "081298102636",
+    "sks": 14
+  },
+  {
+    "kelompok": "Kelompok 4 Lebak Gede",
+    "rw": "RW 2,3,15",
+    "nama": "Febrian Ardianto",
+    "nim": "10524002",
+    "phone": "085846221380",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 4 Lebak Gede",
+    "rw": "RW 2,3,15",
+    "nama": "Naqiyya Ufaira",
+    "nim": "63724011",
+    "phone": "0895326526550",
+    "sks": 18
+  },
+  {
+    "kelompok": "Kelompok 4 Lebak Gede",
+    "rw": "RW 2,3,15",
+    "nama": "Rafi Madani",
+    "nim": "10224020",
+    "phone": "081546894967",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 4 Lebak Gede",
+    "rw": "RW 2,3,15",
+    "nama": "Argi Hasya Prasetya",
+    "nim": "13124005",
+    "phone": "083813319980",
+    "sks": 18
+  },
+  {
+    "kelompok": "Kelompok 4 Lebak Gede",
+    "rw": "RW 2,3,15",
+    "nama": "mitsaal sallih",
+    "nim": "13022009",
+    "phone": "082117244607",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 4 Lebak Gede",
+    "rw": "RW 2,3,15",
+    "nama": "Muhammad Rizki Aliansyah",
+    "nim": "10123041",
+    "phone": "087829623083",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 4 Lebak Gede",
+    "rw": "RW 2,3,15",
+    "nama": "Nur Ain Salimah",
+    "nim": "10123049",
+    "phone": "083133926574",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 4 Lebak Gede",
+    "rw": "RW 2,3,15",
+    "nama": "Wa Ode Syahwa Salsabilah",
+    "nim": "10123062",
+    "phone": "081290808347",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 4 Lebak Gede",
+    "rw": "RW 2,3,15",
+    "nama": "Dani Nurhalim",
+    "nim": "10123076",
+    "phone": "087817066930",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 4 Lebak Gede",
+    "rw": "RW 2,3,15",
+    "nama": "Muhammad Fikri Faizul Haq",
+    "nim": "10124114",
+    "phone": "089526490236",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 1 Sekeloa",
+    "rw": "RW 1 dan 2",
+    "nama": "Nita Triana",
+    "nim": "21124802",
+    "phone": "083143224685",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 1 Sekeloa",
+    "rw": "RW 1 dan 2",
+    "nama": "Habib sidiq mauluddin",
+    "nim": "10421023",
+    "phone": "082125725966",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 1 Sekeloa",
+    "rw": "RW 1 dan 2",
+    "nama": "Nabil Makarim",
+    "nim": "44324026",
+    "phone": "081253638240",
+    "sks": 17
+  },
+  {
+    "kelompok": "Kelompok 1 Sekeloa",
+    "rw": "RW 1 dan 2",
+    "nama": "kayla zahra",
+    "nim": "41824054",
+    "phone": "082128111807",
+    "sks": 13
+  },
+  {
+    "kelompok": "Kelompok 1 Sekeloa",
+    "rw": "RW 1 dan 2",
+    "nama": "Zelgi Raidansyah",
+    "nim": "10524032",
+    "phone": "081286174969",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 1 Sekeloa",
+    "rw": "RW 1 dan 2",
+    "nama": "ANIS WIDYA",
+    "nim": "10524056",
+    "phone": "082120468245",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 1 Sekeloa",
+    "rw": "RW 1 dan 2",
+    "nama": "Rizki Firmansyah",
+    "nim": "10923007",
+    "phone": "083197727852",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 1 Sekeloa",
+    "rw": "RW 1 dan 2",
+    "nama": "ADEN ADHYAKSA WASTIKA",
+    "nim": "10224011",
+    "phone": "083835782323",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 1 Sekeloa",
+    "rw": "RW 1 dan 2",
+    "nama": "Muhammad Adnan Firmansyah",
+    "nim": "13124010",
+    "phone": "089687976529",
+    "sks": 18
+  },
+  {
+    "kelompok": "Kelompok 1 Sekeloa",
+    "rw": "RW 1 dan 2",
+    "nama": "Davy Pardomuan",
+    "nim": "13022008",
+    "phone": "081222761737",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 1 Sekeloa",
+    "rw": "RW 1 dan 2",
+    "nama": "Muhammad Zaidan Azhari",
+    "nim": "10123136",
+    "phone": "085624709908",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 1 Sekeloa",
+    "rw": "RW 1 dan 2",
+    "nama": "Benyamin Benedecthus Nikolaus Maryen",
+    "nim": "10123239",
+    "phone": "085782116995",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 1 Sekeloa",
+    "rw": "RW 1 dan 2",
+    "nama": "Achmad Chasanuddin",
+    "nim": "10123367",
+    "phone": "081461173586",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 1 Sekeloa",
+    "rw": "RW 1 dan 2",
+    "nama": "Muhammad Denish Kafaulloh Arasyid",
+    "nim": "10123433",
+    "phone": "083892668197",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 1 Sekeloa",
+    "rw": "RW 1 dan 2",
+    "nama": "Haifa Afina",
+    "nim": "10123415",
+    "phone": "081293357879",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 2 Sekeloa",
+    "rw": "RW 3 dan 4",
+    "nama": "Akmal Al Jihad",
+    "nim": "21124808",
+    "phone": "085182327492",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 2 Sekeloa",
+    "rw": "RW 3 dan 4",
+    "nama": "Fahmi syahrul romdhoni",
+    "nim": "10421060",
+    "phone": "089527237309",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 2 Sekeloa",
+    "rw": "RW 3 dan 4",
+    "nama": "Nur Shalehatun Nisa",
+    "nim": "44324015",
+    "phone": "085220590156",
+    "sks": 17
+  },
+  {
+    "kelompok": "Kelompok 2 Sekeloa",
+    "rw": "RW 3 dan 4",
+    "nama": "Alya Rachel",
+    "nim": "41822157",
+    "phone": "081312923808",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 2 Sekeloa",
+    "rw": "RW 3 dan 4",
+    "nama": "Raka Bintang Syahputra",
+    "nim": "10524034",
+    "phone": "081297531268",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 2 Sekeloa",
+    "rw": "RW 3 dan 4",
+    "nama": "Lucky Lazuardi",
+    "nim": "10524057",
+    "phone": "081314692013",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 2 Sekeloa",
+    "rw": "RW 3 dan 4",
+    "nama": "ADINDA DWI ZALKIA",
+    "nim": "63724014",
+    "phone": "082127617060",
+    "sks": 18
+  },
+  {
+    "kelompok": "Kelompok 2 Sekeloa",
+    "rw": "RW 3 dan 4",
+    "nama": "Maulana Rimba Zhansasi Anugrah",
+    "nim": "13025031",
+    "phone": "089607789635",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 2 Sekeloa",
+    "rw": "RW 3 dan 4",
+    "nama": "Idin Naufal Hakim",
+    "nim": "10123157",
+    "phone": "082119678835",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 2 Sekeloa",
+    "rw": "RW 3 dan 4",
+    "nama": "Ananda Fadhilah Putra",
+    "nim": "10123328",
+    "phone": "081320387479",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 2 Sekeloa",
+    "rw": "RW 3 dan 4",
+    "nama": "Muhammad Satria Jalalludin",
+    "nim": "10123373",
+    "phone": "0895707867060",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 2 Sekeloa",
+    "rw": "RW 3 dan 4",
+    "nama": "Mochamad Syabill Putra Ramadhan",
+    "nim": "10123436",
+    "phone": "083173277565",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 2 Sekeloa",
+    "rw": "RW 3 dan 4",
+    "nama": "Reyhan Pratama",
+    "nim": "10124058",
+    "phone": "089527514308",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 3 Sekeloa",
+    "rw": "RW 5,6, dan 7",
+    "nama": "Viki Ayu Armaita",
+    "nim": "21124806",
+    "phone": "087821641891",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 3 Sekeloa",
+    "rw": "RW 5,6, dan 7",
+    "nama": "Mohammad farhan Alif Akbar",
+    "nim": "51924064",
+    "phone": "081223532154",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 3 Sekeloa",
+    "rw": "RW 5,6, dan 7",
+    "nama": "Esmenia Maria Ximenes Pereira",
+    "nim": "31624015",
+    "phone": "085862005434",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 3 Sekeloa",
+    "rw": "RW 5,6, dan 7",
+    "nama": "Vernanda Zahra Nurrachman",
+    "nim": "41824058",
+    "phone": "085798428562",
+    "sks": 13
+  },
+  {
+    "kelompok": "Kelompok 3 Sekeloa",
+    "rw": "RW 5,6, dan 7",
+    "nama": "Muhammad Farhan Rasyad",
+    "nim": "10524035",
+    "phone": "082217891422",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 3 Sekeloa",
+    "rw": "RW 5,6, dan 7",
+    "nama": "Ramzi Fitrah",
+    "nim": "10524063",
+    "phone": "087887851769",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 3 Sekeloa",
+    "rw": "RW 5,6, dan 7",
+    "nama": "Moch. Fadzar Wahiddin",
+    "nim": "63823036",
+    "phone": "08813083287",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 3 Sekeloa",
+    "rw": "RW 5,6, dan 7",
+    "nama": "Muhammad Raihan Nur Yusup",
+    "nim": "13124016",
+    "phone": "088223220280",
+    "sks": 18
+  },
+  {
+    "kelompok": "Kelompok 3 Sekeloa",
+    "rw": "RW 5,6, dan 7",
+    "nama": "Muhammad Irfan Fadhilah",
+    "nim": "10324009",
+    "phone": "085775011750",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Sekeloa",
+    "rw": "RW 5,6, dan 7",
+    "nama": "Salman Alfarizzi",
+    "nim": "13022019",
+    "phone": "085641638629",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 3 Sekeloa",
+    "rw": "RW 5,6, dan 7",
+    "nama": "Aldo Revaldo",
+    "nim": "10123163",
+    "phone": "081321250689",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 3 Sekeloa",
+    "rw": "RW 5,6, dan 7",
+    "nama": "Muthia Andini",
+    "nim": "10123345",
+    "phone": "088270987096",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 3 Sekeloa",
+    "rw": "RW 5,6, dan 7",
+    "nama": "Abdul Mujib Mubarok",
+    "nim": "10123385",
+    "phone": "083169942795",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 3 Sekeloa",
+    "rw": "RW 5,6, dan 7",
+    "nama": "Muhammad Nazriel Alfarizi",
+    "nim": "10123442",
+    "phone": "089508900031",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 3 Sekeloa",
+    "rw": "RW 5,6, dan 7",
+    "nama": "Muhammad Bilal",
+    "nim": "10124060",
+    "phone": "0895412955532",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 4 Sekeloa",
+    "rw": "RW 8,9, 10",
+    "nama": "Ghazwan Rifat Al-Faris",
+    "nim": "11024013",
+    "phone": "085642178320",
+    "sks": 18
+  },
+  {
+    "kelompok": "Kelompok 4 Sekeloa",
+    "rw": "RW 8,9, 10",
+    "nama": "REIHAN RENALDI",
+    "nim": "52024009",
+    "phone": "081398458958",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 4 Sekeloa",
+    "rw": "RW 8,9, 10",
+    "nama": "Dean Amando Mendrofa",
+    "nim": "31624001",
+    "phone": "082294699273",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 4 Sekeloa",
+    "rw": "RW 8,9, 10",
+    "nama": "Ferdinan Pasaribu",
+    "nim": "41724008",
+    "phone": "081919966556",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 4 Sekeloa",
+    "rw": "RW 8,9, 10",
+    "nama": "Ahmad Suud Huzaemi",
+    "nim": "10524048",
+    "phone": "081297531268",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 4 Sekeloa",
+    "rw": "RW 8,9, 10",
+    "nama": "Danus Rosan",
+    "nim": "10524065",
+    "phone": "083153709000",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 4 Sekeloa",
+    "rw": "RW 8,9, 10",
+    "nama": "Neval melyuko soedarmasto",
+    "nim": "63824025",
+    "phone": "081319699159",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 4 Sekeloa",
+    "rw": "RW 8,9, 10",
+    "nama": "Surya Willy Syahputra",
+    "nim": "13124007",
+    "phone": "087880854805",
+    "sks": 18
+  },
+  {
+    "kelompok": "Kelompok 4 Sekeloa",
+    "rw": "RW 8,9, 10",
+    "nama": "Cepi Muhamad Faisal",
+    "nim": "10323023",
+    "phone": "082118217775",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 4 Sekeloa",
+    "rw": "RW 8,9, 10",
+    "nama": "Restu Harry Lugina",
+    "nim": "13022016",
+    "phone": "085624049306",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 4 Sekeloa",
+    "rw": "RW 8,9, 10",
+    "nama": "Muhammad Fathan Fadilah Ihsan",
+    "nim": "10123217",
+    "phone": "081906589606",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 4 Sekeloa",
+    "rw": "RW 8,9, 10",
+    "nama": "Raditya Reskyananta Saputra",
+    "nim": "10123255",
+    "phone": "081223189894",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 4 Sekeloa",
+    "rw": "RW 8,9, 10",
+    "nama": "Desta Adi Nugraha",
+    "nim": "10123353",
+    "phone": "085524435339",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 4 Sekeloa",
+    "rw": "RW 8,9, 10",
+    "nama": "Farhan Nawwafal Pramudia",
+    "nim": "10123470",
+    "phone": "082336702004",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 5 Sekeloa",
+    "rw": "RW 11,12, dan 13",
+    "nama": "SAN DIVANTRI SINAGA",
+    "nim": "10423024",
+    "phone": "082164092648",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 5 Sekeloa",
+    "rw": "RW 11,12, dan 13",
+    "nama": "Haifa Azalia Dzulkarnaen",
+    "nim": "41823072",
+    "phone": "08996977312",
+    "sks": 14
+  },
+  {
+    "kelompok": "Kelompok 5 Sekeloa",
+    "rw": "RW 11,12, dan 13",
+    "nama": "AMIRULSAMSU SAN",
+    "nim": "10524018",
+    "phone": "082128790630",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 5 Sekeloa",
+    "rw": "RW 11,12, dan 13",
+    "nama": "ALEXA ROCHMAN",
+    "nim": "10524050",
+    "phone": "082120468245",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 5 Sekeloa",
+    "rw": "RW 11,12, dan 13",
+    "nama": "Ghazwan Jabbar Khairullah",
+    "nim": "10524067",
+    "phone": "082115134061",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 5 Sekeloa",
+    "rw": "RW 11,12, dan 13",
+    "nama": "Farrel Deryl Herwansyah",
+    "nim": "63824026",
+    "phone": "087771375516",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 5 Sekeloa",
+    "rw": "RW 11,12, dan 13",
+    "nama": "Doni enda barus",
+    "nim": "13124702",
+    "phone": "081214581208",
+    "sks": 18
+  },
+  {
+    "kelompok": "Kelompok 5 Sekeloa",
+    "rw": "RW 11,12, dan 13",
+    "nama": "Keandra Indraputra",
+    "nim": "10824011",
+    "phone": "082216838241",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 5 Sekeloa",
+    "rw": "RW 11,12, dan 13",
+    "nama": "Diaz Garcia Pratama",
+    "nim": "10123224",
+    "phone": "085591331132",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 5 Sekeloa",
+    "rw": "RW 11,12, dan 13",
+    "nama": "Muhammad Faris Yuda Putra",
+    "nim": "10123357",
+    "phone": "081313256843",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 5 Sekeloa",
+    "rw": "RW 11,12, dan 13",
+    "nama": "Muhamad Alif",
+    "nim": "10123421",
+    "phone": "085893250407",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 5 Sekeloa",
+    "rw": "RW 11,12, dan 13",
+    "nama": "Reza Alam",
+    "nim": "10124052",
+    "phone": "082217066573",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 5 Sekeloa",
+    "rw": "RW 11,12, dan 13",
+    "nama": "Egi Nugraha",
+    "nim": "10124063",
+    "phone": "082135183580",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 6 Sekeloa",
+    "rw": "RW 14,15, dan 16",
+    "nama": "Arnold Jaya Daeli",
+    "nim": "10423035",
+    "phone": "081288102229",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 6 Sekeloa",
+    "rw": "RW 14,15, dan 16",
+    "nama": "Farsha Bilqis NurulHusna",
+    "nim": "51924013",
+    "phone": "08882000819146",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 6 Sekeloa",
+    "rw": "RW 14,15, dan 16",
+    "nama": "Renata Rufaidah",
+    "nim": "44324078",
+    "phone": "0881023654486",
+    "sks": 17
+  },
+  {
+    "kelompok": "Kelompok 6 Sekeloa",
+    "rw": "RW 14,15, dan 16",
+    "nama": "Agung Utama Kusuma",
+    "nim": "10524024",
+    "phone": "081286174969",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 6 Sekeloa",
+    "rw": "RW 14,15, dan 16",
+    "nama": "Muhamad irsyad fajar",
+    "nim": "10524053",
+    "phone": "0895411926401",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 6 Sekeloa",
+    "rw": "RW 14,15, dan 16",
+    "nama": "Reisya Fricilla Achmad",
+    "nim": "10524075",
+    "phone": "082343456058",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 6 Sekeloa",
+    "rw": "RW 14,15, dan 16",
+    "nama": "Khairul",
+    "nim": "13025027",
+    "phone": "085765163177",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 6 Sekeloa",
+    "rw": "RW 14,15, dan 16",
+    "nama": "Dimas Perkasa Agung Putra",
+    "nim": "10123133",
+    "phone": "081222191512",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 6 Sekeloa",
+    "rw": "RW 14,15, dan 16",
+    "nama": "Hasbi Arsyan Anugrah Firdaus",
+    "nim": "10123237",
+    "phone": "085797040347",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 6 Sekeloa",
+    "rw": "RW 14,15, dan 16",
+    "nama": "Rafael Rangga",
+    "nim": "10123265",
+    "phone": "082113079402",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 6 Sekeloa",
+    "rw": "RW 14,15, dan 16",
+    "nama": "Muhammad Iqbal Noor Iskandar",
+    "nim": "10123366",
+    "phone": "089670447000",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 6 Sekeloa",
+    "rw": "RW 14,15, dan 16",
+    "nama": "Nadhira Aprillia",
+    "nim": "10123425",
+    "phone": "08782395724",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 6 Sekeloa",
+    "rw": "RW 14,15, dan 16",
+    "nama": "Fikri Sofyansyah",
+    "nim": "10124045",
+    "phone": "081313043411",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 1 Lebak Siliwangi",
+    "rw": "RW 7",
+    "nama": "Edi Junaedi",
+    "nim": "10123005",
+    "phone": "0895339601932",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 1 Lebak Siliwangi",
+    "rw": "RW 7",
+    "nama": "Hizkia Imanuel Edho",
+    "nim": "10123020",
+    "phone": "085624705371",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 1 Lebak Siliwangi",
+    "rw": "RW 7",
+    "nama": "Irfan Putra Hendari",
+    "nim": "10123021",
+    "phone": "081221515809",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 1 Lebak Siliwangi",
+    "rw": "RW 7",
+    "nama": "Muhamad Nauval Pamungkas",
+    "nim": "10123022",
+    "phone": "0895330583940",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 1 Lebak Siliwangi",
+    "rw": "RW 7",
+    "nama": "Fadhil Muhammad Akram",
+    "nim": "10523016",
+    "phone": "081324800622",
+    "sks": 14
+  },
+  {
+    "kelompok": "Kelompok 1 Lebak Siliwangi",
+    "rw": "RW 7",
+    "nama": "Raffi Revanza",
+    "nim": "10523036",
+    "phone": "08882285069",
+    "sks": 14
+  },
+  {
+    "kelompok": "Kelompok 1 Lebak Siliwangi",
+    "rw": "RW 7",
+    "nama": "Angga Prasetyo",
+    "nim": "21124803",
+    "phone": "082319759917",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 1 Lebak Siliwangi",
+    "rw": "RW 7",
+    "nama": "Shafira Nurazizah Baeha",
+    "nim": "51923704",
+    "phone": "085359945775",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 1 Lebak Siliwangi",
+    "rw": "RW 7",
+    "nama": "Iqbal Hapidin Febrian",
+    "nim": "44324061",
+    "phone": "089527901171",
+    "sks": 17
+  },
+  {
+    "kelompok": "Kelompok 1 Lebak Siliwangi",
+    "rw": "RW 7",
+    "nama": "Fitri Najla Salsabila",
+    "nim": "31624005",
+    "phone": "082121373288",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 1 Lebak Siliwangi",
+    "rw": "RW 7",
+    "nama": "Putri Andini",
+    "nim": "41824048",
+    "phone": "085924808433",
+    "sks": 13
+  },
+  {
+    "kelompok": "Kelompok 1 Lebak Siliwangi",
+    "rw": "RW 7",
+    "nama": "Aulia Zahwa Putri",
+    "nim": "63824024",
+    "phone": "082111146907",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 1 Lebak Siliwangi",
+    "rw": "RW 7",
+    "nama": "Aufa Fauzan",
+    "nim": "63824023",
+    "phone": "081224821553",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 2 Lebak Siliwangi",
+    "rw": "RW 5 dan RW 7",
+    "nama": "Rizky Al Farid Hafizh",
+    "nim": "10123028",
+    "phone": "087884667371",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 2 Lebak Siliwangi",
+    "rw": "RW 5 dan RW 7",
+    "nama": "Muhammad Rizki",
+    "nim": "10123030",
+    "phone": "082121730722",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 2 Lebak Siliwangi",
+    "rw": "RW 5 dan RW 7",
+    "nama": "Naufal Putra Firmansyah",
+    "nim": "10123036",
+    "phone": "082129566829",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 2 Lebak Siliwangi",
+    "rw": "RW 5 dan RW 7",
+    "nama": "Muhamad Irsad Assopi",
+    "nim": "10123038",
+    "phone": "082315347187",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 2 Lebak Siliwangi",
+    "rw": "RW 5 dan RW 7",
+    "nama": "Rimo Saptazi",
+    "nim": "10924010",
+    "phone": "088802293356",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Lebak Siliwangi",
+    "rw": "RW 5 dan RW 7",
+    "nama": "Novi Fitriani",
+    "nim": "21124804",
+    "phone": "089658155892",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 2 Lebak Siliwangi",
+    "rw": "RW 5 dan RW 7",
+    "nama": "Lion star sabolo gaho",
+    "nim": "41724013",
+    "phone": "081228906205",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 2 Lebak Siliwangi",
+    "rw": "RW 5 dan RW 7",
+    "nama": "Fadilah Aulia Rahman",
+    "nim": "10422046",
+    "phone": "087764627819",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 2 Lebak Siliwangi",
+    "rw": "RW 5 dan RW 7",
+    "nama": "Arasya Melandri Winardi",
+    "nim": "13024003",
+    "phone": "089517214700",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 2 Lebak Siliwangi",
+    "rw": "RW 5 dan RW 7",
+    "nama": "Pebi Pitra Rahman",
+    "nim": "10223012",
+    "phone": "083895107436",
+    "sks": 17
+  },
+  {
+    "kelompok": "Kelompok 3 Lebak Siliwangi",
+    "rw": "RW 8 dan RW 6",
+    "nama": "Fikar wiguna nugraha",
+    "nim": "10524005",
+    "phone": "083805225393",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 3 Lebak Siliwangi",
+    "rw": "RW 8 dan RW 6",
+    "nama": "Rayhana Aqila Gefira",
+    "nim": "10524010",
+    "phone": "081320368738",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 3 Lebak Siliwangi",
+    "rw": "RW 8 dan RW 6",
+    "nama": "Salma Fahrezi",
+    "nim": "10223022",
+    "phone": "085863730151",
+    "sks": 17
+  },
+  {
+    "kelompok": "Kelompok 3 Lebak Siliwangi",
+    "rw": "RW 8 dan RW 6",
+    "nama": "Hilma Humaeroh",
+    "nim": "63724015",
+    "phone": "088299491714",
+    "sks": 18
+  },
+  {
+    "kelompok": "Kelompok 3 Lebak Siliwangi",
+    "rw": "RW 8 dan RW 6",
+    "nama": "Raffa Muhammed Arridho",
+    "nim": "13124012",
+    "phone": "085723024117",
+    "sks": 18
+  },
+  {
+    "kelompok": "Kelompok 3 Lebak Siliwangi",
+    "rw": "RW 8 dan RW 6",
+    "nama": "Naufal Akbar Subarna",
+    "nim": "13124023",
+    "phone": "085722143518",
+    "sks": 18
+  },
+  {
+    "kelompok": "Kelompok 3 Lebak Siliwangi",
+    "rw": "RW 8 dan RW 6",
+    "nama": "Widia Rizqi Gusti Amandani",
+    "nim": "41824153",
+    "phone": "083897010513",
+    "sks": 13
+  },
+  {
+    "kelompok": "Kelompok 3 Lebak Siliwangi",
+    "rw": "RW 8 dan RW 6",
+    "nama": "Muhamad Azhwar Aji Kurnia",
+    "nim": "10324003",
+    "phone": "089637331211",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Lebak Siliwangi",
+    "rw": "RW 8 dan RW 6",
+    "nama": "M. Ilyas Fachrezy Nur'ichsan",
+    "nim": "10123027",
+    "phone": "087798960157",
+    "sks": 12
+  },
+  {
+    "kelompok": "Kelompok 3 Lebak Siliwangi",
+    "rw": "RW 8 dan RW 6",
+    "nama": "MUHAMMAD ARKAN GIFARI",
+    "nim": "10421028",
+    "phone": "082126144109",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 3 Lebak Siliwangi",
+    "rw": "RW 8 dan RW 6",
+    "nama": "Lidya Anjani",
+    "nim": "10624008",
+    "phone": "087882731641",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Sadang Serang",
+    "rw": "RW. 21",
+    "nama": "Anugrah Rizky Agustian",
+    "nim": "21124805",
+    "phone": "089517607195",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 1 Sadang Serang",
+    "rw": "RW. 21",
+    "nama": "Miko Pratama",
+    "nim": "10422035",
+    "phone": "083802480630",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 1 Sadang Serang",
+    "rw": "RW. 21",
+    "nama": "Zhanifa Meluna Fatiha",
+    "nim": "44324071",
+    "phone": "085715546672",
+    "sks": 17
+  },
+  {
+    "kelompok": "Kelompok 1 Sadang Serang",
+    "rw": "RW. 21",
+    "nama": "RIZKI ADITIA RIFALDI",
+    "nim": "41724012",
+    "phone": "081574454957",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 1 Sadang Serang",
+    "rw": "RW. 21",
+    "nama": "Muhammad Hafidz Zidan Sukri",
+    "nim": "10524132",
+    "phone": "081586336263",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 1 Sadang Serang",
+    "rw": "RW. 21",
+    "nama": "muhammad dafa ikhlashul amal",
+    "nim": "10923004",
+    "phone": "082217417415",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 1 Sadang Serang",
+    "rw": "RW. 21",
+    "nama": "RIZKI SAPUTRA",
+    "nim": "10324013",
+    "phone": "081312658717",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Sadang Serang",
+    "rw": "RW. 21",
+    "nama": "faisal syahrul gufron",
+    "nim": "13024009",
+    "phone": "085174230539",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 1 Sadang Serang",
+    "rw": "RW. 21",
+    "nama": "Khoirunnisa Arpandi",
+    "nim": "10124157",
+    "phone": "082280795516",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 1 Sadang Serang",
+    "rw": "RW. 21",
+    "nama": "Malfin Jaffan Inggil Waskito",
+    "nim": "10124225",
+    "phone": "0895606173928",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 1 Sadang Serang",
+    "rw": "RW. 21",
+    "nama": "Asep Saepul",
+    "nim": "10124324",
+    "phone": "082315261498",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 1 Sadang Serang",
+    "rw": "RW. 21",
+    "nama": "Muhammad Ihsan",
+    "nim": "10124384",
+    "phone": "085718158861",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 2 Sadang Serang",
+    "rw": "RW. 21",
+    "nama": "diaz mahram",
+    "nim": "10423032",
+    "phone": "087786555511",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 2 Sadang Serang",
+    "rw": "RW. 21",
+    "nama": "zazkya bunga pratiwi",
+    "nim": "31624018",
+    "phone": "082130120101",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 2 Sadang Serang",
+    "rw": "RW. 21",
+    "nama": "SITI MARYAM HOPIYAH",
+    "nim": "10524112",
+    "phone": "081222144698",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 2 Sadang Serang",
+    "rw": "RW. 21",
+    "nama": "Furqon potabuga",
+    "nim": "10524134",
+    "phone": "085706204879",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 2 Sadang Serang",
+    "rw": "RW. 21",
+    "nama": "GHAZIALGHIFARI",
+    "nim": "10624005",
+    "phone": "085830402767",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Sadang Serang",
+    "rw": "RW. 21",
+    "nama": "Moch. Zaini Miftah",
+    "nim": "10223002",
+    "phone": "089516085578",
+    "sks": 17
+  },
+  {
+    "kelompok": "Kelompok 2 Sadang Serang",
+    "rw": "RW. 21",
+    "nama": "Ibnu Achsan Taqwim",
+    "nim": "10323006",
+    "phone": "0813873873140",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Sadang Serang",
+    "rw": "RW. 21",
+    "nama": "Arya Yaga Rafi' Azaria",
+    "nim": "10124115",
+    "phone": "081211536756",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 2 Sadang Serang",
+    "rw": "RW. 21",
+    "nama": "Wa Ode Calisyah Anastasya",
+    "nim": "10124168",
+    "phone": "085162992393",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 2 Sadang Serang",
+    "rw": "RW. 21",
+    "nama": "Valyza Safina Zoia Azzura",
+    "nim": "10124233",
+    "phone": "083174565723",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 2 Sadang Serang",
+    "rw": "RW. 21",
+    "nama": "Talitha Vania",
+    "nim": "10124333",
+    "phone": "082278497034",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 2 Sadang Serang",
+    "rw": "RW. 21",
+    "nama": "Diwa",
+    "nim": "10124387",
+    "phone": "085789014173",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 3 Sadang Serang",
+    "rw": "RW.18, RW.19 (20%)",
+    "nama": "Dea Michelya Alba",
+    "nim": "21124807",
+    "phone": "0881022275815",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 3 Sadang Serang",
+    "rw": "RW.18, RW.19 (20%)",
+    "nama": "Muhammad Rizky Laksana",
+    "nim": "10422009",
+    "phone": "081910596936",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 3 Sadang Serang",
+    "rw": "RW.18, RW.19 (20%)",
+    "nama": "Raka Habibi",
+    "nim": "51924029",
+    "phone": "085183497702",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 3 Sadang Serang",
+    "rw": "RW.18, RW.19 (20%)",
+    "nama": "cindy mega amelia",
+    "nim": "31624006",
+    "phone": "089655323410",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 3 Sadang Serang",
+    "rw": "RW.18, RW.19 (20%)",
+    "nama": "Fazlie Mawla Al Ammarik",
+    "nim": "10524113",
+    "phone": "081398147718",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 3 Sadang Serang",
+    "rw": "RW.18, RW.19 (20%)",
+    "nama": "Lisa Putri Maharani",
+    "nim": "10524136",
+    "phone": "083833936383",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 3 Sadang Serang",
+    "rw": "RW.18, RW.19 (20%)",
+    "nama": "Riska Aprilia",
+    "nim": "63724017",
+    "phone": "085862529929",
+    "sks": 18
+  },
+  {
+    "kelompok": "Kelompok 3 Sadang Serang",
+    "rw": "RW.18, RW.19 (20%)",
+    "nama": "Addin Ramadhan",
+    "nim": "13123015",
+    "phone": "087774076941",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 3 Sadang Serang",
+    "rw": "RW.18, RW.19 (20%)",
+    "nama": "Rilva Muhammad Akbar",
+    "nim": "10323001",
+    "phone": "083822577218",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 3 Sadang Serang",
+    "rw": "RW.18, RW.19 (20%)",
+    "nama": "Angga Adhya Pratama",
+    "nim": "10124119",
+    "phone": "089531515716",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 3 Sadang Serang",
+    "rw": "RW.18, RW.19 (20%)",
+    "nama": "Siti Marhamah",
+    "nim": "10124175",
+    "phone": "081295892976",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 3 Sadang Serang",
+    "rw": "RW.18, RW.19 (20%)",
+    "nama": "Regita Setiani",
+    "nim": "10124239",
+    "phone": "081382968508",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 3 Sadang Serang",
+    "rw": "RW.18, RW.19 (20%)",
+    "nama": "Muhammad Rakha Ikhsan",
+    "nim": "10124336",
+    "phone": "081916460333",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 4 Sadang Serang",
+    "rw": "RW.10, RW.11, RW.9",
+    "nama": "Teguh Muhammad Iqbal",
+    "nim": "21124018",
+    "phone": "087834711845",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 4 Sadang Serang",
+    "rw": "RW.10, RW.11, RW.9",
+    "nama": "Rully Aditia Ramadan",
+    "nim": "31624012",
+    "phone": "083897996269",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 4 Sadang Serang",
+    "rw": "RW.10, RW.11, RW.9",
+    "nama": "SISKA LESTARI",
+    "nim": "10524114",
+    "phone": "08217037621",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 4 Sadang Serang",
+    "rw": "RW.10, RW.11, RW.9",
+    "nama": "Deliyanti Aprilia",
+    "nim": "10524143",
+    "phone": "081220917393",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 4 Sadang Serang",
+    "rw": "RW.10, RW.11, RW.9",
+    "nama": "Robi Zoelfahmi",
+    "nim": "63824038",
+    "phone": "085189950361",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 4 Sadang Serang",
+    "rw": "RW.10, RW.11, RW.9",
+    "nama": "Muhammad Tauriq Khairy",
+    "nim": "10824010",
+    "phone": "085156157114",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 4 Sadang Serang",
+    "rw": "RW.10, RW.11, RW.9",
+    "nama": "Sayyid Putra Ardano",
+    "nim": "10124123",
+    "phone": "081290468757",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 4 Sadang Serang",
+    "rw": "RW.10, RW.11, RW.9",
+    "nama": "Siti Nurhaliza",
+    "nim": "10124178",
+    "phone": "082260923780",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 4 Sadang Serang",
+    "rw": "RW.10, RW.11, RW.9",
+    "nama": "Iviani Gerbian",
+    "nim": "10124262",
+    "phone": "085722574462",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 4 Sadang Serang",
+    "rw": "RW.10, RW.11, RW.9",
+    "nama": "Salma Syarifah Muthi",
+    "nim": "10124339",
+    "phone": "0881023359218",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 4 Sadang Serang",
+    "rw": "RW.10, RW.11, RW.9",
+    "nama": "Rifki Audzikri Nurwahid",
+    "nim": "10124398",
+    "phone": "082118920881",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 4 Sadang Serang",
+    "rw": "RW.10, RW.11, RW.9",
+    "nama": "Haky Jawwad Al Hakim Effendi",
+    "nim": "10124390",
+    "phone": "08996093081",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 5 Sadang Serang",
+    "rw": "RW.3, RW.4",
+    "nama": "Dhafa bagas nurfaisal",
+    "nim": "21124002",
+    "phone": "08176531899",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 5 Sadang Serang",
+    "rw": "RW.3, RW.4",
+    "nama": "Muhammad Syidik Hidayattuloh",
+    "nim": "52124002",
+    "phone": "085295877936",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 5 Sadang Serang",
+    "rw": "RW.3, RW.4",
+    "nama": "Khalisa Mugia Rahayu",
+    "nim": "51924103",
+    "phone": "081223993761",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 5 Sadang Serang",
+    "rw": "RW.3, RW.4",
+    "nama": "Afifah Dwi Puspita",
+    "nim": "41823078",
+    "phone": "085722435449",
+    "sks": 14
+  },
+  {
+    "kelompok": "Kelompok 5 Sadang Serang",
+    "rw": "RW.3, RW.4",
+    "nama": "Nadia Ramadhani Maulana",
+    "nim": "10524117",
+    "phone": "085295275593",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 5 Sadang Serang",
+    "rw": "RW.3, RW.4",
+    "nama": "Muhammad Palda Satrio",
+    "nim": "10524144",
+    "phone": "081257320600",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 5 Sadang Serang",
+    "rw": "RW.3, RW.4",
+    "nama": "Muzna Mazandarani Sabian",
+    "nim": "63824028",
+    "phone": "08814090320",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 5 Sadang Serang",
+    "rw": "RW.3, RW.4",
+    "nama": "REZA APRIANSYAH",
+    "nim": "13124019",
+    "phone": "085951801914",
+    "sks": 18
+  },
+  {
+    "kelompok": "Kelompok 5 Sadang Serang",
+    "rw": "RW.3, RW.4",
+    "nama": "MUHAMMAD IHRAM NOOR RASYAD",
+    "nim": "13024012",
+    "phone": "087822897263",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 5 Sadang Serang",
+    "rw": "RW.3, RW.4",
+    "nama": "Wildan Madani",
+    "nim": "10124129",
+    "phone": "081323813632",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 5 Sadang Serang",
+    "rw": "RW.3, RW.4",
+    "nama": "Genta Nugraha",
+    "nim": "10124180",
+    "phone": "082129647814",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 5 Sadang Serang",
+    "rw": "RW.3, RW.4",
+    "nama": "Ginda Nugraha Pratama",
+    "nim": "10124274",
+    "phone": "085925727279",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 5 Sadang Serang",
+    "rw": "RW.3, RW.4",
+    "nama": "Akbar Taupiq Alamsyah",
+    "nim": "10124341",
+    "phone": "082320397605",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 5 Sadang Serang",
+    "rw": "RW.3, RW.4",
+    "nama": "Dimas Rizki Nugraha",
+    "nim": "10124439",
+    "phone": "082118388672",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 6 Sadang Serang",
+    "rw": "Rw.1, RW.2, RW.5",
+    "nama": "Adjie Muhammad Iqbal",
+    "nim": "11024007",
+    "phone": "082230884065",
+    "sks": 18
+  },
+  {
+    "kelompok": "Kelompok 6 Sadang Serang",
+    "rw": "Rw.1, RW.2, RW.5",
+    "nama": "Faris Farhan Al Fauzi",
+    "nim": "52024015",
+    "phone": "083107409486",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 6 Sadang Serang",
+    "rw": "Rw.1, RW.2, RW.5",
+    "nama": "Naila Zefanya",
+    "nim": "51923096",
+    "phone": "087875713449",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 6 Sadang Serang",
+    "rw": "Rw.1, RW.2, RW.5",
+    "nama": "Ni Luh Lina Susanti",
+    "nim": "41823005",
+    "phone": "081916667550",
+    "sks": 14
+  },
+  {
+    "kelompok": "Kelompok 6 Sadang Serang",
+    "rw": "Rw.1, RW.2, RW.5",
+    "nama": "Rifqi Mukhtarullah Azzaki",
+    "nim": "10524120",
+    "phone": "085294845952",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 6 Sadang Serang",
+    "rw": "Rw.1, RW.2, RW.5",
+    "nama": "Muhammad Nadhif Fawwaz",
+    "nim": "10524145",
+    "phone": "0895806585554",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 6 Sadang Serang",
+    "rw": "Rw.1, RW.2, RW.5",
+    "nama": "Sintya Ramadani",
+    "nim": "63824039",
+    "phone": "085640391031",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 6 Sadang Serang",
+    "rw": "Rw.1, RW.2, RW.5",
+    "nama": "Mutiara Nurul Hidayah",
+    "nim": "13024014",
+    "phone": "082113741298",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 6 Sadang Serang",
+    "rw": "Rw.1, RW.2, RW.5",
+    "nama": "Muhammad Raffi Nurragi",
+    "nim": "10124139",
+    "phone": "08812076070",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 6 Sadang Serang",
+    "rw": "Rw.1, RW.2, RW.5",
+    "nama": "Febri Kurniawan",
+    "nim": "10124189",
+    "phone": "0895355205081",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 6 Sadang Serang",
+    "rw": "Rw.1, RW.2, RW.5",
+    "nama": "Zaki Imamul Umam",
+    "nim": "10124286",
+    "phone": "081315150602",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 6 Sadang Serang",
+    "rw": "Rw.1, RW.2, RW.5",
+    "nama": "Farhan Farel Nauli Tanjung",
+    "nim": "10124347",
+    "phone": "082277924502",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 6 Sadang Serang",
+    "rw": "Rw.1, RW.2, RW.5",
+    "nama": "Rd. Fariz Nur Syawaluddin",
+    "nim": "10124445",
+    "phone": "081313509451",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 7 Sadang Serang",
+    "rw": "RW.12, RW.13",
+    "nama": "Mohammad Agung Arrifai",
+    "nim": "21324004",
+    "phone": "089516171044",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 7 Sadang Serang",
+    "rw": "RW.12, RW.13",
+    "nama": "Ahmad Rusydan As Shidqi",
+    "nim": "52023006",
+    "phone": "087780786466",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 7 Sadang Serang",
+    "rw": "RW.12, RW.13",
+    "nama": "Aristyan Akhsan",
+    "nim": "51923197",
+    "phone": "082239290335",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 7 Sadang Serang",
+    "rw": "RW.12, RW.13",
+    "nama": "Denara Anindita",
+    "nim": "41824169",
+    "phone": "08999235712",
+    "sks": 13
+  },
+  {
+    "kelompok": "Kelompok 7 Sadang Serang",
+    "rw": "RW.12, RW.13",
+    "nama": "Zahra Orva Lannisa",
+    "nim": "10524121",
+    "phone": "081398147718",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 7 Sadang Serang",
+    "rw": "RW.12, RW.13",
+    "nama": "Rindu Syurga",
+    "nim": "10524157",
+    "phone": "083833936383",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 7 Sadang Serang",
+    "rw": "RW.12, RW.13",
+    "nama": "Serena Indriani",
+    "nim": "63824036",
+    "phone": "082285017405",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 7 Sadang Serang",
+    "rw": "RW.12, RW.13",
+    "nama": "Angga Nugraha",
+    "nim": "13124021",
+    "phone": "082298255474",
+    "sks": 18
+  },
+  {
+    "kelompok": "Kelompok 7 Sadang Serang",
+    "rw": "RW.12, RW.13",
+    "nama": "Niko Adrian Farizi",
+    "nim": "13025028",
+    "phone": "081384200878",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 7 Sadang Serang",
+    "rw": "RW.12, RW.13",
+    "nama": "Rania",
+    "nim": "10124196",
+    "phone": "083126162164",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 7 Sadang Serang",
+    "rw": "RW.12, RW.13",
+    "nama": "Farid Maulana Yusuf",
+    "nim": "10124288",
+    "phone": "082223414588",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 7 Sadang Serang",
+    "rw": "RW.12, RW.13",
+    "nama": "Raida Layla Safa",
+    "nim": "10124349",
+    "phone": "085523994165",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 7 Sadang Serang",
+    "rw": "RW.12, RW.13",
+    "nama": "Arya Bisma Hartono",
+    "nim": "10124452",
+    "phone": "082117279601",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 8 Sadang Serang",
+    "rw": "RW.6, RW.7, RW.8",
+    "nama": "DAVID SETIAWAN",
+    "nim": "10423005",
+    "phone": "0895331171595",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 8 Sadang Serang",
+    "rw": "RW.6, RW.7, RW.8",
+    "nama": "Zahira Nandhifa Syifarany",
+    "nim": "44324016",
+    "phone": "087717319320",
+    "sks": 17
+  },
+  {
+    "kelompok": "Kelompok 8 Sadang Serang",
+    "rw": "RW.6, RW.7, RW.8",
+    "nama": "Mohammad fiqri rizky permana",
+    "nim": "41824056",
+    "phone": "081903971730",
+    "sks": 13
+  },
+  {
+    "kelompok": "Kelompok 8 Sadang Serang",
+    "rw": "RW.6, RW.7, RW.8",
+    "nama": "Anindya Nusa Kalimah Syahadah",
+    "nim": "10524123",
+    "phone": "083142940023",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 8 Sadang Serang",
+    "rw": "RW.6, RW.7, RW.8",
+    "nama": "Renadiya Amelinda",
+    "nim": "63824015",
+    "phone": "087774922001",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 8 Sadang Serang",
+    "rw": "RW.6, RW.7, RW.8",
+    "nama": "Muhammad Fauzi Al-Ghifari",
+    "nim": "13124013",
+    "phone": "087735289557",
+    "sks": 18
+  },
+  {
+    "kelompok": "Kelompok 8 Sadang Serang",
+    "rw": "RW.6, RW.7, RW.8",
+    "nama": "Nur Handayani",
+    "nim": "13022001",
+    "phone": "085934587972",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 8 Sadang Serang",
+    "rw": "RW.6, RW.7, RW.8",
+    "nama": "Muhammad Muflih Izdihar",
+    "nim": "10124142",
+    "phone": "082145468148",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 8 Sadang Serang",
+    "rw": "RW.6, RW.7, RW.8",
+    "nama": "Reyga Reynaldi",
+    "nim": "10124199",
+    "phone": "081271927712",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 8 Sadang Serang",
+    "rw": "RW.6, RW.7, RW.8",
+    "nama": "Rani Amaliyah",
+    "nim": "10124296",
+    "phone": "085715943251",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 8 Sadang Serang",
+    "rw": "RW.6, RW.7, RW.8",
+    "nama": "Ibda Muhafid Romdoni",
+    "nim": "10124350",
+    "phone": "082262930148",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 8 Sadang Serang",
+    "rw": "RW.6, RW.7, RW.8",
+    "nama": "Salsabila Khoirunnisa",
+    "nim": "10124465",
+    "phone": "085732078194",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 8 Sadang Serang",
+    "rw": "RW.6, RW.7, RW.8",
+    "nama": "Fahrian Ahsan",
+    "nim": "21424017",
+    "phone": "089630051640",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 9 Sadang Serang",
+    "rw": "RW.20, RW.19 SEBAGIAN (SEBERANG 30%)",
+    "nama": "ABDUL GOFUR SAEPUDIN",
+    "nim": "10421001",
+    "phone": "082217258956",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 9 Sadang Serang",
+    "rw": "RW.20, RW.19 SEBAGIAN (SEBERANG 30%)",
+    "nama": "Audry Rafi Setiawan",
+    "nim": "44324022",
+    "phone": "0895603407311",
+    "sks": 17
+  },
+  {
+    "kelompok": "Kelompok 9 Sadang Serang",
+    "rw": "RW.20, RW.19 SEBAGIAN (SEBERANG 30%)",
+    "nama": "Naisya Salsabila",
+    "nim": "41824111",
+    "phone": "082118447939",
+    "sks": 13
+  },
+  {
+    "kelompok": "Kelompok 9 Sadang Serang",
+    "rw": "RW.20, RW.19 SEBAGIAN (SEBERANG 30%)",
+    "nama": "Sofia Nur Putri",
+    "nim": "10524125",
+    "phone": "089626360843",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 9 Sadang Serang",
+    "rw": "RW.20, RW.19 SEBAGIAN (SEBERANG 30%)",
+    "nama": "Muhammad Rizqi Amirudin",
+    "nim": "10524186",
+    "phone": "081384336722",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 9 Sadang Serang",
+    "rw": "RW.20, RW.19 SEBAGIAN (SEBERANG 30%)",
+    "nama": "Angga Adittya lrawan",
+    "nim": "13123013",
+    "phone": "083101183602",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 9 Sadang Serang",
+    "rw": "RW.20, RW.19 SEBAGIAN (SEBERANG 30%)",
+    "nama": "Muhammad Raffi Sauki Rifani",
+    "nim": "13024020",
+    "phone": "087819432735",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 9 Sadang Serang",
+    "rw": "RW.20, RW.19 SEBAGIAN (SEBERANG 30%)",
+    "nama": "Alya Rahmawati",
+    "nim": "10124143",
+    "phone": "08818239716",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 9 Sadang Serang",
+    "rw": "RW.20, RW.19 SEBAGIAN (SEBERANG 30%)",
+    "nama": "Hafidh Tedi Setiawan",
+    "nim": "10124201",
+    "phone": "089648354570",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 9 Sadang Serang",
+    "rw": "RW.20, RW.19 SEBAGIAN (SEBERANG 30%)",
+    "nama": "Amanda Maretha Putri Lestari",
+    "nim": "10124304",
+    "phone": "081312977873",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 9 Sadang Serang",
+    "rw": "RW.20, RW.19 SEBAGIAN (SEBERANG 30%)",
+    "nama": "Muhammad Alif Abdul Latif",
+    "nim": "10124351",
+    "phone": "081320317855",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 9 Sadang Serang",
+    "rw": "RW.20, RW.19 SEBAGIAN (SEBERANG 30%)",
+    "nama": "M Farrel Chandrawijaya",
+    "nim": "10124467",
+    "phone": "081219739130",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 10 Sadang Serang",
+    "rw": "RW.14, RW.17",
+    "nama": "Rahi Sultani Rohman Roshan",
+    "nim": "10422005",
+    "phone": "085157799326",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 10 Sadang Serang",
+    "rw": "RW.14, RW.17",
+    "nama": "Chistya Lamisa Balqis",
+    "nim": "44324072",
+    "phone": "089682326222",
+    "sks": 17
+  },
+  {
+    "kelompok": "Kelompok 10 Sadang Serang",
+    "rw": "RW.14, RW.17",
+    "nama": "Rivan Kurniawan",
+    "nim": "41824141",
+    "phone": "085211307737",
+    "sks": 13
+  },
+  {
+    "kelompok": "Kelompok 10 Sadang Serang",
+    "rw": "RW.14, RW.17",
+    "nama": "Javiersa Naufal Algani",
+    "nim": "10524127",
+    "phone": "085797950518",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 10 Sadang Serang",
+    "rw": "RW.14, RW.17",
+    "nama": "Robi Nugraha Fadilah",
+    "nim": "10524200",
+    "phone": "082217891422",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 10 Sadang Serang",
+    "rw": "RW.14, RW.17",
+    "nama": "Shifa khairiyah",
+    "nim": "13024004",
+    "phone": "088220375399",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 10 Sadang Serang",
+    "rw": "RW.14, RW.17",
+    "nama": "Raditya Muhammad Alghifary",
+    "nim": "10124150",
+    "phone": "089509981860",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 10 Sadang Serang",
+    "rw": "RW.14, RW.17",
+    "nama": "Muhammad Ubaidah Akbar",
+    "nim": "10124206",
+    "phone": "085600841390",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 10 Sadang Serang",
+    "rw": "RW.14, RW.17",
+    "nama": "Amelia Vega",
+    "nim": "10124307",
+    "phone": "085703723540",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 10 Sadang Serang",
+    "rw": "RW.14, RW.17",
+    "nama": "Halki Nurhakim",
+    "nim": "10124352",
+    "phone": "0895411964698",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 10 Sadang Serang",
+    "rw": "RW.14, RW.17",
+    "nama": "Ernest Tristan Rafael Siringoringo",
+    "nim": "10124469",
+    "phone": "082217849130",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 10 Sadang Serang",
+    "rw": "RW.14, RW.17",
+    "nama": "Azzahra Fitri Ramadhanti Sutarso",
+    "nim": "51923211",
+    "phone": "082120233789",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 11 Sadang Serang",
+    "rw": "RW.16, RW.19 (20%)",
+    "nama": "TIAN TARDIANSAH",
+    "nim": "10422032",
+    "phone": "085720301033",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 11 Sadang Serang",
+    "rw": "RW.16, RW.19 (20%)",
+    "nama": "Salma Khaerunissa",
+    "nim": "44324018",
+    "phone": "082130876806",
+    "sks": 17
+  },
+  {
+    "kelompok": "Kelompok 11 Sadang Serang",
+    "rw": "RW.16, RW.19 (20%)",
+    "nama": "Reyhan Ahmad Firdaus",
+    "nim": "41823003",
+    "phone": "085175239753",
+    "sks": 14
+  },
+  {
+    "kelompok": "Kelompok 11 Sadang Serang",
+    "rw": "RW.16, RW.19 (20%)",
+    "nama": "Selfy Oktapiani Permana",
+    "nim": "10524131",
+    "phone": "087752463618",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 11 Sadang Serang",
+    "rw": "RW.16, RW.19 (20%)",
+    "nama": "Dede Sutarjo",
+    "nim": "10524201",
+    "phone": "085183166183",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 11 Sadang Serang",
+    "rw": "RW.16, RW.19 (20%)",
+    "nama": "Rendy Kusuma",
+    "nim": "10223015",
+    "phone": "085862286700",
+    "sks": 17
+  },
+  {
+    "kelompok": "Kelompok 11 Sadang Serang",
+    "rw": "RW.16, RW.19 (20%)",
+    "nama": "Dini Novalia Fitriani",
+    "nim": "13024016",
+    "phone": "083816767482",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 11 Sadang Serang",
+    "rw": "RW.16, RW.19 (20%)",
+    "nama": "Zilky Azriel Ramadhan",
+    "nim": "10124151",
+    "phone": "08882347758",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 11 Sadang Serang",
+    "rw": "RW.16, RW.19 (20%)",
+    "nama": "Harits Ramdhani Nugraha",
+    "nim": "10124215",
+    "phone": "081312459367",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 11 Sadang Serang",
+    "rw": "RW.16, RW.19 (20%)",
+    "nama": "Repi Saepul Milah",
+    "nim": "10124322",
+    "phone": "082262403045",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 11 Sadang Serang",
+    "rw": "RW.16, RW.19 (20%)",
+    "nama": "Radja Alkahfi Siregar",
+    "nim": "10124354",
+    "phone": "08988248277",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 11 Sadang Serang",
+    "rw": "RW.16, RW.19 (20%)",
+    "nama": "Ragil Yuni Wulandari",
+    "nim": "10124707",
+    "phone": "089524863162",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 1 Cipaganti",
+    "rw": "RW 1",
+    "nama": "Yosan Suparman",
+    "nim": "21124020",
+    "phone": "0881022759682",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 1 Cipaganti",
+    "rw": "RW 1",
+    "nama": "ILYAS FATURAHMAN",
+    "nim": "10422024",
+    "phone": "085700669767",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 1 Cipaganti",
+    "rw": "RW 1",
+    "nama": "Elga Aulia Zamita Damopolii",
+    "nim": "31624002",
+    "phone": "085954452051",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 1 Cipaganti",
+    "rw": "RW 1",
+    "nama": "Salma Khairunnisa",
+    "nim": "41824168",
+    "phone": "082190465563",
+    "sks": 13
+  },
+  {
+    "kelompok": "Kelompok 1 Cipaganti",
+    "rw": "RW 1",
+    "nama": "Fauzan Ahmad Dhani",
+    "nim": "10524098",
+    "phone": "083153709000",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 1 Cipaganti",
+    "rw": "RW 1",
+    "nama": "Sahrul Muhamad",
+    "nim": "10524104",
+    "phone": "081320357232",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 1 Cipaganti",
+    "rw": "RW 1",
+    "nama": "Ameldio Furqon",
+    "nim": "10524110",
+    "phone": "082210202546",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 1 Cipaganti",
+    "rw": "RW 1",
+    "nama": "Dzaki Ghufron RahmanDanu Putra",
+    "nim": "63824011",
+    "phone": "085710279506",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 1 Cipaganti",
+    "rw": "RW 1",
+    "nama": "Bariq Syauqi Fathulloh",
+    "nim": "13124018",
+    "phone": "085724110038",
+    "sks": 18
+  },
+  {
+    "kelompok": "Kelompok 1 Cipaganti",
+    "rw": "RW 1",
+    "nama": "Azhar Sayyid Ramadhan",
+    "nim": "10324025",
+    "phone": "085156828249",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 1 Cipaganti",
+    "rw": "RW 1",
+    "nama": "Risna Dwi Putera",
+    "nim": "13024023",
+    "phone": "085861041608",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 1 Cipaganti",
+    "rw": "RW 1",
+    "nama": "Panji Gumilang",
+    "nim": "10124071",
+    "phone": "082126577575",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 1 Cipaganti",
+    "rw": "RW 1",
+    "nama": "Andi Muhamad Hakim Ramadhan Mangussara",
+    "nim": "10124079",
+    "phone": "087777081360",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 1 Cipaganti",
+    "rw": "RW 1",
+    "nama": "Abdhika Maestra Harmonasora",
+    "nim": "10124088",
+    "phone": "089517832715",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 1 Cipaganti",
+    "rw": "RW 1",
+    "nama": "Nico Luthfiano Santoso",
+    "nim": "10124096",
+    "phone": "085795522173",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 1 Cipaganti",
+    "rw": "RW 1",
+    "nama": "Faisal Hawari",
+    "nim": "10124110",
+    "phone": "081224017174",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 2 Cipaganti",
+    "rw": "RW 2 dan 3",
+    "nama": "Nova fitriana",
+    "nim": "21124801",
+    "phone": "0895346193872",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 2 Cipaganti",
+    "rw": "RW 2 dan 3",
+    "nama": "ANSYARULLAH SYATHIR AL-ZAYTUNI",
+    "nim": "10420020",
+    "phone": "082134330763",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 2 Cipaganti",
+    "rw": "RW 2 dan 3",
+    "nama": "Safira Oktaviani Fathimah",
+    "nim": "44324024",
+    "phone": "087724298110",
+    "sks": 17
+  },
+  {
+    "kelompok": "Kelompok 2 Cipaganti",
+    "rw": "RW 2 dan 3",
+    "nama": "Renata Fatricia Oktaviani",
+    "nim": "31624010",
+    "phone": "082126628491",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 2 Cipaganti",
+    "rw": "RW 2 dan 3",
+    "nama": "Abiyu Ramadhan",
+    "nim": "41823004",
+    "phone": "081315207870",
+    "sks": 14
+  },
+  {
+    "kelompok": "Kelompok 2 Cipaganti",
+    "rw": "RW 2 dan 3",
+    "nama": "Nova Tri Hapsari",
+    "nim": "10524099",
+    "phone": "082391069343",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 2 Cipaganti",
+    "rw": "RW 2 dan 3",
+    "nama": "Regan Pradiva Kusuma Wijaya",
+    "nim": "10524106",
+    "phone": "081915331929",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 2 Cipaganti",
+    "rw": "RW 2 dan 3",
+    "nama": "Shandy Putra Pranoto",
+    "nim": "10924004",
+    "phone": "08813002848",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Cipaganti",
+    "rw": "RW 2 dan 3",
+    "nama": "Ajeng Retno Handayani Wijatmoko",
+    "nim": "63824040",
+    "phone": "083838724468",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 2 Cipaganti",
+    "rw": "RW 2 dan 3",
+    "nama": "Raihan Nur Zahran",
+    "nim": "13124031",
+    "phone": "081318443400",
+    "sks": 18
+  },
+  {
+    "kelompok": "Kelompok 2 Cipaganti",
+    "rw": "RW 2 dan 3",
+    "nama": "Nazraansyah",
+    "nim": "10324014",
+    "phone": "087771298254",
+    "sks": 11
+  },
+  {
+    "kelompok": "Kelompok 2 Cipaganti",
+    "rw": "RW 2 dan 3",
+    "nama": "Mochammad Maliki Fadhlan Hasya",
+    "nim": "13024019",
+    "phone": "085189951040",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 2 Cipaganti",
+    "rw": "RW 2 dan 3",
+    "nama": "Excel Al Kautsar",
+    "nim": "10124072",
+    "phone": "085697292897",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 2 Cipaganti",
+    "rw": "RW 2 dan 3",
+    "nama": "Praditya Mahardika Ali A. K.",
+    "nim": "10124082",
+    "phone": "083829920145",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 2 Cipaganti",
+    "rw": "RW 2 dan 3",
+    "nama": "Putrama Rahis Akbar Abdullah",
+    "nim": "10124090",
+    "phone": "081224576473",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 2 Cipaganti",
+    "rw": "RW 2 dan 3",
+    "nama": "M. Maliq Firdaus",
+    "nim": "10124097",
+    "phone": "0895636866796",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 2 Cipaganti",
+    "rw": "RW 2 dan 3",
+    "nama": "Fahrossi Azra",
+    "nim": "10124111",
+    "phone": "082219421703",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 3 Cipaganti",
+    "rw": "Rw 4 dan 5",
+    "nama": "Oki Ramdani",
+    "nim": "11024016",
+    "phone": "089525438941",
+    "sks": 18
+  },
+  {
+    "kelompok": "Kelompok 3 Cipaganti",
+    "rw": "Rw 4 dan 5",
+    "nama": "Naila Nurfaiza Hasibuan",
+    "nim": "52124005",
+    "phone": "085220183273",
+    "sks": 6
+  },
+  {
+    "kelompok": "Kelompok 3 Cipaganti",
+    "rw": "Rw 4 dan 5",
+    "nama": "Dame rosalinda gurning",
+    "nim": "44324042",
+    "phone": "089610555335",
+    "sks": 17
+  },
+  {
+    "kelompok": "Kelompok 3 Cipaganti",
+    "rw": "Rw 4 dan 5",
+    "nama": "Hasna Aliya Romani",
+    "nim": "41824073",
+    "phone": "0895377624090",
+    "sks": 13
+  },
+  {
+    "kelompok": "Kelompok 3 Cipaganti",
+    "rw": "Rw 4 dan 5",
+    "nama": "Musdalifa",
+    "nim": "41724004",
+    "phone": "082347758517",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 3 Cipaganti",
+    "rw": "Rw 4 dan 5",
+    "nama": "Naila Rahma Azzahra",
+    "nim": "10524101",
+    "phone": "081285882506",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 3 Cipaganti",
+    "rw": "Rw 4 dan 5",
+    "nama": "Adri Ramadhan",
+    "nim": "10524108",
+    "phone": "081910588356",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 3 Cipaganti",
+    "rw": "Rw 4 dan 5",
+    "nama": "Naila hasna huwaida",
+    "nim": "63724010",
+    "phone": "085723401744",
+    "sks": 18
+  },
+  {
+    "kelompok": "Kelompok 3 Cipaganti",
+    "rw": "Rw 4 dan 5",
+    "nama": "Muhamad Gilang Ramadhan",
+    "nim": "13124028",
+    "phone": "085794439285",
+    "sks": 18
+  },
+  {
+    "kelompok": "Kelompok 3 Cipaganti",
+    "rw": "Rw 4 dan 5",
+    "nama": "Azriel Al Khafidz",
+    "nim": "10824007",
+    "phone": "08976423365",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 3 Cipaganti",
+    "rw": "Rw 4 dan 5",
+    "nama": "Firjill Shyfazzarqy Cleverst Sampouw",
+    "nim": "13024021",
+    "phone": "083808786513",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 3 Cipaganti",
+    "rw": "Rw 4 dan 5",
+    "nama": "Muhammad Rigan Marezka Permana",
+    "nim": "10124074",
+    "phone": "085723785340",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 3 Cipaganti",
+    "rw": "Rw 4 dan 5",
+    "nama": "Mochammad Syafiq Eka Prasetyo",
+    "nim": "10124085",
+    "phone": "089662121307",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 3 Cipaganti",
+    "rw": "Rw 4 dan 5",
+    "nama": "Farrel Gusti Hakim",
+    "nim": "10124094",
+    "phone": "082115758800",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 3 Cipaganti",
+    "rw": "Rw 4 dan 5",
+    "nama": "Lingga Pasya Raifansyah",
+    "nim": "10124098",
+    "phone": "085659876076",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 3 Cipaganti",
+    "rw": "Rw 4 dan 5",
+    "nama": "Anna Alicya Padek",
+    "nim": "10124112",
+    "phone": "085399897151",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 4 Cipaganti",
+    "rw": "RW 6 dan 7",
+    "nama": "Fidlal Husna Fikri Fuadi",
+    "nim": "10420054",
+    "phone": "082120806607",
+    "sks": null
+  },
+  {
+    "kelompok": "Kelompok 4 Cipaganti",
+    "rw": "RW 6 dan 7",
+    "nama": "Eva Natalia Br. Sinurat",
+    "nim": "44324038",
+    "phone": "0881023686354",
+    "sks": 17
+  },
+  {
+    "kelompok": "Kelompok 4 Cipaganti",
+    "rw": "RW 6 dan 7",
+    "nama": "Hasanudin Abdullah",
+    "nim": "41824063",
+    "phone": "085624531503",
+    "sks": 13
+  },
+  {
+    "kelompok": "Kelompok 4 Cipaganti",
+    "rw": "RW 6 dan 7",
+    "nama": "Aditya Indra Rahman",
+    "nim": "10524088",
+    "phone": "082247445835",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 4 Cipaganti",
+    "rw": "RW 6 dan 7",
+    "nama": "RHADITH EKA ERLANGGA SHAPUTRA",
+    "nim": "10524103",
+    "phone": "085364067510",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 4 Cipaganti",
+    "rw": "RW 6 dan 7",
+    "nama": "Nayla Thalita Sabrina",
+    "nim": "10524109",
+    "phone": "081312184479",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 4 Cipaganti",
+    "rw": "RW 6 dan 7",
+    "nama": "Ivan Fuziyaman",
+    "nim": "63823023",
+    "phone": "081318416305",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 4 Cipaganti",
+    "rw": "RW 6 dan 7",
+    "nama": "Yusup budiman",
+    "nim": "13124022",
+    "phone": "085559116440",
+    "sks": 18
+  },
+  {
+    "kelompok": "Kelompok 4 Cipaganti",
+    "rw": "RW 6 dan 7",
+    "nama": "AGIL",
+    "nim": "13024010",
+    "phone": "081342797309",
+    "sks": 20
+  },
+  {
+    "kelompok": "Kelompok 4 Cipaganti",
+    "rw": "RW 6 dan 7",
+    "nama": "Gifari Raya Shahizidan",
+    "nim": "10124067",
+    "phone": "088297202815",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 4 Cipaganti",
+    "rw": "RW 6 dan 7",
+    "nama": "Muhammad Nazib Al Qoys",
+    "nim": "10124077",
+    "phone": "085814411633",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 4 Cipaganti",
+    "rw": "RW 6 dan 7",
+    "nama": "Kayla Yusuf Sumantri",
+    "nim": "10124095",
+    "phone": "081320241715",
+    "sks": 19
+  },
+  {
+    "kelompok": "Kelompok 4 Cipaganti",
+    "rw": "RW 6 dan 7",
+    "nama": "Defrianif1",
+    "nim": "10124107",
+    "phone": "087744480152",
+    "sks": 19
+  }
+]

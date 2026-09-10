@@ -3,6 +3,7 @@ import path from 'path';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import XLSX from 'xlsx';
+import { assertNotProduction } from '../src/utils/vpsSafetyGuard.js';
 
 const prisma = new PrismaClient();
 
@@ -45,6 +46,8 @@ interface GroupSummaryMap {
 }
 
 async function main() {
+  assertNotProduction("seed-dpl.ts");
+
   const args = process.argv.slice(2);
   const isCommit = args.includes('--commit');
   const customFileArg = args.find((a) => !a.startsWith('--'));

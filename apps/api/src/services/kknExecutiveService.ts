@@ -5,6 +5,7 @@ export interface KknExecutiveFilters {
   kelurahan?: string;
   rw?: string;
   periode?: string;
+  kelompok?: string;
 }
 
 export const kknExecutiveService = {
@@ -63,6 +64,18 @@ export const kknExecutiveService = {
       }
     }
 
+    // Filter Kelompok spesifik jika ada filter kelompok
+    const rawKelompok = filters.kelompok ? filters.kelompok.trim() : "";
+    const isFilteredKelompok = rawKelompok && rawKelompok !== "ALL" && rawKelompok !== "Semua Kelompok";
+    if (isFilteredKelompok) {
+      kelompokList = kelompokList.filter(
+        (k) =>
+          k.id === rawKelompok ||
+          k.name.toLowerCase().trim() === rawKelompok.toLowerCase().trim() ||
+          k.name.toLowerCase().includes(rawKelompok.toLowerCase().trim())
+      );
+    }
+
     const kelompokIds = kelompokList.map((k) => k.id);
 
     // 2. Total Kelompok
@@ -91,6 +104,14 @@ export const kknExecutiveService = {
         kelompokId: true,
         assignedRwId: true,
         jenjangPendidikan: true,
+        sks: true,
+        noWa: true,
+        user: {
+          select: {
+            name: true,
+            phone: true,
+          },
+        },
       },
     });
 
@@ -135,28 +156,48 @@ export const kknExecutiveService = {
       ];
     }
 
-    // 7. Distribusi Beban SKS (10 SKS vs 20 SKS)
-    // Standar acuan: 10 SKS (62%), 20 SKS MBKM (38%)
-    const sks10Count = totalMahasiswa > 0 ? Math.round(totalMahasiswa * 0.62) : 0;
-    const sks20Count = totalMahasiswa > 0 ? totalMahasiswa - sks10Count : 0;
+    // 7. Distribusi Beban SKS Dinamis & Real-time (100% Zero Hardcode)
+    const sksCounts: Record<string, { sks: number; count: number; label: string }> = {};
+
+    const COLOR_PALETTE: Record<number, string> = {
+      0: "#94a3b8",  // Slate - Non-Konversi / Reguler
+      6: "#f59e0b",  // Amber
+      11: "#0ea5e9", // Sky Blue
+      12: "#3b82f6", // Blue
+      13: "#6366f1", // Indigo
+      14: "#8b5cf6", // Violet
+      17: "#ec4899", // Pink
+      18: "#f43f5e", // Rose
+      19: "#10b981", // Emerald
+      20: "#059669", // Dark Emerald / MBKM Penuh
+    };
+
+    students.forEach((s: any) => {
+      const sksVal = s.sks && s.sks > 0 ? Number(s.sks) : 0;
+      const key = String(sksVal);
+      if (!sksCounts[key]) {
+        sksCounts[key] = {
+          sks: sksVal,
+          count: 0,
+          label: sksVal > 0 ? `${sksVal} SKS` : "Reguler (0 SKS)",
+        };
+      }
+      sksCounts[key].count++;
+    });
+
+    const breakdown = Object.values(sksCounts)
+      .sort((a, b) => b.count - a.count)
+      .map((item) => ({
+        sks: item.sks,
+        label: item.label,
+        count: item.count,
+        percentage: totalMahasiswa > 0 ? Math.round((item.count / totalMahasiswa) * 100) : 0,
+        color: COLOR_PALETTE[item.sks] || "#0284c7",
+      }));
+
     const distribusiSks = {
       totalMahasiswa,
-      breakdown: [
-        {
-          sks: 10,
-          label: "10 SKS",
-          count: sks10Count,
-          percentage: totalMahasiswa > 0 ? 62 : 0,
-          color: "#009966",
-        },
-        {
-          sks: 20,
-          label: "20 SKS",
-          count: sks20Count,
-          percentage: totalMahasiswa > 0 ? 38 : 0,
-          color: "#3b82f6",
-        },
-      ],
+      breakdown,
     };
 
     // 8. Sebaran Mahasiswa per Wilayah
@@ -243,35 +284,74 @@ export const kknExecutiveService = {
       },
     });
 
-    let prokerDiusulkan = 0;
-    let prokerDisetujui = 0;
-    let prokerSedangBerjalan = 0;
-    let prokerSelesai = 0;
+    let usulanDisetujui = 0;
+    let usulanBelumDisetujui = 0;
+    let usulanDitolak = 0;
+
+    let pelaksanaanBelum = 0;
+    let pelaksanaanSedangBerjalan = 0;
+    let pelaksanaanSelesai = 0;
 
     prokerList.forEach((p) => {
-      if (p.statusPelaksanaan === "SELESAI" || p.status === "SELESAI") {
-        prokerSelesai++;
-      } else if (p.statusPelaksanaan === "SEDANG_BERJALAN" || p.status === "SEDANG_BERJALAN") {
-        prokerSedangBerjalan++;
-      } else if (p.status === "DITERIMA" || p.statusUsulan === "DISETUJUI") {
-        prokerDisetujui++;
+      // 1. Dimensi Status Usulan (Mandiri & Terpisah: Disetujui, Belum Disetujui, Ditolak)
+      const stUsulan = (p.statusUsulan || "").toUpperCase();
+      const stUtama = (p.status || "").toUpperCase();
+
+      if (stUsulan === "DITOLAK" || stUtama === "DITOLAK") {
+        usulanDitolak++;
+      } else if (
+        stUsulan === "DISETUJUI" ||
+        stUtama === "DITERIMA" ||
+        stUtama === "SEDANG_BERJALAN" ||
+        stUtama === "SELESAI"
+      ) {
+        usulanDisetujui++;
       } else {
-        prokerDiusulkan++;
+        usulanBelumDisetujui++;
+      }
+
+      // 2. Dimensi Status Pelaksanaan (Belum, Sedang Berjalan, Selesai)
+      const stPelaksanaan = (p.statusPelaksanaan || "").toUpperCase();
+      if (stPelaksanaan === "SELESAI" || stUtama === "SELESAI") {
+        pelaksanaanSelesai++;
+      } else if (stPelaksanaan === "SEDANG_BERJALAN" || stUtama === "SEDANG_BERJALAN") {
+        pelaksanaanSedangBerjalan++;
+      } else {
+        pelaksanaanBelum++;
       }
     });
 
     const totalProker = prokerList.length;
-    const pctDiusulkan = totalProker > 0 ? Math.round((prokerDiusulkan / totalProker) * 100) : 0;
-    const pctDisetujui = totalProker > 0 ? Math.round((prokerDisetujui / totalProker) * 100) : 0;
-    const pctSedangBerjalan = totalProker > 0 ? Math.round((prokerSedangBerjalan / totalProker) * 100) : 0;
-    const pctSelesai = totalProker > 0 ? Math.max(0, 100 - pctDiusulkan - pctDisetujui - pctSedangBerjalan) : 0;
+    const pctUsulanDisetujui = totalProker > 0 ? Math.round((usulanDisetujui / totalProker) * 100) : 0;
+    const pctUsulanBelumDisetujui = totalProker > 0 ? Math.round((usulanBelumDisetujui / totalProker) * 100) : 0;
+    const pctUsulanDitolak = totalProker > 0 ? Math.round((usulanDitolak / totalProker) * 100) : 0;
+
+    const pctPelaksanaanBelum = totalProker > 0 ? Math.round((pelaksanaanBelum / totalProker) * 100) : 0;
+    const pctPelaksanaanSedangBerjalan = totalProker > 0 ? Math.round((pelaksanaanSedangBerjalan / totalProker) * 100) : 0;
+    const pctPelaksanaanSelesai = totalProker > 0 ? Math.round((pelaksanaanSelesai / totalProker) * 100) : 0;
 
     const statusProker = {
       total: totalProker,
-      diusulkan: { count: prokerDiusulkan, percentage: pctDiusulkan },
-      disetujui: { count: prokerDisetujui, percentage: pctDisetujui },
-      sedangDilaksanakan: { count: prokerSedangBerjalan, percentage: pctSedangBerjalan },
-      selesai: { count: prokerSelesai, percentage: pctSelesai },
+      // Dimensi Status Usulan (Mandiri & Terpisah sesuai Notulensi A.2)
+      usulan: {
+        total: totalProker,
+        disetujui: { count: usulanDisetujui, percentage: pctUsulanDisetujui },
+        belumDisetujui: { count: usulanBelumDisetujui, percentage: pctUsulanBelumDisetujui },
+        ditolak: { count: usulanDitolak, percentage: pctUsulanDitolak },
+      },
+      // Dimensi Status Pelaksanaan (Belum, Sedang Berjalan, Sudah Selesai)
+      pelaksanaan: {
+        total: totalProker,
+        belum: { count: pelaksanaanBelum, percentage: pctPelaksanaanBelum },
+        sedangBerjalan: { count: pelaksanaanSedangBerjalan, percentage: pctPelaksanaanSedangBerjalan },
+        selesai: { count: pelaksanaanSelesai, percentage: pctPelaksanaanSelesai },
+      },
+      // Kompatibilitas alur lama
+      diusulkan: { count: usulanBelumDisetujui, percentage: pctUsulanBelumDisetujui },
+      disetujui: { count: usulanDisetujui, percentage: pctUsulanDisetujui },
+      ditolak: { count: usulanDitolak, percentage: pctUsulanDitolak },
+      sedangDilaksanakan: { count: pelaksanaanSedangBerjalan, percentage: pctPelaksanaanSedangBerjalan },
+      selesai: { count: pelaksanaanSelesai, percentage: pctPelaksanaanSelesai },
     };
 
     // 11. Presensi Mahasiswa
@@ -430,12 +510,20 @@ export const kknExecutiveService = {
     const totalLogMahasiswa = countLogMhs;
     const totalLogDpl = countLogDpl;
 
-    // Real 7-day activities (2 Sep - 8 Sep 2026)
+    // Real 7-day activities dynamically anchored to latest logbook or current date
+    const latestLog = await prisma.logbookKkn.findFirst({
+      where: logMhsWhere,
+      orderBy: { tanggalKegiatan: "desc" },
+      select: { tanggalKegiatan: true },
+    });
+    const anchorDate = latestLog?.tanggalKegiatan ? new Date(latestLog.tanggalKegiatan) : new Date();
+
     const sevenDays: { dateStr: string; label: string; start: Date; end: Date }[] = [];
     const monthsShort = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
 
     for (let i = 6; i >= 0; i--) {
-      const d = new Date(2026, 8, 8 - i);
+      const d = new Date(anchorDate);
+      d.setDate(anchorDate.getDate() - i);
       const dayNum = d.getDate();
       const monthStr = monthsShort[d.getMonth()];
       const dateIso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(dayNum).padStart(2, "0")}`;
@@ -512,19 +600,84 @@ export const kknExecutiveService = {
       };
     });
 
-    // 15. Perhatian Pimpinan (Real alerts dari database)
-    const countAlpaDb = await prisma.activityAttendance.count({
-      where: { ...attendanceWhere, status: "ALPA" },
+    // 15. Resume Aktivitas DPL (Ringkasan Statistik Keaktifan DPL sesuai Notulensi A.4)
+    const dplLogbookStats = await prisma.logbookDpl.groupBy({
+      by: ["dplId"],
+      where: logDplWhere,
+      _count: { id: true },
+      _sum: { durasiMenit: true },
     });
+
+    const activeDplIdSet = new Set(dplLogbookStats.map((d) => d.dplId));
+    const dplAktifCount = activeDplIdSet.size;
+    const persentaseKeaktifanDpl = totalDpl > 0 ? Math.round((dplAktifCount / totalDpl) * 100) : 0;
+
+    const kunjunganCount = await prisma.logbookDpl.count({
+      where: {
+        ...logDplWhere,
+        kategori: { contains: "Kunjungan", mode: "insensitive" },
+      },
+    });
+
+    const totalDurasiBimbinganMenit = dplLogbookStats.reduce(
+      (acc, curr) => acc + (curr._sum.durasiMenit || 0),
+      0
+    );
+    const totalDurasiBimbinganJam = Math.round(totalDurasiBimbinganMenit / 60);
+    const rerataBimbinganPerDpl = dplAktifCount > 0 ? Math.round((totalDurasiBimbinganJam / dplAktifCount) * 10) / 10 : 0;
+
+    const recentDplLogEntries = await prisma.logbookDpl.findMany({
+      where: logDplWhere,
+      orderBy: { tanggal: "desc" },
+      take: 4,
+      include: {
+        dpl: { select: { name: true, nip: true } },
+        kelompok: { select: { name: true, kelurahan: true } },
+      },
+    });
+
+    const resumeDpl = {
+      totalDpl,
+      dplAktifCount,
+      dplBelumAktifCount: Math.max(0, totalDpl - dplAktifCount),
+      persentaseKeaktifan: persentaseKeaktifanDpl,
+      totalLogDpl,
+      totalKunjunganLapangan: kunjunganCount,
+      totalDurasiBimbinganJam,
+      rerataBimbinganPerDpl,
+      recentActivities: recentDplLogEntries.map((l) => ({
+        id: l.id,
+        dplName: l.dpl?.name || "DPL",
+        nip: l.dpl?.nip || "-",
+        kelompokName: l.kelompok?.name || "Kelompok KKN",
+        kelurahan: l.kelompok?.kelurahan || "-",
+        tanggal: new Date(l.tanggal).toISOString().slice(0, 10),
+        kategori: l.kategori || "Bimbingan Lapangan",
+        tempat: l.tempat || "Posko KKN",
+        deskripsi: l.deskripsi || "",
+        durasiMenit: l.durasiMenit ?? 120,
+        waktuMulai: l.waktuMulai || null,
+        waktuSelesai: l.waktuSelesai || null,
+      })),
+    };
+
+    // 16. Perhatian Pimpinan (Real alerts dari database - diletakkan di bawah Top Cards)
     const countPendingProkerDb = await prisma.programKerjaKkn.count({
       where: { ...prokerWhere, status: "BELUM_DISETUJUI" },
     });
+    const countRejectedProkerDb = await prisma.programKerjaKkn.count({
+      where: {
+        ...prokerWhere,
+        OR: [{ status: "DITOLAK" }, { statusUsulan: "DITOLAK" }],
+      },
+    });
 
-    // Hitung real kelompok di bawah rasio 70%
+    // Hitung real kelompok di bawah ambang batas 60% (Presensi & Proker sesuai instruksi user: keduanya)
     const kelompokWithAtt = await prisma.kelompokKkn.findMany({
       where: kelompokWhere,
       select: {
         id: true,
+        name: true,
         schedules: {
           select: {
             attendances: {
@@ -532,11 +685,20 @@ export const kknExecutiveService = {
             },
           },
         },
+        programKerja: {
+          select: {
+            status: true,
+            statusPelaksanaan: true,
+          },
+        },
       },
     });
 
-    let under70Count = 0;
+    let under60AttendanceCount = 0;
+    let under60ProkerCount = 0;
+
     kelompokWithAtt.forEach((k) => {
+      // Presensi
       let totalAtt = 0;
       let hadirAtt = 0;
       k.schedules.forEach((s) => {
@@ -548,33 +710,127 @@ export const kknExecutiveService = {
           }
         });
       });
-      const ratio = totalAtt > 0 ? (hadirAtt / totalAtt) * 100 : 0;
-      if (ratio < 70) {
-        under70Count++;
+      const ratioAtt = totalAtt > 0 ? (hadirAtt / totalAtt) * 100 : 0;
+      if (ratioAtt < 60) {
+        under60AttendanceCount++;
+      }
+
+      // Proker Selesai
+      const totalP = k.programKerja.length;
+      const selesaiP = k.programKerja.filter(
+        (p) => (p.statusPelaksanaan || "").toUpperCase() === "SELESAI" || (p.status || "").toUpperCase() === "SELESAI"
+      ).length;
+      const ratioP = totalP > 0 ? (selesaiP / totalP) * 100 : 0;
+      if (ratioP < 60) {
+        under60ProkerCount++;
       }
     });
+
+    // 16.b Agregasi Alpa Real Database (Zero False Logic - Analisis Logika Manusia)
+    // Total record baris log kehadiran alpa terakumulasi di lapangan
+    const totalAlpaLogs = await prisma.activityAttendance.count({
+      where: { ...attendanceWhere, status: "ALPA" },
+    });
+
+    // Agregasi jumlah alpa per mahasiswa secara riil
+    const alpaPerStudent = await prisma.activityAttendance.groupBy({
+      by: ["studentId"],
+      where: { ...attendanceWhere, status: "ALPA" },
+      _count: { id: true },
+    });
+
+    const uniqueStudentsEverAlpa = alpaPerStudent.length;
+
+    // Filter mahasiswa alpa kritis (akumulasi alpa >= 3 kali tanpa keterangan)
+    // Standar operasional KKN: >= 3x alpa memerlukan intervensi DPL & arahan pimpinan
+    const criticalAlpaMap = new Map<string, number>();
+    alpaPerStudent.forEach((item) => {
+      if (item._count.id >= 3) {
+        criticalAlpaMap.set(item.studentId, item._count.id);
+      }
+    });
+    const countCriticalAlpaStudents = criticalAlpaMap.size;
+
+    // Ambil data DPL untuk mapping rincian mahasiswa alpa kritis
+    const dplUsers = await prisma.user.findMany({
+      where: { id: { in: uniqueDplIds } },
+      select: { id: true, name: true, phone: true },
+    });
+    const dplMap = new Map(dplUsers.map((d) => [d.id, d]));
+    const kelompokMap = new Map(kelompokList.map((k) => [k.id, k]));
+
+    const criticalAlpaStudents = students
+      .filter((s) => criticalAlpaMap.has(s.userId))
+      .map((s) => {
+        const k = kelompokMap.get(s.kelompokId || "");
+        const d = k?.dplId ? dplMap.get(k.dplId) : null;
+        return {
+          id: s.id,
+          userId: s.userId,
+          name: s.user?.name || "Mahasiswa",
+          nim: s.nim || "-",
+          jurusan: s.jurusan || "-",
+          kelompokId: s.kelompokId,
+          kelompokName: k?.name || "Kelompok KKN",
+          kelurahan: k?.kelurahan || "-",
+          dplName: d?.name || "DPL Belum Ditentukan",
+          dplPhone: d?.phone || null,
+          phone: s.noWa || s.user?.phone || null,
+          alpaCount: criticalAlpaMap.get(s.userId) || 0,
+        };
+      })
+      .sort((a, b) => b.alpaCount - a.alpaCount);
 
     const perhatianPimpinan = [
       {
         id: "alpa",
-        count: countAlpaDb,
-        title: `${countAlpaDb} mahasiswa tanpa keterangan`,
+        count: countCriticalAlpaStudents,
+        unit: "Mahasiswa",
+        title: `${countCriticalAlpaStudents} Mahasiswa Alpa Kritis (≥ 3 Hari)`,
+        subtitle: `${countCriticalAlpaStudents} mahasiswa akumulasi alpa tinggi (dari ${totalAlpaLogs} total log insiden), butuh evaluasi DPL`,
         type: "danger",
-        link: "/monitoring-kegiatan/presensi?filter=alpa",
+        link: "/monitoring-kegiatan/presensi?filter=critical_alpa",
+        metadata: {
+          criticalStudentsCount: countCriticalAlpaStudents,
+          totalAlpaLogs,
+          uniqueStudentsEverAlpa,
+        },
       },
       {
         id: "proker_pending",
         count: countPendingProkerDb,
-        title: `${countPendingProkerDb} program belum disetujui`,
+        unit: "Proker",
+        title: `${countPendingProkerDb} Usulan Program Kerja Belum Disetujui`,
+        subtitle: "Menunggu telaah dan persetujuan DPL",
         type: "warning",
         link: "/pelaksanaan/program-kerja?status=BELUM_DISETUJUI",
       },
       {
+        id: "proker_ditolak",
+        count: countRejectedProkerDb,
+        unit: "Proker Ditolak",
+        title: `${countRejectedProkerDb} Usulan Program Kerja Ditolak`,
+        subtitle: "Memerlukan revisi dari kelompok mahasiswa",
+        type: "danger",
+        link: "/pelaksanaan/program-kerja?status=DITOLAK",
+      },
+      {
         id: "low_attendance_group",
-        count: under70Count,
-        title: `${under70Count} kelompok di bawah rasio 70%`,
+        count: under60AttendanceCount,
+        unit: "Kelompok",
+        title: `${under60AttendanceCount} Kelompok Presensi di Bawah 60%`,
+        subtitle: "Perlu pendampingan khusus dan evaluasi lapangan",
         type: "warning",
-        link: "/monitoring-kegiatan/laporan-presensi?filter=under70",
+        link: "/monitoring-kegiatan/laporan-presensi?filter=under60",
+      },
+      {
+        id: "low_proker_group",
+        count: under60ProkerCount,
+        unit: "Kelompok",
+        title: `${under60ProkerCount} Kelompok Capaian Proker < 60%`,
+        subtitle: "Progres pelaksanaan program kerja tertunda",
+        type: "warning",
+        link: "/pelaksanaan/program-kerja?filter=under60",
       },
     ];
 
@@ -618,6 +874,8 @@ export const kknExecutiveService = {
       aktivitasTerkini,
       liniMasaTerkini,
       perhatianPimpinan,
+      criticalAlpaStudents,
+      resumeDpl,
       filterOptions: {
         periodeOptions: [
           { value: "2026", label: "Periode KKN 2026" },
@@ -627,8 +885,13 @@ export const kknExecutiveService = {
           { value: "Semua Kelurahan", label: "Semua Kelurahan" },
           ...allKelurahans.map((k) => ({ value: k, label: `Kel. ${k}` })),
         ],
+        kelompokOptions: [
+          { value: "Semua Kelompok", label: "Semua Kelompok" },
+          ...kelompokList.map((k) => ({ value: k.name, label: k.name, kelurahan: k.kelurahan || "" })),
+        ],
         selectedKelurahan: filters.kelurahan || "Semua Kelurahan",
         selectedRw: filters.rw || "Semua RW",
+        selectedKelompok: filters.kelompok || "Semua Kelompok",
         selectedPeriode: filters.periode || "2026",
       },
     };
@@ -648,6 +911,7 @@ export const kknExecutiveService = {
       ["Waktu Ekspor", new Date().toLocaleString("id-ID")],
       ["Filter Kelurahan", filters.kelurahan || "Semua Kelurahan"],
       ["Filter RW", filters.rw || "Semua RW"],
+      ["Filter Kelompok", filters.kelompok || "Semua Kelompok"],
       [],
       ["METRIK UTAMA", "NILAI"],
       ["Jumlah Wilayah", data.summary.totalWilayah.label],
@@ -690,11 +954,30 @@ export const kknExecutiveService = {
 
     // Sheet 4: Perhatian Pimpinan
     const alertRows = [
-      ["INDIKATOR PERHATIAN PIMPINAN", "STATUS / JUMLAH"],
-      ...data.perhatianPimpinan.map((a) => [a.title, a.count]),
+      ["INDIKATOR PERHATIAN PIMPINAN", "STATUS / JUMLAH", "SATUAN", "KETERANGAN"],
+      ...data.perhatianPimpinan.map((a: any) => [a.title, a.count, a.unit || "Entitas", a.subtitle || ""]),
     ];
     const wsAlert = XLSX.utils.aoa_to_sheet(alertRows);
     XLSX.utils.book_append_sheet(wb, wsAlert, "Perhatian Pimpinan");
+
+    // Sheet 5: Rincian Mahasiswa Alpa Kritis
+    if (data.criticalAlpaStudents && data.criticalAlpaStudents.length > 0) {
+      const criticalMhsRows = [
+        ["NIM", "NAMA MAHASISWA", "PROGRAM STUDI", "KELOMPOK", "KELURAHAN", "DPL PENGAMPU", "NO TELEPON", "JUMLAH ALPA"],
+        ...data.criticalAlpaStudents.map((m: any) => [
+          m.nim,
+          m.name,
+          m.jurusan,
+          m.kelompokName,
+          m.kelurahan,
+          m.dplName,
+          m.phone || "-",
+          m.alpaCount,
+        ]),
+      ];
+      const wsCritical = XLSX.utils.aoa_to_sheet(criticalMhsRows);
+      XLSX.utils.book_append_sheet(wb, wsCritical, "Mahasiswa Alpa Kritis");
+    }
 
     return XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
   },

@@ -138,6 +138,18 @@ export const dplController = {
   decideLeaveRequest: async (req: Request, res: Response): Promise<void> => {
     try {
       const dplUserId = getUserId(req);
+      const userRole = (req.user as any)?.role;
+      const roleStr = String(userRole || "").toUpperCase();
+
+      if (roleStr.includes("PIMPINAN") || roleStr.includes("PEMIMPIN")) {
+        res.status(403).json({
+          error: "FORBIDDEN",
+          message:
+            "Role Pimpinan hanya memiliki akses Read-Only dan tidak berwenang mengambil keputusan izin/sakit.",
+        });
+        return;
+      }
+
       const requestId = req.params.requestId;
       const { status, note } = req.body;
 
@@ -149,10 +161,18 @@ export const dplController = {
         return;
       }
 
-      const data = await dplService.decideLeaveRequest(dplUserId, requestId, status, note);
+      const data = await dplService.decideLeaveRequest(dplUserId, requestId, status, note, userRole);
       res.json({ success: true, data });
     } catch (error: any) {
       console.error("[dplController.decideLeaveRequest] error:", error);
+      if (error.message === "FORBIDDEN_READ_ONLY" || error.message === "FORBIDDEN_READ_ONLY_ROLE") {
+        res.status(403).json({
+          error: "FORBIDDEN",
+          message:
+            "Role Pimpinan hanya memiliki akses Read-Only dan tidak berwenang mengambil keputusan izin/sakit.",
+        });
+        return;
+      }
       if (error.message === "FORBIDDEN_NOT_YOUR_STUDENT") {
         res.status(403).json({
           error: "FORBIDDEN",
@@ -167,6 +187,18 @@ export const dplController = {
   decideCancelLeaveRequest: async (req: Request, res: Response): Promise<void> => {
     try {
       const dplUserId = getUserId(req);
+      const userRole = (req.user as any)?.role;
+      const roleStr = String(userRole || "").toUpperCase();
+
+      if (roleStr.includes("PIMPINAN") || roleStr.includes("PEMIMPIN")) {
+        res.status(403).json({
+          error: "FORBIDDEN",
+          message:
+            "Role Pimpinan hanya memiliki akses Read-Only dan tidak berwenang memproses pembatalan izin/sakit.",
+        });
+        return;
+      }
+
       const { requestId } = req.params;
       const { action, note } = req.body;
 
@@ -179,7 +211,7 @@ export const dplController = {
         return;
       }
 
-      const data = await dplService.decideCancelLeaveRequest(dplUserId, requestId, action, note);
+      const data = await dplService.decideCancelLeaveRequest(dplUserId, requestId, action, note, userRole);
       res.json({
         success: true,
         message:
@@ -190,6 +222,14 @@ export const dplController = {
       });
     } catch (error: any) {
       console.error("[dplController.decideCancelLeaveRequest] error:", error);
+      if (error.message === "FORBIDDEN_READ_ONLY" || error.message === "FORBIDDEN_READ_ONLY_ROLE") {
+        res.status(403).json({
+          error: "FORBIDDEN",
+          message:
+            "Role Pimpinan hanya memiliki akses Read-Only dan tidak berwenang memproses pembatalan izin/sakit.",
+        });
+        return;
+      }
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   },

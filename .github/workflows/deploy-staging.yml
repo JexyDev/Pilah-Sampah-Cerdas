@@ -117,6 +117,8 @@ jobs:
               cp -r "$REPO_DIR/node_modules/.prisma/." "$REPO_DIR/apps/api/node_modules/.prisma/" 2>/dev/null || true
             fi
             npx prisma migrate deploy || true
+            echo "=== 2.5. Synchronizing Student SKS Data ==="
+            FORCE_ALLOW_VPS_MUTATION=I_UNDERSTAND_THE_RISKS_OVERWRITE_VPS npx tsx scripts/sync-student-sks.ts --commit || echo "Sync SKS failed, continuing..."
             npm run build
 
             echo "=== 3. Reloading PM2 Backend Staging ==="

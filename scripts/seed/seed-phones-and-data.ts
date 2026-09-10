@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { assertNotProduction } from '../tools/safety_guard.cjs';
 
 const prisma = new PrismaClient();
 
@@ -9,6 +10,7 @@ function generateRandomPhone() {
 }
 
 async function seed() {
+  assertNotProduction('seed-phones-and-data.ts');
   console.log('Updating users with phone numbers...');
   const users = await prisma.user.findMany();
   for (const u of users) {
