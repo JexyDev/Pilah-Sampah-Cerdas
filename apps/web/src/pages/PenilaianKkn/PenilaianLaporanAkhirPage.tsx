@@ -81,6 +81,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
     rekomendasi: 100,
   });
   const [catatanInput, setCatatanInput] = useState<string>("");
+  const [applyToGroup, setApplyToGroup] = useState<boolean>(true);
 
   // Load Data from Backend
   const fetchData = async () => {
@@ -209,6 +210,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
       rekomendasi: student.rubrikScores?.rekomendasi ?? student.rubrikScores?.refleksi ?? currentScore,
     });
     setCatatanInput(student.catatan || "");
+    setApplyToGroup(true);
     setIsAssessmentModalOpen(true);
   };
 
@@ -244,28 +246,67 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
 
     setSaving(true);
     try {
-      await penilaianKknApiService.saveLaporanAkhirScore(
-        selectedStudent.studentId,
-        scoreInput,
-        catatanInput
-      );
+      if (applyToGroup && selectedStudent.kelompokId) {
+        // Simpan via endpoint kelompok untuk mensinkronkan proker kelompok dan seluruh anggota
+        await penilaianKknApiService.saveLaporanAkhirKelompokScore(
+          selectedStudent.kelompokId,
+          {
+            statusTelaah: "DISETUJUI",
+            rubrikScores: {
+              sistematika: aspectScores.sistematika,
+              analisis: aspectScores.analisis,
+              output: aspectScores.dampak,
+              refleksi: aspectScores.rekomendasi,
+            },
+            catatanUmum: catatanInput,
+            judulLaporan: selectedStudent.judulLaporan,
+            fileUrl: selectedStudent.fileUrl || undefined,
+          }
+        );
 
-      // Local optimistic update
-      setStudents((prev) =>
-        prev.map((s) =>
-          s.studentId === selectedStudent.studentId
-            ? {
-                ...s,
-                status: "Sudah Dinilai",
-                nilai: scoreInput,
-                rubrikScores: aspectScores,
-                catatan: catatanInput,
-              }
-            : s
-        )
-      );
+        // Optimistic update untuk seluruh anggota kelompok ini
+        setStudents((prev) =>
+          prev.map((s) =>
+            s.kelompokId === selectedStudent.kelompokId
+              ? {
+                  ...s,
+                  status: "Sudah Dinilai",
+                  nilai: scoreInput,
+                  rubrikScores: aspectScores,
+                  catatan: catatanInput,
+                }
+              : s
+          )
+        );
 
-      toast.success(`Nilai laporan akhir untuk ${selectedStudent.nama} berhasil disimpan!`);
+        toast.success(
+          `Nilai laporan akhir kelompok ${selectedStudent.kelompok} berhasil disimpan untuk seluruh anggota!`
+        );
+      } else {
+        await penilaianKknApiService.saveLaporanAkhirScore(
+          selectedStudent.studentId,
+          scoreInput,
+          catatanInput
+        );
+
+        // Local optimistic update
+        setStudents((prev) =>
+          prev.map((s) =>
+            s.studentId === selectedStudent.studentId
+              ? {
+                  ...s,
+                  status: "Sudah Dinilai",
+                  nilai: scoreInput,
+                  rubrikScores: aspectScores,
+                  catatan: catatanInput,
+                }
+              : s
+          )
+        );
+
+        toast.success(`Nilai laporan akhir untuk ${selectedStudent.nama} berhasil disimpan!`);
+      }
+
       setIsAssessmentModalOpen(false);
     } catch (err: any) {
       console.error("Gagal menyimpan nilai laporan:", err);
@@ -1065,6 +1106,27 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
                   className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#009966]/20 focus:border-[#009966] resize-none placeholder:text-slate-400 disabled:bg-slate-50/80 disabled:cursor-not-allowed"
                 />
               </div>
+
+              {/* Opsi Terapkan ke Seluruh Anggota Kelompok */}
+              {isEditMode && selectedStudent?.kelompokId && (
+                <div className="p-3 bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/40 rounded-xl flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    id="applyToGroupCheckbox"
+                    checked={applyToGroup}
+                    onChange={(e) => setApplyToGroup(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded text-[#009966] focus:ring-[#009966] border-slate-300 dark:border-slate-600 cursor-pointer"
+                  />
+                  <label htmlFor="applyToGroupCheckbox" className="text-xs text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+                    <span className="font-bold text-emerald-800 dark:text-emerald-300 block">
+                      Terapkan nilai ini untuk semua anggota kelompok ({selectedStudent.kelompok || "Kelompok"})
+                    </span>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-0.5">
+                      Karena Laporan Akhir bersifat komunal (kelompok), mencentang ini akan otomatis mengisi nilai laporan akhir untuk seluruh anggota kelompok sekaligus. Hilangkan centang jika Anda hanya ingin memberikan nilai khusus untuk mahasiswa ini.
+                    </span>
+                  </label>
+                </div>
+              )}
             </div>
 
             {/* Footer Modal */}
