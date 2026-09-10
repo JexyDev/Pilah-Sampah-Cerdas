@@ -365,8 +365,11 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
       final int count = (_qrOrganik.isNotEmpty && _qrAnorganik.isNotEmpty)
           ? 2
           : 1;
+      // isFirstActivation: warga belum punya bin apapun sebelum aktivasi ini
+      final bool isFirstActivation = !_hasOrganic && !_hasAnorganic;
       return _SuccessScreen(
         binCount: count,
+        isFirstActivation: isFirstActivation,
         onBack: () {
           ref.read(aktivasiBinProvider.notifier).reset();
           Navigator.maybePop(context);
@@ -712,9 +715,14 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
 // ─── Success Screen ──────────────────────────────────────────────────────────
 
 class _SuccessScreen extends StatelessWidget {
-  const _SuccessScreen({required this.onBack, this.binCount = 2});
+  const _SuccessScreen({
+    required this.onBack,
+    this.binCount = 2,
+    this.isFirstActivation = false,
+  });
   final VoidCallback onBack;
   final int binCount;
+  final bool isFirstActivation;
 
   @override
   Widget build(BuildContext context) {
@@ -740,13 +748,14 @@ class _SuccessScreen extends StatelessWidget {
       backgroundColor: Colors.white,
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(32),
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Icon sukses
               Container(
-                width: 80,
-                height: 80,
+                width: 88,
+                height: 88,
                 decoration: const BoxDecoration(
                   color: AppColors.primaryGreen,
                   shape: BoxShape.circle,
@@ -754,14 +763,18 @@ class _SuccessScreen extends StatelessWidget {
                 child: const Icon(
                   Icons.check_rounded,
                   color: Colors.white,
-                  size: 44,
+                  size: 48,
                 ),
               ),
               const SizedBox(height: 20),
+
+              // Judul — beda antara first-time & tambahan
               Text(
-                binCount > 1
-                    ? 'Kedua Tempat Sampah Berhasil Diaktivasi!'
-                    : 'Tempat Sampah Berhasil Diaktivasi!',
+                isFirstActivation
+                    ? '🎉 Selamat Bergabung ke Komunitas Berseka!'
+                    : (binCount > 1
+                        ? 'Kedua Tempat Sampah Berhasil Diaktivasi!'
+                        : 'Tempat Sampah Berhasil Diaktivasi!'),
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
@@ -769,26 +782,44 @@ class _SuccessScreen extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
+
+              // Deskripsi
               Text(
-                binCount > 1
-                    ? 'Kedua tempat sampah Anda telah terhubung\ndengan akun rumah tangga.'
-                    : 'Tempat sampah Anda telah terhubung\ndengan akun rumah tangga.',
+                isFirstActivation
+                    ? 'Tempat Sampah pintarmu sudah aktif. Kamu sekarang resmi menjadi bagian dari gerakan lingkungan bersih Komunitas Berseka! 🌿\n\nMulai scan sampah dan kumpulkan poinmu.'
+                    : (binCount > 1
+                        ? 'Kedua tempat sampah Anda telah terhubung\ndengan akun rumah tangga.'
+                        : 'Tempat sampah Anda telah terhubung\ndengan akun rumah tangga.'),
                 style: const TextStyle(
                   fontSize: 13,
                   color: AppColors.textSecondary,
+                  height: 1.5,
                 ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
+
+              // Tombol kembali
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: onBack,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryGreen,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                  child: const Text('Kembali ke Beranda'),
+                  child: Text(
+                    isFirstActivation ? 'Mulai Scan Sampah! 🚀' : 'Kembali ke Beranda',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                    ),
+                  ),
                 ),
               ),
             ],

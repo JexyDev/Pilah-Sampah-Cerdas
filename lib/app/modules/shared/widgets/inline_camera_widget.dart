@@ -81,7 +81,7 @@ class _InlineCameraWidgetState extends State<InlineCameraWidget>
     if (mounted) setState(() => _isInitialized = false);
 
     // ── Cek izin kamera (hanya di mobile) ─────────────────────────────────
-    if (!kIsWeb) {
+    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
       var status = await Permission.camera.status;
       if (!status.isGranted) {
         status = await Permission.camera.request();

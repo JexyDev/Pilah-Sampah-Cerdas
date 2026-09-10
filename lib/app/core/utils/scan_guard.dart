@@ -126,55 +126,9 @@ class ScanGuard {
         ),
       );
     } else if (!hasOrganic || !hasNonOrganic) {
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: const Row(
-            children: [
-              Icon(Icons.info_outline_rounded, color: AppColors.warningOrange),
-              SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Tempat Sampah Belum Diaktivasi',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
-                ),
-              ),
-            ],
-          ),
-          content: const Text(
-            'Anda belum mengaktivasi tempat sampah milik Anda! Silakan ukur & aktivasi tempat sampah terlebih dahulu sebelum dapat menyetor sampah.',
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text(
-                'Batal',
-                style: TextStyle(color: AppColors.textHint),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                Navigator.pushNamed(context, AppRoutes.ukurKapasitas);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryGreen,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text(
-                'Aktivasi & Ukur Sekarang',
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-          ],
-        ),
-      );
+      // Guest Mode: Warga belum punya bin aktif — arahkan ke ScanTrialView
+      // (uji coba AI tanpa menyimpan data ke backend)
+      Navigator.pushNamed(context, AppRoutes.scanTrial);
     } else {
       Navigator.pushNamed(context, AppRoutes.scan);
     }

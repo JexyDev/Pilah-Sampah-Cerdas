@@ -3,6 +3,7 @@ import '../models/bin_reset_entity.dart';
 import '../models/petugas_entity.dart';
 import '../models/petugas_status_response.dart';
 import '../models/ai_detection_entity.dart';
+import '../models/bin_preset_entity.dart';
 
 /// Interface repository tempat sampah.
 /// Implementasi: ApiBinRepository (data layer).
@@ -18,6 +19,12 @@ abstract class BinRepository {
 
   /// Ambil tempat sampah berdasarkan QR serial.
   Future<BinEntity?> getBinByQrSerial(String qrSerial);
+
+  /// Ambil preset ukuran tabung
+  Future<List<BinPresetEntity>> getBinPresetsTabung();
+
+  /// Ambil preset ukuran kotak
+  Future<List<BinPresetEntity>> getBinPresetsKotak();
 
   /// Deteksi AI — kirim foto sampah ke backend, return jenis + estimasi berat.
   /// [imagePath] path file foto yang diambil kamera. Wajib diisi.

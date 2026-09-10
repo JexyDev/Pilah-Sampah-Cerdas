@@ -92,6 +92,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                   ),
                   const SizedBox(height: AppDimensions.md),
 
+
                   // ──────────────── Aksi Cepat ─────────────────────────────────
                   const Text(
                     'Aksi Cepat',
@@ -107,32 +108,6 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                   const SizedBox(height: AppDimensions.lg),
 
                   // ──────────────── Tempat Sampah Anda ─────────────────────────
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Tempat Sampah Anda',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.of(
-                          context,
-                        ).pushNamed(AppRoutes.kelolaBin),
-                        child: const Text(
-                          'Kelola',
-                          style: TextStyle(
-                            color: AppColors.primaryGreen,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
                   Consumer(
                     builder: (context, ref, _) {
                       return ref
@@ -144,70 +119,102 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                                   .where((bin) => bin.isActive)
                                   .toList();
                               if (activeBins.isEmpty) {
-                                return Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFFFFBEB),
-                                    border: Border.all(
-                                      color: AppColors.warningYellow.withValues(
-                                        alpha: 0.5,
+                                if (user?.role == UserRole.warga) {
+                                  return _GabungKomunitasCard();
+                                }
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        const Text(
+                                          'Tempat Sampah Anda',
+                                          style: TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.textPrimary,
+                                          ),
+                                        ),
+                                        TextButton(
+                                          onPressed: () => Navigator.of(context).pushNamed(AppRoutes.kelolaBin),
+                                          child: const Text('Kelola', style: TextStyle(color: AppColors.primaryGreen, fontSize: 13)),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFFFFBEB),
+                                        border: Border.all(color: AppColors.warningYellow.withValues(alpha: 0.5)),
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      child: const Row(
+                                        children: [
+                                          Icon(Icons.warning_amber_rounded, color: AppColors.warningYellow, size: 28),
+                                          SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Belum Aktivasi Tempat Sampah',
+                                                  style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700, fontSize: 14),
+                                                ),
+                                                SizedBox(height: 2),
+                                                Text(
+                                                  'Silakan ketuk "Kelola" untuk menambah.',
+                                                  style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: const Row(
+                                  ],
+                                );
+                              }
+
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Icon(
-                                        Icons.warning_amber_rounded,
-                                        color: AppColors.warningYellow,
-                                        size: 28,
-                                      ),
-                                      SizedBox(width: 12),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              'Belum Aktivasi Tempat Sampah',
-                                              style: TextStyle(
-                                                color: AppColors.textPrimary,
-                                                fontWeight: FontWeight.w700,
-                                                fontSize: 14,
-                                              ),
-                                            ),
-                                            SizedBox(height: 2),
-                                            Text(
-                                              'Silakan ketuk "Kelola" untuk menambah.',
-                                              style: TextStyle(
-                                                color: AppColors.textSecondary,
-                                                fontSize: 12,
-                                              ),
-                                            ),
-                                          ],
+                                      const Text(
+                                        'Tempat Sampah Anda',
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.textPrimary,
                                         ),
+                                      ),
+                                      TextButton(
+                                        onPressed: () => Navigator.of(context).pushNamed(AppRoutes.kelolaBin),
+                                        child: const Text('Kelola', style: TextStyle(color: AppColors.primaryGreen, fontSize: 13)),
                                       ),
                                     ],
                                   ),
-                                );
-                              }
-                              return SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
-                                clipBehavior: Clip.none,
-                                child: Row(
-                                  children: activeBins.map((bin) {
-                                    return Padding(
-                                      padding: const EdgeInsets.only(right: 12),
-                                      child: SizedBox(
-                                        width:
-                                            MediaQuery.of(context).size.width *
-                                            0.42,
-                                        child: _BerandaBinCard(bin: bin),
-                                      ),
-                                    );
-                                  }).toList(),
-                                ),
+                                  const SizedBox(height: 8),
+                                  SingleChildScrollView(
+                                    scrollDirection: Axis.horizontal,
+                                    clipBehavior: Clip.none,
+                                    child: Row(
+                                      children: activeBins.map((bin) {
+                                        return Padding(
+                                          padding: const EdgeInsets.only(right: 12),
+                                          child: SizedBox(
+                                            width: MediaQuery.of(context).size.width * 0.42,
+                                            child: _BerandaBinCard(bin: bin),
+                                          ),
+                                        );
+                                      }).toList(),
+                                    ),
+                                  ),
+                                ],
                               );
                             },
                             loading: () => const SizedBox(
@@ -218,6 +225,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                           );
                     },
                   ),
+
 
                   const SizedBox(height: AppDimensions.lg),
 
@@ -1320,6 +1328,103 @@ class _HorizontalBar extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ─── Card: Gabung Komunitas Berseka (Guest Mode) ──────────────────────────────
+class _GabungKomunitasCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF16A34A), Color(0xFF15803D)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryGreen.withValues(alpha: 0.28),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Icon + Title
+            const Row(
+              children: [
+                Text('🌿', style: TextStyle(fontSize: 26)),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Gabung Komunitas Berseka',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      height: 1.2,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+
+            // Deskripsi
+            const Text(
+              'Aktifkan Tempat Sampah pintarmu dan mulai berkontribusi nyata untuk lingkungan. Setiap sampah yang kamu pilah, poinmu bertambah dan lingkungan semakin bersih!',
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 13,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Tombol CTA
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () =>
+                    Navigator.of(context).pushNamed(AppRoutes.ukurKapasitas),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: AppColors.primaryGreen,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 13),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.eco_rounded, size: 18),
+                    SizedBox(width: 8),
+                    Text(
+                      'Gabung Sekarang',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
+                    ),
+                    SizedBox(width: 4),
+                    Icon(Icons.arrow_forward_rounded, size: 16),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

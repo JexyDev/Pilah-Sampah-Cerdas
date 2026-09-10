@@ -7,6 +7,7 @@ import '../models/ai_detection_entity.dart';
 import '../models/bin_reset_entity.dart';
 import '../models/petugas_entity.dart';
 import '../models/petugas_status_response.dart';
+import '../models/bin_preset_entity.dart';
 import 'bin_repository.dart';
 import '../providers/api_client.dart';
 
@@ -746,6 +747,39 @@ class ApiBinRepository implements BinRepository {
       debugPrint('Silenced error: $e');
     }
     return null;
+  }
+
+  @override
+  Future<List<BinPresetEntity>> getBinPresetsTabung() async {
+    try {
+      final response = await apiClient.dio.get('/api/v1/bins/presets/tabung');
+      final data = response.data;
+      if (data != null && data['status'] == 'success') {
+        final List<dynamic> items = data['data'] ?? [];
+
+        return items.map((json) => BinPresetEntity.fromJson(json)).toList();
+      }
+      return [];
+    } catch (e) {
+      debugPrint('Error getBinPresetsTabung: $e');
+      return [];
+    }
+  }
+
+  @override
+  Future<List<BinPresetEntity>> getBinPresetsKotak() async {
+    try {
+      final response = await apiClient.dio.get('/api/v1/bins/presets/kotak');
+      final data = response.data;
+      if (data != null && data['status'] == 'success') {
+        final List<dynamic> items = data['data'] ?? [];
+        return items.map((json) => BinPresetEntity.fromJson(json)).toList();
+      }
+      return [];
+    } catch (e) {
+      debugPrint('Error getBinPresetsKotak: $e');
+      return [];
+    }
   }
 
   @override

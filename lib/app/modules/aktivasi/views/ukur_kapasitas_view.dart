@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../routes/app_routes.dart';
 import '../../../data/models/bin_entity.dart';
+import '../../../data/models/bin_preset_entity.dart';
+import '../../../data/providers/repository_providers.dart';
 import '../../scan/controllers/scan_controller.dart';
 
 class UkurKapasitasView extends ConsumerStatefulWidget {
@@ -51,19 +53,10 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
     return isOrgActive ? _orgPresetIndex : _anorgPresetIndex;
   }
 
-  static const List<_BinPreset> _roundPresets = [
-    _BinPreset(label: 'Kecil', capacity: 10.0, d: 23, t: 24),
-    _BinPreset(label: 'Sedang', capacity: 20.0, d: 29, t: 30),
-    _BinPreset(label: 'Besar', capacity: 40.0, d: 36, t: 39),
-    _BinPreset(label: 'Jumbo', capacity: 60.0, d: 40, t: 48),
-  ];
-
-  static const List<_BinPreset> _boxPresets = [
-    _BinPreset(label: 'Kecil', capacity: 12.0, p: 25, l: 20, t: 24),
-    _BinPreset(label: 'Sedang', capacity: 25.0, p: 40, l: 25, t: 25),
-    _BinPreset(label: 'Besar', capacity: 50.0, p: 40, l: 35, t: 36),
-    _BinPreset(label: 'Jumbo', capacity: 70.0, p: 45, l: 35, t: 45),
-  ];
+  // Presets dynamic dari API
+  List<BinPresetEntity> _roundPresets = [];
+  List<BinPresetEntity> _boxPresets = [];
+  bool _isLoadingPresets = true;
 
   void _applyPresetByIndex(int index, {required String shape, bool updateBoth = true}) {
     if (index < 0) return;
@@ -120,8 +113,7 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
   @override
   void initState() {
     super.initState();
-    // Inisialisasi controller dengan preset default: Sedang (Standar)
-    _applyPresetByIndex(1, shape: _selectedShape, updateBoth: true);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _fetchPresets());
 
     // Tambahkan listener agar jika dimensi diedit manual, preset index dilepas (-1) dan estimasi terhitung live
     _diameterCtrl.addListener(_onOrgDimensionChanged);
@@ -133,6 +125,25 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
     _anorgTinggiCtrl.addListener(_onAnorgDimensionChanged);
     _anorgPanjangCtrl.addListener(_onAnorgDimensionChanged);
     _anorgLebarCtrl.addListener(_onAnorgDimensionChanged);
+  }
+
+  Future<void> _fetchPresets() async {
+    final repo = ref.read(binRepositoryProvider);
+    final tabung = await repo.getBinPresetsTabung();
+    final kotak = await repo.getBinPresetsKotak();
+    
+    if (mounted) {
+      setState(() {
+        _roundPresets = tabung;
+        _boxPresets = kotak;
+        _isLoadingPresets = false;
+      });
+      // Set default preset index 1 (or 0 if length is < 2)
+      final defaultIdx = tabung.length > 1 ? 1 : (tabung.isNotEmpty ? 0 : -1);
+      if (defaultIdx >= 0) {
+        _applyPresetByIndex(defaultIdx, shape: _selectedShape, updateBoth: true);
+      }
+    }
   }
 
   void _onOrgDimensionChanged() {
@@ -425,10 +436,15 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
         body: SafeArea(
           top: false,
           bottom: false,
-          child: _currentStep == 1 ? _buildStep1() : _buildStep2(),
+          child: _isLoadingPresets
+              ? const Center(
+                  child: CircularProgressIndicator(color: AppColors.primaryGreen),
+                )
+              : (_currentStep == 1 ? _buildStep1() : _buildStep2()),
         ),
       ),
     );
+
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1612,23 +1628,4 @@ class _BinDimensionDiagramPainter extends CustomPainter {
       oldDelegate.shape != shape;
 }
 
-class _BinPreset {
-  final String label;
-  final double capacity;
-  final double d;
-  final double t;
-  final double p;
-  final double l;
 
-  const _BinPreset({
-    required this.label,
-    required this.capacity,
-    this.d = 0,
-    this.t = 0,
-    this.p = 0,
-    this.l = 0,
-  });
-
-  String get capacityLabel =>
-      '${capacity.toStringAsFixed(capacity.truncateToDouble() == capacity ? 0 : 1)} L';
-}
