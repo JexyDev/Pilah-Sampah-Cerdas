@@ -803,8 +803,8 @@ export const DplDashboardPage: React.FC = () => {
           </div>
         )}
 
-        {/* MODAL 4: TINJAU PERMOHONAN IZIN/SAKIT */}
-        {reviewingRequest && (
+        {/* MODAL 4: TINJAU PERMOHONAN IZIN/SAKIT (Hanya untuk DPL / Non-Pimpinan) */}
+        {!isPimpinan && reviewingRequest && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
               <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-800 text-white">
@@ -1177,104 +1177,108 @@ export const DplDashboardPage: React.FC = () => {
               <span className="text-slate-500 dark:text-slate-400 font-normal">{user?.wilayah || "Wilayah Dampingan"}</span>
             </div>
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
-              Verifikasi Ajuan Izin / Sakit
+              {isPimpinan ? "Rekapitulasi Izin & Sakit Mahasiswa KKN (Read-Only)" : "Verifikasi Ajuan Izin / Sakit"}
             </h1>
             <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm max-w-2xl">
-              Validasi bukti surat keterangan sakit/izin, putusan persetujuan, dan riwayat presensi mahasiswa KKN dampingan.
+              {isPimpinan
+                ? "Rekapitulasi dan pemantauan riwayat izin / sakit mahasiswa KKN yang telah divalidasi oleh Dosen Pembimbing Lapangan (DPL)."
+                : "Validasi bukti surat keterangan sakit/izin, putusan persetujuan, dan riwayat presensi mahasiswa KKN dampingan."}
             </p>
           </div>
         </div>
 
-        {/* Permohonan Menunggu Verifikasi */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-              <FileCheck size={18} className="text-amber-500" /> Permohonan Izin / Sakit Menunggu Verifikasi DPL
-            </h3>
-            <span className="bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-200 dark:border-amber-700/40 text-xs font-bold px-2.5 py-0.5 rounded-full">
-              {alerts?.pendingRequests?.length || 0} Menunggu Verifikasi
-            </span>
-          </div>
-
-          {alerts?.pendingRequests && alerts.pendingRequests.length > 0 ? (
-            <div className="space-y-3">
-              {alerts.pendingRequests.map((req) => {
-                const hoursElapsed = (Date.now() - new Date(req.createdAt).getTime()) / (1000 * 60 * 60);
-                const isOver24Hours = hoursElapsed >= 24;
-                const canTakeover = ["PANITIA_TASKFORCE", "SUPER_USER", "DEVELOPER", "ADMIN_DLH", "PIMPINAN", "PEMIMPIN"].includes(userRole);
-                const isCancelReq = req.status === "CANCEL_REQUESTED";
-                const isBusy = decidingLeaveId === req.id;
-
-                return (
-                  <div
-                    key={req.id}
-                    className={`p-4 border rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition ${
-                      isCancelReq
-                        ? "border-cyan-300 dark:border-cyan-700/60 bg-cyan-50/40 dark:bg-cyan-950/30"
-                        : isOver24Hours
-                        ? "border-rose-300 dark:border-rose-700/60 bg-rose-50/40 dark:bg-rose-950/30 shadow-xs"
-                        : "border-amber-200/80 dark:border-amber-700/60 bg-amber-50/40 dark:bg-amber-950/30"
-                    }`}
-                  >
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-bold text-slate-900 dark:text-slate-100 text-sm">{req.studentName}</span>
-                        <span
-                          className={`text-xs font-bold px-2 py-0.5 rounded ${
-                            req.type === "SAKIT"
-                              ? "bg-red-100 dark:bg-rose-950 text-red-800 dark:text-rose-300 border border-red-200 dark:border-rose-700"
-                              : "bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-700"
-                          }`}
-                        >
-                          {req.type}
-                        </span>
-                        {isCancelReq && (
-                          <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-cyan-100 dark:bg-cyan-950 text-cyan-800 dark:text-cyan-300 border border-cyan-300 dark:border-cyan-700 flex items-center gap-1">
-                            <CheckCircle size={11} /> Permohonan Batal Izin (Ingin Hadir)
-                          </span>
-                        )}
-                        {!isCancelReq && isOver24Hours && (
-                          <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-700 flex items-center gap-1">
-                            <Clock size={11} /> &gt;24 Jam (Siap Diambil Alih)
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-1">
-                        <span className="font-semibold text-slate-700 dark:text-slate-200">Alasan:</span> {req.reason}
-                      </p>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                        Diajukan:{" "}
-                        <span className="font-medium text-slate-700 dark:text-slate-300">
-                          {new Date(req.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })} ({Math.floor(hoursElapsed)} jam lalu)
-                        </span>
-                        {req.startDate && (
-                          <span className="ml-2 font-medium text-slate-600 dark:text-slate-300">
-                            (Periode: {new Date(req.startDate).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
-                            {req.endDate && req.endDate !== req.startDate ? ` - ${new Date(req.endDate).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}` : ""})
-                          </span>
-                        )}
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-                      <button
-                        disabled={isBusy}
-                        onClick={() => setReviewingRequest(req)}
-                        className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg transition shadow-xs cursor-pointer disabled:opacity-50"
-                      >
-                        Tinjau
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
+        {/* Permohonan Menunggu Verifikasi (Hanya untuk DPL/Taskforce, disembunyikan sepenuhnya dari role Pimpinan) */}
+        {!isPimpinan && (
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <FileCheck size={18} className="text-amber-500" /> Permohonan Izin / Sakit Menunggu Verifikasi DPL
+              </h3>
+              <span className="bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-200 dark:border-amber-700/40 text-xs font-bold px-2.5 py-0.5 rounded-full">
+                {alerts?.pendingRequests?.length || 0} Menunggu Verifikasi
+              </span>
             </div>
-          ) : (
-            <p className="text-xs text-slate-500 dark:text-slate-400 italic p-4 text-center bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-800">
-              Tidak ada permohonan sakit/izin yang membutuhkan verifikasi saat ini.
-            </p>
-          )}
-        </div>
+
+            {alerts?.pendingRequests && alerts.pendingRequests.length > 0 ? (
+              <div className="space-y-3">
+                {alerts.pendingRequests.map((req) => {
+                  const hoursElapsed = (Date.now() - new Date(req.createdAt).getTime()) / (1000 * 60 * 60);
+                  const isOver24Hours = hoursElapsed >= 24;
+                  const canTakeover = ["PANITIA_TASKFORCE", "SUPER_USER", "DEVELOPER", "ADMIN_DLH", "PIMPINAN", "PEMIMPIN"].includes(userRole);
+                  const isCancelReq = req.status === "CANCEL_REQUESTED";
+                  const isBusy = decidingLeaveId === req.id;
+
+                  return (
+                    <div
+                      key={req.id}
+                      className={`p-4 border rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition ${
+                        isCancelReq
+                          ? "border-cyan-300 dark:border-cyan-700/60 bg-cyan-50/40 dark:bg-cyan-950/30"
+                          : isOver24Hours
+                          ? "border-rose-300 dark:border-rose-700/60 bg-rose-50/40 dark:bg-rose-950/30 shadow-xs"
+                          : "border-amber-200/80 dark:border-amber-700/60 bg-amber-50/40 dark:bg-amber-950/30"
+                      }`}
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-bold text-slate-900 dark:text-slate-100 text-sm">{req.studentName}</span>
+                          <span
+                            className={`text-xs font-bold px-2 py-0.5 rounded ${
+                              req.type === "SAKIT"
+                                ? "bg-red-100 dark:bg-rose-950 text-red-800 dark:text-rose-300 border border-red-200 dark:border-rose-700"
+                                : "bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-700"
+                            }`}
+                          >
+                            {req.type}
+                          </span>
+                          {isCancelReq && (
+                            <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-cyan-100 dark:bg-cyan-950 text-cyan-800 dark:text-cyan-300 border border-cyan-300 dark:border-cyan-700 flex items-center gap-1">
+                              <CheckCircle size={11} /> Permohonan Batal Izin (Ingin Hadir)
+                            </span>
+                          )}
+                          {!isCancelReq && isOver24Hours && (
+                            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-700 flex items-center gap-1">
+                              <Clock size={11} /> &gt;24 Jam (Siap Diambil Alih)
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-1">
+                          <span className="font-semibold text-slate-700 dark:text-slate-200">Alasan:</span> {req.reason}
+                        </p>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                          Diajukan:{" "}
+                          <span className="font-medium text-slate-700 dark:text-slate-300">
+                            {new Date(req.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })} ({Math.floor(hoursElapsed)} jam lalu)
+                          </span>
+                          {req.startDate && (
+                            <span className="ml-2 font-medium text-slate-600 dark:text-slate-300">
+                              (Periode: {new Date(req.startDate).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
+                              {req.endDate && req.endDate !== req.startDate ? ` - ${new Date(req.endDate).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}` : ""})
+                            </span>
+                          )}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                        <button
+                          disabled={isBusy}
+                          onClick={() => setReviewingRequest(req)}
+                          className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg transition shadow-xs cursor-pointer disabled:opacity-50"
+                        >
+                          Tinjau
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-xs text-slate-500 dark:text-slate-400 italic p-4 text-center bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-800">
+                Tidak ada permohonan sakit/izin yang membutuhkan verifikasi saat ini.
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Riwayat Validasi Log */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs space-y-4">
@@ -1518,7 +1522,7 @@ export const DplDashboardPage: React.FC = () => {
           </p>
         </div>
 
-        {alerts && alerts.pendingApprovalsCount > 0 && (
+        {!isPimpinan && alerts && alerts.pendingApprovalsCount > 0 && (
           <div className="flex flex-wrap items-center gap-2">
             <Link
               to="/monitoring-kegiatan/pengajuan-izin"
@@ -1905,8 +1909,8 @@ export const DplDashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Action Callout if pending approvals exist */}
-      {alerts?.pendingRequests && alerts.pendingRequests.length > 0 && (
+      {/* Action Callout if pending approvals exist (Hanya untuk DPL / Non-Pimpinan) */}
+      {!isPimpinan && alerts?.pendingRequests && alerts.pendingRequests.length > 0 && (
         <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-700/40 rounded-2xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-xs">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 rounded-xl">

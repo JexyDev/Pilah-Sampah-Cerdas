@@ -940,7 +940,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             },
             {
               to: "/monitoring-kegiatan/pengajuan-izin",
-              label: "Verifikasi Izin/Sakit",
+              label: isPimpinan ? "Riwayat Izin/Sakit" : "Verifikasi Izin/Sakit",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
