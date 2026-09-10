@@ -179,8 +179,10 @@ interface KknExecutiveData {
       kelompokName: string;
       kategori: string;
       tanggal: string;
-      durasiMenit: number;
+      durasiMenit?: number;
       tempat: string;
+      waktuMulai?: string | null;
+      waktuSelesai?: string | null;
     }>;
   };
   filterOptions: {
@@ -1981,7 +1983,18 @@ export const DashboardEksekutifKkn: React.FC = () => {
                     </div>
                     <div className="text-right shrink-0">
                       <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 block">
-                        {act.durasiMenit} Menit
+                        {(() => {
+                          const m = act.durasiMenit;
+                          if (m && m > 0) {
+                            if (m % 60 === 0) return `${m / 60} Jam`;
+                            if (m > 60) return `${Math.floor(m / 60)} Jam ${m % 60}m`;
+                            return `${m} Menit`;
+                          }
+                          if (act.waktuMulai && act.waktuSelesai) {
+                            return `${act.waktuMulai}–${act.waktuSelesai}`;
+                          }
+                          return "-";
+                        })()}
                       </span>
                       <span className="text-[9px] text-slate-400 block">
                         {act.tanggal}
