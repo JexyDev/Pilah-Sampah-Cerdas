@@ -116,14 +116,19 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Periode Riwayat',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary,
+                    const Expanded(
+                      child: Text(
+                        'Periode Riwayat',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
@@ -194,6 +199,10 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
                   return;
                 }
                 ref.invalidate(wasteLogsProvider);
+                ref.invalidate(totalPointsProvider);
+                ref.invalidate(pointHistoryProvider);
+                ref.invalidate(dailyPointsProvider);
+                ref.invalidate(userLeaderboardRankProvider);
                 ref.invalidate(wargaNotificationsProvider);
                 await Future.delayed(const Duration(milliseconds: 500));
               },

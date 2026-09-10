@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
+import '../../auth/controllers/auth_controller.dart';
 import '../controllers/petugas_pemilahan_controller.dart';
 import 'verifikasi_pengosongan_view.dart';
 
@@ -12,6 +13,17 @@ class PengajuanWargaView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(petugasPemilahanControllerProvider);
+    final user = ref.watch(authProvider).user;
+    final rwLabel = user?.formattedRw.isNotEmpty == true && user?.formattedRw != '-'
+        ? 'RW ${user!.formattedRw}'
+        : (user?.rw.isNotEmpty == true && user?.rw != '-' ? 'RW ${user!.rw}' : '');
+    final kelLabel = user?.kelurahan.isNotEmpty == true && user?.kelurahan != '-'
+        ? (user!.kelurahan.toLowerCase().startsWith('kel') ? user.kelurahan : 'Kel. ${user.kelurahan}')
+        : '';
+    final wilayahLabel = [rwLabel, kelLabel].where((s) => s.isNotEmpty).join(', ');
+    final queueSubtitle = wilayahLabel.isNotEmpty
+        ? '${state.pengajuanList.length} antrean dari warga $wilayahLabel'
+        : '${state.pengajuanList.length} antrean dari warga';
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -33,7 +45,7 @@ class PengajuanWargaView extends ConsumerWidget {
               ),
             ),
             Text(
-              '${state.pengajuanList.length} antrean dari warga',
+              queueSubtitle,
               style: const TextStyle(
                 fontSize: 11,
                 color: AppColors.textSecondary,
@@ -61,7 +73,7 @@ class PengajuanWargaView extends ConsumerWidget {
         child: state.isLoading && state.pengajuanList.isEmpty
             ? const Center(child: CircularProgressIndicator())
             : state.pengajuanList.isEmpty
-            ? _buildEmptyState()
+            ? _buildEmptyState(wilayahLabel)
             : ListView.separated(
                 padding: const EdgeInsets.all(AppDimensions.md),
                 itemCount: state.pengajuanList.length,
@@ -75,7 +87,7 @@ class PengajuanWargaView extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(String wilayahLabel) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -92,7 +104,9 @@ class PengajuanWargaView extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Belum ada pengajuan pengosongan\ntempat sampah dari warga di wilayah RW Anda.',
+            wilayahLabel.isNotEmpty
+                ? 'Belum ada pengajuan pengosongan\ntempat sampah dari warga di wilayah $wilayahLabel.'
+                : 'Belum ada pengajuan pengosongan\ntempat sampah dari warga di wilayah penugasan Anda.',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 13,

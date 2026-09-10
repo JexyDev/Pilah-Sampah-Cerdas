@@ -60,8 +60,12 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
         onRefresh: () async {
           ref.invalidate(binsProvider);
           ref.invalidate(totalPointsProvider);
+          ref.invalidate(dailyPointsProvider);
+          ref.invalidate(pointHistoryProvider);
           ref.invalidate(wasteLogsProvider);
           ref.invalidate(notificationsProvider);
+          ref.invalidate(wargaNotificationsProvider);
+          ref.invalidate(wargaUnreadNotificationCountProvider);
           ref.invalidate(userLeaderboardRankProvider);
         },
         color: AppColors.primaryGreen,
@@ -207,7 +211,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                                         return Padding(
                                           padding: const EdgeInsets.only(right: 12),
                                           child: SizedBox(
-                                            width: MediaQuery.of(context).size.width * 0.42,
+                                            width: (MediaQuery.of(context).size.width * 0.42).clamp(140.0, 180.0),
                                             child: _BerandaBinCard(bin: bin),
                                           ),
                                         );
@@ -257,14 +261,19 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Riwayat Terakhir',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
+                      const Expanded(
+                        child: Text(
+                          'Riwayat Terakhir',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      const SizedBox(width: 8),
                       TextButton(
                         onPressed: widget.onNavigateToHistory,
                         child: const Text(
@@ -422,13 +431,18 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
               return Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Akurasi AI (Rata-rata)',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
+                  const Expanded(
+                    child: Text(
+                      'Akurasi AI (Rata-rata)',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  const SizedBox(width: 8),
                   Text(
                     validLogs.isEmpty
                         ? 'N/A'
@@ -508,12 +522,14 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
     final name = user?.name ?? 'Warga';
     final roleName = user?.role.displayName ?? 'Warga';
     final fotoUrl = user?.fotoProfil;
+    final isCompact = MediaQuery.of(context).size.width < 360;
+
     return Container(
       color: Colors.white,
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 16,
-        left: 16,
-        right: 16,
+        left: isCompact ? 12 : 16,
+        right: isCompact ? 12 : 16,
         bottom: 24,
       ),
       child: Column(
@@ -524,8 +540,8 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
             children: [
               // Avatar logo
               Container(
-                width: 48,
-                height: 48,
+                width: isCompact ? 42 : 48,
+                height: isCompact ? 42 : 48,
                 decoration: BoxDecoration(
                   color: AppColors.backgroundCanvas,
                   borderRadius: BorderRadius.circular(12),
@@ -534,37 +550,27 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                 clipBehavior: Clip.antiAlias,
                 child: _buildHeaderAvatarImage(fotoUrl),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      _getGreeting(),
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 12,
-                      ),
-                    ),
-                    Row(
+                    Wrap(
+                      spacing: 5,
+                      runSpacing: 2,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        Flexible(
-                          child: Text(
-                            name,
-                            style: const TextStyle(
-                              color: AppColors.textPrimary,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                        Text(
+                          _getGreeting(),
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 11,
                           ),
                         ),
-                        const SizedBox(width: 6),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
+                            horizontal: 5,
+                            vertical: 1.5,
                           ),
                           decoration: BoxDecoration(
                             color: AppColors.warningYellow,
@@ -573,7 +579,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                           child: Text(
                             roleName,
                             style: const TextStyle(
-                              fontSize: 9,
+                              fontSize: 8,
                               fontWeight: FontWeight.w700,
                               color: Colors.white,
                             ),
@@ -581,16 +587,29 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 2),
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ],
                 ),
               ),
-              // â”€â”€â”€ Online Indicator & Bell icon â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+              const SizedBox(width: 8),
+              // ─── Online Indicator & Bell icon ───────────────────────────
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    margin: const EdgeInsets.only(right: 12),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
+                    margin: EdgeInsets.only(right: isCompact ? 8 : 12),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isCompact ? 6 : 8,
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
@@ -605,6 +624,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                       ),
                     ),
                     child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
                           width: 8,
@@ -626,17 +646,19 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                             ],
                           ),
                         ),
-                        const SizedBox(width: 6),
-                        Text(
-                          isOnline ? 'Online' : 'Offline',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: isOnline
-                                ? AppColors.primaryGreen
-                                : AppColors.dangerRed,
+                        if (!isCompact) ...[
+                          const SizedBox(width: 6),
+                          Text(
+                            isOnline ? 'Online' : 'Offline',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: isOnline
+                                  ? AppColors.primaryGreen
+                                  : AppColors.dangerRed,
+                            ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   ),
@@ -922,8 +944,8 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
               duration: const Duration(milliseconds: 200),
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                  vertical: 16,
-                  horizontal: 12,
+                  vertical: 14,
+                  horizontal: 8,
                 ),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
@@ -946,16 +968,22 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                     Icon(
                       Icons.qr_code_scanner_rounded,
                       color: Colors.white,
-                      size: 22,
+                      size: 20,
                     ),
-                    SizedBox(width: 8),
-                    Text(
-                      'Scan Sampah',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.3,
+                    SizedBox(width: 6),
+                    Flexible(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          'Scan Sampah',
+                          maxLines: 1,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -964,7 +992,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
             ),
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 10),
         // Secondary CTA: Pengosongan
         Expanded(
           child: GestureDetector(
@@ -978,8 +1006,8 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
               duration: const Duration(milliseconds: 200),
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                  vertical: 16,
-                  horizontal: 12,
+                  vertical: 14,
+                  horizontal: 8,
                 ),
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -1002,16 +1030,22 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                     Image.asset(
                       'assets/icons/waste.png',
                       color: AppColors.primaryGreen,
-                      width: 20,
-                      height: 20,
+                      width: 18,
+                      height: 18,
                     ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Pengosongan',
-                      style: TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
+                    const SizedBox(width: 6),
+                    const Flexible(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          'Pengosongan',
+                          maxLines: 1,
+                          style: TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -1073,32 +1107,41 @@ class _StatItem extends StatelessWidget {
                     duration: const Duration(seconds: 2),
                     curve: Curves.easeOut,
                     builder: (context, val, child) {
-                      return Text(
-                        NumberFormat('#,###', 'id_ID').format(val),
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: valueColor ?? AppColors.textPrimary,
+                      return FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          NumberFormat('#,###', 'id_ID').format(val),
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: valueColor ?? AppColors.textPrimary,
+                          ),
                         ),
                       );
                     },
                   )
                 else
-                  Text(
-                    value,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: valueColor ?? AppColors.textPrimary,
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      value,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: valueColor ?? AppColors.textPrimary,
+                      ),
                     ),
                   ),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: AppColors.textSecondary,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  textAlign: TextAlign.center,
                 ),
               ],
             ),
@@ -1302,13 +1345,18 @@ class _HorizontalBar extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.textSecondary,
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
+            const SizedBox(width: 8),
             Text(
               '${percentage.toStringAsFixed(1)}%',
               style: TextStyle(

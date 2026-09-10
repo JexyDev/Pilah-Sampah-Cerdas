@@ -105,6 +105,13 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
     final name = user?.name ?? '-';
     const roleName = 'Petugas Pemilahan';
     final fotoUrl = user?.fotoProfil;
+    final rwText = user?.formattedRw.isNotEmpty == true && user?.formattedRw != '-'
+        ? 'RW ${user!.formattedRw}'
+        : (user?.rw.isNotEmpty == true && user?.rw != '-' ? 'RW ${user!.rw}' : '');
+    final kelText = user?.kelurahan.isNotEmpty == true && user?.kelurahan != '-'
+        ? (user!.kelurahan.toLowerCase().startsWith('kel') ? user.kelurahan : 'Kel. ${user.kelurahan}')
+        : '';
+    final wilayahBadge = [rwText, kelText].where((s) => s.isNotEmpty).join(', ');
 
     return Container(
       color: Colors.white,
@@ -155,20 +162,56 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: AppColors.warningOrange,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Text(
-                        roleName,
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.warningOrange,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text(
+                            roleName,
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
                         ),
-                      ),
+                        if (wilayahBadge.isNotEmpty)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryGreen.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                color: AppColors.primaryGreen.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.location_on_rounded,
+                                  size: 10,
+                                  color: AppColors.primaryGreen,
+                                ),
+                                const SizedBox(width: 3),
+                                Text(
+                                  wilayahBadge,
+                                  style: const TextStyle(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.primaryGreen,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
                     ),
                   ],
                 ),
@@ -178,15 +221,17 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
               Consumer(
                 builder: (context, ref, child) {
                   final isOnline = ref.watch(isOnlineProvider);
+                  final isCompact = MediaQuery.of(context).size.width < 360;
                   return Container(
-                    margin: const EdgeInsets.only(right: 12),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    margin: EdgeInsets.only(right: isCompact ? 8 : 12),
+                    padding: EdgeInsets.symmetric(horizontal: isCompact ? 6 : 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: isOnline ? AppColors.primaryGreen.withValues(alpha: 0.1) : AppColors.maroonRed.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: isOnline ? AppColors.primaryGreen.withValues(alpha: 0.3) : AppColors.maroonRed.withValues(alpha: 0.3)),
                     ),
                     child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
                           width: 8,
@@ -204,15 +249,17 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                             ],
                           ),
                         ),
-                        const SizedBox(width: 6),
-                        Text(
-                          isOnline ? 'Online' : 'Offline',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: isOnline ? AppColors.primaryGreen : AppColors.maroonRed,
+                        if (!isCompact) ...[
+                          const SizedBox(width: 6),
+                          Text(
+                            isOnline ? 'Online' : 'Offline',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: isOnline ? AppColors.primaryGreen : AppColors.maroonRed,
+                            ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   );
@@ -337,7 +384,7 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      'Perolehan Poin Timbangan & Validasi Warga',
+                      'Total Perolehan Poin Timbangan',
                       style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -407,38 +454,42 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
   }
 
   Widget _buildJadwalSection(BuildContext context, List<PemilahanBinPickup> jadwalList) {
+    const sectionTitle = 'Monitoring Tempat Sampah Warga';
+
+    final criticalCount = jadwalList.where((item) => item.volumePercentage >= 70).length;
+    final isAllSafe = criticalCount == 0;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const Flexible(
+            const Expanded(
               child: Text(
-                'Jadwal Penimbangan RW',
+                sectionTitle,
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  fontSize: 15,
+                  fontSize: 14,
                   color: AppColors.textPrimary,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
             ),
+            const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color: jadwalList.isEmpty
+                color: isAllSafe
                     ? AppColors.primaryGreen.withValues(alpha: 0.1)
                     : AppColors.warningOrange.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                jadwalList.isEmpty ? 'Semua Normal' : '${jadwalList.length} Penuh (≥70%)',
+                isAllSafe ? 'Semua Aman' : '$criticalCount Butuh Tindakan',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
-                  color: jadwalList.isEmpty ? AppColors.primaryGreen : AppColors.warningOrange,
+                  color: isAllSafe ? AppColors.primaryGreen : AppColors.warningOrange,
                 ),
               ),
             ),
@@ -460,7 +511,7 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                 SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Tidak ada tempat sampah penuh (≥ 70%) di wilayah RW saat ini.',
+                    'Semua tempat sampah warga dalam kondisi aman.',
                     style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                   ),
                 ),
@@ -474,6 +525,9 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                   !item.wasteCategory.toUpperCase().contains('ANORGANIK');
               final categoryColor = isOrganik ? AppColors.primaryGreen : AppColors.warningOrange;
               final pct = item.volumePercentage.clamp(0.0, 100.0);
+              final statusColor = pct >= 100
+                  ? AppColors.maroonRed
+                  : (pct >= 70 ? AppColors.warningOrange : AppColors.primaryGreen);
 
               return Container(
                 margin: const EdgeInsets.only(bottom: 10),
@@ -522,10 +576,14 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                                 '${item.binCode} • ${item.wasteCategory}',
                                 style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: categoryColor),
                               ),
-                              if (item.address.isNotEmpty) ...[
+                              if (item.address.isNotEmpty || item.rw.isNotEmpty) ...[
                                 const SizedBox(height: 2),
                                 Text(
-                                  item.address,
+                                  item.address.isNotEmpty
+                                      ? (item.rw.isNotEmpty && !item.address.contains(item.rw)
+                                          ? '${item.address} (${item.rw})'
+                                          : item.address)
+                                      : item.rw,
                                   style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -534,24 +592,25 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                             ],
                           ),
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: (pct >= 85 ? AppColors.maroonRed : AppColors.warningOrange).withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(
-                              color: (pct >= 85 ? AppColors.maroonRed : AppColors.warningOrange).withValues(alpha: 0.3),
+                        if (pct >= 70)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: statusColor.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: statusColor.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Text(
+                              pct >= 100 ? 'Penuh' : 'Kritis',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: statusColor,
+                              ),
                             ),
                           ),
-                          child: Text(
-                            pct >= 85 ? 'Penuh' : 'Kritis',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: pct >= 85 ? AppColors.maroonRed : AppColors.warningOrange,
-                            ),
-                          ),
-                        ),
                       ],
                     ),
                     const SizedBox(height: 10),
@@ -563,9 +622,7 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                             child: LinearProgressIndicator(
                               value: pct / 100,
                               backgroundColor: Colors.grey.shade200,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                pct >= 85 ? AppColors.maroonRed : AppColors.warningOrange,
-                              ),
+                              valueColor: AlwaysStoppedAnimation<Color>(statusColor),
                               minHeight: 6,
                             ),
                           ),
@@ -576,7 +633,7 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
-                            color: pct >= 85 ? AppColors.maroonRed : AppColors.warningOrange,
+                            color: statusColor,
                           ),
                         ),
                       ],
@@ -741,7 +798,7 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                   ),
                   const SizedBox(height: 18),
 
-                  // ── Jadwal Penimbangan Tempat Sampah RW (>= 70%) ──────────────
+                  // ── Monitoring Tempat Sampah Warga ─────────────────────────────
                   _buildJadwalSection(context, state.jadwalList),
                   const SizedBox(height: 20),
 
@@ -749,10 +806,15 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Aktivitas Input Terbaru',
-                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: AppColors.textPrimary),
+                      const Expanded(
+                        child: Text(
+                          'Aktivitas Input Terbaru',
+                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: AppColors.textPrimary),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
+                      const SizedBox(width: 8),
                       TextButton(
                         style: TextButton.styleFrom(
                           padding: EdgeInsets.zero,
@@ -855,7 +917,7 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                         );
                       }).toList(),
                     ),
-                    const SizedBox(height: 40), // Spasi bawah sebelum bottom bar
+                  const SizedBox(height: 100), // Spasi bawah agar konten dapat di-scroll bebas dari floating button & bottom bar
                 ]),
               ),
             ),

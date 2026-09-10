@@ -188,62 +188,68 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
     final bool isPetugas = role == UserRole.petugasPemilahan;
     final bool isMahasiswa = role == UserRole.mahasiswaKkn;
     final bool hasFab = isWarga || isPetugas || isMahasiswa;
+    final double screenWidth = MediaQuery.of(context).size.width;
 
     return BottomAppBar(
       shape: hasFab ? const CircularNotchedRectangle() : null,
-      notchMargin: hasFab ? 8 : 0,
+      notchMargin: hasFab ? 6 : 0,
       color: Colors.white,
       elevation: 8,
       child: SizedBox(
         height: AppDimensions.bottomNavHeight,
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Expanded(
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _navItem(
-                    0,
-                    Icons.home_rounded,
-                    Icons.home_outlined,
-                    role == UserRole.petugasPemilahan ? 'Beranda' : 'Home',
+                  Expanded(
+                    child: _navItem(
+                      0,
+                      Icons.home_rounded,
+                      Icons.home_outlined,
+                      role == UserRole.petugasPemilahan ? 'Beranda' : 'Home',
+                    ),
                   ),
-                  _navItem(
-                    1,
-                    Icons.history_rounded,
-                    Icons.history_outlined,
-                    role == UserRole.petugasPemilahan ? 'Riwayat' : 'History',
+                  Expanded(
+                    child: _navItem(
+                      1,
+                      Icons.history_rounded,
+                      Icons.history_outlined,
+                      role == UserRole.petugasPemilahan ? 'Riwayat' : 'History',
+                    ),
                   ),
                 ],
               ),
             ),
-            if (hasFab) const SizedBox(width: 64), // Perfect FAB hole
+            if (hasFab) SizedBox(width: screenWidth < 360 ? 44 : 56), // Responsive FAB hole
             Expanded(
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _navItem(
-                    3,
-                    role == UserRole.petugasPemilahan
-                        ? Icons.monetization_on_rounded
-                        : null,
-                    role == UserRole.petugasPemilahan
-                        ? Icons.monetization_on_outlined
-                        : null,
-                    'Poin', // Semua role dinamakan 'Poin'
-                    activeAsset: role == UserRole.petugasPemilahan
-                        ? null
-                        : 'assets/icons/medal_active.png',
-                    inactiveAsset: role == UserRole.petugasPemilahan
-                        ? null
-                        : 'assets/icons/medal.png',
+                  Expanded(
+                    child: _navItem(
+                      3,
+                      role == UserRole.petugasPemilahan
+                          ? Icons.monetization_on_rounded
+                          : null,
+                      role == UserRole.petugasPemilahan
+                          ? Icons.monetization_on_outlined
+                          : null,
+                      'Poin', // Semua role dinamakan 'Poin'
+                      activeAsset: role == UserRole.petugasPemilahan
+                          ? null
+                          : 'assets/icons/medal_active.png',
+                      inactiveAsset: role == UserRole.petugasPemilahan
+                          ? null
+                          : 'assets/icons/medal.png',
+                    ),
                   ),
-                  _navItem(
-                    4,
-                    Icons.person_rounded,
-                    Icons.person_outline_rounded,
-                    role == UserRole.petugasPemilahan ? 'Profil' : 'Profile',
+                  Expanded(
+                    child: _navItem(
+                      4,
+                      Icons.person_rounded,
+                      Icons.person_outline_rounded,
+                      role == UserRole.petugasPemilahan ? 'Profil' : 'Profile',
+                    ),
                   ),
                 ],
               ),
@@ -267,30 +273,35 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
       onTap: () => _onTabTap(index),
       borderRadius: BorderRadius.circular(8),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             if (activeAsset != null && inactiveAsset != null)
               Image.asset(
                 sel ? activeAsset : inactiveAsset,
                 color: sel ? AppColors.primaryGreen : AppColors.textHint,
-                width: 22,
-                height: 22,
+                width: 20,
+                height: 20,
               )
             else if (active != null && inactive != null)
               Icon(
                 sel ? active : inactive,
                 color: sel ? AppColors.primaryGreen : AppColors.textHint,
-                size: 22,
+                size: 20,
               ),
             const SizedBox(height: 2),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: sel ? FontWeight.w600 : FontWeight.w400,
-                color: sel ? AppColors.primaryGreen : AppColors.textHint,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                maxLines: 1,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: sel ? FontWeight.w600 : FontWeight.w400,
+                  color: sel ? AppColors.primaryGreen : AppColors.textHint,
+                ),
               ),
             ),
           ],

@@ -15,6 +15,8 @@ import '../../core/utils/image_compressor.dart';
 import '../../core/utils/network_exception_helper.dart';
 import '../../core/values/api_constants.dart';
 import '../../core/values/app_config.dart';
+import '../services/notification_engine.dart';
+import '../services/local_notification_cache_service.dart';
 
 /// Implementasi BinRepository yang terhubung ke backend Express.js.
 ///
@@ -712,6 +714,28 @@ class ApiBinRepository implements BinRepository {
           );
           if (pending.isNotEmpty) {
             return _mapResetRequest(pending.first);
+          } else {
+            // Cek apakah ada pengajuan aktif di local storage yang baru saja disetujui / selesai
+            final cachedStr = await apiClient.secureStorage.read(
+              key: 'active_reset_request_$userId',
+            );
+            if (cachedStr != null) {
+              await apiClient.secureStorage.delete(
+                key: 'active_reset_request_$userId',
+              );
+              // ponytail: Trigger notifikasi selesai pengosongan ke Warga
+              NotificationEngine().showResetCompletedNotification();
+              LocalNotificationCacheService().addNotification(
+                userId: userId,
+                role: 'WARGA',
+                title: 'Tempat Sampah Telah Dikosongkan! 🗑️',
+                desc:
+                    'Pengajuan pengosongan tempat sampah Anda telah selesai diproses oleh petugas. Kapasitas kembali 0%.',
+                type: 'PENGAJUAN_PENGOSONGAN',
+                icon: 'delete_sweep',
+              );
+              return null;
+            }
           }
         }
       } catch (e) {
@@ -733,6 +757,16 @@ class ApiBinRepository implements BinRepository {
             // Jika semua tempat sampah sudah tidak penuh (misal 0L), berarti pengajuan sudah disetujui/selesai!
             await apiClient.secureStorage.delete(
               key: 'active_reset_request_$userId',
+            );
+            NotificationEngine().showResetCompletedNotification();
+            LocalNotificationCacheService().addNotification(
+              userId: userId,
+              role: 'WARGA',
+              title: 'Tempat Sampah Telah Dikosongkan! 🗑️',
+              desc:
+                  'Pengajuan pengosongan tempat sampah Anda telah selesai diproses oleh petugas. Kapasitas kembali 0%.',
+              type: 'PENGAJUAN_PENGOSONGAN',
+              icon: 'delete_sweep',
             );
             return null;
           }

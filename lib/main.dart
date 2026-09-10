@@ -214,6 +214,8 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
             ref.invalidate(totalPointsProvider);
             ref.invalidate(pointHistoryProvider);
             ref.invalidate(dailyPointsProvider);
+            ref.invalidate(wasteLogsProvider);
+            ref.invalidate(userLeaderboardRankProvider);
             ref.invalidate(binsProvider);
             debugPrint('-> Warga providers invalidated in background.');
           } else if (event == 'REFRESH_KEGIATAN_MAHASISWA') {
@@ -442,15 +444,26 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
       theme: AppTheme.lightTheme,
       // Tidak ada darkTheme â€” sesuai spesifikasi
 
-      // Poppins sebagai font default â€” semua Text() otomatis Poppins
-      // bahkan yang tidak pakai Theme.of(context).textTheme
+      // Mengunci textScaler agar bentuk UI paten tidak berubah saat DPI atau ukuran font sistem diubah.
+      // Jika DPI diatur maksimal (<360dp), scale teks dinamis proporsional agar seluruh 65 page otomatis bebas overflow.
       builder: (context, child) {
-        return DefaultTextStyle(
-          style: GoogleFonts.poppins(
-            fontSize: 14,
-            color: const Color(0xFF191C1E),
+        final mediaQuery = MediaQuery.of(context);
+        final double width = mediaQuery.size.width;
+        final double fontScale = width < 300
+            ? 0.82
+            : (width < 330 ? 0.86 : (width < 360 ? 0.92 : 1.0));
+
+        return MediaQuery(
+          data: mediaQuery.copyWith(
+            textScaler: TextScaler.linear(fontScale),
           ),
-          child: child ?? const SizedBox.shrink(),
+          child: DefaultTextStyle(
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              color: const Color(0xFF191C1E),
+            ),
+            child: child ?? const SizedBox.shrink(),
+          ),
         );
       },
 

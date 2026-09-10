@@ -46,7 +46,10 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
     // Pola Anorganik
     final isAnorganicPattern =
         lower.contains('anorganik') ||
+        lower.contains('anorganic') ||
         lower.contains('anorg') ||
+        lower.contains('agn') ||
+        lower.contains('ano') ||
         lower.contains('non') ||
         lower.contains('an-org') ||
         lower.contains('non-org') ||
@@ -59,7 +62,9 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
     final isOrganicPattern =
         !isAnorganicPattern &&
         (lower.contains('organik') ||
+            lower.contains('organic') ||
             lower.contains('organ') ||
+            lower.contains('ogn') ||
             lower.contains('org') ||
             lower.contains('kompos') ||
             lower.contains('basah'));

@@ -519,15 +519,19 @@ class _KknAttendanceHistoryViewState
                 color: AppColors.textSecondary,
               ),
               const SizedBox(width: 8),
-              const Text(
-                'Capaian Durasi',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  color: AppColors.textPrimary,
+              const Expanded(
+                child: Text(
+                  'Capaian Durasi',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: AppColors.textPrimary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 10,
@@ -572,13 +576,18 @@ class _KknAttendanceHistoryViewState
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                '$aktualMenit menit dari $targetMenit menit target',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textSecondary,
+              Expanded(
+                child: Text(
+                  '$aktualMenit menit dari $targetMenit menit target',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
+              const SizedBox(width: 8),
               Row(
                 children: [
                   Icon(

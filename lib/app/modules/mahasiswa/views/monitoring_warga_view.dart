@@ -168,30 +168,15 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
               '$cleaned, RW $targetRw, $kelDisplay, Kec. $targetKec';
         } else if (!formattedAddr.toLowerCase().contains('rw') &&
             !formattedAddr.toLowerCase().contains('kel')) {
-          final numStr = w.binId.length >= 2
-              ? w.binId.substring(w.binId.length - 2)
-              : '';
           formattedAddr =
-              '$formattedAddr${numStr.isNotEmpty ? " No. $numStr" : ""}, RW $targetRw, $kelDisplay, Kec. $targetKec';
+              '$formattedAddr, RW $targetRw, $kelDisplay, Kec. $targetKec';
         }
 
-        return WargaDampingan(
-          wargaId: w.wargaId,
-          binId: w.binId,
-          binOrganikId: w.binOrganikId,
-          binAnorganikId: w.binAnorganikId,
-          wargaName: w.wargaName,
+        return w.copyWith(
           address: formattedAddr,
           kelurahan: targetKel,
           rw: targetRw,
           kecamatan: targetKec,
-          mahasiswaId: w.mahasiswaId,
-          recentLogs: w.recentLogs,
-          isActivated: w.isActivated,
-          role: w.role,
-          totalPoints: w.totalPoints,
-          apiCorrectPercentage: w.apiCorrectPercentage,
-          pendampingName: w.pendampingName,
         );
       }).toList();
     } catch (_) {
@@ -221,21 +206,32 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
     // For ALL modes, we need to watch the aktivasi controller to get ALL warga matching the RW.
     final aktivasiState = ref.watch(aktivasiWargaProvider);
 
-    // Fetch list of ALL warga from aktivasiState (which hits /kkn/warga-list)
-    // regardless of whether we are in aktivasi_bin mode or monitoring mode.
-    List<WargaDampingan> allWargaList = _getFilteredWargaAktivasi(
-      aktivasiState.wargaList,
-      userKec,
-      userKel,
-      userRw,
-    );
+    // For ALL modes, we combine warga from aktivasiState and mahasiswaState to ensure
+    // all registered & claimed citizens are included dynamically.
+    final rawMerged = <WargaDampingan>[
+      ...state.wargaList,
+      ..._getFilteredWargaAktivasi(
+        aktivasiState.wargaList,
+        userKec,
+        userKel,
+        userRw,
+      ),
+    ];
 
-    // Remove duplicates
+    // Remove duplicates safely: never collapse citizens with empty or placeholder ID
     final uniqueMap = <String, WargaDampingan>{};
-    for (final w in allWargaList) {
-      uniqueMap[w.wargaId] = w;
+    for (int i = 0; i < rawMerged.length; i++) {
+      final w = rawMerged[i];
+      final key = w.wargaId.isNotEmpty
+          ? w.wargaId
+          : (w.binId.isNotEmpty
+              ? w.binId
+              : (w.wargaName.isNotEmpty
+                  ? '${w.wargaName}_${w.address}'
+                  : 'warga_$i'));
+      uniqueMap[key] = w;
     }
-    allWargaList = uniqueMap.values.toList();
+    List<WargaDampingan> allWargaList = uniqueMap.values.toList();
 
     List<String> kelurahanList = [];
     List<String> rtRwList = [];
@@ -332,7 +328,10 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
           if (isAktivasiBinMode) {
             await ref.read(aktivasiWargaProvider.notifier).refresh();
           } else {
-            await ref.read(mahasiswaControllerProvider.notifier).refresh();
+            await Future.wait([
+              ref.read(aktivasiWargaProvider.notifier).refresh(),
+              ref.read(mahasiswaControllerProvider.notifier).refresh(),
+            ]);
           }
         },
         color: AppColors.primaryGreen,

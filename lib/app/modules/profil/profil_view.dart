@@ -10,6 +10,7 @@ import '../auth/controllers/auth_controller.dart';
 import '../../core/values/app_config.dart';
 import '../scan/controllers/scan_controller.dart';
 import '../mahasiswa/controllers/mahasiswa_controller.dart';
+import '../../core/widgets/profile_photo_cropper_view.dart';
 
 import '../../data/models/user_entity.dart';
 
@@ -42,52 +43,91 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
 
     showModalBottomSheet(
       context: context,
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) {
         return SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16.0),
-            child: Wrap(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                ListTile(
-                  leading: const Icon(
-                    Icons.photo_camera_rounded,
-                    color: AppColors.primaryGreen,
+                // Drag handle
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
                   ),
-                  title: const Text('Ambil Foto dari Kamera'),
+                ),
+                const SizedBox(height: 16),
+                const Row(
+                  children: [
+                    Text(
+                      'Foto Profil',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                const Row(
+                  children: [
+                    Text(
+                      'Pilih sumber foto atau sesuaikan foto profil Anda',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _buildAvatarActionTile(
+                  icon: Icons.photo_camera_rounded,
+                  title: 'Ambil Foto dari Kamera',
+                  subtitle: 'Gunakan kamera perangkat untuk mengambil foto',
+                  iconColor: AppColors.primaryGreen,
+                  bgColor: AppColors.primaryGreen.withValues(alpha: 0.1),
                   onTap: () {
                     Navigator.pop(ctx);
                     _pickImage(ImageSource.camera);
                   },
                 ),
-                ListTile(
-                  leading: const Icon(
-                    Icons.photo_library_rounded,
-                    color: AppColors.primaryGreen,
-                  ),
-                  title: const Text('Pilih dari Galeri'),
+                const SizedBox(height: 10),
+                _buildAvatarActionTile(
+                  icon: Icons.photo_library_rounded,
+                  title: 'Pilih dari Galeri',
+                  subtitle: 'Pilih foto yang tersimpan di galeri perangkat',
+                  iconColor: AppColors.primaryGreen,
+                  bgColor: AppColors.primaryGreen.withValues(alpha: 0.1),
                   onTap: () {
                     Navigator.pop(ctx);
                     _pickImage(ImageSource.gallery);
                   },
                 ),
-                if (hasPhoto)
-                  ListTile(
-                    leading: const Icon(
-                      Icons.delete_outline_rounded,
-                      color: AppColors.dangerRed,
-                    ),
-                    title: const Text(
-                      'Hapus Foto Profil',
-                      style: TextStyle(color: AppColors.dangerRed),
-                    ),
+                if (hasPhoto) ...[
+                  const SizedBox(height: 10),
+                  _buildAvatarActionTile(
+                    icon: Icons.delete_outline_rounded,
+                    title: 'Hapus Foto Profil',
+                    subtitle: 'Kembali menggunakan avatar/inisial nama default',
+                    iconColor: AppColors.dangerRed,
+                    bgColor: AppColors.dangerRed.withValues(alpha: 0.08),
+                    isDanger: true,
                     onTap: () {
                       Navigator.pop(ctx);
                       _confirmDeletePhoto();
                     },
                   ),
+                ],
+                const SizedBox(height: 8),
               ],
             ),
           ),
@@ -96,16 +136,106 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
     );
   }
 
+  Widget _buildAvatarActionTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color iconColor,
+    required Color bgColor,
+    required VoidCallback onTap,
+    bool isDanger = false,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isDanger
+                ? AppColors.dangerRed.withValues(alpha: 0.25)
+                : AppColors.border,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: iconColor, size: 20),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: isDanger ? AppColors.dangerRed : AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: isDanger ? AppColors.dangerRed : AppColors.textHint,
+              size: 20,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _pickImage(ImageSource source) async {
     final picked = await _picker.pickImage(source: source);
-    if (picked != null) {
-      setState(() => _profileImage = File(picked.path));
+    if (picked != null && mounted) {
+      // ── Buka Fitur Crop Foto Interaktif ──
+      final croppedFile = await ProfilePhotoCropperView.crop(
+        context,
+        imageFile: File(picked.path),
+      );
+      if (croppedFile == null || !mounted) return;
 
-      if (!mounted) return;
+      setState(() => _profileImage = croppedFile);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+              ),
+              SizedBox(width: 12),
+              Text('Mengunggah foto profil...'),
+            ],
+          ),
+          duration: Duration(seconds: 2),
+        ),
+      );
 
       final success = await ref
           .read(authProvider.notifier)
-          .uploadAvatar(picked.path);
+          .uploadAvatar(croppedFile.path);
       if (mounted) {
         if (success) {
           ref.read(authProvider.notifier).fetchProfile();
@@ -135,14 +265,33 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          'Hapus Foto Profil?',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.dangerRed.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.delete_outline_rounded,
+                color: AppColors.dangerRed,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'Hapus Foto Profil?',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+          ],
         ),
         content: const Text(
-          'Foto profil Anda akan dihapus dan kembali ke avatar default.',
+          'Foto profil Anda akan dihapus dan avatar akan kembali menggunakan inisial nama Anda.',
+          style: TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
         ),
+        actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -155,9 +304,11 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.dangerRed,
               foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Hapus'),
+            child: const Text('Hapus', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -194,7 +345,7 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
       return const Icon(
         Icons.person_rounded,
         color: AppColors.primaryGreen,
-        size: 48,
+        size: 54,
       );
     }
     if (fotoPath.startsWith('http://') || fotoPath.startsWith('https://')) {
@@ -204,7 +355,7 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
         errorWidget: (_, __, ___) => const Icon(
           Icons.person_rounded,
           color: AppColors.primaryGreen,
-          size: 48,
+          size: 54,
         ),
       );
     }
@@ -226,7 +377,7 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
       errorWidget: (_, __, ___) => const Icon(
         Icons.person_rounded,
         color: AppColors.primaryGreen,
-        size: 48,
+        size: 54,
       ),
     );
   }
@@ -260,8 +411,8 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                       alignment: Alignment.bottomRight,
                       children: [
                         Container(
-                          width: 100,
-                          height: 100,
+                          width: 116,
+                          height: 116,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             border: Border.all(color: Colors.white, width: 4),
@@ -280,8 +431,8 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                           ),
                         ),
                         Container(
-                          width: 34,
-                          height: 34,
+                          width: 36,
+                          height: 36,
                           decoration: BoxDecoration(
                             color: AppColors.primaryGreen,
                             shape: BoxShape.circle,
@@ -299,19 +450,41 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                           child: const Icon(
                             Icons.camera_alt_rounded,
                             color: Colors.white,
-                            size: 16,
+                            size: 18,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
                   Text(
                     user != null ? user.name : 'Warga',
                     style: const TextStyle(
                       color: AppColors.textPrimary,
                       fontSize: 20,
                       fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.25)),
+                    ),
+                    child: Text(
+                      user?.role == UserRole.mahasiswaKkn
+                          ? 'MAHASISWA KKN • ${user?.kelompokName.isNotEmpty == true ? user!.kelompokName : (user?.rw.isNotEmpty == true ? "RW ${user!.rw}" : "Aktif")}'
+                          : (user?.formattedRw.isNotEmpty == true && user?.formattedRw != '-'
+                              ? 'WARGA • RW ${user!.formattedRw}'
+                              : 'WARGA BERSEKA'),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primaryGreen,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                   ),
                 ],

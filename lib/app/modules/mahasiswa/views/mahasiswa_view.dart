@@ -695,14 +695,19 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Tercapai: $totalFormatted',
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
+              Expanded(
+                child: Text(
+                  'Tercapai: $totalFormatted',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
+              const SizedBox(width: 8),
               Text(
                 '${progressPercentage.toStringAsFixed(1)}%',
                 style: const TextStyle(
@@ -1137,30 +1142,11 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
 
     // Tampilkan warga yang diaktivasi oleh mahasiswa ini berdasarkan mahasiswaId
     final userId = user?.id ?? '';
-    final list = state.wargaList
-        .where((w) {
-          if (!w.isActivated) return false;
-          if (userId.isEmpty) return false;
-          return w.mahasiswaId == userId;
-        })
-        .map((w) {
-          return WargaDampingan(
-            wargaId: w.wargaId,
-            binId: w.binId,
-            wargaName: w.wargaName,
-            address: w.address,
-            kelurahan: w.kelurahan,
-            rw: w.rw,
-            mahasiswaId: w.mahasiswaId,
-            pendampingName: w.pendampingName,
-            recentLogs: w.recentLogs,
-            isActivated: w.isActivated,
-            role: w.role,
-            totalPoints: w.totalPoints,
-            apiCorrectPercentage: w.apiCorrectPercentage,
-          );
-        })
-        .toList();
+    final list = state.wargaList.where((w) {
+      if (!w.isActivated) return false;
+      if (userId.isEmpty) return false;
+      return w.mahasiswaId == userId;
+    }).toList();
 
     // Remove duplicates based on wargaId
     final uniqueMap = <String, WargaDampingan>{};
@@ -1175,15 +1161,20 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'Warga Dampingan Terbaru',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+            const Expanded(
+              child: Text(
+                'Warga Dampingan Terbaru',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
-            if (uniqueList.length > 5)
+            if (uniqueList.length > 5) ...[
+              const SizedBox(width: 8),
               GestureDetector(
                 onTap: () =>
                     Navigator.pushNamed(context, AppRoutes.daftarWarga),
@@ -1196,6 +1187,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                   ),
                 ),
               ),
+            ],
           ],
         ),
         const SizedBox(height: AppDimensions.sm),
@@ -1397,13 +1389,18 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Progress Fase',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: AppColors.textSecondary,
+                        const Expanded(
+                          child: Text(
+                            'Progress Fase',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: AppColors.textSecondary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                        const SizedBox(width: 8),
                         Text(
                           '${response.activeFaseSummary!.progressPercentage}%',
                           style: const TextStyle(
@@ -1592,27 +1589,31 @@ class _SummaryCard extends StatelessWidget {
                       : Icon(icon, color: color, size: 18),
                 ),
                 const SizedBox(height: 5),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                    color: color,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      color: color,
+                    ),
+                    maxLines: 1,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 10,
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w500,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
                   ),
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),

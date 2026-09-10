@@ -7,6 +7,7 @@ import 'waste_log_repository.dart';
 import '../../core/utils/app_exceptions.dart';
 import '../providers/api_client.dart';
 import '../../core/values/api_constants.dart';
+import '../../core/values/app_config.dart';
 
 /// Implementasi WasteLogRepository yang terhubung ke backend Express.js.
 ///
@@ -29,9 +30,14 @@ class ApiWasteLogRepository implements WasteLogRepository {
       final cachedStr = await apiClient.secureStorage.read(key: cacheKey);
       if (cachedStr != null) {
         final List<dynamic> cachedData = jsonDecode(cachedStr);
-        return cachedData
-            .map((json) => _mapWasteLog(json as Map<String, dynamic>, userId))
-            .toList();
+        return cachedData.map((json) {
+          final map = json is Map<String, dynamic>
+              ? json
+              : (json is Map
+                  ? Map<String, dynamic>.from(json)
+                  : <String, dynamic>{});
+          return _mapWasteLog(map, userId);
+        }).toList();
       }
     } catch (e) {
       // Abaikan error saat membaca cache
@@ -55,9 +61,14 @@ class ApiWasteLogRepository implements WasteLogRepository {
           value: jsonEncode(data),
         );
 
-        return data
-            .map((json) => _mapWasteLog(json as Map<String, dynamic>, userId))
-            .toList();
+        return data.map((json) {
+          final map = json is Map<String, dynamic>
+              ? json
+              : (json is Map
+                  ? Map<String, dynamic>.from(json)
+                  : <String, dynamic>{});
+          return _mapWasteLog(map, userId);
+        }).toList();
       }
       return [];
     } on DioException catch (e) {
@@ -78,12 +89,20 @@ class ApiWasteLogRepository implements WasteLogRepository {
       final response = await apiClient.dio.get(ApiEndpoints.pointsMe);
 
       if (response.statusCode == 200) {
-        final data = response.data['data'] as Map<String, dynamic>;
+        final rawData = response.data is Map ? response.data['data'] : null;
+        final Map<String, dynamic> data = rawData is Map<String, dynamic>
+            ? rawData
+            : (rawData is Map ? Map<String, dynamic>.from(rawData) : {});
         final List<dynamic> history = data['history'] as List<dynamic>? ?? [];
 
-        return history
-            .map((json) => _mapPointHistory(json as Map<String, dynamic>))
-            .toList();
+        return history.map((item) {
+          final map = item is Map<String, dynamic>
+              ? item
+              : (item is Map
+                  ? Map<String, dynamic>.from(item)
+                  : <String, dynamic>{});
+          return _mapPointHistory(map);
+        }).toList();
       }
       throw Exception('Gagal memuat riwayat poin');
     } on DioException catch (e) {
@@ -236,7 +255,7 @@ class ApiWasteLogRepository implements WasteLogRepository {
       binId: '',
       wasteType: wasteType,
       weightKg: weightKg,
-      volumeLiter: weightKg / (wasteType == WasteType.organic ? 0.4 : 0.2),
+      volumeLiter: weightKg / AppConfig.organicDensityKgPerLiter,
       pointsAwarded: poin,
       createdAt: createdAt,
       kelurahan: binLocation,
@@ -289,7 +308,21 @@ class ApiWasteLogRepository implements WasteLogRepository {
 
     DateTime createdAt;
     try {
-      createdAt = DateTime.parse(json['createdAt']?.toString() ?? '').toLocal();
+      final raw = json['createdAt'] ??
+          json['created_at'] ??
+          json['dibuat_pada'] ??
+          json['dibuatPada'] ??
+          json['timestamp'] ??
+          json['date'] ??
+          json['tanggal'];
+      if (raw != null) {
+        final str = raw.toString();
+        createdAt = str.contains('T') || str.contains('-')
+            ? DateTime.parse(str).toLocal()
+            : _parseIdDate(str);
+      } else {
+        createdAt = DateTime.now();
+      }
     } catch (_) {
       createdAt = DateTime.now();
     }

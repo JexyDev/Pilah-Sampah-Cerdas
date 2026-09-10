@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import '../../core/utils/safe_storage.dart';
@@ -599,9 +600,10 @@ class ApiAuthRepository implements AuthRepository {
   // ————————————————————————————————————————————————————— Upload Avatar —————————————————————————————————————————————————————————————
   @override
   Future<void> uploadAvatar(String imagePath) async {
+    String? compressedImagePath;
     try {
       // Auto-compress avatar before upload (Target < 300KB, max 512x512)
-      final compressedImagePath = await ImageCompressor.compressImage(
+      compressedImagePath = await ImageCompressor.compressImage(
         imagePath,
         maxSizeBytes: 300 * 1024,
         maxWidth: 512,
@@ -632,10 +634,25 @@ class ApiAuthRepository implements AuthRepository {
       }
       throw const AuthException('NETWORK_ERROR', 'Terjadi kesalahan jaringan');
     } catch (e) {
+      if (e is AuthException) rethrow;
       throw const AuthException(
         'UNKNOWN_ERROR',
         'Gagal memproses gambar. Terjadi kesalahan sistem.',
       );
+    } finally {
+      // Storage cleanup mobile: hapus file crop dan kompresi sementara dari disk lokal
+      try {
+        if (compressedImagePath != null && compressedImagePath != imagePath) {
+          final compFile = File(compressedImagePath);
+          if (await compFile.exists()) await compFile.delete();
+        }
+        final cropFile = File(imagePath);
+        if (await cropFile.exists() && imagePath.contains('avatar_crop_')) {
+          await cropFile.delete();
+        }
+      } catch (err) {
+        debugPrint('[StorageCleanup] Gagal menghapus file temporer lokal: $err');
+      }
     }
   }
 
