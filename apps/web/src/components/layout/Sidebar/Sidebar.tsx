@@ -23,7 +23,7 @@ import {
   Bot,
   Truck,
   Recycle,
-  Sparkles,
+  Info,
   Globe,
   Coins,
   Radio,
@@ -1587,7 +1587,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
         },
         {
           to: "/informasi",
-          icon: Sparkles,
+          icon: Info,
           label: "Tentang Aplikasi",
           allowed: ALL_ROLES.filter(role => role !== "DPL" && role !== "DOSEN_PEMBIMBING"),
         },
