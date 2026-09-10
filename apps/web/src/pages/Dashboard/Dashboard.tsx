@@ -45,6 +45,7 @@ const PERIODE_OPTIONS: SelectOption[] = [
   { value: "mingguan", label: "Minggu Ini", sublabel: "7 Hari Terakhir" },
   { value: "bulanan", label: "Bulan Ini", sublabel: "30 Hari Terakhir" },
   { value: "tahunan", label: "Tahun Ini", sublabel: "Tahun Berjalan" },
+  { value: "custom", label: "Rentang Tanggal", sublabel: "Pilih Tanggal Mulai s/d Akhir" },
 ];
 
 // ========== Compliance Modal Component ==========
@@ -922,7 +923,7 @@ const WargaDashboard: React.FC = () => {
             <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
               <h5 className="font-bold text-[15px] text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
                 <History className="text-emerald-600" size={18} />
-                Setoran Terakhir
+                Pemilahan Terakhir
               </h5>
               <button
                 onClick={() => setShowSetoranModal(true)}
@@ -940,7 +941,7 @@ const WargaDashboard: React.FC = () => {
             ) : wasteLogs.length === 0 ? (
               <div className="text-center py-6 text-slate-500 text-xs">
                 <Archive className="text-slate-700 dark:text-slate-300 block mb-1 mx-auto" size={32} />
-                Belum ada riwayat setoran sampah.
+                Belum ada riwayat pemilahan sampah.
               </div>
             ) : (
               <div className="space-y-3">
@@ -1349,7 +1350,7 @@ const WargaDashboard: React.FC = () => {
             <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/60">
               <h3 className="font-extrabold text-[18px] text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <Recycle className="text-emerald-600" size={20} />
-                Semua Riwayat Setoran Sampah
+                Semua Riwayat Pemilahan Sampah
               </h3>
               <button
                 onClick={() => setShowSetoranModal(false)}
@@ -1379,7 +1380,7 @@ const WargaDashboard: React.FC = () => {
               {isLoadingLogs ? (
                 <p className="text-xs text-center py-6 text-slate-400">Memuat...</p>
               ) : filteredLogs.length === 0 ? (
-                <p className="text-xs text-slate-500 py-6 text-center">Tidak ada data setoran.</p>
+                <p className="text-xs text-slate-500 py-6 text-center">Tidak ada data pemilahan.</p>
               ) : (
                 <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden bg-slate-50 dark:bg-slate-800/60">
                   <div className="overflow-x-auto">
@@ -1513,8 +1514,13 @@ const KpiCard: React.FC<KpiCardProps> = ({
           {renderKpiIcon(iconName)}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 font-extrabold uppercase tracking-wider truncate">{label}</p>
-          <h4 className="text-[24px] font-black text-slate-900 dark:text-slate-100 tracking-tight mt-0.5 leading-none">
+          <p 
+            title={label}
+            className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-extrabold uppercase tracking-wider leading-snug line-clamp-2 min-h-[2.4em] flex items-center"
+          >
+            {label}
+          </p>
+          <h4 className="text-[22px] sm:text-[24px] font-black text-slate-900 dark:text-slate-100 tracking-tight mt-0.5 leading-none">
             {value !== undefined ? value : "-"}
           </h4>
         </div>
@@ -1566,8 +1572,9 @@ const Dashboard: React.FC = () => {
   const [error, setError] = useState("");
 
   const [hoveredTrendIndex, setHoveredTrendIndex] = useState<number | null>(null);
-  const [showCompositionDetail, setShowCompositionDetail] = useState(false);
   const [timeFilter, setTimeFilter] = useState("semua");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   // Wilayah selection state (Default: Kecamatan Coblong)
   const isLurahRole = (user?.role || user?.peran || "").toUpperCase() === "LURAH";
@@ -1677,8 +1684,16 @@ const Dashboard: React.FC = () => {
     const fetchStats = async () => {
       try {
         setError("");
+        const kpiParams: Record<string, any> = { wilayah: effectiveWilayah };
+        if (timeFilter === "custom" && startDate && endDate) {
+          kpiParams.startDate = startDate;
+          kpiParams.endDate = endDate;
+        } else {
+          kpiParams.period = timeFilter;
+        }
+
         const response = await api.get("/dashboard/kpi", {
-          params: { wilayah: effectiveWilayah, period: timeFilter },
+          params: kpiParams,
         });
         const kpi = response.data?.data ?? response.data;
         if (!kpi) throw new Error("KPI kosong");
@@ -1691,11 +1706,18 @@ const Dashboard: React.FC = () => {
         const pctAnorganik = totalBerat > 0 ? Math.round((anorganikKg / totalBerat) * 100) : 0;
         const pctResidu = totalBerat > 0 ? 100 - pctOrganik - pctAnorganik : 0;
 
+        const periodTrendLabel =
+          timeFilter === "custom" && startDate && endDate
+            ? `${startDate} s/d ${endDate}`
+            : timeFilter === "semua"
+            ? "Total Keseluruhan"
+            : `Periode ${timeFilter}`;
+
         setStats({
           totalPengguna: {
             value: (kpi.totalUsers ?? 0).toLocaleString("id-ID"),
             trend: "Terdaftar",
-            trendLabel: timeFilter === "semua" ? "Total Keseluruhan" : `Periode ${timeFilter}`,
+            trendLabel: periodTrendLabel,
             trendUp: true,
           },
           tempatSampahAktif: {
@@ -1712,8 +1734,8 @@ const Dashboard: React.FC = () => {
           },
           setoranHariIni: {
             value: `${Number(kpi.setoranHariIniKg ?? 0).toFixed(2)} Kg`,
-            trend: "Aktivitas Setoran",
-            trendLabel: timeFilter === "semua" ? "Total Keseluruhan" : `Periode ${timeFilter}`,
+            trend: "Aktivitas Pemilahan",
+            trendLabel: periodTrendLabel,
             trendUp: true,
           },
           totalPoin: {
@@ -1809,7 +1831,7 @@ const Dashboard: React.FC = () => {
     fetchStats();
     const interval = setInterval(fetchStats, 30_000);
     return () => clearInterval(interval);
-  }, [user, weeks, timeFilter, selectedWilayah]);
+  }, [user, weeks, timeFilter, startDate, endDate, selectedWilayah]);
 
   if (user?.peran === "MPL" || (user?.peran as string) === "MITRA_PENDAMPING_LAPANGAN") {
     return <Navigate to="/penilaian/mahasiswa" replace />;
@@ -2016,12 +2038,52 @@ const Dashboard: React.FC = () => {
 
             <CustomSelect
               value={timeFilter}
-              onChange={(val) => setTimeFilter(val)}
+              onChange={(val) => {
+                setTimeFilter(val);
+                if (val !== "custom") {
+                  setStartDate("");
+                  setEndDate("");
+                }
+              }}
               options={PERIODE_OPTIONS}
               icon={<Calendar size={15} className="text-sky-600 flex-shrink-0" />}
               label="Periode:"
               variant="slate"
             />
+
+            {timeFilter === "custom" && (
+              <div className="flex items-center gap-2 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 shadow-2xs">
+                <Calendar size={14} className="text-sky-600 shrink-0" />
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="bg-transparent text-xs font-semibold text-slate-800 dark:text-slate-100 outline-none cursor-pointer"
+                  title="Tanggal Mulai"
+                />
+                <span className="text-slate-400 text-xs font-bold">s/d</span>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="bg-transparent text-xs font-semibold text-slate-800 dark:text-slate-100 outline-none cursor-pointer"
+                  title="Tanggal Selesai"
+                />
+                {(startDate || endDate) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStartDate("");
+                      setEndDate("");
+                    }}
+                    className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md text-slate-400 hover:text-slate-600 transition cursor-pointer"
+                    title="Hapus Tanggal"
+                  >
+                    <X size={13} />
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           <button
@@ -2073,11 +2135,12 @@ const Dashboard: React.FC = () => {
           iconName="shopping_bag"
           color="amber"
           label={
-            timeFilter === "harian" ? "Setoran Hari Ini" :
-            timeFilter === "mingguan" ? "Setoran Minggu Ini" :
-            timeFilter === "bulanan" ? "Setoran Bulan Ini" :
-            timeFilter === "tahunan" ? "Setoran Tahun Ini" :
-            "Total Setoran"
+            timeFilter === "custom" && startDate && endDate ? "Pemilahan Periode Ini" :
+            timeFilter === "harian" ? "Pemilahan Hari Ini" :
+            timeFilter === "mingguan" ? "Pemilahan Minggu Ini" :
+            timeFilter === "bulanan" ? "Pemilahan Bulan Ini" :
+            timeFilter === "tahunan" ? "Pemilahan Tahun Ini" :
+            "Total Pemilahan"
           }
           value={stats?.setoranHariIni?.value}
           trend={stats?.setoranHariIni?.trend}
@@ -2099,15 +2162,15 @@ const Dashboard: React.FC = () => {
 
       {/* 3. Charts & Komposisi Grid (2 Columns, 6 cols each) */}
       <div className="px-1 pt-2 text-[10.5px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">
-        Analitik Tren Setoran &amp; Komposisi Sampah
+        Analitik Tren Pemilahan &amp; Komposisi Sampah
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 relative z-10">
-        {/* Left Column (6 cols): Trend Setoran Chart */}
+        {/* Left Column (6 cols): Trend Pemilahan Chart */}
         <div className="lg:col-span-6 bg-white dark:bg-slate-900 shadow-xs rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 relative overflow-hidden flex flex-col justify-between space-y-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div className="space-y-1">
               <h4 className="font-bold text-[18px] text-slate-900 dark:text-slate-100">
-                Grafik Tren Setoran Sampah (Real-Time)
+                Grafik Tren Pemilahan Sampah (Real-Time)
               </h4>
               <div className="flex gap-4 text-[11px] font-bold">
                 <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
@@ -2442,7 +2505,7 @@ const Dashboard: React.FC = () => {
                 </span>
               </h4>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                Kesesuaian antara kategori tempat sampah (Organik/Anorganik/Residu) dengan hasil klasifikasi AI dari setoran warga.
+                Kesesuaian antara kategori tempat sampah (Organik/Anorganik/Residu) dengan hasil klasifikasi AI dari pemilahan warga.
               </p>
             </div>
           </div>
@@ -2468,7 +2531,7 @@ const Dashboard: React.FC = () => {
               }`} />
               Status Kepatuhan: {
                 (stats?.kepatuhanPemilahan?.totalCount ?? 0) === 0
-                  ? "Belum Ada Setoran"
+                  ? "Belum Ada Pemilahan"
                   : (stats?.kepatuhanPemilahan?.rate ?? 0) >= 80
                   ? "Sangat Baik"
                   : (stats?.kepatuhanPemilahan?.rate ?? 0) >= 60
@@ -2511,13 +2574,13 @@ const Dashboard: React.FC = () => {
               <div className="bg-white dark:bg-slate-800 p-2 rounded-xl border border-emerald-100 dark:border-emerald-700/30 shadow-2xs">
                 <span className="text-[10px] text-slate-400 font-bold uppercase block">Patuh (Sesuai)</span>
                 <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">
-                  {stats?.kepatuhanPemilahan?.compliantCount ?? 0} <span className="text-[10px] font-normal text-slate-400">setoran</span>
+                  {stats?.kepatuhanPemilahan?.compliantCount ?? 0} <span className="text-[10px] font-normal text-slate-400">pemilahan</span>
                 </span>
               </div>
               <div className="bg-white dark:bg-slate-800 p-2 rounded-xl border border-rose-100 dark:border-rose-700/30 shadow-2xs">
                 <span className="text-[10px] text-slate-400 font-bold uppercase block">Salah Tempat Sampah</span>
                 <span className="text-sm font-black text-rose-600 dark:text-rose-400">
-                  {stats?.kepatuhanPemilahan?.nonCompliantCount ?? 0} <span className="text-[10px] font-normal text-slate-400">setoran</span>
+                  {stats?.kepatuhanPemilahan?.nonCompliantCount ?? 0} <span className="text-[10px] font-normal text-slate-400">pemilahan</span>
                 </span>
               </div>
             </div>
@@ -2583,7 +2646,7 @@ const Dashboard: React.FC = () => {
                 Deteksi Kontaminasi &amp; Edukasi
               </div>
               <p className="text-[11px] text-slate-600 dark:text-slate-300 font-normal leading-relaxed">
-                Jika tempat sampah berkategori <strong className="text-emerald-700 dark:text-emerald-400 font-bold">Organik</strong> tetapi hasil deteksi AI setoran warga teridentifikasi didominasi <strong className="text-amber-700 dark:text-amber-400 font-bold">Anorganik/Residu</strong>, maka tingkat kepatuhan pada lokasi tersebut dianggap <strong className="text-rose-600 dark:text-rose-400 font-bold">Rendah (Tercampur)</strong>.
+                Jika tempat sampah berkategori <strong className="text-emerald-700 dark:text-emerald-400 font-bold">Organik</strong> tetapi hasil deteksi AI pemilahan warga teridentifikasi didominasi <strong className="text-amber-700 dark:text-amber-400 font-bold">Anorganik/Residu</strong>, maka tingkat kepatuhan pada lokasi tersebut dianggap <strong className="text-rose-600 dark:text-rose-400 font-bold">Rendah (Tercampur)</strong>.
               </p>
             </div>
 
@@ -3039,7 +3102,7 @@ const Dashboard: React.FC = () => {
                   );
                 })()}
                 <div className="flex justify-between items-center py-2 text-sm">
-                  <span className="text-slate-400">Poin Setoran</span>
+                  <span className="text-slate-400">Poin Pemilahan</span>
                   <span className="font-bold text-amber-600 dark:text-amber-400">
                     {selectedBinForDetail.category?.pointsPerKg || 100} Poin / Kg
                   </span>
