@@ -77,6 +77,7 @@ const PenilaianKknMahasiswaPage = React.lazy(() => import("../pages/PenilaianKkn
 const PenilaianLaporanAkhirPage = React.lazy(() => import("../pages/PenilaianKkn/PenilaianLaporanAkhirPage"));
 const MasterPanduanPage = React.lazy(() => import("../pages/MasterData/MasterPanduanPage"));
 const MasterKegiatanSampahPage = React.lazy(() => import("../pages/MasterData/MasterKegiatanSampahPage"));
+const MasterPresetTempatSampahPage = React.lazy(() => import("../pages/MasterData/MasterPresetTempatSampahPage"));
 const LogbookKknPage = React.lazy(() => import("../pages/dpl/LogbookKknPage"));
 const LogAktivitasDpl = React.lazy(() => import("../pages/dpl/LogAktivitasDpl"));
 const KurasiLandingPage = React.lazy(() => import("../pages/SuperUser/KurasiLandingPage"));
@@ -832,6 +833,30 @@ const AppRoutes: React.FC = () => {
           }
         />
         <Route
+          path="/master-data/jenis-tempat-sampah"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "DEVELOPER", "PANITIA_TASKFORCE", "RW", "CAMAT", "LURAH", "PETUGAS_RESIDU", "MAHASISWA_KKN", "PIMPINAN", "WARGA"]}>
+              <MasterPresetTempatSampahPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/monitoring-pengelolaan/jenis-tempat-sampah"
+          element={<Navigate to="/master-data/jenis-tempat-sampah" replace />}
+        />
+        <Route
+          path="/master-data/preset-tempat-sampah"
+          element={<Navigate to="/master-data/jenis-tempat-sampah" replace />}
+        />
+        <Route
+          path="/jenis-tempat-sampah"
+          element={<Navigate to="/master-data/jenis-tempat-sampah" replace />}
+        />
+        <Route
+          path="/preset-tempat-sampah"
+          element={<Navigate to="/master-data/jenis-tempat-sampah" replace />}
+        />
+        <Route
           path="/ajuan-absensi"
           element={
             <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PIMPINAN", "PANITIA_TASKFORCE", "DEVELOPER", "MAHASISWA_KKN"]}>
@@ -1141,7 +1166,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/monitoring-pemilahan/penyetoran-sampah"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "PIMPINAN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING", "MAHASISWA_KKN", "WARGA", "DEVELOPER"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING", "MAHASISWA_KKN", "WARGA", "DEVELOPER"]}>
               <SetorSampah />
             </ProtectedRoute>
           }
@@ -1149,7 +1174,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/penyetoran-sampah"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "PIMPINAN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING", "MAHASISWA_KKN", "WARGA", "DEVELOPER"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING", "MAHASISWA_KKN", "WARGA", "DEVELOPER"]}>
               <SetorSampah />
             </ProtectedRoute>
           }
