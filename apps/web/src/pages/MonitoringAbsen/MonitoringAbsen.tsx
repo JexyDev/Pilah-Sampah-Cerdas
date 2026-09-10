@@ -2759,7 +2759,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
           <div className="p-3.5 rounded-2xl bg-amber-50/90 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/60 text-amber-900 dark:text-amber-200 text-xs font-medium flex items-center gap-3 shadow-2xs">
             <span className="text-lg leading-none shrink-0">ℹ️</span>
             <div className="flex-1 leading-relaxed">
-              <span className="font-bold">Jadwal Fleksibel Akhir Pekan (Sabtu / Minggu):</span> Presensi hari ini bersifat fleksibel. Mahasiswa yang tidak hadir <strong>tidak dikenakan status Alpa</strong> ataupun pengurangan poin. Mahasiswa yang hadir tetap tercatat presensinya dan durasi jamnya dihitung ke akumulasi kegiatan.
+              <span className="font-bold">Jadwal Fleksibel Akhir Pekan (Sabtu / Minggu):</span> Presensi hari ini bersifat fleksibel. Mahasiswa yang tidak hadir <strong>tidak dikenakan status Tanpa Keterangan</strong> ataupun pengurangan poin. Mahasiswa yang hadir tetap tercatat presensinya dan durasi jamnya dihitung ke akumulasi kegiatan.
             </div>
           </div>
         )}
