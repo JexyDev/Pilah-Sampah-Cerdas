@@ -52,6 +52,7 @@ import {
 import { dplService, type GroupSummary, type ProgramKerjaItem } from "../../services/dplService";
 import { resolveImageUrl } from "../../utils/imageUrl";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
+import { Pagination } from "../../components/common/Pagination";
 
 // Helper Inisial Profil
 const getInitials = (name: string): string => {
@@ -89,7 +90,7 @@ export const LogAktivitasDpl: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [totalItems, setTotalItems] = useState<number>(0);
-  const pageSize = 10;
+  const [pageSize, setPageSize] = useState<number>(10);
 
   // Modal Form State (Catat / Edit Kegiatan DPL)
   const [isFormModalOpen, setIsFormModalOpen] = useState<boolean>(false);
@@ -305,7 +306,7 @@ export const LogAktivitasDpl: React.FC = () => {
 
   useEffect(() => {
     fetchActivityLogs();
-  }, [searchQuery, selectedGroupFilter, selectedCategoryFilter, selectedPekanFilter, currentPage]);
+  }, [searchQuery, selectedGroupFilter, selectedCategoryFilter, selectedPekanFilter, currentPage, pageSize]);
 
   // File Upload Handlers
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -803,44 +804,24 @@ export const LogAktivitasDpl: React.FC = () => {
         </div>
 
         {/* Table Footer / Pagination */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2 text-xs text-slate-500">
-          <span>
-            Menampilkan <span className="font-semibold text-slate-700">{logs.length}</span> dari{" "}
-            <span className="font-semibold text-slate-700">{totalItems}</span> kegiatan
-          </span>
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              disabled={currentPage <= 1}
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pg) => (
-              <button
-                key={pg}
-                type="button"
-                onClick={() => setCurrentPage(pg)}
-                className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-semibold transition-colors ${
-                  currentPage === pg
-                    ? "bg-slate-800 text-white"
-                    : "border border-slate-200 text-slate-600 hover:bg-slate-50"
-                }`}
-              >
-                {pg}
-              </button>
-            ))}
-            <button
-              type="button"
-              disabled={currentPage >= totalPages}
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
+        {totalItems > 0 && (
+          <div className="pt-2">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              itemsPerPage={pageSize}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={(newSize) => {
+                setPageSize(newSize);
+                setCurrentPage(1);
+              }}
+              itemsPerPageOptions={[10, 25, 50, 100]}
+              itemLabel="kegiatan"
+              showQuickJump={true}
+            />
           </div>
-        </div>
+        )}
       </div>
 
       {/* ─────────────────────────────────────────────
