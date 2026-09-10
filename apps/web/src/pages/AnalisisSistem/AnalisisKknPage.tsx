@@ -407,7 +407,7 @@ export const AnalisisKknPage: React.FC = () => {
                     <div className="text-lg font-black text-slate-900 dark:text-slate-100">{data.pilar3.breakdown.selesai}</div>
                   </div>
                   <div>
-                    <span className="text-[10px] font-extrabold text-amber-600 uppercase">Berjalan</span>
+                    <span className="text-[10px] font-extrabold text-amber-600 uppercase">Berlangsung</span>
                     <div className="text-lg font-black text-slate-900 dark:text-slate-100">{data.pilar3.breakdown.proses}</div>
                   </div>
                   <div>
@@ -443,7 +443,7 @@ export const AnalisisKknPage: React.FC = () => {
 
                   <div>
                     <div className="flex justify-between text-xs font-bold mb-1.5">
-                      <span className="text-amber-600 dark:text-amber-400">Sedang Berjalan ({data.pilar3.breakdown.proses})</span>
+                      <span className="text-amber-600 dark:text-amber-400">Sedang Berlangsung ({data.pilar3.breakdown.proses})</span>
                       <span className="text-slate-400">
                         {data.pilar3.totalProker > 0 ? Math.round((data.pilar3.breakdown.proses / data.pilar3.totalProker) * 100) : 0}%
                       </span>
