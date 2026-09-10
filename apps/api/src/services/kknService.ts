@@ -4449,6 +4449,7 @@ export class KknService {
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: {
+        penilaianKkn: true,
         studentProfile: {
           include: {
             kelompok: {
@@ -4472,8 +4473,24 @@ export class KknService {
     if (!user) throw new Error("User tidak ditemukan");
     const student = user.studentProfile;
     const kelompok = student?.kelompok;
+    const individualScore =
+      user.penilaianKkn && user.penilaianKkn.skorDplLaporanAkhir > 0
+        ? Number(user.penilaianKkn.skorDplLaporanAkhir)
+        : null;
+
     if (!kelompok) {
-      return null;
+      return {
+        hasSubmitted: false,
+        kelompokId: null,
+        namaKelompok: null,
+        dplNama: null,
+        dpl: null,
+        laporan: null,
+        skorIndividu: {
+          skorDplLaporanAkhir: individualScore || 0,
+          isCustomized: false,
+        },
+      };
     }
 
     const prokers = kelompok.programKerja || [];
@@ -4493,7 +4510,22 @@ export class KknService {
       null;
 
     if (!laporanProker) {
-      return null;
+      return {
+        hasSubmitted: false,
+        kelompokId: kelompok.id,
+        namaKelompok: kelompok.name,
+        dplNama: kelompok.dpl?.name || null,
+        dpl: {
+          id: kelompok.dpl?.id,
+          nama: kelompok.dpl?.name,
+          nip: kelompok.dpl?.nip,
+        },
+        laporan: null,
+        skorIndividu: {
+          skorDplLaporanAkhir: individualScore || 0,
+          isCustomized: false,
+        },
+      };
     }
 
     const parsed = parseProkerDeskripsi(laporanProker.deskripsi);
@@ -4559,10 +4591,20 @@ export class KknService {
       else predikat = "D (Kurang)";
     }
 
+    const submittedByStr = laporanProker.student?.user?.name
+      ? `${laporanProker.student.user.name} (${laporanProker.student.nim || "-"})`
+      : "Mahasiswa KKN";
+
+    const catatanFeedback = laporanProker.evaluasiDpl || laporanProker.catatanDpl || "";
+    const isCustomized =
+      individualScore !== null && scoreVal !== null && individualScore !== scoreVal;
+
     return {
+      hasSubmitted: true,
       id: laporanProker.id,
       kelompokId: kelompok.id,
       namaKelompok: kelompok.name,
+      dplNama: kelompok.dpl?.name || null,
       judul: parsed.judul || `Laporan Akhir KKN - ${kelompok.name}`,
       deskripsi: parsed.deskripsi || laporanProker.deskripsi,
       kategori: "LAPORAN_AKHIR",
@@ -4578,13 +4620,35 @@ export class KknService {
         nama: kelompok.dpl?.name,
         nip: kelompok.dpl?.nip,
       },
+      status: laporanProker.status || statusTelaah,
       statusTelaah,
       nilaiAkhir: scoreVal,
+      skorPenilaian: scoreVal,
       predikat,
       rubrikScores,
-      catatanDpl: laporanProker.evaluasiDpl || laporanProker.catatanDpl || "",
+      catatanDpl: catatanFeedback,
+      catatanRevisi: catatanFeedback,
       submittedAt: laporanProker.createdAt.toISOString(),
       updatedAt: laporanProker.updatedAt.toISOString(),
+      submittedBy: submittedByStr,
+      laporan: {
+        id: laporanProker.id,
+        judul: parsed.judul || `Laporan Akhir KKN - ${kelompok.name}`,
+        deskripsi: parsed.deskripsi || laporanProker.deskripsi,
+        fileUrl,
+        fileName: fileUrl ? `Laporan_Akhir_${kelompok.name.replace(/\s+/g, "_")}.pdf` : null,
+        status: laporanProker.status || statusTelaah,
+        statusTelaah,
+        skorPenilaian: scoreVal,
+        catatanRevisi: catatanFeedback,
+        rubrikScores,
+        submittedAt: laporanProker.createdAt.toISOString(),
+        submittedBy: submittedByStr,
+      },
+      skorIndividu: {
+        skorDplLaporanAkhir: individualScore || scoreVal || 0,
+        isCustomized,
+      },
     };
   }
 
