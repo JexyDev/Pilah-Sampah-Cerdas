@@ -41,8 +41,8 @@ class PetugasPemilahanDashboard extends Equatable {
     required this.monthlyWeightKg,
     required this.kpiScore,
     required this.totalPoints,
-    this.ketepatanWaktuScore = 95.0,
-    this.akurasiScore = 92.0,
+    this.ketepatanWaktuScore = 0.0,
+    this.akurasiScore = 0.0,
   });
 
   final String petugasId;
@@ -71,14 +71,14 @@ class PetugasPemilahanDashboard extends Equatable {
 
     return PetugasPemilahanDashboard(
       petugasId: json['petugasId']?.toString() ?? '',
-      name: json['name']?.toString() ?? 'Petugas Pemilahan',
+      name: json['name']?.toString() ?? '',
       assignedZone:
           json['assignedZone']?.toString() ??
           json['rw']?.toString() ??
           json['rtRw']?.toString() ??
           '-',
       whitelistStatus: WhitelistStatusExtension.fromApi(
-        json['whitelistStatus']?.toString() ?? 'APPROVED',
+        json['whitelistStatus']?.toString() ?? 'PENDING',
       ),
       accountStatus: json['accountStatus']?.toString() ?? 'ACTIVE',
       totalJadwal: (json['totalJadwal'] as num?)?.toInt() ?? 0,
@@ -125,7 +125,7 @@ class PemilahanBinPickup extends Equatable {
     this.lastPickedUpTime,
     this.latitude,
     this.longitude,
-    this.wasteCategory = 'PEMILAHAN',
+    this.wasteCategory = '-',
   });
 
   final String binId;
@@ -144,25 +144,74 @@ class PemilahanBinPickup extends Equatable {
 
   bool get isHighVolume => volumePercentage >= 70.0;
 
+  /// Memeriksa apakah tempat sampah ini berada di RW tertentu secara andal
+  bool matchesRw(String? targetRw) {
+    if (targetRw == null || targetRw.trim().isEmpty || targetRw == '-') return true;
+    final cleanTarget = targetRw.replaceAll(RegExp(r'[^\d]'), '');
+    final cleanThis = rw.replaceAll(RegExp(r'[^\d]'), '');
+    if (cleanTarget.isNotEmpty && cleanThis.isNotEmpty) {
+      return cleanThis == cleanTarget;
+    }
+    return rw.toLowerCase().contains(targetRw.toLowerCase().trim()) ||
+        targetRw.toLowerCase().contains(rw.toLowerCase().trim());
+  }
+
+  /// Memeriksa apakah tempat sampah ini berada di Kelurahan tertentu
+  bool matchesKelurahan(String? targetKelurahan) {
+    if (targetKelurahan == null || targetKelurahan.trim().isEmpty || targetKelurahan == '-') {
+      return true;
+    }
+    if (kelurahan.isEmpty) return true;
+    return kelurahan.toLowerCase().contains(targetKelurahan.toLowerCase().trim()) ||
+        targetKelurahan.toLowerCase().contains(kelurahan.toLowerCase().trim());
+  }
+
   factory PemilahanBinPickup.fromJson(Map<String, dynamic> json) {
+    // Ekstraksi data RW & Kelurahan yang tangguh (mendukung String flat atau nested Map dari Prisma)
+    String extractedRw = '';
+    String extractedKelurahan = '';
+
+    if (json['rw'] is Map) {
+      final rwMap = json['rw'] as Map<String, dynamic>;
+      extractedRw = rwMap['name']?.toString() ?? rwMap['nama']?.toString() ?? '';
+      if (rwMap['kelurahan'] is Map) {
+        final kelMap = rwMap['kelurahan'] as Map<String, dynamic>;
+        extractedKelurahan = kelMap['name']?.toString() ?? kelMap['nama']?.toString() ?? '';
+      } else if (rwMap['kelurahan'] is String) {
+        extractedKelurahan = rwMap['kelurahan'].toString();
+      }
+    } else if (json['rw'] != null && json['rw'].toString().trim().isNotEmpty) {
+      extractedRw = json['rw'].toString().trim();
+    }
+
+    if (extractedRw.isEmpty) {
+      extractedRw = json['lokasi']?.toString() ?? json['rtRw']?.toString() ?? '';
+    }
+
+    if (extractedKelurahan.isEmpty) {
+      extractedKelurahan = json['kelurahan']?.toString() ?? '';
+    }
+
     return PemilahanBinPickup(
       binId: json['binId']?.toString() ?? json['id']?.toString() ?? '',
       binCode:
           json['binCode']?.toString() ??
           json['qrCode']?.toString() ??
-          'BIN-PEMILAHAN',
+          '-',
       wargaName:
+          json['wargaNama']?.toString() ??
           json['namaWarga']?.toString() ??
           json['wargaName']?.toString() ??
           json['user']?['name']?.toString() ??
-          'Warga',
+          '-',
       address:
           json['alamat']?.toString() ??
           json['address']?.toString() ??
-          'Jl. Raya Bojongsoang No. 12',
+          json['user']?['address']?.toString() ??
+          '-',
       kecamatan: json['kecamatan']?.toString() ?? '',
-      kelurahan: json['kelurahan']?.toString() ?? '',
-      rw: json['rw']?.toString() ?? json['rtRw']?.toString() ?? '',
+      kelurahan: extractedKelurahan,
+      rw: extractedRw,
       volumePercentage:
           (json['volumePercent'] as num?)?.toDouble() ??
           (json['volumePercentage'] as num?)?.toDouble() ??
@@ -176,9 +225,11 @@ class PemilahanBinPickup extends Equatable {
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),
       wasteCategory:
-          json['kategori']?.toString() ??
           json['wasteCategory']?.toString() ??
-          'PEMILAHAN',
+          json['category']?['name']?.toString() ??
+          json['kategori']?.toString() ??
+          json['type']?.toString() ??
+          '-',
     );
   }
 

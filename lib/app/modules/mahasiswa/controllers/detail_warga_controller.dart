@@ -32,13 +32,18 @@ class DetailWargaNotifier extends StateNotifier<DetailWargaState> {
   void setWarga(WargaDampingan warga) {
     state = DetailWargaState(warga: warga);
   }
+
+  void reset() {
+    state = const DetailWargaState();
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Provider
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ponytail: autoDispose ensures no stale citizen state leaks when opening different citizens.
 final detailWargaControllerProvider =
-    StateNotifierProvider<DetailWargaNotifier, DetailWargaState>((ref) {
+    StateNotifierProvider.autoDispose<DetailWargaNotifier, DetailWargaState>((ref) {
       return DetailWargaNotifier(ref);
     });

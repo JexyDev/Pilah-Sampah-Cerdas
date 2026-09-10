@@ -59,7 +59,19 @@ bool _isWargaNotification(NotificationEntity notif) {
       desc.contains('PRESENSI GEOFENCE') ||
       desc.contains('AKUN PETUGAS');
 
-  if (isForbidden) return false;
+  // ponytail: Notifikasi terkait pengosongan/reset tempat sampah selalu diizinkan untuk Warga
+  final isPengosonganTopic =
+      type.contains('PENGOSONGAN') ||
+      type.contains('RESET') ||
+      title.contains('PENGOSONGAN') ||
+      title.contains('DIKOSONGKAN') ||
+      title.contains('DISETUJUI') ||
+      desc.contains('PENGOSONGAN') ||
+      desc.contains('DIKOSONGKAN') ||
+      desc.contains('MERESET') ||
+      desc.contains('FOTO BUKTI');
+
+  if (isForbidden && !isPengosonganTopic) return false;
 
   // Warga HANYA menerima:
   // 1. Pengajuan Pengosongan (Status disetujui / ditolak dll)
@@ -67,6 +79,7 @@ bool _isWargaNotification(NotificationEntity notif) {
   // 3. Poin reward
   // 4. Penalti, Peringatan, Jadwal
   final isWargaTopic =
+      isPengosonganTopic ||
       type.contains('TONG_PENUH') ||
       type.contains('PENGAJUAN') ||
       type.contains('POIN') ||
@@ -84,7 +97,7 @@ bool _isWargaNotification(NotificationEntity notif) {
       desc.contains('JADWAL') ||
       desc.contains('POIN');
 
-  if (isForbidden) return false;
+  if (isForbidden && !isPengosonganTopic) return false;
 
   // Hapus seed notifikasi palsu / dummy lama (seperti seed ORG004520)
   if (notif.id == 'seed-notif-1' || desc.contains('ORG004520')) {

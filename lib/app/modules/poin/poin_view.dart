@@ -23,7 +23,9 @@ class PoinView extends ConsumerWidget {
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(totalPointsProvider);
+          ref.invalidate(dailyPointsProvider);
           ref.invalidate(pointHistoryProvider);
+          ref.invalidate(wasteLogsProvider);
           ref.invalidate(userLeaderboardRankProvider);
         },
         color: AppColors.primaryGreen,
@@ -44,7 +46,7 @@ class PoinView extends ConsumerWidget {
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
                   // ─── Stats 3 kolom ──────────────────────────────────
-                  _buildStatsRow(historyAsync.value ?? []),
+                  _buildStatsRow(ref, historyAsync.value ?? []),
                   const SizedBox(height: 16),
 
                   // ─── Status Jadwal Hari Ini ──────────────────────────
@@ -284,26 +286,40 @@ class PoinView extends ConsumerWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                NumberFormat('#,###').format(total),
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 36,
-                  fontWeight: FontWeight.w800,
+              Flexible(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Flexible(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          NumberFormat('#,###').format(total),
+                          style: const TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 36,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.only(left: 6, bottom: 4),
+                      child: Text(
+                        'PTS',
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const Padding(
-                padding: EdgeInsets.only(left: 6, bottom: 4),
-                child: Text(
-                  'PTS',
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              const Spacer(),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
@@ -314,6 +330,7 @@ class PoinView extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     const Icon(
                       Icons.emoji_events_rounded,
@@ -379,7 +396,7 @@ class PoinView extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatsRow(List<PointHistoryEntity> history) {
+  Widget _buildStatsRow(WidgetRef ref, List<PointHistoryEntity> history) {
     final now = DateTime.now();
     final todayStart = DateTime(now.year, now.month, now.day);
     final weekStart = todayStart.subtract(Duration(days: now.weekday - 1));
@@ -400,6 +417,13 @@ class PoinView extends ConsumerWidget {
       if (!localCreatedAt.isBefore(monthStart)) {
         monthPts += h.points;
       }
+    }
+
+    final dailyPts = ref.watch(dailyPointsProvider).value ?? 0;
+    if (todayPts == 0 && dailyPts > 0) {
+      todayPts = dailyPts;
+      if (weekPts == 0) weekPts = dailyPts;
+      if (monthPts == 0) monthPts = dailyPts;
     }
 
     return Row(
@@ -443,20 +467,26 @@ class _StatsCard extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 11,
-                color: AppColors.textSecondary,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: AppColors.textSecondary,
+                ),
               ),
             ),
             const SizedBox(height: 4),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
               ),
             ),
             Text(

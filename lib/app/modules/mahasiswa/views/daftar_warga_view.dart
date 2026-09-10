@@ -58,26 +58,17 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
           final kelDisplay = targetKel.toLowerCase().startsWith('kel')
               ? targetKel
               : 'Kel. $targetKel';
-          final displayAddr =
-              w.address.contains('Bojongsoang') || w.address.contains('RW')
+          final displayAddr = w.address.isNotEmpty && w.address != '-'
               ? w.address
-              : 'Jl. ${w.wargaName} No. ${w.binId.length > 3 ? w.binId.substring(w.binId.length - 2) : "4"}, RW $targetRw, $kelDisplay, Kec. $targetKec';
+              : (targetRw.isNotEmpty
+                  ? 'RW $targetRw, $kelDisplay, Kec. $targetKec'
+                  : '-');
 
-          return WargaDampingan(
-            wargaId: w.wargaId,
-            binId: w.binId,
-            binOrganikId: w.binOrganikId,
-            binAnorganikId: w.binAnorganikId,
-            wargaName: w.wargaName,
+          return w.copyWith(
             address: displayAddr,
-            kelurahan: targetKel,
-            rw: targetRw,
-            mahasiswaId: w.mahasiswaId,
-            recentLogs: w.recentLogs,
-            isActivated: w.isActivated,
-            role: w.role,
-            totalPoints: w.totalPoints,
-            apiCorrectPercentage: w.apiCorrectPercentage,
+            kelurahan: w.kelurahan.isNotEmpty ? w.kelurahan : targetKel,
+            rw: w.rw.isNotEmpty ? w.rw : targetRw,
+            kecamatan: targetKec,
           );
         })
         .toList();

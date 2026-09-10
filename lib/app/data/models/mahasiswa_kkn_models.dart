@@ -140,8 +140,16 @@ class WasteLogEntry extends Equatable {
     } else if (extractedCategory.toLowerCase() == 'anorganik' ||
         extractedCategory.toLowerCase() == 'non_organic' ||
         extractedCategory.toLowerCase() == 'non organik') {
-      extractedCategory = 'Non Organik';
+      extractedCategory = 'Anorganik';
     }
+
+    final rawDiscrepancy = json['discrepancyStatus']?.toString() ??
+        json['discrepancy_status']?.toString() ??
+        (json['isCorrect'] == true || json['is_correct'] == true
+            ? 'NONE'
+            : (json['isCorrect'] == false || json['is_correct'] == false
+                ? 'MISMATCH'
+                : 'NONE'));
 
     return WasteLogEntry(
       weightKg:
@@ -151,11 +159,14 @@ class WasteLogEntry extends Equatable {
       category: extractedCategory,
       aiConfidence:
           (json['aiConfidence'] as num?)?.toDouble() ??
+          (json['ai_confidence'] as num?)?.toDouble() ??
           (json['confidenceAi'] as num?)?.toDouble() ??
           0.0,
-      discrepancyStatus: json['discrepancyStatus']?.toString() ?? 'NONE',
+      discrepancyStatus: rawDiscrepancy,
       createdAt:
-          DateTime.tryParse(json['createdAt']?.toString() ?? '') ??
+          DateTime.tryParse(
+            json['createdAt']?.toString() ?? json['date']?.toString() ?? '',
+          ) ??
           DateTime.now(),
     );
   }
@@ -181,6 +192,7 @@ class WargaDampingan extends Equatable {
     this.mahasiswaId = '',
     this.pendampingName = '',
     this.status = '',
+    this.phone = '',
     required this.recentLogs,
     this.isActivated = true,
     this.role = 'WARGA',
@@ -204,6 +216,7 @@ class WargaDampingan extends Equatable {
   final String mahasiswaId;
   final String pendampingName;
   final String status;
+  final String phone;
   final bool isActivated;
   final String role;
   final List<WasteLogEntry> recentLogs;
@@ -242,6 +255,58 @@ class WargaDampingan extends Equatable {
     if (recentLogs.isEmpty) return null;
     // Log biasanya sudah diurutkan dari backend (terbaru di atas)
     return recentLogs.first.createdAt;
+  }
+
+  WargaDampingan copyWith({
+    String? wargaId,
+    String? binId,
+    String? binOrganikId,
+    String? binAnorganikId,
+    String? wargaName,
+    String? address,
+    String? kecamatan,
+    String? kelurahan,
+    String? rw,
+    String? mahasiswaId,
+    String? pendampingName,
+    String? status,
+    String? phone,
+    List<WasteLogEntry>? recentLogs,
+    bool? isActivated,
+    String? role,
+    int? totalPoints,
+    double? totalKg,
+    double? apiCorrectPercentage,
+    int? backendTotalActivities,
+    int? backendCorrectCount,
+    int? backendIncorrectCount,
+  }) {
+    return WargaDampingan(
+      wargaId: wargaId ?? this.wargaId,
+      binId: binId ?? this.binId,
+      binOrganikId: binOrganikId ?? this.binOrganikId,
+      binAnorganikId: binAnorganikId ?? this.binAnorganikId,
+      wargaName: wargaName ?? this.wargaName,
+      address: address ?? this.address,
+      kecamatan: kecamatan ?? this.kecamatan,
+      kelurahan: kelurahan ?? this.kelurahan,
+      rw: rw ?? this.rw,
+      mahasiswaId: mahasiswaId ?? this.mahasiswaId,
+      pendampingName: pendampingName ?? this.pendampingName,
+      status: status ?? this.status,
+      phone: phone ?? this.phone,
+      recentLogs: recentLogs ?? this.recentLogs,
+      isActivated: isActivated ?? this.isActivated,
+      role: role ?? this.role,
+      totalPoints: totalPoints ?? this.totalPoints,
+      totalKg: totalKg ?? this.totalKg,
+      apiCorrectPercentage: apiCorrectPercentage ?? this.apiCorrectPercentage,
+      backendTotalActivities:
+          backendTotalActivities ?? this.backendTotalActivities,
+      backendCorrectCount: backendCorrectCount ?? this.backendCorrectCount,
+      backendIncorrectCount:
+          backendIncorrectCount ?? this.backendIncorrectCount,
+    );
   }
 
   factory WargaDampingan.fromJson(Map<String, dynamic> json) {
@@ -520,7 +585,8 @@ class WargaDampingan extends Equatable {
           json['wargaName']?.toString() ??
           json['name']?.toString() ??
           json['warga_name']?.toString() ??
-          'Warga',
+          json['user']?['name']?.toString() ??
+          '-',
       address: rawAddr,
       kecamatan: parsedKecamatan,
       kelurahan: parsedKelurahan,
@@ -528,6 +594,11 @@ class WargaDampingan extends Equatable {
       mahasiswaId: extractMhsId(),
       pendampingName: extractPendampingName(),
       status: rawStatus.isEmpty ? 'Aktif' : rawStatus,
+      phone:
+          json['phone']?.toString() ??
+          json['user']?['phone']?.toString() ??
+          json['phoneNumber']?.toString() ??
+          '',
       recentLogs: logs,
       isActivated:
           (json['isActivated'] == true) ||

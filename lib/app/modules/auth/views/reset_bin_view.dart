@@ -30,9 +30,6 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
   String? _selectedPetugasId;
   DateTime? _lastSnackbarTime;
 
-  /// Batas minimal kapasitas terisi untuk dapat diajukan pengosongan (70%)
-  static const double minResetCapacityPercent = 0.70;
-
   void _showThrottledSnackBar(String message, {Color backgroundColor = AppColors.warningYellow}) {
     final now = DateTime.now();
     if (_lastSnackbarTime != null && now.difference(_lastSnackbarTime!) < const Duration(milliseconds: 1500)) {
@@ -382,7 +379,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
               SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Pengajuan pengosongan dilakukan saat tempat sampah sudah penuh (minimal 70%). Anda WAJIB memfoto tempat sampah yang PENUH sebagai bukti pengajuan pengosongan.',
+                  'Pengajuan pengosongan dapat dilakukan kapan saja saat tempat sampah perlu dikosongkan. Anda wajib menyertakan foto tempat sampah sebagai bukti pengajuan pengosongan.',
                   style: TextStyle(fontSize: 12.5, color: AppColors.textPrimary, height: 1.4),
                 ),
               ),
@@ -401,7 +398,6 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
               final BinEntity bin = bins[index];
               final bool isBinActive = bin.isActive;
               final bool isPendingBin = bin.isResetPending;
-              final bool isCapacityEligible = bin.capacityPercent >= minResetCapacityPercent;
               final bool isSelected = _selectedBinIds.contains(bin.id);
 
               Color cardBg;
@@ -422,12 +418,6 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                 iconColor = AppColors.warningYellow;
                 progressColor = AppColors.warningYellow;
                 textColor = AppColors.textPrimary;
-              } else if (!isCapacityEligible) {
-                cardBg = Colors.grey.shade50;
-                borderColor = Colors.grey.shade300;
-                iconColor = (bin.binType == WasteType.organic ? AppColors.organicColor : AppColors.nonOrganicColor).withValues(alpha: 0.4);
-                progressColor = (bin.binType == WasteType.organic ? AppColors.organicColor : AppColors.nonOrganicColor).withValues(alpha: 0.4);
-                textColor = Colors.grey.shade700;
               } else if (isSelected) {
                 cardBg = AppColors.primaryGreen.withValues(alpha: 0.06);
                 borderColor = AppColors.primaryGreen;
@@ -451,13 +441,6 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
 
                   if (isPendingBin) {
                     _showThrottledSnackBar('Tempat sampah ini sedang dalam proses pengajuan (PENDING).');
-                    return;
-                  }
-
-                  if (!isCapacityEligible) {
-                    _showThrottledSnackBar(
-                      'Tempat sampah belum penuh (minimal 70%). Kapasitas saat ini baru ${(bin.capacityPercent * 100).toStringAsFixed(0)}%.',
-                    );
                     return;
                   }
 
@@ -539,23 +522,6 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                                         ),
                                       ),
                                     ),
-                                  ] else if (!isCapacityEligible) ...[
-                                    const SizedBox(width: 8),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey.shade200,
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Text(
-                                        '${(bin.capacityPercent * 100).toStringAsFixed(0)}% (< 70%)',
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.grey.shade700,
-                                        ),
-                                      ),
-                                    ),
                                   ] else ...[
                                     const SizedBox(width: 8),
                                     Icon(
@@ -588,9 +554,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                                   ? 'Tempat Sampah Dinonaktifkan di Web — '
                                   : (isPendingBin
                                       ? 'Pengosongan sedang diproses — '
-                                      : (!isCapacityEligible
-                                          ? 'Belum penuh (minimal 70%) — '
-                                          : '${(bin.capacityPercent * 100).toStringAsFixed(0)}% terisi — ')),
+                                      : '${(bin.capacityPercent * 100).toStringAsFixed(0)}% terisi — '),
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(color: textColor),
                             ),
                             Text(
@@ -688,10 +652,14 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
               width: double.infinity,
               child: OutlinedButton.icon(
                 onPressed: _showImageSourcePicker,
-                icon: const Icon(Icons.camera_alt_outlined),
-                label: const Text('Upload Foto Bukti (< 5MB)'),
+                icon: const Icon(Icons.camera_alt_outlined, color: AppColors.primaryGreen),
+                label: const Text(
+                  'Upload Foto Bukti (< 5MB)',
+                  style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.w600),
+                ),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
+                  side: const BorderSide(color: AppColors.primaryGreen, width: 1.5),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
@@ -714,51 +682,48 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                         backgroundColor: AppColors.warningYellow,
                       );
                     }
-                  : isFotoEmpty
+                  : _selectedBinIds.isEmpty
+                      ? () {
+                          _showThrottledSnackBar(
+                            'Pilih minimal satu tempat sampah yang ingin dikosongkan.',
+                            backgroundColor: AppColors.warningYellow,
+                          );
+                        }
+                      : isFotoEmpty
                           ? () {
                               _showThrottledSnackBar(
                                 'Silakan upload foto bukti terlebih dahulu.',
-                                backgroundColor: AppColors.dangerRed,
+                                backgroundColor: AppColors.warningYellow,
                               );
+                              _showImageSourcePicker();
                             }
-                          : canSubmit
-                                  ? () {
-                                      final binIds = _selectedBinIds.toList();
-                                      ref.read(resetBinProvider.notifier).submitReset(
-                                              binIds: binIds,
-                                              userId: userId,
-                                              evidencePhotoPath: _evidencePhotoPath!,
-                                              wargaName: ref.read(authProvider).user?.name,
-                                              petugasId: _selectedPetugasId ?? petugasState.statusResponse?.petugas?.id,
-                                            );
-                                    }
-                                  : () {
-                                      _showThrottledSnackBar(
-                                        'Pilih minimal satu tempat sampah yang sudah mencapai batas minimal (70%).',
-                                        backgroundColor: AppColors.warningYellow,
-                                      );
-                                    },
+                          : () {
+                              final binIds = _selectedBinIds.toList();
+                              ref.read(resetBinProvider.notifier).submitReset(
+                                    binIds: binIds,
+                                    userId: userId,
+                                    evidencePhotoPath: _evidencePhotoPath!,
+                                    wargaName: ref.read(authProvider).user?.name,
+                                    petugasId: _selectedPetugasId ?? petugasState.statusResponse?.petugas?.id,
+                                  );
+                            },
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 backgroundColor: isPending
                     ? AppColors.warningYellow
-                    : isFotoEmpty
-                        ? AppColors.dangerRed
-                        : (canSubmit ? AppColors.primaryGreen : Colors.grey.shade400),
+                    : (canSubmit ? AppColors.primaryGreen : Colors.grey.shade300),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               child: Text(
                 isPending
                     ? 'Sedang Mengajukan (PENDING)'
-                    : isFotoEmpty
-                        ? 'Upload Foto Bukti'
-                        : (_selectedBinIds.isEmpty
-                            ? 'Pilih Tempat Sampah'
-                            : 'Kosongkan (${_selectedBinIds.length} Tempat Sampah)'),
+                    : (_selectedBinIds.isEmpty
+                        ? 'Pilih Tempat Sampah'
+                        : 'Ajukan Pengosongan (${_selectedBinIds.length} Tempat Sampah)'),
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: isPending || isFotoEmpty || canSubmit ? Colors.white : Colors.grey.shade700,
+                  color: isPending || canSubmit ? Colors.white : Colors.grey.shade600,
                 ),
                 textAlign: TextAlign.center,
               ),

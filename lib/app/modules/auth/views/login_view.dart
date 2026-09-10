@@ -101,17 +101,22 @@ class _LoginViewState extends ConsumerState<LoginView> {
     final password = _passwordController.text;
 
     if (identifier.isEmpty && password.isEmpty) {
-      _showToast('Nomor Telepon atau NIM, serta Kata Sandi wajib diisi');
+      _showToast('Nomor telepon dan kata sandi wajib diisi');
       _formKey.currentState!.validate();
       return;
     }
     if (identifier.isEmpty) {
-      _showToast('Nomor Telepon atau NIM wajib diisi');
+      _showToast('Nomor telepon wajib diisi');
       _formKey.currentState!.validate();
       return;
     }
     if (password.isEmpty) {
       _showToast('Kata sandi wajib diisi');
+      _formKey.currentState!.validate();
+      return;
+    }
+    if (password.length < 8) {
+      _showToast('Kata sandi minimal 8 karakter');
       _formKey.currentState!.validate();
       return;
     }
@@ -151,7 +156,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
       }
 
       String errorText =
-          'Nomor telepon/NIM atau kata sandi salah. Silakan coba lagi.';
+          'Nomor telepon atau kata sandi salah. Silakan coba lagi.';
       if (authState.errorCode == 'NETWORK_ERROR') {
         errorText = 'Tidak dapat terhubung ke server. Periksa koneksi.';
       } else if (authState.errorCode == 'UNAUTHORIZED_ROLE') {
@@ -316,16 +321,16 @@ class _LoginViewState extends ConsumerState<LoginView> {
                                 ),
                                 validator: (v) {
                                   if (v == null || v.trim().isEmpty) {
-                                    return 'Nomor telepon atau NIM wajib diisi';
+                                    return 'Nomor telepon wajib diisi';
                                   }
                                   final clean = v.trim().replaceAll(
                                     RegExp(r'[^\d]'),
                                     '',
                                   );
-                                  if (clean.length >= 8 && clean.length <= 16) {
+                                  if (clean.length >= 8 && clean.length <= 15) {
                                     return null; // Valid
                                   }
-                                  return 'Format tidak valid (8-16 digit)';
+                                  return 'Format nomor telepon tidak valid (8-15 digit)';
                                 },
                               ),
                               const SizedBox(height: 18),
@@ -371,8 +376,8 @@ class _LoginViewState extends ConsumerState<LoginView> {
                                   if (v == null || v.isEmpty) {
                                     return 'Kata sandi wajib diisi';
                                   }
-                                  if (v.length < 6) {
-                                    return 'Kata sandi minimal 6 karakter';
+                                  if (v.length < 8) {
+                                    return 'Kata sandi minimal 8 karakter';
                                   }
                                   return null;
                                 },

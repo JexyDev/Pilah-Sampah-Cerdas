@@ -79,11 +79,9 @@ class BinEntity extends Equatable {
   /// Volume sisa dalam liter.
   double get remainingVolumeL => maxCapacityL - currentVolumeL;
 
-  /// Densitas berat per liter berdasarkan jenis sampah (sesuai AppConfig & backend DENSITY).
-  double get densityKgPerLiter =>
-      binType == WasteType.organic
-          ? AppConfig.organicDensityKgPerLiter
-          : AppConfig.nonOrganicDensityKgPerLiter;
+  /// Densitas berat per liter tempat sampah — disamakan 0.4 kg/L agar kapasitas kg seragam antara Organik dan Anorganik.
+  // ponytail: density seragam 0.4 kg/L; ubah jika regulasi kembali memisahkan rasio kapasitas fisik.
+  double get densityKgPerLiter => AppConfig.organicDensityKgPerLiter;
 
   /// Estimasi berat saat ini dalam Kg (konsisten dengan densitas jenis sampah).
   double get currentWeightKg => currentVolumeL * densityKgPerLiter;

@@ -60,8 +60,12 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
         onRefresh: () async {
           ref.invalidate(binsProvider);
           ref.invalidate(totalPointsProvider);
+          ref.invalidate(dailyPointsProvider);
+          ref.invalidate(pointHistoryProvider);
           ref.invalidate(wasteLogsProvider);
           ref.invalidate(notificationsProvider);
+          ref.invalidate(wargaNotificationsProvider);
+          ref.invalidate(wargaUnreadNotificationCountProvider);
           ref.invalidate(userLeaderboardRankProvider);
         },
         color: AppColors.primaryGreen,
@@ -110,14 +114,19 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Tempat Sampah Anda',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
+                      const Expanded(
+                        child: Text(
+                          'Tempat Sampah Anda',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      const SizedBox(width: 8),
                       TextButton(
                         onPressed: () => Navigator.of(
                           context,
@@ -200,9 +209,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                                     return Padding(
                                       padding: const EdgeInsets.only(right: 12),
                                       child: SizedBox(
-                                        width:
-                                            MediaQuery.of(context).size.width *
-                                            0.42,
+                                        width: (MediaQuery.of(context).size.width * 0.42).clamp(140.0, 180.0),
                                         child: _BerandaBinCard(bin: bin),
                                       ),
                                     );
@@ -248,14 +255,19 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Riwayat Terakhir',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
+                      const Expanded(
+                        child: Text(
+                          'Riwayat Terakhir',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      const SizedBox(width: 8),
                       TextButton(
                         onPressed: widget.onNavigateToHistory,
                         child: const Text(
@@ -412,13 +424,18 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
               return Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Akurasi AI (Rata-rata)',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
+                  const Expanded(
+                    child: Text(
+                      'Akurasi AI (Rata-rata)',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  const SizedBox(width: 8),
                   Text(
                     validLogs.isEmpty
                         ? 'N/A'
@@ -1292,13 +1309,18 @@ class _HorizontalBar extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.textSecondary,
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
+            const SizedBox(width: 8),
             Text(
               '${percentage.toStringAsFixed(1)}%',
               style: TextStyle(
