@@ -835,7 +835,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/master-data/jenis-tempat-sampah"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "DEVELOPER", "PANITIA_TASKFORCE", "RW", "CAMAT", "LURAH", "PETUGAS_RESIDU", "MAHASISWA_KKN", "PIMPINAN", "WARGA"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER"]}>
               <MasterPresetTempatSampahPage />
             </ProtectedRoute>
           }
