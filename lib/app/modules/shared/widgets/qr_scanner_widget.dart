@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import 'package:flutter/services.dart';
@@ -225,121 +226,131 @@ class QrScannerWidgetState extends State<QrScannerWidget> {
       );
     }
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: AspectRatio(
-            aspectRatio: 1.0,
-            child: Stack(
-              children: [
-                // MobileScanner selalu ada di widget tree agar stream tidak putus
-                MobileScanner(
-                  controller: _controller!,
-                  onDetect: _onDetect,
-                  errorBuilder: (ctx, error, child) {
-                    if (error.errorCode ==
-                        MobileScannerErrorCode.permissionDenied) {
-                      return _buildDenied(permanent: true);
-                    }
-                    return Container(
-                      color: Colors.black,
-                      child: Center(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double maxW = constraints.maxWidth;
+        final double maxH =
+            constraints.maxHeight.isFinite ? constraints.maxHeight : maxW;
+        final double side = math.min(maxW, maxH);
+
+        return Center(
+          child: SizedBox(
+            width: side,
+            height: side,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Stack(
+                children: [
+                  // MobileScanner selalu ada di widget tree agar stream tidak putus
+                  MobileScanner(
+                    controller: _controller!,
+                    onDetect: _onDetect,
+                    errorBuilder: (ctx, error, child) {
+                      if (error.errorCode ==
+                          MobileScannerErrorCode.permissionDenied) {
+                        return _buildDenied(permanent: true);
+                      }
+                      return Container(
+                        color: Colors.black,
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.error_outline_rounded,
+                                color: AppColors.dangerRed,
+                                size: 36,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Error: ${error.errorDetails?.message ?? 'Kamera gagal'}',
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 12,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 12),
+                              TextButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _scanned = false;
+                                    _isProcessing = false;
+                                  });
+                                },
+                                child: const Text(
+                                  'Coba Lagi',
+                                  style: TextStyle(color: AppColors.primaryGreen),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  // Overlay frame
+                  CustomPaint(
+                    painter: _ScanOverlayPainter(color: frameColor),
+                    child: const SizedBox.expand(),
+                  ),
+                  // Flash button
+                  Positioned(
+                    top: 12,
+                    right: 12,
+                    child: _FlashButton(controller: _controller!),
+                  ),
+                  // Label
+                  const Positioned(
+                    bottom: 12,
+                    left: 8,
+                    right: 8,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        'Posisikan QR Code di dalam kotak',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                  // Konfirmasi QR terdeteksi ditaruh di paling atas
+                  if (_scanned)
+                    Container(
+                      color: Colors.black87,
+                      child: const Center(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(
-                              Icons.error_outline_rounded,
-                              color: AppColors.dangerRed,
-                              size: 36,
+                            Icon(
+                              Icons.check_circle_rounded,
+                              color: AppColors.primaryGreen,
+                              size: 56,
                             ),
-                            const SizedBox(height: 8),
+                            SizedBox(height: 8),
                             Text(
-                              'Error: ${error.errorDetails?.message ?? 'Kamera gagal'}',
-                              style: const TextStyle(
-                                color: Colors.white70,
-                                fontSize: 12,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 12),
-                            TextButton(
-                              onPressed: () {
-                                setState(() {
-                                  _scanned = false;
-                                  _isProcessing = false;
-                                });
-                              },
-                              child: const Text(
-                                'Coba Lagi',
-                                style: TextStyle(color: AppColors.primaryGreen),
+                              'QR Terdeteksi!',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ],
                         ),
                       ),
-                    );
-                  },
-                ),
-                // Overlay frame
-                CustomPaint(
-                  painter: _ScanOverlayPainter(color: frameColor),
-                  child: const SizedBox.expand(),
-                ),
-                // Flash button
-                Positioned(
-                  top: 12,
-                  right: 12,
-                  child: _FlashButton(controller: _controller!),
-                ),
-                // Label
-                const Positioned(
-                  bottom: 14,
-                  left: 0,
-                  right: 0,
-                  child: Text(
-                    'Posisikan QR Code di dalam kotak',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                // Konfirmasi QR terdeteksi ditaruh di paling atas
-                if (_scanned)
-                  Container(
-                    color: Colors.black87,
-                    child: const Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.check_circle_rounded,
-                            color: AppColors.primaryGreen,
-                            size: 56,
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            'QR Terdeteksi!',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
-      ],
+        );
+      },
     );
   }
 
@@ -585,7 +596,7 @@ class _ScanOverlayPainter extends CustomPainter {
           70; // Shifted up to give generous breathing room above label & bottom card
       scanRect = Rect.fromLTWH(left, top, boxSize, boxSize);
     } else {
-      const m = 48.0;
+      final double m = (w * 0.16).clamp(16.0, 48.0);
       scanRect = Rect.fromLTWH(m, m, w - m * 2, h - m * 2);
     }
 

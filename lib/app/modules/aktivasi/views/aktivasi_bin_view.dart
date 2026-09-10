@@ -499,6 +499,9 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
           SafeArea(
             top: false,
             child: Container(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.sizeOf(context).height * 0.58,
+              ),
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.only(
@@ -513,10 +516,13 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
                   ),
                 ],
               ),
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
-              child: _bothBinsDetected
-                  ? _buildDetectedContent()
-                  : _buildScanPrompt(),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+              child: SingleChildScrollView(
+                physics: const ClampingScrollPhysics(),
+                child: _bothBinsDetected
+                    ? _buildDetectedContent()
+                    : _buildScanPrompt(),
+              ),
             ),
           ),
         ],
@@ -866,12 +872,16 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
             ),
           ),
           const SizedBox(width: 8),
-          Text(
-            id,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+          Flexible(
+            child: Text(
+              id,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],

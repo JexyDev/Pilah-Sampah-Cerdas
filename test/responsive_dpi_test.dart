@@ -139,4 +139,135 @@ void main() {
     expect(find.text('Pengosongan'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('UkurKapasitas preset header and action bar render without overflow on extreme DPI (300x580)', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(300, 580);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.straighten_rounded, color: AppColors.primaryGreen, size: 20),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Ukuran Standar (Tinggal Pilih)',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Kecil ➔ Besar',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.grey.shade500),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          bottomNavigationBar: SafeArea(
+            top: false,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: SizedBox(
+                      height: 50,
+                      child: OutlinedButton(
+                        onPressed: () {},
+                        child: const FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text('Ubah bentuk'),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    flex: 3,
+                    child: SizedBox(
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: () {},
+                        child: const FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text('Simpan Tempat Sampah'),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pump();
+    expect(find.text('Ukuran Standar (Tinggal Pilih)'), findsOneWidget);
+    expect(find.text('Ubah bentuk'), findsOneWidget);
+    expect(find.text('Simpan Tempat Sampah'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('QrScannerWidget non-fullscreen layout scales cleanly without overflow in constrained height (200dp)', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(300, 580);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Column(
+            children: [
+              Expanded(
+                child: Center(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final double maxW = constraints.maxWidth;
+                      final double maxH = constraints.maxHeight.isFinite ? constraints.maxHeight : maxW;
+                      final double side = maxW < maxH ? maxW : maxH;
+                      return Center(
+                        child: SizedBox(
+                          width: side,
+                          height: side,
+                          child: Container(color: Colors.black),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              SafeArea(
+                top: false,
+                child: Container(
+                  height: 300,
+                  color: Colors.white,
+                  child: const Center(child: Text('Bottom Sheet')),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    await tester.pump();
+    expect(find.text('Bottom Sheet'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }

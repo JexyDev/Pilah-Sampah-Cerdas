@@ -504,12 +504,16 @@ class _VerifikasiPengosonganViewState extends ConsumerState<VerifikasiPengosonga
                         const Icon(Icons.qr_code_2_rounded, size: 18, color: AppColors.primaryGreen),
                         const SizedBox(width: 8),
                         const Text('Target QR: ', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                        Text(
-                          _targetBinCode.isNotEmpty ? _targetBinCode : 'Kode Terdaftar',
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
+                        Expanded(
+                          child: Text(
+                            _targetBinCode.isNotEmpty ? _targetBinCode : 'Kode Terdaftar',
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                         if (_rtRw.isNotEmpty) ...[
-                          const Spacer(),
+                          const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(

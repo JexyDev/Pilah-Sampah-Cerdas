@@ -449,7 +449,9 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
       builder: (context, child) {
         final mediaQuery = MediaQuery.of(context);
         final double width = mediaQuery.size.width;
-        final double fontScale = width < 330 ? 0.88 : (width < 360 ? 0.92 : 1.0);
+        final double fontScale = width < 300
+            ? 0.82
+            : (width < 330 ? 0.86 : (width < 360 ? 0.92 : 1.0));
 
         return MediaQuery(
           data: mediaQuery.copyWith(

@@ -477,7 +477,9 @@ class _WargaListItem extends StatelessWidget {
                         ),
                       ],
                       const SizedBox(height: 6),
-                      Row(
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
                         children: [
                           _StatBadge(
                             icon: Icons.check_circle_outline_rounded,
@@ -485,7 +487,6 @@ class _WargaListItem extends StatelessWidget {
                                 '${warga.correctPercentage.toStringAsFixed(0)}% benar',
                             color: AppColors.success,
                           ),
-                          const SizedBox(width: 8),
                           _StatBadge(
                             icon: Icons.list_alt_rounded,
                             label: '${warga.totalActivities} aktivitas',
