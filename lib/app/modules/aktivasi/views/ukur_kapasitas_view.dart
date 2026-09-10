@@ -891,8 +891,8 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
                 size: 20,
               ),
               const SizedBox(width: 8),
-              Expanded(
-                child: const Text(
+              const Expanded(
+                child: Text(
                   'Ukuran Standar',
                   style: TextStyle(
                     fontSize: 14,

@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
@@ -77,16 +76,7 @@ class _ScanTrialViewState extends ConsumerState<ScanTrialView> {
     }
   }
 
-  void _reset() {
-    ref.read(scanFlowProvider.notifier).reset();
-    setState(() {
-      _step = 0;
-      _capturedImagePath = '';
-      _photoTaken = false;
-      _aiResult = null;
-      _errorMessage = null;
-    });
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -418,7 +408,7 @@ class _ScanTrialViewState extends ConsumerState<ScanTrialView> {
                           });
                         }
                       } catch (e) {
-                        if (context.mounted) {
+                        if (mounted) {
                           ScaffoldMessenger.of(context).clearSnackBars();
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text('Gagal membuka galeri: $e')),
