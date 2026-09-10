@@ -804,8 +804,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             "PANITIA_TASKFORCE",
             "PIMPINAN",
             "PEMIMPIN",
-            "DPL",
-            "DOSEN_PEMBIMBING",
           ] as UserRole[],
         },
         {
