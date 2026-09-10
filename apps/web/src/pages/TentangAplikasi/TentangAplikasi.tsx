@@ -12,7 +12,6 @@ import {
   ShieldCheck,
   Server,
   Award,
-  Sparkles,
   Cpu,
   MapPin,
   GraduationCap,
@@ -721,7 +720,7 @@ const Informasi: React.FC = () => {
         {/* Header */}
         <div className="flex items-center gap-3 border-b border-slate-200/80 dark:border-slate-800 pb-3">
           <div className="w-8 h-8 rounded-xl bg-emerald-100 text-[#009966] flex items-center justify-center font-bold shrink-0">
-            <Sparkles size={16} />
+            <Info size={16} />
           </div>
           <div>
             <h2 className="text-base font-black text-slate-800 dark:text-slate-100">Tentang Aplikasi &amp; Informasi Versi</h2>
