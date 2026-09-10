@@ -9,6 +9,14 @@
 
 import { prisma } from "../lib/prisma.js";
 
+// Global safe serializer for PostgreSQL BigInt values (e.g. COUNT(*) results)
+if (typeof (BigInt.prototype as any).toJSON !== "function") {
+  (BigInt.prototype as any).toJSON = function () {
+    const intVal = Number(this);
+    return Number.isSafeInteger(intVal) ? intVal : this.toString();
+  };
+}
+
 export const systemAnalysisService = {
   /**
    * Sub-Sistem KKN: 5 Pilar Operasional
@@ -441,103 +449,256 @@ export const systemAnalysisService = {
 
   /**
    * AI Console Chat for System Analysis
-   * Strict scope: Kuliah Kerja Nyata (KKN) & Tata Kelola Sampah Berseka
+   * Autonomous Text-to-SQL Engine + Full Database Visibility
    */
-  async queryAiChat(prompt: string, contextType: "kkn" | "tata-kelola" = "kkn", kelompokId?: string) {
+  async queryAiChat(
+    prompt: string,
+    contextType: "kkn" | "tata-kelola" = "kkn",
+    kelompokId?: string,
+    history: Array<{ role: "user" | "assistant"; content: string }> = []
+  ) {
     const cleanPrompt = prompt.trim();
     if (!cleanPrompt) {
       throw new Error("Prompt pertanyaan tidak boleh kosong.");
     }
 
-    // TIER 1: Verifikasi Relevansi Domain (KKN & Tata Kelola Sampah Berseka)
-    // Longgar: Cukup verifikasi agar tidak menanyakan hal di luar konteks platform Berseka sama sekali.
-    const genericIrrelevant = [
-      "resep masakan", "lirik lagu", "chord gitar", "crypto", "bitcoin",
-      "main game", "film bioskop", "sepak bola liga", "zodiak", "ramalan"
-    ];
-
-    const lowerPrompt = cleanPrompt.toLowerCase();
-    const isExplicitlyIrrelevant = genericIrrelevant.some((kw) => lowerPrompt.includes(kw));
-
-    if (isExplicitlyIrrelevant) {
-      return {
-        reply: "Konsol Cerdas Berseka difokuskan untuk menganalisis data ekosistem Kuliah Kerja Nyata (KKN) dan Tata Kelola Sampah Berseka. Silakan ajukan pertanyaan seputar metrik mahasiswa, posko, kehadiran, fasilitas persampahan, pengangkutan, reduksi emisi, atau neraca material sirkular.",
-        isBlocked: true,
-        model: process.env.HUGGINGFACE_MODEL || "Qwen/Qwen2.5-Coder-32B-Instruct",
-      };
-    }
-
-    // TIER 2: Live Grounding Context Langsung dari Database
-    let contextSummary = "";
-    if (contextType === "kkn") {
-      const [kknData, totalKelompokCount, activeSchedulesToday, wasteBasic] = await Promise.all([
-        this.getKknAnalysis(kelompokId),
-        prisma.kelompokKkn.count(),
-        prisma.schedule.count(),
-        this.getWasteGovernanceAnalysis(),
-      ]);
-
-      const topKelompokStr = kknData.pilar5.top5Kelompok
-        .map((k, i) => `#${i + 1} ${k.nama} (Kelurahan: ${k.kelurahan}, Mahasiswa: ${k.totalMahasiswa}, Proker: ${k.prokerSelesai}/${k.totalProker}, Skor: ${k.skorKinerja})`)
-        .join("; ");
-
-      contextSummary = `
-[DATA AKTUAL DATABASE SISTEM KULIAH KERJA NYATA (KKN)]
-- Cakupan: ${totalKelompokCount} Kelompok KKN, ${kknData.pilar4.totalStudents} Mahasiswa Aktif.
-- Pilar 1 (Buku Harian/Logbook): Total ${kknData.pilar1.totalLogbook} entri buku harian tercatat (${kknData.pilar1.approvedLogbook} disetujui DPL, rasio verifikasi ${kknData.pilar1.verificationRate}%).
-- Pilar 2 (Presensi & Geofencing Posko): Dari ${activeSchedulesToday} jadwal kegiatan, tercatat ${kknData.pilar2.hadirCount} presensi (${kknData.pilar2.inZoneCount} di dalam radius aman geofence posko, ${kknData.pilar2.outZoneCount} di luar radius). Pengajuan izin: ${kknData.pilar2.izinCount} izin, ${kknData.pilar2.sakitCount} sakit. Tingkat kehadiran tepat waktu: ${kknData.pilar2.onTimeAttendanceRate}%. Kepatuhan radius posko: ${kknData.pilar2.geofenceComplianceRate}%.
-- Pilar 3 (Program Kerja): Total ${kknData.pilar3.totalProker} proker (${kknData.pilar3.breakdown.selesai} selesai, ${kknData.pilar3.breakdown.proses} sedang berjalan, ${kknData.pilar3.breakdown.belum} dalam persiapan/belum mulai). Rasio tuntas: ${kknData.pilar3.prokerCompletionRate}%.
-- Pilar 4 (Penilaian DPL): ${kknData.pilar4.evaluatedStudents} dari ${kknData.pilar4.totalStudents} mahasiswa tuntas dievaluasi (${kknData.pilar4.dplEvaluationRate}%).
-- Pilar 5 (Top Posko Berkinerja Tinggi): ${topKelompokStr}.
-
-[KORELASI DATA TATA KELOLA SAMPAH BERSEKA (CROSS-DOMAIN ACCESS)]
-- Total Sampah Masuk: ${wasteBasic.pilar3.totalSampahMasukKg.toLocaleString("id-ID")} kg (Organik: ${wasteBasic.pilar3.organikKg.toLocaleString("id-ID")} kg, Anorganik: ${wasteBasic.pilar3.anorganikKg.toLocaleString("id-ID")} kg).
-- Pemanfaatan Sirkular: ${wasteBasic.pilar3.totalSampahTerolahKg.toLocaleString("id-ID")} kg (${wasteBasic.pilar3.wasteUtilizationRate}%).
-- Fasilitas Aktif Terkelola: ${wasteBasic.pilar2.totalFasilitas} unit di seluruh wilayah intervensi.
-      `.trim();
-    } else {
-      const [wasteData, facilityTypeCounts, kknBasic] = await Promise.all([
-        this.getWasteGovernanceAnalysis(),
-        prisma.facility.groupBy({
-          by: ["jenis"],
-          _count: { id: true },
-        }),
-        this.getKknAnalysis(),
-      ]);
-
-      const facilityBreakdown = facilityTypeCounts
-        .map((f) => `${f.jenis}: ${f._count.id} unit`)
-        .join(", ");
-
-      contextSummary = `
-[DATA AKTUAL DATABASE SISTEM TATA KELOLA SAMPAH BERSEKA]
-- Pilar 1 (Partisipasi Warga): ${wasteData.pilar1.activeResidentCount} dari ${wasteData.pilar1.totalWarga} warga aktif memilah 30 hari terakhir (${wasteData.pilar1.activeResidentRatio}%). Indeks kepatuhan pilah: ${wasteData.pilar1.sortingComplianceIndex}%.
-- Pilar 2 (Infrastruktur Fasilitas & Tempat Sampah): Total ${wasteData.pilar2.totalFasilitas} fasilitas aktif (${facilityBreakdown}). Rata-rata latensi respon pengangkutan: ${wasteData.pilar2.avgPickupLatencyMinutes} menit. Status tempat sampah pintar: ${wasteData.pilar2.kritisitasTempatSampah.total} unit (${wasteData.pilar2.kritisitasTempatSampah.normal} normal, ${wasteData.pilar2.kritisitasTempatSampah.waspada} waspada, ${wasteData.pilar2.kritisitasTempatSampah.kritis} kritis butuh pengangkutan segera).
-- Pilar 3 (Neraca Material Sampah): Total ${wasteData.pilar3.totalSampahMasukKg.toLocaleString("id-ID")} kg sampah masuk (terdiri dari ${wasteData.pilar3.organikKg.toLocaleString("id-ID")} kg sampah Organik dan ${wasteData.pilar3.anorganikKg.toLocaleString("id-ID")} kg sampah Anorganik). Sampah terolah di fasilitas lokal: ${wasteData.pilar3.totalSampahTerolahKg.toLocaleString("id-ID")} kg. Rasio pemanfaatan sirkular (waste utilization rate): ${wasteData.pilar3.wasteUtilizationRate}%.
-- Pilar 4 (Dampak Keberlanjutan Triple Bottom Line): Monetisasi ekonomi sirkular Rp ${wasteData.pilar4.totalNilaiEkonomiRupiah.toLocaleString("id-ID")}. Reduksi emisi gas metana/karbon setara ${wasteData.pilar4.reduksiEmisiCo2Kg.toLocaleString("id-ID")} kg CO₂e (dari hasil pemilahan ${wasteData.pilar4.organikKg.toLocaleString("id-ID")} kg organik & ${wasteData.pilar4.anorganikKg.toLocaleString("id-ID")} kg anorganik). Indeks resiliensi komunitas: ${wasteData.pilar4.indeksKomunitas}/100.
-
-[KORELASI DATA KULIAH KERJA NYATA (CROSS-DOMAIN ACCESS)]
-- Dukungan KKN: ${kknBasic.pilar4.totalStudents} mahasiswa terbagi dalam 33 posko/kelompok.
-- Program Kerja Terealisasi: ${kknBasic.pilar3.breakdown.selesai} dari ${kknBasic.pilar3.totalProker} proker lingkungan tuntas diselesaikan.
-      `.trim();
-    }
-
     const hfToken = process.env.HUGGINGFACE_API_KEY;
     const hfModel = process.env.HUGGINGFACE_MODEL || "Qwen/Qwen2.5-Coder-32B-Instruct";
 
+    // ─── 1. TIER 1: SNAPSHOT DATA ENTITAS LENGKAP DARI DATABASE ───
+    let contextSummary = "";
+    let dplEntitySummary = "";
+    let wasteEntitySummary = "";
+
+    try {
+      if (contextType === "kkn" || true) {
+        // Tarik data 33 Kelompok KKN dan relasi DPL, Logbook, Mahasiswa, Penilaian
+        const [kknData, totalKelompokCount, activeSchedulesToday, wasteBasic, kelompokDplList] = await Promise.all([
+          this.getKknAnalysis(kelompokId),
+          prisma.kelompokKkn.count(),
+          prisma.schedule.count(),
+          this.getWasteGovernanceAnalysis(),
+          prisma.kelompokKkn.findMany({
+            select: {
+              name: true,
+              kelurahan: true,
+              dplNamaMentah: true,
+              dpl: { select: { id: true, name: true, nip: true, email: true } },
+              _count: {
+                select: {
+                  dplLogbooks: true,
+                  logbooks: true,
+                  students: true,
+                  penilaianMahasiswa: true,
+                },
+              },
+            },
+            orderBy: { name: "asc" },
+          }),
+        ]);
+
+        const dplBelumIsiLogbook = kelompokDplList
+          .filter((k) => k._count.dplLogbooks === 0)
+          .map((k) => `- ${k.dpl?.name || k.dplNamaMentah || "Belum Ditentukan"} (Posko: ${k.name}, Kelurahan: ${k.kelurahan || "-"}, Logbook DPL: 0, Mahasiswa: ${k._count.students})`);
+
+        const dplSudahIsiLogbook = kelompokDplList
+          .filter((k) => k._count.dplLogbooks > 0)
+          .map((k) => `- ${k.dpl?.name || k.dplNamaMentah || "Belum Ditentukan"} (Posko: ${k.name}, Kelurahan: ${k.kelurahan || "-"}, Logbook DPL: ${k._count.dplLogbooks})`);
+
+        const dplBelumInputNilai = kelompokDplList
+          .filter((k) => k._count.penilaianMahasiswa === 0 && k._count.students > 0)
+          .map((k) => `- ${k.dpl?.name || k.dplNamaMentah || "Belum Ditentukan"} (Posko: ${k.name}, Mahasiswa Dinilai: 0/${k._count.students})`);
+
+        dplEntitySummary = `
+[DETAIL ENTITAS DPL & KELOMPOK KKN (33 POSKO)]
+* DPL YANG BELUM MENGISI LOGBOOK BIMBINGAN SAMA SEKALI (${dplBelumIsiLogbook.length} DPL):
+${dplBelumIsiLogbook.length > 0 ? dplBelumIsiLogbook.join("\n") : "- Semua DPL telah mengisi logbook."}
+
+* DPL YANG SUDAH AKTIF MENGISI LOGBOOK BIMBINGAN (${dplSudahIsiLogbook.length} DPL):
+${dplSudahIsiLogbook.length > 0 ? dplSudahIsiLogbook.join("\n") : "- Belum ada DPL yang mengisi logbook."}
+
+* DPL YANG BELUM MENILAI MAHASISWA (${dplBelumInputNilai.length} DPL):
+${dplBelumInputNilai.length > 0 ? dplBelumInputNilai.join("\n") : "- Seluruh DPL telah menyelesaikan penilaian."}
+`.trim();
+
+        const topKelompokStr = kknData.pilar5.top5Kelompok
+          .map((k, i) => `#${i + 1} ${k.nama} (Kelurahan: ${k.kelurahan}, Mahasiswa: ${k.totalMahasiswa}, Proker: ${k.prokerSelesai}/${k.totalProker}, Skor: ${k.skorKinerja})`)
+          .join("; ");
+
+        contextSummary = `
+[DATA MAKRO DATABASE KKN BERSEKA]
+- Cakupan: ${totalKelompokCount} Kelompok KKN, ${kknData.pilar4.totalStudents} Mahasiswa Aktif.
+- Pilar 1 (Logbook Mahasiswa): Total ${kknData.pilar1.totalLogbook} entri buku harian tercatat (${kknData.pilar1.approvedLogbook} disetujui DPL, rasio verifikasi ${kknData.pilar1.verificationRate}%).
+- Pilar 2 (Presensi & Geofencing Posko): Dari ${activeSchedulesToday} jadwal kegiatan, tercatat ${kknData.pilar2.hadirCount} presensi (${kknData.pilar2.inZoneCount} di dalam radius aman geofence posko, ${kknData.pilar2.outZoneCount} di luar radius). Izin: ${kknData.pilar2.izinCount}, Sakit: ${kknData.pilar2.sakitCount}. Kehadiran tepat waktu: ${kknData.pilar2.onTimeAttendanceRate}%.
+- Pilar 3 (Program Kerja): Total ${kknData.pilar3.totalProker} proker (${kknData.pilar3.breakdown.selesai} selesai, ${kknData.pilar3.breakdown.proses} berjalan, ${kknData.pilar3.breakdown.belum} belum mulai). Rasio tuntas: ${kknData.pilar3.prokerCompletionRate}%.
+- Pilar 4 (Penilaian): ${kknData.pilar4.evaluatedStudents} dari ${kknData.pilar4.totalStudents} mahasiswa tuntas dievaluasi (${kknData.pilar4.dplEvaluationRate}%).
+- Pilar 5 (Top Posko): ${topKelompokStr}.
+
+${dplEntitySummary}
+
+[DATA TATA KELOLA SAMPAH BERSEKA]
+- Total Sampah Masuk: ${wasteBasic.pilar3.totalSampahMasukKg.toLocaleString("id-ID")} kg (Organik: ${wasteBasic.pilar3.organikKg.toLocaleString("id-ID")} kg, Anorganik: ${wasteBasic.pilar3.anorganikKg.toLocaleString("id-ID")} kg).
+- Pemanfaatan Sirkular: ${wasteBasic.pilar3.totalSampahTerolahKg.toLocaleString("id-ID")} kg (${wasteBasic.pilar3.wasteUtilizationRate}%).
+- Fasilitas Aktif Terkelola: ${wasteBasic.pilar2.totalFasilitas} unit di seluruh wilayah intervensi.
+        `.trim();
+      }
+
+      // Tarik juga tempat sampah aktif jika relevan
+      const binsKritis = await prisma.bin.findMany({
+        where: { status: { in: ["ACTIVE_BOUND", "PENDING_APPROVAL"] } },
+        select: {
+          qrCode: true,
+          status: true,
+          currentVolumeLiter: true,
+          maxCapacityLiter: true,
+          binType: true,
+          kelurahan: { select: { name: true } },
+          rw: { select: { name: true } },
+        },
+        take: 10,
+        orderBy: { currentVolumeLiter: "desc" },
+      });
+
+      if (binsKritis.length > 0) {
+        wasteEntitySummary = `\n\n[SAMPEL TEMPAT SAMPAH AKTIF / TERISI TINGGI]:\n` +
+          binsKritis.map((b) => {
+            const fillPct = Number(b.maxCapacityLiter) > 0 ? Math.round((Number(b.currentVolumeLiter) / Number(b.maxCapacityLiter)) * 100) : 0;
+            return `- ${b.qrCode} (Status: ${b.status}, Volume: ${b.currentVolumeLiter}/${b.maxCapacityLiter} L [${fillPct}%], Tipe: ${b.binType || "-"}, Kelurahan: ${b.kelurahan?.name || "-"} RW ${b.rw?.name || "-"})`;
+          }).join("\n");
+        contextSummary += wasteEntitySummary;
+      }
+    } catch (dbErr: any) {
+      console.warn("[AI Context Fetch Warning]:", dbErr?.message);
+    }
+
+    // ─── 2. TIER 2: AUTONOMOUS TEXT-TO-SQL ENGINE ───
+    let dynamicSqlResult: { sql?: string; rows?: any[]; error?: string } = {};
+
+    if (hfToken) {
+      try {
+        let historyContextText = "";
+        if (history && history.length > 0) {
+          const recentTurns = history.slice(-4);
+          historyContextText = `
+Riwayat percakapan sebelumnya:
+${recentTurns.map((h) => `${h.role === "user" ? "Pengguna" : "Asisten"}: ${h.content.slice(0, 300)}`).join("\n")}
+          `.trim();
+        }
+
+        const sqlGenPrompt = `
+Kamu adalah SQL Analyst PostgreSQL untuk sistem terintegrasi Berseka.
+Berikut daftar tabel utama dalam database PostgreSQL Berseka:
+1. pengguna (id UUID, nama TEXT, email TEXT, role TEXT ['DPL','DOSEN_PEMBIMBING','MAHASISWA','PIMPINAN','ADMIN_KKN','SUPER_ADMIN'], nip TEXT, prodi TEXT, telepon TEXT)
+2. kelompok_kkn (id UUID, nama TEXT, kelurahan TEXT, id_dpl UUID -> pengguna.id, dpl_nama_mentah TEXT)
+3. logbook_dpl (id UUID, id_dpl UUID -> pengguna.id, id_kelompok UUID -> kelompok_kkn.id, tanggal DATE, waktu_mulai TEXT, waktu_selesai TEXT, kategori TEXT, tempat TEXT, deskripsi TEXT, status TEXT, durasi_menit INT, pekan_ke INT)
+4. logbook_kkn (id UUID, id_penulis UUID -> pengguna.id, id_kelompok UUID -> kelompok_kkn.id, tanggal_kegiatan DATE, deskripsi TEXT, status_persetujuan TEXT ['MENUNGGU_PERSETUJUAN_KETUA','MENUNGGU_VERIFIKASI_DPL','DISETUJUI_DPL','DITOLAK_KETUA','PERLU_REVISI_DPL'], catatan_dpl TEXT, pekan_ke INT)
+5. mahasiswa_kkn (id UUID, nim TEXT, nama TEXT, id_kelompok UUID -> kelompok_kkn.id, program_studi TEXT, no_telepon TEXT)
+6. program_kerja_kkn (id UUID, id_kelompok UUID -> kelompok_kkn.id, judul TEXT, kategori TEXT, status_pelaksanaan TEXT, progress INT, deskripsi TEXT)
+7. penilaian_kkn_mahasiswa (id UUID, id_mahasiswa UUID -> mahasiswa_kkn.id, id_kelompok UUID -> kelompok_kkn.id, nilai_akhir DECIMAL)
+8. jadwal (id UUID, id_kelompok UUID -> kelompok_kkn.id, tanggal DATE, waktu_mulai TEXT, waktu_selesai TEXT, kegiatan TEXT)
+9. presensi_mandiri (id UUID, id_mahasiswa UUID -> mahasiswa_kkn.id, tanggal DATE, waktu_masuk TEXT, status_kehadiran TEXT, di_luar_radius BOOLEAN)
+10. tempat_sampah (id UUID, kode TEXT, id_kelurahan UUID, status TEXT ['NORMAL','WASPADA','KRITIS'], persentase_kepenuhan INT, kapasitas_liter INT, jenis_sampah TEXT)
+11. fasilitas (id UUID, nama TEXT, jenis TEXT, id_kelurahan UUID, status_operasional TEXT)
+12. pemanfaatan_sampah (id UUID, berat_kg DECIMAL, id_fasilitas UUID, jenis_sampah TEXT, nilai_ekonomi DECIMAL, tanggal DATE)
+13. kelurahan (id UUID, nama TEXT)
+14. rw (id INT, nomor TEXT, id_kelurahan UUID)
+
+${historyContextText ? `${historyContextText}\n\n` : ""}Tugasmu:
+Buat SATU query SQL PostgreSQL (hanya SELECT) untuk mengambil data spesifik guna menjawab pertanyaan terkini pengguna berikut:
+Pertanyaan: "${cleanPrompt}"
+
+Aturan:
+- Pahami konteks dari riwayat percakapan sebelumnya jika pertanyaan menggunakan kata ganti seperti "mereka", "dia", "posko tersebut", dsb.
+- HANYA keluarkan kode SQL SELECT saja, tanpa backtick, tanpa format markdown, tanpa kata pembuka/penutup.
+- Jangan gunakan INSERT, UPDATE, DELETE, DROP, ALTER, TRUNCATE, dsb.
+- Gunakan LIMIT 50.
+- Jika pertanyaan tidak memerlukan query SQL database (misal ucapan halo, terima kasih), jawab persis: NONE.
+        `.trim();
+
+        const sqlRes = await fetch("https://router.huggingface.co/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${hfToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: hfModel,
+            messages: [{ role: "user", content: sqlGenPrompt }],
+            max_tokens: 300,
+            temperature: 0.1,
+          }),
+        });
+
+        if (sqlRes.ok) {
+          const sqlJson = await sqlRes.json();
+          let rawSql = sqlJson.choices?.[0]?.message?.content?.trim() || "NONE";
+          rawSql = rawSql.replace(/```(?:sql)?/gi, "").replace(/```/g, "").trim();
+
+          // Validasi keamanan: hanya SELECT dan tanpa keyword berbahaya
+          const isSelect = /^select\b/i.test(rawSql);
+          const hasForbidden = /\b(insert|update|delete|drop|alter|create|truncate|grant|revoke|execute|copy)\b/i.test(rawSql);
+
+          if (isSelect && !hasForbidden && rawSql !== "NONE") {
+            try {
+              console.log("[AI Autonomous SQL Query]:", rawSql);
+              const rows: any = await prisma.$queryRawUnsafe(rawSql);
+              const safeSerialized = JSON.stringify(Array.isArray(rows) ? rows.slice(0, 50) : [rows], (_, v) =>
+                typeof v === "bigint" ? (Number.isSafeInteger(Number(v)) ? Number(v) : v.toString()) : v
+              );
+              dynamicSqlResult = {
+                sql: rawSql,
+                rows: JSON.parse(safeSerialized),
+              };
+            } catch (queryErr: any) {
+              console.warn("[AI SQL Execution Warning]:", queryErr.message);
+              dynamicSqlResult = { sql: rawSql, error: queryErr.message };
+            }
+          }
+        }
+      } catch (sqlAgentErr: any) {
+        console.warn("[AI Text-to-SQL Agent Warning]:", sqlAgentErr.message);
+      }
+    }
+
+    // ─── 3. TIER 3: FINAL SYNTHESIS GROUNDING ───
+    let sqlContextText = "";
+    if (dynamicSqlResult.rows && dynamicSqlResult.rows.length > 0) {
+      const formattedRows = JSON.stringify(dynamicSqlResult.rows, (_, v) =>
+        typeof v === "bigint" ? (Number.isSafeInteger(Number(v)) ? Number(v) : v.toString()) : v,
+        2
+      );
+      sqlContextText = `
+[HASIL QUERY DATABASE OTOMATIS BERDASARKAN PERTANYAAN USER]
+Query SQL: ${dynamicSqlResult.sql}
+Data Hasil Query (${dynamicSqlResult.rows.length} baris):
+${formattedRows}
+      `.trim();
+    }
+
     const systemInstruction = `
-Kamu adalah BERSEKA AI, asisten analitik cerdas resmi sistem terintegrasi Berseka (Bersih, Sehat, Kampung Asri).
-Tugasmu: Menjawab pertanyaan pengguna secara ringkas, faktual, profesional, berbasis data nyata database sistem yang disediakan di bawah.
-ATURAN KETAT:
-1. Hanya bahas data dan ekosistem Kuliah Kerja Nyata dan Tata Kelola Sampah Berseka. Tolak topik di luar ini.
-2. Gunakan Bahasa Indonesia baku yang lugas dan berstandar KBBI/EYD V.
-3. Rujuk fakta angka dari data aktual sistem di bawah ini. Jangan mengarang data angka.
-4. Maksimal 3-4 paragraf singkat atau poin-poin padat.
+Kamu adalah BERSEKA AI, Asisten Analitik Cerdas dan Konsol Eksekutif resmi sistem terintegrasi Berseka (Bersih, Sehat, Kampung Asri).
+Kamu memiliki visibilitas dan akses PENUH ke seluruh database sistem (KKN, DPL, Mahasiswa, Logbook, Program Kerja, Presensi, Fasilitas, Tempat Sampah, dan Tata Kelola Sampah).
+
+PRINSIP & ATURAN KERJA:
+1. SEMUA pertanyaan pengguna harus dijawab secara tuntas, informatif, dan solutif. Tidak ada sensor atau penolakan topik selama dapat dijawab dengan data sistem.
+2. Ketika pengguna (khususnya Pimpinan/Eksekutif) menanyakan "siapa" atau meminta daftar pihak yang belum/sudah menyelesaikan kewajiban (seperti DPL yang belum mengisi logbook, DPL yang belum memverifikasi logbook mahasiswa, DPL yang belum input nilai, mahasiswa alpa, dsb), SEBUTKAN NAMA-NAMA INDIVIDU, DOSEN, POSKO, DAN KELURAHAN SECARA JELAS DAN TRANSPARAN berdasarkan data di bawah.
+3. Ingat konteks dari percakapan sebelumnya untuk menjawab pertanyaan lanjutan secara konsisten.
+4. Gunakan Bahasa Indonesia yang sopan, lugas, profesional, dan berbobot eksekutif.
+5. Sajikan jawaban dalam bentuk ringkasan eksekutif, diikuti poin-poin daftar nama/data yang rapi.
 
 ${contextSummary}
+
+${sqlContextText}
     `.trim();
 
     try {
+      const sanitizedHistory = (history || [])
+        .slice(-8)
+        .map((h) => ({
+          role: h.role,
+          content: h.content,
+        }));
+
       const response = await fetch("https://router.huggingface.co/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -548,10 +709,11 @@ ${contextSummary}
           model: hfModel,
           messages: [
             { role: "system", content: systemInstruction },
+            ...sanitizedHistory,
             { role: "user", content: cleanPrompt },
           ],
-          max_tokens: 500,
-          temperature: 0.3,
+          max_tokens: 1500,
+          temperature: 0.2,
         }),
       });
 
@@ -570,16 +732,18 @@ ${contextSummary}
         reply: assistantMessage,
         isBlocked: false,
         model: "BERSEKA AI",
+        sqlExecuted: dynamicSqlResult.sql || null,
       };
     } catch (apiError: any) {
       console.warn("[HF Fallback triggered]:", apiError?.message);
-      // Fallback response jika ada kendala jaringan eksternal
+      // Fallback response jika inferensi eksternal terkendala
       return {
-        reply: `Berdasarkan ringkasan data aktual sistem Berseka:\n${contextSummary}\n\n(Catatan: Layanan inferensi eksternal sedang mengalami latensi tinggi, tanggapan disajikan berdasarkan kompilasi data langsung dari server).`,
+        reply: `Berdasarkan penelusuran data langsung dari database Berseka:\n\n${dplEntitySummary || contextSummary}\n\n(Catatan: Tanggapan disajikan langsung dari kompilasi database server Berseka).`,
         isBlocked: false,
         model: "BERSEKA AI",
       };
     }
   },
 };
+
 
