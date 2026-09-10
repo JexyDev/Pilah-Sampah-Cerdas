@@ -203,16 +203,31 @@ jobs:
             VPS_PASS="$PROD_PASS"
           fi
 
-          echo "Uploading $APK_FILE to $VPS_HOST as $APK_NAME..."
-          sshpass -p "$VPS_PASS" scp -o StrictHostKeyChecking=no "$APK_FILE" "$VPS_USER@$VPS_HOST:$APK_NAME"
+          echo "Uploading $APK_FILE to $VPS_HOST as /tmp/$APK_NAME..."
+          if ! sshpass -p "$VPS_PASS" scp -O -o StrictHostKeyChecking=no -o ConnectTimeout=60 "$APK_FILE" "$VPS_USER@$VPS_HOST:/tmp/$APK_NAME"; then
+            echo "SCP failed, trying direct SSH stream..."
+            sshpass -p "$VPS_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=60 "$VPS_USER@$VPS_HOST" "cat > /tmp/$APK_NAME" < "$APK_FILE"
+          fi
 
-          sshpass -p "$VPS_PASS" ssh -T -o StrictHostKeyChecking=no "$VPS_USER@$VPS_HOST" "VPS_PASS='$VPS_PASS' APK_NAME='$APK_NAME' DEST_DIR='$DEST_DIR' bash -s" << 'EOF'
+          sshpass -p "$VPS_PASS" ssh -T -o StrictHostKeyChecking=no -o ConnectTimeout=30 "$VPS_USER@$VPS_HOST" "VPS_PASS='$VPS_PASS' APK_NAME='$APK_NAME' DEST_DIR='$DEST_DIR' bash -s" << 'EOF'
             set -e
-            TMP_APK="$HOME/$APK_NAME"
+            TMP_APK="/tmp/$APK_NAME"
+            if [ ! -f "$TMP_APK" ] && [ -f "$HOME/$APK_NAME" ]; then
+              TMP_APK="$HOME/$APK_NAME"
+            fi
+
+            if [ ! -f "$TMP_APK" ]; then
+              echo "Error: APK file not found at /tmp/$APK_NAME or $HOME/$APK_NAME"
+              ls -la /tmp/ 2>/dev/null | grep -i apk || true
+              ls -la "$HOME" 2>/dev/null | grep -i apk || true
+              exit 1
+            fi
+
             echo "=== Deploying APK to $DEST_DIR ==="
-            sudo mkdir -p "$DEST_DIR"
-            sudo cp "$TMP_APK" "$DEST_DIR/$APK_NAME"
-            sudo chmod 644 "$DEST_DIR/$APK_NAME"
+            echo "$VPS_PASS" | sudo -S mkdir -p "$DEST_DIR"
+            echo "$VPS_PASS" | sudo -S cp "$TMP_APK" "$DEST_DIR/$APK_NAME"
+            echo "$VPS_PASS" | sudo -S chmod 644 "$DEST_DIR/$APK_NAME"
             rm -f "$TMP_APK"
             echo "APK successfully published to $DEST_DIR/$APK_NAME"
+            ls -lh "$DEST_DIR/$APK_NAME"
           EOF
