@@ -809,17 +809,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           ] as UserRole[],
         },
         {
-          to: "/dasbor?tab=kkn",
-          icon: GraduationCap,
-          label: "Dasbor Eksekutif KKN",
-          allowed: [
-            "DEVELOPER",
-            "SUPER_USER",
-            "ADMIN_DLH",
-            "PANITIA_TASKFORCE",
-          ] as UserRole[],
-        },
-        {
           type: "group",
           label: "Pelaksanaan",
           icon: Briefcase,
