@@ -92,6 +92,14 @@ const checkRouteActive = (
     const tempatSampahAliases = ["/monitoring-pengelolaan/tempat-sampah", "/master-data/manajemen-tempat-sampah"];
     if (tempatSampahAliases.includes(tPath) && tempatSampahAliases.includes(cPath)) return true;
 
+    const jenisTempatSampahAliases = [
+      "/master-data/jenis-tempat-sampah",
+      "/master-data/preset-tempat-sampah",
+      "/jenis-tempat-sampah",
+      "/preset-tempat-sampah",
+    ];
+    if (jenisTempatSampahAliases.includes(tPath) && jenisTempatSampahAliases.includes(cPath)) return true;
+
     const penyetoranAliases = ["/monitoring-pemilahan/penyetoran-sampah", "/penyetoran-sampah", "/setor-sampah", "/setor"];
     if (penyetoranAliases.includes(tPath) && penyetoranAliases.includes(cPath)) return true;
 
@@ -1495,6 +1503,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             { to: "/wilayah/kelurahan", label: "Kelurahan" },
             { to: "/wilayah/rw", label: "Rukun Warga" },
           ],
+        },
+        {
+          to: "/master-data/jenis-tempat-sampah",
+          icon: Trash2,
+          label: "Jenis Tempat Sampah",
+          allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE", "RW"] as UserRole[],
         },
         {
           type: "group",
