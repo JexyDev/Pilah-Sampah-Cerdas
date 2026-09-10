@@ -43,7 +43,7 @@ export const systemAnalysisController = {
 
   async queryAiChat(req: Request, res: Response) {
     try {
-      const { prompt, contextType, kelompokId } = req.body;
+      const { prompt, contextType, kelompokId, history } = req.body;
       if (!prompt || typeof prompt !== "string") {
         return res.status(400).json({
           status: "error",
@@ -51,10 +51,17 @@ export const systemAnalysisController = {
         });
       }
 
+      const validHistory = Array.isArray(history)
+        ? history
+            .filter((item) => item && (item.role === "user" || item.role === "assistant") && typeof item.content === "string")
+            .map((item) => ({ role: item.role as "user" | "assistant", content: String(item.content) }))
+        : [];
+
       const result = await systemAnalysisService.queryAiChat(
         prompt,
         contextType === "tata-kelola" ? "tata-kelola" : "kkn",
-        kelompokId ? String(kelompokId) : undefined
+        kelompokId ? String(kelompokId) : undefined,
+        validHistory
       );
 
       return res.status(200).json({

@@ -89,11 +89,20 @@ export const AiConsoleChat: React.FC<AiConsoleChatProps> = ({ contextType, kelom
     setInputPrompt("");
     setLoading(true);
 
+    const chatHistory = messages
+      .filter((m) => m.id !== "welcome" && !m.isBlocked && m.text)
+      .slice(-8)
+      .map((m) => ({
+        role: m.sender === "user" ? "user" : "assistant",
+        content: m.text,
+      }));
+
     try {
       const response = await api.post("/analisis-sistem/chat", {
         prompt: textToSend,
         contextType,
         kelompokId: kelompokId || undefined,
+        history: chatHistory,
       });
 
       const resData = response.data?.data;
