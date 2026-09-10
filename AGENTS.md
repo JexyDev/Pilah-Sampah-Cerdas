@@ -28,24 +28,26 @@
 Setiap build aplikasi Android ditangani otomatis oleh GitHub Actions Pipeline:
 
 ### 1. Lingkungan & Server Target
-| Lingkungan | Target API URL | Output Nama APK | Lokasi Download |
-|---|---|---|---|
-| **Lokal (Dev)** | `http://localhost:3000` atau IP LAN | Build lokal debug | Di perangkat dev |
-| **Staging** | `https://staging.berseka.id` | `berseka-staging-arm64-v8a.apk` | `https://staging.berseka.id/downloads/berseka-staging-arm64-v8a.apk` |
-| **Production** | `https://berseka.id` | `berseka-release-arm64-v8a.apk` | `https://berseka.id/downloads/berseka-release-arm64-v8a.apk` |
 
-### 2. Prosedur Build APK Staging untuk QA/Testing
+| Lingkungan | Web Dashboard | API Base URL | Download APK |
+|---|---|---|---|
+| **Staging** | `https://staging.berseka.id` | `https://staging.berseka.id/api/v1` | `https://staging.berseka.id/downloads/berseka-staging-arm64-v8a.apk` |
+| **Production** | `https://berseka.id` | `https://berseka.id/api/v1` | `https://berseka.id/downloads/berseka-release-arm64-v8a.apk` |
+
+### 2. Prosedur Build APK Staging untuk QA/Testing (Khusus Staging)
 1. Buka tab **Actions** di GitHub repository.
 2. Pilih workflow **"BERSEKA Mobile — CI/CD Pipeline"**.
 3. Klik **Run workflow**:
-   - Branch: `mobile`
+   - Pilih branch: `mobile`
    - Target Environment: pilih **`staging`**
-4. CI akan mengompilasi APK dengan `--dart-define=API_BASE_URL=https://staging.berseka.id` dan mengunggahnya ke server staging.
-5. Tim QA/QC langsung mengunduh dan menguji APK tanpa risiko merusak database produksi.
+4. CI akan build APK dengan endpoint `https://staging.berseka.id`.
+5. Selesai build, APK otomatis terunggah dan bisa langsung diunduh tim QA di:
+   - `https://staging.berseka.id/downloads/berseka-staging-arm64-v8a.apk`
 
-### 3. Prosedur Rilis APK Production
-- Jalankan workflow dengan Target Environment **`production`** (atau push commit ke branch `mobile`).
-- APK otomatis terpasang ke halaman download `https://berseka.id`.
+### 3. Prosedur Rilis Production
+- Jalankan workflow yang sama dengan Target **`production`** (atau push langsung ke branch `mobile`).
+- APK production menembak `https://berseka.id` dan otomatis terunggah ke:
+  - `https://berseka.id/downloads/berseka-release-arm64-v8a.apk`
 
 ---
 

@@ -14,6 +14,7 @@ import '../modules/auth/views/forgot_password_view.dart';
 import '../modules/onboarding/views/onboarding_view.dart';
 import '../modules/dashboard/dashboard_view.dart';
 import '../modules/scan/views/scan_flow_view.dart';
+import '../modules/scan/views/scan_trial_view.dart';
 import '../modules/aktivasi/views/aktivasi_bin_view.dart';
 import '../modules/aktivasi/views/ukur_kapasitas_view.dart';
 import '../modules/mahasiswa/views/aktivasi_warga_view.dart';
@@ -105,6 +106,8 @@ class AppPages {
         return _buildRoute(const CatatPanenView(), settings);
       case AppRoutes.scan:
         return _buildRoute(const ScanFlowView(), settings);
+      case AppRoutes.scanTrial:
+        return _buildRoute(const ScanTrialView(), settings);
       case AppRoutes.aktivasiBin:
         return _buildRoute(const AktivasiBinView(), settings);
       case AppRoutes.ukurKapasitas:

@@ -1,5 +1,6 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
@@ -85,6 +86,7 @@ class LocalNotificationService {
     required int hour,
     required int minute,
   }) async {
+    if (kIsWeb || (!Platform.isAndroid && !Platform.isIOS)) return;
     final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
     tz.TZDateTime scheduledDate = tz.TZDateTime(
       tz.local,

@@ -53,6 +53,38 @@ class PoinView extends ConsumerWidget {
                   _buildScheduleStatusCard(),
                   const SizedBox(height: 20),
 
+                  // Info Poin card
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryGreen.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppColors.primaryGreen.withValues(alpha: 0.2),
+                      ),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(
+                          Icons.info_rounded,
+                          color: AppColors.primaryGreen,
+                          size: 18,
+                        ),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Poin akan Anda dapatkan setelah menyetor sampah menggunakan tempat sampah yang sesuai.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.primaryGreen,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
                   // ─── Riwayat Poin ───────────────────────────────────
                   const Text(
                     'Riwayat Poin',
@@ -100,37 +132,6 @@ class PoinView extends ConsumerWidget {
                     ),
                   ),
 
-                  const SizedBox(height: 16),
-                  // Info Poin card
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryGreen.withValues(alpha: 0.06),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: AppColors.primaryGreen.withValues(alpha: 0.2),
-                      ),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(
-                          Icons.info_rounded,
-                          color: AppColors.primaryGreen,
-                          size: 18,
-                        ),
-                        SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            'Poin akan Anda dapatkan setelah menyetor sampah menggunakan tempat sampah yang sesuai.',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.primaryGreen,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                   const SizedBox(height: 80),
                 ]),
               ),

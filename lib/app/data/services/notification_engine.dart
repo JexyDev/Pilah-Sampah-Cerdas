@@ -83,6 +83,7 @@ class NotificationEngine {
   }
 
   Future<void> scheduleRoleBasedNotifications(String roleName) async {
+    if (kIsWeb || (!Platform.isAndroid && !Platform.isIOS)) return;
     try {
       await _flutterLocalNotificationsPlugin.cancel(id: 1);
       await _flutterLocalNotificationsPlugin.cancel(id: 2);

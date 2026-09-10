@@ -351,7 +351,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
             ),
             const SizedBox(height: AppDimensions.md),
             Text(
-              'Anda belum memiliki tempat sampah terdaftar.',
+              'Anda belum bergabung dengan Komunitas Berseka.',
               style: Theme.of(context).textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),
