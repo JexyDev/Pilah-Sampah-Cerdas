@@ -378,10 +378,10 @@ export const LeaderboardWidget: React.FC<LeaderboardWidgetProps> = ({ mode = "al
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         
         {/* Chart 1: Kepatuhan Pemilahan */}
-        <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-xs space-y-4">
-          <div className="flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-xs flex flex-col justify-between">
+          <div className="flex items-start justify-between gap-3 min-h-[58px]">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-xs">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-xs shrink-0">
                 <span className="material-symbols-outlined text-xl">bar_chart</span>
               </div>
               <div>
@@ -398,63 +398,70 @@ export const LeaderboardWidget: React.FC<LeaderboardWidgetProps> = ({ mode = "al
               </div>
             </div>
 
-            <div className="px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-700/30 text-emerald-800 dark:text-emerald-300 text-xs font-black flex items-center gap-1">
+            <div className="px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-700/30 text-emerald-800 dark:text-emerald-300 text-xs font-black flex items-center gap-1.5 shrink-0 self-start">
               <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase">Status</span>
               <span className="text-emerald-700 dark:text-emerald-300">Terverifikasi Real</span>
             </div>
           </div>
 
           {/* Bar Chart Area */}
-          <div className="pt-4 flex gap-2 items-end">
-            <div className="flex flex-col justify-between text-[9px] text-slate-400 dark:text-slate-500 font-extrabold pr-1.5 border-r border-slate-200 dark:border-slate-800 h-40 text-right select-none shrink-0 pb-5">
-              <span>100%</span>
-              <span>80%</span>
-              <span>60%</span>
-              <span>40%</span>
-              <span>20%</span>
-              <span>0%</span>
+          <div className="pt-6 mt-auto space-y-2">
+            <div className="flex gap-2 items-end">
+              <div className="w-12 shrink-0 flex flex-col justify-between text-[9px] text-slate-400 dark:text-slate-500 font-extrabold pr-2 border-r border-slate-200 dark:border-slate-800 h-40 text-right select-none pb-5">
+                <span>100%</span>
+                <span>80%</span>
+                <span>60%</span>
+                <span>40%</span>
+                <span>20%</span>
+                <span>0%</span>
+              </div>
+
+              <div
+                className="flex-1 grid gap-2 items-end h-40 border-b border-slate-200 dark:border-slate-800 pb-1 relative"
+                style={{ gridTemplateColumns: `repeat(${chartColCount}, minmax(0, 1fr))` }}
+              >
+                {activeChartData.map((d, idx) => {
+                  const valPct = d.points > 0 ? Math.min(100, Math.round(d.points)) : 0;
+                  return (
+                    <div key={idx} className="flex flex-col items-center gap-1 group h-full justify-end">
+                      <span className="text-[10px] font-black text-slate-800 dark:text-slate-200 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition truncate w-full text-center">
+                        {valPct}%
+                      </span>
+                      <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-t-lg overflow-hidden h-[80%] flex items-end">
+                        <div
+                          className="w-full bg-gradient-to-t from-emerald-700 to-emerald-500 rounded-t-lg transition-all duration-500 shadow-2xs"
+                          style={{ height: `${valPct}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
             <div
-              className="flex-1 grid gap-2 items-end h-40 border-b border-slate-200 dark:border-slate-800 pb-1 relative"
-              style={{ gridTemplateColumns: `repeat(${chartColCount}, minmax(0, 1fr))` }}
+              className="flex gap-2"
             >
-              {activeChartData.map((d, idx) => {
-                const valPct = d.points > 0 ? Math.min(100, Math.round(d.points)) : 0;
-                return (
-                  <div key={idx} className="flex flex-col items-center gap-1 group h-full justify-end">
-                    <span className="text-[10px] font-black text-slate-800 dark:text-slate-200 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition truncate w-full text-center">
-                      {valPct}%
-                    </span>
-                    <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-t-lg overflow-hidden h-[80%] flex items-end">
-                      <div
-                        className="w-full bg-gradient-to-t from-emerald-700 to-emerald-500 rounded-t-lg transition-all duration-500 shadow-2xs"
-                        style={{ height: `${valPct}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                );
-              })}
+              <div className="w-12 shrink-0" />
+              <div
+                className="flex-1 grid gap-2 text-center"
+                style={{ gridTemplateColumns: `repeat(${chartColCount}, minmax(0, 1fr))` }}
+              >
+                {activeChartData.map((item, idx) => (
+                  <span key={idx} className="text-[9px] sm:text-[10px] font-extrabold text-slate-600 dark:text-slate-400 truncate block w-full" title={item.name}>
+                    {item.name}
+                  </span>
+                ))}
+              </div>
             </div>
-          </div>
-
-          <div
-            className="grid gap-2 pl-9 text-center"
-            style={{ gridTemplateColumns: `repeat(${chartColCount}, minmax(0, 1fr))` }}
-          >
-            {activeChartData.map((item, idx) => (
-              <span key={idx} className="text-[9px] sm:text-[10px] font-extrabold text-slate-600 dark:text-slate-400 truncate" title={item.name}>
-                {item.name}
-              </span>
-            ))}
           </div>
         </div>
 
         {/* Chart 2: Volume Sampah */}
-        <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-xs space-y-4">
-          <div className="flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-xs flex flex-col justify-between">
+          <div className="flex items-start justify-between gap-3 min-h-[58px]">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-sky-600 text-white flex items-center justify-center shadow-xs">
+              <div className="w-10 h-10 rounded-2xl bg-sky-600 text-white flex items-center justify-center shadow-xs shrink-0">
                 <span className="material-symbols-outlined text-xl">delete</span>
               </div>
               <div>
@@ -471,7 +478,7 @@ export const LeaderboardWidget: React.FC<LeaderboardWidgetProps> = ({ mode = "al
               </div>
             </div>
 
-            <div className="px-3 py-1 rounded-full bg-sky-50 dark:bg-sky-950/60 border border-sky-200 dark:border-sky-700/30 text-sky-800 dark:text-sky-300 text-xs font-black flex items-center gap-1">
+            <div className="px-3 py-1.5 rounded-full bg-sky-50 dark:bg-sky-950/60 border border-sky-200 dark:border-sky-700/30 text-sky-800 dark:text-sky-300 text-xs font-black flex items-center gap-1.5 shrink-0 self-start">
               <span className="text-[10px] text-sky-600 dark:text-sky-400 font-bold uppercase">Total</span>
               <span className="text-sky-700 dark:text-sky-300">
                 {activeChartData.reduce((acc, k) => acc + (k.points || 0), 0).toFixed(2)} Kg
@@ -480,48 +487,55 @@ export const LeaderboardWidget: React.FC<LeaderboardWidgetProps> = ({ mode = "al
           </div>
 
           {/* Bar Chart Area */}
-          <div className="pt-4 flex gap-2 items-end">
-            <div className="flex flex-col justify-between text-[9px] text-slate-400 dark:text-slate-500 font-extrabold pr-1.5 border-r border-slate-200 dark:border-slate-800 h-40 text-right select-none shrink-0 pb-5">
-              <span>{maxVolumeKg.toFixed(0)} Kg</span>
-              <span>{(maxVolumeKg * 0.8).toFixed(0)}</span>
-              <span>{(maxVolumeKg * 0.6).toFixed(0)}</span>
-              <span>{(maxVolumeKg * 0.4).toFixed(0)}</span>
-              <span>{(maxVolumeKg * 0.2).toFixed(0)}</span>
-              <span>0</span>
+          <div className="pt-6 mt-auto space-y-2">
+            <div className="flex gap-2 items-end">
+              <div className="w-12 shrink-0 flex flex-col justify-between text-[9px] text-slate-400 dark:text-slate-500 font-extrabold pr-2 border-r border-slate-200 dark:border-slate-800 h-40 text-right select-none pb-5">
+                <span>{maxVolumeKg.toFixed(0)} Kg</span>
+                <span>{(maxVolumeKg * 0.8).toFixed(0)}</span>
+                <span>{(maxVolumeKg * 0.6).toFixed(0)}</span>
+                <span>{(maxVolumeKg * 0.4).toFixed(0)}</span>
+                <span>{(maxVolumeKg * 0.2).toFixed(0)}</span>
+                <span>0</span>
+              </div>
+
+              <div
+                className="flex-1 grid gap-2 items-end h-40 border-b border-slate-200 dark:border-slate-800 pb-1 relative"
+                style={{ gridTemplateColumns: `repeat(${chartColCount}, minmax(0, 1fr))` }}
+              >
+                {activeChartData.map((d, idx) => {
+                  const heightPct = d.points > 0 ? Math.min(100, Math.round((d.points / maxVolumeKg) * 100)) : 0;
+                  return (
+                    <div key={idx} className="flex flex-col items-center gap-1 group h-full justify-end">
+                      <span className="text-[10px] font-black text-slate-800 dark:text-slate-200 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition truncate w-full text-center">
+                        {(d.points || 0).toFixed(2)} Kg
+                      </span>
+                      <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-t-lg overflow-hidden h-[80%] flex items-end">
+                        <div
+                          className="w-full bg-gradient-to-t from-sky-700 to-sky-500 rounded-t-lg transition-all duration-500 shadow-2xs"
+                          style={{ height: `${heightPct}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
             <div
-              className="flex-1 grid gap-2 items-end h-40 border-b border-slate-200 dark:border-slate-800 pb-1 relative"
-              style={{ gridTemplateColumns: `repeat(${chartColCount}, minmax(0, 1fr))` }}
+              className="flex gap-2"
             >
-              {activeChartData.map((d, idx) => {
-                const heightPct = d.points > 0 ? Math.min(100, Math.round((d.points / maxVolumeKg) * 100)) : 0;
-                return (
-                  <div key={idx} className="flex flex-col items-center gap-1 group h-full justify-end">
-                    <span className="text-[10px] font-black text-slate-800 dark:text-slate-200 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition truncate w-full text-center">
-                      {(d.points || 0).toFixed(2)} Kg
-                    </span>
-                    <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-t-lg overflow-hidden h-[80%] flex items-end">
-                      <div
-                        className="w-full bg-gradient-to-t from-sky-700 to-sky-500 rounded-t-lg transition-all duration-500 shadow-2xs"
-                        style={{ height: `${heightPct}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                );
-              })}
+              <div className="w-12 shrink-0" />
+              <div
+                className="flex-1 grid gap-2 text-center"
+                style={{ gridTemplateColumns: `repeat(${chartColCount}, minmax(0, 1fr))` }}
+              >
+                {activeChartData.map((item, idx) => (
+                  <span key={idx} className="text-[9px] sm:text-[10px] font-extrabold text-slate-600 dark:text-slate-400 truncate block w-full" title={item.name}>
+                    {item.name}
+                  </span>
+                ))}
+              </div>
             </div>
-          </div>
-
-          <div
-            className="grid gap-2 pl-9 text-center"
-            style={{ gridTemplateColumns: `repeat(${chartColCount}, minmax(0, 1fr))` }}
-          >
-            {activeChartData.map((item, idx) => (
-              <span key={idx} className="text-[9px] sm:text-[10px] font-extrabold text-slate-600 dark:text-slate-400 truncate" title={item.name}>
-                {item.name}
-              </span>
-            ))}
           </div>
         </div>
 
