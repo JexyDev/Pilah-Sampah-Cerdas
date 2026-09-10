@@ -2736,20 +2736,24 @@ const Dashboard: React.FC = () => {
                             >
                               <Eye size={15} />
                             </button>
-                            <button
-                              onClick={() => navigate(`/monitoring-pengelolaan/tempat-sampah?edit=${bin.id || bin.kode}`)}
-                              className="p-1.5 text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-colors cursor-pointer"
-                              title="Edit Tempat Sampah"
-                            >
-                              <Pencil size={15} />
-                            </button>
-                            <button
-                              onClick={() => setDeleteBinConfirm(bin)}
-                              className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
-                              title="Hapus Tempat Sampah"
-                            >
-                              <Trash2 size={15} />
-                            </button>
+                            {!isPimpinan && (
+                              <>
+                                <button
+                                  onClick={() => navigate(`/monitoring-pengelolaan/tempat-sampah?edit=${bin.id || bin.kode}`)}
+                                  className="p-1.5 text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-colors cursor-pointer"
+                                  title="Edit Tempat Sampah"
+                                >
+                                  <Pencil size={15} />
+                                </button>
+                                <button
+                                  onClick={() => setDeleteBinConfirm(bin)}
+                                  className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
+                                  title="Hapus Tempat Sampah"
+                                >
+                                  <Trash2 size={15} />
+                                </button>
+                              </>
+                            )}
                           </div>
                         </td>
                       </tr>
