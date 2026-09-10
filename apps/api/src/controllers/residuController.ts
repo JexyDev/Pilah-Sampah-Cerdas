@@ -33,20 +33,51 @@ export class ResiduController {
         return;
       }
 
+      const petugasUserId = req.user.userId;
+
+      // Scoping otomatis berdasarkan penugasan RW Petugas Residu (Token -> Profil User -> Relasi Penugasan RW)
+      let scopedRwId: number | undefined = req.user.rwId;
+      if (!scopedRwId) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: petugasUserId },
+          select: { rwId: true },
+        });
+        scopedRwId = dbUser?.rwId ?? undefined;
+
+        if (!scopedRwId) {
+          const assignedRw = await prisma.rw.findFirst({
+            where: { petugasResiduId: petugasUserId },
+            select: { id: true },
+          });
+          scopedRwId = assignedRw?.id;
+        }
+      }
+
       const kelurahanFilter = req.query.kelurahan as string | undefined;
       const rwFilter = req.query.rw as string | undefined;
 
-      let whereCondition: any = {
+      const whereCondition: any = {
         status: "ACTIVE_BOUND",
       };
 
-      if (rwFilter) {
+      if (scopedRwId) {
+        whereCondition.rwId = scopedRwId;
+      } else if (rwFilter) {
         whereCondition.rw = {
           name: { contains: rwFilter, mode: "insensitive" },
         };
       }
 
-      // Get all active bins
+      if (kelurahanFilter && !scopedRwId) {
+        whereCondition.rw = {
+          ...whereCondition.rw,
+          kelurahan: {
+            name: { contains: kelurahanFilter, mode: "insensitive" },
+          },
+        };
+      }
+
+      // Ambil tempat sampah aktif sesuai cakupan RW petugas
       const bins = await prisma.bin.findMany({
         where: whereCondition,
         include: {
@@ -59,23 +90,19 @@ export class ResiduController {
         take: 20,
       });
 
-      let filteredBins = bins;
-      if (kelurahanFilter) {
-        filteredBins = bins.filter((b: any) =>
-          b.rw?.kelurahan?.name?.toLowerCase().includes(kelurahanFilter.toLowerCase())
-        );
-      }
-
-      const targetBins = filteredBins.filter((b: any) => {
+      const targetBins = bins.filter((b: any) => {
         const vol = Number(b.currentVolumeLiter);
         const max = Number(b.maxCapacityLiter);
         return max > 0 && vol / max >= 0.7;
       });
 
-      const finalBins = targetBins.length > 0 ? targetBins : filteredBins;
+      const finalBins = targetBins.length > 0 ? targetBins : bins;
 
       if (finalBins.length === 0) {
-        res.status(200).json([]);
+        res.status(200).json({
+          success: true,
+          data: [],
+        });
         return;
       }
 
