@@ -389,7 +389,8 @@ export class AuthService {
   }
 
   /**
-   * Update user profile
+   * Update user profile.
+   * Jika kelurahan / rw dikirim dan user adalah WARGA, otomatis upsert Household.
    */
   async updateProfile(
     userId: string,
@@ -397,7 +398,8 @@ export class AuthService {
     phone?: string,
     address?: string,
     fotoProfil?: string | null,
-    jumlahAnggotaKeluarga?: number | null
+    jumlahAnggotaKeluarga?: number | null,
+    wilayah?: { kelurahan?: string; rw?: string; kecamatan?: string }
   ) {
     const user = await authRepository.findUserById(userId);
     if (!user) {
@@ -411,6 +413,47 @@ export class AuthService {
       fotoProfil,
       jumlahAnggotaKeluarga,
     });
+
+    // Upsert household hanya untuk WARGA jika ada data wilayah
+    const isWarga = (user as any).role?.name === "WARGA";
+    const hasWilayah =
+      wilayah && (wilayah.kelurahan || wilayah.rw);
+
+    if (isWarga && hasWilayah) {
+      let resolvedRwId: number | undefined;
+      try {
+        resolvedRwId = await this.resolveRtRwId(wilayah.rw, wilayah.kelurahan);
+      } catch {
+        // Jika RW tidak ditemukan, household tetap diupdate tanpa rwId
+      }
+
+      const existingHousehold = await prisma.household.findFirst({
+        where: { userId },
+      });
+
+      const householdAddress = address || existingHousehold?.address || "";
+
+      if (existingHousehold) {
+        await prisma.household.update({
+          where: { id: existingHousehold.id },
+          data: {
+            address: householdAddress,
+            rwId: resolvedRwId ?? existingHousehold.rwId,
+          },
+        });
+      } else {
+        await prisma.household.create({
+          data: {
+            userId,
+            address: householdAddress,
+            rwId: resolvedRwId ?? null,
+            latitude: 0,
+            longitude: 0,
+          },
+        });
+      }
+    }
+
     return updatedUser;
   }
 
