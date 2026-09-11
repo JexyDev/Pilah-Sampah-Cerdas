@@ -9,14 +9,17 @@ import api from "./api";
 export interface MasterKelurahanItem {
   id: string;
   name: string;
+  nama: string;
   kecamatanId?: number | null;
 }
 
 export interface MasterRwItem {
   id: number;
   name: string;
+  rw: string;
   kelurahanId?: string | null;
   kelurahanName?: string | null;
+  kelurahanNama?: string | null;
 }
 
 export interface KelompokItemLike {
@@ -25,6 +28,11 @@ export interface KelompokItemLike {
   kelurahan?: string | null;
   cakupanRw?: any;
 }
+
+// Runtime object exports so Vite bundler never complains if imported as value
+export const MasterKelurahanItem = {};
+export const MasterRwItem = {};
+export const KelompokItemLike = {};
 
 // In-memory cache for master data
 let cachedMasterKelurahan: MasterKelurahanItem[] | null = null;
@@ -57,21 +65,31 @@ export const fetchMasterWilayah = async (forceRefresh = false): Promise<{
       const rawKel = Array.isArray(kelRes.data)
         ? kelRes.data
         : kelRes.data?.data || [];
-      const kelurahans: MasterKelurahanItem[] = rawKel.map((k: any) => ({
-        id: String(k.id),
-        name: String(k.name || "").trim(),
-        kecamatanId: k.kecamatanId ?? null,
-      }));
+      const kelurahans: MasterKelurahanItem[] = rawKel.map((k: any) => {
+        const valName = String(k.name || k.nama || "").trim();
+        return {
+          id: String(k.id),
+          name: valName,
+          nama: valName,
+          kecamatanId: k.kecamatanId ?? null,
+        };
+      });
 
       const rawRw = Array.isArray(rwRes.data)
         ? rwRes.data
         : rwRes.data?.data || [];
-      const rws: MasterRwItem[] = rawRw.map((r: any) => ({
-        id: Number(r.id),
-        name: String(r.name || "").trim(),
-        kelurahanId: r.kelurahanId ? String(r.kelurahanId) : null,
-        kelurahanName: r.kelurahan?.name ? String(r.kelurahan.name).trim() : null,
-      }));
+      const rws: MasterRwItem[] = rawRw.map((r: any) => {
+        const valName = String(r.name || r.rw || "").trim();
+        const kName = r.kelurahan?.name || r.kelurahanName || r.kelurahanNama || null;
+        return {
+          id: Number(r.id),
+          name: valName,
+          rw: valName,
+          kelurahanId: r.kelurahanId ? String(r.kelurahanId) : null,
+          kelurahanName: kName ? String(kName).trim() : null,
+          kelurahanNama: kName ? String(kName).trim() : null,
+        };
+      });
 
       cachedMasterKelurahan = kelurahans;
       cachedMasterRw = rws;
@@ -197,10 +215,21 @@ export const isKelompokCoveringRw = (
  * Menghasilkan daftar RW unik terurut untuk suatu Kelurahan berdasarkan master RW database atau cakupan kelompok.
  */
 export const getRwOptionsForKelurahan = (
-  selectedKelurahan: string,
-  masterRwList: MasterRwItem[] = [],
+  param1: any,
+  param2: any = [],
   groups: KelompokItemLike[] = []
 ): string[] => {
+  let selectedKelurahan = "";
+  let masterRwList: MasterRwItem[] = [];
+
+  if (typeof param1 === "string") {
+    selectedKelurahan = param1;
+    masterRwList = Array.isArray(param2) ? param2 : [];
+  } else if (Array.isArray(param1)) {
+    masterRwList = param1;
+    selectedKelurahan = typeof param2 === "string" ? param2 : "";
+  }
+
   const isKelSelected = Boolean(
     selectedKelurahan &&
     selectedKelurahan !== "ALL" &&
@@ -213,11 +242,11 @@ export const getRwOptionsForKelurahan = (
   // 1. Ambil dari masterRwList
   if (masterRwList && masterRwList.length > 0) {
     const filteredMaster = isKelSelected
-      ? masterRwList.filter((r) => isKelurahanMatching(r.kelurahanName, selectedKelurahan))
+      ? masterRwList.filter((r) => isKelurahanMatching(r.kelurahanName || r.kelurahanNama, selectedKelurahan))
       : masterRwList;
 
     filteredMaster.forEach((r) => {
-      const num = extractRwNumber(r.name);
+      const num = extractRwNumber(r.name || r.rw);
       if (num !== null && num > 0 && num < 90) {
         rwMap.set(num, formatRwLabel(num));
       }

@@ -33,8 +33,8 @@ import {
   isKelurahanMatching,
   isKelompokCoveringRw,
   getRwOptionsForKelurahan,
-  MasterKelurahanItem,
-  MasterRwItem,
+  type MasterKelurahanItem,
+  type MasterRwItem,
 } from "../../utils/areaFilterUtils";
 
 const PRODI_OPTIONS = [

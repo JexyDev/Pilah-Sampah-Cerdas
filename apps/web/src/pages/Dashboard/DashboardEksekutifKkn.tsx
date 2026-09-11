@@ -31,13 +31,11 @@ import {
   X,
   Crown,
   ChevronLeft,
-  FileCheck,
   Award,
   Trophy,
   Filter,
   XCircle,
   AlertCircle,
-  SlidersHorizontal,
   Phone,
 } from "lucide-react";
 import {
@@ -59,7 +57,7 @@ import api from "../../services/api";
 import showToast from "../../utils/showToast";
 import { dplService, type GroupSummary, type StudentDetail } from "../../services/dplService";
 import LeaderboardWidget from "../../components/LeaderboardWidget";
-import { fetchMasterWilayah, MasterKelurahanItem } from "../../utils/areaFilterUtils";
+import { fetchMasterWilayah, type MasterKelurahanItem } from "../../utils/areaFilterUtils";
 
 interface KknExecutiveData {
   lastUpdated: string;
@@ -277,9 +275,9 @@ export const DashboardEksekutifKkn: React.FC = () => {
       if (rws.length > 0) {
         setMasterRwList(
           rws.map((r) => ({
-            id: Number(r.id) || Number(r.rw),
-            name: `RW ${String(r.rw).padStart(2, "0")}`,
-            kelurahanName: r.kelurahanNama || "",
+            id: Number(r.id),
+            name: r.name,
+            kelurahanName: r.kelurahanName || r.kelurahanNama || "",
           }))
         );
       }
@@ -801,8 +799,8 @@ export const DashboardEksekutifKkn: React.FC = () => {
                   <option value="Semua Kelurahan">Semua Kelurahan</option>
                   {masterKelurahans.length > 0 ? (
                     masterKelurahans.map((kel) => (
-                      <option key={kel.id || kel.nama} value={kel.nama}>
-                        Kel. {kel.nama}
+                      <option key={kel.id || kel.name} value={kel.name}>
+                        Kel. {kel.name}
                       </option>
                     ))
                   ) : (

@@ -33,12 +33,11 @@ import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { sortKelompokList } from "../../utils/sortUtils";
 import {
   fetchMasterWilayah,
-  formatRwLabel,
   isKelurahanMatching,
   isKelompokCoveringRw,
   getRwOptionsForKelurahan,
-  MasterKelurahanItem,
-  MasterRwItem,
+  type MasterKelurahanItem,
+  type MasterRwItem,
 } from "../../utils/areaFilterUtils";
 
 export const ManajemenEkosistemKkn: React.FC = () => {
@@ -256,7 +255,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
   // Dynamic Kelurahan list from master or fallback data
   const kelurahanOptions = useMemo(() => {
     if (masterKelurahans.length > 0) {
-      return masterKelurahans.map((k) => k.nama);
+      return masterKelurahans.map((k) => k.name || k.nama);
     }
     const set = new Set<string>();
     kelompokList.forEach((k) => {
@@ -267,12 +266,12 @@ export const ManajemenEkosistemKkn: React.FC = () => {
 
   // Cascading RW options based on selected Kelurahan
   const rwOptions = useMemo(() => {
-    return getRwOptionsForKelurahan(masterRws, filterKelurahan);
+    return getRwOptionsForKelurahan(filterKelurahan, masterRws);
   }, [masterRws, filterKelurahan]);
 
   // Auto reset RW when Kelurahan changes and current RW is invalid
   useEffect(() => {
-    if (filterRw !== "ALL" && !rwOptions.some((r) => String(r.rw) === String(filterRw))) {
+    if (filterRw !== "ALL" && !rwOptions.includes(filterRw)) {
       setFilterRw("ALL");
     }
   }, [filterKelurahan, rwOptions, filterRw]);
@@ -719,9 +718,9 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                         className="px-3 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-xs sm:text-sm bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all cursor-pointer w-full sm:w-auto"
                       >
                         <option value="ALL">Semua RW</option>
-                        {rwOptions.map((rwItem) => (
-                          <option key={rwItem.id || rwItem.rw} value={String(rwItem.rw)}>
-                            {formatRwLabel(rwItem.rw)}
+                        {rwOptions.map((rwLabel) => (
+                          <option key={rwLabel} value={rwLabel}>
+                            {rwLabel}
                           </option>
                         ))}
                       </select>

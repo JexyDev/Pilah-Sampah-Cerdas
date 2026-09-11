@@ -48,7 +48,7 @@ import {
   KELURAHAN_GEODATA,
   createHouseholdPinIcon,
 } from "../../constants/coblongGeoData";
-import { fetchMasterWilayah, MasterKelurahanItem } from "../../utils/areaFilterUtils";
+import { fetchMasterWilayah, type MasterKelurahanItem } from "../../utils/areaFilterUtils";
 
 interface KPIStats {
   totalWarga: number;
@@ -772,11 +772,14 @@ const Monitoring: React.FC = () => {
                       <>
                         <option value="Semua Kelurahan">Semua Kelurahan</option>
                         {masterKelurahans.length > 0 ? (
-                          masterKelurahans.map((kel) => (
-                            <option key={kel.id || kel.nama} value={kel.nama}>
-                              Kel. {kel.nama}
-                            </option>
-                          ))
+                          masterKelurahans.map((kel) => {
+                            const valName = kel.name || kel.nama;
+                            return (
+                              <option key={kel.id || valName} value={valName}>
+                                Kel. {valName}
+                              </option>
+                            );
+                          })
                         ) : (
                           <>
                             <option value="Dago">Kel. Dago</option>

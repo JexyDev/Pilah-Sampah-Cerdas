@@ -13,7 +13,6 @@ import {
   Trash2,
   CheckCircle2,
   Search,
-  Download,
   Loader2,
   X,
   XCircle,
@@ -27,7 +26,6 @@ import {
   Users,
   GraduationCap,
   Phone,
-  Eye,
   Building2,
   Play,
 } from "lucide-react";
@@ -47,8 +45,8 @@ import {
   isRwMatching,
   isKelompokCoveringRw,
   getRwOptionsForKelurahan,
-  MasterKelurahanItem,
-  MasterRwItem,
+  type MasterKelurahanItem,
+  type MasterRwItem,
 } from "../../utils/areaFilterUtils";
 
 // Google Drive Official Logo Icon Component
@@ -167,7 +165,7 @@ export const ProgramKerjaKkn: React.FC = () => {
     linkGoogleDrive: string;
     kebutuhanBiaya: number;
     status: ProgramKerjaItem["status"];
-    statusUsulan: "BELUM_DISETUJUI" | "DISETUJUI" | "DITOLAK";
+    statusUsulan: "BELUM_DISETUJUI" | "DISETUJUI" | "DITOLAK" | "KADALUARSA";
     statusPelaksanaan: "BELUM_MULAI" | "SEDANG_BERJALAN" | "SELESAI";
     catatanDpl: string;
   }>({
@@ -622,7 +620,6 @@ export const ProgramKerjaKkn: React.FC = () => {
         proker.id,
         "SEDANG_BERJALAN",
         undefined,
-        undefined,
         "SEDANG_BERJALAN"
       );
       toast.success(`Program kerja #${proker.nomor} berhasil diaktifkan: Sedang Berjalan`);
@@ -719,8 +716,8 @@ export const ProgramKerjaKkn: React.FC = () => {
 
   // Cascading RW options based on selected Kelurahan
   const rwOptions = useMemo(() => {
-    return getRwOptionsForKelurahan(masterRws, selectedKelurahan);
-  }, [masterRws, selectedKelurahan]);
+    return getRwOptionsForKelurahan(selectedKelurahan, masterRws, kelompokList);
+  }, [selectedKelurahan, masterRws, kelompokList]);
 
   // Cascading Kelompok options based on selected Kelurahan and RW
   const availableKelompokList = useMemo(() => {
@@ -733,7 +730,7 @@ export const ProgramKerjaKkn: React.FC = () => {
 
   // Auto reset RW if not valid for selected Kelurahan
   useEffect(() => {
-    if (selectedRw !== "ALL" && !rwOptions.some((r) => String(r.rw) === String(selectedRw))) {
+    if (selectedRw !== "ALL" && !rwOptions.includes(selectedRw)) {
       setSelectedRw("ALL");
     }
   }, [selectedKelurahan, rwOptions, selectedRw]);
@@ -799,9 +796,9 @@ export const ProgramKerjaKkn: React.FC = () => {
         item.cakupanRw || kelompokList.find((k) => k.id === item.kelompokId)?.cakupanRw;
       const matchesRw =
         selectedRw === "ALL" ||
-        isRwMatching(item.rw, selectedRw) ||
-        (Array.isArray(itemCakupanRw) &&
-          itemCakupanRw.some((rwVal: any) => isRwMatching(rwVal, selectedRw)));
+        (Array.isArray(itemCakupanRw)
+          ? itemCakupanRw.some((rwVal: any) => isRwMatching(rwVal, selectedRw))
+          : isRwMatching(itemCakupanRw, selectedRw));
 
       const matchesKelompok =
         selectedKelompokId === "ALL" || item.kelompokId === selectedKelompokId;
@@ -1246,11 +1243,14 @@ export const ProgramKerjaKkn: React.FC = () => {
                 className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
               >
                 <option value="ALL">Semua Kelurahan</option>
-                {masterKelurahans.map((kel) => (
-                  <option key={kel.id || kel.nama} value={kel.nama}>
-                    {kel.nama}
-                  </option>
-                ))}
+                {masterKelurahans.map((kel) => {
+                  const valName = kel.name || kel.nama;
+                  return (
+                    <option key={kel.id || valName} value={valName}>
+                      {valName}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 
@@ -1263,9 +1263,9 @@ export const ProgramKerjaKkn: React.FC = () => {
                 className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
               >
                 <option value="ALL">Semua RW</option>
-                {rwOptions.map((rwItem) => (
-                  <option key={rwItem.id || rwItem.rw} value={String(rwItem.rw)}>
-                    {formatRwLabel(rwItem.rw)}
+                {rwOptions.map((rwLabel) => (
+                  <option key={rwLabel} value={rwLabel}>
+                    {rwLabel}
                   </option>
                 ))}
               </select>
@@ -1506,9 +1506,6 @@ export const ProgramKerjaKkn: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
                   {paginatedProkers.map((p, idx) => {
-                    const driveUrl = p.linkGoogleDrive || "https://drive.google.com";
-                    const normalizedU = normalizeStatusUsulan(p.statusUsulan, p.status);
-                    const normalizedP = normalizeStatusPelaksanaan(p.statusPelaksanaan, p.status);
                     const timestampInfo = formatIndonesianTimestamp(p.createdAt);
 
                     return (
@@ -1689,9 +1686,6 @@ export const ProgramKerjaKkn: React.FC = () => {
             {/* Mobile Card View (< md) */}
             <div className="block md:hidden divide-y divide-slate-100 dark:divide-slate-800">
               {paginatedProkers.map((p, idx) => {
-                const driveUrl = p.linkGoogleDrive || "https://drive.google.com";
-                const normalizedU = normalizeStatusUsulan(p.statusUsulan, p.status);
-                const normalizedP = normalizeStatusPelaksanaan(p.statusPelaksanaan, p.status);
                 const timestampInfo = formatIndonesianTimestamp(p.createdAt);
                 const rowNumber = (currentPage - 1) * itemsPerPage + idx + 1;
 
@@ -2229,7 +2223,17 @@ export const ProgramKerjaKkn: React.FC = () => {
       {rosterModal.isOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in"
-          onClick={() => setRosterModal({ isOpen: false, proker: null, search: "" })}
+          onClick={() =>
+            setRosterModal({
+              isOpen: false,
+              kelompokName: "",
+              kelurahan: "",
+              cakupanRw: [],
+              dplName: "",
+              mahasiswa: [],
+              search: "",
+            })
+          }
         >
           <div
             onClick={(e) => e.stopPropagation()}
