@@ -41,6 +41,7 @@ const MasterDatasetKlasifikasi = React.lazy(() => import("../pages/MasterDataset
 const Notifikasi = React.lazy(() => import("../pages/Notifikasi/Notifikasi"));
 const Pengaturan = React.lazy(() => import("../pages/Pengaturan/Pengaturan"));
 const SimulasiModelAI = React.lazy(() => import("../pages/SimulasiModelAI/SimulasiModelAI"));
+const BersekaVisionAIPage = React.lazy(() => import("../pages/BersekaVisionAI/BersekaVisionAIPage"));
 const PenggunaOnline = React.lazy(() => import("../pages/PenggunaOnline/PenggunaOnline"));
 const SetorSampah = React.lazy(() => import("../pages/SetorSampah/SetorSampah"));
 const KknDashboard = React.lazy(() => import("../pages/KknDashboard/KknDashboard"));
@@ -715,6 +716,7 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
+        <Route path="/berseka-vision-ai" element={<BersekaVisionAIPage />} />
         <Route path="/panduan" element={<PanduanPage />} />
         <Route
           path="/manajemen-ekosistem-kkn"
