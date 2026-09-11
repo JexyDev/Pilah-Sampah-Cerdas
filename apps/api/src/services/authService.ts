@@ -452,6 +452,18 @@ export class AuthService {
           },
         });
       }
+
+      // Update lifecycleState if they are REGISTERED
+      const currentUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { lifecycleState: true },
+      });
+      if (currentUser?.lifecycleState === "REGISTERED") {
+        await prisma.user.update({
+          where: { id: userId },
+          data: { lifecycleState: "COMMUNITY_ACTIVE_NO_BIN" },
+        });
+      }
     }
 
     return updatedUser;
@@ -759,6 +771,7 @@ export class AuthService {
       dplKelompok: user.dplKelompok || [],
       studentProfile: studentProfile || null,
       petugasProfile: user.petugasProfile || null,
+      lifecycleState: (user as any).lifecycleState || "REGISTERED",
       assignedZone:
         user.petugasProfile?.assignedZone ||
         (resolvedRw ? `${resolvedRw}, Kel. ${resolvedKelurahan}` : "Kecamatan Coblong"),
