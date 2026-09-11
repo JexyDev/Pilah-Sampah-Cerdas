@@ -7,6 +7,7 @@ class UserEntity extends Equatable {
     required this.id,
     required this.name,
     required this.role,
+    this.lifecycleState = WargaLifecycle.registered,
     this.phone = '',
     this.address = '',
     this.kelurahan = '',
@@ -35,6 +36,7 @@ class UserEntity extends Equatable {
   final String phone;
   final String address;
   final UserRole role;
+  final WargaLifecycle lifecycleState;
   final String kecamatan;
   final String provinsi;
   final String kota;
@@ -61,6 +63,7 @@ class UserEntity extends Equatable {
     String? phone,
     String? address,
     UserRole? role,
+    WargaLifecycle? lifecycleState,
     String? kecamatan,
     String? provinsi,
     String? kota,
@@ -87,6 +90,7 @@ class UserEntity extends Equatable {
       phone: phone ?? this.phone,
       address: address ?? this.address,
       role: role ?? this.role,
+      lifecycleState: lifecycleState ?? this.lifecycleState,
       kecamatan: kecamatan ?? this.kecamatan,
       provinsi: provinsi ?? this.provinsi,
       kota: kota ?? this.kota,
@@ -129,6 +133,7 @@ class UserEntity extends Equatable {
     phone,
     address,
     role,
+    lifecycleState,
     nim,
     jurusan,
     prodi,
@@ -260,6 +265,30 @@ extension UserRoleExtension on UserRole {
         }
         // Previously defaulted to warga which allowed other roles like DPL to login
         return UserRole.unknown;
+    }
+  }
+}
+
+enum WargaLifecycle {
+  registered,
+  communityActiveNoBin,
+  fullyActive,
+  unknown,
+}
+
+extension WargaLifecycleExtension on WargaLifecycle {
+  static WargaLifecycle fromApi(String? value) {
+    if (value == null) return WargaLifecycle.registered;
+    final v = value.trim().toUpperCase();
+    switch (v) {
+      case 'COMMUNITY_ACTIVE_NO_BIN':
+        return WargaLifecycle.communityActiveNoBin;
+      case 'FULLY_ACTIVE':
+        return WargaLifecycle.fullyActive;
+      case 'REGISTERED':
+        return WargaLifecycle.registered;
+      default:
+        return WargaLifecycle.unknown;
     }
   }
 }

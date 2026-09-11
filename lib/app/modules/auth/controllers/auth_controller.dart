@@ -519,6 +519,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     String? kelurahan,
     String? rw,
     String? jenjangPendidikan,
+    int? familySize,
   }) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
@@ -530,6 +531,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         kelurahan: kelurahan,
         rw: rw,
         jenjangPendidikan: jenjangPendidikan,
+        familySize: familySize,
       );
       if (success && state.user != null) {
         final updatedUser = state.user!.copyWith(
@@ -540,6 +542,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           kelurahan: kelurahan ?? state.user!.kelurahan,
           rw: rw ?? state.user!.rw,
           jenjangPendidikan: jenjangPendidikan ?? state.user!.jenjangPendidikan,
+          familySize: familySize ?? state.user!.familySize,
         );
         state = state.copyWith(user: updatedUser, isLoading: false);
       } else {
