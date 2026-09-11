@@ -39,6 +39,8 @@ const BersekaVisionAIPage: React.FC = () => {
   const [result, setResult] = useState<VisionDetectionData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [filterCategory, setFilterCategory] = useState<"ALL" | "ORGANIK" | "ANORGANIK" | "RESIDU">("ALL");
+  const [showBbox, setShowBbox] = useState<boolean>(true);
 
   const dropzoneRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -80,6 +82,7 @@ const BersekaVisionAIPage: React.FC = () => {
     reader.readAsDataURL(file);
     setResult(null);
     setError(null);
+    setFilterCategory("ALL");
     runVisionAnalysis(file);
   };
 
@@ -141,14 +144,24 @@ const BersekaVisionAIPage: React.FC = () => {
     return "#ef4444";
   };
 
+  // Filter objek berdasarkan tab kategori aktif
+  const displayedObjects = result?.objects.filter((obj) => {
+    if (filterCategory === "ALL") return true;
+    return obj.category === filterCategory;
+  }) || [];
+
+  const countOrg = result?.objects.filter((o) => o.category === "ORGANIK").length || 0;
+  const countInorg = result?.objects.filter((o) => o.category === "ANORGANIK").length || 0;
+  const countRes = result?.objects.filter((o) => o.category === "RESIDU").length || 0;
+
   return (
     <div className={styles.container}>
       <header className={styles.header}>
         <div className={styles.badge}>BERSEKA Vision Grounding AI v2.0</div>
         <h1>Deteksi Cerdas Sampah 3 Klasifikasi</h1>
         <p>
-          Pemilahan otomatis Organik, Anorganik, dan Residu dilengkapi identifikasi objek dan
-          koordinat visual Bounding Box secara real-time.
+          Pemilahan dinamis Organik, Anorganik, dan Residu dilengkapi identifikasi objek dan
+          koordinat visual Bounding Box secara presisi.
         </p>
       </header>
 
@@ -182,62 +195,120 @@ const BersekaVisionAIPage: React.FC = () => {
           </div>
 
           {preview && (
-            <div className={styles.previewWrapper}>
-              <img src={preview} alt="Pratinjau Sampah" className={styles.imageLayer} />
+            <>
+              {/* Controls Bar Dinamis */}
+              {result && (
+                <div className={styles.controlsBar}>
+                  <div className={styles.filterTabs}>
+                    <button
+                      type="button"
+                      className={`${styles.filterBtn} ${filterCategory === "ALL" ? styles.filterActiveAll : ""}`}
+                      onClick={() => setFilterCategory("ALL")}
+                    >
+                      Semua ({result.objects.length})
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.filterBtn} ${filterCategory === "ORGANIK" ? styles.filterActiveOrg : ""}`}
+                      onClick={() => setFilterCategory("ORGANIK")}
+                    >
+                      Organik ({countOrg})
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.filterBtn} ${filterCategory === "ANORGANIK" ? styles.filterActiveInorg : ""}`}
+                      onClick={() => setFilterCategory("ANORGANIK")}
+                    >
+                      Anorganik ({countInorg})
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.filterBtn} ${filterCategory === "RESIDU" ? styles.filterActiveRes : ""}`}
+                      onClick={() => setFilterCategory("RESIDU")}
+                    >
+                      Residu ({countRes})
+                    </button>
+                  </div>
 
-              {result && result.objects.length > 0 && (
-                <svg
-                  className={styles.svgOverlay}
-                  viewBox="0 0 1000 1000"
-                  preserveAspectRatio="none"
-                >
-                  {result.objects.map((obj, idx) => {
-                    const [ymin, xmin, ymax, xmax] = obj.box_2d;
-                    const width = Math.max(0, xmax - xmin);
-                    const height = Math.max(0, ymax - ymin);
-                    const isHovered = hoveredIndex === idx;
-                    const catColor = getCategoryColor(obj.category);
-
-                    return (
-                      <g
-                        key={idx}
-                        onMouseEnter={() => setHoveredIndex(idx)}
-                        onMouseLeave={() => setHoveredIndex(null)}
-                      >
-                        {/* Kotak Bounding Box */}
-                        <rect
-                          x={xmin}
-                          y={ymin}
-                          width={width}
-                          height={height}
-                          className={`${styles.bboxRect} ${getBboxClass(obj.category)}`}
-                          style={isHovered ? { strokeWidth: 6, fillOpacity: 0.4 } : {}}
-                        />
-
-                        {/* Background Tag Label */}
-                        <rect
-                          x={xmin}
-                          y={Math.max(0, ymin - 36)}
-                          width={Math.min(320, Math.max(120, obj.label.length * 15 + 24))}
-                          height={34}
-                          fill={catColor}
-                          className={styles.bboxTagBg}
-                        />
-
-                        {/* Teks Label Nama Benda */}
-                        <text
-                          x={xmin + 10}
-                          y={Math.max(22, ymin - 14)}
-                          className={styles.bboxLabel}
-                        >
-                          {obj.label}
-                        </text>
-                      </g>
-                    );
-                  })}
-                </svg>
+                  <button
+                    type="button"
+                    className={`${styles.toggleBtn} ${showBbox ? styles.toggleBtnActive : ""}`}
+                    onClick={() => setShowBbox(!showBbox)}
+                  >
+                    <span>{showBbox ? "👁️ Sembunyikan Kotak" : "🎯 Tampilkan Kotak"}</span>
+                  </button>
+                </div>
               )}
-            </div>
+
+              <div className={styles.previewWrapper}>
+                <img src={preview} alt="Pratinjau Sampah" className={styles.imageLayer} />
+
+                {showBbox && result && displayedObjects.length > 0 && (
+                  <svg
+                    className={styles.svgOverlay}
+                    viewBox="0 0 1000 1000"
+                    preserveAspectRatio="none"
+                  >
+                    {result.objects.map((obj, idx) => {
+                      // Filter objek
+                      if (filterCategory !== "ALL" && obj.category !== filterCategory) {
+                        return null;
+                      }
+
+                      const [ymin, xmin, ymax, xmax] = obj.box_2d;
+                      const width = Math.max(0, xmax - xmin);
+                      const height = Math.max(0, ymax - ymin);
+                      const isHovered = hoveredIndex === idx;
+                      const catColor = getCategoryColor(obj.category);
+
+                      return (
+                        <g
+                          key={idx}
+                          onMouseEnter={() => setHoveredIndex(idx)}
+                          onMouseLeave={() => setHoveredIndex(null)}
+                          style={{ cursor: "pointer" }}
+                        >
+                          {/* Kotak Bounding Box */}
+                          <rect
+                            x={xmin}
+                            y={ymin}
+                            width={width}
+                            height={height}
+                            className={`${styles.bboxRect} ${getBboxClass(obj.category)}`}
+                            style={
+                              isHovered
+                                ? { strokeWidth: 7, fillOpacity: 0.45, stroke: "#ffffff" }
+                                : {}
+                            }
+                          />
+
+                          {/* Background Tag Label */}
+                          <rect
+                            x={xmin}
+                            y={Math.max(0, ymin - 34)}
+                            width={Math.min(340, Math.max(120, obj.label.length * 14 + 20))}
+                            height={32}
+                            fill={catColor}
+                            className={styles.bboxTagBg}
+                            stroke={isHovered ? "#ffffff" : "none"}
+                            strokeWidth={isHovered ? 2 : 0}
+                          />
+
+                          {/* Teks Label Nama Benda */}
+                          <text
+                            x={xmin + 10}
+                            y={Math.max(22, ymin - 12)}
+                            className={styles.bboxLabel}
+                          >
+                            {obj.label}
+                          </text>
+                        </g>
+                      );
+                    })}
+                  </svg>
+                )}
+              </div>
+            </>
           )}
 
           {/* Legenda Warna Bounding Box */}
@@ -323,29 +394,39 @@ const BersekaVisionAIPage: React.FC = () => {
               {/* Rincian Objek Spesifik Terdeteksi */}
               <div className={styles.inventorySection}>
                 <div className={styles.inventoryTitle}>
-                  Objek Spesifik Terdeteksi ({result.objects.length} Benda):
+                  Objek Spesifik Terdeteksi ({displayedObjects.length}{" "}
+                  {filterCategory !== "ALL" ? `Kategori ${filterCategory}` : "Benda"}):
                 </div>
-                {result.objects.length === 0 ? (
+                {displayedObjects.length === 0 ? (
                   <p style={{ fontSize: "0.85rem", color: "#64748b", margin: 0 }}>
-                    Tidak ada objek individual yang terisolasi secara terpisah.
+                    Tidak ada objek terdeteksi untuk filter kategori ini.
                   </p>
                 ) : (
                   <div className={styles.objectTags}>
-                    {result.objects.map((obj, idx) => (
-                      <span
-                        key={idx}
-                        className={`${styles.objTag} ${getTagClass(obj.category)}`}
-                        onMouseEnter={() => setHoveredIndex(idx)}
-                        onMouseLeave={() => setHoveredIndex(null)}
-                        style={
-                          hoveredIndex === idx
-                            ? { transform: "scale(1.05)", fontWeight: "800" }
-                            : {}
-                        }
-                      >
-                        • {obj.label} ({obj.category})
-                      </span>
-                    ))}
+                    {result.objects.map((obj, idx) => {
+                      if (filterCategory !== "ALL" && obj.category !== filterCategory) {
+                        return null;
+                      }
+                      const isHovered = hoveredIndex === idx;
+
+                      return (
+                        <span
+                          key={idx}
+                          className={`${styles.objTag} ${getTagClass(obj.category)}`}
+                          onMouseEnter={() => setHoveredIndex(idx)}
+                          onMouseLeave={() => setHoveredIndex(null)}
+                          style={{
+                            cursor: "pointer",
+                            transform: isHovered ? "scale(1.06)" : "scale(1)",
+                            boxShadow: isHovered ? "0 4px 12px rgba(0,0,0,0.15)" : "none",
+                            borderColor: isHovered ? "#0f172a" : "transparent",
+                            transition: "all 0.15s ease",
+                          }}
+                        >
+                          • {obj.label} ({obj.category})
+                        </span>
+                      );
+                    })}
                   </div>
                 )}
               </div>
