@@ -255,11 +255,20 @@ const BersekaVisionAIPage: React.FC = () => {
                         return null;
                       }
 
-                      const [ymin, xmin, ymax, xmax] = obj.box_2d;
-                      const width = Math.max(0, xmax - xmin);
-                      const height = Math.max(0, ymax - ymin);
+                      const [rawYmin, rawXmin, rawYmax, rawXmax] = obj.box_2d;
+                      const xmin = Math.min(rawXmin, rawXmax);
+                      const xmax = Math.max(rawXmin, rawXmax);
+                      const ymin = Math.min(rawYmin, rawYmax);
+                      const ymax = Math.max(rawYmin, rawYmax);
+                      const width = Math.max(15, xmax - xmin);
+                      const height = Math.max(15, ymax - ymin);
                       const isHovered = hoveredIndex === idx;
                       const catColor = getCategoryColor(obj.category);
+
+                      // Hindari tag terpotong di tepi atas frame
+                      const tagWidth = Math.min(280, Math.max(90, obj.label.length * 11 + 16));
+                      const tagY = ymin >= 34 ? ymin - 32 : ymin + 4;
+                      const textY = ymin >= 34 ? ymin - 12 : ymin + 24;
 
                       return (
                         <g
@@ -285,9 +294,10 @@ const BersekaVisionAIPage: React.FC = () => {
                           {/* Background Tag Label */}
                           <rect
                             x={xmin}
-                            y={Math.max(0, ymin - 34)}
-                            width={Math.min(340, Math.max(120, obj.label.length * 14 + 20))}
-                            height={32}
+                            y={tagY}
+                            width={tagWidth}
+                            height={28}
+                            rx={4}
                             fill={catColor}
                             className={styles.bboxTagBg}
                             stroke={isHovered ? "#ffffff" : "none"}
@@ -296,8 +306,8 @@ const BersekaVisionAIPage: React.FC = () => {
 
                           {/* Teks Label Nama Benda */}
                           <text
-                            x={xmin + 10}
-                            y={Math.max(22, ymin - 12)}
+                            x={xmin + 8}
+                            y={textY}
                             className={styles.bboxLabel}
                           >
                             {obj.label}
