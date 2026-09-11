@@ -51,19 +51,21 @@ export class VlmVisionService {
       : `data:image/jpeg;base64,${imageBase64}`;
 
     const prompt = `Lakukan deteksi objek sampah pada gambar secara presisi dengan visual grounding bounding box.
-Aturan:
-1. Klasifikasikan setiap objek ke dalam salah satu dari 3 kategori:
-   - "ORGANIK" (sisa makanan, sayur, buah, daun, kompos, kulit buah, sisa organik)
-   - "ANORGANIK" (botol plastik, kaleng, kardus/kertas bersih, gelas plastik, logam, kaca bernilai daur ulang)
-   - "RESIDU" (popok/pembalut, puntung rokok, styrofoam kotor/berminyak, sachet multilapis, tisu basah kotor, pecahan keramik, benda non-daur ulang)
-2. Berikan koordinat box_2d dalam format [ymin, xmin, ymax, xmax] dengan nilai dinormalisasi integer antara 0 sampai 1000.
-3. Sebutkan nama spesifik benda dalam Bahasa Indonesia pada properti label (contoh: "botol plastik", "kulit pisang", "puntung rokok").
-4. Hitung proporsi persentase (organik_percent + anorganik_percent + residu_percent = 100).
-5. Tentukan kategori_utama berdasarkan persentase dominan.
-6. Berikan rekomendasi_tempat_sampah ("organik", "anorganik", atau "residu").
-7. Berikan ringkasan_eksekutif singkat dan solutif (1-2 kalimat).
+Pedoman Deteksi Presisi:
+1. Temukan 3 hingga 8 objek sampah individual yang paling jelas/mencolok di gambar.
+2. Koordinat box_2d HARUS berupa tight bounding box rapat pada masing-masing benda dalam format [ymin, xmin, ymax, xmax] dengan nilai integer normalisasi 0 sampai 1000.
+3. JANGAN membuat bounding box raksasa yang menutupi seluruh layar/background. Jika gambar berupa tumpukan sampah, temukan beberapa item individu spesifik di lokasi yang berbeda.
+4. Klasifikasikan setiap objek ke salah satu dari 3 kategori tepat:
+   - "ANORGANIK": botol plastik, gelas plastik/cup, kantong plastik/kresek, sedotan, kaleng minuman, kardus, kertas bersih, botol kaca, wadah plastik daur ulang.
+   - "RESIDU": kemasan sachet multilapis (foil sachet kopi/snack), popok/pembalut, puntung rokok, styrofoam kotor/berminyak, tisu basah kotor, bungkus mie instan, benda rusak tak bernilai daur ulang.
+   - "ORGANIK": sisa makanan, kulit buah (pisang, jeruk, dll), sayuran, dedaunan, sisa nasi, ampas bahan alami.
+5. Sebutkan nama spesifik benda dalam Bahasa Indonesia (misal: "botol air mineral", "kantong kresek biru", "sachet bumbu", "kulit jeruk").
+6. Hitung persentase proporsi keseluruhan (organik_percent + anorganik_percent + residu_percent = 100).
+7. Tentukan kategori_utama berdasarkan persentase dominan ("ORGANIK", "ANORGANIK", atau "RESIDU").
+8. Berikan rekomendasi_tempat_sampah ("organik", "anorganik", atau "residu").
+9. Berikan ringkasan_eksekutif yang solutif dan profesional (1-2 kalimat).
 
-Keluarkan HANYA JSON murni tanpa kata pembuka/penutup, format:
+Keluarkan HANYA JSON murni tanpa markdown/teks lain:
 {
   "kategori_utama": "ORGANIK | ANORGANIK | RESIDU",
   "rekomendasi_tempat_sampah": "organik | anorganik | residu",
@@ -72,12 +74,12 @@ Keluarkan HANYA JSON murni tanpa kata pembuka/penutup, format:
   "residu_percent": 0,
   "objects": [
     {
-      "box_2d": [100, 150, 450, 600],
-      "label": "botol plastik",
-      "category": "ANORGANIK"
+      "box_2d": [ymin, xmin, ymax, xmax],
+      "label": "nama benda spesifik",
+      "category": "ANORGANIK | ORGANIK | RESIDU"
     }
   ],
-  "ringkasan_eksekutif": "Keterangan singkat analisis sampah."
+  "ringkasan_eksekutif": "Ringkasan eksekutif sampah."
 }`.trim();
 
     try {
@@ -162,9 +164,65 @@ Keluarkan HANYA JSON murni tanpa kata pembuka/penutup, format:
       .filter((obj) => Array.isArray(obj.box_2d) && obj.box_2d.length === 4)
       .map((obj) => {
         let cat: "ORGANIK" | "ANORGANIK" | "RESIDU" = "ANORGANIK";
-        const rawCat = String(obj.category || "").toUpperCase();
-        if (rawCat.includes("ORGANIK") || rawCat.includes("ORGANIC")) cat = "ORGANIK";
-        else if (rawCat.includes("RESIDU") || rawCat.includes("RESIDUAL")) cat = "RESIDU";
+        const rawCat = String(obj.category || "").toUpperCase().trim();
+        const rawLabel = String(obj.label || "Sampah").toLowerCase().trim();
+
+        // 1. Prioritaskan pengecekan ANORGANIK lebih dulu agar "ANORGANIK" tidak terkena ".includes('ORGANIK')"
+        if (
+          rawCat === "ANORGANIK" ||
+          rawCat.includes("ANORGANIK") ||
+          rawCat.includes("NON_ORGANIC") ||
+          rawCat.includes("INORGANIC")
+        ) {
+          cat = "ANORGANIK";
+        } else if (
+          rawCat === "RESIDU" ||
+          rawCat.includes("RESIDU") ||
+          rawCat.includes("RESIDUAL")
+        ) {
+          cat = "RESIDU";
+        } else if (
+          rawCat === "ORGANIK" ||
+          rawCat.includes("ORGANIK") ||
+          rawCat.includes("ORGANIC")
+        ) {
+          cat = "ORGANIK";
+        }
+
+        // 2. Koreksi semantik label jika model AI keliru mengklasifikasikan bahan sintetis
+        if (
+          rawLabel.includes("plastik") ||
+          rawLabel.includes("botol") ||
+          rawLabel.includes("kresek") ||
+          rawLabel.includes("kantong") ||
+          rawLabel.includes("kaleng") ||
+          rawLabel.includes("gelas") ||
+          rawLabel.includes("kaca") ||
+          rawLabel.includes("logam") ||
+          rawLabel.includes("kardus")
+        ) {
+          if (cat === "ORGANIK") {
+            cat = "ANORGANIK";
+          }
+        } else if (
+          rawLabel.includes("sachet") ||
+          rawLabel.includes("bungkus mie") ||
+          rawLabel.includes("styrofoam") ||
+          rawLabel.includes("puntung") ||
+          rawLabel.includes("popok") ||
+          rawLabel.includes("pembalut")
+        ) {
+          cat = "RESIDU";
+        } else if (
+          rawLabel.includes("kulit") ||
+          rawLabel.includes("buah") ||
+          rawLabel.includes("sayur") ||
+          rawLabel.includes("daun") ||
+          rawLabel.includes("makanan") ||
+          rawLabel.includes("nasi")
+        ) {
+          cat = "ORGANIK";
+        }
 
         const box = obj.box_2d.map((val: any) => {
           const num = Number(val);
@@ -173,7 +231,7 @@ Keluarkan HANYA JSON murni tanpa kata pembuka/penutup, format:
 
         return {
           box_2d: box,
-          label: String(obj.label || "Sampah").toLowerCase(),
+          label: rawLabel,
           category: cat,
           confidence: 0.92,
         };
@@ -182,6 +240,7 @@ Keluarkan HANYA JSON murni tanpa kata pembuka/penutup, format:
     let katUtama: "ORGANIK" | "ANORGANIK" | "RESIDU" = "ANORGANIK";
     if (orgPct >= inorgPct && orgPct >= resPct) katUtama = "ORGANIK";
     else if (resPct >= orgPct && resPct >= inorgPct) katUtama = "RESIDU";
+
 
     const rekomendasiBin = katUtama.toLowerCase() as "organik" | "anorganik" | "residu";
 
