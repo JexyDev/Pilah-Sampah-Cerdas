@@ -10,6 +10,8 @@ import { Request, Response } from "express";
 import { aiService } from "../services/aiService.js";
 import { redisService } from "../services/redisService.js";
 import { WasteAiAdapterFactory } from "../infrastructure/ai/WasteAiAdapterFactory.js";
+import { vlmVisionService } from "../services/vlmVisionService.js";
+import fs from "fs";
 
 export class AiController {
   /**
@@ -368,6 +370,66 @@ export class AiController {
           .status(500)
           .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
       }
+    }
+  }
+
+  /**
+   * Deteksi Cerdas 3 Klasifikasi (Organik, Anorganik, Residu) + Visual Grounding Bounding Box
+   * Endpoint: POST /api/v1/waste/vision-detect atau /api/v1/ai/vision-detect
+   */
+  async detectVisionBbox(req: Request, res: Response): Promise<void> {
+    try {
+      let imageBase64 = "";
+
+      if (req.file) {
+        const fileBuffer = fs.readFileSync(req.file.path);
+        const mimeType = req.file.mimetype || "image/jpeg";
+        imageBase64 = `data:${mimeType};base64,${fileBuffer.toString("base64")}`;
+      } else if (req.body.imageBase64) {
+        imageBase64 = req.body.imageBase64;
+      } else if (req.body.imageUrl) {
+        const imgUrl = String(req.body.imageUrl);
+        if (imgUrl.startsWith("http")) {
+          const fetchResp = await fetch(imgUrl);
+          const arrBuf = await fetchResp.arrayBuffer();
+          const mimeType = fetchResp.headers.get("content-type") || "image/jpeg";
+          imageBase64 = `data:${mimeType};base64,${Buffer.from(arrBuf).toString("base64")}`;
+        } else {
+          // File lokal
+          const clean = imgUrl.replace(/^\/?uploads\//, "");
+          const localPath = `${process.cwd()}/uploads/${clean}`;
+          if (fs.existsSync(localPath)) {
+            const buf = fs.readFileSync(localPath);
+            imageBase64 = `data:image/jpeg;base64,${buf.toString("base64")}`;
+          }
+        }
+      }
+
+      if (!imageBase64) {
+        res.status(400).json({
+          success: false,
+          code: "IMAGE_REQUIRED",
+          message: "Harap unggah file foto sampah atau sertakan data gambar base64.",
+        });
+        return;
+      }
+
+      const result = await vlmVisionService.detectWasteWithBoundingBox(imageBase64);
+
+      res.status(200).json({
+        success: true,
+        data: {
+          ...result,
+          imageUrl: req.file ? `/uploads/${req.file.filename}` : req.body.imageUrl || undefined,
+        },
+      });
+    } catch (error: any) {
+      console.error("[AiController] detectVisionBbox error:", error);
+      res.status(500).json({
+        success: false,
+        code: "INTERNAL_SERVER_ERROR",
+        message: error.message || "Gagal memproses analisis visual AI.",
+      });
     }
   }
 }
