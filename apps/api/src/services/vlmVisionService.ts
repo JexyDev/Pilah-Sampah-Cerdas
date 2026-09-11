@@ -50,36 +50,32 @@ export class VlmVisionService {
       ? imageBase64
       : `data:image/jpeg;base64,${imageBase64}`;
 
-    const prompt = `Lakukan deteksi objek sampah pada gambar secara presisi dengan visual grounding bounding box.
-Pedoman Deteksi Presisi:
-1. Temukan 3 hingga 8 objek sampah individual yang paling jelas/mencolok di gambar.
-2. Koordinat box_2d HARUS berupa tight bounding box rapat pada masing-masing benda dalam format [ymin, xmin, ymax, xmax] dengan nilai integer normalisasi 0 sampai 1000.
-3. JANGAN membuat bounding box raksasa yang menutupi seluruh layar/background. Jika gambar berupa tumpukan sampah, temukan beberapa item individu spesifik di lokasi yang berbeda.
-4. Klasifikasikan setiap objek ke salah satu dari 3 kategori tepat:
-   - "ANORGANIK": botol plastik, gelas plastik/cup, kantong plastik/kresek, sedotan, kaleng minuman, kardus, kertas bersih, botol kaca, wadah plastik daur ulang.
-   - "RESIDU": kemasan sachet multilapis (foil sachet kopi/snack), popok/pembalut, puntung rokok, styrofoam kotor/berminyak, tisu basah kotor, bungkus mie instan, benda rusak tak bernilai daur ulang.
-   - "ORGANIK": sisa makanan, kulit buah (pisang, jeruk, dll), sayuran, dedaunan, sisa nasi, ampas bahan alami.
-5. Sebutkan nama spesifik benda dalam Bahasa Indonesia (misal: "botol air mineral", "kantong kresek biru", "sachet bumbu", "kulit jeruk").
-6. Hitung persentase proporsi keseluruhan (organik_percent + anorganik_percent + residu_percent = 100).
-7. Tentukan kategori_utama berdasarkan persentase dominan ("ORGANIK", "ANORGANIK", atau "RESIDU").
-8. Berikan rekomendasi_tempat_sampah ("organik", "anorganik", atau "residu").
-9. Berikan ringkasan_eksekutif yang solutif dan profesional (1-2 kalimat).
+    const prompt = `Lakukan visual grounding deteksi objek sampah pada gambar ini dengan presisi batas fisik objek.
+Aturan Deteksi Presisi:
+1. Temukan 3 hingga 8 objek sampah individual yang paling jelas terlihat di gambar.
+2. Tentukan koordinat tight bounding box [ymin, xmin, ymax, xmax] (skala integer 0 sampai 1000) yang tepat melingkupi batas fisik terluar setiap benda:
+   - ymin: batas paling atas benda (0 = tepi atas gambar, 1000 = tepi bawah)
+   - xmin: batas paling kiri benda (0 = tepi kiri gambar, 1000 = tepi kanan)
+   - ymax: batas paling bawah benda
+   - xmax: batas paling kanan benda
+   JANGAN membuat kotak perkiraan seragam 100x100 atau kelipatan 50 kasar. Sesuaikan ukuran dan rasio kotak dengan bentuk fisik asli benda.
+3. Klasifikasikan setiap objek ke salah satu dari 3 kategori tepat:
+   - "ANORGANIK": botol/gelas plastik, kantong kresek, kaleng, kardus, kertas, botol kaca/pecahan kaca, perabot/logam daur ulang, karung.
+   - "RESIDU": kemasan sachet multilapis (kopi/snack foil), popok, puntung rokok, baterai bekas, limbah B3/elektronik rusak parah, benda tidak bernilai daur ulang.
+   - "ORGANIK": sisa makanan, kulit buah, sayuran, daun, sisa nasi, ampas alami.
+4. Sebutkan nama spesifik benda dalam Bahasa Indonesia (misal: "botol air mineral", "kantong kresek kuning", "karung putih", "baterai bekas", "kaca pecah").
+5. Berikan ringkasan eksekutif sampah yang objektif dan solutif (1-2 kalimat).
 
 Keluarkan HANYA JSON murni tanpa markdown/teks lain:
 {
-  "kategori_utama": "ORGANIK | ANORGANIK | RESIDU",
-  "rekomendasi_tempat_sampah": "organik | anorganik | residu",
-  "organik_percent": 0,
-  "anorganik_percent": 0,
-  "residu_percent": 0,
   "objects": [
     {
       "box_2d": [ymin, xmin, ymax, xmax],
       "label": "nama benda spesifik",
-      "category": "ANORGANIK | ORGANIK | RESIDU"
+      "category": "ANORGANIK | RESIDU | ORGANIK"
     }
   ],
-  "ringkasan_eksekutif": "Ringkasan eksekutif sampah."
+  "ringkasan_eksekutif": "Ringkasan komposisi sampah."
 }`.trim();
 
     try {
@@ -144,21 +140,6 @@ Keluarkan HANYA JSON murni tanpa markdown/teks lain:
   }
 
   private formatAndValidateResult(parsed: any, latencyMs: number): VisionDetectionResult {
-    let orgPct = Number(parsed.organik_percent) || 0;
-    let inorgPct = Number(parsed.anorganik_percent) || 0;
-    let resPct = Number(parsed.residu_percent) || 0;
-
-    const totalPct = orgPct + inorgPct + resPct;
-    if (totalPct <= 0) {
-      orgPct = 0;
-      inorgPct = 100;
-      resPct = 0;
-    } else if (totalPct !== 100) {
-      orgPct = Math.round((orgPct / totalPct) * 100);
-      inorgPct = Math.round((inorgPct / totalPct) * 100);
-      resPct = Math.max(0, 100 - orgPct - inorgPct);
-    }
-
     let rawObjects: any[] = Array.isArray(parsed.objects) ? parsed.objects : [];
     const validObjects: BoundingBoxObject[] = rawObjects
       .filter((obj) => Array.isArray(obj.box_2d) && obj.box_2d.length === 4)
@@ -199,7 +180,8 @@ Keluarkan HANYA JSON murni tanpa markdown/teks lain:
           rawLabel.includes("gelas") ||
           rawLabel.includes("kaca") ||
           rawLabel.includes("logam") ||
-          rawLabel.includes("kardus")
+          rawLabel.includes("kardus") ||
+          rawLabel.includes("karung")
         ) {
           if (cat === "ORGANIK") {
             cat = "ANORGANIK";
@@ -209,6 +191,7 @@ Keluarkan HANYA JSON murni tanpa markdown/teks lain:
           rawLabel.includes("bungkus mie") ||
           rawLabel.includes("styrofoam") ||
           rawLabel.includes("puntung") ||
+          rawLabel.includes("baterai") ||
           rawLabel.includes("popok") ||
           rawLabel.includes("pembalut")
         ) {
@@ -236,6 +219,61 @@ Keluarkan HANYA JSON murni tanpa markdown/teks lain:
           confidence: 0.92,
         };
       });
+
+    // 3. SINKRONISASI MATEMATIS PERSENTASE DARI OBJEK YANG TERDETEKSI (MENCEGAH ANOMALI ORGANIK 10% TAPI OBJEK ORGANIK 0)
+    let orgPct = 0;
+    let inorgPct = 0;
+    let resPct = 0;
+
+    const orgObjects = validObjects.filter((o) => o.category === "ORGANIK");
+    const inorgObjects = validObjects.filter((o) => o.category === "ANORGANIK");
+    const resObjects = validObjects.filter((o) => o.category === "RESIDU");
+
+    if (validObjects.length > 0) {
+      let orgWeight = 0;
+      let inorgWeight = 0;
+      let resWeight = 0;
+
+      for (const o of validObjects) {
+        const h = Math.max(0, (o.box_2d[2] - o.box_2d[0]) / 1000);
+        const w = Math.max(0, (o.box_2d[3] - o.box_2d[1]) / 1000);
+        const area = Math.max(0.01, h * w);
+        if (o.category === "ORGANIK") orgWeight += area;
+        else if (o.category === "RESIDU") resWeight += area;
+        else inorgWeight += area;
+      }
+
+      const totalWeight = orgWeight + inorgWeight + resWeight;
+      if (totalWeight > 0) {
+        orgPct = Math.round((orgWeight / totalWeight) * 100);
+        inorgPct = Math.round((inorgWeight / totalWeight) * 100);
+        resPct = Math.max(0, 100 - orgPct - inorgPct);
+
+        // Strict enforcement: Jika kategori objek 0, persentase HARUS 0%
+        if (orgObjects.length === 0) {
+          orgPct = 0;
+          if (inorgWeight + resWeight > 0) {
+            inorgPct = Math.round((inorgWeight / (inorgWeight + resWeight)) * 100);
+            resPct = 100 - inorgPct;
+          } else {
+            inorgPct = 100;
+            resPct = 0;
+          }
+        }
+        if (inorgObjects.length === 0) {
+          inorgPct = 0;
+          resPct = 100 - orgPct;
+        }
+        if (resObjects.length === 0) {
+          resPct = 0;
+          inorgPct = 100 - orgPct;
+        }
+      }
+    } else {
+      // Fallback jika tidak ada objek terdeteksi sama sekali
+      orgPct = Number(parsed.organik_percent) || 0;
+      inorgPct = Number(parsed.anorganik_percent) || 100;
+    }
 
     let katUtama: "ORGANIK" | "ANORGANIK" | "RESIDU" = "ANORGANIK";
     if (orgPct >= inorgPct && orgPct >= resPct) katUtama = "ORGANIK";
