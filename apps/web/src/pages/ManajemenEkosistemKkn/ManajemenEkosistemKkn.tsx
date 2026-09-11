@@ -31,6 +31,15 @@ import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { sortKelompokList } from "../../utils/sortUtils";
+import {
+  fetchMasterWilayah,
+  formatRwLabel,
+  isKelurahanMatching,
+  isKelompokCoveringRw,
+  getRwOptionsForKelurahan,
+  MasterKelurahanItem,
+  MasterRwItem,
+} from "../../utils/areaFilterUtils";
 
 export const ManajemenEkosistemKkn: React.FC = () => {
   const { user: currentUser } = useAuthStore();
@@ -44,6 +53,9 @@ export const ManajemenEkosistemKkn: React.FC = () => {
   const [loadingKelompok, setLoadingKelompok] = useState(true);
   const [searchKelompok, setSearchKelompok] = useState("");
   const [filterKelurahan, setFilterKelurahan] = useState("ALL");
+  const [filterRw, setFilterRw] = useState("ALL");
+  const [masterKelurahans, setMasterKelurahans] = useState<MasterKelurahanItem[]>([]);
+  const [masterRws, setMasterRws] = useState<MasterRwItem[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [isKelompokModalOpen, setIsKelompokModalOpen] = useState(false);
@@ -198,6 +210,10 @@ export const ManajemenEkosistemKkn: React.FC = () => {
   const fetchKelompok = async () => {
     try {
       setLoadingKelompok(true);
+      fetchMasterWilayah().then(({ kelurahans, rws }) => {
+        setMasterKelurahans(kelurahans);
+        setMasterRws(rws);
+      });
       // Fetch all groups with limit=0 so client-side search, filtering, and pagination are instantaneous
       const res = await api.get("/kelompok?limit=0");
       if (res.data?.success) {
@@ -237,18 +253,31 @@ export const ManajemenEkosistemKkn: React.FC = () => {
     }
   }, [activeTab]);
 
-  // Extract unique Kelurahan list from data
+  // Dynamic Kelurahan list from master or fallback data
   const kelurahanOptions = useMemo(() => {
+    if (masterKelurahans.length > 0) {
+      return masterKelurahans.map((k) => k.nama);
+    }
     const set = new Set<string>();
     kelompokList.forEach((k) => {
       if (k.kelurahan) set.add(k.kelurahan);
     });
-    // Add default Coblong kelurahans if not present
-    ["Sekeloa", "Sadang Serang", "Lebak Gede", "Lebak Siliwangi", "Dago", "Cipaganti"].forEach((kel) => set.add(kel));
     return Array.from(set).sort();
-  }, [kelompokList]);
+  }, [masterKelurahans, kelompokList]);
 
-  // Filtered Kelompok List
+  // Cascading RW options based on selected Kelurahan
+  const rwOptions = useMemo(() => {
+    return getRwOptionsForKelurahan(masterRws, filterKelurahan);
+  }, [masterRws, filterKelurahan]);
+
+  // Auto reset RW when Kelurahan changes and current RW is invalid
+  useEffect(() => {
+    if (filterRw !== "ALL" && !rwOptions.some((r) => String(r.rw) === String(filterRw))) {
+      setFilterRw("ALL");
+    }
+  }, [filterKelurahan, rwOptions, filterRw]);
+
+  // Filtered Kelompok List: Search && Kelurahan && RW
   const filteredKelompokList = useMemo(() => {
     return kelompokList.filter((k) => {
       const matchSearch =
@@ -260,17 +289,19 @@ export const ManajemenEkosistemKkn: React.FC = () => {
 
       const matchKelurahan =
         filterKelurahan === "ALL" ||
-        (k.kelurahan || "").toLowerCase() === filterKelurahan.toLowerCase() ||
+        isKelurahanMatching(k.kelurahan, filterKelurahan) ||
         (k.name || "").toLowerCase().includes(filterKelurahan.toLowerCase());
 
-      return matchSearch && matchKelurahan;
+      const matchRw = isKelompokCoveringRw(k, filterRw);
+
+      return matchSearch && matchKelurahan && matchRw;
     });
-  }, [kelompokList, searchKelompok, filterKelurahan]);
+  }, [kelompokList, searchKelompok, filterKelurahan, filterRw]);
 
   // Reset page to 1 on filter/search change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchKelompok, filterKelurahan, rowsPerPage]);
+  }, [searchKelompok, filterKelurahan, filterRw, rowsPerPage]);
 
   // Paginated Kelompok
   const totalPages = Math.max(1, Math.ceil(filteredKelompokList.length / (rowsPerPage === 9999 ? filteredKelompokList.length || 1 : rowsPerPage)));
@@ -660,24 +691,42 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                   )}
                 </div>
 
-                {/* Filter Kelurahan (Hanya untuk Admin / Taskforce / Pemimpin, disembunyikan untuk DPL) */}
+                {/* Filter Hierarki Berjenjang: Kelurahan -> RW (Disembunyikan untuk DPL) */}
                 {!isDpl && (
-                  <div className="flex items-center gap-2">
-                    <Filter size={16} className="text-slate-400 shrink-0" />
-                    <select
-                      value={filterKelurahan}
-                      onChange={(e) => setFilterKelurahan(e.target.value)}
-                      aria-label="Filter Kelurahan"
-                      className="px-3 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-xs sm:text-sm bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all cursor-pointer w-full sm:w-auto"
-                    >
-                      <option value="ALL">Semua Kelurahan</option>
-                      {kelurahanOptions.map((kel) => (
-                        <option key={kel} value={kel}>
-                          Kel. {kel}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <>
+                    <div className="flex items-center gap-2">
+                      <Filter size={16} className="text-slate-400 shrink-0" />
+                      <select
+                        value={filterKelurahan}
+                        onChange={(e) => setFilterKelurahan(e.target.value)}
+                        aria-label="Filter Kelurahan"
+                        className="px-3 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-xs sm:text-sm bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all cursor-pointer w-full sm:w-auto"
+                      >
+                        <option value="ALL">Semua Kelurahan</option>
+                        {kelurahanOptions.map((kel) => (
+                          <option key={kel} value={kel}>
+                            Kel. {kel}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={filterRw}
+                        onChange={(e) => setFilterRw(e.target.value)}
+                        aria-label="Filter RW"
+                        className="px-3 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-xs sm:text-sm bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all cursor-pointer w-full sm:w-auto"
+                      >
+                        <option value="ALL">Semua RW</option>
+                        {rwOptions.map((rwItem) => (
+                          <option key={rwItem.id || rwItem.rw} value={String(rwItem.rw)}>
+                            {formatRwLabel(rwItem.rw)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </>
                 )}
               </div>
 

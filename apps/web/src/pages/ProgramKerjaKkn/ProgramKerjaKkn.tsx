@@ -40,6 +40,16 @@ import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
 import { sortKelompokList } from "../../utils/sortUtils";
+import {
+  fetchMasterWilayah,
+  formatRwLabel,
+  isKelurahanMatching,
+  isRwMatching,
+  isKelompokCoveringRw,
+  getRwOptionsForKelurahan,
+  MasterKelurahanItem,
+  MasterRwItem,
+} from "../../utils/areaFilterUtils";
 
 // Google Drive Official Logo Icon Component
 const GoogleDriveIcon = () => (
@@ -91,7 +101,11 @@ export const ProgramKerjaKkn: React.FC = () => {
   const [prokerList, setProkerList] = useState<ProgramKerjaItem[]>([]);
   const [kelompokList, setKelompokList] = useState<any[]>([]);
 
-  // 5 Filter States (Termasuk Status Usulan & Status Pelaksanaan)
+  // Filter States: Kelurahan -> RW -> Kelompok -> Kategori -> Sumber -> Status
+  const [selectedKelurahan, setSelectedKelurahan] = useState<string>("ALL");
+  const [selectedRw, setSelectedRw] = useState<string>("ALL");
+  const [masterKelurahans, setMasterKelurahans] = useState<MasterKelurahanItem[]>([]);
+  const [masterRws, setMasterRws] = useState<MasterRwItem[]>([]);
   const [selectedKelompokId, setSelectedKelompokId] = useState<string>(
     searchParams.get("kelompokId") || searchParams.get("groupId") || "ALL"
   );
@@ -366,6 +380,11 @@ export const ProgramKerjaKkn: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
+      fetchMasterWilayah().then(({ kelurahans, rws }) => {
+        setMasterKelurahans(kelurahans);
+        setMasterRws(rws);
+      });
+
       // 1. Fetch Kelompok strictly scoped for DPL vs Management
       let groups: any[] = [];
       if (isDpl) {
@@ -698,6 +717,38 @@ export const ProgramKerjaKkn: React.FC = () => {
     return "BELUM_MULAI";
   };
 
+  // Cascading RW options based on selected Kelurahan
+  const rwOptions = useMemo(() => {
+    return getRwOptionsForKelurahan(masterRws, selectedKelurahan);
+  }, [masterRws, selectedKelurahan]);
+
+  // Cascading Kelompok options based on selected Kelurahan and RW
+  const availableKelompokList = useMemo(() => {
+    return kelompokList.filter((k) => {
+      const matchKel = isKelurahanMatching(k.kelurahan, selectedKelurahan);
+      const matchRw = isKelompokCoveringRw(k, selectedRw);
+      return matchKel && matchRw;
+    });
+  }, [kelompokList, selectedKelurahan, selectedRw]);
+
+  // Auto reset RW if not valid for selected Kelurahan
+  useEffect(() => {
+    if (selectedRw !== "ALL" && !rwOptions.some((r) => String(r.rw) === String(selectedRw))) {
+      setSelectedRw("ALL");
+    }
+  }, [selectedKelurahan, rwOptions, selectedRw]);
+
+  // Auto reset Kelompok if no longer available in filtered list
+  useEffect(() => {
+    if (
+      isManagement &&
+      selectedKelompokId !== "ALL" &&
+      !availableKelompokList.some((k) => k.id === selectedKelompokId)
+    ) {
+      setSelectedKelompokId("ALL");
+    }
+  }, [isManagement, availableKelompokList, selectedKelompokId]);
+
   // Filtered proker data
   const filteredProkers = useMemo(() => {
     return prokerList.filter((item) => {
@@ -740,7 +791,25 @@ export const ProgramKerjaKkn: React.FC = () => {
         if (new Date(item.createdAt).getTime() > endTs) matchesDate = false;
       }
 
+      const itemKelurahan =
+        item.kelurahan || kelompokList.find((k) => k.id === item.kelompokId)?.kelurahan;
+      const matchesKelurahan = isKelurahanMatching(itemKelurahan, selectedKelurahan);
+
+      const itemCakupanRw =
+        item.cakupanRw || kelompokList.find((k) => k.id === item.kelompokId)?.cakupanRw;
+      const matchesRw =
+        selectedRw === "ALL" ||
+        isRwMatching(item.rw, selectedRw) ||
+        (Array.isArray(itemCakupanRw) &&
+          itemCakupanRw.some((rwVal: any) => isRwMatching(rwVal, selectedRw)));
+
+      const matchesKelompok =
+        selectedKelompokId === "ALL" || item.kelompokId === selectedKelompokId;
+
       return (
+        matchesKelurahan &&
+        matchesRw &&
+        matchesKelompok &&
         matchesSearch &&
         matchesCategory &&
         matchesSource &&
@@ -751,6 +820,10 @@ export const ProgramKerjaKkn: React.FC = () => {
     });
   }, [
     prokerList,
+    kelompokList,
+    selectedKelurahan,
+    selectedRw,
+    selectedKelompokId,
     searchQuery,
     categoryFilter,
     sourceFilter,
@@ -763,8 +836,10 @@ export const ProgramKerjaKkn: React.FC = () => {
   useEffect(() => {
     setCurrentPage(1);
   }, [
-    searchQuery,
+    selectedKelurahan,
+    selectedRw,
     selectedKelompokId,
+    searchQuery,
     categoryFilter,
     sourceFilter,
     statusUsulanFilter,
@@ -816,9 +891,9 @@ export const ProgramKerjaKkn: React.FC = () => {
     const headers = [
       "No",
       "Waktu Dibuat",
-      "Kelompok",
       "Kelurahan",
       "RW",
+      "Kelompok",
       "DPL Pembimbing",
       "Pengisi Data",
       "NIM",
@@ -839,9 +914,9 @@ export const ProgramKerjaKkn: React.FC = () => {
       return [
         p.nomor || idx + 1,
         formatIndonesianTimestamp(p.createdAt).full,
-        p.kelompokName || "-",
         p.kelurahan || "-",
         rwText,
+        p.kelompokName || "-",
         p.dplName || "-",
         p.penginput?.nama || (p.sumber === "DPL" ? "DPL" : "Mahasiswa"),
         p.penginput?.nim || "-",
@@ -1161,8 +1236,42 @@ export const ProgramKerjaKkn: React.FC = () => {
       {/* Toolbar Filter */}
       <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-3">
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 flex-1 max-w-5xl">
-            {/* Filter 1: Kelompok */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-2.5 flex-1">
+            {/* Filter 1: Kelurahan */}
+            <div>
+              <span className="text-[10.5px] font-bold text-slate-500 block mb-1">Kelurahan</span>
+              <select
+                value={selectedKelurahan}
+                onChange={(e) => setSelectedKelurahan(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
+              >
+                <option value="ALL">Semua Kelurahan</option>
+                {masterKelurahans.map((kel) => (
+                  <option key={kel.id || kel.nama} value={kel.nama}>
+                    {kel.nama}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Filter 2: RW */}
+            <div>
+              <span className="text-[10.5px] font-bold text-slate-500 block mb-1">RW</span>
+              <select
+                value={selectedRw}
+                onChange={(e) => setSelectedRw(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
+              >
+                <option value="ALL">Semua RW</option>
+                {rwOptions.map((rwItem) => (
+                  <option key={rwItem.id || rwItem.rw} value={String(rwItem.rw)}>
+                    {formatRwLabel(rwItem.rw)}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Filter 3: Kelompok */}
             <div>
               <span className="text-[10.5px] font-bold text-slate-500 block mb-1">Kelompok</span>
               {isDpl && kelompokList.length <= 1 ? (
@@ -1181,7 +1290,7 @@ export const ProgramKerjaKkn: React.FC = () => {
                   className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
                 >
                   {isManagement && <option value="ALL">Semua Kelompok</option>}
-                  {kelompokList.map((k) => (
+                  {availableKelompokList.map((k) => (
                     <option key={k.id} value={k.id}>
                       {k.name}
                     </option>
@@ -1190,7 +1299,7 @@ export const ProgramKerjaKkn: React.FC = () => {
               )}
             </div>
 
-            {/* Filter 2: Kategori */}
+            {/* Filter 4: Kategori */}
             <div>
               <span className="text-[10.5px] font-bold text-slate-500 block mb-1">Kategori</span>
               <select
@@ -1208,7 +1317,7 @@ export const ProgramKerjaKkn: React.FC = () => {
               </select>
             </div>
 
-            {/* Filter 3: Sumber */}
+            {/* Filter 5: Sumber */}
             <div>
               <span className="text-[10.5px] font-bold text-slate-500 block mb-1">Sumber</span>
               <select
@@ -1222,7 +1331,7 @@ export const ProgramKerjaKkn: React.FC = () => {
               </select>
             </div>
 
-            {/* Filter 4: Status Usulan */}
+            {/* Filter 6: Status Usulan */}
             <div>
               <span className="text-[10.5px] font-bold text-slate-500 block mb-1">
                 Status Usulan
@@ -1240,7 +1349,7 @@ export const ProgramKerjaKkn: React.FC = () => {
               </select>
             </div>
 
-            {/* Filter 5: Status Pelaksanaan */}
+            {/* Filter 7: Status Pelaksanaan */}
             <div>
               <span className="text-[10.5px] font-bold text-slate-500 block mb-1">
                 Status Pelaksanaan
@@ -1343,6 +1452,8 @@ export const ProgramKerjaKkn: React.FC = () => {
             isSearch={
               !!(
                 searchQuery ||
+                selectedKelurahan !== "ALL" ||
+                selectedRw !== "ALL" ||
                 (selectedKelompokId !== "ALL" && !isDpl) ||
                 categoryFilter !== "ALL" ||
                 sourceFilter !== "ALL" ||
@@ -1353,6 +1464,8 @@ export const ProgramKerjaKkn: React.FC = () => {
             searchQuery={searchQuery}
             onResetSearch={() => {
               setSearchQuery("");
+              setSelectedKelurahan("ALL");
+              setSelectedRw("ALL");
               if (isManagement) setSelectedKelompokId("ALL");
               setCategoryFilter("ALL");
               setSourceFilter("ALL");

@@ -42,6 +42,10 @@ import L from "leaflet";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { sortKelompokList } from "../../utils/sortUtils";
 import {
+  fetchMasterWilayah,
+  isKelurahanMatching,
+} from "../../utils/areaFilterUtils";
+import {
   TIMELINE_KKN_HEADER,
   TIMELINE_KKN_DATA,
   computeTimelineStatus,
@@ -202,6 +206,11 @@ const JadwalKegiatan: React.FC = () => {
 
   const fetchKelurahans = async () => {
     try {
+      const { kelurahans } = await fetchMasterWilayah();
+      if (kelurahans.length > 0) {
+        setKelurahanOptions(kelurahans.map((k) => k.nama));
+        return;
+      }
       const res = await api.get("/areas/kelurahan");
       const list = res.data?.data || res.data || [];
       if (Array.isArray(list) && list.length > 0) {
@@ -216,6 +225,23 @@ const JadwalKegiatan: React.FC = () => {
       // keep fallback
     }
   };
+
+  // Cascading groups based on selected Kelurahan
+  const availableGroups = React.useMemo(() => {
+    if (selectedKelurahan === "ALL") return groups;
+    return groups.filter((g) => isKelurahanMatching(g.kelurahan, selectedKelurahan));
+  }, [groups, selectedKelurahan]);
+
+  // Auto reset selectedScope when Kelurahan changes and selected group is no longer valid
+  useEffect(() => {
+    if (
+      selectedScope !== "ALL" &&
+      selectedScope !== "GLOBAL" &&
+      !availableGroups.some((g) => g.id === selectedScope)
+    ) {
+      setSelectedScope("ALL");
+    }
+  }, [selectedKelurahan, availableGroups, selectedScope]);
 
   const fetchGroups = async () => {
     try {
@@ -1114,7 +1140,7 @@ const JadwalKegiatan: React.FC = () => {
                 >
                   <option value="ALL">🌐 Semua Kelompok / Global</option>
                   <option value="GLOBAL">🏛️ Acuan Global KKN</option>
-                  {groups.map((g) => (
+                  {availableGroups.map((g) => (
                     <option key={g.id} value={g.id}>
                       👥 {g.name} {g.kelurahan ? `(${g.kelurahan})` : ""}
                     </option>

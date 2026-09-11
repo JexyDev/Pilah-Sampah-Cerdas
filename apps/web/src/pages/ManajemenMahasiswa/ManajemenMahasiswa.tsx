@@ -27,6 +27,15 @@ import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
 import Sidebar from "../../components/layout/Sidebar/Sidebar";
 import { sortKelompokList } from "../../utils/sortUtils";
+import {
+  fetchMasterWilayah,
+  formatRwLabel,
+  isKelurahanMatching,
+  isKelompokCoveringRw,
+  getRwOptionsForKelurahan,
+  MasterKelurahanItem,
+  MasterRwItem,
+} from "../../utils/areaFilterUtils";
 
 const PRODI_OPTIONS = [
   "S1 Teknik Informatika",
@@ -63,10 +72,14 @@ const ManajemenMahasiswa: React.FC = () => {
 
   // Filters State
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("Semua");
+  const [kelurahanFilter, setKelurahanFilter] = useState("Semua");
+  const [rwFilter, setRwFilter] = useState("Semua");
   const [kelompokFilter, setKelompokFilter] = useState("Semua");
+  const [statusFilter, setStatusFilter] = useState("Semua");
   const [startDateFilter, setStartDateFilter] = useState("");
   const [endDateFilter, setEndDateFilter] = useState("");
+  const [masterKelurahans, setMasterKelurahans] = useState<MasterKelurahanItem[]>([]);
+  const [masterRws, setMasterRws] = useState<MasterRwItem[]>([]);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -132,22 +145,32 @@ const ManajemenMahasiswa: React.FC = () => {
     fetchMahasiswas();
     fetchKelompokList();
     fetchAreas();
+    fetchMasterWilayah().then(({ kelurahans, rws }) => {
+      setMasterKelurahans(kelurahans);
+      setMasterRws(rws);
+    });
   }, []);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter, kelompokFilter, startDateFilter, endDateFilter]);
+  }, [searchTerm, kelurahanFilter, rwFilter, statusFilter, kelompokFilter, startDateFilter, endDateFilter]);
 
-  // Extract unique Kelompok KKN list for Filter dropdown
-  const uniqueKelompoks = useMemo(() => {
-    const set = new Set<string>();
-    mahasiswas.forEach((m) => {
-      if (m.studentProfile?.kelompok?.name) {
-        set.add(m.studentProfile.kelompok.name);
-      }
-    });
-    return sortKelompokList(Array.from(set), (s) => s);
-  }, [mahasiswas]);
+  // Dynamic RW options cascading from selected Kelurahan
+  const rwOptions = useMemo(() => {
+    return getRwOptionsForKelurahan(kelurahanFilter, masterRws, kelompokList);
+  }, [kelurahanFilter, masterRws, kelompokList]);
+
+  // Dynamic Kelompok options cascading from Kelurahan and RW
+  const availableKelompoks = useMemo(() => {
+    let list = kelompokList;
+    if (kelurahanFilter !== "Semua" && kelurahanFilter !== "ALL") {
+      list = list.filter((k) => isKelurahanMatching(k.kelurahan, kelurahanFilter));
+    }
+    if (rwFilter !== "Semua" && rwFilter !== "ALL") {
+      list = list.filter((k) => isKelompokCoveringRw(k, rwFilter));
+    }
+    return sortKelompokList(list, (k: any) => k.name);
+  }, [kelompokList, kelurahanFilter, rwFilter]);
 
   // Filtered List
   const filteredMahasiswas = useMemo(() => {
@@ -167,6 +190,21 @@ const ManajemenMahasiswa: React.FC = () => {
         kelompokFilter === "Semua" ||
         m.studentProfile?.kelompok?.name === kelompokFilter;
 
+      const studentKel =
+        m.studentProfile?.kelompok?.kelurahan ||
+        m.rw?.kelurahan?.name ||
+        "";
+      const matchesKelurahan =
+        kelurahanFilter === "Semua" ||
+        kelurahanFilter === "ALL" ||
+        isKelurahanMatching(studentKel, kelurahanFilter);
+
+      const matchesRw =
+        rwFilter === "Semua" ||
+        rwFilter === "ALL" ||
+        isKelompokCoveringRw(m.studentProfile?.kelompok, rwFilter) ||
+        (m.rw?.name && String(m.rw.name).includes(rwFilter.replace(/\D/g, "")));
+
       let matchesDate = true;
       if (startDateFilter && m.createdAt) {
         const startTs = new Date(`${startDateFilter}T00:00:00`).getTime();
@@ -177,9 +215,9 @@ const ManajemenMahasiswa: React.FC = () => {
         if (new Date(m.createdAt).getTime() > endTs) matchesDate = false;
       }
 
-      return matchesSearch && matchesStatus && matchesKelompok && matchesDate;
+      return matchesSearch && matchesStatus && matchesKelurahan && matchesRw && matchesKelompok && matchesDate;
     });
-  }, [mahasiswas, searchTerm, statusFilter, kelompokFilter, startDateFilter, endDateFilter]);
+  }, [mahasiswas, searchTerm, kelurahanFilter, rwFilter, statusFilter, kelompokFilter, startDateFilter, endDateFilter]);
 
   // Selected Kelompok Object in Form
   const selectedKelompok = useMemo(() => {
@@ -315,11 +353,11 @@ const ManajemenMahasiswa: React.FC = () => {
       "Program Studi",
       "Universitas",
       "No WhatsApp",
+      "Kelurahan",
+      "Wilayah RT/RW",
       "Kelompok KKN",
       "Peran",
       "Dosen Pendamping (DPL)",
-      "Kelurahan",
-      "Wilayah RT/RW",
       "Status",
       "Tanggal Terdaftar",
     ];
@@ -341,11 +379,11 @@ const ManajemenMahasiswa: React.FC = () => {
         m.studentProfile?.jurusan || m.programStudi || "-",
         m.studentProfile?.fakultas || m.institusi || "UNIKOM",
         m.phone || "-",
+        kelurahan,
+        m.rtRw?.name || m.rw?.name || "-",
         m.studentProfile?.kelompok?.name || "-",
         m.studentProfile?.isKetua ? "Ketua Kelompok" : "Anggota",
         dplName,
-        kelurahan,
-        m.rtRw?.name || m.rw?.name || "-",
         m.status || "Aktif",
         m.createdAt ? new Date(m.createdAt).toLocaleDateString("id-ID") : "-",
       ];
@@ -456,6 +494,49 @@ const ManajemenMahasiswa: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+            {/* Filter 1: Kelurahan */}
+            <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl px-2.5 py-1.5 text-xs text-slate-600 dark:text-slate-300">
+              <MapPin size={13} className="text-emerald-600 dark:text-emerald-400" />
+              <span className="font-bold text-[11px] text-slate-400">Kelurahan:</span>
+              <select
+                value={kelurahanFilter}
+                onChange={(e) => {
+                  setKelurahanFilter(e.target.value);
+                  setRwFilter("Semua");
+                  setKelompokFilter("Semua");
+                }}
+                className="bg-transparent font-bold text-xs text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
+              >
+                <option value="Semua">Semua Kelurahan</option>
+                {masterKelurahans.map((k) => (
+                  <option key={k.id} value={k.name}>
+                    Kel. {k.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Filter 2: RW */}
+            <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl px-2.5 py-1.5 text-xs text-slate-600 dark:text-slate-300">
+              <span className="font-bold text-[11px] text-slate-400">RW:</span>
+              <select
+                value={rwFilter}
+                onChange={(e) => {
+                  setRwFilter(e.target.value);
+                  setKelompokFilter("Semua");
+                }}
+                className="bg-transparent font-bold text-xs text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
+              >
+                <option value="Semua">Semua RW</option>
+                {rwOptions.map((rw) => (
+                  <option key={rw} value={rw}>
+                    {formatRwLabel(rw)}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Filter 3: Kelompok */}
             <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl px-2.5 py-1.5 text-xs text-slate-600 dark:text-slate-300">
               <Filter size={13} className="text-slate-400" />
               <span className="font-bold text-[11px] text-slate-400">Kelompok:</span>
@@ -465,9 +546,9 @@ const ManajemenMahasiswa: React.FC = () => {
                 className="bg-transparent font-bold text-xs text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
               >
                 <option value="Semua">Semua Kelompok</option>
-                {uniqueKelompoks.map((k) => (
-                  <option key={k} value={k}>
-                    {k}
+                {availableKelompoks.map((k: any) => (
+                  <option key={k.id || k.name} value={k.name}>
+                    {k.name}
                   </option>
                 ))}
               </select>
@@ -504,10 +585,12 @@ const ManajemenMahasiswa: React.FC = () => {
               />
             </div>
 
-            {(searchTerm || statusFilter !== "Semua" || kelompokFilter !== "Semua" || startDateFilter || endDateFilter) && (
+            {(searchTerm || kelurahanFilter !== "Semua" || rwFilter !== "Semua" || statusFilter !== "Semua" || kelompokFilter !== "Semua" || startDateFilter || endDateFilter) && (
               <button
                 onClick={() => {
                   setSearchTerm("");
+                  setKelurahanFilter("Semua");
+                  setRwFilter("Semua");
                   setStatusFilter("Semua");
                   setKelompokFilter("Semua");
                   setStartDateFilter("");
@@ -548,9 +631,9 @@ const ManajemenMahasiswa: React.FC = () => {
                   <th className="py-3.5 px-4">Program Studi</th>
                   <th className="py-3.5 px-4">NIM</th>
                   <th className="py-3.5 px-4">No. HP / WA</th>
+                  <th className="py-3.5 px-4">Kelurahan & Wilayah</th>
                   <th className="py-3.5 px-4">Kelompok KKN</th>
                   <th className="py-3.5 px-4">DPL</th>
-                  <th className="py-3.5 px-4">Kelurahan & Wilayah</th>
                   <th className="py-3.5 px-4 text-center">Status</th>
                   <th className="py-3.5 px-4 text-center w-28">Aksi</th>
                 </tr>
@@ -628,6 +711,17 @@ const ManajemenMahasiswa: React.FC = () => {
                             {mhs.phone || "-"}
                           </a>
                         </td>
+                        <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400 font-medium">
+                          <div className="flex flex-col">
+                            <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
+                              <MapPin size={11} className="text-primary" />
+                              Kel. {kelurahanName}
+                            </span>
+                            <span className="text-[11px] text-slate-500 font-mono">
+                              {rwName}
+                            </span>
+                          </div>
+                        </td>
                         <td className="py-3.5 px-4">
                           <span className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-lg border border-blue-200 font-bold text-[10px] inline-block">
                             {mhs.studentProfile?.kelompok?.name || "Belum Plotting"}
@@ -639,17 +733,6 @@ const ManajemenMahasiswa: React.FC = () => {
                             mhs.studentProfile?.kelompok?.dplNamaMentah || (
                               <span className="text-slate-400 italic">Belum Plotting</span>
                             )}
-                        </td>
-                        <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400 font-medium">
-                          <div className="flex flex-col">
-                            <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
-                              <MapPin size={11} className="text-primary" />
-                              Kel. {kelurahanName}
-                            </span>
-                            <span className="text-[11px] text-slate-500 font-mono">
-                              {rwName}
-                            </span>
-                          </div>
                         </td>
                         <td className="py-3.5 px-4 text-center">
                           <span
