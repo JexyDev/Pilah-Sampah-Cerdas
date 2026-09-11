@@ -109,14 +109,13 @@
   overflow: hidden;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
   border: 1px solid #1e293b;
+  line-height: 0; /* Hindari whitespace gap di bawah image */
 }
 
 .imageLayer {
   display: block;
   width: 100%;
   height: auto;
-  max-height: 580px;
-  object-fit: contain;
   margin: 0 auto;
 }
 
@@ -129,6 +128,86 @@
   pointer-events: none;
 }
 
+/* Controls Bar (Filter Kategori & Toggle Bbox) */
+.controlsBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  background: #f8fafc;
+  padding: 0.75rem 1rem;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+}
+
+.filterTabs {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.filterBtn {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.35rem 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filterBtn:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.filterActiveAll {
+  background: #0f172a;
+  color: #ffffff;
+  border-color: #0f172a;
+}
+
+.filterActiveOrg {
+  background: #10b981;
+  color: #ffffff;
+  border-color: #10b981;
+}
+
+.filterActiveInorg {
+  background: #0ea5e9;
+  color: #ffffff;
+  border-color: #0ea5e9;
+}
+
+.filterActiveRes {
+  background: #ef4444;
+  color: #ffffff;
+  border-color: #ef4444;
+}
+
+.toggleBtn {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.35rem 0.85rem;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.toggleBtnActive {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  color: #1d4ed8;
+}
+
 /* Bounding Box Styling */
 .bboxRect {
   fill-opacity: 0.15;
@@ -137,6 +216,7 @@
   pointer-events: all;
   cursor: pointer;
 }
+
 
 .bboxRect:hover {
   fill-opacity: 0.35;
