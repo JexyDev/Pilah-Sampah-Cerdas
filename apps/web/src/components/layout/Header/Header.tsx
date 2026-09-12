@@ -102,8 +102,20 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
     switch (pathname) {
       case "/dasbor":
       case "/dashboard":
-      case "/":
-        return ["Dasbor"];
+      case "/": {
+        const params = new URLSearchParams(search);
+        const tab = params.get("tab");
+        const role = String(user?.peran || (user as any)?.role || "").toUpperCase();
+        const isPimpinan = ["PEMIMPIN", "PIMPINAN"].includes(role);
+
+        if (tab === "tata-kelola-sampah" || tab === "sampah") {
+          return ["Dasbor", "Tata Kelola Sampah"];
+        }
+        if (tab === "kkn" || isPimpinan) {
+          return ["Dasbor", "Kuliah Kerja Nyata"];
+        }
+        return ["Dasbor", "Tata Kelola Sampah"];
+      }
       case "/monitoring-wilayah":
       case "/monitoring":
         return ["Peta Wilayah"];

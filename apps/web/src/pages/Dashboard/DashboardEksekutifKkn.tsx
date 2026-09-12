@@ -173,6 +173,28 @@ interface KknExecutiveData {
     totalKunjunganLapangan: number;
     totalDurasiBimbinganJam: number;
     rerataBimbinganPerDpl: number;
+    dplTerisiList?: Array<{
+      id: string;
+      name: string;
+      nip: string;
+      phone: string | null;
+      email: string | null;
+      programStudi: string;
+      totalLog: number;
+      totalJam: number;
+      kelompok: Array<{ id: string; name: string; kelurahan: string; cakupanRw: any }>;
+    }>;
+    dplKosongList?: Array<{
+      id: string;
+      name: string;
+      nip: string;
+      phone: string | null;
+      email: string | null;
+      programStudi: string;
+      totalLog: number;
+      totalJam: number;
+      kelompok: Array<{ id: string; name: string; kelurahan: string; cakupanRw: any }>;
+    }>;
     recentActivities: Array<{
       id: string;
       dplName: string;
@@ -267,6 +289,13 @@ export const DashboardEksekutifKkn: React.FC = () => {
   const [criticalAlpaFilterKelompok, setCriticalAlpaFilterKelompok] = useState("ALL");
   const [criticalAlpaPage, setCriticalAlpaPage] = useState(1);
   const CRITICAL_ALPA_PER_PAGE = 8;
+
+  // Modal Detail DPL (Logbook Terisi & Kosong)
+  const [showDplLogbookModal, setShowDplLogbookModal] = useState(false);
+  const [dplLogbookModalTab, setDplLogbookModalTab] = useState<"TERISI" | "KOSONG">("TERISI");
+  const [dplModalSearchQuery, setDplModalSearchQuery] = useState("");
+  const [dplModalPage, setDplModalPage] = useState(1);
+  const DPL_MODAL_PER_PAGE = 8;
 
   // Ambil data master Wilayah & RW
   useEffect(() => {
@@ -413,6 +442,34 @@ export const DashboardEksekutifKkn: React.FC = () => {
     return filteredCriticalAlpaStudents.slice(start, start + CRITICAL_ALPA_PER_PAGE);
   }, [filteredCriticalAlpaStudents, criticalAlpaPage]);
 
+  // Filter & Pagination DPL Modal (Terisi & Kosong)
+  const currentDplSourceList = useMemo(() => {
+    if (dplLogbookModalTab === "TERISI") {
+      return data?.resumeDpl?.dplTerisiList || [];
+    }
+    return data?.resumeDpl?.dplKosongList || [];
+  }, [data?.resumeDpl?.dplTerisiList, data?.resumeDpl?.dplKosongList, dplLogbookModalTab]);
+
+  const filteredDplList = useMemo(() => {
+    if (!dplModalSearchQuery.trim()) return currentDplSourceList;
+    const q = dplModalSearchQuery.toLowerCase();
+    return currentDplSourceList.filter((d) => {
+      const matchName = d.name.toLowerCase().includes(q);
+      const matchNip = d.nip.toLowerCase().includes(q);
+      const matchProdi = (d.programStudi || "").toLowerCase().includes(q);
+      const matchKelompok = d.kelompok.some(
+        (k) => k.name.toLowerCase().includes(q) || k.kelurahan.toLowerCase().includes(q)
+      );
+      return matchName || matchNip || matchProdi || matchKelompok;
+    });
+  }, [currentDplSourceList, dplModalSearchQuery]);
+
+  const totalDplModalPages = Math.ceil(filteredDplList.length / DPL_MODAL_PER_PAGE) || 1;
+  const paginatedDplList = useMemo(() => {
+    const start = (dplModalPage - 1) * DPL_MODAL_PER_PAGE;
+    return filteredDplList.slice(start, start + DPL_MODAL_PER_PAGE);
+  }, [filteredDplList, dplModalPage]);
+
   const fetchData = async (isSilent = false) => {
     try {
       if (!isSilent) setLoading(true);
@@ -452,10 +509,25 @@ export const DashboardEksekutifKkn: React.FC = () => {
           dplService.getGroupSummary(),
           dplService.getStudents().catch(() => []),
         ]);
-        setGroups(groupsData || []);
-        if (studentsData && studentsData.length > 0) {
-          setStudents(studentsData);
-        }
+        const cleanGroups = (groupsData || []).filter((g: any) => {
+          const name = (g.name || "").toLowerCase();
+          return !name.includes("test") && !name.includes("dummy");
+        });
+        const cleanStudents = (studentsData || []).filter((s: any) => {
+          const name = (s.user?.name || s.name || "").toLowerCase();
+          const email = (s.user?.email || s.email || "").toLowerCase();
+          const nim = (s.nim || "").toLowerCase();
+          return !(
+            name.includes("test") ||
+            name.includes("dummy") ||
+            email.includes("test") ||
+            email.includes("dummy") ||
+            nim.includes("test") ||
+            nim.includes("dummy")
+          );
+        });
+        setGroups(cleanGroups);
+        setStudents(cleanStudents);
       } catch (err) {
         console.warn("Gagal memuat ringkasan kelompok KKN:", err);
       } finally {
@@ -500,7 +572,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
     }>;
   } | null>(null);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
-  const [leaderboardTab, setLeaderboardTab] = useState<"students" | "groups">("students");
+  const [leaderboardTab, setLeaderboardTab] = useState<"students" | "groups" | "dpl">("students");
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
@@ -714,20 +786,12 @@ export const DashboardEksekutifKkn: React.FC = () => {
     return `${day} ${month} ${year} • ${hours}.${mins} WIB`;
   }, [data?.lastUpdated]);
 
-  // Sebaran Mahasiswa per Wilayah dengan Indeks Angka (1-6) agar label X-Axis tidak menumpuk
-  const sebaranMahasiswaIndexedData = useMemo(() => {
-    return (data?.sebaranMahasiswaPerWilayah || []).map((item, idx) => ({
-      ...item,
-      wilayahNo: String(idx + 1),
-    }));
-  }, [data?.sebaranMahasiswaPerWilayah]);
-
   if (loading && !data) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[500px] w-full gap-3 py-16">
         <div className="w-10 h-10 border-3 border-emerald-600/20 border-t-emerald-600 rounded-full animate-spin" />
         <span className="text-xs font-bold text-slate-500 tracking-wide uppercase">
-          Memuat Dashboard Eksekutif KKN...
+          Memuat Dasbor Eksekutif KKN...
         </span>
       </div>
     );
@@ -751,144 +815,151 @@ export const DashboardEksekutifKkn: React.FC = () => {
   return (
     <div className="space-y-6 pb-12 font-sans">
       {/* ========================================================================= */}
-      {/* 1. HEADER SECTION                                                         */}
+      {/* 1. BAR TAJUK HALAMAN (STANDAR EKSEKUTIF KONSISTEN DENGAN ANALISIS SISTEM)  */}
       {/* ========================================================================= */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-[26px] font-black text-slate-900 dark:text-slate-100 tracking-tight">
-            Dashboard Eksekutif KKN
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
-            Ringkasan strategis pelaksanaan KKN secara real-time
-          </p>
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-[#e5f7ed] dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 flex items-center justify-center shrink-0 border border-[#009966]/15 dark:border-emerald-700/30 shadow-2xs">
+            <GraduationCap size={24} />
+          </div>
+          <div className="space-y-0.5">
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight leading-tight">
+              Kuliah Kerja Nyata
+            </h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+              Dasbor eksekutif pemantauan strategis pelaksanaan Kuliah Kerja Nyata secara terpadu, berkala, dan waktu nyata.
+            </p>
+          </div>
         </div>
 
-        {/* Action & Filter Controls */}
-        <div className="flex flex-col items-end gap-1.5">
-          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
-            {/* Periode Dropdown */}
-            <div className="relative">
-              <div className="flex items-center gap-2 bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-2xs">
-                <Calendar size={14} className="text-blue-500 shrink-0" />
-                <select
-                  value={selectedPeriode}
-                  onChange={(e) => setSelectedPeriode(e.target.value)}
-                  aria-label="Filter Periode KKN"
-                  className="bg-transparent outline-none cursor-pointer pr-2 text-xs font-bold text-slate-700 dark:text-slate-200"
-                >
-                  <option value="2026">Periode KKN 2026</option>
-                  <option value="ALL">Semua Periode</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Kelurahan Dropdown */}
-            <div className="relative">
-              <div className="flex items-center gap-2 bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-2xs">
-                <MapPin size={14} className="text-emerald-600 shrink-0" />
-                <select
-                  value={selectedKelurahan}
-                  onChange={(e) => {
-                    setSelectedKelurahan(e.target.value);
-                    setSelectedRw("Semua RW");
-                    setSelectedKelompok("Semua Kelompok");
-                  }}
-                  aria-label="Filter Kelurahan"
-                  className="bg-transparent outline-none cursor-pointer pr-2 text-xs font-bold text-slate-700 dark:text-slate-200"
-                >
-                  <option value="Semua Kelurahan">Semua Kelurahan</option>
-                  {masterKelurahans.length > 0 ? (
-                    masterKelurahans.map((kel) => (
-                      <option key={kel.id || kel.name} value={kel.name}>
-                        Kel. {kel.name}
-                      </option>
-                    ))
-                  ) : (
-                    <>
-                      <option value="Cipaganti">Kel. Cipaganti</option>
-                      <option value="Dago">Kel. Dago</option>
-                      <option value="Lebak Gede">Kel. Lebak Gede</option>
-                      <option value="Lebak Siliwangi">Kel. Lebak Siliwangi</option>
-                      <option value="Sadang Serang">Kel. Sadang Serang</option>
-                      <option value="Sekeloa">Kel. Sekeloa</option>
-                    </>
-                  )}
-                </select>
-              </div>
-            </div>
-
-            {/* RW Dropdown (Hanya aktif jika kelurahan spesifik dipilih) */}
-            <div className="relative">
-              <div
-                className={`flex items-center gap-2 border px-3 py-2 rounded-xl text-xs font-semibold shadow-2xs transition-all ${
-                  isKelurahanSelected
-                    ? "bg-white dark:bg-slate-850 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200"
-                    : "bg-slate-100/80 dark:bg-slate-800/50 border-slate-200/60 dark:border-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed"
-                }`}
-              >
-                <Layers
-                  size={14}
-                  className={`shrink-0 ${isKelurahanSelected ? "text-blue-500" : "text-slate-400 dark:text-slate-600"}`}
-                />
-                <select
-                  value={selectedRw}
-                  onChange={(e) => setSelectedRw(e.target.value)}
-                  disabled={!isKelurahanSelected}
-                  aria-label="Filter Rukun Warga"
-                  title={!isKelurahanSelected ? "Pilih kelurahan terlebih dahulu untuk memfilter RW" : "Pilih RW"}
-                  className="bg-transparent outline-none pr-2 text-xs font-bold disabled:cursor-not-allowed"
-                >
-                  {!isKelurahanSelected ? (
-                    <option value="Semua RW">Semua RW (Pilih Kelurahan Dulu)</option>
-                  ) : (
-                    rwOptions.map((rw) => (
-                      <option key={rw} value={rw}>
-                        {rw}
-                      </option>
-                    ))
-                  )}
-                </select>
-              </div>
-            </div>
-
-            {/* Kelompok Dropdown */}
-            <div className="relative">
-              <div className="flex items-center gap-2 bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-2xs">
-                <Users size={14} className="text-purple-600 shrink-0" />
-                <select
-                  value={selectedKelompok}
-                  onChange={(e) => setSelectedKelompok(e.target.value)}
-                  aria-label="Filter Kelompok KKN"
-                  className="bg-transparent outline-none cursor-pointer pr-2 text-xs font-bold text-slate-700 dark:text-slate-200 max-w-[170px] truncate"
-                >
-                  {kelompokOptions.map((kel) => (
-                    <option key={kel} value={kel}>
-                      {kel}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Unduh Laporan Button */}
-            <button
-              onClick={handleExport}
-              disabled={downloading}
-              className="flex items-center gap-2 bg-[#009966] hover:bg-[#008055] text-white px-4 py-2 rounded-xl text-xs font-bold shadow-xs hover:shadow transition cursor-pointer disabled:opacity-50"
-            >
-              <Download size={14} />
-              <span>{downloading ? "Mengunduh..." : "Unduh Laporan"}</span>
-            </button>
-          </div>
-
-          {/* Real-time Indicator */}
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+        {/* Action Controls & Real-time Indicator */}
+        <div className="flex items-center gap-2.5 shrink-0 self-start md:self-center flex-wrap">
+          <div className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-50 dark:bg-slate-850 rounded-xl border border-slate-200/80 dark:border-slate-700 text-xs text-slate-500 dark:text-slate-400 font-semibold shadow-2xs shrink-0">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse inline-block" />
             <span>Terakhir diperbarui: {formattedLastUpdated}</span>
             {refreshing && (
-              <RefreshCw size={11} className="animate-spin text-emerald-600 ml-1" />
+              <RefreshCw size={12} className="animate-spin text-emerald-600 ml-1" />
             )}
           </div>
+          <button
+            type="button"
+            onClick={() => fetchData(false)}
+            disabled={refreshing}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#009966] hover:bg-[#008855] active:scale-95 text-white font-extrabold text-xs rounded-full shadow-xs transition-all cursor-pointer disabled:opacity-50"
+          >
+            <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
+            <span>Perbarui Data</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={downloading}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-extrabold text-xs rounded-full shadow-xs transition-all cursor-pointer disabled:opacity-50"
+          >
+            <Download size={14} />
+            <span>{downloading ? "Mengunduh..." : "Unduh Laporan"}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* 1B. BILAH FILTER SIMETRIS 4 KOLOM (RESPONSIF & SEJAJAR)                    */}
+      {/* ========================================================================= */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 bg-white dark:bg-slate-900 p-2.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+        {/* Filter 1: Periode */}
+        <div className="flex items-center gap-2 bg-slate-50/80 dark:bg-slate-850 border border-slate-200/80 dark:border-slate-700/80 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 w-full hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
+          <Calendar size={14} className="text-blue-500 shrink-0" />
+          <select
+            value={selectedPeriode}
+            onChange={(e) => setSelectedPeriode(e.target.value)}
+            aria-label="Filter Periode KKN"
+            className="bg-transparent outline-none cursor-pointer pr-1 text-xs font-bold text-slate-700 dark:text-slate-200 w-full"
+          >
+            <option value="2026">Periode KKN 2026</option>
+            <option value="ALL">Semua Periode</option>
+          </select>
+        </div>
+
+        {/* Filter 2: Kelurahan */}
+        <div className="flex items-center gap-2 bg-slate-50/80 dark:bg-slate-850 border border-slate-200/80 dark:border-slate-700/80 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 w-full hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
+          <MapPin size={14} className="text-emerald-600 shrink-0" />
+          <select
+            value={selectedKelurahan}
+            onChange={(e) => {
+              setSelectedKelurahan(e.target.value);
+              setSelectedRw("Semua RW");
+              setSelectedKelompok("Semua Kelompok");
+            }}
+            aria-label="Filter Kelurahan"
+            className="bg-transparent outline-none cursor-pointer pr-1 text-xs font-bold text-slate-700 dark:text-slate-200 w-full"
+          >
+            <option value="Semua Kelurahan">Semua Kelurahan</option>
+            {masterKelurahans.length > 0 ? (
+              masterKelurahans.map((kel) => (
+                <option key={kel.id || kel.name} value={kel.name}>
+                  Kel. {kel.name}
+                </option>
+              ))
+            ) : (
+              <>
+                <option value="Cipaganti">Kel. Cipaganti</option>
+                <option value="Dago">Kel. Dago</option>
+                <option value="Lebak Gede">Kel. Lebak Gede</option>
+                <option value="Lebak Siliwangi">Kel. Lebak Siliwangi</option>
+                <option value="Sadang Serang">Kel. Sadang Serang</option>
+                <option value="Sekeloa">Kel. Sekeloa</option>
+              </>
+            )}
+          </select>
+        </div>
+
+        {/* Filter 3: RW */}
+        <div
+          className={`flex items-center gap-2 border px-3 py-2 rounded-xl text-xs font-semibold transition-all w-full ${
+            isKelurahanSelected
+              ? "bg-slate-50/80 dark:bg-slate-850 border-slate-200/80 dark:border-slate-700/80 text-slate-700 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600"
+              : "bg-slate-100/60 dark:bg-slate-800/40 border-slate-200/50 dark:border-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed"
+          }`}
+          title={!isKelurahanSelected ? "Pilih kelurahan terlebih dahulu untuk memfilter RW" : "Pilih RW"}
+        >
+          <Layers
+            size={14}
+            className={`shrink-0 ${isKelurahanSelected ? "text-blue-500" : "text-slate-400 dark:text-slate-600"}`}
+          />
+          <select
+            value={selectedRw}
+            onChange={(e) => setSelectedRw(e.target.value)}
+            disabled={!isKelurahanSelected}
+            aria-label="Filter Rukun Warga"
+            className="bg-transparent outline-none pr-1 text-xs font-bold disabled:cursor-not-allowed w-full"
+          >
+            <option value="Semua RW">Semua RW</option>
+            {isKelurahanSelected &&
+              rwOptions
+                .filter((rw) => rw !== "Semua RW")
+                .map((rw) => (
+                  <option key={rw} value={rw}>
+                    {rw}
+                  </option>
+                ))}
+          </select>
+        </div>
+
+        {/* Filter 4: Kelompok */}
+        <div className="flex items-center gap-2 bg-slate-50/80 dark:bg-slate-850 border border-slate-200/80 dark:border-slate-700/80 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 w-full hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
+          <Users size={14} className="text-purple-600 shrink-0" />
+          <select
+            value={selectedKelompok}
+            onChange={(e) => setSelectedKelompok(e.target.value)}
+            aria-label="Filter Kelompok KKN"
+            className="bg-transparent outline-none cursor-pointer pr-1 text-xs font-bold text-slate-700 dark:text-slate-200 w-full truncate"
+          >
+            {kelompokOptions.map((kel) => (
+              <option key={kel} value={kel}>
+                {kel}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -897,28 +968,33 @@ export const DashboardEksekutifKkn: React.FC = () => {
       {/* ========================================================================= */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 sm:gap-4">
         {/* Card 1: Jumlah Wilayah */}
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-xs flex items-center gap-3.5">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:shadow-md hover:-translate-y-0.5 hover:border-emerald-500/40 transition-all duration-300 flex items-center gap-3.5">
           <div className="w-11 h-11 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 flex items-center justify-center shrink-0 border border-emerald-100 dark:border-emerald-800/40">
             <MapPin size={20} className="text-[#009966] dark:text-emerald-400" />
           </div>
           <div>
             <p className="text-[11.5px] font-semibold text-slate-400 dark:text-slate-400">
-              Jumlah Wilayah
+              Cakupan Wilayah KKN
             </p>
-            <p className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5 tracking-tight">
-              {summary.totalWilayah.label}
-            </p>
+            <div className="mt-0.5 leading-tight">
+              <p className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 tracking-tight">
+                {summary.totalWilayah.kelurahanCount || 6} Kelurahan
+              </p>
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                {summary.totalWilayah.rwCount || 21} RW
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Card 2: Total Semua Kelompok Mahasiswa */}
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-xs flex items-center gap-3.5">
+        {/* Card 2: Jumlah Kelompok KKN */}
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:shadow-md hover:-translate-y-0.5 hover:border-blue-500/40 transition-all duration-300 flex items-center gap-3.5">
           <div className="w-11 h-11 rounded-xl bg-blue-50 dark:bg-blue-950/60 flex items-center justify-center shrink-0 border border-blue-100 dark:border-blue-800/40">
             <Users size={20} className="text-blue-600 dark:text-blue-400" />
           </div>
           <div>
             <p className="text-[11.5px] font-semibold text-slate-400 dark:text-slate-400">
-              Total Semua Kelompok
+              Kelompok Kuliah Kerja Nyata
             </p>
             <p className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5 tracking-tight">
               {summary.totalKelompok.label}
@@ -927,7 +1003,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
         </div>
 
         {/* Card 3: Total Mahasiswa */}
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-xs flex items-center gap-3.5">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:shadow-md hover:-translate-y-0.5 hover:border-emerald-500/40 transition-all duration-300 flex items-center gap-3.5">
           <div className="w-11 h-11 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 flex items-center justify-center shrink-0 border border-emerald-100 dark:border-emerald-800/40">
             <User size={20} className="text-[#009966] dark:text-emerald-400" />
           </div>
@@ -941,14 +1017,14 @@ export const DashboardEksekutifKkn: React.FC = () => {
           </div>
         </div>
 
-        {/* Card 4: Total DPL */}
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-xs flex items-center gap-3.5">
+        {/* Card 4: Jumlah Dosen (DPL) */}
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:shadow-md hover:-translate-y-0.5 hover:border-blue-500/40 transition-all duration-300 flex items-center gap-3.5">
           <div className="w-11 h-11 rounded-xl bg-blue-50 dark:bg-blue-950/60 flex items-center justify-center shrink-0 border border-blue-100 dark:border-blue-800/40">
             <GraduationCap size={20} className="text-blue-600 dark:text-blue-400" />
           </div>
           <div>
             <p className="text-[11.5px] font-semibold text-slate-400 dark:text-slate-400">
-              Total DPL
+              Dosen Pembimbing Lapangan
             </p>
             <p className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5 tracking-tight">
               {summary.totalDpl.label}
@@ -957,7 +1033,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
         </div>
 
         {/* Card 5: Rasio Kehadiran */}
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-xs flex items-center gap-3.5">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:shadow-md hover:-translate-y-0.5 hover:border-amber-500/40 transition-all duration-300 flex items-center gap-3.5">
           <div className="w-11 h-11 rounded-xl bg-amber-50 dark:bg-amber-950/60 flex items-center justify-center shrink-0 border border-amber-100 dark:border-amber-800/40">
             <TrendingUp size={20} className="text-amber-600 dark:text-amber-400" />
           </div>
@@ -978,7 +1054,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
       </div>
 
       {/* ========================================================================= */}
-      {/* 2B. PERINGATAN DINI & PERHATIAN PIMPINAN (LANGSUNG DI BAWAH TOP 5 KPI)    */}
+      {/* 2B. PERINGATAN DINI & PERHATIAN PIMPINAN                                   */}
       {/* ========================================================================= */}
       <div className="bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-amber-500/5 dark:from-amber-950/30 dark:via-rose-950/30 dark:to-slate-900 rounded-2xl border border-amber-200/80 dark:border-amber-900/40 p-4 sm:p-5 shadow-xs space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -994,13 +1070,13 @@ export const DashboardEksekutifKkn: React.FC = () => {
                 </span>
               </h3>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                Monitoring indikator kritis lapangan yang memerlukan tindak lanjut pembimbingan atau arahan pimpinan.
+                Pemantauan indikator kritis lapangan yang memerlukan tindak lanjut pembimbingan atau arahan pimpinan.
               </p>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-stretch">
           {(data?.perhatianPimpinan || []).map((alert, idx) => {
             const isDanger = alert.type === "danger";
             const isAlpa = alert.id === "alpa";
@@ -1018,6 +1094,10 @@ export const DashboardEksekutifKkn: React.FC = () => {
                 ? "Kelompok"
                 : "Entitas"
             );
+
+            const displayTitle = alert.title
+              .replace(/^\d+\s*/, "")
+              .replace(/^Kelompok\s+/i, "");
 
             return (
               <button
@@ -1041,7 +1121,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
                     navigate(alert.link);
                   }
                 }}
-                className={`p-3.5 rounded-xl border flex items-center justify-between text-left transition-all cursor-pointer group bg-white dark:bg-slate-900 hover:shadow-xs ${
+                className={`p-3.5 rounded-xl border flex items-center justify-between text-left transition-all cursor-pointer group bg-white dark:bg-slate-900 hover:shadow-xs h-full min-h-[74px] ${
                   isDanger || isRejected
                     ? "border-rose-200 dark:border-rose-900/50 hover:border-rose-400"
                     : isUnder60
@@ -1090,7 +1170,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
                       </span>
                     </div>
                     <p className="text-xs font-semibold text-slate-700 dark:text-slate-200 leading-snug line-clamp-2">
-                      {alert.title.replace(/^\d+\s*/, "")}
+                      {displayTitle}
                     </p>
                   </div>
                 </div>
@@ -1106,11 +1186,11 @@ export const DashboardEksekutifKkn: React.FC = () => {
       </div>
 
       {/* ========================================================================= */}
-      {/* 3. ROW 2 - 4 CHARTS                                                       */}
+      {/* 3. ROW 2A - PROFIL AKADEMIK KKN (SIMETRIS 2 KOLOM 50% - 50%)              */}
       {/* ========================================================================= */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* Col 1: Sebaran Program Studi Mahasiswa (4 cols) */}
-        <div className="lg:col-span-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-xs flex flex-col justify-between">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+        {/* Col 1: Sebaran Program Studi Mahasiswa */}
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-xs flex flex-col justify-between h-full">
           <div className="flex items-center gap-2 mb-3">
             <GraduationCap size={16} className="text-[#009966] dark:text-emerald-400" />
             <h2 className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100">
@@ -1118,12 +1198,12 @@ export const DashboardEksekutifKkn: React.FC = () => {
             </h2>
           </div>
 
-          <div className="h-56 w-full">
+          <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 layout="vertical"
                 data={data?.sebaranProdi || []}
-                margin={{ top: 5, right: 30, left: 10, bottom: 25 }}
+                margin={{ top: 5, right: 35, left: 15, bottom: 25 }}
               >
                 <XAxis
                   type="number"
@@ -1136,8 +1216,8 @@ export const DashboardEksekutifKkn: React.FC = () => {
                 <YAxis
                   type="category"
                   dataKey="name"
-                  tick={{ fontSize: 10, fill: "#475569" }}
-                  width={125}
+                  tick={{ fontSize: 10.5, fill: "#475569" }}
+                  width={140}
                   tickLine={false}
                   axisLine={false}
                 />
@@ -1159,7 +1239,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
                   dataKey="count"
                   fill="#009966"
                   radius={[0, 4, 4, 0]}
-                  barSize={12}
+                  barSize={14}
                   label={{
                     position: "right",
                     fontSize: 10,
@@ -1175,8 +1255,8 @@ export const DashboardEksekutifKkn: React.FC = () => {
           </p>
         </div>
 
-        {/* Col 2: Distribusi Beban SKS (Donut Chart) (3 cols) */}
-        <div className="lg:col-span-3 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-xs flex flex-col justify-between">
+        {/* Col 2: Distribusi Beban SKS */}
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-xs flex flex-col justify-between h-full">
           <div className="flex items-center gap-2 mb-2">
             <FileText size={16} className="text-blue-600 dark:text-blue-400" />
             <h2 className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100">
@@ -1184,95 +1264,108 @@ export const DashboardEksekutifKkn: React.FC = () => {
             </h2>
           </div>
 
-          <div className="relative h-44 w-full flex items-center justify-center">
-            <ResponsiveContainer width="100%" height="100%">
-              <RechartsPieChart>
-                <Pie
-                  data={data?.distribusiSks?.breakdown || []}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={46}
-                  outerRadius={68}
-                  paddingAngle={2}
-                  dataKey="count"
-                >
-                  {(data?.distribusiSks?.breakdown || []).map((entry, idx) => (
-                    <Cell key={`sks-cell-${idx}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <RechartsTooltip
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      const d = payload[0].payload;
-                      return (
-                        <div className="bg-slate-900 text-white text-[11px] font-bold py-1 px-2.5 rounded-lg shadow">
-                          <span>{d.label}: </span>
-                          <span className="text-emerald-400 font-extrabold">
-                            {d.count} Mahasiswa ({d.percentage}%)
-                          </span>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-              </RechartsPieChart>
-            </ResponsiveContainer>
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center my-auto py-1">
+            {/* Donut Chart */}
+            <div className="sm:col-span-6 relative h-48 w-full flex items-center justify-center">
+              <ResponsiveContainer width="100%" height="100%">
+                <RechartsPieChart>
+                  <Pie
+                    data={data?.distribusiSks?.breakdown || []}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={74}
+                    paddingAngle={2}
+                    dataKey="count"
+                  >
+                    {(data?.distribusiSks?.breakdown || []).map((entry, idx) => (
+                      <Cell key={`sks-cell-${idx}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const d = payload[0].payload;
+                        return (
+                          <div className="bg-slate-900 text-white text-[11px] font-bold py-1 px-2.5 rounded-lg shadow">
+                            <span>{d.label}: </span>
+                            <span className="text-emerald-400 font-extrabold">
+                              {d.count} Mahasiswa ({d.percentage}%)
+                            </span>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                </RechartsPieChart>
+              </ResponsiveContainer>
 
-            {/* Inner Center Text */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight leading-none">
-                {data?.distribusiSks?.totalMahasiswa ?? 0}
-              </span>
-              <span className="text-[10px] text-slate-400 font-medium mt-0.5">
-                Mahasiswa
-              </span>
+              {/* Inner Center Text */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <span className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight leading-none">
+                  {data?.distribusiSks?.totalMahasiswa ?? 0}
+                </span>
+                <span className="text-[10px] text-slate-400 font-medium mt-0.5">
+                  Mahasiswa
+                </span>
+              </div>
+            </div>
+
+            {/* Legend Grid 2 Kolom Rapi */}
+            <div className="sm:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-x-2.5 gap-y-2 text-[11px] font-bold">
+              {(data?.distribusiSks?.breakdown || []).map((item, idx) => (
+                <div key={idx} className="flex items-center gap-1.5 min-w-0">
+                  <span
+                    className="w-2.5 h-2.5 rounded-full inline-block shrink-0"
+                    style={{ backgroundColor: item.color }}
+                  />
+                  <span className="text-slate-700 dark:text-slate-300 truncate text-[10.5px]">
+                    {item.label} {item.percentage}% ({item.count})
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* Legend */}
-          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 pt-2 text-[11px] font-bold max-h-24 overflow-y-auto">
-            {(data?.distribusiSks?.breakdown || []).map((item, idx) => (
-              <div key={idx} className="flex items-center gap-1.5">
-                <span
-                  className="w-2.5 h-2.5 rounded-full inline-block shrink-0"
-                  style={{ backgroundColor: item.color }}
-                />
-                <span className="text-slate-700 dark:text-slate-300">
-                  {item.label} {item.percentage}% ({item.count})
-                </span>
-              </div>
-            ))}
-          </div>
+          <p className="text-center text-[10.5px] text-slate-400 font-medium mt-1">
+            Persentase dan Jumlah Mahasiswa per Beban SKS
+          </p>
         </div>
+      </div>
 
-        {/* Col 3: Sebaran Mahasiswa per Wilayah (3 cols) */}
-        <div className="lg:col-span-3 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-xs flex flex-col justify-between">
+      {/* ========================================================================= */}
+      {/* 3B. ROW 2B - SEBARAN WILAYAH KKN (SIMETRIS 2 KOLOM 50% - 50%)             */}
+      {/* ========================================================================= */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+        {/* Col 1: Sebaran Mahasiswa per Wilayah */}
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-xs flex flex-col justify-between h-full">
           <div className="flex items-center gap-2 mb-2">
-            <MapPin size={16} className="text-blue-600 dark:text-blue-400" />
+            <MapPin size={16} className="text-emerald-600 dark:text-emerald-400" />
             <h2 className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100">
-              Sebaran Mahasiswa per Wilayah
+              Sebaran Mahasiswa per Wilayah (Kelurahan)
             </h2>
           </div>
 
-          <div className="h-48 w-full">
+          <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
-                data={sebaranMahasiswaIndexedData}
-                margin={{ top: 15, right: 10, left: -10, bottom: 20 }}
+                data={data?.sebaranMahasiswaPerWilayah || []}
+                margin={{ top: 15, right: 15, left: -10, bottom: 30 }}
               >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis
-                  dataKey="wilayahNo"
-                  tick={{ fontSize: 11, fontWeight: 700, fill: "#334155" }}
+                  dataKey="kelurahan"
+                  tick={{ fontSize: 10.5, fontWeight: 700, fill: "#475569" }}
                   interval={0}
                   tickLine={false}
                   axisLine={{ stroke: "#e2e8f0" }}
-                  label={{ value: "Wilayah (1-6)", position: "insideBottom", offset: -5, fontSize: 10, fill: "#94a3b8" }}
+                  angle={-15}
+                  textAnchor="end"
                 />
                 <YAxis
                   domain={[0, "auto"]}
-                  tick={{ fontSize: 9, fill: "#94a3b8" }}
+                  tick={{ fontSize: 9.5, fill: "#94a3b8" }}
                   tickLine={false}
                   axisLine={false}
                   label={{ value: "Mahasiswa", angle: -90, position: "insideLeft", offset: 15, fontSize: 10, fill: "#94a3b8" }}
@@ -1283,7 +1376,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
                       const d = payload[0].payload;
                       return (
                         <div className="bg-slate-900 text-white text-[11px] font-bold py-1 px-2.5 rounded-lg shadow">
-                          <span>Wilayah {d.wilayahNo} ({d.kelurahan}): </span>
+                          <span>Kelurahan {d.kelurahan}: </span>
                           <span className="text-emerald-400 font-extrabold">{d.count} Mahasiswa</span>
                         </div>
                       );
@@ -1294,11 +1387,11 @@ export const DashboardEksekutifKkn: React.FC = () => {
                 <Bar
                   dataKey="count"
                   fill="#009966"
-                  radius={[3, 3, 0, 0]}
-                  barSize={18}
+                  radius={[4, 4, 0, 0]}
+                  barSize={24}
                   label={{
                     position: "top",
-                    fontSize: 9.5,
+                    fontSize: 10,
                     fontWeight: 700,
                     fill: "#334155",
                   }}
@@ -1307,61 +1400,42 @@ export const DashboardEksekutifKkn: React.FC = () => {
             </ResponsiveContainer>
           </div>
           <p className="text-center text-[10.5px] text-slate-400 font-medium mt-1">
-            Sumbu X: Nomor Wilayah (1 - 6) • Sumbu Y: Jumlah Mahasiswa (Orang)
+            Jumlah Mahasiswa Terdistribusi pada 6 Kelurahan Binaan KKN
           </p>
-
-          {/* Keterangan Nomor Wilayah (1 = Cipaganti, 2 = Dago, dst) */}
-          <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-              Keterangan Wilayah:
-            </p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-2 gap-y-1">
-              {sebaranMahasiswaIndexedData.map((item) => (
-                <div key={item.wilayahNo} className="flex items-center gap-1.5 text-[10.5px] leading-tight text-slate-600 dark:text-slate-300">
-                  <span className="w-4 h-4 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/40 text-[#009966] font-extrabold text-[9px] flex items-center justify-center shrink-0">
-                    {item.wilayahNo}
-                  </span>
-                  <span className="truncate font-semibold" title={item.kelurahan}>
-                    {item.kelurahan}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
 
-        {/* Col 4: Sebaran DPL per Wilayah (2 cols) */}
-        <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center gap-2 mb-3">
+        {/* Col 2: Sebaran DPL per Wilayah */}
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-xs flex flex-col justify-between h-full">
+          <div className="flex items-center gap-2 mb-2">
             <Users size={16} className="text-blue-600 dark:text-blue-400" />
             <h2 className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100">
-              Sebaran DPL per Wilayah
+              Sebaran Dosen Pendamping Lapangan (DPL) per Wilayah
             </h2>
           </div>
 
-          <div className="h-56 w-full">
+          <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
-                layout="vertical"
                 data={data?.sebaranDplPerWilayah || []}
-                margin={{ top: 5, right: 20, left: 0, bottom: 25 }}
+                margin={{ top: 15, right: 15, left: -10, bottom: 30 }}
               >
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis
-                  type="number"
-                  domain={[0, 8]}
-                  ticks={[0, 2, 4, 6, 8]}
-                  tick={{ fontSize: 9.5, fill: "#94a3b8" }}
+                  dataKey="kelurahan"
+                  tick={{ fontSize: 10.5, fontWeight: 700, fill: "#475569" }}
+                  interval={0}
                   tickLine={false}
                   axisLine={{ stroke: "#e2e8f0" }}
-                  label={{ value: "Jumlah DPL (Orang)", position: "insideBottom", offset: -10, fontSize: 10, fill: "#94a3b8" }}
+                  angle={-15}
+                  textAnchor="end"
                 />
                 <YAxis
-                  type="category"
-                  dataKey="kelurahan"
-                  tick={{ fontSize: 9, fill: "#475569" }}
-                  width={72}
+                  domain={[0, (dataMax: number) => Math.max(8, Math.ceil(dataMax * 1.2))]}
+                  allowDecimals={false}
+                  tick={{ fontSize: 9.5, fill: "#94a3b8" }}
                   tickLine={false}
                   axisLine={false}
+                  label={{ value: "DPL", angle: -90, position: "insideLeft", offset: 15, fontSize: 10, fill: "#94a3b8" }}
                 />
                 <RechartsTooltip
                   content={({ active, payload }) => {
@@ -1369,7 +1443,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
                       const d = payload[0].payload;
                       return (
                         <div className="bg-slate-900 text-white text-[11px] font-bold py-1 px-2.5 rounded-lg shadow">
-                          <span>{d.kelurahan}: </span>
+                          <span>Kelurahan {d.kelurahan}: </span>
                           <span className="text-blue-400 font-extrabold">{d.count} DPL</span>
                         </div>
                       );
@@ -1380,11 +1454,11 @@ export const DashboardEksekutifKkn: React.FC = () => {
                 <Bar
                   dataKey="count"
                   fill="#3b82f6"
-                  radius={[0, 3, 3, 0]}
-                  barSize={11}
+                  radius={[4, 4, 0, 0]}
+                  barSize={24}
                   label={{
-                    position: "right",
-                    fontSize: 9.5,
+                    position: "top",
+                    fontSize: 10,
                     fontWeight: 700,
                     fill: "#334155",
                   }}
@@ -1393,7 +1467,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
             </ResponsiveContainer>
           </div>
           <p className="text-center text-[10.5px] text-slate-400 font-medium mt-1">
-            Jumlah DPL (Sumbu X: Orang, Sumbu Y: Kelurahan)
+            Jumlah DPL Pengampu Terdistribusi pada 6 Kelurahan Binaan KKN
           </p>
         </div>
       </div>
@@ -1416,63 +1490,123 @@ export const DashboardEksekutifKkn: React.FC = () => {
             </span>
           </div>
 
-          {/* Dimensi 1: Status Usulan (Mandiri, Ditolak Terpisah & Jelas) */}
+          {/* Dimensi 1: Status Usulan (Mandiri, Ditolak Terpisah & Pie Chart) */}
           <div className="space-y-1.5">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Status Usulan Program Kerja:
             </p>
-            <div className="grid grid-cols-4 gap-2">
-              {/* Total Usulan */}
-              <div className="bg-slate-50 dark:bg-slate-800/80 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700">
-                <div className="flex items-center gap-1 text-slate-600 dark:text-slate-300 mb-1">
-                  <Calendar size={12} />
-                  <span className="text-[9.5px] font-bold">Total</span>
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+              {/* Pie Chart Usulan */}
+              <div className="relative h-24 w-24 shrink-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RechartsPieChart>
+                    <Pie
+                      data={[
+                        {
+                          name: "Disetujui",
+                          value: data?.statusProker?.usulan?.disetujui?.count ?? data?.statusProker?.disetujui?.count ?? 0,
+                          color: "#10b981",
+                        },
+                        {
+                          name: "Menunggu",
+                          value: data?.statusProker?.usulan?.belumDisetujui?.count ?? data?.statusProker?.diusulkan?.count ?? 0,
+                          color: "#f59e0b",
+                        },
+                        {
+                          name: "Ditolak",
+                          value: data?.statusProker?.usulan?.ditolak?.count ?? data?.statusProker?.ditolak?.count ?? 0,
+                          color: "#ef4444",
+                        },
+                      ]}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={20}
+                      outerRadius={40}
+                      paddingAngle={2}
+                      dataKey="value"
+                    >
+                      <Cell fill="#10b981" />
+                      <Cell fill="#f59e0b" />
+                      <Cell fill="#ef4444" />
+                    </Pie>
+                    <RechartsTooltip
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const d = payload[0];
+                          return (
+                            <div className="bg-slate-900 text-white text-[10px] font-bold py-1 px-2 rounded shadow">
+                              <span>{d.name}: </span>
+                              <span className="text-emerald-400 font-extrabold">{d.value} Proker</span>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                  </RechartsPieChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <span className="text-[11px] font-black text-slate-800 dark:text-slate-200">
+                    {data?.statusProker?.usulan?.total ?? data?.statusProker?.total ?? 0}
+                  </span>
+                  <span className="text-[7.5px] text-slate-400">Total</span>
                 </div>
-                <p className="text-sm sm:text-base font-black text-slate-900 dark:text-slate-100">
-                  {data?.statusProker?.usulan?.total ?? data?.statusProker?.total ?? 0}
-                </p>
               </div>
 
-              {/* Usulan Disetujui */}
-              <div className="bg-emerald-50/80 dark:bg-emerald-950/40 p-2.5 rounded-xl border border-emerald-200 dark:border-emerald-800/40">
-                <div className="flex items-center gap-1 text-[#009966] dark:text-emerald-400 mb-1">
-                  <CheckCircle2 size={12} />
-                  <span className="text-[9.5px] font-bold">Disetujui</span>
+              {/* Grid 4 Metrik Status Usulan */}
+              <div className="grid grid-cols-4 gap-2 flex-1 w-full">
+                {/* Total Usulan */}
+                <div className="bg-slate-50 dark:bg-slate-800/80 p-2 rounded-xl border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-1 text-slate-600 dark:text-slate-300 mb-0.5">
+                    <Calendar size={11} />
+                    <span className="text-[9px] font-bold">Total</span>
+                  </div>
+                  <p className="text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100">
+                    {data?.statusProker?.usulan?.total ?? data?.statusProker?.total ?? 0}
+                  </p>
                 </div>
-                <p className="text-sm sm:text-base font-black text-[#009966] dark:text-emerald-400">
-                  {data?.statusProker?.usulan?.disetujui?.count ?? data?.statusProker?.disetujui?.count ?? 0}
-                </p>
-                <p className="text-[9px] text-slate-400 font-medium">
-                  {data?.statusProker?.usulan?.disetujui?.percentage ?? data?.statusProker?.disetujui?.percentage ?? 0}%
-                </p>
-              </div>
 
-              {/* Usulan Belum Disetujui */}
-              <div className="bg-amber-50/80 dark:bg-amber-950/40 p-2.5 rounded-xl border border-amber-200 dark:border-amber-800/40">
-                <div className="flex items-center gap-1 text-amber-600 dark:text-amber-400 mb-1">
-                  <Clock size={12} />
-                  <span className="text-[9.5px] font-bold">Menunggu</span>
+                {/* Usulan Disetujui */}
+                <div className="bg-emerald-50/80 dark:bg-emerald-950/40 p-2 rounded-xl border border-emerald-200 dark:border-emerald-800/40">
+                  <div className="flex items-center gap-1 text-[#009966] dark:text-emerald-400 mb-0.5">
+                    <CheckCircle2 size={11} />
+                    <span className="text-[9px] font-bold">Disetujui</span>
+                  </div>
+                  <p className="text-xs sm:text-sm font-black text-[#009966] dark:text-emerald-400">
+                    {data?.statusProker?.usulan?.disetujui?.count ?? data?.statusProker?.disetujui?.count ?? 0}
+                  </p>
+                  <p className="text-[8.5px] text-slate-400 font-medium">
+                    {data?.statusProker?.usulan?.disetujui?.percentage ?? data?.statusProker?.disetujui?.percentage ?? 0}%
+                  </p>
                 </div>
-                <p className="text-sm sm:text-base font-black text-amber-600 dark:text-amber-400">
-                  {data?.statusProker?.usulan?.belumDisetujui?.count ?? data?.statusProker?.diusulkan?.count ?? 0}
-                </p>
-                <p className="text-[9px] text-slate-400 font-medium">
-                  {data?.statusProker?.usulan?.belumDisetujui?.percentage ?? data?.statusProker?.diusulkan?.percentage ?? 0}%
-                </p>
-              </div>
 
-              {/* Usulan DITOLAK (Mandiri Terpisah) */}
-              <div className="bg-rose-50/80 dark:bg-rose-950/40 p-2.5 rounded-xl border border-rose-200 dark:border-rose-800/40">
-                <div className="flex items-center gap-1 text-rose-600 dark:text-rose-400 mb-1">
-                  <XCircle size={12} />
-                  <span className="text-[9.5px] font-bold">Ditolak</span>
+                {/* Usulan Belum Disetujui */}
+                <div className="bg-amber-50/80 dark:bg-amber-950/40 p-2 rounded-xl border border-amber-200 dark:border-amber-800/40">
+                  <div className="flex items-center gap-1 text-amber-600 dark:text-amber-400 mb-0.5">
+                    <Clock size={11} />
+                    <span className="text-[9px] font-bold">Menunggu</span>
+                  </div>
+                  <p className="text-xs sm:text-sm font-black text-amber-600 dark:text-amber-400">
+                    {data?.statusProker?.usulan?.belumDisetujui?.count ?? data?.statusProker?.diusulkan?.count ?? 0}
+                  </p>
+                  <p className="text-[8.5px] text-slate-400 font-medium">
+                    {data?.statusProker?.usulan?.belumDisetujui?.percentage ?? data?.statusProker?.diusulkan?.percentage ?? 0}%
+                  </p>
                 </div>
-                <p className="text-sm sm:text-base font-black text-rose-600 dark:text-rose-400">
-                  {data?.statusProker?.usulan?.ditolak?.count ?? data?.statusProker?.ditolak?.count ?? 0}
-                </p>
-                <p className="text-[9px] text-slate-400 font-medium">
-                  {data?.statusProker?.usulan?.ditolak?.percentage ?? data?.statusProker?.ditolak?.percentage ?? 0}%
-                </p>
+
+                {/* Usulan DITOLAK */}
+                <div className="bg-rose-50/80 dark:bg-rose-950/40 p-2 rounded-xl border border-rose-200 dark:border-rose-800/40">
+                  <div className="flex items-center gap-1 text-rose-600 dark:text-rose-400 mb-0.5">
+                    <XCircle size={11} />
+                    <span className="text-[9px] font-bold">Ditolak</span>
+                  </div>
+                  <p className="text-xs sm:text-sm font-black text-rose-600 dark:text-rose-400">
+                    {data?.statusProker?.usulan?.ditolak?.count ?? data?.statusProker?.ditolak?.count ?? 0}
+                  </p>
+                  <p className="text-[8.5px] text-slate-400 font-medium">
+                    {data?.statusProker?.usulan?.ditolak?.percentage ?? data?.statusProker?.ditolak?.percentage ?? 0}%
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -1758,15 +1892,15 @@ export const DashboardEksekutifKkn: React.FC = () => {
       </div>
 
       {/* ========================================================================= */}
-      {/* 5. ROW 4 - AKTIVITAS, LINI MASA & PERHATIAN PIMPINAN                       */}
+      {/* 5. ROW 4 - TREN AKTIVITAS, LINIMASA & IKHTISAR DPL                         */}
       {/* ========================================================================= */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* Col 1: Aktivitas Terkini (4 cols) */}
-        <div className="lg:col-span-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-3">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+        {/* Col 1: Tren Aktivitas Lapangan (4 cols) */}
+        <div className="lg:col-span-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-3 h-full">
           <div className="flex items-center gap-2">
             <Activity size={16} className="text-[#009966] dark:text-emerald-400" />
             <h2 className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100">
-              Aktivitas Terkini
+              Tren Aktivitas Lapangan
             </h2>
           </div>
 
@@ -1777,7 +1911,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
                 <Users size={16} className="text-[#009966]" />
               </div>
               <div>
-                <p className="text-[9.5px] text-slate-400 font-semibold">Log Aktivitas Mahasiswa</p>
+                <p className="text-[9.5px] text-slate-400 font-semibold">Log Mahasiswa</p>
                 <p className="text-sm sm:text-base font-black text-slate-900 dark:text-slate-100">
                   {(data?.aktivitasTerkini?.totalLogMahasiswa ?? 0).toLocaleString("id-ID")}
                 </p>
@@ -1789,7 +1923,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
                 <FileText size={16} className="text-blue-600" />
               </div>
               <div>
-                <p className="text-[9.5px] text-slate-400 font-semibold">Log Aktivitas DPL</p>
+                <p className="text-[9.5px] text-slate-400 font-semibold">Log DPL</p>
                 <p className="text-sm sm:text-base font-black text-slate-900 dark:text-slate-100">
                   {(data?.aktivitasTerkini?.totalLogDpl ?? 0).toLocaleString("id-ID")}
                 </p>
@@ -1866,51 +2000,66 @@ export const DashboardEksekutifKkn: React.FC = () => {
           </div>
         </div>
 
-        {/* Col 2: Lini Masa Terkini (4 cols) */}
-        <div className="lg:col-span-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-3">
+        {/* Col 2: Linimasa Pelaksanaan KKN (4 cols) */}
+        <div className="lg:col-span-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-3 h-full">
           <div className="flex items-center gap-2">
             <Calendar size={16} className="text-blue-600 dark:text-blue-400" />
             <h2 className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100">
-              Lini Masa Terkini
+              Linimasa Pelaksanaan KKN
             </h2>
           </div>
 
-          {/* Vertical Timeline List */}
-          <div className="relative pl-5 space-y-3.5 border-l-2 border-slate-100 dark:border-slate-800 ml-2">
-            {(data?.liniMasaTerkini || []).map((item, idx) => {
+          {/* Vertical Timeline List (ISO 9241-11 Usability & Responsive Align) */}
+          <div className="space-y-4 my-auto py-1">
+            {(data?.liniMasaTerkini || []).map((item, idx, arr) => {
               const isActive = item.badgeType === "active";
+              const isLast = idx === arr.length - 1;
               return (
-                <div key={item.id || idx} className="relative flex items-center justify-between gap-2">
-                  {/* Timeline node dot */}
-                  <span
-                    className={`absolute -left-[27px] top-1.5 w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${
-                      isActive
-                        ? "border-[#009966] bg-emerald-100"
-                        : "border-blue-400 bg-white dark:bg-slate-900"
-                    }`}
-                  >
-                    {isActive && <span className="w-1.5 h-1.5 rounded-full bg-[#009966]" />}
-                  </span>
-
-                  <div>
-                    <h3 className="text-xs font-bold text-slate-800 dark:text-slate-100">
-                      {item.title}
-                    </h3>
-                    <p className="text-[10px] text-slate-400 font-medium">
-                      {item.dateRange}
-                    </p>
-                  </div>
-
-                  <div>
+                <div key={item.id || idx} className="relative flex items-start gap-3">
+                  {/* Timeline Node & Connector Line */}
+                  <div className="flex flex-col items-center self-stretch shrink-0 w-4">
                     <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                      className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center mt-0.5 shrink-0 ${
                         isActive
-                          ? "bg-emerald-50 text-[#009966] border-emerald-200 dark:bg-emerald-950/50 dark:border-emerald-800/40"
-                          : "bg-slate-50 text-slate-400 border-slate-200 dark:bg-slate-850 dark:border-slate-700"
+                          ? "border-emerald-600 bg-emerald-100 dark:bg-emerald-950"
+                          : "border-blue-400 bg-white dark:bg-slate-900"
                       }`}
                     >
-                      {item.status}
+                      {isActive && <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />}
                     </span>
+                    {!isLast && (
+                      <span className="w-0.5 grow bg-slate-200 dark:bg-slate-800 my-1 min-h-[26px]" />
+                    )}
+                  </div>
+
+                  {/* Content & Badge */}
+                  <div className="flex-1 min-w-0 pb-0.5">
+                    <div className="flex items-start justify-between gap-2.5">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-xs font-bold text-slate-800 dark:text-slate-100 leading-snug">
+                          {item.title}
+                        </h3>
+                        <p className="text-[10.5px] text-slate-400 font-medium mt-0.5">
+                          {item.dateRange}
+                        </p>
+                      </div>
+
+                      {/* Status Badge with whitespace-nowrap and shrink-0 */}
+                      <div className="shrink-0 pt-0.5">
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-tight whitespace-nowrap border ${
+                            isActive
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800 shadow-2xs"
+                              : "bg-slate-50 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700"
+                          }`}
+                        >
+                          {isActive && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                          )}
+                          <span>{item.status}</span>
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               );
@@ -1918,16 +2067,16 @@ export const DashboardEksekutifKkn: React.FC = () => {
           </div>
         </div>
 
-        {/* Col 3: Resume Aktivitas DPL (4 cols) */}
-        <div className="lg:col-span-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-3">
+        {/* Col 3: Ikhtisar Aktivitas DPL (4 cols) */}
+        <div className="lg:col-span-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-3 h-full">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <GraduationCap size={16} className="text-[#009966] dark:text-emerald-400" />
               <h2 className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100">
-                Resume Aktivitas DPL
+                Ikhtisar Aktivitas DPL
               </h2>
             </div>
-            <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-50 text-[#009966] dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40">
+            <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-50 text-[#009966] dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40">
               {data?.resumeDpl?.persentaseKeaktifan ?? 0}% Aktif
             </span>
           </div>
@@ -1947,16 +2096,43 @@ export const DashboardEksekutifKkn: React.FC = () => {
               />
             </div>
 
-            {/* Rincian DPL Sudah Buat Log vs Belum Buat Log */}
+            {/* Rincian DPL Logbook Terisi vs Belum Terisi (Interaktif Klik untuk Pop up Detail) */}
             <div className="grid grid-cols-2 gap-2 pt-0.5">
-              <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200/70 dark:border-emerald-800/40 text-[10.5px]">
-                <span className="font-bold text-emerald-800 dark:text-emerald-300">Sudah Buat Log</span>
-                <span className="font-black text-emerald-700 dark:text-emerald-300">{data?.resumeDpl?.dplAktifCount ?? 0} DPL</span>
-              </div>
-              <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/70 dark:border-amber-800/40 text-[10.5px]">
-                <span className="font-bold text-amber-800 dark:text-amber-300">Belum Buat Log</span>
-                <span className="font-black text-amber-700 dark:text-amber-300">{data?.resumeDpl?.dplBelumAktifCount ?? 0} DPL</span>
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setDplLogbookModalTab("TERISI");
+                  setDplModalSearchQuery("");
+                  setDplModalPage(1);
+                  setShowDplLogbookModal(true);
+                }}
+                className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-emerald-50/90 hover:bg-emerald-100/90 dark:bg-emerald-950/50 dark:hover:bg-emerald-900/60 border border-emerald-200/80 dark:border-emerald-800/60 text-[10.5px] cursor-pointer transition-all duration-150 shadow-2xs hover:shadow-xs group text-left"
+                title="Klik untuk melihat daftar DPL yang telah mengisi logbook"
+              >
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 size={12} className="text-emerald-600 dark:text-emerald-400 shrink-0 group-hover:scale-110 transition-transform" />
+                  <span className="font-bold text-emerald-800 dark:text-emerald-300">Logbook Terisi</span>
+                </div>
+                <span className="font-black text-emerald-700 dark:text-emerald-200">{data?.resumeDpl?.dplAktifCount ?? 0} DPL</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setDplLogbookModalTab("KOSONG");
+                  setDplModalSearchQuery("");
+                  setDplModalPage(1);
+                  setShowDplLogbookModal(true);
+                }}
+                className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-amber-50/90 hover:bg-amber-100/90 dark:bg-amber-950/50 dark:hover:bg-amber-900/60 border border-amber-200/80 dark:border-amber-800/60 text-[10.5px] cursor-pointer transition-all duration-150 shadow-2xs hover:shadow-xs group text-left"
+                title="Klik untuk melihat daftar DPL yang belum mengisi logbook"
+              >
+                <div className="flex items-center gap-1.5">
+                  <AlertCircle size={12} className="text-amber-600 dark:text-amber-400 shrink-0 group-hover:scale-110 transition-transform" />
+                  <span className="font-bold text-amber-800 dark:text-amber-300">Logbook Kosong</span>
+                </div>
+                <span className="font-black text-amber-700 dark:text-amber-200">{data?.resumeDpl?.dplBelumAktifCount ?? 0} DPL</span>
+              </button>
             </div>
 
             <div className="grid grid-cols-3 gap-2 pt-1 text-center">
@@ -1984,11 +2160,11 @@ export const DashboardEksekutifKkn: React.FC = () => {
           {/* Aktivitas Terkini DPL Feed */}
           <div className="space-y-2">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-              Aktivitas Pembimbingan Terbaru:
+              Aktivitas Pembimbingan Terkini:
             </p>
             {(!data?.resumeDpl?.recentActivities || data.resumeDpl.recentActivities.length === 0) ? (
               <div className="p-3 text-center text-xs text-slate-400 bg-slate-50 dark:bg-slate-850 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
-                Belum ada catatan log bimbingan DPL terverifikasi.
+                Belum ada catatan logbook pembimbingan DPL yang terverifikasi.
               </div>
             ) : (
               <div className="space-y-1.5 max-h-36 overflow-y-auto">
@@ -2065,7 +2241,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
               }`}
             >
               <Users size={14} />
-              <span>Top Mahasiswa</span>
+              <span>Mahasiswa</span>
             </button>
             <button
               type="button"
@@ -2077,7 +2253,19 @@ export const DashboardEksekutifKkn: React.FC = () => {
               }`}
             >
               <Award size={14} />
-              <span>Top Kelompok</span>
+              <span>Kelompok</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setLeaderboardTab("dpl")}
+              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                leaderboardTab === "dpl"
+                  ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-xs"
+                  : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+              }`}
+            >
+              <GraduationCap size={14} />
+              <span>Dosen Pendamping Lapangan</span>
             </button>
           </div>
         </div>
@@ -2096,8 +2284,6 @@ export const DashboardEksekutifKkn: React.FC = () => {
                   <th className="py-2.5 px-3 font-extrabold">Mahasiswa & NIM</th>
                   <th className="py-2.5 px-3 font-extrabold">Kelompok KKN</th>
                   <th className="py-2.5 px-3 font-extrabold text-right">Jam Lapangan</th>
-                  <th className="py-2.5 px-3 font-extrabold text-right">Tempat Sampah Aktif</th>
-                  <th className="py-2.5 px-3 font-extrabold text-right">Nilai DPL</th>
                   <th className="py-2.5 px-3 font-extrabold text-right">Skor Akhir</th>
                 </tr>
               </thead>
@@ -2144,12 +2330,6 @@ export const DashboardEksekutifKkn: React.FC = () => {
                       <td className="py-2.5 px-3 text-right font-black text-emerald-600 dark:text-emerald-400">
                         {st.totalHours} Jam
                       </td>
-                      <td className="py-2.5 px-3 text-right font-extrabold text-slate-700 dark:text-slate-300">
-                        {st.activeBins} Titik
-                      </td>
-                      <td className="py-2.5 px-3 text-right font-extrabold text-slate-700 dark:text-slate-300">
-                        {st.dplScore}
-                      </td>
                       <td className="py-2.5 px-3 text-right">
                         <span className="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-black text-xs border border-emerald-200 dark:border-emerald-700/40">
                           {st.finalScore} Poin
@@ -2161,7 +2341,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
               </tbody>
             </table>
           </div>
-        ) : (
+        ) : leaderboardTab === "groups" ? (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
@@ -2204,12 +2384,72 @@ export const DashboardEksekutifKkn: React.FC = () => {
               </tbody>
             </table>
           </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400 uppercase tracking-wider text-[10px]">
+                  <th className="py-2.5 px-3 font-extrabold w-12 text-center">Peringkat</th>
+                  <th className="py-2.5 px-3 font-extrabold">Nama Dosen (DPL)</th>
+                  <th className="py-2.5 px-3 font-extrabold text-right">Kelompok Dibina</th>
+                  <th className="py-2.5 px-3 font-extrabold text-right">Mahasiswa Bimbingan</th>
+                  <th className="py-2.5 px-3 font-extrabold text-right">Skor Pembimbingan</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {(leaderboardData?.dpl || []).slice(0, 10).map((d, idx) => {
+                  const rank = idx + 1;
+                  const isTop3 = rank <= 3;
+                  return (
+                    <tr
+                      key={d.id || idx}
+                      className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors"
+                    >
+                      <td className="py-2.5 px-3 text-center">
+                        {rank === 1 ? (
+                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-950/80 dark:text-amber-300 font-black text-xs shadow-xs border border-amber-300/60">
+                            👑 1
+                          </span>
+                        ) : rank === 2 ? (
+                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200 font-black text-xs shadow-xs">
+                            🥈 2
+                          </span>
+                        ) : rank === 3 ? (
+                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-orange-100 text-orange-700 dark:bg-orange-950/80 dark:text-orange-300 font-black text-xs shadow-xs">
+                            🥉 3
+                          </span>
+                        ) : (
+                          <span className="font-extrabold text-slate-400">#{rank}</span>
+                        )}
+                      </td>
+                      <td className="py-2.5 px-3 font-black text-slate-900 dark:text-slate-100">
+                        <div className="flex items-center gap-1.5">
+                          <span>{d.name}</span>
+                          {isTop3 && (
+                            <span className="text-[9px] px-1.5 py-0.2 rounded bg-teal-50 dark:bg-teal-950 text-teal-700 dark:text-teal-300 font-bold border border-teal-200 dark:border-teal-800/40">
+                              DPL Teladan
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-extrabold text-slate-700 dark:text-slate-300">
+                        {d.totalGroups} Kelompok
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-extrabold text-slate-700 dark:text-slate-300">
+                        {d.totalStudents} Mahasiswa
+                      </td>
+                      <td className="py-2.5 px-3 text-right">
+                        <span className="px-2.5 py-1 rounded-lg bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 font-black text-xs border border-teal-200 dark:border-teal-700/40">
+                          {d.points} Poin
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
-      </div>
-
-      {/* 5B.2 TOP 10 AKADEMIK & PENDAMPINGAN */}
-      <div className="w-full">
-        <LeaderboardWidget mode="kkn" />
       </div>
 
       {/* Row 4: Daftar Kelompok KKN & DPL Pengampu (Dengan Search & Multi-Filter Standar Eksekutif) */}
@@ -2223,7 +2463,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
               </h3>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Monitoring operasional kelompok KKN binaan, DPL pengampu, sebaran RW, tingkat presensi, dan progres program kerja.
+              Pemantauan operasional kelompok KKN binaan, DPL pendamping, sebaran RW, tingkat presensi, dan perkembangan program kerja.
             </p>
           </div>
           <Link
@@ -2276,7 +2516,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
               ? "bg-amber-50/70 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800/40"
               : "bg-slate-50 dark:bg-slate-850 border-slate-200/80 dark:border-slate-800"
           }`}>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Proker &lt; 60%</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Program Kerja &lt; 60%</p>
             <p className={`text-base sm:text-lg font-black mt-0.5 ${
               filteredSummaryStats.countProkerUnder60 > 0 ? "text-amber-600 dark:text-amber-400" : "text-slate-700 dark:text-slate-300"
             }`}>
@@ -2504,28 +2744,32 @@ export const DashboardEksekutifKkn: React.FC = () => {
       {/* Modal Detail Anggota Kelompok & Fasilitas */}
       {selectedGroupForDetail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
             {/* Header Modal */}
-            <div className="flex justify-between items-start px-6 py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-900 text-white shrink-0">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[10.5px] font-extrabold uppercase tracking-wider">
-                    Master Penempatan KKN
-                  </span>
-                  <span className="text-slate-400 text-xs">•</span>
-                  <span className="text-xs font-semibold text-slate-300">
-                    Kel. {selectedGroupForDetail.kelurahan || "-"} {selectedGroupForDetail.kecamatan ? `• Kec. ${selectedGroupForDetail.kecamatan}` : ""}
-                  </span>
+            <div className="flex items-center justify-between px-6 py-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shrink-0">
+              <div className="flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-500/20 shrink-0">
+                  <Users size={20} />
                 </div>
-                <h3 className="text-lg font-black text-white flex items-center gap-2">
-                  <Users size={20} className="text-emerald-400" />
-                  <span>{selectedGroupForDetail.name}</span>
-                </h3>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                      {selectedGroupForDetail.name}
+                    </h3>
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 text-[11px] font-semibold">
+                      Kel. {selectedGroupForDetail.kelurahan || "-"} {selectedGroupForDetail.kecamatan ? `• Kec. ${selectedGroupForDetail.kecamatan}` : ""}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Rincian informasi posko, dosen pembimbing lapangan, dan daftar mahasiswa kelompok
+                  </p>
+                </div>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedGroupForDetail(null)}
-                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/20 text-white/80 hover:text-white transition cursor-pointer"
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:text-slate-200 dark:hover:bg-slate-800 transition cursor-pointer"
+                title="Tutup dialog"
               >
                 <X size={18} />
               </button>
@@ -2534,7 +2778,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
             {/* Modal Body with Scroll */}
             <div className="p-5 sm:p-6 overflow-y-auto space-y-5 flex-1">
               {/* Ringkasan Profil & Wilayah Kelompok */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 bg-slate-50 dark:bg-slate-800/80 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 text-xs">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-200/80 dark:border-slate-700/80 text-xs">
                 <div className="space-y-1">
                   <span className="text-slate-400 font-bold text-[10.5px] uppercase block">Total Mahasiswa</span>
                   <div className="flex items-center gap-1.5">
@@ -2742,18 +2986,18 @@ export const DashboardEksekutifKkn: React.FC = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="px-6 py-3.5 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-700/80 flex items-center justify-between gap-3 shrink-0">
+            <div className="px-6 py-3.5 bg-slate-50 dark:bg-slate-850 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 shrink-0">
               <Link
                 to="/pelaksanaan/kelompok"
-                className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
+                className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1.5"
               >
-                <span>Buka di Menu Kelompok</span>
+                <span>Buka Detail di Manajemen Kelompok</span>
                 <ChevronRight size={13} />
               </Link>
               <button
                 type="button"
                 onClick={() => setSelectedGroupForDetail(null)}
-                className="px-5 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 font-bold text-xs rounded-xl transition cursor-pointer"
+                className="px-4 py-2 bg-slate-200/80 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs rounded-xl transition cursor-pointer"
               >
                 Tutup
               </button>
@@ -2765,28 +3009,32 @@ export const DashboardEksekutifKkn: React.FC = () => {
       {/* Modal Detail Mahasiswa Alpa Kritis (Peringatan Dini) */}
       {showCriticalAlpaModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
             {/* Header Modal */}
-            <div className="flex justify-between items-start px-6 py-4 bg-gradient-to-r from-rose-900 via-slate-900 to-slate-900 text-white shrink-0">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-400/30 text-[10.5px] font-extrabold uppercase tracking-wider">
-                    Peringatan Dini Presensi Lapangan
-                  </span>
-                  <span className="text-slate-400 text-xs">•</span>
-                  <span className="text-xs font-semibold text-slate-300">
-                    Akumulasi Tanpa Keterangan ≥ 3 Hari
-                  </span>
+            <div className="flex items-center justify-between px-6 py-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shrink-0">
+              <div className="flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center border border-rose-500/20 shrink-0">
+                  <AlertTriangle size={20} />
                 </div>
-                <h3 className="text-lg font-black text-white flex items-center gap-2">
-                  <AlertTriangle size={20} className="text-rose-400" />
-                  <span>Daftar Mahasiswa Tanpa Keterangan Kritis</span>
-                </h3>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                      Daftar Mahasiswa Tanpa Keterangan Kritis
+                    </h3>
+                    <span className="px-2.5 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-500/20 text-[11px] font-semibold">
+                      Akumulasi ≥ 3 Hari
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Data mahasiswa yang membutuhkan tindak lanjut pembimbingan DPL dan evaluasi pimpinan KKN
+                  </p>
+                </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowCriticalAlpaModal(false)}
-                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/20 text-white/80 hover:text-white transition cursor-pointer"
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:text-slate-200 dark:hover:bg-slate-800 transition cursor-pointer"
+                title="Tutup dialog"
               >
                 <X size={18} />
               </button>
@@ -2796,11 +3044,11 @@ export const DashboardEksekutifKkn: React.FC = () => {
             <div className="p-5 sm:p-6 overflow-y-auto space-y-4 flex-1">
               {/* Context Summary Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 p-3.5 rounded-2xl">
-                  <p className="text-[10.5px] font-bold text-rose-700 dark:text-rose-300 uppercase tracking-wider">
+                <div className="bg-rose-50/70 dark:bg-rose-950/30 border border-rose-200/80 dark:border-rose-900/50 p-3.5 rounded-xl">
+                  <p className="text-[11px] font-bold text-rose-700 dark:text-rose-300 uppercase tracking-wider">
                     Mahasiswa Tanpa Keterangan Kritis (≥ 3x)
                   </p>
-                  <p className="text-xl font-black text-rose-600 dark:text-rose-400 mt-1">
+                  <p className="text-xl font-bold text-rose-600 dark:text-rose-400 mt-1">
                     {data?.criticalAlpaStudents?.length || 0} <span className="text-xs font-semibold text-slate-500">Mahasiswa</span>
                   </p>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
@@ -2808,11 +3056,11 @@ export const DashboardEksekutifKkn: React.FC = () => {
                   </p>
                 </div>
 
-                <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 p-3.5 rounded-2xl">
-                  <p className="text-[10.5px] font-bold text-amber-700 dark:text-amber-300 uppercase tracking-wider">
+                <div className="bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-900/50 p-3.5 rounded-xl">
+                  <p className="text-[11px] font-bold text-amber-700 dark:text-amber-300 uppercase tracking-wider">
                     Mahasiswa Pernah Tanpa Keterangan (≥ 1x)
                   </p>
-                  <p className="text-xl font-black text-amber-600 dark:text-amber-400 mt-1">
+                  <p className="text-xl font-bold text-amber-600 dark:text-amber-400 mt-1">
                     {data?.perhatianPimpinan?.find(a => a.id === "alpa")?.metadata?.uniqueStudentsEverAlpa ?? 0} <span className="text-xs font-semibold text-slate-500">Mahasiswa</span>
                   </p>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
@@ -2820,11 +3068,11 @@ export const DashboardEksekutifKkn: React.FC = () => {
                   </p>
                 </div>
 
-                <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3.5 rounded-2xl">
-                  <p className="text-[10.5px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 p-3.5 rounded-xl">
+                  <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     Total Kejadian Log Tanpa Keterangan
                   </p>
-                  <p className="text-xl font-black text-slate-800 dark:text-slate-100 mt-1">
+                  <p className="text-xl font-bold text-slate-800 dark:text-slate-100 mt-1">
                     {data?.perhatianPimpinan?.find(a => a.id === "alpa")?.metadata?.totalAlpaLogs ?? 0} <span className="text-xs font-semibold text-slate-500">Log Kasus</span>
                   </p>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
@@ -2881,10 +3129,10 @@ export const DashboardEksekutifKkn: React.FC = () => {
               </div>
 
               {/* Table of Critical Alpa Students */}
-              <div className="border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden bg-white dark:bg-slate-900">
+              <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-900">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-bold uppercase text-[10px]">
+                    <thead className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-bold uppercase text-[10.5px]">
                       <tr>
                         <th className="py-2.5 px-3.5 text-center w-12">No</th>
                         <th className="py-2.5 px-3.5">Mahasiswa</th>
@@ -2905,7 +3153,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
                         paginatedCriticalAlpaStudents.map((st, idx) => {
                           const rowNum = (criticalAlpaPage - 1) * CRITICAL_ALPA_PER_PAGE + idx + 1;
                           return (
-                            <tr key={st.id || idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
+                            <tr key={st.id || idx} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition">
                               <td className="py-2.5 px-3.5 text-center font-bold text-slate-400">
                                 {rowNum}
                               </td>
@@ -2945,7 +3193,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
                                 )}
                               </td>
                               <td className="py-2.5 px-3.5 text-center">
-                                <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-black bg-rose-100 text-rose-700 dark:bg-rose-950/80 dark:text-rose-300 border border-rose-300 dark:border-rose-800">
+                                <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200 dark:border-rose-900/40">
                                   {st.alpaCount} Hari Tanpa Keterangan
                                 </span>
                               </td>
@@ -2992,10 +3240,10 @@ export const DashboardEksekutifKkn: React.FC = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="flex items-center justify-between px-6 py-3.5 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-800 shrink-0">
+            <div className="flex items-center justify-between px-6 py-3.5 bg-slate-50 dark:bg-slate-850 border-t border-slate-200 dark:border-slate-800 shrink-0">
               <Link
                 to="/monitoring-kegiatan/presensi?filter=alpa"
-                className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
+                className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1.5"
               >
                 <span>Buka Modul Monitoring Presensi Lapangan</span>
                 <ChevronRight size={14} />
@@ -3003,7 +3251,291 @@ export const DashboardEksekutifKkn: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowCriticalAlpaModal(false)}
-                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition cursor-pointer"
+                className="px-4 py-2 bg-slate-200/80 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs rounded-xl transition cursor-pointer"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Popup Detail DPL: Logbook Terisi vs Logbook Kosong */}
+      {showDplLogbookModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-850/80 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className={`p-2.5 rounded-xl ${
+                  dplLogbookModalTab === "TERISI"
+                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40"
+                    : "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-200 dark:border-amber-800/40"
+                }`}>
+                  <GraduationCap size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                    <span>
+                      {dplLogbookModalTab === "TERISI"
+                        ? "Daftar DPL Logbook Terisi"
+                        : "Daftar DPL Logbook Belum Terisi (Kosong)"}
+                    </span>
+                    <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                      dplLogbookModalTab === "TERISI"
+                        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                        : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                    }`}>
+                      {filteredDplList.length} DPL
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Monitoring keaktifan pembimbingan DPL KKN secara real-time
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowDplLogbookModal(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4 overflow-y-auto flex-1">
+              {/* Tab Selector & Overview Stats */}
+              <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+                {/* Tabs */}
+                <div className="flex items-center p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDplLogbookModalTab("TERISI");
+                      setDplModalPage(1);
+                    }}
+                    className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      dplLogbookModalTab === "TERISI"
+                        ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-300 shadow-xs"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                    }`}
+                  >
+                    <CheckCircle2 size={13} className="text-emerald-600 dark:text-emerald-400" />
+                    <span>Logbook Terisi ({data?.resumeDpl?.dplAktifCount ?? 0})</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDplLogbookModalTab("KOSONG");
+                      setDplModalPage(1);
+                    }}
+                    className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      dplLogbookModalTab === "KOSONG"
+                        ? "bg-white dark:bg-slate-900 text-amber-700 dark:text-amber-300 shadow-xs"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                    }`}
+                  >
+                    <AlertCircle size={13} className="text-amber-600 dark:text-amber-400" />
+                    <span>Logbook Kosong ({data?.resumeDpl?.dplBelumAktifCount ?? 0})</span>
+                  </button>
+                </div>
+
+                {/* Summary badges */}
+                <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+                  <span>Total Terdaftar: <strong className="text-slate-800 dark:text-slate-200 font-bold">{data?.resumeDpl?.totalDpl ?? 0} DPL</strong></span>
+                  <span>•</span>
+                  <span>Keaktifan: <strong className="text-[#009966] dark:text-emerald-400 font-bold">{data?.resumeDpl?.persentaseKeaktifan ?? 0}%</strong></span>
+                </div>
+              </div>
+
+              {/* Search Bar */}
+              <div className="relative">
+                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  value={dplModalSearchQuery}
+                  onChange={(e) => {
+                    setDplModalSearchQuery(e.target.value);
+                    setDplModalPage(1);
+                  }}
+                  placeholder="Cari nama dosen, NIP, prodi, atau kelompok KKN binaan..."
+                  className="w-full pl-9 pr-8 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 placeholder:text-slate-400 outline-none focus:border-emerald-500 dark:focus:border-emerald-400 transition"
+                />
+                {dplModalSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDplModalSearchQuery("");
+                      setDplModalPage(1);
+                    }}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+
+              {/* Table of DPL */}
+              <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-900">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-bold uppercase text-[10.5px]">
+                      <tr>
+                        <th className="py-2.5 px-3.5 text-center w-12">No</th>
+                        <th className="py-2.5 px-3.5">Dosen Pembimbing Lapangan</th>
+                        <th className="py-2.5 px-3.5">Kelompok Binaan</th>
+                        <th className="py-2.5 px-3.5">Kontak</th>
+                        <th className="py-2.5 px-3.5 text-center">
+                          {dplLogbookModalTab === "TERISI" ? "Aktivitas Bimbingan" : "Status Pengisian"}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                      {paginatedDplList.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="py-8 text-center text-slate-400 text-xs">
+                            {dplModalSearchQuery
+                              ? "Tidak ditemukan dosen pembimbing dengan kata kunci tersebut."
+                              : dplLogbookModalTab === "TERISI"
+                              ? "Belum ada DPL yang mengisi logbook pembimbingan."
+                              : "Seluruh DPL telah aktif mengisi logbook pembimbingan!"}
+                          </td>
+                        </tr>
+                      ) : (
+                        paginatedDplList.map((dpl, idx) => {
+                          const realIndex = (dplModalPage - 1) * DPL_MODAL_PER_PAGE + idx + 1;
+                          return (
+                            <tr key={dpl.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
+                              <td className="py-2.5 px-3.5 text-center text-slate-400 font-mono">
+                                {realIndex}
+                              </td>
+                              <td className="py-2.5 px-3.5">
+                                <p className="font-bold text-slate-900 dark:text-slate-100 leading-tight">
+                                  {dpl.name}
+                                </p>
+                                <p className="text-[11px] text-slate-400 font-mono mt-0.5">
+                                  NIP: {dpl.nip || "-"}
+                                </p>
+                                {dpl.programStudi && dpl.programStudi !== "-" && (
+                                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                    Prodi: {dpl.programStudi}
+                                  </p>
+                                )}
+                              </td>
+                              <td className="py-2.5 px-3.5">
+                                {dpl.kelompok.length === 0 ? (
+                                  <span className="text-slate-400 italic text-[11px]">-</span>
+                                ) : (
+                                  <div className="space-y-1">
+                                    {dpl.kelompok.map((k) => (
+                                      <div key={k.id} className="text-xs">
+                                        <p className="font-semibold text-slate-800 dark:text-slate-200">
+                                          {k.name}
+                                        </p>
+                                        <p className="text-[10.5px] text-slate-400">
+                                          Kel. {k.kelurahan}
+                                        </p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </td>
+                              <td className="py-2.5 px-3.5">
+                                {dpl.phone ? (
+                                  <a
+                                    href={`https://wa.me/${dpl.phone.replace(/\D/g, "")}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 font-medium"
+                                  >
+                                    <Phone size={11} />
+                                    <span>{dpl.phone}</span>
+                                  </a>
+                                ) : (
+                                  <span className="text-slate-400 text-[11px]">-</span>
+                                )}
+                                {dpl.email && (
+                                  <p className="text-[10.5px] text-slate-400 truncate max-w-[170px] mt-0.5">
+                                    {dpl.email}
+                                  </p>
+                                )}
+                              </td>
+                              <td className="py-2.5 px-3.5 text-center">
+                                {dplLogbookModalTab === "TERISI" ? (
+                                  <div className="inline-flex flex-col items-center">
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/40">
+                                      <CheckCircle2 size={11} />
+                                      <span>{dpl.totalLog} Logbook</span>
+                                    </span>
+                                    {dpl.totalJam > 0 && (
+                                      <span className="text-[10px] text-slate-400 mt-0.5 font-medium">
+                                        Total {dpl.totalJam} Jam Bimbingan
+                                      </span>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-900/40">
+                                    <AlertCircle size={11} />
+                                    <span>Belum Ada Logbook</span>
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination Controls */}
+                {totalDplModalPages > 1 && (
+                  <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50 dark:bg-slate-850 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-500">
+                    <span>
+                      Menampilkan {Math.min((dplModalPage - 1) * DPL_MODAL_PER_PAGE + 1, filteredDplList.length)} -{" "}
+                      {Math.min(dplModalPage * DPL_MODAL_PER_PAGE, filteredDplList.length)} dari{" "}
+                      {filteredDplList.length} DPL
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        disabled={dplModalPage === 1}
+                        onClick={() => setDplModalPage((p) => Math.max(1, p - 1))}
+                        className="p-1 rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-40 hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer"
+                      >
+                        <ChevronLeft size={14} />
+                      </button>
+                      <span className="font-bold text-slate-700 dark:text-slate-300 px-2">
+                        {dplModalPage} / {totalDplModalPages}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={dplModalPage === totalDplModalPages}
+                        onClick={() => setDplModalPage((p) => Math.min(totalDplModalPages, p + 1))}
+                        className="p-1 rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-40 hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer"
+                      >
+                        <ChevronRight size={14} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-between px-6 py-3.5 bg-slate-50 dark:bg-slate-850 border-t border-slate-200 dark:border-slate-800 shrink-0">
+              <Link
+                to="/monitoring-kegiatan/logbook?role=dpl"
+                className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1.5"
+              >
+                <span>Buka Detail Modul Logbook DPL</span>
+                <ChevronRight size={14} />
+              </Link>
+              <button
+                type="button"
+                onClick={() => setShowDplLogbookModal(false)}
+                className="px-4 py-2 bg-slate-200/80 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs rounded-xl transition cursor-pointer"
               >
                 Tutup
               </button>

@@ -244,6 +244,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/dashboard" element={<Navigate to="/dasbor" replace />} />
         <Route path="/dasbor-kkn-eksekutif" element={<Navigate to="/dasbor?tab=kkn" replace />} />
         <Route path="/dashboard-eksekutif-kkn" element={<Navigate to="/dasbor?tab=kkn" replace />} />
+        <Route path="/dasbor-tata-kelola-sampah" element={<Navigate to="/dasbor?tab=tata-kelola-sampah" replace />} />
         <Route path="/manajemen-lokasi" element={<Navigate to="/master-data/rukun-warga" replace />} />
         <Route path="/setor" element={<Navigate to="/penyetoran-sampah" replace />} />
         <Route

@@ -757,6 +757,30 @@ export class LogbookService {
       },
     });
 
+    // Berikan +3 poin harian untuk pengisian logbook (maksimal 1x per tanggal kegiatan)
+    const actDateStr = activityDate.toISOString().split("T")[0];
+    const existingLogbookPoint = await prisma.pointHistory.findFirst({
+      where: {
+        userId: targetUserId,
+        kategori: "KKN_LOGBOOK_HARIAN",
+        description: { contains: actDateStr },
+      },
+    });
+
+    if (!existingLogbookPoint) {
+      await prisma.pointHistory
+        .create({
+          data: {
+            userId: targetUserId,
+            points: 3,
+            description: `Poin pengisian logbook harian KKN (${actDateStr})`,
+            kategori: "KKN_LOGBOOK_HARIAN",
+            redeemable: false,
+          },
+        })
+        .catch(() => {});
+    }
+
     // Berikan poin gamifikasi jika langsung disetujui DPL
     if (statusApproval === StatusLogbookKkn.DISETUJUI_DPL) {
       await prisma.pointHistory

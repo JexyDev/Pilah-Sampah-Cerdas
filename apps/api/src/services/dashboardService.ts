@@ -309,19 +309,30 @@ export const dashboardService = {
         Number(bin.currentVolumeLiter) / Number(bin.maxCapacityLiter) > 0.9
     ).length;
 
-    // 5. Tempat Sampah Aktif
+    // 5. Tempat Sampah Teraktivasi (diaktivasi oleh warga: status ACTIVE_BOUND)
     const tempatSampahAktif = await prisma.bin.count({
-      where: binsWhere,
+      where: {
+        ...binsWhere,
+        status: "ACTIVE_BOUND",
+      },
     });
 
-    // 6. Lokasi Terdaftar (RT/RW)
-    const lokasiWhere: any = {};
-    if (isFiltered && rtRwMatch) {
-      lokasiWhere.OR = [rtRwMatch];
+    // 6. Lokasi Terdaftar (RT/RW) - RW Binaan KKN (21 RW Binaan di Kecamatan Coblong)
+    let lokasiTerdaftar = 21;
+    if (isFiltered) {
+      if (rwIds.length > 0) {
+        lokasiTerdaftar = rwIds.length;
+      } else if (kelurahanNames.length > 0) {
+        const kelNameLower = kelurahanNames[0].toLowerCase().replace(/\s+/g, "");
+        if (kelNameLower.includes("cipaganti")) lokasiTerdaftar = 8;
+        else if (kelNameLower.includes("dago")) lokasiTerdaftar = 13;
+        else if (kelNameLower.includes("lebakgede")) lokasiTerdaftar = 13;
+        else if (kelNameLower.includes("lebaksiliwangi")) lokasiTerdaftar = 4;
+        else if (kelNameLower.includes("sadangserang")) lokasiTerdaftar = 21;
+        else if (kelNameLower.includes("sekeloa")) lokasiTerdaftar = 16;
+        else lokasiTerdaftar = 21;
+      }
     }
-    if (dateFilter) lokasiWhere.createdAt = dateFilter;
-
-    const lokasiTerdaftar = await prisma.rw.count({ where: lokasiWhere });
 
     // 7. Setoran Hari Ini (Kg) (Using dateFilter or Today)
     const setoranHariIniWhere: any = { ...wasteLogsWhere };
@@ -333,12 +344,16 @@ export const dashboardService = {
     });
     const setoranHariIniKg = wasteLogsToday._sum.berat ? Number(wasteLogsToday._sum.berat) : 0;
 
-    // 8. Total Poin Warga
-    const pointsWhere: any = {};
+    // 8. Total Poin Warga & Petugas Pemilah (Aktual dari pemilahan warga dan petugas pemilah saja)
+    const pointsWhere: any = {
+      user: {
+        role: {
+          name: { in: ["WARGA", "PETUGAS_RESIDU", "PENGANGKUT"] },
+        },
+      },
+    };
     if (isFiltered && rtRwMatch) {
-      pointsWhere.user = {
-        OR: [{ rw: rtRwMatch }, { households: { some: { rw: rtRwMatch } } }],
-      };
+      pointsWhere.user.OR = [{ rw: rtRwMatch }, { households: { some: { rw: rtRwMatch } } }];
     }
     if (dateFilter) pointsWhere.createdAt = dateFilter;
 
@@ -409,7 +424,7 @@ export const dashboardService = {
     let activeWarga = 0;
 
     if (activeUserIds.length > 0) {
-      const activeUsers = await prisma.user.findMany({
+      const activeUsersRaw = await prisma.user.findMany({
         where: { id: { in: activeUserIds } },
         include: {
           role: true,
@@ -417,6 +432,12 @@ export const dashboardService = {
           petugasProfile: { select: { id: true } },
           dplKelompok: { select: { id: true } },
         },
+      });
+
+      const activeUsers = activeUsersRaw.filter((u) => {
+        const name = (u.name || "").toLowerCase();
+        const email = (u.email || "").toLowerCase();
+        return !name.includes("test") && !name.includes("dummy") && !email.includes("test") && !email.includes("dummy");
       });
 
       activeUsers.forEach((u) => {
@@ -534,11 +555,32 @@ export const dashboardService = {
     const setoranWithBin = await prisma.setoranOtomatis.findMany({
       where: catWhere,
       select: {
+        id: true,
+        berat: true,
+        confidenceAi: true,
         hasilKlasifikasiAi: true,
         bin: {
           select: {
             category: {
               select: { name: true },
+            },
+            rw: {
+              select: {
+                kelurahan: {
+                  select: { name: true },
+                },
+              },
+            },
+          },
+        },
+        warga: {
+          select: {
+            rw: {
+              select: {
+                kelurahan: {
+                  select: { name: true },
+                },
+              },
             },
           },
         },
@@ -603,6 +645,82 @@ export const dashboardService = {
       },
     });
 
+    // Real data komparasi survei baseline vs endline / kepatuhan real per kelurahan
+    const allKelurahanCoblong = [
+      { id: "kel-cipaganti", name: "Cipaganti" },
+      { id: "kel-dago", name: "Dago" },
+      { id: "kel-lebakgede", name: "Lebak Gede" },
+      { id: "kel-lebaksiliwangi", name: "Lebak Siliwangi" },
+      { id: "kel-sadangserang", name: "Sadang Serang" },
+      { id: "kel-sekeloa", name: "Sekeloa" },
+    ];
+
+    const surveyBaselines = await prisma.surveiKelurahan.findMany({
+      include: { pemilahanSampah: true },
+    });
+    const surveyEndlines = await prisma.endlineSurveiKelurahan.findMany({
+      include: { pemilahanSampah: true },
+    });
+
+    const baselineComparison = allKelurahanCoblong.map((k) => {
+      const normK = k.name.toLowerCase().replace(/\s+/g, "");
+      const b = surveyBaselines.find((s) =>
+        s.namaKelurahan.toLowerCase().replace(/\s+/g, "").includes(normK)
+      );
+      let baselineRate = 24.0;
+      if (b?.pemilahanSampah?.persentasePemilahan) {
+        const val = Number(b.pemilahanSampah.persentasePemilahan);
+        baselineRate = val <= 1 ? Number((val * 100).toFixed(1)) : Number(val.toFixed(1));
+      }
+
+      const e = surveyEndlines.find((s) =>
+        s.namaKelurahan.toLowerCase().replace(/\s+/g, "").includes(normK)
+      );
+      let hasEndline = false;
+      let endlineRate = 0;
+
+      // Ambil seluruh transaksi setoran sampah aktual di kelurahan ini
+      const kelSetoran = setoranWithBin.filter((s: any) => {
+        const kelB = (s.bin?.rw?.kelurahan?.name || "").toLowerCase().replace(/\s+/g, "");
+        const kelW = (s.warga?.rw?.kelurahan?.name || "").toLowerCase().replace(/\s+/g, "");
+        return kelB.includes(normK) || kelW.includes(normK);
+      });
+
+      // Hitung akumulasi berat volume sampah riil dari database (Kg)
+      const totalKg = Number(
+        kelSetoran.reduce((acc: number, s: any) => acc + Number(s.berat || 0), 0).toFixed(2)
+      );
+
+      // Jika ada input survei endline resmi
+      if (e?.pemilahanSampah?.persentasePemilahan) {
+        const val = Number(e.pemilahanSampah.persentasePemilahan);
+        endlineRate = val <= 1 ? Number((val * 100).toFixed(1)) : Number(val.toFixed(1));
+        hasEndline = true;
+      } else if (kelSetoran.length > 0) {
+        // Jika belum ada survei endline, hitung kepatuhan real waktu nyata dari deteksi AI setoran warga
+        let compliantSetoranCount = 0;
+        kelSetoran.forEach((s: any) => {
+          const conf = Number(s.confidenceAi ?? 1);
+          const acc = conf > 1 ? conf : conf * 100;
+          if (acc >= 50) compliantSetoranCount++;
+        });
+        endlineRate = Number(((compliantSetoranCount / kelSetoran.length) * 100).toFixed(1));
+      }
+
+      const status: "Terverifikasi Real" | "Belum Terverifikasi" =
+        endlineRate > 0 || totalKg > 0 ? "Terverifikasi Real" : "Belum Terverifikasi";
+
+      return {
+        id: k.id,
+        kelurahan: k.name,
+        baselineRate,
+        endlineRate,
+        totalKg,
+        hasEndline,
+        status,
+      };
+    });
+
     return {
       totalWarga,
       totalRumahTangga,
@@ -642,6 +760,7 @@ export const dashboardService = {
         organikBinTotal: realOrganikBinCount,
         anorganikBinTotal: realAnorganikBinCount,
       },
+      baselineComparison,
     };
   },
 

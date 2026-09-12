@@ -1700,7 +1700,7 @@ export class KknAttendanceService {
           },
         });
 
-        // Award points if not already awarded
+        // Award points if not already awarded (+4 poin kehadiran)
         if (!isAutoAlpa) {
           const existingPoint = await tx.pointHistory.findFirst({
             where: {
@@ -1712,9 +1712,9 @@ export class KknAttendanceService {
             await tx.pointHistory.create({
               data: {
                 userId: studentId,
-                points: 10,
-                description: `Bonus kehadiran KKN: ${actLoc?.title || scheduleId} (${method})`,
-                kategori: "PARTISIPASI_STREAK",
+                points: 4,
+                description: `Poin kehadiran KKN (Check-In): ${actLoc?.title || scheduleId} (${method})`,
+                kategori: "KKN_PRESENSI_HADIR",
                 redeemable: false,
               },
             });
@@ -1757,14 +1757,14 @@ export class KknAttendanceService {
         },
       });
 
-      // Award +10 points to student on Check-In if NOT ALPA
+      // Award +4 points to student on Check-In if NOT ALPA
       if (!isAutoAlpa) {
         await tx.pointHistory.create({
           data: {
             userId: studentId,
-            points: 10,
-            description: `Bonus kehadiran (Check-In) KKN: ${actLoc?.title || scheduleId} (${method})`,
-            kategori: "PARTISIPASI_STREAK",
+            points: 4,
+            description: `Poin kehadiran (Check-In) KKN: ${actLoc?.title || scheduleId} (${method})`,
+            kategori: "KKN_PRESENSI_HADIR",
             redeemable: false,
           },
         });
@@ -2201,25 +2201,27 @@ export class KknAttendanceService {
       },
     });
 
-    // Award +10 points to student on Check-Out (Kepulangan) if not already awarded today
-    const existingCheckoutPoint = await prisma.pointHistory.findFirst({
-      where: {
-        userId: studentId,
-        description: { contains: `(Check-Out)` },
-        createdAt: { gte: startOfDay },
-      },
-    });
-
-    if (!existingCheckoutPoint) {
-      await prisma.pointHistory.create({
-        data: {
+    // Award +3 points to student on Check-Out ONLY IF duration targets met (HADIR_MEMENUHI)
+    if (isMemenuhi) {
+      const existingCheckoutPoint = await prisma.pointHistory.findFirst({
+        where: {
           userId: studentId,
-          points: 10,
-          description: `Bonus kepulangan (Check-Out) presensi KKN: ${updated.schedule?.title || updated.scheduleId}`,
-          kategori: "PARTISIPASI_STREAK",
-          redeemable: false,
+          kategori: "KKN_DURASI_MEMENUHI",
+          createdAt: { gte: startOfDay },
         },
       });
+
+      if (!existingCheckoutPoint) {
+        await prisma.pointHistory.create({
+          data: {
+            userId: studentId,
+            points: 3,
+            description: `Poin durasi harian terpenuhi (${durationMinutes} menit): ${updated.schedule?.title || updated.scheduleId}`,
+            kategori: "KKN_DURASI_MEMENUHI",
+            redeemable: false,
+          },
+        });
+      }
     }
 
     // Broadcast checkout event via WebSocket
@@ -4120,12 +4122,12 @@ export class KknAttendanceService {
       },
     });
 
-    // Award +10 points to student on Check-In (Mulai Kegiatan) if not already awarded today
+    // Award +4 points to student on Check-In (Mulai Kegiatan) if not already awarded today
     const startOfDay = new Date(`${todayStr}T00:00:00+07:00`);
     const existingCheckInPoint = await prisma.pointHistory.findFirst({
       where: {
         userId: studentUserId,
-        description: { contains: `(Check-In)` },
+        kategori: "KKN_PRESENSI_HADIR",
         createdAt: { gte: startOfDay },
       },
     });
@@ -4134,9 +4136,9 @@ export class KknAttendanceService {
       await prisma.pointHistory.create({
         data: {
           userId: studentUserId,
-          points: 10,
-          description: `Bonus kehadiran (Check-In) KKN: ${schedule.title || scheduleId}`,
-          kategori: "PARTISIPASI_STREAK",
+          points: 4,
+          description: `Poin kehadiran KKN (Check-In): ${schedule.title || scheduleId}`,
+          kategori: "KKN_PRESENSI_HADIR",
           redeemable: false,
         },
       });

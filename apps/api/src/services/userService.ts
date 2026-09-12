@@ -573,6 +573,10 @@ export class UserService {
               jurusan: u.studentProfile.jurusan,
               fakultas: u.studentProfile.fakultas,
               noWa: u.studentProfile.noWa,
+              sks:
+                u.studentProfile.sks !== undefined && u.studentProfile.sks !== null
+                  ? Number(u.studentProfile.sks)
+                  : 0,
               startDate: u.studentProfile.startDate,
               endDate: u.studentProfile.endDate,
               assignedRwId: u.studentProfile.assignedRwId,
@@ -846,6 +850,12 @@ export class UserService {
               ? parseInt(studentProfile.assignedRwId)
               : u.rwId,
             kelompokId: targetKelompokId || null,
+            sks:
+              data.sks !== undefined && data.sks !== null
+                ? Number(data.sks)
+                : studentProfile?.sks !== undefined && studentProfile?.sks !== null
+                  ? Number(studentProfile.sks)
+                  : 0,
             whitelistStatus: "APPROVED",
           },
         });
@@ -1159,6 +1169,12 @@ export class UserService {
               ? parseInt(studentProfile.assignedRwId)
               : parsedRwId || u.rwId,
             kelompokId: targetKelompokId !== undefined ? targetKelompokId : null,
+            sks:
+              data.sks !== undefined && data.sks !== null
+                ? Number(data.sks)
+                : studentProfile?.sks !== undefined && studentProfile?.sks !== null
+                  ? Number(studentProfile.sks)
+                  : 0,
             whitelistStatus: "APPROVED",
           },
           update: {
@@ -1171,6 +1187,14 @@ export class UserService {
             }),
             ...(targetKelompokId !== undefined && { kelompokId: targetKelompokId }),
             ...(parsedRwId !== null && parsedRwId !== undefined ? { assignedRwId: parsedRwId } : {}),
+            ...((data.sks !== undefined || studentProfile?.sks !== undefined) && {
+              sks:
+                data.sks !== undefined && data.sks !== null
+                  ? Number(data.sks)
+                  : studentProfile?.sks !== undefined && studentProfile?.sks !== null
+                    ? Number(studentProfile.sks)
+                    : 0,
+            }),
           },
         });
       }

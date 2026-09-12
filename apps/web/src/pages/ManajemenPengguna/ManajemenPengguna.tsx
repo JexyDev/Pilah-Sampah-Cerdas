@@ -270,6 +270,7 @@ const ManajemenPengguna: React.FC = () => {
     kecamatan: "Kecamatan Terdaftar",
     petugasResiduId: "",
     dplId: "",
+    sks: 0,
   });
 
   const formatPhone = (phone: string) => {
@@ -604,6 +605,7 @@ const ManajemenPengguna: React.FC = () => {
       kecamatan: kecamatanList[0]?.name || kecamatanList[0]?.nama || "",
       petugasResiduId: "",
       dplId: "",
+      sks: 0,
     });
     setShowPassword(false);
     setIsModalOpen(true);
@@ -691,6 +693,7 @@ const ManajemenPengguna: React.FC = () => {
       kecamatan: u.kecamatan || u.rw?.kelurahan?.kecamatan?.name || kecamatanList[0]?.name || "Kecamatan Terdaftar",
       petugasResiduId: u.petugasResidu?.id || "",
       dplId: u.studentProfile?.kelompok?.dplId || u.studentProfile?.kelompok?.dpl?.id || u.dplId || "",
+      sks: u.studentProfile?.sks !== undefined && u.studentProfile?.sks !== null ? Number(u.studentProfile.sks) : (u.sks !== undefined && u.sks !== null ? Number(u.sks) : 0),
     });
     setShowPassword(false);
     setIsModalOpen(true);
@@ -787,7 +790,9 @@ const ManajemenPengguna: React.FC = () => {
           jenjangPendidikan: formData.jenjangPendidikan,
           kelompokId: selectedKelId,
           dplId: formData.dplId || null,
+          sks: Number(formData.sks) || 0,
         };
+        payload.sks = Number(formData.sks) || 0;
         if (!selectedKelId) {
           payload.wilayah = null;
           payload.address = null;
@@ -1453,6 +1458,7 @@ const ManajemenPengguna: React.FC = () => {
                     <th className="py-3 px-4">KELOMPOK KKN</th>
                     <th className="py-3 px-4">DOSEN PENDAMPING</th>
                     <th className="py-3 px-4">WILAYAH PENUGASAN</th>
+                    <th className="py-3 px-4">BEBAN SKS</th>
                     <th className="py-3 px-4 text-center">STATUS</th>
                     {!isReadOnly && <th className="py-3 px-4 text-center">AKSI</th>}
                   </>
@@ -1668,6 +1674,13 @@ const ManajemenPengguna: React.FC = () => {
                           {renderDplCell(u.studentProfile?.kelompok?.dplName || u.studentProfile?.kelompok?.dpl?.name, u.studentProfile?.kelompok?.dplFotoProfil || u.studentProfile?.kelompok?.dpl?.fotoProfil)}
                         </td>
                         <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-semibold">{renderWilayahBadges(getMahasiswaWilayahStr(u))}</td>
+                        <td className="py-3 px-4">
+                          <span className="bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 px-2.5 py-1 rounded-lg border border-sky-200 dark:border-sky-800/80 font-bold text-[10px] whitespace-nowrap inline-block shadow-2xs">
+                            {(u.studentProfile?.sks && u.studentProfile.sks > 0) || (u.sks && u.sks > 0)
+                              ? `${u.studentProfile?.sks || u.sks} SKS`
+                              : "Reguler (0 SKS)"}
+                          </span>
+                        </td>
                       </>
                     ) : (
                       <>
@@ -1903,6 +1916,17 @@ const ManajemenPengguna: React.FC = () => {
                     </div>
                   )}
 
+                  {(u.role === "MAHASISWA_KKN" || selectedRole === "MAHASISWA_KKN") && (
+                    <div>
+                      <span className="font-extrabold text-slate-400 uppercase tracking-wider block text-[9px] mb-0.5">Beban SKS</span>
+                      <span className="bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 px-2.5 py-0.5 rounded-md border border-sky-200 dark:border-sky-800/80 font-bold text-[10px] inline-block">
+                        {(u.studentProfile?.sks && u.studentProfile.sks > 0) || (u.sks && u.sks > 0)
+                          ? `${u.studentProfile?.sks || u.sks} SKS`
+                          : "Reguler (0 SKS)"}
+                      </span>
+                    </div>
+                  )}
+
                   {u.address && (
                     <div className="col-span-2">
                       <span className="font-extrabold text-slate-400 uppercase tracking-wider block text-[9px] mb-0.5">Alamat Lengkap</span>
@@ -2127,7 +2151,8 @@ const ManajemenPengguna: React.FC = () => {
                             <div>
                               <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">NIM</label>
                               <input type="text" inputMode="numeric" pattern="[0-9]*" value={formData.nim} onChange={(e) => setFormData({ ...formData, nim: e.target.value.replace(/\D/g, "") })} placeholder="10123047" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-mono font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
-                                               <div>
+                            </div>
+                            <div>
                               <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Kelompok KKN</label>
                               <select
                                 value={formData.dplKelompokIds?.[0] || ""}
@@ -2179,9 +2204,9 @@ const ManajemenPengguna: React.FC = () => {
                               className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100/80 dark:bg-slate-800/80 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-not-allowed outline-none select-none opacity-90"
                             />
                             <p className="text-[10px] text-slate-400 dark:text-slate-400 mt-1">Otomatis terhubung secara dinamis mengikuti DPL yang bertugas di kelompok KKN yang dipilih.</p>
-                          </div>            </div>
+                          </div>
 
-                          <div className="grid grid-cols-2 gap-3">
+                          <div className="grid grid-cols-3 gap-3">
                             <div>
                               <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Jenjang Pendidikan</label>
                               <select value={formData.jenjangPendidikan} onChange={(e) => setFormData({...formData, jenjangPendidikan: e.target.value})} className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none">
@@ -2195,6 +2220,25 @@ const ManajemenPengguna: React.FC = () => {
                             <div>
                               <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Program Studi</label>
                               <input type="text" value={formData.prodi} onChange={(e) => setFormData({ ...formData, prodi: e.target.value })} placeholder="S1 Teknik Informatika" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Beban SKS</label>
+                              <select
+                                value={formData.sks || 0}
+                                onChange={(e) => setFormData({ ...formData, sks: Number(e.target.value) })}
+                                className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                              >
+                                <option value={0}>Reguler (0 SKS)</option>
+                                <option value={6}>6 SKS</option>
+                                <option value={11}>11 SKS</option>
+                                <option value={12}>12 SKS</option>
+                                <option value={13}>13 SKS</option>
+                                <option value={14}>14 SKS</option>
+                                <option value={17}>17 SKS</option>
+                                <option value={18}>18 SKS</option>
+                                <option value={19}>19 SKS</option>
+                                <option value={20}>20 SKS (MBKM Penuh)</option>
+                              </select>
                             </div>
                           </div>
                         </>
