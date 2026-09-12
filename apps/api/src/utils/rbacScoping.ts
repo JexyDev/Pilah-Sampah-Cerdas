@@ -304,7 +304,10 @@ export async function getScopingFilters(user: {
           ],
         },
         binFilter: {
-          rwId: student.assignedRwId,
+          OR: [
+            { rwId: student.assignedRwId },
+            ...(student.kelompokId ? [{ kelompokId: student.kelompokId }] : []),
+          ],
         },
         householdFilter: {
           OR: [
@@ -342,6 +345,7 @@ export async function getScopingFilters(user: {
         userFilter: { rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } },
         binFilter: {
           OR: [
+            ...(student.kelompokId ? [{ kelompokId: student.kelompokId }] : []),
             { kelurahan: { name: { equals: kel, mode: "insensitive" } } },
             { rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } },
           ],

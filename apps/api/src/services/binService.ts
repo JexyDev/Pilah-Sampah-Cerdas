@@ -243,14 +243,30 @@ export class BinService {
       if (existingHh) {
         householdId = existingHh.id;
       } else {
-        const u = await prisma.user.findUnique({ where: { id: userId } });
+        const u = await prisma.user.findUnique({
+          where: { id: userId },
+          include: { rw: true },
+        });
+        const lat =
+          userLat != null && userLat !== 0
+            ? userLat
+            : u?.rw?.latitude != null
+            ? Number(u.rw.latitude)
+            : 0;
+        const lng =
+          userLng != null && userLng !== 0
+            ? userLng
+            : u?.rw?.longitude != null
+            ? Number(u.rw.longitude)
+            : 0;
+
         const newHh = await prisma.household.create({
           data: {
             userId,
-            address: u?.address || "Bandung, Jawa Barat",
-            rwId: u?.rwId || 1,
-            latitude: userLat ?? -6.8903,
-            longitude: userLng ?? 107.611,
+            address: u?.address || "-",
+            rwId: u?.rwId ?? undefined,
+            latitude: lat,
+            longitude: lng,
           },
         });
         householdId = newHh.id;
@@ -323,7 +339,7 @@ export class BinService {
       const maxRadius =
         process.env.NODE_ENV === "development" && process.env.ALLOW_GEOFENCE_BYPASS === "true"
           ? 1000000
-          : 50;
+          : Number(process.env.BIN_GEOFENCE_MAX_RADIUS_METERS || 100);
 
       if (distance > maxRadius) {
         const error = new Error("LOCATION_OUT_OF_RANGE");
@@ -764,16 +780,25 @@ export class BinService {
     if (!user) throw new Error("USER_NOT_FOUND");
     let household = user.households && user.households.length > 0 ? user.households[0] : null;
     if (!household) {
-      const rwId = user.rwId || 1;
-      const lat = data.latitude ?? -6.8903;
-      const lng = data.longitude ?? 107.611;
-      const addr = user.address || "Bandung, Jawa Barat";
+      const uRw = user.rwId ? await prisma.rw.findUnique({ where: { id: user.rwId } }) : null;
+      const lat =
+        data.latitude != null && data.latitude !== 0
+          ? data.latitude
+          : uRw?.latitude != null
+          ? Number(uRw.latitude)
+          : 0;
+      const lng =
+        data.longitude != null && data.longitude !== 0
+          ? data.longitude
+          : uRw?.longitude != null
+          ? Number(uRw.longitude)
+          : 0;
 
       household = await prisma.household.create({
         data: {
           userId: user.id,
-          address: addr,
-          rwId: rwId,
+          address: user.address || "-",
+          rwId: user.rwId ?? undefined,
           latitude: lat,
           longitude: lng,
         },
