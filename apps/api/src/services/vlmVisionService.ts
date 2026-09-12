@@ -266,15 +266,11 @@ Keluarkan HANYA JSON murni tanpa markdown atau teks pengantar apapun:
 
     const rekomendasiBin = katUtama.toLowerCase() as "organik" | "anorganik" | "residu";
 
-    let estimatedVolumeLiter = 1.5;
+    let estimatedVolumeLiter = 1.0;
     if (validObjects.length > 0) {
-      let totalAreaRatio = 0;
-      for (const o of validObjects) {
-        const h = Math.max(0, (o.box_2d[2] - o.box_2d[0]) / 1000);
-        const w = Math.max(0, (o.box_2d[3] - o.box_2d[1]) / 1000);
-        totalAreaRatio += h * w;
-      }
-      estimatedVolumeLiter = Math.max(0.5, Math.min(5.0, Math.round(totalAreaRatio * 4.5 * 10) / 10));
+      // Volume estimasi dinamis: objek anorganik berongga (botol/wadah) ~0.45L, organik ~0.35L, residu padat/kecil ~0.25L
+      const basePerItem = katUtama === "ANORGANIK" ? 0.45 : katUtama === "ORGANIK" ? 0.35 : 0.25;
+      estimatedVolumeLiter = Math.max(0.5, Math.min(15.0, Math.round(validObjects.length * basePerItem * 10) / 10));
     }
 
     return {
