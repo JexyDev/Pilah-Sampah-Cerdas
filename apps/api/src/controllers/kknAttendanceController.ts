@@ -239,10 +239,16 @@ export const kknAttendanceController = {
         return;
       }
 
-      const defaultLat = -6.975412;
-      const defaultLng = 107.632145;
-      const validLat = finalLat !== null && !isNaN(finalLat) ? finalLat : defaultLat;
-      const validLng = finalLng !== null && !isNaN(finalLng) ? finalLng : defaultLng;
+      if (finalLat === null || isNaN(finalLat) || finalLng === null || isNaN(finalLng)) {
+        res.status(400).json({
+          success: false,
+          error: "VALIDATION_ERROR",
+          message: "Koordinat GPS lokasi presensi wajib dikirimkan secara akurat",
+        });
+        return;
+      }
+      const validLat = finalLat;
+      const validLng = finalLng;
 
       const result = await kknAttendanceService.recordAttendance({
         studentId: targetStudentId,

@@ -1326,8 +1326,8 @@ export class KknAttendanceService {
     const configLngStr = await configService.getConfig("default_activity_longitude");
     const configRadiusStr = await configService.getConfig("default_activity_radius");
 
-    const defaultLat = configLatStr ? parseFloat(configLatStr) : -6.8915; // Bandung / Coblong
-    const defaultLng = configLngStr ? parseFloat(configLngStr) : 107.6107;
+    const defaultLat = configLatStr ? parseFloat(configLatStr) : null;
+    const defaultLng = configLngStr ? parseFloat(configLngStr) : null;
     const defaultRadius = configRadiusStr ? parseInt(configRadiusStr, 10) : 500;
 
     const effectiveLat = schedule.latitude
@@ -2043,8 +2043,8 @@ export class KknAttendanceService {
     let logsCalculatedMins = 0;
     if (schedule && (todayLogsForCheckout?.length ?? 0) >= 2) {
       const checkoutGeofence = {
-        latitude: schedule.latitude ? Number(schedule.latitude) : -6.8915,
-        longitude: schedule.longitude ? Number(schedule.longitude) : 107.6107,
+        latitude: schedule.latitude ? Number(schedule.latitude) : null,
+        longitude: schedule.longitude ? Number(schedule.longitude) : null,
         radius: schedule.radius ? Number(schedule.radius) : 500,
         polygon: schedule.polygon,
       };
@@ -3302,43 +3302,15 @@ export class KknAttendanceService {
 
       const registeredPosko =
         group?.poskoKkn || (group as any)?.poskoMulti?.[0] || group?.facilities?.[0];
-      let poskoLat = -6.8915; // default Coblong
-      let poskoLng = 107.6107;
+      let poskoLat: number | null = null;
+      let poskoLng: number | null = null;
       let poskoName = `Posko KKN ${group?.name || "Mahasiswa"}`;
       const poskoRadius = Math.max(150, Number((registeredPosko as any)?.radius) || 500);
 
-      if (registeredPosko) {
+      if (registeredPosko && registeredPosko.latitude && registeredPosko.longitude) {
         poskoLat = Number(registeredPosko.latitude);
         poskoLng = Number(registeredPosko.longitude);
         poskoName = registeredPosko.nama || poskoName;
-      } else {
-        // Fallback berdasarkan kelurahan resmi
-        const kel = (group?.kelurahan || group?.name || "").toLowerCase();
-        if (kel.includes("dago")) {
-          poskoLat = -6.8833;
-          poskoLng = 107.6167;
-          poskoName = `Posko KKN ${group?.name || "Dago"} - Kel. Dago`;
-        } else if (kel.includes("cipaganti")) {
-          poskoLat = -6.8912;
-          poskoLng = 107.6035;
-          poskoName = `Posko KKN ${group?.name || "Cipaganti"} - Kel. Cipaganti`;
-        } else if (kel.includes("lebak gede") || kel.includes("lebakgede")) {
-          poskoLat = -6.8875;
-          poskoLng = 107.6133;
-          poskoName = `Posko KKN ${group?.name || "Lebak Gede"} - Kel. Lebak Gede`;
-        } else if (kel.includes("lebak siliwangi")) {
-          poskoLat = -6.8892;
-          poskoLng = 107.6083;
-          poskoName = `Posko KKN ${group?.name || "Lebak Siliwangi"} - Kel. Lebak Siliwangi`;
-        } else if (kel.includes("sadang serang")) {
-          poskoLat = -6.8917;
-          poskoLng = 107.625;
-          poskoName = `Posko KKN ${group?.name || "Sadang Serang"} - Kel. Sadang Serang`;
-        } else if (kel.includes("sekeloa")) {
-          poskoLat = -6.89;
-          poskoLng = 107.62;
-          poskoName = `Posko KKN ${group?.name || "Sekeloa"} - Kel. Sekeloa`;
-        }
       }
 
       // Upsert automatic daily schedule in database for today
@@ -3605,13 +3577,13 @@ export class KknAttendanceService {
           ? Number(sch.latitude)
           : officialPosko?.latitude
             ? Number(officialPosko.latitude)
-            : -6.8906;
+            : null;
       const lngNum =
         sch.longitude != null
           ? Number(sch.longitude)
           : officialPosko?.longitude
             ? Number(officialPosko.longitude)
-            : 107.615;
+            : null;
       const poskoRadiusNum =
         sch.radius != null
           ? Math.max(50, Number(sch.radius))
@@ -5717,8 +5689,8 @@ export class KknAttendanceService {
       deskripsiKegiatan,
       fotoUrl,
       method = "MANUAL_ADMIN",
-      latitude = -6.8903,
-      longitude = 107.611,
+      latitude,
+      longitude,
     } = payload;
 
     if (!studentId || !scheduleId) {
@@ -5744,6 +5716,13 @@ export class KknAttendanceService {
           : "HADIR_TIDAK_MEMENUHI"
         : "BERLANGSUNG");
 
+    const targetSchedule = await prisma.schedule.findUnique({
+      where: { id: scheduleId },
+      select: { latitude: true, longitude: true },
+    });
+    const finalLat = latitude != null ? Number(latitude) : targetSchedule?.latitude ? Number(targetSchedule.latitude) : null;
+    const finalLng = longitude != null ? Number(longitude) : targetSchedule?.longitude ? Number(targetSchedule.longitude) : null;
+
     const record = await prisma.activityAttendance.upsert({
       where: {
         studentId_scheduleId: {
@@ -5761,8 +5740,8 @@ export class KknAttendanceService {
         deskripsiKegiatan: deskripsiKegiatan || null,
         fotoUrl: fotoUrl || null,
         method,
-        latitude: Number(latitude),
-        longitude: Number(longitude),
+        latitude: finalLat,
+        longitude: finalLng,
         jedaLogs: {
           createdManuallyBy: authorUserId,
           createdAt: new Date().toISOString(),
@@ -6297,8 +6276,8 @@ export class KknAttendanceService {
                 scheduleId: sched.id,
                 attendedAt: startOfDay,
                 method: "LEAVE_AUTO",
-                latitude: sched.latitude || -6.89,
-                longitude: sched.longitude || 107.61,
+                latitude: sched.latitude ? Number(sched.latitude) : null,
+                longitude: sched.longitude ? Number(sched.longitude) : null,
                 status: leaveStatus,
                 actualInZoneMinutes: 240,
                 deskripsiKegiatan: `Izin/Sakit Disetujui DPL: ${approvedLeave.reason || "-"}`,
@@ -6342,8 +6321,8 @@ export class KknAttendanceService {
               scheduleId: sched.id,
               attendedAt: startOfDay,
               method: "ALPA_AUTO",
-              latitude: sched.latitude || -6.89,
-              longitude: sched.longitude || 107.61,
+              latitude: sched.latitude ? Number(sched.latitude) : null,
+              longitude: sched.longitude ? Number(sched.longitude) : null,
               status: "ALPA",
               actualInZoneMinutes: 0,
               deskripsiKegiatan:
