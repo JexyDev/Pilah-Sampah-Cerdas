@@ -16,7 +16,7 @@ import {
   calculateLiveInZoneMinutes,
   kknAttendanceService,
 } from "./kknAttendanceService.js";
-import { parseProkerDeskripsi } from "./dplService.js";
+import { parseProkerDeskripsi, calculateGroupPoints } from "./dplService.js";
 import { calculateNilaiEkonomi } from "./pemanfaatanService.js";
 import { logbookService } from "./logbookService.js";
 import { evaluateSortingStatus } from "../utils/sortingEvaluation.js";
@@ -2662,7 +2662,8 @@ export class KknService {
       };
     });
 
-    const totalGroupPoints = members.reduce((sum, m) => sum + m.individualPoints, 0);
+    const groupPointsData = await calculateGroupPoints(group.id, undefined, memberUserIds);
+    const totalGroupPoints = groupPointsData.totalGroupPoints;
 
     const registeredPosko = await prisma.facility.findFirst({
       where: {

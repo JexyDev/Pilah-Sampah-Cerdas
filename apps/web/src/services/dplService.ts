@@ -50,9 +50,13 @@ export interface GroupSummary {
   activatedBinsCount: number;
   organikBinsCount?: number;
   anorganikBinsCount?: number;
-  totalWasteWeight?: number;
   avgAttendanceRate: number;
   totalGroupPoints: number;
+  poinProker?: number;
+  rataRataPoinAnggota?: number;
+  poinDpl?: number;
+  poinLogbookDpl?: number;
+  hasLogbookDpl?: boolean;
   programKerja?: any[];
 }
 
@@ -233,7 +237,7 @@ export interface RekapNilaiStudent {
   kelurahan: string;
   isKetua: boolean;
   kehadiran: number;
-  poinDampingan: number;
+  poinDampingan?: number;
   individuDpl?: number | null;
   individuMpl?: number | null;
   individuGabungan?: number | null;

@@ -50,6 +50,12 @@ export const kknExecutiveService = {
       },
     });
 
+    // 100% Data Aktual: Filter kelompok testing/dummy
+    kelompokList = kelompokList.filter((k) => {
+      const name = (k.name || "").toLowerCase();
+      return !name.includes("test") && !name.includes("dummy");
+    });
+
     // Filter RW di memori jika ada filter RW
     if (isFilteredRw) {
       const rwNum = parseInt(rawRw.replace(/\D/g, ""), 10);
@@ -78,14 +84,25 @@ export const kknExecutiveService = {
 
     const kelompokIds = kelompokList.map((k) => k.id);
 
-    // 2. Total Kelompok
+    // 2. Total Kelompok Aktual
     const totalKelompok = kelompokList.length;
 
-    // 3. Total DPL
-    const uniqueDplIds = Array.from(new Set(kelompokList.map((k) => k.dplId).filter(Boolean))) as string[];
+    // 3. Total DPL Aktual (Validasi nama dan email DPL non-testing)
+    const rawUniqueDplIds = Array.from(new Set(kelompokList.map((k) => k.dplId).filter(Boolean))) as string[];
+    const dplUsersRaw = await prisma.user.findMany({
+      where: { id: { in: rawUniqueDplIds } },
+      select: { id: true, name: true, phone: true, email: true, nip: true, programStudi: true },
+    });
+    const realDplUsers = dplUsersRaw.filter((d) => {
+      const name = (d.name || "").toLowerCase();
+      const email = (d.email || "").toLowerCase();
+      return !name.includes("test") && !name.includes("dummy") && !email.includes("test") && !email.includes("dummy");
+    });
+    const realDplMap = new Map(realDplUsers.map((d) => [d.id, d]));
+    const uniqueDplIds = rawUniqueDplIds.filter((id) => realDplMap.has(id));
     const totalDpl = uniqueDplIds.length;
 
-    // 4. Mahasiswa KKN
+    // 4. Mahasiswa KKN Aktual
     const studentWhere: any = {};
     if (kelompokIds.length > 0) {
       studentWhere.kelompokId = { in: kelompokIds };
@@ -93,7 +110,7 @@ export const kknExecutiveService = {
       studentWhere.kelompokId = "__none__";
     }
 
-    const students = await prisma.studentKkn.findMany({
+    const studentsRaw = await prisma.studentKkn.findMany({
       where: studentWhere,
       select: {
         id: true,
@@ -110,12 +127,31 @@ export const kknExecutiveService = {
           select: {
             name: true,
             phone: true,
+            email: true,
           },
         },
       },
     });
 
+    // 100% Data Aktual: Filter akun mahasiswa testing / dummy
+    const students = studentsRaw.filter((s) => {
+      const uName = (s.user?.name || "").toLowerCase();
+      const uEmail = (s.user?.email || "").toLowerCase();
+      const nim = (s.nim || "").toLowerCase();
+      return !(
+        uName.includes("test") ||
+        uName.includes("dummy") ||
+        uEmail.includes("test") ||
+        uEmail.includes("dummy") ||
+        nim.includes("test") ||
+        nim.includes("dummy")
+      );
+    });
+
     const totalMahasiswa = students.length;
+    const realStudentIds = students.map((s) => s.id);
+    const realStudentUserIds = students.map((s) => s.userId).filter(Boolean);
+    const realStudentUserIdsSet = new Set(realStudentUserIds);
 
     // 5. Total Wilayah (Kelurahan & RW)
     const allKelurahans = ["Cipaganti", "Dago", "Lebakgede", "Lebak Siliwangi", "Sadang Serang", "Sekeloa"];
@@ -636,6 +672,63 @@ export const kknExecutiveService = {
       },
     });
 
+    // Map kelompok per DPL untuk detail list
+    const dplGroupsMap = new Map<string, Array<{ id: string; name: string; kelurahan: string; cakupanRw: any }>>();
+    kelompokList.forEach((k) => {
+      if (k.dplId && realDplMap.has(k.dplId)) {
+        const list = dplGroupsMap.get(k.dplId) || [];
+        list.push({
+          id: k.id,
+          name: k.name,
+          kelurahan: k.kelurahan,
+          cakupanRw: typeof k.cakupanRw === "object" ? JSON.stringify(k.cakupanRw) : String(k.cakupanRw ?? ""),
+        });
+        dplGroupsMap.set(k.dplId, list);
+      }
+    });
+
+    const dplStatsMap = new Map(dplLogbookStats.map((s) => [s.dplId, s]));
+
+    const dplTerisiList = uniqueDplIds
+      .filter((id) => activeDplIdSet.has(id))
+      .map((id) => {
+        const u = realDplMap.get(id);
+        const stats = dplStatsMap.get(id);
+        const groups = dplGroupsMap.get(id) || [];
+        const durasiJam = Math.round(((stats?._sum?.durasiMenit || 0) / 60) * 10) / 10;
+        return {
+          id,
+          name: u?.name || "Dosen Pembimbing",
+          nip: u?.nip || "-",
+          phone: u?.phone || null,
+          email: u?.email || null,
+          programStudi: u?.programStudi || "-",
+          totalLog: stats?._count?.id || 0,
+          totalJam: durasiJam,
+          kelompok: groups,
+        };
+      })
+      .sort((a, b) => b.totalLog - a.totalLog || a.name.localeCompare(b.name));
+
+    const dplKosongList = uniqueDplIds
+      .filter((id) => !activeDplIdSet.has(id))
+      .map((id) => {
+        const u = realDplMap.get(id);
+        const groups = dplGroupsMap.get(id) || [];
+        return {
+          id,
+          name: u?.name || "Dosen Pembimbing",
+          nip: u?.nip || "-",
+          phone: u?.phone || null,
+          email: u?.email || null,
+          programStudi: u?.programStudi || "-",
+          totalLog: 0,
+          totalJam: 0,
+          kelompok: groups,
+        };
+      })
+      .sort((a, b) => a.name.localeCompare(b.name));
+
     const resumeDpl = {
       totalDpl,
       dplAktifCount,
@@ -645,6 +738,8 @@ export const kknExecutiveService = {
       totalKunjunganLapangan: kunjunganCount,
       totalDurasiBimbinganJam,
       rerataBimbinganPerDpl,
+      dplTerisiList,
+      dplKosongList,
       recentActivities: recentDplLogEntries.map((l) => ({
         id: l.id,
         dplName: l.dpl?.name || "DPL",
@@ -674,14 +769,17 @@ export const kknExecutiveService = {
 
     // Hitung real kelompok di bawah ambang batas 60% (Presensi & Proker sesuai instruksi user: keduanya)
     const kelompokWithAtt = await prisma.kelompokKkn.findMany({
-      where: kelompokWhere,
+      where: {
+        ...kelompokWhere,
+        id: { in: kelompokIds },
+      },
       select: {
         id: true,
         name: true,
         schedules: {
           select: {
             attendances: {
-              select: { status: true },
+              select: { status: true, studentId: true },
             },
           },
         },
@@ -703,6 +801,7 @@ export const kknExecutiveService = {
       let hadirAtt = 0;
       k.schedules.forEach((s) => {
         s.attendances.forEach((a) => {
+          if (!realStudentUserIdsSet.has(a.studentId)) return;
           totalAtt++;
           const st = (a.status || "").toUpperCase();
           if (st.includes("HADIR") || st === "BERLANGSUNG" || st === "SELESAI") {
@@ -727,7 +826,7 @@ export const kknExecutiveService = {
     });
 
     // 16.b Agregasi Alpa Real Database (Zero False Logic - Analisis Logika Manusia)
-    // Total record baris log kehadiran alpa terakumulasi di lapangan
+    // Total record baris log kehadiran alpa terakumulasi di lapangan (khusus mahasiswa aktual)
     const totalAlpaLogs = await prisma.activityAttendance.count({
       where: { ...attendanceWhere, status: "ALPA" },
     });
@@ -745,25 +844,18 @@ export const kknExecutiveService = {
     // Standar operasional KKN: >= 3x alpa memerlukan intervensi DPL & arahan pimpinan
     const criticalAlpaMap = new Map<string, number>();
     alpaPerStudent.forEach((item) => {
-      if (item._count.id >= 3) {
+      if (item._count.id >= 3 && realStudentUserIdsSet.has(item.studentId)) {
         criticalAlpaMap.set(item.studentId, item._count.id);
       }
     });
-    const countCriticalAlpaStudents = criticalAlpaMap.size;
 
-    // Ambil data DPL untuk mapping rincian mahasiswa alpa kritis
-    const dplUsers = await prisma.user.findMany({
-      where: { id: { in: uniqueDplIds } },
-      select: { id: true, name: true, phone: true },
-    });
-    const dplMap = new Map(dplUsers.map((d) => [d.id, d]));
     const kelompokMap = new Map(kelompokList.map((k) => [k.id, k]));
 
     const criticalAlpaStudents = students
       .filter((s) => criticalAlpaMap.has(s.userId))
       .map((s) => {
         const k = kelompokMap.get(s.kelompokId || "");
-        const d = k?.dplId ? dplMap.get(k.dplId) : null;
+        const d = k?.dplId ? realDplMap.get(k.dplId) : null;
         return {
           id: s.id,
           userId: s.userId,
@@ -780,6 +872,8 @@ export const kknExecutiveService = {
         };
       })
       .sort((a, b) => b.alpaCount - a.alpaCount);
+
+    const countCriticalAlpaStudents = criticalAlpaStudents.length;
 
     const perhatianPimpinan = [
       {
@@ -841,6 +935,7 @@ export const kknExecutiveService = {
         totalWilayah: {
           kelurahanCount,
           rwCount,
+          totalRwKecamatan: 84,
           label: `${kelurahanCount} Kelurahan • ${rwCount} RW`,
         },
         totalKelompok: {
