@@ -482,6 +482,8 @@ export const kknAttendanceController = {
       const currentUserId = (req as any).user?.userId || (req as any).user?.id;
       const dplUserId = isDpl ? currentUserId : undefined;
       const kelompokId = req.query.kelompokId as string | undefined;
+      const kelurahan = req.query.kelurahan as string | undefined;
+      const rw = req.query.rw as string | undefined;
       const startDate = req.query.startDate as string | undefined;
       const endDate = req.query.endDate as string | undefined;
       const status = req.query.status as string | undefined;
@@ -491,6 +493,8 @@ export const kknAttendanceController = {
 
       const result = await kknAttendanceService.getLaporanPresensi({
         kelompokId,
+        kelurahan,
+        rw,
         dplUserId,
         startDate,
         endDate,

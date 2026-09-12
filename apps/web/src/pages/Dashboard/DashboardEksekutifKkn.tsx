@@ -31,13 +31,11 @@ import {
   X,
   Crown,
   ChevronLeft,
-  FileCheck,
   Award,
   Trophy,
   Filter,
   XCircle,
   AlertCircle,
-  SlidersHorizontal,
   Phone,
 } from "lucide-react";
 import {
@@ -59,6 +57,7 @@ import api from "../../services/api";
 import showToast from "../../utils/showToast";
 import { dplService, type GroupSummary, type StudentDetail } from "../../services/dplService";
 import LeaderboardWidget from "../../components/LeaderboardWidget";
+import { fetchMasterWilayah, type MasterKelurahanItem } from "../../utils/areaFilterUtils";
 
 interface KknExecutiveData {
   lastUpdated: string;
@@ -247,7 +246,8 @@ export const DashboardEksekutifKkn: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
-  // Master RW List dari API Area
+  // Master Wilayah & RW List dari fetchMasterWilayah
+  const [masterKelurahans, setMasterKelurahans] = useState<MasterKelurahanItem[]>([]);
   const [masterRwList, setMasterRwList] = useState<Array<{ id: number; name: string; kelurahanName: string }>>([]);
 
   // Kelompok KKN & Mahasiswa List untuk Section Daftar Kelompok & DPL Pengampu
@@ -268,9 +268,22 @@ export const DashboardEksekutifKkn: React.FC = () => {
   const [criticalAlpaPage, setCriticalAlpaPage] = useState(1);
   const CRITICAL_ALPA_PER_PAGE = 8;
 
-  // Ambil data master RW dari /areas/rw
+  // Ambil data master Wilayah & RW
   useEffect(() => {
-    const fetchMasterRw = async () => {
+    fetchMasterWilayah().then(({ kelurahans, rws }) => {
+      setMasterKelurahans(kelurahans);
+      if (rws.length > 0) {
+        setMasterRwList(
+          rws.map((r) => ({
+            id: Number(r.id),
+            name: r.name,
+            kelurahanName: r.kelurahanName || r.kelurahanNama || "",
+          }))
+        );
+      }
+    });
+
+    const fetchMasterRwFallback = async () => {
       try {
         const res = await api.get("/areas/rw");
         if (res.data?.success && Array.isArray(res.data?.data)) {
@@ -279,13 +292,13 @@ export const DashboardEksekutifKkn: React.FC = () => {
             name: r.name,
             kelurahanName: r.kelurahan?.name || "",
           }));
-          setMasterRwList(mapped);
+          setMasterRwList((prev) => (prev.length === 0 ? mapped : prev));
         }
       } catch (err) {
         console.error("Gagal memuat master RW:", err);
       }
     };
-    fetchMasterRw();
+    fetchMasterRwFallback();
   }, []);
 
   // Filter RW dinamis: Hanya tampilkan opsi RW jika kelurahan spesifik telah dipilih
@@ -784,12 +797,22 @@ export const DashboardEksekutifKkn: React.FC = () => {
                   className="bg-transparent outline-none cursor-pointer pr-2 text-xs font-bold text-slate-700 dark:text-slate-200"
                 >
                   <option value="Semua Kelurahan">Semua Kelurahan</option>
-                  <option value="Cipaganti">Kel. Cipaganti</option>
-                  <option value="Dago">Kel. Dago</option>
-                  <option value="Lebakgede">Kel. Lebakgede</option>
-                  <option value="Lebak Siliwangi">Kel. Lebak Siliwangi</option>
-                  <option value="Sadang Serang">Kel. Sadang Serang</option>
-                  <option value="Sekeloa">Kel. Sekeloa</option>
+                  {masterKelurahans.length > 0 ? (
+                    masterKelurahans.map((kel) => (
+                      <option key={kel.id || kel.name} value={kel.name}>
+                        Kel. {kel.name}
+                      </option>
+                    ))
+                  ) : (
+                    <>
+                      <option value="Cipaganti">Kel. Cipaganti</option>
+                      <option value="Dago">Kel. Dago</option>
+                      <option value="Lebak Gede">Kel. Lebak Gede</option>
+                      <option value="Lebak Siliwangi">Kel. Lebak Siliwangi</option>
+                      <option value="Sadang Serang">Kel. Sadang Serang</option>
+                      <option value="Sekeloa">Kel. Sekeloa</option>
+                    </>
+                  )}
                 </select>
               </div>
             </div>
