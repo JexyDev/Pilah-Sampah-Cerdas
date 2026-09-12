@@ -42,9 +42,13 @@ class LocationService {
                     child: const Text('Batal', style: TextStyle(color: Colors.grey)),
                   ),
                 ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     Navigator.of(ctx).pop();
-                    Geolocator.openLocationSettings();
+                    final isNowEnabled =
+                        await Geolocator.isLocationServiceEnabled();
+                    if (!isNowEnabled) {
+                      Geolocator.openLocationSettings();
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
