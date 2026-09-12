@@ -290,7 +290,7 @@ Keluarkan HANYA JSON murni tanpa markdown atau teks pengantar apapun:
       ringkasan_eksekutif:
         String(parsed.ringkasan_eksekutif || "").trim() ||
         `Terdeteksi ${validObjects.length} objek dengan kategori dominan ${katUtama}. Silakan buang ke Tempat Sampah ${rekomendasiBin}.`,
-      vendorName: "BERSEKA-Qwen2.5-VL-72B",
+      vendorName: "AISAh Vision Multi-Modal Engine",
     };
   }
 
