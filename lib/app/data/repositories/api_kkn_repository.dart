@@ -516,10 +516,15 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<KelompokQrResponse> getKelompokQrCodes() async {
+  Future<KelompokQrResponse> getKelompokQrCodes({String? kelompokId}) async {
     try {
+      final queryParams = <String, dynamic>{};
+      if (kelompokId != null && kelompokId.isNotEmpty) {
+        queryParams['kelompokId'] = kelompokId;
+      }
       final response = await apiClient.dio.get(
         ApiEndpoints.kknMyKelompokQrCodes,
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
       );
       if (response.statusCode == 200 && response.data != null) {
         return KelompokQrResponse.fromJson(

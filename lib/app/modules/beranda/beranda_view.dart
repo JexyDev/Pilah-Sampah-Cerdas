@@ -22,6 +22,8 @@ import '../shared/widgets/empty_state.dart';
 import '../../core/utils/network_exception_helper.dart';
 import '../../core/utils/scan_guard.dart';
 import '../mahasiswa/controllers/location_ping_controller.dart';
+import '../shared/controllers/user_location_controller.dart';
+import '../shared/widgets/user_location_card.dart';
 
 /// Halaman beranda — sesuai desain:
 /// Header biru, avatar+nama+RW, stats card, Aksi Cepat, Riwayat.
@@ -42,6 +44,8 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
       final user = ref.read(authProvider).user;
       if (user?.role == UserRole.mahasiswaKkn) {
         ref.read(locationPingControllerProvider.notifier).startTracking();
+      } else {
+        ref.read(userLocationProvider.notifier).refreshLocation();
       }
     });
   }
@@ -58,6 +62,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
       backgroundColor: AppColors.backgroundCanvas,
       body: RefreshIndicator(
         onRefresh: () async {
+          ref.read(userLocationProvider.notifier).refreshLocation();
           ref.invalidate(binsProvider);
           ref.invalidate(totalPointsProvider);
           ref.invalidate(dailyPointsProvider);
@@ -217,6 +222,50 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                                         );
                                       }).toList(),
                                     ),
+                                  ),
+                                  Builder(
+                                    builder: (context) {
+                                      final hasOrganic = activeBins.any((b) => b.binType == WasteType.organic);
+                                      final hasNonOrganic = activeBins.any((b) => b.binType == WasteType.nonOrganic);
+                                      final isMissingOne = (hasOrganic && !hasNonOrganic) || (!hasOrganic && hasNonOrganic);
+                                      if (!isMissingOne) return const SizedBox.shrink();
+
+                                      final missingName = hasOrganic ? 'Anorganik (Kuning)' : 'Organik (Hijau)';
+                                      final targetType = hasOrganic ? 'non_organic' : 'organic';
+
+                                      return Container(
+                                        margin: const EdgeInsets.only(top: 10),
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFFFFBEB),
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(color: AppColors.warningYellow.withValues(alpha: 0.6)),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            const Icon(Icons.info_outline_rounded, color: AppColors.warningYellow, size: 20),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Text(
+                                                'Lengkapi tempat sampah $missingName Anda agar dapat mulai memilah sampah.',
+                                                style: const TextStyle(fontSize: 12, color: AppColors.textPrimary, fontWeight: FontWeight.w500),
+                                              ),
+                                            ),
+                                            TextButton(
+                                              onPressed: () => Navigator.of(context).pushNamed(
+                                                AppRoutes.ukurKapasitas,
+                                                arguments: {'targetType': targetType},
+                                              ),
+                                              style: TextButton.styleFrom(
+                                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                                visualDensity: VisualDensity.compact,
+                                              ),
+                                              child: const Text('Aktivasi', style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.bold, fontSize: 12)),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
                                   ),
                                 ],
                               );
@@ -716,6 +765,29 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                 ],
               ),
             ],
+          ),
+          const SizedBox(height: 10),
+          // Baris 2: Lokasi Domisili & GPS Card Terstruktur Warga (2 Tier)
+          Consumer(
+            builder: (context, ref, _) {
+              final locState = ref.watch(userLocationProvider);
+              final rwText = user?.formattedRw.isNotEmpty == true && user?.formattedRw != '-'
+                  ? 'RW ${user!.formattedRw}'
+                  : (user?.rw.isNotEmpty == true && user?.rw != '-' ? 'RW ${user!.rw}' : '');
+              final kelText = user?.kelurahan.isNotEmpty == true && user?.kelurahan != '-'
+                  ? (user!.kelurahan.toLowerCase().startsWith('kel') ? user.kelurahan : 'Kel. ${user.kelurahan}')
+                  : '';
+              final wilayahList = [kelText, rwText].where((s) => s.isNotEmpty).toList();
+              final wilayahTitle = wilayahList.isNotEmpty ? wilayahList.join(' • ') : 'Wilayah Warga';
+
+              return UserLocationCard(
+                wilayahTitle: wilayahTitle,
+                isFetchingAddress: locState.isFetchingAddress,
+                address: locState.address,
+                position: locState.position,
+                onRefresh: () => ref.read(userLocationProvider.notifier).refreshLocation(context: context),
+              );
+            },
           ),
         ],
       ),

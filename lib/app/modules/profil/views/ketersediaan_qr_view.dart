@@ -536,7 +536,7 @@ class KetersediaanQrView extends ConsumerWidget {
           final rawQr =
               (item['qrCode']?.toString() ?? item['kode']?.toString() ?? '')
                   .trim();
-          final qrCodeStr = rawQr.isNotEmpty ? rawQr : 'BSK-OGN-250826-0001';
+          final qrCodeStr = rawQr.isNotEmpty ? rawQr : '-';
           final rawCat =
               (item['category']?['name']?.toString() ??
                       item['jenis']?.toString() ??

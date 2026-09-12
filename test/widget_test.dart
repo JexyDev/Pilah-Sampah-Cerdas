@@ -1,10 +1,8 @@
-// Widget test placeholder untuk Pilah Sampah Cerdas.
-// Test fungsional akan ditambahkan setelah integrasi backend selesai.
-// Sesuai CLAUDE.md — unit test difokuskan pada service/usecase layer.
-
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_app_sampah/app/core/values/app_config.dart';
 import 'package:mobile_app_sampah/app/core/utils/platform_utils.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 void main() {
   group('AppConfig', () {
@@ -49,5 +47,78 @@ void main() {
     test('supportsGps selalu true', () {
       expect(PlatformUtils.supportsGps, isTrue);
     });
+  });
+
+  testWidgets('Test QR preview dialog tab switch', (tester) async {
+    bool showStikerPhoto = true;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: StatefulBuilder(
+            builder: (dialogCtx, setDialogState) => AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              contentPadding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    InkWell(
+                      key: const Key('switch_tab'),
+                      onTap: () => setDialogState(() => showStikerPhoto = false),
+                      child: const Text('Scan Barcode Saja'),
+                    ),
+                    if (showStikerPhoto) ...[
+                      const Text('Poster photo'),
+                    ] else ...[
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.grey.shade200),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.05),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: CustomPaint(
+                          size: const Size.square(200),
+                          painter: QrPainter(
+                            data: 'BSK-OGN-070926-0663',
+                            version: QrVersions.auto,
+                            gapless: false,
+                            eyeStyle: const QrEyeStyle(
+                              eyeShape: QrEyeShape.square,
+                              color: Colors.black,
+                            ),
+                            dataModuleStyle: const QrDataModuleStyle(
+                              dataModuleShape: QrDataModuleShape.square,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    expect(find.text('Poster photo'), findsOneWidget);
+
+    // Tap switch tab
+    await tester.tap(find.byKey(const Key('switch_tab')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CustomPaint), findsWidgets);
   });
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 
 class LocationService {
@@ -135,6 +136,42 @@ class LocationService {
       return pos;
     } catch (_) {
       return null;
+    }
+  }
+
+  /// Mengonversi koordinat (lat, lng) ke nama alamat ringkas (reverse geocoding)
+  /// Format disesuaikan dengan standar tampilan di modul Mahasiswa.
+  Future<String?> getAddressFromCoordinates(double lat, double lng) async {
+    // ponytail: reverse geocoding placemark; fallback jika gagal/offline
+    try {
+      final placemarks = await Geocoding().placemarkFromCoordinates(lat, lng);
+      if (placemarks.isNotEmpty) {
+        final p = placemarks.first;
+        String address = '';
+        if (p.street != null && p.street!.isNotEmpty) {
+          address = p.street!;
+          if (p.country != null && p.country!.isNotEmpty) {
+            address = address.replaceAll(', ${p.country!}', '').trim();
+            if (address.endsWith(',')) {
+              address = address.substring(0, address.length - 1);
+            }
+          }
+        } else {
+          final parts = <String>[];
+          if (p.subLocality != null && p.subLocality!.isNotEmpty) {
+            parts.add(p.subLocality!);
+          }
+          if (p.locality != null && p.locality!.isNotEmpty) {
+            parts.add(p.locality!);
+          }
+          address = parts.join(', ');
+        }
+        if (address.isEmpty) address = 'Lokasi tidak diketahui';
+        return address;
+      }
+      return 'Lokasi tidak ditemukan';
+    } catch (_) {
+      return 'Gagal memuat alamat';
     }
   }
 }

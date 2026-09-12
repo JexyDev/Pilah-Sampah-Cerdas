@@ -349,10 +349,6 @@ class KelompokKknView extends ConsumerWidget {
                 _buildGoogleDriveCard(context, kelompokData.linkGoogleDrive),
                 const SizedBox(height: 16),
 
-                // Card Stiker QR Kelompok
-                _buildStikerQrCard(context),
-                const SizedBox(height: 16),
-
                 // Card Total Poin Kelompok (Akumulasi)
                 Container(
                   padding: const EdgeInsets.all(20),
@@ -642,70 +638,6 @@ class KelompokKknView extends ConsumerWidget {
               ],
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStikerQrCard(BuildContext context) {
-    return InkWell(
-      onTap: () {
-        Navigator.pushNamed(context, AppRoutes.kelompokStikerQr);
-      },
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.qr_code_scanner,
-                color: AppColors.primary,
-              ),
-            ),
-            const SizedBox(width: 16),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Stiker QR Kelompok (10x15cm)',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Lihat kuota & print stiker QR fisik',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right, color: AppColors.textSecondary),
-          ],
         ),
       ),
     );
@@ -1152,7 +1084,7 @@ class KelompokKknView extends ConsumerWidget {
                     const SizedBox(height: 2),
                     Text(
                       hasUrl
-                          ? 'Folder Portofolio & Laporan KKN'
+                          ? 'Folder Dokumen & File Stiker QR'
                           : 'Belum ada link drive',
                       style: TextStyle(
                         fontSize: 14,
@@ -1164,7 +1096,7 @@ class KelompokKknView extends ConsumerWidget {
                     ),
                     const SizedBox(height: 2),
                     const Text(
-                      'Penyimpanan terpusat dokumen, foto kegiatan, & portofolio tim.',
+                      'Unduh file stiker QR, foto kegiatan, dan berkas laporan kelompok terpusat di Google Drive.',
                       style: TextStyle(fontSize: 11, color: Colors.black45),
                     ),
                   ],
@@ -1198,9 +1130,9 @@ class KelompokKknView extends ConsumerWidget {
                       }
                     }
                   : null,
-              icon: const Icon(Icons.open_in_new_rounded, size: 16),
+              icon: const Icon(Icons.qr_code_rounded, size: 16),
               label: Text(
-                hasUrl ? 'Buka Google Drive' : 'Link Belum Disiapkan Admin',
+                hasUrl ? 'Buka Google Drive QR' : 'Link Drive QR Belum Disiapkan Admin',
                 style: const TextStyle(
                   fontWeight: FontWeight.w700,
                   fontSize: 13,

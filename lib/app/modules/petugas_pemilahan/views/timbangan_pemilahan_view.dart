@@ -40,6 +40,7 @@ class _TimbanganPemilahanViewState
 
   String? _photoPath;
   Position? _currentLocation;
+  String? _locationAddress;
   String _selectedClassification = 'Organik';
   bool _isSubmitting = false;
   bool _isScanningAi = false;
@@ -142,13 +143,21 @@ class _TimbanganPemilahanViewState
         final locPermission = await LocationService.instance
             .checkAndRequestPermission(context);
         Position? loc;
+        String? address;
         if (locPermission == LocationPermission.whileInUse ||
             locPermission == LocationPermission.always) {
           loc = await LocationService.instance.getCurrentLocation();
+          if (loc != null) {
+            address = await LocationService.instance.getAddressFromCoordinates(
+              loc.latitude,
+              loc.longitude,
+            );
+          }
         }
         setState(() {
           _photoPath = file.path;
           _currentLocation = loc;
+          _locationAddress = address;
           _isScanningAi = true;
         });
 
@@ -801,20 +810,27 @@ class _TimbanganPemilahanViewState
                                 Positioned(
                                   left: 12,
                                   bottom: 12,
+                                  right: 12,
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                     decoration: BoxDecoration(
-                                      color: Colors.black54,
-                                      borderRadius: BorderRadius.circular(16),
+                                      color: Colors.black.withValues(alpha: 0.7),
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         const Icon(Icons.location_on, color: AppColors.primaryGreen, size: 14),
                                         const SizedBox(width: 4),
-                                        Text(
-                                          'GPS: ${_currentLocation!.latitude.toStringAsFixed(4)}, ${_currentLocation!.longitude.toStringAsFixed(4)}',
-                                          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600),
+                                        Expanded(
+                                          child: Text(
+                                            _locationAddress != null && _locationAddress!.isNotEmpty
+                                                ? _locationAddress!
+                                                : 'GPS: ${_currentLocation!.latitude.toStringAsFixed(4)}, ${_currentLocation!.longitude.toStringAsFixed(4)}',
+                                            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
                                         ),
                                       ],
                                     ),

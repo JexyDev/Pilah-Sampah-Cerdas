@@ -25,6 +25,8 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
   // Target kategori wadah yang didaftarkan: 'organic', 'non_organic', atau 'both'
   String _targetCategory = 'both';
   bool _argsLoaded = false;
+  bool _hasExplicitTarget = false;
+  bool _targetResolvedFromBins = false;
 
   // Toggle apakah ukuran Organik & Anorganik identik (Default: true)
   bool _sameSizeForBoth = true;
@@ -54,9 +56,9 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
     return isOrgActive ? _orgPresetIndex : _anorgPresetIndex;
   }
 
-  // Presets dynamic dari API
-  List<BinPresetEntity> _roundPresets = [];
-  List<BinPresetEntity> _boxPresets = [];
+  // Presets dynamic dari API dengan nilai baku default resmi (SNI/Standar Berseka)
+  List<BinPresetEntity> _roundPresets = BinPresetEntity.defaultTabungPresets;
+  List<BinPresetEntity> _boxPresets = BinPresetEntity.defaultKotakPresets;
   bool _isLoadingPresets = true;
 
   void _applyPresetByIndex(
@@ -118,6 +120,13 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
   @override
   void initState() {
     super.initState();
+    // Terapkan ukuran standar baku resmi (Sedang) ke controller saat inisialisasi awal
+    _applyPresetByIndex(
+      _orgPresetIndex,
+      shape: _selectedShape,
+      updateBoth: true,
+    );
+
     WidgetsBinding.instance.addPostFrameCallback((_) => _fetchPresets());
 
     // Tambahkan listener agar jika dimensi diedit manual, preset index dilepas (-1) dan estimasi terhitung live
@@ -139,17 +148,17 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
 
     if (mounted) {
       setState(() {
-        _roundPresets = tabung;
-        _boxPresets = kotak;
+        if (tabung.isNotEmpty) _roundPresets = tabung;
+        if (kotak.isNotEmpty) _boxPresets = kotak;
         _isLoadingPresets = false;
       });
-      // Set default preset index 1 (or 0 if length is < 2)
-      final defaultIdx = tabung.length > 1 ? 1 : (tabung.isNotEmpty ? 0 : -1);
-      if (defaultIdx >= 0) {
+      // Jika user masih berada pada preset standar (belum custom manual), sinkronkan dengan data server
+      final currentIdx = _currentPresetIndex;
+      if (currentIdx >= 0 && !_showCustomSizeForm) {
         _applyPresetByIndex(
-          defaultIdx,
+          currentIdx,
           shape: _selectedShape,
-          updateBoth: true,
+          updateBoth: _sameSizeForBoth,
         );
       }
     }
@@ -203,6 +212,7 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
           ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
       if (args != null && args['targetType'] != null) {
         _targetCategory = args['targetType'].toString();
+        _hasExplicitTarget = true;
       }
       _argsLoaded = true;
     }
@@ -333,6 +343,26 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_hasExplicitTarget && !_targetResolvedFromBins) {
+      final bins = ref.watch(binsProvider).value ?? [];
+      final hasOrganic = bins.any(
+        (b) => b.binType == WasteType.organic && b.isActive,
+      );
+      final hasNonOrganic = bins.any(
+        (b) => b.binType == WasteType.nonOrganic && b.isActive,
+      );
+      if (hasOrganic && !hasNonOrganic) {
+        _targetCategory = 'non_organic';
+        _targetResolvedFromBins = true;
+      } else if (!hasOrganic && hasNonOrganic) {
+        _targetCategory = 'organic';
+        _targetResolvedFromBins = true;
+      } else if (!hasOrganic && !hasNonOrganic) {
+        _targetCategory = 'both';
+        _targetResolvedFromBins = true;
+      }
+    }
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
@@ -484,6 +514,8 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
       (b) => b.binType == WasteType.nonOrganic && b.isActive,
     );
     final isPostOnboarding = hasOrganic && hasNonOrganic;
+    final isMissingOne =
+        (hasOrganic && !hasNonOrganic) || (!hasOrganic && hasNonOrganic);
 
     return Column(
       children: [
@@ -495,6 +527,8 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
               children: [
                 if (isPostOnboarding)
                   _buildTargetCategorySelector()
+                else if (isMissingOne)
+                  _buildLengkapiNotice(hasOrganic: hasOrganic)
                 else
                   _buildOnboardingNotice(),
 
@@ -884,6 +918,60 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
     );
   }
 
+  Widget _buildLengkapiNotice({required bool hasOrganic}) {
+    final missingColor =
+        hasOrganic ? AppColors.nonOrganicColor : AppColors.organicColor;
+    final existingName = hasOrganic ? 'Organik (Hijau)' : 'Anorganik (Kuning)';
+    final missingName = hasOrganic ? 'Anorganik (Kuning)' : 'Organik (Hijau)';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: missingColor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: missingColor.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.info_outline_rounded,
+            color: missingColor,
+            size: 22,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Lengkapi Tempat Sampah $missingName',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: missingColor,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  'Tempat Sampah $existingName Anda sudah aktif di sistem. Masukkan ukuran Tempat Sampah $missingName untuk melengkapi pemilahan sampah Anda.',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textPrimary,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildPresetSizeSelector() {
     final presets = _selectedShape == 'tabung' ? _roundPresets : _boxPresets;
     return Container(
@@ -933,8 +1021,23 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
             style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
           ),
           const SizedBox(height: 12),
-          Row(
-            children: List.generate(presets.length, (idx) {
+          if (presets.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.primaryGreen,
+                  ),
+                ),
+              ),
+            )
+          else
+            Row(
+              children: List.generate(presets.length, (idx) {
               final p = presets[idx];
               final isSelected = _currentPresetIndex == idx;
               return Expanded(

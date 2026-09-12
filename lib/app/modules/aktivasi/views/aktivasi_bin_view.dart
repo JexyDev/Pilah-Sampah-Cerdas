@@ -352,6 +352,9 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
         return 'QR Code tempat sampah tidak terdaftar di sistem.';
       case 'BIN_CATEGORY_DUPLICATE':
         return msg ?? 'Kategori tempat sampah sudah terdaftar untuk warga ini.';
+      case 'ONBOARDING_INCOMPLETE_WRONG_CATEGORY':
+        return msg ??
+            'Harap selesaikan aktivasi kategori tempat sampah yang belum terdaftar.';
       default:
         if (msg != null && msg.isNotEmpty) {
           return msg;

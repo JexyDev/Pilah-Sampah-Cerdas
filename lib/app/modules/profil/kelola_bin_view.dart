@@ -62,11 +62,75 @@ class KelolaBinView extends ConsumerWidget {
               ),
             );
           }
+          final hasOrganic = bins.any(
+            (b) => b.binType == WasteType.organic && b.isActive,
+          );
+          final hasNonOrganic = bins.any(
+            (b) => b.binType == WasteType.nonOrganic && b.isActive,
+          );
+          final isMissingOne =
+              (hasOrganic && !hasNonOrganic) || (!hasOrganic && hasNonOrganic);
+
           return ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: bins.length,
+            itemCount: bins.length + (isMissingOne ? 1 : 0),
             itemBuilder: (context, index) {
-              final bin = bins[index];
+              if (isMissingOne && index == 0) {
+                final missingName =
+                    hasOrganic ? 'Anorganik (Kuning)' : 'Organik (Hijau)';
+                final existingName = hasOrganic ? 'Organik' : 'Anorganik';
+                final missingColor =
+                    hasOrganic ? AppColors.nonOrganicColor : AppColors.organicColor;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: missingColor.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(14),
+                      border:
+                          Border.all(color: missingColor.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.info_outline_rounded,
+                          color: missingColor,
+                          size: 22,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Tempat Sampah Belum Lengkap',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: missingColor,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                'Anda baru memiliki Tempat Sampah $existingName aktif. Harap aktivasi Tempat Sampah $missingName untuk melengkapi pemilahan dan pengumpulan poin sampah.',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.textPrimary,
+                                  height: 1.35,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              final bin = bins[isMissingOne ? index - 1 : index];
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: _BinCardLarge(bin: bin, user: user),
@@ -80,27 +144,47 @@ class KelolaBinView extends ConsumerWidget {
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: ElevatedButton(
-            onPressed: () => _onTambahBinPressed(
-              context,
-              binsAsync.value ?? [],
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryGreen,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 0,
-            ),
-            child: const FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                'Tambah Tempat Sampah Baru',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-              ),
-            ),
+          child: Builder(
+            builder: (context) {
+              final bins = binsAsync.value ?? [];
+              final hasOrganic = bins.any(
+                (b) => b.binType == WasteType.organic && b.isActive,
+              );
+              final hasNonOrganic = bins.any(
+                (b) => b.binType == WasteType.nonOrganic && b.isActive,
+              );
+              String buttonText = 'Tambah Tempat Sampah Baru';
+              if (!hasOrganic && !hasNonOrganic) {
+                buttonText = 'Aktivasi Tempat Sampah (Sepasang)';
+              } else if (hasOrganic && !hasNonOrganic) {
+                buttonText = 'Aktivasi Tempat Sampah Anorganik';
+              } else if (!hasOrganic && hasNonOrganic) {
+                buttonText = 'Aktivasi Tempat Sampah Organik';
+              }
+
+              return ElevatedButton(
+                onPressed: () => _onTambahBinPressed(context, bins),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryGreen,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    buttonText,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ),
@@ -117,7 +201,22 @@ class KelolaBinView extends ConsumerWidget {
     final isPostOnboarding = hasOrganic && hasNonOrganic;
 
     if (!isPostOnboarding) {
-      Navigator.of(context).pushNamed(AppRoutes.ukurKapasitas);
+      if (hasOrganic && !hasNonOrganic) {
+        Navigator.of(context).pushNamed(
+          AppRoutes.ukurKapasitas,
+          arguments: {'targetType': 'non_organic'},
+        );
+      } else if (!hasOrganic && hasNonOrganic) {
+        Navigator.of(context).pushNamed(
+          AppRoutes.ukurKapasitas,
+          arguments: {'targetType': 'organic'},
+        );
+      } else {
+        Navigator.of(context).pushNamed(
+          AppRoutes.ukurKapasitas,
+          arguments: {'targetType': 'both'},
+        );
+      }
       return;
     }
 

@@ -886,22 +886,63 @@ class _GabungKomunitasCta extends StatelessWidget {
           const SizedBox(height: 14),
           SizedBox(
             width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () =>
-                  Navigator.pushNamed(context, AppRoutes.ukurKapasitas),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: AppColors.primaryGreen,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(vertical: 13),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              child: const Text(
-                'Gabung Sekarang →',
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-              ),
+            child: Consumer(
+              builder: (context, ref, _) {
+                final bins = ref.watch(binsProvider).value ?? [];
+                final hasOrganic = bins.any(
+                  (b) => b.binType == WasteType.organic && b.isActive,
+                );
+                final hasNonOrganic = bins.any(
+                  (b) => b.binType == WasteType.nonOrganic && b.isActive,
+                );
+
+                String ctaLabel = 'Gabung Sekarang →';
+                if (hasOrganic && !hasNonOrganic) {
+                  ctaLabel = 'Lengkapi Tempat Sampah Anorganik →';
+                } else if (!hasOrganic && hasNonOrganic) {
+                  ctaLabel = 'Lengkapi Tempat Sampah Organik →';
+                }
+
+                return ElevatedButton(
+                  onPressed: () {
+                    if (hasOrganic && !hasNonOrganic) {
+                      Navigator.pushNamed(
+                        context,
+                        AppRoutes.ukurKapasitas,
+                        arguments: {'targetType': 'non_organic'},
+                      );
+                    } else if (!hasOrganic && hasNonOrganic) {
+                      Navigator.pushNamed(
+                        context,
+                        AppRoutes.ukurKapasitas,
+                        arguments: {'targetType': 'organic'},
+                      );
+                    } else {
+                      Navigator.pushNamed(
+                        context,
+                        AppRoutes.ukurKapasitas,
+                        arguments: {'targetType': 'both'},
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: AppColors.primaryGreen,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: Text(
+                    ctaLabel,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ],
