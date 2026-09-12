@@ -342,6 +342,7 @@
 }
 
 /* Result Cards */
+.summaryCard,
 .topDecisionCard {
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   border-radius: 16px;
@@ -352,22 +353,32 @@
   gap: 0.75rem;
 }
 
+.summaryHeader,
 .decisionHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
+.labelMuted,
 .decisionTitle {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 700;
   color: #64748b;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
+.kategoriTitle {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: #0f172a;
+  margin: 0.15rem 0 0 0;
+}
+
+.kategoriBadge,
 .mainBadge {
-  padding: 0.4rem 1rem;
+  padding: 0.45rem 1.1rem;
   border-radius: 9999px;
   font-size: 0.95rem;
   font-weight: 800;
@@ -378,70 +389,131 @@
 .badgeAnorganik { background: #e0f2fe; color: #075985; border: 1px solid #7dd3fc; }
 .badgeResidu { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
 
-.binInstruction {
-  font-size: 1.05rem;
-  font-weight: 800;
-  color: #0f172a;
-  margin: 0;
-}
-
-.binInstruction span {
-  text-decoration: underline;
-}
-
+.ringkasanText,
 .executiveSummary {
-  font-size: 0.9rem;
+  font-size: 0.92rem;
   color: #334155;
-  line-height: 1.5;
+  line-height: 1.55;
   background: #ffffff;
-  padding: 0.85rem 1rem;
-  border-radius: 10px;
+  padding: 0.85rem 1.1rem;
+  border-radius: 12px;
   border: 1px solid #e2e8f0;
   margin: 0;
 }
 
 /* Composition Progress Bar (3-way) */
+.compositionCard,
 .compositionSection {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 1.25rem;
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  gap: 0.75rem;
 }
 
+.compositionCard h3,
 .compHeader {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 800;
   color: #1e293b;
+  margin: 0;
 }
 
+.ratioBarContainer,
 .triColorBar {
   display: flex;
-  height: 22px;
+  height: 26px;
   border-radius: 9999px;
   overflow: hidden;
   background: #e2e8f0;
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
 }
 
-.barOrg { background: #10b981; transition: width 0.4s ease; }
-.barInorg { background: #0ea5e9; transition: width 0.4s ease; }
-.barRes { background: #ef4444; transition: width 0.4s ease; }
+.barOrganik,
+.barOrg {
+  background: #10b981;
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: width 0.4s ease;
+}
 
+.barAnorganik,
+.barInorg {
+  background: #0ea5e9;
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: width 0.4s ease;
+}
+
+.barResidu,
+.barRes {
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: width 0.4s ease;
+}
+
+.ratioLegend,
 .compLabels {
   display: flex;
   justify-content: space-between;
-  font-size: 0.8rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.85rem;
   font-weight: 700;
 }
 
-.compLblOrg { color: #10b981; }
-.compLblInorg { color: #0284c7; }
-.compLblRes { color: #dc2626; }
+.ratioItem {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
 
 /* Objects Inventory List */
+.objectsCard,
 .inventorySection {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 1.25rem;
   display: flex;
   flex-direction: column;
+  gap: 0.85rem;
+}
+
+.objectsCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
   gap: 0.75rem;
+}
+
+.objectsCardHeader h3 {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin: 0;
+}
+
+.objectsCardSubtitle {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin: 0.2rem 0 0 0;
 }
 
 .inventoryTitle {
