@@ -3286,7 +3286,9 @@ export const DashboardEksekutifKkn: React.FC = () => {
                         ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
                         : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
                     }`}>
-                      {filteredDplList.length} DPL
+                      {dplModalSearchQuery.trim()
+                        ? `${filteredDplList.length} DPL`
+                        : `${(dplLogbookModalTab === "TERISI" ? data?.resumeDpl?.dplAktifCount : data?.resumeDpl?.dplBelumAktifCount) ?? filteredDplList.length} DPL`}
                     </span>
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
