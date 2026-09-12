@@ -1908,6 +1908,9 @@ const Dashboard: React.FC = () => {
   };
 
   useEffect(() => {
+    // Role non-operasional dialihkan / tidak memuat stats sampah
+    // Khusus PIMPINAN / PEMIMPIN: tetap memuat fetchStats() jika sub-tab tata-kelola-sampah aktif
+    const isPimpinanUser = user?.peran === "PIMPINAN" || user?.peran === "PEMIMPIN";
     if (
       user?.peran === "WARGA" ||
       user?.peran === "MAHASISWA_KKN" ||
@@ -1916,8 +1919,7 @@ const Dashboard: React.FC = () => {
       user?.peran === "DPL" ||
       user?.peran === "DOSEN_PEMBIMBING" ||
       user?.peran === "PANITIA_TASKFORCE" ||
-      user?.peran === "PIMPINAN" ||
-      user?.peran === "PEMIMPIN"
+      (isPimpinanUser && activeSubTab !== "tata-kelola-sampah")
     ) {
       setLoading(false);
       return;
@@ -1926,7 +1928,7 @@ const Dashboard: React.FC = () => {
     fetchStats(false);
     const interval = setInterval(() => fetchStats(true), 30_000);
     return () => clearInterval(interval);
-  }, [user, weeks, timeFilter, startDate, endDate, selectedWilayah]);
+  }, [user, weeks, timeFilter, startDate, endDate, selectedWilayah, activeSubTab]);
 
   if (user?.peran === "MPL" || (user?.peran as string) === "MITRA_PENDAMPING_LAPANGAN") {
     return <Navigate to="/penilaian/mahasiswa" replace />;
@@ -3140,146 +3142,146 @@ const Dashboard: React.FC = () => {
         <LeaderboardWidget mode="sampah" />
       </div>
 
-      {/* === Central Operational Lists & Activity (Khusus Non-Pimpinan) === */}
-      {!isPimpinan && (
-        <>
-          <div className="px-1 pt-2 text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">
-            Data Operasional Tempat Sampah
-          </div>
-          <div className="w-full relative z-10">
-            {/* Data Tempat Sampah Terbaru */}
-            <div className="w-full bg-white dark:bg-slate-900 shadow-xs rounded-2xl p-6 border border-slate-200 dark:border-slate-800 flex flex-col justify-between space-y-4">
-              <div className="flex justify-between items-center pb-4 border-b border-slate-200 dark:border-slate-800">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                    <Trash2 size={18} />
-                  </div>
-                  <div>
-                    <h4 className="font-extrabold text-[16px] text-slate-900 dark:text-slate-100 tracking-tight">
-                      Data Tempat Sampah Terbaru
-                    </h4>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                      Monitoring kapasitas realtime dan status aktivasi QR tempat sampah
-                    </p>
-                  </div>
-                </div>
-                <Link
-                  to="/monitoring-pengelolaan/tempat-sampah"
-                  className="text-xs font-extrabold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 transition-colors flex items-center gap-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 px-3.5 py-2 rounded-xl border border-emerald-500/20"
-                >
-                  Lihat Semua Data <ChevronRight size={14} />
-                </Link>
+      {/* === Central Operational Lists & Activity === */}
+      <div className="px-1 pt-2 text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">
+        Data Operasional Tempat Sampah
+      </div>
+      <div className="w-full relative z-10">
+        {/* Data Tempat Sampah Terbaru */}
+        <div className="w-full bg-white dark:bg-slate-900 shadow-xs rounded-2xl p-6 border border-slate-200 dark:border-slate-800 flex flex-col justify-between space-y-4">
+          <div className="flex justify-between items-center pb-4 border-b border-slate-200 dark:border-slate-800">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                <Trash2 size={18} />
               </div>
+              <div>
+                <h4 className="font-extrabold text-[16px] text-slate-900 dark:text-slate-100 tracking-tight">
+                  Data Tempat Sampah Terbaru
+                </h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                  Monitoring kapasitas realtime dan status aktivasi QR tempat sampah
+                </p>
+              </div>
+            </div>
+            <Link
+              to="/monitoring-pengelolaan/tempat-sampah"
+              className="text-xs font-extrabold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 transition-colors flex items-center gap-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 px-3.5 py-2 rounded-xl border border-emerald-500/20"
+            >
+              Lihat Semua Data <ChevronRight size={14} />
+            </Link>
+          </div>
 
-              <div className="overflow-x-auto min-h-[260px] rounded-xl border border-slate-200/80 dark:border-slate-800">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/60">
-                      <th className="py-3 px-4">ID &amp; Jenis Tempat Sampah</th>
-                      <th className="py-3 px-4">Wilayah Lokasi</th>
-                      <th className="py-3 px-4 w-2/5">Kapasitas Terisi</th>
-                      <th className="py-3 px-4 text-right">Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200/80 dark:divide-slate-800 text-xs">
-                    {recentBins.length === 0 ? (
-                      <tr>
-                        <td colSpan={4} className="py-10 text-center text-slate-500 dark:text-slate-400 font-medium">
-                          Belum ada data tempat sampah terdaftar.
+          <div className="overflow-x-auto min-h-[260px] rounded-xl border border-slate-200/80 dark:border-slate-800">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/60">
+                  <th className="py-3 px-4">ID &amp; Jenis Tempat Sampah</th>
+                  <th className="py-3 px-4">Wilayah Lokasi</th>
+                  <th className="py-3 px-4 w-2/5">Kapasitas Terisi</th>
+                  <th className="py-3 px-4 text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200/80 dark:divide-slate-800 text-xs">
+                {recentBins.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="py-10 text-center text-slate-500 dark:text-slate-400 font-medium">
+                      Belum ada data tempat sampah terdaftar.
+                    </td>
+                  </tr>
+                ) : (
+                  recentBins.map((bin, i) => {
+                    const maxCapacityLiter = Number(bin.maxCapacityLiter);
+                    const currentVolumeLiter = Number(bin.currentVolumeLiter) || 0;
+                    const cap = Math.min(100, Math.round(
+                      bin.kapasitas != null
+                        ? bin.kapasitas
+                        : maxCapacityLiter > 0
+                        ? (currentVolumeLiter / maxCapacityLiter) * 100
+                        : 0
+                    ));
+                    const categoryStr = String(bin.category?.name || bin.categoryId || "UMUM").toUpperCase();
+                    const isOrganik = categoryStr.includes("ORGANIK") && !categoryStr.includes("ANORGANIK") && !categoryStr.includes("NON");
+                    const isAnorganik = categoryStr.includes("ANORGANIK") || categoryStr.includes("NON");
+
+                    const isHighCap = cap >= 90;
+
+                    return (
+                      <tr
+                        key={bin.id || bin.kode || i}
+                        className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors group"
+                      >
+                        <td className="py-3.5 px-4">
+                          <div className="flex items-center gap-2.5">
+                            <div className="flex flex-col">
+                              <span className="font-mono font-black text-slate-900 dark:text-slate-100 text-[13px] group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                                {bin.qrCode || bin.kode || (bin.id ? bin.id.substring(0, 8) : "BIN")}
+                              </span>
+                              <div className="flex items-center gap-1 mt-1">
+                                {isOrganik ? (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-700/40">
+                                    <Leaf size={11} /> Organik
+                                  </span>
+                                ) : isAnorganik ? (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-700/40">
+                                    <Recycle size={11} /> Anorganik
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
+                                    {bin.category?.name || bin.categoryId || "Umum"}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
                         </td>
-                      </tr>
-                    ) : (
-                      recentBins.map((bin, i) => {
-                        const maxCapacityLiter = Number(bin.maxCapacityLiter);
-                        const currentVolumeLiter = Number(bin.currentVolumeLiter) || 0;
-                        const cap = Math.min(100, Math.round(
-                          bin.kapasitas != null
-                            ? bin.kapasitas
-                            : maxCapacityLiter > 0
-                            ? (currentVolumeLiter / maxCapacityLiter) * 100
-                            : 0
-                        ));
-                        const categoryStr = String(bin.category?.name || bin.categoryId || "UMUM").toUpperCase();
-                        const isOrganik = categoryStr.includes("ORGANIK") && !categoryStr.includes("ANORGANIK") && !categoryStr.includes("NON");
-                        const isAnorganik = categoryStr.includes("ANORGANIK") || categoryStr.includes("NON");
 
-                        const isHighCap = cap >= 90;
+                        <td className="py-3.5 px-4">
+                          <div className="flex flex-col min-w-[140px]">
+                            <span className="font-bold text-slate-800 dark:text-slate-200 text-[12.5px]">
+                              {bin.rtRw?.kelurahan?.name || bin.kelurahan || "Wilayah Dampingan"}
+                            </span>
+                            <span className="text-[11px] text-slate-400 dark:text-slate-400 font-medium">
+                              {(() => {
+                                const rwStr = typeof bin.rtRw === "string" ? bin.rtRw : bin.rtRw?.name;
+                                if (!rwStr || rwStr === "-") return "Fasilitas Umum";
+                                return rwStr.toLowerCase().includes("rw") ? rwStr : `RW ${rwStr}`;
+                              })()}
+                            </span>
+                          </div>
+                        </td>
 
-                        return (
-                          <tr
-                            key={bin.id || bin.kode || i}
-                            className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors group"
-                          >
-                            <td className="py-3.5 px-4">
-                              <div className="flex items-center gap-2.5">
-                                <div className="flex flex-col">
-                                  <span className="font-mono font-black text-slate-900 dark:text-slate-100 text-[13px] group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                                    {bin.qrCode || bin.kode || (bin.id ? bin.id.substring(0, 8) : "BIN")}
-                                  </span>
-                                  <div className="flex items-center gap-1 mt-1">
-                                    {isOrganik ? (
-                                      <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-700/40">
-                                        <Leaf size={11} /> Organik
-                                      </span>
-                                    ) : isAnorganik ? (
-                                      <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-700/40">
-                                        <Recycle size={11} /> Anorganik
-                                      </span>
-                                    ) : (
-                                      <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
-                                        {bin.category?.name || bin.categoryId || "Umum"}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            </td>
+                        <td className="py-3.5 px-4">
+                          <div className="flex flex-col gap-1.5">
+                            <div className="flex justify-between items-center text-[10.5px]">
+                              <span className={isHighCap ? "text-rose-600 dark:text-rose-400 font-black" : "text-emerald-700 dark:text-emerald-400 font-extrabold"}>
+                                {isHighCap ? `${cap}% (Penuh)` : `${cap}% (Aman)`}
+                              </span>
+                              <span className="font-mono text-slate-500 dark:text-slate-400 text-[10.5px]">
+                                {currentVolumeLiter} / {maxCapacityLiter} Liter
+                              </span>
+                            </div>
+                            <div className="h-2.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-200/70 dark:border-slate-700">
+                              <div
+                                className={`h-full rounded-full transition-all duration-500 ${
+                                  isHighCap ? "bg-rose-500 animate-pulse" : "bg-emerald-500"
+                                }`}
+                                style={{ width: `${cap}%` }}
+                              />
+                            </div>
+                          </div>
+                        </td>
 
-                            <td className="py-3.5 px-4">
-                              <div className="flex flex-col min-w-[140px]">
-                                <span className="font-bold text-slate-800 dark:text-slate-200 text-[12.5px]">
-                                  {bin.rtRw?.kelurahan?.name || bin.kelurahan || "Wilayah Dampingan"}
-                                </span>
-                                <span className="text-[11px] text-slate-400 dark:text-slate-400 font-medium">
-                                  {(() => {
-                                    const rwStr = typeof bin.rtRw === "string" ? bin.rtRw : bin.rtRw?.name;
-                                    if (!rwStr || rwStr === "-") return "Fasilitas Umum";
-                                    return rwStr.toLowerCase().includes("rw") ? rwStr : `RW ${rwStr}`;
-                                  })()}
-                                </span>
-                              </div>
-                            </td>
-
-                            <td className="py-3.5 px-4">
-                              <div className="flex flex-col gap-1.5">
-                                <div className="flex justify-between items-center text-[10.5px]">
-                                  <span className={isHighCap ? "text-rose-600 dark:text-rose-400 font-black" : "text-emerald-700 dark:text-emerald-400 font-extrabold"}>
-                                    {isHighCap ? `${cap}% (Penuh)` : `${cap}% (Aman)`}
-                                  </span>
-                                  <span className="font-mono text-slate-500 dark:text-slate-400 text-[10.5px]">
-                                    {currentVolumeLiter} / {maxCapacityLiter} Liter
-                                  </span>
-                                </div>
-                                <div className="h-2.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-200/70 dark:border-slate-700">
-                                  <div
-                                    className={`h-full rounded-full transition-all duration-500 ${
-                                      isHighCap ? "bg-rose-500 animate-pulse" : "bg-emerald-500"
-                                    }`}
-                                    style={{ width: `${cap}%` }}
-                                  />
-                                </div>
-                              </div>
-                            </td>
-
-                            <td className="py-3.5 px-4 text-right">
-                              <div className="flex justify-end items-center gap-1.5">
-                                <button
-                                  onClick={() => setSelectedBinForDetail(bin)}
-                                  className="p-1.5 text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 rounded-lg transition-colors cursor-pointer"
-                                  title="Detail Tempat Sampah"
-                                >
-                                  <Eye size={15} />
-                                </button>
+                        <td className="py-3.5 px-4 text-right">
+                          <div className="flex justify-end items-center gap-1.5">
+                            <button
+                              onClick={() => setSelectedBinForDetail(bin)}
+                              className="p-1.5 text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 rounded-lg transition-colors cursor-pointer"
+                              title="Detail Tempat Sampah"
+                            >
+                              <Eye size={15} />
+                            </button>
+                            {isSuperOrDev && (
+                              <>
                                 <button
                                   onClick={() => navigate(`/monitoring-pengelolaan/tempat-sampah?edit=${bin.id || bin.kode}`)}
                                   className="p-1.5 text-slate-500 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-950/50 rounded-lg transition-colors cursor-pointer"
@@ -3294,19 +3296,19 @@ const Dashboard: React.FC = () => {
                                 >
                                   <Trash2 size={15} />
                                 </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
           </div>
-        </>
-      )}
+        </div>
+      </div>
 
       {/* Compliance List Modal */}
       {showComplianceModal && (
