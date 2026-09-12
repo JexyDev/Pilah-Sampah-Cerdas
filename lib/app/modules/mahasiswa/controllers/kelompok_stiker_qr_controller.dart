@@ -8,18 +8,23 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../../data/models/kelompok_qr_models.dart';
 import '../../../data/providers/repository_providers.dart';
+import 'kelompok_kkn_controller.dart';
 
 class KelompokStikerQrState {
   final bool isLoading;
   final String? errorMessage;
   final KelompokQrData? qrData;
   final String selectedFilter; // 'ALL', 'ORGANIK', 'ANORGANIK'
+  final String selectedStatus; // 'ALL', 'AVAILABLE', 'BOUND'
+  final String selectedRw; // 'ALL', '01', '02', dst
 
   KelompokStikerQrState({
     this.isLoading = false,
     this.errorMessage,
     this.qrData,
     this.selectedFilter = 'ALL',
+    this.selectedStatus = 'ALL',
+    this.selectedRw = 'ALL',
   });
 
   KelompokStikerQrState copyWith({
@@ -27,6 +32,8 @@ class KelompokStikerQrState {
     String? errorMessage,
     KelompokQrData? qrData,
     String? selectedFilter,
+    String? selectedStatus,
+    String? selectedRw,
     bool clearError = false,
   }) {
     return KelompokStikerQrState(
@@ -34,16 +41,78 @@ class KelompokStikerQrState {
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       qrData: qrData ?? this.qrData,
       selectedFilter: selectedFilter ?? this.selectedFilter,
+      selectedStatus: selectedStatus ?? this.selectedStatus,
+      selectedRw: selectedRw ?? this.selectedRw,
     );
   }
 
   List<StikerQrItem> get filteredItems {
     if (qrData == null) return [];
-    final items = qrData!.items;
-    if (selectedFilter == 'ALL') return items;
-    return items
-        .where((item) => item.jenis.toUpperCase() == selectedFilter)
-        .toList();
+    var items = qrData!.items;
+
+    // 1. Filter Kategori Sampah
+    if (selectedFilter == 'ORGANIK') {
+      items = items
+          .where((item) => item.jenis.toUpperCase() == 'ORGANIK')
+          .toList();
+    } else if (selectedFilter == 'ANORGANIK') {
+      items = items
+          .where((item) => item.jenis.toUpperCase() == 'ANORGANIK')
+          .toList();
+    }
+
+    // 2. Filter Status Penggunaan
+    if (selectedStatus == 'AVAILABLE') {
+      items = items.where((item) => item.isAvailable).toList();
+    } else if (selectedStatus == 'BOUND') {
+      items = items.where((item) => !item.isAvailable).toList();
+    }
+
+    // 3. Filter Wilayah RW (untuk Kelompok Multi-RW)
+    if (selectedRw != 'ALL') {
+      final cleanTargetRw = selectedRw
+          .replaceAll(RegExp(r'[^\d]'), '')
+          .replaceFirst(RegExp(r'^0+'), '');
+      items = items.where((item) {
+        if (item.isAvailable) {
+          // Stiker tersedia adalah pool bersama kelompok, valid untuk seluruh RW kelompok
+          return true;
+        }
+        final itemRw = item.wargaRw
+            ?.replaceAll(RegExp(r'[^\d]'), '')
+            .replaceFirst(RegExp(r'^0+'), '');
+        if (itemRw != null && itemRw.isNotEmpty) {
+          return itemRw == cleanTargetRw;
+        }
+        final addr = (item.terikatWarga?.alamat ?? '').toLowerCase();
+        return addr.contains('rw $cleanTargetRw') ||
+            addr.contains('rw 0$cleanTargetRw');
+      }).toList();
+    }
+
+    // Untuk tampilan 'ALL' kategori & 'ALL' status: Susun berpasangan
+    // (1 Organik [Hijau] & 1 Anorganik [Kuning]) agar serasi
+    if (selectedFilter == 'ALL' && selectedStatus == 'ALL') {
+      final organiks = items
+          .where((item) => item.jenis.toUpperCase() == 'ORGANIK')
+          .toList();
+      final anorganiks = items
+          .where((item) => item.jenis.toUpperCase() == 'ANORGANIK')
+          .toList();
+
+      final List<StikerQrItem> paired = [];
+      final maxLen = organiks.length > anorganiks.length
+          ? organiks.length
+          : anorganiks.length;
+
+      for (int i = 0; i < maxLen; i++) {
+        if (i < organiks.length) paired.add(organiks[i]);
+        if (i < anorganiks.length) paired.add(anorganiks[i]);
+      }
+      return paired;
+    }
+
+    return items;
   }
 }
 
@@ -54,11 +123,26 @@ class KelompokStikerQrController extends StateNotifier<KelompokStikerQrState> {
 
   final Ref ref;
 
-  Future<void> loadData() async {
+  Future<void> loadData({String? explicitKelompokId}) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
+      String? targetKelompokId = explicitKelompokId;
+      if (targetKelompokId == null || targetKelompokId.isEmpty) {
+        var kelompok = ref.read(kelompokKknProvider).kelompok;
+        if (kelompok == null) {
+          // Tunggu / fetch data kelompok jika belum ada di state
+          await ref.read(kelompokKknProvider.notifier).fetchKelompok();
+          kelompok = ref.read(kelompokKknProvider).kelompok;
+        }
+        targetKelompokId = kelompok?.groupId;
+      }
+
       final repository = ref.read(kknRepositoryProvider);
-      final response = await repository.getKelompokQrCodes();
+      final response = await repository.getKelompokQrCodes(
+        kelompokId: (targetKelompokId != null && targetKelompokId.isNotEmpty)
+            ? targetKelompokId
+            : null,
+      );
 
       state = state.copyWith(isLoading: false, qrData: response.data);
     } catch (e) {
@@ -71,6 +155,14 @@ class KelompokStikerQrController extends StateNotifier<KelompokStikerQrState> {
 
   void setFilter(String filter) {
     state = state.copyWith(selectedFilter: filter);
+  }
+
+  void setStatusFilter(String status) {
+    state = state.copyWith(selectedStatus: status);
+  }
+
+  void setRwFilter(String rw) {
+    state = state.copyWith(selectedRw: rw);
   }
 
   Future<void> exportData() async {

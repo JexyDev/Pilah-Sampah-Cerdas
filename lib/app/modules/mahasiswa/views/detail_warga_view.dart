@@ -167,377 +167,346 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
-      body: RefreshIndicator(
-        color: AppColors.primaryGreen,
-        onRefresh: () async {
-          await ref.read(mahasiswaControllerProvider.notifier).refresh();
-        },
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-          // ── App Bar + Header ────────────────────────────────
-          SliverAppBar(
-            expandedHeight: warga.phone.isNotEmpty ? 240 : 220,
-            pinned: true,
-            backgroundColor: AppColors.primaryGreen,
-            foregroundColor: Colors.white,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [AppColors.primaryGreen, AppColors.successDark],
-                  ),
-                ),
-                child: SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 40, 20, 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Row(
-                          children: [
-                            // Avatar besar
-                            Container(
-                              width: 52,
-                              height: 52,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.2),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Center(
-                                child: Text(
-                                  warga.wargaName.isNotEmpty
-                                      ? warga.wargaName[0].toUpperCase()
-                                      : '?',
-                                  style: const TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    warga.wargaName,
-                                    style: const TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.white,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.location_on_outlined,
-                                        size: 14,
-                                        color: Colors.white70,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Expanded(
-                                        child: Text(
-                                          _formatWargaAddress(warga),
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.white70,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  if (warga.phone.isNotEmpty) ...[
-                                    const SizedBox(height: 4),
-                                    Row(
-                                      children: [
-                                        const Icon(
-                                          Icons.phone_outlined,
-                                          size: 14,
-                                          color: Colors.white70,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          warga.phone,
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.white70,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                  const SizedBox(height: 6),
-                                  Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.delete_outline_rounded,
-                                        size: 14,
-                                        color: Colors.white70,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Expanded(
-                                        child: Builder(
-                                          builder: (_) {
-                                            final org = warga.binOrganikId;
-                                            final anorg = warga.binAnorganikId;
-                                            final hasOrg =
-                                                org != null &&
-                                                org.trim().isNotEmpty;
-                                            final hasAnorg =
-                                                anorg != null &&
-                                                anorg.trim().isNotEmpty;
-                                            const defaultStyle = TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.w600,
-                                            );
+      appBar: AppBar(
+        backgroundColor: AppColors.primaryGreen,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        title: const Text(
+          'Detail Warga',
+          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+        ),
+      ),
+      body: Column(
+        children: [
+          // ── Fixed Profile Header ────────────────────────
+          _buildWargaHeader(warga, kelompokState),
 
-                                            if (hasOrg &&
-                                                hasAnorg &&
-                                                org != anorg) {
-                                              return Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    'Organik: $org',
-                                                    style: defaultStyle,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                  ),
-                                                  Text(
-                                                    'Anorganik: $anorg',
-                                                    style: defaultStyle,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                  ),
-                                                ],
-                                              );
-                                            }
-                                            if (hasOrg) {
-                                              return Text(
-                                                'Organik: $org',
-                                                style: defaultStyle,
-                                                overflow: TextOverflow.ellipsis,
-                                              );
-                                            }
-                                            if (hasAnorg) {
-                                              return Text(
-                                                'Anorganik: $anorg',
-                                                style: defaultStyle,
-                                                overflow: TextOverflow.ellipsis,
-                                              );
-                                            }
-                                            if (warga.binId.isEmpty ||
-                                                warga.binId ==
-                                                    'Belum Ada Tempat Sampah') {
-                                              return const Text(
-                                                'Belum Ada Tempat Sampah',
-                                                style: defaultStyle,
-                                                overflow: TextOverflow.ellipsis,
-                                              );
-                                            }
-                                            return Text(
-                                              'ID: ${warga.binId}',
-                                              style: defaultStyle,
-                                              overflow: TextOverflow.ellipsis,
-                                            );
-                                          },
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  if (warga.isActivated) ...[
-                                    const SizedBox(height: 6),
-                                    Row(
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 3,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white.withValues(
-                                              alpha: 0.2,
-                                            ),
-                                            borderRadius: BorderRadius.circular(
-                                              6,
-                                            ),
-                                            border: Border.all(
-                                              color: Colors.white38,
-                                            ),
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              const Icon(
-                                                Icons.verified_rounded,
-                                                size: 12,
-                                                color: Colors.white,
-                                              ),
-                                              const SizedBox(width: 4),
-                                              Flexible(
-                                                child: Builder(
-                                                  builder: (_) {
-                                                    String mName =
-                                                        warga.pendampingName;
-                                                    if (mName.isEmpty &&
-                                                        warga
-                                                            .mahasiswaId
-                                                            .isNotEmpty) {
-                                                      final mem = kelompokState
-                                                          .kelompok
-                                                          ?.members
-                                                          .where(
-                                                            (m) =>
-                                                                m.userId ==
-                                                                warga
-                                                                    .mahasiswaId,
-                                                          )
-                                                          .firstOrNull;
-                                                      if (mem != null) {
-                                                        mName = mem.name;
-                                                      }
-                                                    }
-                                                    return Text(
-                                                      mName.isNotEmpty
-                                                          ? 'Diaktivasi oleh: $mName'
-                                                          : 'Aktivasi Mandiri',
-                                                      style: const TextStyle(
-                                                        fontSize: 13,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        color: Colors.white,
-                                                      ),
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                    );
-                                                  },
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        if (warga.pendampingName.isEmpty &&
-                                            warga.mahasiswaId.isEmpty) ...[
-                                          const SizedBox(width: 8),
-                                          InkWell(
-                                            onTap: () => _handleClaimWarga(
-                                              context,
-                                              ref,
-                                              warga,
-                                            ),
-                                            child: Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 8,
-                                                    vertical: 4,
-                                                  ),
-                                              decoration: BoxDecoration(
-                                                color: Colors.white,
-                                                borderRadius:
-                                                    BorderRadius.circular(4),
-                                              ),
-                                              child: const Text(
-                                                'Klaim Warga',
-                                                style: TextStyle(
-                                                  fontSize: 11,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: AppColors.primaryGreen,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ],
-                                    ),
-                                  ],
-                                ],
+          // ── Content ────────────────────────────────────
+          Expanded(
+            child: RefreshIndicator(
+              color: AppColors.primaryGreen,
+              onRefresh: () async {
+                await ref.read(mahasiswaControllerProvider.notifier).refresh();
+              },
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(AppDimensions.md),
+                children: [
+                  // Status badge
+                  if (warga.needsReeducation)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.only(bottom: AppDimensions.md),
+                      decoration: BoxDecoration(
+                        color: AppColors.warningOrange.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(
+                          AppDimensions.radiusMd,
+                        ),
+                        border: Border.all(
+                          color: AppColors.warningOrange.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.warning_amber_rounded,
+                            color: AppColors.warningOrange,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Warga ini membutuhkan edukasi ulang. Tingkat kesalahan: ${warga.errorPercentage.toStringAsFixed(1)}%',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppColors.warningOrange,
+                                fontWeight: FontWeight.w500,
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            title: const Text(
-              'Detail Warga',
-              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
-            ),
-          ),
-
-          // ── Content ────────────────────────────────────────
-          SliverPadding(
-            padding: const EdgeInsets.all(AppDimensions.md),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                // Status badge
-                if (warga.needsReeducation)
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    margin: const EdgeInsets.only(bottom: AppDimensions.md),
-                    decoration: BoxDecoration(
-                      color: AppColors.warningOrange.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(
-                        AppDimensions.radiusMd,
-                      ),
-                      border: Border.all(
-                        color: AppColors.warningOrange.withValues(alpha: 0.3),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.warning_amber_rounded,
-                          color: AppColors.warningOrange,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Warga ini membutuhkan edukasi ulang. Tingkat kesalahan: ${warga.errorPercentage.toStringAsFixed(1)}%',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.warningOrange,
-                              fontWeight: FontWeight.w500,
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
+
+                  // Stat Cards
+                  _buildStatCards(warga, state),
+                  const SizedBox(height: AppDimensions.md),
+
+                  // Chart Section
+                  _buildChartSection(warga),
+                  const SizedBox(height: AppDimensions.md),
+
+                  // Riwayat Pemilahan Terakhir
+                  _buildRecentLogsSection(
+                    warga.recentLogs,
+                    warga.totalActivities,
                   ),
-
-                // Stat Cards
-                _buildStatCards(warga, state),
-                const SizedBox(height: AppDimensions.md),
-
-                // Chart Section
-                _buildChartSection(warga),
-                const SizedBox(height: AppDimensions.md),
-
-                // Riwayat Pemilahan Terakhir
-                _buildRecentLogsSection(
-                  warga.recentLogs,
-                  warga.totalActivities,
-                ),
-                const SizedBox(height: AppDimensions.lg),
-              ]),
+                  const SizedBox(height: AppDimensions.lg),
+                ],
+              ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Header Warga
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  Widget _buildWargaHeader(
+    WargaDampingan warga,
+    KelompokKknState kelompokState,
+  ) {
+    return Container(
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [AppColors.primaryGreen, AppColors.successDark],
+        ),
+      ),
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Avatar besar
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                warga.wargaName.isNotEmpty
+                    ? warga.wargaName[0].toUpperCase()
+                    : '?',
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  warga.wargaName,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.location_on_outlined,
+                      size: 14,
+                      color: Colors.white70,
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        _formatWargaAddress(warga),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.white70,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                if (warga.phone.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.phone_outlined,
+                        size: 14,
+                        color: Colors.white70,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        warga.phone,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.white70,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.delete_outline_rounded,
+                      size: 14,
+                      color: Colors.white70,
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Builder(
+                        builder: (_) {
+                          final org = warga.binOrganikId;
+                          final anorg = warga.binAnorganikId;
+                          final hasOrg = org != null && org.trim().isNotEmpty;
+                          final hasAnorg =
+                              anorg != null && anorg.trim().isNotEmpty;
+                          const defaultStyle = TextStyle(
+                            fontSize: 12,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          );
+
+                          if (hasOrg && hasAnorg && org != anorg) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Organik: $org',
+                                  style: defaultStyle,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Text(
+                                  'Anorganik: $anorg',
+                                  style: defaultStyle,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            );
+                          }
+                          if (hasOrg) {
+                            return Text(
+                              'Organik: $org',
+                              style: defaultStyle,
+                              overflow: TextOverflow.ellipsis,
+                            );
+                          }
+                          if (hasAnorg) {
+                            return Text(
+                              'Anorganik: $anorg',
+                              style: defaultStyle,
+                              overflow: TextOverflow.ellipsis,
+                            );
+                          }
+                          if (warga.binId.isEmpty ||
+                              warga.binId == 'Belum Ada Tempat Sampah') {
+                            return const Text(
+                              'Belum Ada Tempat Sampah',
+                              style: defaultStyle,
+                              overflow: TextOverflow.ellipsis,
+                            );
+                          }
+                          return Text(
+                            'ID: ${warga.binId}',
+                            style: defaultStyle,
+                            overflow: TextOverflow.ellipsis,
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                if (warga.isActivated) ...[
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: Colors.white38),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.verified_rounded,
+                              size: 12,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Builder(
+                                builder: (_) {
+                                  String mName = warga.pendampingName;
+                                  if (mName.isEmpty &&
+                                      warga.mahasiswaId.isNotEmpty) {
+                                    final mem = kelompokState.kelompok?.members
+                                        .where(
+                                          (m) => m.userId == warga.mahasiswaId,
+                                        )
+                                        .firstOrNull;
+                                    if (mem != null) {
+                                      mName = mem.name;
+                                    }
+                                  }
+                                  return Text(
+                                    mName.isNotEmpty
+                                        ? 'Diaktivasi oleh: $mName'
+                                        : 'Aktivasi Mandiri',
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (warga.pendampingName.isEmpty &&
+                          warga.mahasiswaId.isEmpty) ...[
+                        const SizedBox(width: 8),
+                        InkWell(
+                          onTap: () => _handleClaimWarga(context, ref, warga),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text(
+                              'Klaim Warga',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primaryGreen,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -31,4 +31,72 @@ class BinPresetEntity {
 
   String get capacityLabel =>
       '${capacity.toStringAsFixed(capacity.truncateToDouble() == capacity ? 0 : 1)} L';
+
+  /// Ukuran standar baku resmi tempat sampah bentuk tabung/bulat (SNI/Standar Berseka)
+  static List<BinPresetEntity> get defaultTabungPresets => [
+        BinPresetEntity(
+          id: 'preset-t-1',
+          label: 'Kecil',
+          capacity: 10.0,
+          d: 23,
+          t: 24,
+        ),
+        BinPresetEntity(
+          id: 'preset-t-2',
+          label: 'Sedang',
+          capacity: 20.0,
+          d: 29,
+          t: 30,
+        ),
+        BinPresetEntity(
+          id: 'preset-t-3',
+          label: 'Besar',
+          capacity: 40.0,
+          d: 36,
+          t: 39,
+        ),
+        BinPresetEntity(
+          id: 'preset-t-4',
+          label: 'Jumbo',
+          capacity: 60.0,
+          d: 40,
+          t: 48,
+        ),
+      ];
+
+  /// Ukuran standar baku resmi tempat sampah bentuk kotak/balok (SNI/Standar Berseka)
+  static List<BinPresetEntity> get defaultKotakPresets => [
+        BinPresetEntity(
+          id: 'preset-k-1',
+          label: 'Kecil',
+          capacity: 12.0,
+          p: 25,
+          l: 20,
+          t: 24,
+        ),
+        BinPresetEntity(
+          id: 'preset-k-2',
+          label: 'Sedang',
+          capacity: 25.0,
+          p: 40,
+          l: 25,
+          t: 25,
+        ),
+        BinPresetEntity(
+          id: 'preset-k-3',
+          label: 'Besar',
+          capacity: 50.0,
+          p: 40,
+          l: 35,
+          t: 36,
+        ),
+        BinPresetEntity(
+          id: 'preset-k-4',
+          label: 'Jumbo',
+          capacity: 70.0,
+          p: 45,
+          l: 35,
+          t: 45,
+        ),
+      ];
 }

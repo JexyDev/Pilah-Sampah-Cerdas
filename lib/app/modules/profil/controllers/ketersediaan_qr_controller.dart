@@ -164,7 +164,7 @@ class KetersediaanQrController extends StateNotifier<KetersediaanQrState> {
             final rawQr =
                 (item['qrCode']?.toString() ?? item['kode']?.toString() ?? '')
                     .trim();
-            final qrCodeStr = rawQr.isNotEmpty ? rawQr : 'BSK-OGN-250826-0001';
+            final qrCodeStr = rawQr;
             return state.selectedItems.contains(qrCodeStr);
           }).toList()
         : state.items;
@@ -196,7 +196,7 @@ class KetersediaanQrController extends StateNotifier<KetersediaanQrState> {
         final rawQr =
             (item['qrCode']?.toString() ?? item['kode']?.toString() ?? '')
                 .trim();
-        final qrCodeStr = rawQr.isNotEmpty ? rawQr : 'BSK-OGN-250826-0001';
+        final qrCodeStr = rawQr;
         final rawCat =
             (item['category']?['name']?.toString() ??
                     item['jenis']?.toString() ??

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:equatable/equatable.dart';
 
 /// ─────────────────────────────────────────────────────────────────────────────
@@ -923,6 +924,7 @@ class KelompokKknData extends Equatable {
     required this.totalGroupPoints,
     required this.members,
     this.linkGoogleDrive,
+    this.cakupanRw = const [],
   });
 
   final String groupId;
@@ -933,6 +935,7 @@ class KelompokKknData extends Equatable {
   final String poskoLocation;
   final int totalGroupPoints;
   final List<KelompokMemberData> members;
+  final List<String> cakupanRw;
 
   /// Link Google Drive folder kelompok, null jika belum diset Admin.
   final String? linkGoogleDrive;
@@ -1018,6 +1021,39 @@ class KelompokKknData extends Equatable {
         ? rawDrive.trim()
         : null;
 
+    final rawCakupan =
+        json['cakupanRw'] ?? json['cakupan_rw'] ?? json['cakupan'];
+    List<String> parsedCakupan = [];
+    if (rawCakupan is List) {
+      parsedCakupan = rawCakupan
+          .map((e) => e.toString().trim())
+          .where((s) => s.isNotEmpty)
+          .toList();
+    } else if (rawCakupan is String && rawCakupan.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(rawCakupan);
+        if (decoded is List) {
+          parsedCakupan = decoded
+              .map((e) => e.toString().trim())
+              .where((s) => s.isNotEmpty)
+              .toList();
+        }
+      } catch (_) {
+        parsedCakupan = rawCakupan
+            .split(',')
+            .map((s) => s.trim())
+            .where((s) => s.isNotEmpty)
+            .toList();
+      }
+    }
+    if (parsedCakupan.isEmpty && membersList.isNotEmpty) {
+      parsedCakupan = membersList
+          .map((m) => m.statusPenugasanRw)
+          .where((r) => r.isNotEmpty && r != '-')
+          .toSet()
+          .toList();
+    }
+
     return KelompokKknData(
       groupId: json['groupId']?.toString() ?? json['id']?.toString() ?? '',
       groupName:
@@ -1039,6 +1075,7 @@ class KelompokKknData extends Equatable {
           0,
       members: membersList,
       linkGoogleDrive: driveUrl,
+      cakupanRw: parsedCakupan,
     );
   }
 
@@ -1052,6 +1089,7 @@ class KelompokKknData extends Equatable {
     dplNip,
     dplPhone,
     linkGoogleDrive,
+    cakupanRw,
   ];
 }
 

@@ -17,6 +17,8 @@ import 'pengajuan_warga_view.dart';
 import '../widgets/petugas_whitelist_guard_widget.dart';
 
 import '../../shared/controllers/connectivity_controller.dart';
+import '../../shared/controllers/user_location_controller.dart';
+import '../../shared/widgets/user_location_card.dart';
 
 class PetugasPemilahanDashboardView extends ConsumerStatefulWidget {
   const PetugasPemilahanDashboardView({super.key});
@@ -32,7 +34,10 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     // Silent reload on first load
-    Future.microtask(() => ref.read(petugasPemilahanControllerProvider.notifier).refreshAll());
+    Future.microtask(() {
+      ref.read(petugasPemilahanControllerProvider.notifier).refreshAll();
+      ref.read(userLocationProvider.notifier).refreshLocation();
+    });
   }
 
   @override
@@ -46,6 +51,7 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
     if (state == AppLifecycleState.resumed) {
       // Silent reload on resume
       ref.read(petugasPemilahanControllerProvider.notifier).refreshAll();
+      ref.read(userLocationProvider.notifier).refreshLocation();
     }
   }
 
@@ -314,6 +320,21 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 10),
+          // Baris 2: Lokasi Penugasan & GPS Card Terstruktur Petugas (2 Tier)
+          Consumer(
+            builder: (context, ref, _) {
+              final locState = ref.watch(userLocationProvider);
+              final wilayahTitle = wilayahBadge.isNotEmpty ? wilayahBadge : 'Wilayah Penugasan';
+              return UserLocationCard(
+                wilayahTitle: wilayahTitle,
+                isFetchingAddress: locState.isFetchingAddress,
+                address: locState.address,
+                position: locState.position,
+                onRefresh: () => ref.read(userLocationProvider.notifier).refreshLocation(context: context),
+              );
+            },
           ),
         ],
       ),
@@ -658,7 +679,10 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
       return Scaffold(
         backgroundColor: AppColors.backgroundCanvas,
         body: RefreshIndicator(
-          onRefresh: () => ref.read(petugasPemilahanControllerProvider.notifier).refreshAll(),
+          onRefresh: () async {
+            ref.read(userLocationProvider.notifier).refreshLocation();
+            await ref.read(petugasPemilahanControllerProvider.notifier).refreshAll();
+          },
           color: AppColors.primaryGreen,
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -677,7 +701,10 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       body: RefreshIndicator(
-        onRefresh: () => ref.read(petugasPemilahanControllerProvider.notifier).refreshAll(),
+        onRefresh: () async {
+          ref.read(userLocationProvider.notifier).refreshLocation();
+          await ref.read(petugasPemilahanControllerProvider.notifier).refreshAll();
+        },
         color: AppColors.primaryGreen,
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),

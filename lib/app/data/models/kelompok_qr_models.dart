@@ -72,8 +72,24 @@ class KelompokInfoData {
       id: json['id'] ?? '',
       nama: json['nama'] ?? '',
       kelurahan: json['kelurahan'] ?? '',
-      cakupanRw:
-          (json['cakupanRw'] as List?)?.map((e) => e.toString()).toList() ?? [],
+      cakupanRw: () {
+        final raw = json['cakupanRw'];
+        if (raw is List) {
+          return raw.map((e) => e.toString().trim()).toList();
+        } else if (raw is String) {
+          final trimmed = raw.trim();
+          return trimmed
+              .replaceAll('[', '')
+              .replaceAll(']', '')
+              .replaceAll('"', '')
+              .replaceAll("'", '')
+              .split(',')
+              .map((e) => e.trim())
+              .where((e) => e.isNotEmpty)
+              .toList();
+        }
+        return <String>[];
+      }(),
       dpl: json['dpl'] ?? '',
       dplPhone: json['dplPhone'] ?? '',
     );
@@ -152,6 +168,8 @@ class StikerQrItem {
   final String hexColor;
   final String status;
   final bool isAvailable;
+  final int? rwId;
+  final String? nomorRw;
   final WargaTerikatData? terikatWarga;
   final String? tanggalAktivasi;
   final SpesifikasiStikerData spesifikasiStiker;
@@ -167,6 +185,8 @@ class StikerQrItem {
     required this.hexColor,
     required this.status,
     required this.isAvailable,
+    this.rwId,
+    this.nomorRw,
     this.terikatWarga,
     this.tanggalAktivasi,
     required this.spesifikasiStiker,
@@ -184,6 +204,10 @@ class StikerQrItem {
       hexColor: json['hexColor'] ?? '',
       status: json['status'] ?? '',
       isAvailable: json['isAvailable'] ?? false,
+      rwId: json['rwId'] is int
+          ? json['rwId']
+          : int.tryParse(json['rwId']?.toString() ?? ''),
+      nomorRw: json['nomorRw']?.toString(),
       terikatWarga: json['terikatWarga'] != null
           ? WargaTerikatData.fromJson(json['terikatWarga'])
           : null,
@@ -194,6 +218,26 @@ class StikerQrItem {
       asetUrl: AsetUrlData.fromJson(json['asetUrl'] ?? {}),
     );
   }
+
+  /// Mengekstrak nomor RW warga terikat (prioritas dari response backend, fallback regex alamat)
+  String? get wargaRw {
+    if (nomorRw != null && nomorRw!.isNotEmpty) {
+      final clean = nomorRw!.replaceAll(RegExp(r'[^\d]'), '');
+      if (clean.isNotEmpty) return clean.padLeft(2, '0');
+    }
+    if (terikatWarga?.nomorRw != null && terikatWarga!.nomorRw!.isNotEmpty) {
+      final clean = terikatWarga!.nomorRw!.replaceAll(RegExp(r'[^\d]'), '');
+      if (clean.isNotEmpty) return clean.padLeft(2, '0');
+    }
+    if (terikatWarga == null) return null;
+    final addr = terikatWarga!.alamat.toLowerCase();
+    final match = RegExp(r'rw\s*([0-9]+)').firstMatch(addr);
+    if (match != null) {
+      final numStr = match.group(1)!;
+      return numStr.padLeft(2, '0');
+    }
+    return null;
+  }
 }
 
 class WargaTerikatData {
@@ -201,12 +245,16 @@ class WargaTerikatData {
   final String nama;
   final String telepon;
   final String alamat;
+  final int? rwId;
+  final String? nomorRw;
 
   WargaTerikatData({
     required this.id,
     required this.nama,
     required this.telepon,
     required this.alamat,
+    this.rwId,
+    this.nomorRw,
   });
 
   factory WargaTerikatData.fromJson(Map<String, dynamic> json) {
@@ -215,6 +263,10 @@ class WargaTerikatData {
       nama: json['nama'] ?? '',
       telepon: json['telepon'] ?? '',
       alamat: json['alamat'] ?? '',
+      rwId: json['rwId'] is int
+          ? json['rwId']
+          : int.tryParse(json['rwId']?.toString() ?? ''),
+      nomorRw: json['nomorRw']?.toString(),
     );
   }
 }
