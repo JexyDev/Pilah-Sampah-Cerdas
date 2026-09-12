@@ -967,6 +967,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     if (context != null) {
       permission = await LocationService.instance.checkAndRequestPermission(
         context,
+        role: 'mahasiswa_kkn',
       );
     } else {
       permission = await Geolocator.checkPermission();

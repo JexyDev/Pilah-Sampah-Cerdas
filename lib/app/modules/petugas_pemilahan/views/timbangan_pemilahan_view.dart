@@ -141,7 +141,7 @@ class _TimbanganPemilahanViewState
       if (file != null) {
         if (!mounted) return;
         final locPermission = await LocationService.instance
-            .checkAndRequestPermission(context);
+            .checkAndRequestPermission(context, role: 'petugas_pemilahan');
         Position? loc;
         String? address;
         if (locPermission == LocationPermission.whileInUse ||
