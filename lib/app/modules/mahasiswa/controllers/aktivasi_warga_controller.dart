@@ -248,34 +248,44 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
 
       if (PlatformUtils.isMobile) {
         try {
-          // Request permission lokasi jika belum diizinkan
-          LocationPermission perm = await Geolocator.checkPermission();
-          if (perm == LocationPermission.denied) {
-            perm = await Geolocator.requestPermission();
-          }
+          final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+          if (serviceEnabled) {
+            LocationPermission perm = await Geolocator.checkPermission();
+            if (perm == LocationPermission.denied) {
+              perm = await Geolocator.requestPermission();
+            }
 
-          if (perm == LocationPermission.whileInUse ||
-              perm == LocationPermission.always) {
-            final pos = await Geolocator.getCurrentPosition(
-              locationSettings: const LocationSettings(
-                accuracy: LocationAccuracy.high,
-                timeLimit: Duration(seconds: 8),
-              ),
-            );
-            lat = pos.latitude;
-            lng = pos.longitude;
+            if (perm == LocationPermission.whileInUse ||
+                perm == LocationPermission.always) {
+              Position? pos;
+              try {
+                pos = await Geolocator.getCurrentPosition(
+                  locationSettings: const LocationSettings(
+                    accuracy: LocationAccuracy.high,
+                    timeLimit: Duration(seconds: 10),
+                  ),
+                );
+              } catch (_) {
+                try {
+                  pos = await Geolocator.getCurrentPosition(
+                    locationSettings: const LocationSettings(
+                      accuracy: LocationAccuracy.medium,
+                      timeLimit: Duration(seconds: 5),
+                    ),
+                  );
+                } catch (_) {
+                  pos = await Geolocator.getLastKnownPosition();
+                }
+              }
+
+              if (pos != null) {
+                lat = pos.latitude;
+                lng = pos.longitude;
+              }
+            }
           }
         } catch (gpsErr) {
-          debugPrint(
-            '[AktivasiWarga] GPS warning: $gpsErr, trying last known position...',
-          );
-          try {
-            final lastPos = await Geolocator.getLastKnownPosition();
-            if (lastPos != null) {
-              lat = lastPos.latitude;
-              lng = lastPos.longitude;
-            }
-          } catch (_) {}
+          debugPrint('[AktivasiWarga] GPS warning: $gpsErr');
         }
       }
 

@@ -783,7 +783,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                                 height: 46,
                                 child: ElevatedButton.icon(
                                   onPressed: () {
-                                    // Validasi: Mahasiswa HANYA boleh aktivasi warga di RW penugasannya sendiri
+                                    // Validasi: Mahasiswa HANYA boleh aktivasi warga di RW penugasannya sendiri (atau cakupan kelompok jika Multi-RW)
                                     final studentRwClean = userRw
                                         .replaceAll(RegExp(r'[^\d,]'), '')
                                         .split(',')
@@ -798,9 +798,27 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                                         .where((s) => s.isNotEmpty)
                                         .toSet();
 
-                                    if (studentRwClean.isNotEmpty &&
+                                    final kelompok = ref.read(kelompokKknProvider).kelompok;
+                                    final kelompokCakupanSet = (kelompok?.cakupanRw ?? const [])
+                                        .map((s) => s.replaceAll(RegExp(r'[^\d]'), '').replaceFirst(RegExp(r'^0+'), '').trim())
+                                        .where((s) => s.isNotEmpty)
+                                        .toSet();
+
+                                    final effectiveStudentRw = studentRwClean.isNotEmpty
+                                        ? studentRwClean
+                                        : kelompokCakupanSet;
+
+                                    if (effectiveStudentRw.isNotEmpty &&
                                         wargaRwClean.isNotEmpty &&
-                                        !studentRwClean.contains(wargaRwClean.first)) {
+                                        !effectiveStudentRw.contains(wargaRwClean.first)) {
+                                      final isSingle = studentRwClean.isNotEmpty;
+                                      final scopeTitle = isSingle
+                                          ? 'RW 0${studentRwClean.join(', RW 0')}'
+                                          : 'RW ${kelompokCakupanSet.map((r) => '0$r').join(', ')}';
+                                      final errorDesc = isSingle
+                                          ? 'Warga binaan ${warga.wargaName} berada di RW 0${wargaRwClean.first}, sedangkan wilayah penugasan KKN Anda adalah $scopeTitle.\n\nAnda HANYA diperbolehkan melakukan aktivasi tempat sampah untuk warga di wilayah penugasan Anda.'
+                                          : 'Warga binaan ${warga.wargaName} berada di RW 0${wargaRwClean.first}, di luar wilayah cakupan kelompok KKN Anda ($scopeTitle).\n\nAnda HANYA diperbolehkan melakukan aktivasi tempat sampah untuk warga di wilayah binaan kelompok Anda.';
+
                                       showDialog(
                                         context: context,
                                         builder: (dialogCtx) => AlertDialog(
@@ -826,9 +844,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                                               ),
                                             ],
                                           ),
-                                          content: Text(
-                                            'Warga binaan ${warga.wargaName} berada di RW 0${wargaRwClean.first}, sedangkan wilayah penugasan KKN Anda adalah RW 0${studentRwClean.join(', RW 0')}.\n\nAnda HANYA diperbolehkan melakukan aktivasi tempat sampah untuk warga di wilayah penugasan Anda.',
-                                          ),
+                                          content: Text(errorDesc),
                                           actions: [
                                             ElevatedButton(
                                               style: ElevatedButton.styleFrom(

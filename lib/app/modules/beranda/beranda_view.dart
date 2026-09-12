@@ -22,6 +22,9 @@ import '../shared/widgets/empty_state.dart';
 import '../../core/utils/network_exception_helper.dart';
 import '../../core/utils/scan_guard.dart';
 import '../mahasiswa/controllers/location_ping_controller.dart';
+import 'package:geolocator/geolocator.dart';
+import '../../core/utils/platform_utils.dart';
+import '../../data/services/location_service.dart';
 import '../shared/controllers/user_location_controller.dart';
 import '../shared/widgets/user_location_card.dart';
 
@@ -36,18 +39,62 @@ class BerandaView extends ConsumerStatefulWidget {
   ConsumerState<BerandaView> createState() => _BerandaViewState();
 }
 
-class _BerandaViewState extends ConsumerState<BerandaView> {
+class _BerandaViewState extends ConsumerState<BerandaView>
+    with WidgetsBindingObserver {
+  bool _isCheckingLocation = false;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final user = ref.read(authProvider).user;
-      if (user?.role == UserRole.mahasiswaKkn) {
-        ref.read(locationPingControllerProvider.notifier).startTracking();
-      } else {
-        ref.read(userLocationProvider.notifier).refreshLocation();
-      }
+      _checkLocationIfNeeded();
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkLocationIfNeeded();
+    }
+  }
+
+  Future<void> _checkLocationIfNeeded() async {
+    if (!mounted || _isCheckingLocation) return;
+    final user = ref.read(authProvider).user;
+    if (user?.role == UserRole.mahasiswaKkn) {
+      ref.read(locationPingControllerProvider.notifier).startTracking();
+      return;
+    }
+
+    if (PlatformUtils.isMobile && user?.role == UserRole.warga) {
+      _isCheckingLocation = true;
+      try {
+        final perm = await LocationService.instance.checkAndRequestPermission(
+          context,
+          role: 'warga',
+          mandatory: true,
+        );
+        if (perm == LocationPermission.whileInUse ||
+            perm == LocationPermission.always) {
+          if (mounted) {
+            ref.read(userLocationProvider.notifier).refreshLocation();
+          }
+        }
+      } finally {
+        if (mounted) {
+          _isCheckingLocation = false;
+        }
+      }
+    } else {
+      ref.read(userLocationProvider.notifier).refreshLocation();
+    }
   }
 
   @override

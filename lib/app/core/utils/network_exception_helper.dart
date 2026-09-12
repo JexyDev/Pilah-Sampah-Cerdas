@@ -23,6 +23,18 @@ class NetworkExceptionHelper {
           if (responseData is Map<String, dynamic>) {
             final errorCode = responseData['error']?.toString() ?? '';
             switch (errorCode) {
+              case 'BIN_RW_MISMATCH':
+                final customMsg = responseData['message']?.toString();
+                if (customMsg != null && customMsg.isNotEmpty && !RegExp(r'^[A-Z_]+$').hasMatch(customMsg)) {
+                  return customMsg.replaceFirst(RegExp(r'^BIN_RW_MISMATCH:\s*', caseSensitive: false), '');
+                }
+                return 'Stiker tempat sampah dialokasikan khusus untuk RW lain, bukan untuk wilayah penugasan Anda.';
+              case 'BIN_ALREADY_OWNED':
+                final customMsg = responseData['message']?.toString();
+                if (customMsg != null && customMsg.isNotEmpty && !RegExp(r'^[A-Z_]+$').hasMatch(customMsg)) {
+                  return customMsg;
+                }
+                return 'Tempat sampah ini sudah dimiliki oleh warga lain dan tidak dapat diaktivasi ulang.';
               case 'STUDENT_PROFILE_INCOMPLETE':
                 return 'Profil KKN Anda belum lengkap. Hubungi Admin atau DPL untuk melengkapi data NIM dan jurusan sebelum presensi.';
               case 'OUT_OF_COBLONG_BOUNDS':
@@ -34,11 +46,14 @@ class NetworkExceptionHelper {
               default:
                 // Fallback ke pesan dari backend jika bukan kode yang dikenal
                 if (responseData['message'] != null) {
-                  final msg = responseData['message'].toString();
+                  final msg = responseData['message'].toString().trim();
+                  if (msg == 'BIN_RW_MISMATCH') {
+                    return 'Stiker tempat sampah dialokasikan khusus untuk RW lain, bukan untuk wilayah penugasan Anda.';
+                  }
                   if (RegExp(r'^[A-Z_]+$').hasMatch(msg)) {
                     return 'Terjadi kesalahan tidak terduga. Silakan coba lagi.';
                   }
-                  return msg;
+                  return msg.replaceFirst(RegExp(r'^BIN_RW_MISMATCH:\s*', caseSensitive: false), '');
                 }
             }
           }
