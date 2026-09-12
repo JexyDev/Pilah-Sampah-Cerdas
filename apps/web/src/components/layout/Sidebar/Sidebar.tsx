@@ -231,10 +231,18 @@ const checkRouteActive = (
           currentTab = "dpl";
         } else if (["/log-aktivitas/mahasiswa", "/logbook-kkn", "/dpl/logbook", "/logbook"].includes(pathname)) {
           currentTab = "mahasiswa";
+        } else if (pathname === "/dasbor") {
+          currentTab = "kkn";
         }
       }
 
+      // Khusus menu Dasbor di sidebar: tetap aktif baik di tab kkn maupun tata-kelola-sampah jika targetnya dasbor
+      if (targetPath === "/dasbor" && pathname === "/dasbor") {
+        return true;
+      }
+
       const normalizeLeaderboardTab = (t: string) => {
+        if (["tata-kelola-sampah", "sampah"].includes(t)) return "tata-kelola-sampah";
         if (["warga", "citizens"].includes(t)) return "citizens";
         if (["petugas", "pengangkut"].includes(t)) return "pengangkut";
         if (["rw", "rtrw"].includes(t)) return "rtrw";
@@ -783,7 +791,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
       header: "OPERASIONAL",
       items: [
         {
-          to: "/dasbor",
+          to: "/dasbor?tab=kkn",
           icon: LayoutDashboard,
           label: "Dasbor",
           allowed: ALL_ROLES,
@@ -1696,7 +1704,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               {/* ponytail: FallingLeavesBackground di-hide sesuai permintaan */}
               {/* <FallingLeavesBackground /> */}
               <Link
-                to="/dasbor"
+                to="/dasbor?tab=kkn"
                 onClick={handleMobileItemClick}
                 className="flex items-center justify-center group cursor-pointer relative z-10 w-full text-center"
               >

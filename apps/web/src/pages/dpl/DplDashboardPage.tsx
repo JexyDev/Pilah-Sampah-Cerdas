@@ -2009,7 +2009,38 @@ export const DplDashboardPage: React.FC = () => {
                     )}
                   </div>
 
-                  <div className="flex items-center justify-between text-xs pt-2.5 border-t border-slate-200/60 dark:border-slate-700/60 text-slate-600 dark:text-slate-300">
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
+                    <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60">
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">
+                        Poin Kelompok
+                      </div>
+                      <div className="flex items-baseline gap-1 mt-0.5">
+                        <span className="text-base font-black text-emerald-700 dark:text-emerald-400">
+                          {g.totalGroupPoints !== undefined ? g.totalGroupPoints : 0}
+                        </span>
+                        <span className="text-[10px] text-slate-400">pts</span>
+                      </div>
+                      <div className="text-[9px] text-slate-400 truncate" title={`Proker: ${g.poinProker || 0} (60%) • Rerata: ${g.rataRataPoinAnggota || 0} (40%)`}>
+                        Proker 60% • Anggota 40%
+                      </div>
+                    </div>
+                    <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60">
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">
+                        Poin DPL
+                      </div>
+                      <div className="flex items-baseline gap-1 mt-0.5">
+                        <span className="text-base font-black text-blue-700 dark:text-blue-400">
+                          {g.poinDpl !== undefined ? g.poinDpl : 0}
+                        </span>
+                        <span className="text-[10px] text-slate-400">pts</span>
+                      </div>
+                      <div className="text-[9px] text-slate-400 truncate" title={`Logbook: ${g.poinLogbookDpl || 0} (60%) • Kelompok: ${g.totalGroupPoints || 0} (40%)`}>
+                        Logbook {g.hasLogbookDpl ? "✓" : "0"} • Kel. 40%
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-200/60 dark:border-slate-700/60 text-slate-600 dark:text-slate-300">
                     <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Rerata Presensi Lapangan</span>
                     <strong className="text-emerald-700 dark:text-emerald-400 font-black text-sm bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-0.5 rounded-lg border border-emerald-200/80 dark:border-emerald-700/40">
                       {g.avgAttendanceRate || 0}%

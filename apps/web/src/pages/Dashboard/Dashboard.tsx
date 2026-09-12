@@ -1,4 +1,4 @@
-import { X, Star, Banknote, Recycle, AlertCircle, Eye, LineChart, BarChart, Leaf, TrendingUp, TrendingDown, Wallet, Zap, MapPin, AlertTriangle, Truck, Pencil, Trash2, Calendar, ChevronRight, GraduationCap, Search, CheckCircle2, Sparkles, RotateCcw, UserCheck, Code2, ShieldCheck, Award, BookOpen, RefreshCcw, Settings, Save, Loader2, Building2, History, Home, Bell, Megaphone, Archive, Send, Users, ShoppingBag } from "lucide-react";
+import { X, Star, Banknote, Recycle, AlertCircle, Eye, LineChart, BarChart, Leaf, TrendingUp, TrendingDown, Wallet, Zap, MapPin, AlertTriangle, Truck, Pencil, Trash2, Calendar, ChevronRight, GraduationCap, Search, CheckCircle2, Sparkles, RotateCcw, Award, BookOpen, RefreshCcw, RefreshCw, Settings, Save, Loader2, Building2, History, Home, Bell, Megaphone, Archive, Send, Users, ShoppingBag, Info } from "lucide-react";
 
 /**
  * Project: BERSEKA
@@ -11,7 +11,7 @@ import { X, Star, Banknote, Recycle, AlertCircle, Eye, LineChart, BarChart, Leaf
  * - Strict Standard Rukun Warga (RW) Terminology
  */
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Link, useNavigate, Navigate, useSearchParams } from "react-router-dom";
 import { RwDashboard } from "../RwPortal/RwDashboard";
 import api from "../../services/api";
@@ -28,6 +28,66 @@ import { getPortalLoadingText } from "../../utils/portalLoading";
 import LeaderboardWidget from "../../components/LeaderboardWidget";
 import { CustomSelect, type SelectOption } from "../../components/common/CustomSelect";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
+
+export interface KelurahanBaselineData {
+  id: string;
+  kelurahan: string;
+  baselineRate: number; // Persentase pemilahan survei baseline pra-intervensi
+  endlineRate: number; // Persentase kepatuhan pemilahan real-time
+  totalKg?: number; // Total akumulasi volume sampah terdata aktual (Kg)
+  status: "Terverifikasi Real" | "Belum Terverifikasi";
+}
+
+export const KELURAHAN_BASELINE_DATA: KelurahanBaselineData[] = [
+  {
+    id: "kel-cipaganti",
+    kelurahan: "Cipaganti",
+    baselineRate: 24.0,
+    endlineRate: 0,
+    totalKg: 0.5,
+    status: "Terverifikasi Real",
+  },
+  {
+    id: "kel-dago",
+    kelurahan: "Dago",
+    baselineRate: 10.0,
+    endlineRate: 0,
+    totalKg: 0,
+    status: "Belum Terverifikasi",
+  },
+  {
+    id: "kel-lebakgede",
+    kelurahan: "Lebak Gede",
+    baselineRate: 21.6,
+    endlineRate: 0,
+    totalKg: 4.0,
+    status: "Terverifikasi Real",
+  },
+  {
+    id: "kel-lebaksiliwangi",
+    kelurahan: "Lebak Siliwangi",
+    baselineRate: 15.0,
+    endlineRate: 58.3,
+    totalKg: 6.79,
+    status: "Terverifikasi Real",
+  },
+  {
+    id: "kel-sadangserang",
+    kelurahan: "Sadang Serang",
+    baselineRate: 24.8,
+    endlineRate: 21.7,
+    totalKg: 43.5,
+    status: "Terverifikasi Real",
+  },
+  {
+    id: "kel-sekeloa",
+    kelurahan: "Sekeloa",
+    baselineRate: 17.8,
+    endlineRate: 42.9,
+    totalKg: 4.5,
+    status: "Terverifikasi Real",
+  },
+];
 
 const DEFAULT_WILAYAH_OPTIONS: SelectOption[] = [
   { value: "Semua Wilayah", label: "Seluruh Wilayah", sublabel: "Cakupan Seluruh Wilayah" },
@@ -106,52 +166,54 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
     });
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all duration-300">
-      <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-3xl shadow-2xl overflow-hidden border border-emerald-500/30 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[85vh] text-slate-800 dark:text-slate-100">
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 transition-all duration-200">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[85vh] text-slate-800 dark:text-slate-100">
         {/* Modal Header */}
-        <div className="p-6 border-b border-slate-200 dark:border-slate-800 bg-emerald-50/60 dark:bg-emerald-950/30 flex justify-between items-start shrink-0 relative overflow-hidden">
-          <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className="bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/40 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                Wilayah Operasional
-              </span>
-              <span className="bg-cyan-100 dark:bg-cyan-950/80 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-700/40 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse"></span> Stream Real-Time
-              </span>
+        <div className="p-5 sm:p-6 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex justify-between items-center shrink-0">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-500/20 shrink-0">
+              <LineChart size={20} />
             </div>
-            <h3 className="font-black text-2xl tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2.5">
-              <LineChart className="text-cyan-600 dark:text-cyan-400" size={24} />
-              Indeks Kepatuhan Pemilahan Sampah
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium max-w-xl">
-              Persentase keaktifan rumah tangga dan tingkat kepatuhan pemilahan sampah terdata pada tiap Rukun Warga (RW) di wilayah operasional.
-            </p>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                  Indeks Kepatuhan Pemilahan Sampah
+                </h3>
+                <span className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 text-[11px] font-semibold px-2 py-0.5 rounded-full">
+                  Wilayah Operasional
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-normal">
+                Persentase keaktifan rumah tangga dan kepatuhan pemilahan sampah terdata per Rukun Warga (RW)
+              </p>
+            </div>
           </div>
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-full bg-white dark:bg-slate-800 hover:bg-emerald-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-emerald-700 dark:hover:text-slate-200 flex items-center justify-center border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer shrink-0 z-10"
+            className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:text-slate-200 dark:hover:bg-slate-800 transition cursor-pointer"
+            title="Tutup dialog"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 
         {/* Quick Stats Bar */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 bg-slate-50 dark:bg-slate-850 border-b border-slate-200 dark:border-slate-800 shrink-0">
-          <div className="bg-white dark:bg-slate-800 p-3 rounded-2xl border border-slate-200 dark:border-slate-700">
+          <div className="bg-white dark:bg-slate-800/80 p-3 rounded-xl border border-slate-200 dark:border-slate-700/80">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Rerata Kepatuhan</span>
-            <span className="text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5 block">{avgPatuh}%</span>
+            <span className="text-lg font-bold text-slate-900 dark:text-slate-100 mt-0.5 block">{avgPatuh}%</span>
           </div>
-          <div className="bg-white dark:bg-slate-800 p-3 rounded-2xl border border-emerald-500/30">
+          <div className="bg-white dark:bg-slate-800/80 p-3 rounded-xl border border-slate-200 dark:border-slate-700/80">
             <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block">Patuh Tinggi (≥85%)</span>
-            <span className="text-lg font-black text-emerald-600 dark:text-emerald-400 mt-0.5 block">{highPatuhCount} RW</span>
+            <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 block">{highPatuhCount} RW</span>
           </div>
-          <div className="bg-white dark:bg-slate-800 p-3 rounded-2xl border border-amber-500/30">
+          <div className="bg-white dark:bg-slate-800/80 p-3 rounded-xl border border-slate-200 dark:border-slate-700/80">
             <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider block">Sedang (60-84%)</span>
-            <span className="text-lg font-black text-amber-600 dark:text-amber-400 mt-0.5 block">{medPatuhCount} RW</span>
+            <span className="text-lg font-bold text-amber-600 dark:text-amber-400 mt-0.5 block">{medPatuhCount} RW</span>
           </div>
-          <div className="bg-white dark:bg-slate-800 p-3 rounded-2xl border border-rose-500/30">
+          <div className="bg-white dark:bg-slate-800/80 p-3 rounded-xl border border-slate-200 dark:border-slate-700/80">
             <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider block">Perlu Perhatian (&lt;60%)</span>
-            <span className="text-lg font-black text-rose-600 dark:text-rose-400 mt-0.5 block">{lowPatuhCount} RW</span>
+            <span className="text-lg font-bold text-rose-600 dark:text-rose-400 mt-0.5 block">{lowPatuhCount} RW</span>
           </div>
         </div>
 
@@ -264,12 +326,12 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
 
                     <div className="text-right shrink-0">
                       <span
-                        className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-extrabold shadow-2xs ${
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
                           isHigh
-                            ? "bg-emerald-500/10 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.2)]"
+                            ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20"
                             : isMed
-                            ? "bg-amber-500/10 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border border-amber-500/30 shadow-[0_0_12px_rgba(245,158,11,0.2)]"
-                            : "bg-rose-500/10 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border border-rose-500/30 shadow-[0_0_12px_rgba(244,63,94,0.2)]"
+                            ? "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-500/20"
+                            : "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-500/20"
                         }`}
                       >
                         {isHigh ? (
@@ -286,11 +348,11 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
 
                   {/* Progress Bar */}
                   <div className="space-y-1">
-                    <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden p-0.5 border border-slate-200 dark:border-slate-700">
+                    <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden p-0.5 border border-slate-200 dark:border-slate-700">
                       <div
                         className={`h-full rounded-full transition-all duration-500 ${
                           isHigh
-                            ? "bg-emerald-600 dark:bg-emerald-500"
+                            ? "bg-emerald-500"
                             : isMed
                             ? "bg-amber-500"
                             : "bg-rose-500"
@@ -306,11 +368,11 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
         </div>
 
         {/* Modal Footer */}
-        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex justify-between items-center text-xs text-slate-400 shrink-0">
+        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 flex justify-between items-center text-xs text-slate-500 dark:text-slate-400 shrink-0">
           <span>Menampilkan <strong className="text-slate-900 dark:text-slate-100">{filteredLocations.length}</strong> dari <strong className="text-slate-900 dark:text-slate-100">{locations.length}</strong> Rukun Warga (RW)</span>
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-extrabold rounded-xl transition cursor-pointer border border-slate-300 dark:border-slate-700"
+            className="px-4 py-2 bg-slate-200/80 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold rounded-xl transition cursor-pointer"
           >
             Tutup
           </button>
@@ -1564,7 +1626,15 @@ const Dashboard: React.FC = () => {
   const isSuperOrDev = user?.peran === "SUPER_USER" || user?.peran === "DEVELOPER";
   const canAccessKknSub = isPimpinan || isSuperOrDev;
 
-  const activeSubTab = searchParams.get("tab") || (isPimpinan ? "kkn" : "sampah");
+  const tabParam = searchParams.get("tab");
+  const isKknTab = tabParam === "kkn";
+  const activeSubTab = isKknTab
+    ? "kkn"
+    : tabParam === "tata-kelola-sampah" || tabParam === "sampah"
+    ? "tata-kelola-sampah"
+    : isPimpinan
+    ? "kkn"
+    : "tata-kelola-sampah";
 
   const [stats, setStats] = useState<any>(null);
   const [recentBins, setRecentBins] = useState<any[]>([]);
@@ -1646,6 +1716,23 @@ const Dashboard: React.FC = () => {
   const [showCompositionDetail, setShowCompositionDetail] = useState(false);
   const [selectedBinForDetail, setSelectedBinForDetail] = useState<any | null>(null);
   const [deleteBinConfirm, setDeleteBinConfirm] = useState<any | null>(null);
+  const [hoveredBaselineIndex, setHoveredBaselineIndex] = useState<number | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(new Date());
+
+  const formattedLastUpdated = useMemo(() => {
+    const d = lastUpdated || new Date();
+    const months = [
+      "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+      "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+    ];
+    const day = d.getDate();
+    const month = months[d.getMonth()];
+    const year = d.getFullYear();
+    const hours = String(d.getHours()).padStart(2, "0");
+    const mins = String(d.getMinutes()).padStart(2, "0");
+    return `${day} ${month} ${year} • ${hours}.${mins} WIB`;
+  }, [lastUpdated]);
 
   const handleConfirmDeleteBin = async () => {
     if (!deleteBinConfirm) return;
@@ -1659,6 +1746,164 @@ const Dashboard: React.FC = () => {
       showToast.error(err.response?.data?.message || "Gagal menghapus tempat sampah");
     } finally {
       setDeleteBinConfirm(null);
+    }
+  };
+
+  const effectiveWilayah = isLurahRole
+    ? (userKelurahan ? (userKelurahan.startsWith("Kel.") ? userKelurahan : `Kel. ${userKelurahan}`) : "Kel. Cipaganti")
+    : (selectedWilayah || "Semua Wilayah");
+
+  const fetchStats = async (isSilent = false) => {
+    try {
+      if (!isSilent) setLoading(true);
+      else setRefreshing(true);
+      setError("");
+      const kpiParams: Record<string, any> = { wilayah: effectiveWilayah };
+      if (timeFilter === "custom" && startDate && endDate) {
+        kpiParams.startDate = startDate;
+        kpiParams.endDate = endDate;
+      } else {
+        kpiParams.period = timeFilter;
+      }
+
+      const response = await api.get("/dashboard/kpi", {
+        params: kpiParams,
+      });
+      const kpi = response.data?.data ?? response.data;
+      if (!kpi) throw new Error("KPI kosong");
+
+      const organikKg = Number(kpi.komposisiSampah?.organikKg ?? 0);
+      const anorganikKg = Number(kpi.komposisiSampah?.anorganikKg ?? 0);
+      const residuKg = Number(kpi.komposisiSampah?.residuKg ?? 0);
+      const totalBerat = organikKg + anorganikKg + residuKg;
+      const pctOrganik = totalBerat > 0 ? Math.round((organikKg / totalBerat) * 100) : 0;
+      const pctAnorganik = totalBerat > 0 ? Math.round((anorganikKg / totalBerat) * 100) : 0;
+      const pctResidu = totalBerat > 0 ? 100 - pctOrganik - pctAnorganik : 0;
+
+      const periodTrendLabel =
+        timeFilter === "custom" && startDate && endDate
+          ? `${startDate} s/d ${endDate}`
+          : timeFilter === "semua"
+          ? "Total Keseluruhan"
+          : `Periode ${timeFilter}`;
+
+      setStats({
+        totalPengguna: {
+          value: (kpi.totalUsers ?? 0).toLocaleString("id-ID"),
+          trend: "Terdaftar",
+          trendLabel: periodTrendLabel,
+          trendUp: true,
+        },
+        tempatSampahAktif: {
+          value: (kpi.tempatSampahAktif ?? 0).toLocaleString("id-ID"),
+          trend: "Teraktivasi Warga",
+          trendLabel: "Terdaftar Aktif",
+          trendUp: true,
+        },
+        lokasiTerdaftar: {
+          value: (kpi.lokasiTerdaftar ?? 0).toLocaleString("id-ID"),
+          trend: "Wilayah Terjangkau",
+          trendLabel: "Rukun Warga (RW)",
+          trendUp: true,
+        },
+        setoranHariIni: {
+          value: `${Number(kpi.setoranHariIniKg ?? 0).toFixed(2)} Kg`,
+          trend: "Aktivitas Pemilahan",
+          trendLabel: periodTrendLabel,
+          trendUp: true,
+        },
+        totalPoin: {
+          value:
+            (kpi.totalPoin ?? 0) > 1000
+              ? `${((kpi.totalPoin ?? 0) / 1000).toFixed(2)}K`
+              : Number(kpi.totalPoin ?? 0).toLocaleString("id-ID"),
+          trend: "Akumulasi Poin",
+          trendLabel: "Peringkat Warga",
+          trendUp: true,
+        },
+        jadwalMingguIni: { 
+          value: kpi.jadwalSelesai ?? 0, 
+          trend: `${kpi.jadwalTotal ?? 0}`, 
+          trendLabel: timeFilter === "semua" ? "Total keseluruhan" : `Periode ${timeFilter}`, 
+          trendUp: true 
+        },
+        komposisiSampah: {
+          organik: { berat: `${organikKg.toFixed(2)} Kg`, persentase: `${pctOrganik}%` },
+          anorganik: { berat: `${anorganikKg.toFixed(2)} Kg`, persentase: `${pctAnorganik}%` },
+          residu: { berat: `${residuKg.toFixed(2)} Kg`, persentase: `${pctResidu}%` },
+          pctOrganik,
+          pctAnorganik,
+          pctResidu,
+          organikKg,
+          anorganikKg,
+          residuKg,
+        },
+        activeSessions: kpi.activeSessions ?? null,
+        kepatuhanPemilahan: kpi.kepatuhanPemilahan ?? {
+          rate: 0,
+          compliantCount: 0,
+          nonCompliantCount: 0,
+          totalCount: 0,
+          organikRate: 0,
+          anorganikRate: 0,
+          organikBinTotal: 0,
+          anorganikBinTotal: 0,
+        },
+        baselineComparison: kpi.baselineComparison ?? null,
+      });
+
+      const [binsSettled, trendSettled, locSettled] =
+        await Promise.allSettled([
+          api.get("/bins"),
+          api.get("/dashboard/trend", { params: { weeks, wilayah: effectiveWilayah } }),
+          api.get("/bins/locations"),
+        ]);
+
+      const isDistrictScope =
+        !effectiveWilayah ||
+        effectiveWilayah === "Semua Wilayah" ||
+        effectiveWilayah === "Kecamatan Coblong" ||
+        effectiveWilayah.toLowerCase().includes("kecamatan") ||
+        effectiveWilayah === "Sistem Pusat" ||
+        effectiveWilayah === "PT Makerindo";
+
+      if (binsSettled.status === "fulfilled") {
+        let binsData = binsSettled.value.data?.data ?? binsSettled.value.data ?? [];
+        if (!isDistrictScope) {
+          const cleanWil = effectiveWilayah.replace(/^Kel\.\s*/i, "").trim().toLowerCase();
+          binsData = binsData.filter((b: any) => {
+            const binKelName = (
+              b.kelurahanName ||
+              b.kelurahan?.name ||
+              b.rtRw?.kelurahan?.name ||
+              (typeof b.rtRw === "string" ? b.rtRw : b.rtRw?.name || "") ||
+              b.lokasi ||
+              ""
+            ).toLowerCase();
+            return binKelName.includes(cleanWil);
+          });
+        }
+        const realBins = Array.isArray(binsData) ? binsData.filter((b: any) => !(b.qrCode || b.kode || b.id || "").toUpperCase().includes("TEST")) : [];
+        setRecentBins(realBins.slice(0, 5));
+      } else {
+        setRecentBins([]);
+      }
+
+      if (trendSettled.status === "fulfilled" && trendSettled.value.data?.success) {
+        setTrendData(trendSettled.value.data.data);
+      }
+
+      if (locSettled.status === "fulfilled" && locSettled.value.data?.success) {
+        setLocations(locSettled.value.data.data);
+      }
+
+      setLastUpdated(new Date());
+    } catch (err) {
+      console.error("Dashboard KPI error", err);
+      setError("Gagal memuat data dashboard dari server.");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -1678,159 +1923,8 @@ const Dashboard: React.FC = () => {
       return;
     }
 
-    const effectiveWilayah = isLurahRole
-      ? (userKelurahan ? (userKelurahan.startsWith("Kel.") ? userKelurahan : `Kel. ${userKelurahan}`) : "Kel. Cipaganti")
-      : (selectedWilayah || "Semua Wilayah");
-
-    const fetchStats = async () => {
-      try {
-        setError("");
-        const kpiParams: Record<string, any> = { wilayah: effectiveWilayah };
-        if (timeFilter === "custom" && startDate && endDate) {
-          kpiParams.startDate = startDate;
-          kpiParams.endDate = endDate;
-        } else {
-          kpiParams.period = timeFilter;
-        }
-
-        const response = await api.get("/dashboard/kpi", {
-          params: kpiParams,
-        });
-        const kpi = response.data?.data ?? response.data;
-        if (!kpi) throw new Error("KPI kosong");
-
-        const organikKg = Number(kpi.komposisiSampah?.organikKg ?? 0);
-        const anorganikKg = Number(kpi.komposisiSampah?.anorganikKg ?? 0);
-        const residuKg = Number(kpi.komposisiSampah?.residuKg ?? 0);
-        const totalBerat = organikKg + anorganikKg + residuKg;
-        const pctOrganik = totalBerat > 0 ? Math.round((organikKg / totalBerat) * 100) : 0;
-        const pctAnorganik = totalBerat > 0 ? Math.round((anorganikKg / totalBerat) * 100) : 0;
-        const pctResidu = totalBerat > 0 ? 100 - pctOrganik - pctAnorganik : 0;
-
-        const periodTrendLabel =
-          timeFilter === "custom" && startDate && endDate
-            ? `${startDate} s/d ${endDate}`
-            : timeFilter === "semua"
-            ? "Total Keseluruhan"
-            : `Periode ${timeFilter}`;
-
-        setStats({
-          totalPengguna: {
-            value: (kpi.totalUsers ?? 0).toLocaleString("id-ID"),
-            trend: "Terdaftar",
-            trendLabel: periodTrendLabel,
-            trendUp: true,
-          },
-          tempatSampahAktif: {
-            value: (kpi.tempatSampahAktif ?? 0).toLocaleString("id-ID"),
-            trend: (kpi.alertTempatSampahPenuh ?? 0) > 0 ? `${kpi.alertTempatSampahPenuh} Penuh` : "Kondisi Aman",
-            trendLabel: "Status Operasional",
-            trendUp: (kpi.alertTempatSampahPenuh ?? 0) === 0,
-          },
-          lokasiTerdaftar: {
-            value: (kpi.lokasiTerdaftar ?? 0).toLocaleString("id-ID"),
-            trend: "Wilayah Terjangkau",
-            trendLabel: "Rukun Warga (RW)",
-            trendUp: true,
-          },
-          setoranHariIni: {
-            value: `${Number(kpi.setoranHariIniKg ?? 0).toFixed(2)} Kg`,
-            trend: "Aktivitas Pemilahan",
-            trendLabel: periodTrendLabel,
-            trendUp: true,
-          },
-          totalPoin: {
-            value:
-              (kpi.totalPoin ?? 0) > 1000
-                ? `${((kpi.totalPoin ?? 0) / 1000).toFixed(2)}K`
-                : Number(kpi.totalPoin ?? 0).toLocaleString("id-ID"),
-            trend: "Akumulasi Poin",
-            trendLabel: "Peringkat Warga",
-            trendUp: true,
-          },
-          jadwalMingguIni: { 
-            value: kpi.jadwalSelesai ?? 0, 
-            trend: `${kpi.jadwalTotal ?? 0}`, 
-            trendLabel: timeFilter === "semua" ? "Total keseluruhan" : `Periode ${timeFilter}`, 
-            trendUp: true 
-          },
-          komposisiSampah: {
-            organik: { berat: `${organikKg.toFixed(2)} Kg`, persentase: `${pctOrganik}%` },
-            anorganik: { berat: `${anorganikKg.toFixed(2)} Kg`, persentase: `${pctAnorganik}%` },
-            residu: { berat: `${residuKg.toFixed(2)} Kg`, persentase: `${pctResidu}%` },
-            pctOrganik,
-            pctAnorganik,
-            pctResidu,
-            organikKg,
-            anorganikKg,
-            residuKg,
-          },
-          activeSessions: kpi.activeSessions ?? null,
-          kepatuhanPemilahan: kpi.kepatuhanPemilahan ?? {
-            rate: 0,
-            compliantCount: 0,
-            nonCompliantCount: 0,
-            totalCount: 0,
-            organikRate: 0,
-            anorganikRate: 0,
-            organikBinTotal: 0,
-            anorganikBinTotal: 0,
-          },
-        });
-
-        const [binsSettled, trendSettled, locSettled] =
-          await Promise.allSettled([
-            api.get("/bins"),
-            api.get("/dashboard/trend", { params: { weeks, wilayah: effectiveWilayah } }),
-            api.get("/bins/locations"),
-          ]);
-
-        const isDistrictScope =
-          !effectiveWilayah ||
-          effectiveWilayah === "Semua Wilayah" ||
-          effectiveWilayah === "Kecamatan Coblong" ||
-          effectiveWilayah.toLowerCase().includes("kecamatan") ||
-          effectiveWilayah === "Sistem Pusat" ||
-          effectiveWilayah === "PT Makerindo";
-
-        if (binsSettled.status === "fulfilled") {
-          let binsData = binsSettled.value.data?.data ?? binsSettled.value.data ?? [];
-          if (!isDistrictScope) {
-            const cleanWil = effectiveWilayah.replace(/^Kel\.\s*/i, "").trim().toLowerCase();
-            binsData = binsData.filter((b: any) => {
-              const binKelName = (
-                b.kelurahanName ||
-                b.kelurahan?.name ||
-                b.rtRw?.kelurahan?.name ||
-                (typeof b.rtRw === "string" ? b.rtRw : b.rtRw?.name || "") ||
-                b.lokasi ||
-                ""
-              ).toLowerCase();
-              return binKelName.includes(cleanWil);
-            });
-          }
-          const realBins = Array.isArray(binsData) ? binsData.filter((b: any) => !(b.qrCode || b.kode || b.id || "").toUpperCase().includes("TEST")) : [];
-          setRecentBins(realBins.slice(0, 5));
-        } else {
-          setRecentBins([]);
-        }
-
-        if (trendSettled.status === "fulfilled" && trendSettled.value.data?.success) {
-          setTrendData(trendSettled.value.data.data);
-        }
-
-        if (locSettled.status === "fulfilled" && locSettled.value.data?.success) {
-          setLocations(locSettled.value.data.data);
-        }
-      } catch (err) {
-        console.error("Dashboard KPI error", err);
-        setError("Gagal memuat data dashboard dari server.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchStats();
-    const interval = setInterval(fetchStats, 30_000);
+    fetchStats(false);
+    const interval = setInterval(() => fetchStats(true), 30_000);
     return () => clearInterval(interval);
   }, [user, weeks, timeFilter, startDate, endDate, selectedWilayah]);
 
@@ -1855,30 +1949,32 @@ const Dashboard: React.FC = () => {
   // Khusus Pimpinan (atau Super User/Dev) jika sub-dashboard KKN aktif
   if (canAccessKknSub && activeSubTab === "kkn") {
     return (
-      <div className="space-y-6">
+      <div className="w-full space-y-6 font-sans">
         {/* Executive Sub-Dashboard Tab Switcher */}
-        <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-850 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-750 w-fit">
+        <div className="bg-slate-100/90 dark:bg-slate-800/90 p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 flex items-center gap-1.5 w-fit shadow-2xs">
           <button
+            type="button"
             onClick={() => setSearchParams({ tab: "kkn" })}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
               activeSubTab === "kkn"
-                ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs border border-slate-200/80 dark:border-slate-700"
-                : "text-slate-500 hover:text-slate-800 dark:text-slate-400"
+                ? "bg-white dark:bg-slate-900 text-[#009966] dark:text-emerald-400 shadow-xs border border-slate-200/80 dark:border-slate-700 font-black"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-white/60 dark:hover:bg-slate-700/60"
             }`}
           >
-            <GraduationCap size={15} />
-            <span>Dasbor Eksekutif KKN</span>
+            <GraduationCap size={15} className={activeSubTab === "kkn" ? "text-[#009966] dark:text-emerald-400" : "text-slate-400"} />
+            <span>Kuliah Kerja Nyata</span>
           </button>
           <button
-            onClick={() => setSearchParams({ tab: "sampah" })}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              activeSubTab === "sampah"
-                ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs border border-slate-200/80 dark:border-slate-700"
-                : "text-slate-500 hover:text-slate-800 dark:text-slate-400"
+            type="button"
+            onClick={() => setSearchParams({ tab: "tata-kelola-sampah" })}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
+              activeSubTab !== "kkn"
+                ? "bg-white dark:bg-slate-900 text-[#009966] dark:text-emerald-400 shadow-xs border border-slate-200/80 dark:border-slate-700 font-black"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-white/60 dark:hover:bg-slate-700/60"
             }`}
           >
-            <Recycle size={15} />
-            <span>Tata Kelola Sampah Kota</span>
+            <Recycle size={15} className={activeSubTab !== "kkn" ? "text-[#009966] dark:text-emerald-400" : "text-slate-400"} />
+            <span>Tata Kelola Sampah</span>
           </button>
         </div>
 
@@ -1916,17 +2012,16 @@ const Dashboard: React.FC = () => {
     );
   }
 
-  // Scaling factors for Trend SVG
+  // Scaling factors for Trend SVG (Hanya sampah terpilah: Organik & Anorganik)
   const maxWeightTrend = Math.max(
-    ...trendData.map((d) => Math.max(d.organic || 0, d.inorganic || 0, d.residu || 0, d.weight || 0)),
+    ...trendData.map((d) => Math.max(d.organic || 0, d.inorganic || 0, d.weight || 0)),
     10
   );
   const trendPoints = trendData.map((d, i) => {
     const x = trendData.length > 1 ? 60 + (i / (trendData.length - 1)) * 620 : 350;
     const yOrganic = 280 - ((d.organic || 0) / maxWeightTrend) * 240;
     const yInorganic = 280 - ((d.inorganic || 0) / maxWeightTrend) * 240;
-    const yResidu = 280 - ((d.residu || 0) / maxWeightTrend) * 240;
-    return { x, yOrganic, yInorganic, yResidu, label: d.label, organic: d.organic, inorganic: d.inorganic, residu: d.residu };
+    return { x, yOrganic, yInorganic, label: d.label, organic: d.organic, inorganic: d.inorganic };
   });
 
   const trendOrganicPath = trendPoints
@@ -1934,9 +2029,6 @@ const Dashboard: React.FC = () => {
     .join(" ");
   const trendInorganicPath = trendPoints
     .map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.yInorganic}`)
-    .join(" ");
-  const trendResiduPath = trendPoints
-    .map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.yResidu}`)
     .join(" ");
 
   const trendOrganicAreaPath =
@@ -1947,62 +2039,121 @@ const Dashboard: React.FC = () => {
     trendPoints.length > 0
       ? `${trendInorganicPath} L${trendPoints[trendPoints.length - 1].x},280 L${trendPoints[0].x},280 Z`
       : "";
-  const trendResiduAreaPath =
-    trendPoints.length > 0
-      ? `${trendResiduPath} L${trendPoints[trendPoints.length - 1].x},280 L${trendPoints[0].x},280 Z`
-      : "";
+
+  const kelurahanBaselineList: KelurahanBaselineData[] =
+    stats?.baselineComparison && Array.isArray(stats.baselineComparison) && stats.baselineComparison.length > 0
+      ? stats.baselineComparison
+      : KELURAHAN_BASELINE_DATA;
+
+  const avgBaseline =
+    kelurahanBaselineList.length > 0
+      ? +(kelurahanBaselineList.reduce((acc, curr) => acc + (curr.baselineRate || 0), 0) / kelurahanBaselineList.length).toFixed(1)
+      : 0;
+
+  const validEndlines = kelurahanBaselineList.filter((k) => k.endlineRate > 0);
+  const avgEndline =
+    validEndlines.length > 0
+      ? +(validEndlines.reduce((acc, curr) => acc + (curr.endlineRate || 0), 0) / validEndlines.length).toFixed(1)
+      : 0;
+
+  const avgBaselineActive =
+    validEndlines.length > 0
+      ? +(validEndlines.reduce((acc, curr) => acc + (curr.baselineRate || 0), 0) / validEndlines.length).toFixed(1)
+      : avgBaseline;
+
+  const deltaBaseline = +(avgEndline - avgBaselineActive).toFixed(1);
+
+  const totalCoblongVolumeKg = kelurahanBaselineList.reduce(
+    (acc, curr) => acc + (Number(curr.totalKg) || 0),
+    0
+  );
+
+  const parseKgValue = (val: any, fallback: number): number => {
+    if (typeof val === "number" && !isNaN(val)) return val;
+    if (typeof val === "string") {
+      const match = val.match(/[\d.]+/);
+      if (match) {
+        const num = parseFloat(match[0]);
+        if (!isNaN(num)) return num;
+      }
+    }
+    return fallback;
+  };
+
+  const rawOrg = parseKgValue(stats?.komposisiSampah?.organikKg ?? stats?.komposisiSampah?.organik?.berat, 0);
+  const rawAnorg = parseKgValue(stats?.komposisiSampah?.anorganikKg ?? stats?.komposisiSampah?.anorganik?.berat, 0);
+  const rawResidu = parseKgValue(stats?.komposisiSampah?.residuKg ?? stats?.komposisiSampah?.residu?.berat, 0);
+  const totalTerpilah = rawOrg + rawAnorg;
 
   void trendInorganicAreaPath;
-  void trendResiduAreaPath;
   void KpiCard;
 
   return (
-    <div className="space-y-6 pb-12 text-slate-800 dark:text-slate-100 font-sans relative">
+    <div className="w-full space-y-6 pb-12 text-slate-800 dark:text-slate-100 font-sans relative">
       {canAccessKknSub && (
-        <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-850 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-750 w-fit">
+        <div className="bg-slate-100/90 dark:bg-slate-800/90 p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 flex items-center gap-1.5 w-fit shadow-2xs">
           <button
+            type="button"
             onClick={() => setSearchParams({ tab: "kkn" })}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
               activeSubTab === "kkn"
-                ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs border border-slate-200/80 dark:border-slate-700"
-                : "text-slate-500 hover:text-slate-800 dark:text-slate-400"
+                ? "bg-white dark:bg-slate-900 text-[#009966] dark:text-emerald-400 shadow-xs border border-slate-200/80 dark:border-slate-700 font-black"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-white/60 dark:hover:bg-slate-700/60"
             }`}
           >
-            <GraduationCap size={15} />
-            <span>Dasbor Eksekutif KKN</span>
+            <GraduationCap size={15} className={activeSubTab === "kkn" ? "text-[#009966] dark:text-emerald-400" : "text-slate-400"} />
+            <span>Kuliah Kerja Nyata</span>
           </button>
           <button
-            onClick={() => setSearchParams({ tab: "sampah" })}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              activeSubTab === "sampah"
-                ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs border border-slate-200/80 dark:border-slate-700"
-                : "text-slate-500 hover:text-slate-800 dark:text-slate-400"
+            type="button"
+            onClick={() => setSearchParams({ tab: "tata-kelola-sampah" })}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
+              activeSubTab !== "kkn"
+                ? "bg-white dark:bg-slate-900 text-[#009966] dark:text-emerald-400 shadow-xs border border-slate-200/80 dark:border-slate-700 font-black"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-white/60 dark:hover:bg-slate-700/60"
             }`}
           >
-            <Recycle size={15} />
-            <span>Tata Kelola Sampah Kota</span>
+            <Recycle size={15} className={activeSubTab !== "kkn" ? "text-[#009966] dark:text-emerald-400" : "text-slate-400"} />
+            <span>Tata Kelola Sampah</span>
           </button>
         </div>
       )}
 
-      {/* 1. Header Bar (Clean Multi-Tier Executive UI) */}
+      {/* 1. Header Bar (Clean Multi-Tier Executive UI - Konsisten dengan Analisis Sistem) */}
       <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-4">
         {/* Top Tier: Title & Live Badge */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="space-y-1">
-            <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
-              Dasbor Monitoring BERSEKA
-            </h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-              Pusat komando pemantauan pemilahan sampah cerdas, sektor kebersihan &amp; residu Rukun Warga (RW)
-            </p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-[#e5f7ed] dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 flex items-center justify-center shrink-0 border border-[#009966]/15 dark:border-emerald-700/30 shadow-2xs">
+              <Recycle size={24} />
+            </div>
+            <div className="space-y-0.5">
+              <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight leading-tight">
+                Tata Kelola Sampah
+              </h1>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                Dasbor pusat komando pemantauan pemilahan sampah cerdas, sektor kebersihan, dan pengelolaan residu wilayah percontohan Rukun Warga (RW).
+              </p>
+            </div>
           </div>
 
-          <div className="self-start sm:self-center">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-700/40 shadow-2xs">
-              <span className="w-2 h-2 rounded-full bg-[#009966] animate-pulse" />
-              Real-Time Monitoring
-            </span>
+          <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-center flex-wrap">
+            <div className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-700 text-xs text-slate-500 dark:text-slate-400 font-semibold shadow-2xs shrink-0">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse inline-block" />
+              <span>Terakhir diperbarui: {formattedLastUpdated}</span>
+              {refreshing && (
+                <RefreshCw size={12} className="animate-spin text-emerald-600 ml-1" />
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => fetchStats(false)}
+              disabled={refreshing || loading}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[#009966] hover:bg-[#008855] active:scale-95 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all cursor-pointer disabled:opacity-50"
+            >
+              <RefreshCw size={14} className={refreshing || loading ? "animate-spin" : ""} />
+              <span>Perbarui Data</span>
+            </button>
           </div>
         </div>
 
@@ -2115,7 +2266,7 @@ const Dashboard: React.FC = () => {
         <KpiCard
           iconName="delete"
           color="emerald"
-          label="Tempat Sampah Aktif"
+          label="Tempat Sampah Teraktivasi"
           value={stats?.tempatSampahAktif?.value}
           trend={stats?.tempatSampahAktif?.trend}
           trendLabel={stats?.tempatSampahAktif?.trendLabel}
@@ -2163,25 +2314,27 @@ const Dashboard: React.FC = () => {
 
       {/* 3. Charts & Komposisi Grid (2 Columns, 6 cols each) */}
       <div className="px-1 pt-2 text-[10.5px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">
-        Analitik Tren Pemilahan &amp; Komposisi Sampah
+        Analisis Tren Pemilahan dan Komposisi Sampah
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 relative z-10">
         {/* Left Column (6 cols): Trend Pemilahan Chart */}
         <div className="lg:col-span-6 bg-white dark:bg-slate-900 shadow-xs rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 relative overflow-hidden flex flex-col justify-between space-y-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-            <div className="space-y-1">
-              <h4 className="font-bold text-[18px] text-slate-900 dark:text-slate-100">
-                Grafik Tren Pemilahan Sampah (Real-Time)
-              </h4>
+            <div className="space-y-1.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <h4 className="font-bold text-[18px] text-slate-900 dark:text-slate-100">
+                  Grafik Tren Pemilahan Sampah (Waktu Nyata)
+                </h4>
+                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40">
+                  Terpilah: {(rawOrg + rawAnorg).toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Kg
+                </span>
+              </div>
               <div className="flex gap-4 text-[11px] font-bold">
                 <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
                   <span className="w-2.5 h-2.5 rounded-full bg-[#34d399] shadow-[0_0_8px_#34d399]"></span> Organik
                 </span>
                 <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
                   <span className="w-2.5 h-2.5 rounded-full bg-[#fbbf24] shadow-[0_0_8px_#fbbf24]"></span> Anorganik
-                </span>
-                <span className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#fb7185] shadow-[0_0_8px_#fb7185]"></span> Residu
                 </span>
               </div>
             </div>
@@ -2213,10 +2366,6 @@ const Dashboard: React.FC = () => {
                     <stop offset="0%" stopColor="#fbbf24" stopOpacity="0.4" />
                     <stop offset="100%" stopColor="#fbbf24" stopOpacity="0.0" />
                   </linearGradient>
-                  <linearGradient id="residuGradDark" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#fb7185" stopOpacity="0.4" />
-                    <stop offset="100%" stopColor="#fb7185" stopOpacity="0.0" />
-                  </linearGradient>
                 </defs>
 
                 <text x="10" y="20" fill="#94a3b8" fontSize="10" fontWeight="bold">
@@ -2245,11 +2394,9 @@ const Dashboard: React.FC = () => {
                 <line x1="60" y1="40" x2="60" y2="280" stroke="#475569" strokeWidth="1.5" />
                 <path d={trendOrganicAreaPath} fill="url(#orgGradDark)" />
                 <path d={trendInorganicAreaPath} fill="url(#inorgGradDark)" />
-                <path d={trendResiduAreaPath} fill="url(#residuGradDark)" />
 
                 <path d={trendOrganicPath} fill="none" stroke="#34d399" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
                 <path d={trendInorganicPath} fill="none" stroke="#fbbf24" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                <path d={trendResiduPath} fill="none" stroke="#fb7185" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
 
                 {trendPoints.map((p, i) => (
                   <g 
@@ -2262,7 +2409,6 @@ const Dashboard: React.FC = () => {
 
                     <circle cx={p.x} cy={p.yOrganic} r={hoveredTrendIndex === i ? 6 : 4} fill="#34d399" stroke="#ffffff" strokeWidth="2" />
                     <circle cx={p.x} cy={p.yInorganic} r={hoveredTrendIndex === i ? 6 : 4} fill="#fbbf24" stroke="#ffffff" strokeWidth="2" />
-                    <circle cx={p.x} cy={p.yResidu} r={hoveredTrendIndex === i ? 6 : 4} fill="#fb7185" stroke="#ffffff" strokeWidth="2" />
 
                     <text
                       x={p.x}
@@ -2280,7 +2426,7 @@ const Dashboard: React.FC = () => {
                 {/* Floating Hover Tooltip */}
                 {hoveredTrendIndex !== null && trendPoints[hoveredTrendIndex] && (
                   <g transform={`translate(${Math.min(Math.max(trendPoints[hoveredTrendIndex].x - 75, 60), 530)}, ${Math.max(trendPoints[hoveredTrendIndex].yOrganic - 85, 25)})`}>
-                    <rect width="150" height="72" rx="10" fill="#0f172a" stroke="#10b981" strokeWidth="1" opacity="0.95" />
+                    <rect width="150" height="58" rx="10" fill="#0f172a" stroke="#10b981" strokeWidth="1" opacity="0.95" />
                     <text x="75" y="18" textAnchor="middle" fill="#ffffff" fontSize="10" fontWeight="black">
                       {trendPoints[hoveredTrendIndex].label}
                     </text>
@@ -2289,9 +2435,6 @@ const Dashboard: React.FC = () => {
                     </text>
                     <text x="12" y="49" fill="#fbbf24" fontSize="9.5" fontWeight="bold">
                       ♻️ Anorganik: {trendPoints[hoveredTrendIndex].inorganic} kg
-                    </text>
-                    <text x="12" y="63" fill="#fb7185" fontSize="9.5" fontWeight="bold">
-                      🗑️ Residu: {trendPoints[hoveredTrendIndex].residu} kg
                     </text>
                   </g>
                 )}
@@ -2310,7 +2453,7 @@ const Dashboard: React.FC = () => {
             <div>
               <h4 className="font-bold text-[18px] text-slate-900 dark:text-slate-100">Komposisi Sampah</h4>
               <p className="text-[11px] text-slate-400 dark:text-slate-400 font-medium mt-0.5">
-                Akumulasi Real-time Hasil Pemilahan &amp; Residu
+                Akumulasi Waktu Nyata Hasil Pemilahan dan Residu
               </p>
             </div>
             <span className="text-[10px] font-extrabold bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/40 px-3 py-1 rounded-full uppercase tracking-wider">
@@ -2319,41 +2462,19 @@ const Dashboard: React.FC = () => {
           </div>
 
           {(() => {
-            const parseKgValue = (val: any, fallback: number): number => {
-              if (typeof val === "number" && !isNaN(val)) return val;
-              if (typeof val === "string") {
-                const match = val.match(/[\d.]+/);
-                if (match) {
-                  const num = parseFloat(match[0]);
-                  if (!isNaN(num)) return num;
-                }
-              }
-              return fallback;
-            };
-
-            const rawOrg = parseKgValue(stats?.komposisiSampah?.organikKg ?? stats?.komposisiSampah?.organik?.berat, 0);
-            const rawAnorg = parseKgValue(stats?.komposisiSampah?.anorganikKg ?? stats?.komposisiSampah?.anorganik?.berat, 0);
-            const rawResidu = parseKgValue(stats?.komposisiSampah?.residuKg ?? stats?.komposisiSampah?.residu?.berat, 0);
-
-            const totalKg = rawOrg + rawAnorg + rawResidu;
+            const totalKg = rawOrg + rawAnorg;
             const pctOrg = totalKg > 0 ? Math.round((rawOrg / totalKg) * 100) : 0;
-            const pctAnorg = totalKg > 0 ? Math.round((rawAnorg / totalKg) * 100) : 0;
-            const pctResidu = totalKg > 0 ? Math.max(0, 100 - pctOrg - pctAnorg) : 0;
+            const pctAnorg = totalKg > 0 ? 100 - pctOrg : 0;
 
             const c = 2 * Math.PI * 50;
             const valOrg = (pctOrg / 100) * c;
             const valAnorg = (pctAnorg / 100) * c;
-            const valResidu = (pctResidu / 100) * c;
 
-            let dominantLabel = "Residu";
-            let dominantPct = pctResidu;
-            let dominantColor = "text-rose-600 dark:text-rose-400";
+            let dominantLabel = "Organik";
+            let dominantPct = pctOrg;
+            let dominantColor = "text-emerald-600 dark:text-emerald-400";
 
-            if (pctOrg >= pctAnorg && pctOrg >= pctResidu) {
-              dominantLabel = "Organik";
-              dominantPct = pctOrg;
-              dominantColor = "text-emerald-600 dark:text-emerald-400";
-            } else if (pctAnorg >= pctOrg && pctAnorg >= pctResidu) {
+            if (pctAnorg > pctOrg) {
               dominantLabel = "Anorganik";
               dominantPct = pctAnorg;
               dominantColor = "text-amber-600 dark:text-amber-400";
@@ -2390,19 +2511,6 @@ const Dashboard: React.FC = () => {
                         className="transition-all duration-500 hover:stroke-[15]"
                       />
                     )}
-                    {pctResidu > 0 && (
-                      <circle
-                        cx="80"
-                        cy="80"
-                        r="50"
-                        fill="transparent"
-                        stroke="#fb7185"
-                        strokeWidth="12"
-                        strokeDasharray={`${valResidu} ${c}`}
-                        strokeDashoffset={-(valOrg + valAnorg)}
-                        className="transition-all duration-500 hover:stroke-[15]"
-                      />
-                    )}
                   </svg>
                   <div className="absolute text-center flex flex-col items-center justify-center">
                     <span className={`block text-2xl font-black leading-none ${dominantColor}`}>
@@ -2412,9 +2520,26 @@ const Dashboard: React.FC = () => {
                       {dominantLabel}
                     </span>
                     <span className="text-[9px] text-slate-500 dark:text-slate-400 font-bold block mt-0.5 font-mono">
-                      {totalKg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Kg Total
+                      {totalKg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Kg Terpilah
                     </span>
                   </div>
+                </div>
+
+                {/* Sub-indikator Komposisi Sampah Terpilah */}
+                <div className="w-full flex items-center justify-between text-[10px] font-bold px-3 py-1.5 bg-slate-100 dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-700/60 text-slate-600 dark:text-slate-300">
+                  <span className="flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    Organik: {rawOrg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Kg
+                  </span>
+                  <span className="text-slate-300 dark:text-slate-600">+</span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                    Anorganik: {rawAnorg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Kg
+                  </span>
+                  <span className="text-slate-300 dark:text-slate-600">=</span>
+                  <span className="font-extrabold text-slate-800 dark:text-slate-100 font-mono">
+                    {totalKg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Kg
+                  </span>
                 </div>
 
                 <div className="mt-3 w-full space-y-3 bg-slate-50 dark:bg-slate-800/80 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700/80">
@@ -2455,25 +2580,6 @@ const Dashboard: React.FC = () => {
                       />
                     </div>
                   </div>
-
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center text-xs">
-                      <div className="flex items-center gap-1.5 font-extrabold text-slate-600 dark:text-slate-300">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#fb7185] shadow-[0_0_8px_#fb7185] inline-block"></span>
-                        Residu
-                      </div>
-                      <div className="font-mono font-bold text-slate-700 dark:text-slate-200">
-                        {rawResidu.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Kg{" "}
-                        <span className="text-rose-600 dark:text-rose-400 font-extrabold ml-1">({pctResidu}%)</span>
-                      </div>
-                    </div>
-                    <div className="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-[#fb7185] rounded-full transition-all duration-500"
-                        style={{ width: `${pctResidu}%` }}
-                      />
-                    </div>
-                  </div>
                 </div>
               </div>
             );
@@ -2502,7 +2608,7 @@ const Dashboard: React.FC = () => {
               <h4 className="font-extrabold text-[18px] text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
                 Tingkat Kepatuhan Pemilahan Sampah
                 <span className="text-[10px] font-black bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/40 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                  Real-Time AI Match
+                  Pencocokan AI Waktu Nyata
                 </span>
               </h4>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">
@@ -2662,275 +2768,545 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* 3.6 Seksi Komparasi Baseline Survey vs Endline Aktual (Agregat Kelurahan Real) */}
+      <div className="px-1 pt-2 text-[10.5px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider flex items-center justify-between">
+        <span>Evaluasi Capaian: Baseline vs Kepatuhan Pemilahan Real (per Kelurahan)</span>
+        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase">
+          Agregat 6 Kelurahan Coblong
+        </span>
+      </div>
+
+      <div className="bg-white dark:bg-slate-900 shadow-xs rounded-2xl p-6 border border-slate-200 dark:border-slate-800 relative z-10 space-y-6">
+        {/* Header Seksi & KPI Ringkasan 4 Kolom Simetris */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5">
+          <div className="space-y-1 max-w-xl">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="p-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/40">
+                <LineChart size={18} />
+              </span>
+              <h3 className="font-extrabold text-[17px] text-slate-900 dark:text-slate-100 tracking-tight">
+                Grafik Perbandingan: Survei Baseline vs Kepatuhan Real per Kelurahan
+              </h3>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              Perbandingan tingkat pemilahan sampah awal sebelum pendampingan (Survei Baseline) dengan capaian kepatuhan pemilahan aktual real-time di 6 Kelurahan Kecamatan Coblong.
+            </p>
+            <div className="flex items-center gap-2 pt-1 text-[11px] text-slate-400 font-semibold">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Terakhir diperbarui: {formattedLastUpdated}</span>
+              <button
+                type="button"
+                onClick={() => fetchStats(false)}
+                disabled={refreshing || loading}
+                className="ml-2 inline-flex items-center gap-1 text-[#009966] dark:text-emerald-400 hover:underline font-bold cursor-pointer disabled:opacity-50"
+              >
+                <RefreshCw size={11} className={refreshing || loading ? "animate-spin" : ""} />
+                <span>Perbarui Data</span>
+              </button>
+            </div>
+          </div>
+
+          {/* 4 Kartu Mini Ringkasan Simetris (Termasuk Total Volume Sampah Coblong) */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 shrink-0 w-full lg:w-auto">
+            <div className="bg-slate-50 dark:bg-slate-800/80 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 text-center min-w-[95px]">
+              <span className="text-[10px] text-slate-400 font-bold uppercase block tracking-wider">
+                Rata-rata Baseline
+              </span>
+              <span className="text-base font-black text-slate-600 dark:text-slate-300">
+                {avgBaseline.toLocaleString("id-ID")}%
+              </span>
+              <span className="text-[9.5px] text-slate-400 block mt-0.5">Survei Lapangan</span>
+            </div>
+
+            <div className="bg-emerald-50/70 dark:bg-emerald-950/40 p-3 rounded-2xl border border-emerald-200/70 dark:border-emerald-700/40 text-center min-w-[95px]">
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase block tracking-wider">
+                Kepatuhan Real
+              </span>
+              <span className="text-base font-black text-emerald-700 dark:text-emerald-300">
+                {avgEndline.toLocaleString("id-ID")}%
+              </span>
+              <span className="text-[9.5px] text-emerald-600 dark:text-emerald-400 block mt-0.5">Real-Time Terdata</span>
+            </div>
+
+            <div className="bg-teal-50/70 dark:bg-teal-950/40 p-3 rounded-2xl border border-teal-200/70 dark:border-teal-700/40 text-center min-w-[95px]">
+              <span className="text-[10px] text-teal-600 dark:text-teal-400 font-bold uppercase block tracking-wider">
+                Kenaikan (Δ)
+              </span>
+              <span className="text-base font-black text-teal-700 dark:text-teal-300 flex items-center justify-center gap-0.5">
+                <TrendingUp size={13} /> {deltaBaseline >= 0 ? `+${deltaBaseline.toLocaleString("id-ID")}%` : `${deltaBaseline.toLocaleString("id-ID")}%`}
+              </span>
+              <span className="text-[9.5px] text-teal-600 dark:text-teal-400 block mt-0.5">Peningkatan Positif</span>
+            </div>
+
+            <div className="bg-blue-50/70 dark:bg-blue-950/40 p-3 rounded-2xl border border-blue-200/70 dark:border-blue-700/40 text-center min-w-[95px]">
+              <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold uppercase block tracking-wider">
+                Total Volume
+              </span>
+              <span className="text-base font-black text-blue-700 dark:text-blue-300">
+                {totalCoblongVolumeKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} <span className="text-xs font-bold">Kg</span>
+              </span>
+              <span className="text-[9.5px] text-blue-600 dark:text-blue-400 block mt-0.5">Kecamatan Coblong</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Legenda Grafik */}
+        <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className="w-3.5 h-3.5 rounded bg-slate-400 dark:bg-slate-500 shadow-2xs" />
+              <span className="font-bold text-slate-600 dark:text-slate-300">
+                Survei Baseline (Awal)
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-3.5 h-3.5 rounded bg-emerald-500 shadow-2xs" />
+              <span className="font-bold text-emerald-700 dark:text-emerald-400">
+                Kepatuhan Real / Endline (Waktu Nyata)
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-3.5 h-3.5 rounded-full bg-blue-100 dark:bg-blue-950/60 border border-blue-300 dark:border-blue-700 flex items-center justify-center text-[9px] font-black text-blue-700 dark:text-blue-300">
+                Kg
+              </span>
+              <span className="font-bold text-blue-700 dark:text-blue-400">
+                Volume Sampah Terpilah (Kg)
+              </span>
+            </div>
+          </div>
+          <span className="text-[11px] text-slate-400 italic">
+            *Dua bar chart per kelurahan: Kiri = Baseline, Kanan = Kepatuhan Real | Badge = Total Volume Sampah
+          </span>
+        </div>
+
+        {/* Kanvas Grafik Dual Bar Chart dengan Padding Atas Luas (pt-40) agar Tooltip Hover Utuh Tidak Terpotong */}
+        <div className="w-full bg-slate-50/50 dark:bg-slate-800/40 rounded-2xl p-5 pt-40 border border-slate-100 dark:border-slate-800/80 overflow-x-auto">
+          <div className="min-w-[720px] space-y-2">
+            <div className="flex gap-3 items-end">
+              {/* Sumbu Y (0% - 100%) */}
+              <div className="w-12 shrink-0 flex flex-col justify-between text-[10px] text-slate-400 dark:text-slate-500 font-extrabold pr-2 border-r border-slate-200 dark:border-slate-800 h-56 text-right select-none pb-4">
+                <span>100%</span>
+                <span>80%</span>
+                <span>60%</span>
+                <span>40%</span>
+                <span>20%</span>
+                <span>0%</span>
+              </div>
+
+              {/* Grid Bar untuk 6 Kelurahan */}
+              <div className="flex-1 grid grid-cols-6 gap-3 sm:gap-4 items-end h-56 border-b border-slate-200 dark:border-slate-800 pb-1 relative">
+                {kelurahanBaselineList.map((item, idx) => {
+                  const bRate = Math.min(100, Math.max(0, item.baselineRate || 0));
+                  const eRate = Math.min(100, Math.max(0, item.endlineRate || 0));
+                  const isHovered = hoveredBaselineIndex === idx;
+                  const itemKg = Number(item.totalKg || 0);
+
+                  return (
+                    <div
+                      key={item.id}
+                      className="flex flex-col items-center h-full justify-end group relative cursor-pointer"
+                      onMouseEnter={() => setHoveredBaselineIndex(idx)}
+                      onMouseLeave={() => setHoveredBaselineIndex(null)}
+                    >
+                      {/* Tooltip Hover Popover (Posisi Aman dengan Caret Panah) */}
+                      {isHovered && (
+                        <div className="absolute bottom-[calc(100%+14px)] left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 dark:bg-slate-950/95 backdrop-blur-md text-white rounded-xl p-3 shadow-2xl border border-emerald-500/40 text-[11px] w-52 pointer-events-none transition-all duration-200 animate-in fade-in zoom-in-95">
+                          {/* Panah Indikator Bawah (Caret) */}
+                          <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-slate-900 dark:bg-slate-950 border-r border-b border-emerald-500/40 rotate-45" />
+
+                          <div className="flex items-center justify-between border-b border-slate-800 pb-1.5 mb-2">
+                            <span className="font-black text-emerald-400 text-xs truncate">Kel. {item.kelurahan}</span>
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 font-bold border border-emerald-500/20">
+                              Coblong
+                            </span>
+                          </div>
+
+                          <div className="space-y-1">
+                            <div className="flex justify-between items-center text-slate-300">
+                              <span className="flex items-center gap-1.5 text-slate-400">
+                                <span className="w-2 h-2 rounded-xs bg-slate-400 inline-block" />
+                                Baseline:
+                              </span>
+                              <span className="font-bold text-slate-200">{bRate}%</span>
+                            </div>
+
+                            <div className="flex justify-between items-center text-slate-300">
+                              <span className="flex items-center gap-1.5 text-emerald-400">
+                                <span className="w-2 h-2 rounded-xs bg-emerald-500 inline-block" />
+                                Kepatuhan Real:
+                              </span>
+                              <span className="font-black text-emerald-400">{eRate}%</span>
+                            </div>
+
+                            <div className="flex justify-between items-center text-blue-300 pt-0.5">
+                              <span className="flex items-center gap-1.5 text-blue-400">
+                                <span className="w-2 h-2 rounded-xs bg-blue-500 inline-block" />
+                                Volume Terdata:
+                              </span>
+                              <span className="font-bold text-blue-300">
+                                {itemKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} Kg
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="mt-2 pt-1.5 border-t border-slate-800 flex justify-between items-center text-[10px] font-bold">
+                            <span className="text-slate-400">Delta Capaian:</span>
+                            <span
+                              className={`px-1.5 py-0.5 rounded text-[10px] font-extrabold ${
+                                eRate >= bRate
+                                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                                  : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                              }`}
+                            >
+                              {eRate >= bRate ? "+" : ""}
+                              {(eRate - bRate).toFixed(1)}%
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Sepasang Bar (Kiri: Baseline, Kanan: Real) */}
+                      <div className="w-full flex items-end justify-center gap-1.5 sm:gap-2 h-[85%] pb-1">
+                        {/* Bar 1: Baseline (Kiri - Slate) */}
+                        <div className="flex-1 flex flex-col items-center justify-end h-full">
+                          <span className="text-[10px] font-extrabold text-slate-500 dark:text-slate-400 mb-1">
+                            {bRate}%
+                          </span>
+                          <div className="w-full bg-slate-200/70 dark:bg-slate-700/50 rounded-t-lg overflow-hidden h-full flex items-end">
+                            <div
+                              className="w-full bg-gradient-to-t from-slate-500 to-slate-400 dark:from-slate-600 dark:to-slate-400 rounded-t-lg transition-all duration-500 shadow-2xs group-hover:brightness-110"
+                              style={{ height: `${bRate}%` }}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Bar 2: Real / Endline (Kanan - Emerald) */}
+                        <div className="flex-1 flex flex-col items-center justify-end h-full">
+                          <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 mb-1">
+                            {eRate}%
+                          </span>
+                          <div className="w-full bg-emerald-100/60 dark:bg-emerald-950/40 rounded-t-lg overflow-hidden h-full flex items-end">
+                            <div
+                              className="w-full bg-gradient-to-t from-emerald-600 to-emerald-400 rounded-t-lg transition-all duration-500 shadow-2xs group-hover:brightness-110"
+                              style={{ height: `${eRate}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Label Nama Kelurahan Sumbu X & Badge Volume Terdata */}
+            <div className="flex gap-3">
+              <div className="w-12 shrink-0" />
+              <div className="flex-1 grid grid-cols-6 gap-3 sm:gap-4 text-center pt-1">
+                {kelurahanBaselineList.map((item) => {
+                  const itemKg = Number(item.totalKg || 0);
+                  return (
+                    <div key={item.id} className="space-y-1">
+                      <span className="text-[10.5px] sm:text-xs font-black text-slate-700 dark:text-slate-300 block truncate" title={item.kelurahan}>
+                        {item.kelurahan}
+                      </span>
+                      {/* Badge Volume Sampah Riil */}
+                      <div className="inline-flex items-center justify-center gap-1 px-1.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/50 border border-blue-200/80 dark:border-blue-800/50 text-[9.5px] font-extrabold text-blue-700 dark:text-blue-300 w-full truncate">
+                        <span>{itemKg > 0 ? `${itemKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} Kg` : "0 Kg"}</span>
+                      </div>
+                      <div className="flex items-center justify-center gap-1 text-[9px] text-slate-400 font-bold">
+                        <span className="text-slate-500">Base</span>
+                        <span>vs</span>
+                        <span className="text-emerald-600 dark:text-emerald-400">Real</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Card Penjelasan Rumus & Metodologi Relasi Data Real Database */}
+        <div className="bg-emerald-50/40 dark:bg-emerald-950/20 rounded-2xl p-4 sm:p-5 border border-emerald-200/70 dark:border-emerald-800/40">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="space-y-1.5 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <h5 className="font-extrabold text-xs sm:text-[13px] text-emerald-900 dark:text-emerald-200">
+                  Rumus & Metodologi Perhitungan Kepatuhan Real Waktu Nyata
+                </h5>
+              </div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                Data agregat kepatuhan per kelurahan bersumber langsung dari catatan riil transaksi warga pada tabel database <code className="px-1 py-0.5 rounded bg-emerald-100/70 dark:bg-emerald-900/40 text-[10px] font-bold text-emerald-800 dark:text-emerald-300">SetoranOtomatis</code> yang berelasi ke <code className="px-1 py-0.5 rounded bg-emerald-100/70 dark:bg-emerald-900/40 text-[10px] font-bold text-emerald-800 dark:text-emerald-300">Bin → RW → Kelurahan</code>.
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 shrink-0 text-xs">
+              <div className="bg-white/80 dark:bg-slate-900/80 p-2.5 rounded-xl border border-emerald-200/60 dark:border-emerald-800/40">
+                <span className="text-[10px] font-bold text-slate-400 block uppercase">Formula Kepatuhan Real</span>
+                <span className="font-black text-emerald-700 dark:text-emerald-300 text-[11px] block mt-0.5">
+                  (Σ Setoran Patuh AI ÷ Total Setoran) × 100%
+                </span>
+                <span className="text-[9px] text-slate-500 dark:text-slate-400 block">Kategori AI sesuai jenis tempat sampah</span>
+              </div>
+              <div className="bg-white/80 dark:bg-slate-900/80 p-2.5 rounded-xl border border-emerald-200/60 dark:border-emerald-800/40">
+                <span className="text-[10px] font-bold text-slate-400 block uppercase">Formula Delta Capaian (Δ)</span>
+                <span className="font-black text-teal-700 dark:text-teal-300 text-[11px] block mt-0.5">
+                  Δ = Kepatuhan Real (%) − Survei Baseline (%)
+                </span>
+                <span className="text-[9px] text-slate-500 dark:text-slate-400 block">Mengukur kenaikan pasca intervensi Berseka</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Tabel Rekapitulasi Data Kelurahan Lengkap dengan Volume Sampah */}
+        <div className="space-y-3 pt-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h4 className="font-extrabold text-[15px] text-slate-900 dark:text-slate-100 tracking-tight">
+                Rekapitulasi Kepatuhan Pemilahan & Volume Sampah per Kelurahan
+              </h4>
+              <p className="text-[11.5px] text-slate-500 dark:text-slate-400">
+                Agregat evaluasi perbandingan survei baseline, real-time kepatuhan AI, serta total volume sampah terpilah di 6 kelurahan Kecamatan Coblong.
+              </p>
+            </div>
+            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl self-start sm:self-auto border border-slate-200 dark:border-slate-700">
+              Total Wilayah: <span className="font-extrabold text-slate-800 dark:text-slate-200">{kelurahanBaselineList.length} Kelurahan</span>
+            </span>
+          </div>
+
+          <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-100/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 font-extrabold border-b border-slate-200 dark:border-slate-800">
+                  <th className="py-3 px-4 text-center w-12">No</th>
+                  <th className="py-3 px-4">Kelurahan</th>
+                  <th className="py-3 px-4 text-center bg-slate-200/50 dark:bg-slate-700/40">Survei Baseline</th>
+                  <th className="py-3 px-4 text-center bg-emerald-50/60 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300">Kepatuhan Real</th>
+                  <th className="py-3 px-4 text-center">Peningkatan (Δ)</th>
+                  <th className="py-3 px-4 text-center bg-blue-50/60 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300">Total Volume (Kg)</th>
+                  <th className="py-3 px-4 text-center">Status Capaian</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200/70 dark:divide-slate-800">
+                {kelurahanBaselineList.map((item, idx) => {
+                  const delta = +(item.endlineRate - item.baselineRate).toFixed(1);
+                  const itemKg = Number(item.totalKg || 0);
+                  return (
+                    <tr
+                      key={item.id}
+                      className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors"
+                    >
+                      <td className="py-3 px-4 text-center text-slate-400 font-medium">{idx + 1}</td>
+                      <td className="py-3 px-4 font-bold text-slate-800 dark:text-slate-200">
+                        Kelurahan {item.kelurahan}
+                      </td>
+                      <td className="py-3 px-4 text-center font-bold text-slate-600 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-800/30">
+                        {item.baselineRate}%
+                      </td>
+                      <td className="py-3 px-4 text-center font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-950/20">
+                        {item.endlineRate > 0 ? `${item.endlineRate}%` : <span className="text-slate-400 font-normal italic text-[11px]">Belum Terdata</span>}
+                      </td>
+                      <td className="py-3 px-4 text-center font-extrabold text-teal-600 dark:text-teal-400">
+                        {item.endlineRate > 0 ? (delta >= 0 ? `+${delta}%` : `${delta}%`) : <span className="text-slate-400 font-normal text-[11px]">-</span>}
+                      </td>
+                      <td className="py-3 px-4 text-center font-black text-blue-600 dark:text-blue-400 bg-blue-50/20 dark:bg-blue-950/10">
+                        {itemKg > 0 ? `${itemKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} Kg` : <span className="text-slate-400 font-normal text-[11px]">0.00 Kg</span>}
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold ${
+                            item.status === "Terverifikasi Real"
+                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/50"
+                              : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
+                          }`}
+                        >
+                          <CheckCircle2 size={11} /> {item.status === "Terverifikasi Real" ? "Terverifikasi Real" : "Belum Ada Setoran"}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       {/* === Monitoring Leaderboard Section === */}
       <div className="w-full relative z-10">
         <LeaderboardWidget mode="sampah" />
       </div>
 
-      {/* === Central Operational Lists & Activity === */}
-      <div className="px-1 pt-2 text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">
-        {isPimpinan ? "Sesi Pengguna Sistem" : "Data Operasional & Sesi Pengguna"}
-      </div>
-      <div className="grid grid-cols-12 gap-6 relative z-10">
-        {/* Data Tempat Sampah Terbaru (Dihapus dari Dasbor Pimpinan - Dialihkan ke menu Tempat Sampah) */}
-        {!isPimpinan && (
-        <div className="col-span-12 lg:col-span-6 bg-white dark:bg-slate-900 shadow-sm rounded-3xl p-6 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
-          <div className="flex justify-between items-center mb-5 pb-3 border-b border-slate-200 dark:border-slate-800">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-                <Trash2 size={16} />
-              </div>
-              <div>
-                <h4 className="font-extrabold text-[16px] text-slate-900 dark:text-slate-100 tracking-tight">
-                  Data Tempat Sampah Terbaru
-                </h4>
-                <p className="text-[11px] text-slate-400 dark:text-slate-400 font-medium leading-none mt-0.5">
-                  Monitoring Kapasitas &amp; Status QR Tempat Sampah Terdaftar
-                </p>
-              </div>
-            </div>
-            <Link
-              to="/monitoring-pengelolaan/tempat-sampah"
-              className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors flex items-center gap-1 bg-emerald-500/10 hover:bg-emerald-500/20 px-3 py-1.5 rounded-xl border border-emerald-500/30"
-            >
-              Lihat Semua <ChevronRight size={14} />
-            </Link>
+      {/* === Central Operational Lists & Activity (Khusus Non-Pimpinan) === */}
+      {!isPimpinan && (
+        <>
+          <div className="px-1 pt-2 text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">
+            Data Operasional Tempat Sampah
           </div>
+          <div className="w-full relative z-10">
+            {/* Data Tempat Sampah Terbaru */}
+            <div className="w-full bg-white dark:bg-slate-900 shadow-xs rounded-2xl p-6 border border-slate-200 dark:border-slate-800 flex flex-col justify-between space-y-4">
+              <div className="flex justify-between items-center pb-4 border-b border-slate-200 dark:border-slate-800">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                    <Trash2 size={18} />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-[16px] text-slate-900 dark:text-slate-100 tracking-tight">
+                      Data Tempat Sampah Terbaru
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                      Monitoring kapasitas realtime dan status aktivasi QR tempat sampah
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  to="/monitoring-pengelolaan/tempat-sampah"
+                  className="text-xs font-extrabold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 transition-colors flex items-center gap-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 px-3.5 py-2 rounded-xl border border-emerald-500/20"
+                >
+                  Lihat Semua Data <ChevronRight size={14} />
+                </Link>
+              </div>
 
-          <div className="overflow-x-auto min-h-[300px]">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="text-[11px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60">
-                  <th className="py-2.5 px-3 rounded-l-lg">ID &amp; Jenis</th>
-                  <th className="py-2.5 px-3">Lokasi</th>
-                  <th className="py-2.5 px-3">Kapasitas Tempat Sampah</th>
-                  <th className="py-2.5 px-3 text-right rounded-r-lg">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-xs">
-                {recentBins.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="py-8 text-center text-slate-500 dark:text-slate-400 font-medium">
-                      Belum ada data tempat sampah terdaftar.
-                    </td>
-                  </tr>
-                ) : (
-                  recentBins.map((bin, i) => {
-                    const maxCapacityLiter = Number(bin.maxCapacityLiter);
-                    const currentVolumeLiter = Number(bin.currentVolumeLiter) || 0;
-                    const cap = Math.min(100, Math.round(
-                      bin.kapasitas != null
-                        ? bin.kapasitas
-                        : maxCapacityLiter > 0
-                        ? (currentVolumeLiter / maxCapacityLiter) * 100
-                        : 0
-                    ));
-                    const categoryStr = String(bin.category?.name || bin.categoryId || "UMUM").toUpperCase();
-                    const isOrganik = categoryStr.includes("ORGANIK") && !categoryStr.includes("ANORGANIK") && !categoryStr.includes("NON");
-                    const isAnorganik = categoryStr.includes("ANORGANIK") || categoryStr.includes("NON");
-
-                    const isHighCap = cap >= 90;
-
-                    return (
-                      <tr
-                        key={bin.id || bin.kode || i}
-                        className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all duration-150 group"
-                      >
-                        <td className="py-3 px-3">
-                          <div className="flex flex-col">
-                            <span className="font-mono font-extrabold text-slate-900 dark:text-slate-100 text-[13px] group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                              {bin.qrCode || bin.kode || (bin.id ? bin.id.substring(0, 8) : "BIN")}
-                            </span>
-                            <div className="flex items-center gap-1 mt-0.5">
-                              {isOrganik ? (
-                                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/30">
-                                  <Leaf size={11} /> Organik
-                                </span>
-                              ) : isAnorganik ? (
-                                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/30">
-                                  <Recycle size={11} /> Anorganik
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
-                                  {bin.category?.name || bin.categoryId || "Umum"}
-                                </span>
-                              )}
-                            </div>
-                          </div>
+              <div className="overflow-x-auto min-h-[260px] rounded-xl border border-slate-200/80 dark:border-slate-800">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/60">
+                      <th className="py-3 px-4">ID &amp; Jenis Tempat Sampah</th>
+                      <th className="py-3 px-4">Wilayah Lokasi</th>
+                      <th className="py-3 px-4 w-2/5">Kapasitas Terisi</th>
+                      <th className="py-3 px-4 text-right">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200/80 dark:divide-slate-800 text-xs">
+                    {recentBins.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="py-10 text-center text-slate-500 dark:text-slate-400 font-medium">
+                          Belum ada data tempat sampah terdaftar.
                         </td>
+                      </tr>
+                    ) : (
+                      recentBins.map((bin, i) => {
+                        const maxCapacityLiter = Number(bin.maxCapacityLiter);
+                        const currentVolumeLiter = Number(bin.currentVolumeLiter) || 0;
+                        const cap = Math.min(100, Math.round(
+                          bin.kapasitas != null
+                            ? bin.kapasitas
+                            : maxCapacityLiter > 0
+                            ? (currentVolumeLiter / maxCapacityLiter) * 100
+                            : 0
+                        ));
+                        const categoryStr = String(bin.category?.name || bin.categoryId || "UMUM").toUpperCase();
+                        const isOrganik = categoryStr.includes("ORGANIK") && !categoryStr.includes("ANORGANIK") && !categoryStr.includes("NON");
+                        const isAnorganik = categoryStr.includes("ANORGANIK") || categoryStr.includes("NON");
 
-                        <td className="py-3 px-3">
-                          <div className="flex flex-col min-w-[110px]">
-                            <span className="font-bold text-slate-700 dark:text-slate-300 text-[12px]">
-                              {bin.rtRw?.kelurahan?.name || bin.kelurahan || "Wilayah Dampingan"}
-                            </span>
-                            <span className="text-[10px] text-slate-400 dark:text-slate-400 font-medium">
-                              {(() => {
-                                const rwStr = typeof bin.rtRw === "string" ? bin.rtRw : bin.rtRw?.name;
-                                if (!rwStr || rwStr === "-") return "Fasilitas Umum";
-                                return rwStr.toLowerCase().includes("rw") ? rwStr : `RW ${rwStr}`;
-                              })()}
-                            </span>
-                          </div>
-                        </td>
+                        const isHighCap = cap >= 90;
 
-                        <td className="py-3 px-3 min-w-[120px]">
-                          <div className="flex flex-col gap-1">
-                            <div className="flex justify-between items-center text-[10px] font-bold">
-                              <span className={isHighCap ? "text-rose-600 dark:text-rose-400 font-black" : "text-emerald-600 dark:text-emerald-400 font-extrabold"}>
-                                {isHighCap ? `${cap}% Terisi (Penuh) — ${currentVolumeLiter}/${maxCapacityLiter} L` : `${cap}% Terisi (Aman) — ${currentVolumeLiter}/${maxCapacityLiter} L`}
-                              </span>
-                            </div>
-                            <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700">
-                              <div
-                                className={`h-full rounded-full transition-all duration-500 ${
-                                  isHighCap ? "bg-rose-500 animate-pulse shadow-[0_0_8px_#f43f5e]" : "bg-emerald-400 shadow-[0_0_8px_#34d399]"
-                                }`}
-                                style={{ width: `${cap}%` }}
-                              />
-                            </div>
-                          </div>
-                        </td>
+                        return (
+                          <tr
+                            key={bin.id || bin.kode || i}
+                            className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors group"
+                          >
+                            <td className="py-3.5 px-4">
+                              <div className="flex items-center gap-2.5">
+                                <div className="flex flex-col">
+                                  <span className="font-mono font-black text-slate-900 dark:text-slate-100 text-[13px] group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                                    {bin.qrCode || bin.kode || (bin.id ? bin.id.substring(0, 8) : "BIN")}
+                                  </span>
+                                  <div className="flex items-center gap-1 mt-1">
+                                    {isOrganik ? (
+                                      <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-700/40">
+                                        <Leaf size={11} /> Organik
+                                      </span>
+                                    ) : isAnorganik ? (
+                                      <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-700/40">
+                                        <Recycle size={11} /> Anorganik
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
+                                        {bin.category?.name || bin.categoryId || "Umum"}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
 
-                        <td className="py-3 px-3 text-right">
-                          <div className="flex justify-end items-center gap-1">
-                            <button
-                              onClick={() => setSelectedBinForDetail(bin)}
-                              className="p-1.5 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors cursor-pointer"
-                              title="Detail Tempat Sampah"
-                            >
-                              <Eye size={15} />
-                            </button>
-                            {!isPimpinan && (
-                              <>
+                            <td className="py-3.5 px-4">
+                              <div className="flex flex-col min-w-[140px]">
+                                <span className="font-bold text-slate-800 dark:text-slate-200 text-[12.5px]">
+                                  {bin.rtRw?.kelurahan?.name || bin.kelurahan || "Wilayah Dampingan"}
+                                </span>
+                                <span className="text-[11px] text-slate-400 dark:text-slate-400 font-medium">
+                                  {(() => {
+                                    const rwStr = typeof bin.rtRw === "string" ? bin.rtRw : bin.rtRw?.name;
+                                    if (!rwStr || rwStr === "-") return "Fasilitas Umum";
+                                    return rwStr.toLowerCase().includes("rw") ? rwStr : `RW ${rwStr}`;
+                                  })()}
+                                </span>
+                              </div>
+                            </td>
+
+                            <td className="py-3.5 px-4">
+                              <div className="flex flex-col gap-1.5">
+                                <div className="flex justify-between items-center text-[10.5px]">
+                                  <span className={isHighCap ? "text-rose-600 dark:text-rose-400 font-black" : "text-emerald-700 dark:text-emerald-400 font-extrabold"}>
+                                    {isHighCap ? `${cap}% (Penuh)` : `${cap}% (Aman)`}
+                                  </span>
+                                  <span className="font-mono text-slate-500 dark:text-slate-400 text-[10.5px]">
+                                    {currentVolumeLiter} / {maxCapacityLiter} Liter
+                                  </span>
+                                </div>
+                                <div className="h-2.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-200/70 dark:border-slate-700">
+                                  <div
+                                    className={`h-full rounded-full transition-all duration-500 ${
+                                      isHighCap ? "bg-rose-500 animate-pulse" : "bg-emerald-500"
+                                    }`}
+                                    style={{ width: `${cap}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </td>
+
+                            <td className="py-3.5 px-4 text-right">
+                              <div className="flex justify-end items-center gap-1.5">
+                                <button
+                                  onClick={() => setSelectedBinForDetail(bin)}
+                                  className="p-1.5 text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 rounded-lg transition-colors cursor-pointer"
+                                  title="Detail Tempat Sampah"
+                                >
+                                  <Eye size={15} />
+                                </button>
                                 <button
                                   onClick={() => navigate(`/monitoring-pengelolaan/tempat-sampah?edit=${bin.id || bin.kode}`)}
-                                  className="p-1.5 text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-colors cursor-pointer"
+                                  className="p-1.5 text-slate-500 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-950/50 rounded-lg transition-colors cursor-pointer"
                                   title="Edit Tempat Sampah"
                                 >
                                   <Pencil size={15} />
                                 </button>
                                 <button
                                   onClick={() => setDeleteBinConfirm(bin)}
-                                  className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
+                                  className="p-1.5 text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg transition-colors cursor-pointer"
                                   title="Hapus Tempat Sampah"
                                 >
                                   <Trash2 size={15} />
                                 </button>
-                              </>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-        )}
-
-        {/* Sesi Pengguna Aktif Card */}
-        <div className={`col-span-12 ${isPimpinan ? "lg:col-span-12" : "lg:col-span-6"} bg-white dark:bg-slate-900 shadow-sm rounded-3xl p-6 border border-slate-200 dark:border-slate-800 flex flex-col justify-between`}>
-          <div>
-            <div className="flex justify-between items-start mb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-                  <UserCheck size={20} />
-                </div>
-                <div>
-                  <h4 className="font-extrabold text-[17px] text-slate-900 dark:text-slate-100 tracking-tight">
-                    Sesi Pengguna Aktif
-                  </h4>
-                  <p className="text-xs text-slate-400 dark:text-slate-400 font-medium leading-none mt-1">
-                    Status sesi pengguna terdaftar dengan token login aktif
-                  </p>
-                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
               </div>
-              {stats?.activeSessions && (
-                <span className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_10px_#34d399]"></span>
-                  {stats.activeSessions.total ?? 0}
-                </span>
-              )}
             </div>
-
-            {stats?.activeSessions ? (
-              <div className="mt-4 space-y-2.5">
-                <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                  <div className="flex items-center gap-3 text-slate-600 dark:text-slate-300 text-xs font-semibold">
-                    <Code2 size={16} className="text-slate-400" />
-                    <span>Admin / Task Force / Dev</span>
-                  </div>
-                  <span className="font-black text-slate-700 dark:text-slate-200 text-sm bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 rounded-md border border-slate-300 dark:border-slate-700">{stats.activeSessions.admin ?? 0}</span>
-                </div>
-
-                <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                  <div className="flex items-center gap-3 text-slate-600 dark:text-slate-300 text-xs font-semibold">
-                    <ShieldCheck size={16} className="text-cyan-600 dark:text-cyan-400" />
-                    <span>Operator (DLH / Camat / Lurah)</span>
-                  </div>
-                  <span className="font-extrabold text-cyan-700 dark:text-cyan-300 text-xs bg-cyan-50 dark:bg-cyan-950/60 border border-cyan-200 dark:border-cyan-700/40 px-2.5 py-0.5 rounded-lg">{stats.activeSessions.operator ?? 0}</span>
-                </div>
-
-                <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                  <div className="flex items-center gap-3 text-slate-600 dark:text-slate-300 text-xs font-semibold">
-                    <Award size={16} className="text-amber-600 dark:text-amber-400" />
-                    <span>Rukun Warga (RW)</span>
-                  </div>
-                  <span className="font-extrabold text-amber-700 dark:text-amber-300 text-xs bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-700/40 px-2.5 py-0.5 rounded-lg">{stats.activeSessions.rw ?? 0}</span>
-                </div>
-
-                <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                  <div className="flex items-center gap-3 text-slate-600 dark:text-slate-300 text-xs font-semibold">
-                    <BookOpen size={16} className="text-emerald-600 dark:text-emerald-400" />
-                    <span>Dosen DPL</span>
-                  </div>
-                  <span className="font-extrabold text-emerald-700 dark:text-emerald-300 text-xs bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-700/40 px-2.5 py-0.5 rounded-lg">{stats.activeSessions.dpl ?? 0}</span>
-                </div>
-
-                <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                  <div className="flex items-center gap-3 text-slate-600 dark:text-slate-300 text-xs font-semibold">
-                    <Truck size={16} className="text-rose-600 dark:text-rose-400" />
-                    <span>Petugas Residu</span>
-                  </div>
-                  <span className="font-extrabold text-rose-700 dark:text-rose-300 text-xs bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-700/40 px-2.5 py-0.5 rounded-lg">{stats.activeSessions.residu ?? 0}</span>
-                </div>
-
-                <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                  <div className="flex items-center gap-3 text-slate-600 dark:text-slate-300 text-xs font-semibold">
-                    <GraduationCap size={16} className="text-indigo-600 dark:text-indigo-400" />
-                    <span>Mahasiswa KKN</span>
-                  </div>
-                  <span className="font-extrabold text-indigo-700 dark:text-indigo-300 text-xs bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-700/40 px-2.5 py-0.5 rounded-lg">{stats.activeSessions.kkn ?? 0}</span>
-                </div>
-
-                <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                  <div className="flex items-center gap-3 text-slate-600 dark:text-slate-300 text-xs font-semibold">
-                    <Users size={16} className="text-teal-600 dark:text-teal-400" />
-                    <span>Warga / Masyarakat</span>
-                  </div>
-                  <span className="font-extrabold text-teal-700 dark:text-teal-300 text-xs bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-700/40 px-2.5 py-0.5 rounded-lg">{stats.activeSessions.warga ?? 0}</span>
-                </div>
-              </div>
-            ) : (
-              <div className="mt-4 py-8 text-center text-xs text-slate-500 dark:text-slate-400 italic">
-                Belum ada data sesi pengguna aktif.
-              </div>
-            )}
           </div>
-
-          <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-800">
-            <Link
-              to="/pengguna-daring"
-              className="w-full py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-extrabold text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white transition-all flex items-center justify-center gap-2 group cursor-pointer"
-            >
-              Kelola Pengguna Daring <ChevronRight size={15} className="group-hover:translate-x-0.5 transition-transform text-slate-400" />
-            </Link>
-          </div>
-        </div>
-      </div>
+        </>
+      )}
 
       {/* Compliance List Modal */}
       {showComplianceModal && (
@@ -2942,29 +3318,35 @@ const Dashboard: React.FC = () => {
 
       {/* Composition Detail Modal */}
       {showCompositionDetail && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden border border-emerald-500/30 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150 text-slate-800 dark:text-slate-100">
-            <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-850">
-              <h3 className="font-bold text-[20px] text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                <BarChart className="text-cyan-600 dark:text-cyan-400" />
-                Rincian Komposisi &amp; Aliran Sampah
-              </h3>
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 transition-all duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150 text-slate-800 dark:text-slate-100">
+            <div className="p-5 sm:p-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-900">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-cyan-50 dark:bg-cyan-950/60 text-cyan-600 dark:text-cyan-400 flex items-center justify-center border border-cyan-500/20 shrink-0">
+                  <BarChart size={20} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                    Rincian Komposisi &amp; Aliran Sampah
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Data material timbulan sampah organik, anorganik, dan residu hilir
+                  </p>
+                </div>
+              </div>
               <button
                 onClick={() => setShowCompositionDetail(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center transition-colors cursor-pointer border border-slate-300 dark:border-slate-700"
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:text-slate-200 dark:hover:bg-slate-800 transition cursor-pointer"
+                title="Tutup dialog"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
-            <div className="p-6 space-y-4 max-h-[400px] overflow-y-auto text-sm">
-              <p className="text-xs text-slate-400">
-                Detail material timbulan sampah organik, anorganik, dan residu hilir terdata real-time di wilayah operasional.
-              </p>
-
+            <div className="p-5 sm:p-6 space-y-4 max-h-[420px] overflow-y-auto text-sm">
               <div className="space-y-3">
-                <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 rounded-2xl border border-emerald-200 dark:border-emerald-700/30">
-                  <h4 className="font-extrabold text-emerald-700 dark:text-emerald-400 text-[13px] uppercase tracking-wider mb-2 flex items-center gap-1">
-                    <Leaf size={16} />
+                <div className="p-4 bg-emerald-50/70 dark:bg-emerald-950/40 rounded-xl border border-emerald-200/80 dark:border-emerald-800/40">
+                  <h4 className="font-bold text-emerald-800 dark:text-emerald-300 text-xs uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    <Leaf size={15} />
                     Material Organik ({stats?.komposisiSampah?.organik?.persentase || "0%"})
                   </h4>
                   <div className="grid grid-cols-2 gap-4 text-xs">
@@ -2974,14 +3356,14 @@ const Dashboard: React.FC = () => {
                     </div>
                     <div>
                       <span className="text-slate-500 dark:text-slate-400 font-medium block">Metode Pengolahan</span>
-                      <strong className="text-emerald-700 dark:text-emerald-400 font-extrabold">Loseda &amp; Maggot</strong>
+                      <strong className="text-emerald-700 dark:text-emerald-400 font-semibold">Loseda &amp; Maggot</strong>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-4 bg-amber-50 dark:bg-amber-950/40 rounded-2xl border border-amber-200 dark:border-amber-700/30">
-                  <h4 className="font-extrabold text-amber-700 dark:text-amber-400 text-[13px] uppercase tracking-wider mb-2 flex items-center gap-1">
-                    <Recycle size={16} />
+                <div className="p-4 bg-amber-50/70 dark:bg-amber-950/40 rounded-xl border border-amber-200/80 dark:border-amber-800/40">
+                  <h4 className="font-bold text-amber-800 dark:text-amber-300 text-xs uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    <Recycle size={15} />
                     Material Anorganik ({stats?.komposisiSampah?.anorganik?.persentase || "0%"})
                   </h4>
                   <div className="grid grid-cols-2 gap-4 text-xs">
@@ -2991,14 +3373,14 @@ const Dashboard: React.FC = () => {
                     </div>
                     <div>
                       <span className="text-slate-500 dark:text-slate-400 font-medium block">Metode Daur Ulang</span>
-                      <strong className="text-amber-700 dark:text-amber-400 font-extrabold">Bank Sampah &amp; Poin</strong>
+                      <strong className="text-amber-700 dark:text-amber-400 font-semibold">Bank Sampah &amp; Poin</strong>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-4 bg-rose-50 dark:bg-rose-950/40 rounded-2xl border border-rose-200 dark:border-rose-700/30">
-                  <h4 className="font-extrabold text-rose-700 dark:text-rose-400 text-[13px] uppercase tracking-wider mb-2 flex items-center gap-1">
-                    <Trash2 size={16} />
+                <div className="p-4 bg-rose-50/70 dark:bg-rose-950/40 rounded-xl border border-rose-200/80 dark:border-rose-800/40">
+                  <h4 className="font-bold text-rose-800 dark:text-rose-300 text-xs uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    <Trash2 size={15} />
                     Material Residu Hilir ({stats?.komposisiSampah?.residu?.persentase || "0%"})
                   </h4>
                   <div className="grid grid-cols-2 gap-4 text-xs">
@@ -3008,7 +3390,7 @@ const Dashboard: React.FC = () => {
                     </div>
                     <div>
                       <span className="text-slate-500 dark:text-slate-400 font-medium block">Tujuan Akhir</span>
-                      <strong className="text-rose-700 dark:text-rose-400 font-extrabold">TPA Hilir Kota</strong>
+                      <strong className="text-rose-700 dark:text-rose-400 font-semibold">TPA Hilir Kota</strong>
                     </div>
                   </div>
                 </div>
@@ -3017,7 +3399,7 @@ const Dashboard: React.FC = () => {
             <div className="p-4 bg-slate-50 dark:bg-slate-850 border-t border-slate-200 dark:border-slate-800 flex justify-end">
               <button
                 onClick={() => setShowCompositionDetail(false)}
-                className="px-5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 transition-colors border border-slate-300 dark:border-slate-700 cursor-pointer"
+                className="px-4 py-2 bg-slate-200/80 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 transition cursor-pointer"
               >
                 Tutup Detail
               </button>
@@ -3028,26 +3410,35 @@ const Dashboard: React.FC = () => {
 
       {/* Detail Bin Modal */}
       {selectedBinForDetail && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden border border-emerald-500/30 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150 text-slate-800 dark:text-slate-100">
-            <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-850">
-              <h3 className="font-bold text-[18px] text-slate-900 dark:text-slate-100">Detail Tempat Sampah Cerdas</h3>
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 transition-all duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150 text-slate-800 dark:text-slate-100">
+            <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-900">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-500/20 shrink-0">
+                  <Trash2 size={20} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-slate-900 dark:text-white">Detail Tempat Sampah Cerdas</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Kode &amp; data pemantauan real-time</p>
+                </div>
+              </div>
               <button
                 onClick={() => setSelectedBinForDetail(null)}
-                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center transition-colors cursor-pointer border border-slate-300 dark:border-slate-700"
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:text-slate-200 dark:hover:bg-slate-800 transition cursor-pointer"
+                title="Tutup dialog"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
-            <div className="p-6 space-y-6">
+            <div className="p-5 sm:p-6 space-y-5">
               <div className="flex justify-center">
-                <div className="p-4 bg-white dark:bg-slate-800 rounded-2xl border-2 border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.2)] flex flex-col items-center gap-2">
+                <div className="p-4 bg-white dark:bg-slate-850 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col items-center gap-2">
                   <img
                     className="w-40 h-40"
                     alt="QR Code"
                     src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(selectedBinForDetail.qrCode || selectedBinForDetail.kode)}`}
                   />
-                  <span className="text-[14px] font-mono font-bold text-slate-900 dark:text-slate-100 tracking-widest">
+                  <span className="text-sm font-mono font-bold text-slate-900 dark:text-slate-100 tracking-wider">
                     {selectedBinForDetail.qrCode || selectedBinForDetail.kode}
                   </span>
                 </div>
@@ -3112,7 +3503,7 @@ const Dashboard: React.FC = () => {
 
               <button
                 onClick={() => setSelectedBinForDetail(null)}
-                className="w-full py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-900 dark:text-slate-100 transition-colors cursor-pointer"
+                className="w-full py-2.5 bg-slate-200/80 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 transition cursor-pointer"
               >
                 Tutup Detail
               </button>
