@@ -5,9 +5,12 @@ import '../../../core/values/app_colors.dart';
 import '../../shared/widgets/qr_scanner_widget.dart';
 import '../../shared/widgets/feature_rating_dialog.dart';
 import '../controllers/aktivasi_warga_controller.dart';
+import '../controllers/kelompok_kkn_controller.dart';
+import '../controllers/kelompok_stiker_qr_controller.dart';
 import '../controllers/mahasiswa_controller.dart';
 import '../controllers/mahasiswa_notifikasi_controller.dart';
 import '../../auth/controllers/auth_controller.dart';
+import '../../../data/models/kelompok_qr_models.dart';
 import '../../../data/services/local_notification_cache_service.dart';
 import '../../../data/services/firebase_notification_service.dart';
 
@@ -27,8 +30,59 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
   final GlobalKey<QrScannerWidgetState> _scannerKey =
       GlobalKey<QrScannerWidgetState>();
 
-  /// Memvalidasi format & kategori QR Code tempat sampah
-  String? _validateBinQr(String qr, int step) {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (ref.read(kelompokStikerQrProvider).qrData == null) {
+        ref.read(kelompokStikerQrProvider.notifier).loadData();
+      }
+    });
+  }
+
+  /// Membersihkan format nomor RW menjadi digit murni tanpa leading zero
+  String _cleanRw(String? val) {
+    if (val == null) return '';
+    final digits = val.replaceAll(RegExp(r'[^\d]'), '');
+    if (digits.isEmpty) return '';
+    return digits.replaceFirst(RegExp(r'^0+'), '');
+  }
+
+  /// Mengambil kumpulan nomor RW bersih (Set of digits) dari string atau list (misal "01, 02" -> {"1", "2"})
+  Set<String> _extractRwSet(dynamic val) {
+    if (val == null) return {};
+    if (val is List) {
+      return val
+          .map((e) => _cleanRw(e?.toString()))
+          .where((s) => s.isNotEmpty)
+          .toSet();
+    }
+    final str = val.toString().trim();
+    if (str.isEmpty) return {};
+    final matches = RegExp(r'\b\d+\b').allMatches(str);
+    if (matches.isNotEmpty) {
+      return matches
+          .map((m) => m.group(0)!.replaceFirst(RegExp(r'^0+'), ''))
+          .where((s) => s.isNotEmpty)
+          .toSet();
+    }
+    return {};
+  }
+
+  /// Memformat tampilan nomor RW yang ramah pengguna (misal "RW 01" atau "Multi RW: RW 01, RW 02")
+  String _formatRwDisplay(String? val) {
+    final set = _extractRwSet(val);
+    if (set.isEmpty) return '';
+    if (set.length == 1) return 'RW 0${set.first}';
+    return 'Multi RW: ${set.map((r) => 'RW 0$r').join(', ')}';
+  }
+
+  /// Memvalidasi format, kategori, dan kesesuaian wilayah RW untuk QR Code tempat sampah
+  String? _validateBinQr(
+    String qr,
+    int step, {
+    required String targetRw,
+  }) {
     final lower = qr.toLowerCase().trim();
 
     // 1. Tolak QR acak / URL / link web yang bukan format tempat sampah
@@ -43,7 +97,97 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
       return 'Format QR Code terlalu pendek atau tidak valid. Harap pindai kode QR tempat sampah resmi Pilah Sampah Cerdas.';
     }
 
-    // Pola Anorganik
+    // 3. Validasi Kesesuaian Wilayah RW (Stiker QR Wajib Sesuai RW Penugasan Mahasiswa & Warga)
+    final studentUser = ref.read(authProvider).user;
+    final studentRwSet = _extractRwSet(studentUser?.rw);
+    final targetRwSet = _extractRwSet(targetRw);
+    final kelompok = ref.read(kelompokKknProvider).kelompok;
+    final kelompokCakupanSet = (kelompok?.cakupanRw ?? const [])
+        .map((r) => _cleanRw(r))
+        .where((r) => r.isNotEmpty)
+        .toSet();
+    final effectiveStudentRwSet =
+        studentRwSet.isNotEmpty ? studentRwSet : kelompokCakupanSet;
+
+    // 3a. Validasi Mahasiswa vs Warga:
+    if (effectiveStudentRwSet.isNotEmpty &&
+        targetRwSet.isNotEmpty &&
+        !effectiveStudentRwSet.contains(targetRwSet.first)) {
+      if (studentRwSet.isNotEmpty) {
+        return 'Aktivasi Ditolak!\n\nWarga ini berada di RW 0${targetRwSet.join(', RW 0')}, sedangkan wilayah penugasan KKN Anda adalah RW 0${studentRwSet.join(', RW 0')}.\n\nAnda HANYA diperbolehkan melakukan aktivasi tempat sampah untuk warga di wilayah penugasan Anda!';
+      } else {
+        return 'Aktivasi Ditolak!\n\nWarga ini berada di RW 0${targetRwSet.join(', RW 0')}, di luar wilayah cakupan kelompok KKN Anda (RW ${kelompokCakupanSet.map((r) => '0$r').join(', ')}).\n\nAnda HANYA diperbolehkan melakukan aktivasi tempat sampah untuk warga di wilayah binaan kelompok Anda!';
+      }
+    }
+
+    final qrItems = ref.read(kelompokStikerQrProvider).qrData?.items;
+    if (qrItems != null && qrItems.isNotEmpty) {
+      final matchedItem = qrItems.cast<StikerQrItem?>().firstWhere(
+        (it) => it?.qrCode.trim().toUpperCase() == qr.trim().toUpperCase(),
+        orElse: () => null,
+      );
+
+      if (matchedItem != null) {
+        // Cek 3b: Apakah stiker sudah aktif terikat ke warga lain
+        if (!matchedItem.isAvailable ||
+            matchedItem.status.toUpperCase() == 'ACTIVE_BOUND') {
+          final boundName = matchedItem.terikatWarga?.nama;
+          return 'Stiker QR ($qr) sudah aktif dan terikat pada ${boundName != null && boundName.isNotEmpty ? 'Warga Binaan $boundName' : 'warga lain'}.\n\nHarap gunakan stiker QR yang masih berstatus Tersedia.';
+        }
+
+        // Cek 3c: Apakah nomor RW stiker sesuai dengan RW penugasan mahasiswa & domisili warga
+        final itemRw = _cleanRw(
+          matchedItem.nomorRw ??
+              matchedItem.wargaRw ??
+              (matchedItem.rwId != null ? matchedItem.rwId.toString() : ''),
+        );
+
+        // Jika itemRw ada (bukan Shared Pool), validasi kesesuaian wilayah
+        if (itemRw.isNotEmpty) {
+          if (effectiveStudentRwSet.isNotEmpty &&
+              !effectiveStudentRwSet.contains(itemRw)) {
+            return 'Stiker QR ($qr) dialokasikan khusus untuk RW 0$itemRw, bukan untuk wilayah penugasan Anda.\n\nHarap gunakan stiker tempat sampah yang dialokasikan untuk wilayah Anda atau stiker Shared Pool.';
+          }
+
+          if (targetRwSet.isNotEmpty &&
+              !targetRwSet.contains(itemRw)) {
+            return 'Stiker QR ($qr) dialokasikan khusus untuk RW 0$itemRw, sedangkan Warga binaan berada di RW 0${targetRwSet.join(', RW 0')}.\n\nStiker tempat sampah TIDAK DAPAT digunakan di luar wilayah RW domisili warga!';
+          }
+        }
+      } else {
+        // Cek 3d: Stiker tidak ada di data alokasi kelompok, cek pola teks QR
+        final rwPattern = RegExp(r'rw[\s_-]?0?(\d+)', caseSensitive: false);
+        final match = rwPattern.firstMatch(qr);
+        if (match != null) {
+          final codeRw = _cleanRw(match.group(1));
+          if (codeRw.isNotEmpty) {
+            if (effectiveStudentRwSet.isNotEmpty && !effectiveStudentRwSet.contains(codeRw)) {
+              return 'Stiker QR ($qr) terdeteksi khusus untuk RW 0$codeRw, bukan untuk wilayah penugasan Anda.\n\nHarap gunakan stiker untuk wilayah penugasan Anda!';
+            }
+            if (targetRwSet.isNotEmpty && !targetRwSet.contains(codeRw)) {
+              return 'Stiker QR ($qr) terdeteksi khusus untuk RW 0$codeRw, sedangkan Warga berada di RW 0${targetRwSet.join(', RW 0')}.\n\nStiker tempat sampah TIDAK DAPAT digunakan di luar wilayah RW domisili warga!';
+            }
+          }
+        }
+      }
+    } else {
+      // Fallback: cek pola teks QR jika data alokasi kelompok belum selesai termuat
+      final rwPattern = RegExp(r'rw[\s_-]?0?(\d+)', caseSensitive: false);
+      final match = rwPattern.firstMatch(qr);
+      if (match != null) {
+        final codeRw = _cleanRw(match.group(1));
+        if (codeRw.isNotEmpty) {
+          if (effectiveStudentRwSet.isNotEmpty && !effectiveStudentRwSet.contains(codeRw)) {
+            return 'Stiker QR ($qr) terdeteksi khusus untuk RW 0$codeRw, bukan untuk wilayah penugasan Anda.\n\nHarap gunakan stiker untuk wilayah penugasan Anda!';
+          }
+          if (targetRwSet.isNotEmpty && !targetRwSet.contains(codeRw)) {
+            return 'Stiker QR ($qr) terdeteksi khusus untuk RW 0$codeRw, sedangkan Warga berada di RW 0${targetRwSet.join(', RW 0')}.\n\nStiker tempat sampah TIDAK DAPAT digunakan di luar wilayah RW domisili warga!';
+          }
+        }
+      }
+    }
+
+    // 4. Pola Anorganik
     final isAnorganicPattern =
         lower.contains('anorganik') ||
         lower.contains('anorganic') ||
@@ -58,7 +202,7 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
         lower.contains('kertas') ||
         lower.contains('logam');
 
-    // Pola Organik
+    // 5. Pola Organik
     final isOrganicPattern =
         !isAnorganicPattern &&
         (lower.contains('organik') ||
@@ -91,6 +235,7 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
     String qrCode,
     String wargaId,
     String wargaName,
+    String targetRw,
   ) async {
     if (_isProcessing) return;
     _isProcessing = true;
@@ -116,9 +261,11 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
       return;
     }
 
-    // Validasi kesesuaian kategori QR (Organik vs Anorganik vs Random)
-    final validationError = _validateBinQr(cleanQr, _step);
+    // Validasi kesesuaian kategori QR & wilayah RW
+    final validationError =
+        _validateBinQr(cleanQr, _step, targetRw: targetRw);
     if (validationError != null) {
+      final isRwError = validationError.contains('RW');
       if (mounted) {
         await showDialog(
           context: context,
@@ -126,18 +273,23 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
-            title: const Row(
+            title: Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.warning_amber_rounded,
                   color: AppColors.dangerRed,
                   size: 28,
                 ),
-                SizedBox(width: 10),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Kategori QR Tidak Sesuai',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    isRwError
+                        ? 'Wilayah RW Tidak Sesuai'
+                        : 'Kategori QR Tidak Sesuai',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
@@ -216,6 +368,27 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
                   ),
                 ),
               ),
+              if (targetRw.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    'Wilayah Penugasan: ${_formatRwDisplay(targetRw)}',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primaryGreen,
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 14),
               const Text(
                 'Tekan tombol di bawah untuk melanjutkan ke pindaian tempat sampah Anorganik (Tahap 2).',
@@ -298,6 +471,27 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
                   fontSize: 14,
                 ),
               ),
+              if (targetRw.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    'Wilayah Penugasan: ${_formatRwDisplay(targetRw)}',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primaryGreen,
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 12),
               const Text(
                 'QR Organik:',
@@ -555,6 +749,7 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
     final rawArgs = ModalRoute.of(context)?.settings.arguments;
     String wargaId = '';
     String wargaName = 'Warga';
+    String wargaRw = '';
 
     if (rawArgs is Map<String, dynamic>) {
       final wargaMap = rawArgs['warga'] as Map<String, dynamic>? ?? rawArgs;
@@ -567,14 +762,37 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
           wargaMap['name']?.toString() ??
           wargaMap['wargaName']?.toString() ??
           'Warga';
+      wargaRw =
+          wargaMap['rw']?.toString() ??
+          wargaMap['rtRw']?.toString() ??
+          '';
     } else if (rawArgs is WargaDampingan) {
       wargaId = rawArgs.wargaId.isNotEmpty
           ? rawArgs.wargaId
           : rawArgs.wargaName;
       wargaName = rawArgs.wargaName;
+      wargaRw = rawArgs.rw;
     } else if (rawArgs is String) {
       wargaId = rawArgs;
     }
+
+    final user = ref.watch(authProvider).user;
+    final kelompokQr = ref.watch(kelompokStikerQrProvider).qrData?.kelompok;
+    final kelompokKkn = ref.watch(kelompokKknProvider).kelompok;
+    String effectiveRw = wargaRw;
+    if (effectiveRw.isEmpty) {
+      effectiveRw = user?.rw ?? '';
+    }
+    if (effectiveRw.isEmpty &&
+        kelompokQr != null &&
+        kelompokQr.cakupanRw.isNotEmpty) {
+      effectiveRw = kelompokQr.cakupanRw.join(', ');
+    } else if (effectiveRw.isEmpty &&
+        kelompokKkn != null &&
+        kelompokKkn.cakupanRw.isNotEmpty) {
+      effectiveRw = kelompokKkn.cakupanRw.join(', ');
+    }
+    final rwDisplay = _formatRwDisplay(effectiveRw);
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -592,7 +810,7 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
                 ? const Color(0xFF10B981)
                 : const Color(0xFFFFB800),
             onQrDetected: (qrCode) async {
-              await _handleQrDetected(qrCode, wargaId, wargaName);
+              await _handleQrDetected(qrCode, wargaId, wargaName, effectiveRw);
               // Kembalikan false agar QrScannerWidget tidak auto-reset (kita kelola via _scannerKey)
               return false;
             },
@@ -666,15 +884,48 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
-                              Text(
-                                wargaName,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                              Row(
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      wargaName,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                   if (rwDisplay.isNotEmpty) ...[
+                                     const SizedBox(width: 8),
+                                     Container(
+                                       padding: const EdgeInsets.symmetric(
+                                         horizontal: 8,
+                                         vertical: 2,
+                                       ),
+                                       decoration: BoxDecoration(
+                                         color: AppColors.primaryGreen
+                                             .withValues(alpha: 0.25),
+                                         borderRadius:
+                                             BorderRadius.circular(6),
+                                         border: Border.all(
+                                           color: AppColors.primaryGreen
+                                               .withValues(alpha: 0.6),
+                                         ),
+                                       ),
+                                       child: Text(
+                                         rwDisplay,
+                                         style: const TextStyle(
+                                           fontSize: 10,
+                                           fontWeight: FontWeight.bold,
+                                           color: Colors.white,
+                                         ),
+                                       ),
+                                     ),
+                                   ],
+                                ],
                               ),
                             ],
                           ),

@@ -8,6 +8,7 @@ import '../../../data/services/notification_engine.dart' as import_engine;
 import '../../../routes/app_routes.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/utils/platform_utils.dart';
+import '../../../data/services/location_service.dart';
 import '../../../data/models/bin_entity.dart';
 import '../../scan/controllers/scan_controller.dart';
 import '../../shared/controllers/connectivity_controller.dart';
@@ -113,19 +114,24 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
     setState(() => _gpsLoading = true);
 
     try {
-      final bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        if (mounted) setState(() => _gpsLoading = false);
-        return null;
-      }
-
-      LocationPermission perm = await Geolocator.checkPermission();
-      if (perm == LocationPermission.denied && requestPermissionIfNeeded) {
-        perm = await Geolocator.requestPermission();
+      final LocationPermission perm;
+      if (requestPermissionIfNeeded) {
+        perm = await LocationService.instance.checkAndRequestPermission(
+          context,
+          role: 'warga',
+        );
+      } else {
+        final bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+        if (!serviceEnabled) {
+          if (mounted) setState(() => _gpsLoading = false);
+          return null;
+        }
+        perm = await Geolocator.checkPermission();
       }
 
       if (perm == LocationPermission.deniedForever ||
-          perm == LocationPermission.denied) {
+          perm == LocationPermission.denied ||
+          perm == LocationPermission.unableToDetermine) {
         if (mounted) setState(() => _gpsLoading = false);
         return null;
       }
@@ -874,12 +880,42 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                     }
                   }
 
+                  // Pastikan koordinat GPS akurat sudah didapatkan
+                  double? finalLat = _userLat;
+                  double? finalLng = _userLng;
+
+                  if (finalLat == null || finalLng == null || finalLat == 0.0) {
+                    final pos = await _fetchGps(requestPermissionIfNeeded: true);
+                    if (pos != null) {
+                      finalLat = pos.latitude;
+                      finalLng = pos.longitude;
+                    }
+                  }
+
+                  if (PlatformUtils.isMobile &&
+                      (finalLat == null || finalLng == null || finalLat == 0.0)) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context)
+                        ..clearSnackBars()
+                        ..showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Lokasi GPS tidak terdeteksi. Pastikan GPS HP Anda menyala lalu coba lagi.',
+                            ),
+                            backgroundColor: AppColors.dangerRed,
+                            duration: Duration(seconds: 3),
+                          ),
+                        );
+                    }
+                    return false;
+                  }
+
                   await ref
                       .read(scanFlowProvider.notifier)
                       .scanAndCommit(
                         qrCode: qrCode,
-                        userLat: _userLat ?? -6.8903,
-                        userLng: _userLng ?? 107.611,
+                        userLat: finalLat ?? 0.0,
+                        userLng: finalLng ?? 0.0,
                       );
 
                   // if there's an error, return false to reset the scanner so the user can scan again

@@ -1,112 +1,99 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:geocoding/geocoding.dart';
+import '../../../data/services/location_service.dart';
+import '../../auth/controllers/auth_controller.dart';
 
+/// State lokasi dan alamat untuk Warga & Petugas Pemilah
 class UserLocationState {
-  final Position? currentPosition;
-  final String? currentAddress;
+  final Position? position;
+  final String? address;
   final bool isFetchingAddress;
+  final String? error;
 
-  UserLocationState({
-    this.currentPosition,
-    this.currentAddress,
+  const UserLocationState({
+    this.position,
+    this.address,
     this.isFetchingAddress = false,
+    this.error,
   });
 
   UserLocationState copyWith({
-    Position? currentPosition,
-    String? currentAddress,
+    Position? position,
+    String? address,
     bool? isFetchingAddress,
+    String? error,
+    bool clearError = false,
   }) {
     return UserLocationState(
-      currentPosition: currentPosition ?? this.currentPosition,
-      currentAddress: currentAddress ?? this.currentAddress,
+      position: position ?? this.position,
+      address: address ?? this.address,
       isFetchingAddress: isFetchingAddress ?? this.isFetchingAddress,
+      error: clearError ? null : (error ?? this.error),
     );
   }
 }
 
+/// Controller untuk memperbarui lokasi GPS dan mengonversi koordinat ke alamat
 class UserLocationNotifier extends StateNotifier<UserLocationState> {
-  UserLocationNotifier() : super(UserLocationState());
+  final Ref? _ref;
+  UserLocationNotifier([this._ref]) : super(const UserLocationState());
 
-  Future<void> fetchAddress() async {
-    state = state.copyWith(isFetchingAddress: true);
+  /// Ambil lokasi GPS terkini dan konversi ke nama alamat (reverse geocoding)
+  Future<void> refreshLocation({BuildContext? context, String? role}) async {
+    // ponytail: geocoding reverse lookup; fallback ke lat/long desimal jika provider gagal
+    state = state.copyWith(isFetchingAddress: true, clearError: true);
     try {
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
+      if (context != null && context.mounted) {
+        final currentRole = role ?? _ref?.read(authProvider).user?.role.name;
+        final permission =
+            await LocationService.instance.checkAndRequestPermission(
+          context,
+          role: currentRole,
+        );
+        if (permission == LocationPermission.denied ||
+            permission == LocationPermission.deniedForever) {
           state = state.copyWith(
-            currentAddress: 'Izin lokasi ditolak',
             isFetchingAddress: false,
+            error: 'Izin lokasi tidak diberikan',
           );
           return;
         }
       }
-      if (permission == LocationPermission.deniedForever) {
+
+      final pos = await LocationService.instance.getCurrentLocation();
+      if (pos == null) {
         state = state.copyWith(
-          currentAddress: 'Izin lokasi ditolak permanen',
           isFetchingAddress: false,
+          error: 'Lokasi tidak terdeteksi. Aktifkan GPS Anda.',
         );
         return;
       }
 
-      final pos = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.best,
-          timeLimit: Duration(seconds: 10),
-        ),
-      );
+      state = state.copyWith(position: pos);
 
-      state = state.copyWith(currentPosition: pos);
-
-      List<Placemark> placemarks = await Geocoding().placemarkFromCoordinates(
+      final address = await LocationService.instance.getAddressFromCoordinates(
         pos.latitude,
         pos.longitude,
       );
 
-      if (placemarks.isNotEmpty) {
-        final p = placemarks.first;
-        String address = '';
-        if (p.street != null && p.street!.isNotEmpty) {
-          address = p.street!;
-          if (p.country != null && p.country!.isNotEmpty) {
-            address = address.replaceAll(', ${p.country!}', '').trim();
-            if (address.endsWith(',')) {
-              address = address.substring(0, address.length - 1);
-            }
-          }
-        } else {
-          List<String> parts = [];
-          if (p.subLocality != null && p.subLocality!.isNotEmpty) {
-            parts.add(p.subLocality!);
-          }
-          if (p.locality != null && p.locality!.isNotEmpty) {
-            parts.add(p.locality!);
-          }
-          address = parts.join(', ');
-        }
-        if (address.isEmpty) address = 'Lokasi tidak diketahui';
-        state = state.copyWith(
-          currentAddress: address,
-          isFetchingAddress: false,
-        );
-      } else {
-        state = state.copyWith(
-          currentAddress: 'Lokasi tidak ditemukan',
-          isFetchingAddress: false,
-        );
-      }
+      state = state.copyWith(
+        position: pos,
+        address: address,
+        isFetchingAddress: false,
+        clearError: true,
+      );
     } catch (e) {
       state = state.copyWith(
-        currentAddress: 'Gagal memuat alamat',
         isFetchingAddress: false,
+        error: 'Gagal memperbarui alamat',
       );
     }
   }
 }
 
+/// Provider shared lokasi & reverse geocoding alamat
 final userLocationProvider =
     StateNotifierProvider<UserLocationNotifier, UserLocationState>((ref) {
-      return UserLocationNotifier();
-    });
+  return UserLocationNotifier(ref);
+});

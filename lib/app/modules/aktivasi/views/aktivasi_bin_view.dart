@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import '../../../data/services/location_service.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/utils/platform_utils.dart';
 import '../../auth/controllers/auth_controller.dart';
@@ -11,7 +12,6 @@ import '../../shared/widgets/app_loading.dart';
 import '../../shared/widgets/qr_scanner_widget.dart';
 import '../../../data/services/notification_engine.dart' as import_engine;
 import '../../riwayat/controllers/riwayat_controller.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 /// Aktivasi Tempat Sampah — sesuai desain:
 /// AppBar biru, QrScannerWidget (kamera native / input manual),
@@ -77,59 +77,21 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
   Future<bool> _checkAndRequestLocation({bool showDialogs = true}) async {
     if (!PlatformUtils.isMobile) return true;
 
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      if (mounted && showDialogs) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => AlertDialog(
-            title: const Text('GPS Tidak Aktif'),
-            content: const Text(
-              'Silakan aktifkan GPS/Layanan Lokasi pada perangkat Anda untuk mencatat titik posisi tempat sampah.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  Geolocator.openLocationSettings();
-                },
-                child: const Text('Buka Pengaturan'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Batal'),
-              ),
-            ],
-          ),
-        );
-      }
-      return false;
-    }
-
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
+    final LocationPermission permission;
+    if (showDialogs && mounted) {
+      permission = await LocationService.instance.checkAndRequestPermission(
+        context,
+        role: 'warga',
+      );
+    } else {
+      final bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) return false;
+      permission = await Geolocator.checkPermission();
     }
 
     if (permission == LocationPermission.deniedForever ||
-        permission == LocationPermission.denied) {
-      if (mounted && showDialogs) {
-        ScaffoldMessenger.of(context).clearSnackBars();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
-              'Akses lokasi diperlukan untuk mencatat titik posisi tempat sampah.',
-            ),
-            backgroundColor: AppColors.dangerRed,
-            action: SnackBarAction(
-              label: 'Pengaturan',
-              textColor: Colors.white,
-              onPressed: () => openAppSettings(),
-            ),
-          ),
-        );
-      }
+        permission == LocationPermission.denied ||
+        permission == LocationPermission.unableToDetermine) {
       return false;
     }
 
@@ -352,6 +314,9 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
         return 'QR Code tempat sampah tidak terdaftar di sistem.';
       case 'BIN_CATEGORY_DUPLICATE':
         return msg ?? 'Kategori tempat sampah sudah terdaftar untuk warga ini.';
+      case 'ONBOARDING_INCOMPLETE_WRONG_CATEGORY':
+        return msg ??
+            'Harap selesaikan aktivasi kategori tempat sampah yang belum terdaftar.';
       default:
         if (msg != null && msg.isNotEmpty) {
           return msg;

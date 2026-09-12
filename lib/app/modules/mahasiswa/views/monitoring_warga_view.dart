@@ -54,15 +54,15 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
 
         // Fallback: jika profil kosong, gunakan data kelompok KKN
         // Ini terjadi pada akun bulk-insert yang tidak punya wilayah di profil
-        if (kelurahan.isEmpty) {
-          final kelompok = ref.read(kelompokKknProvider).kelompok;
-          if (kelompok != null) {
-            // poskoLocation diisi dari field kelurahan kelompok di backend
-            final loc = kelompok.poskoLocation;
-            if (loc.isNotEmpty && loc != '-') {
-              kelurahan = loc;
-            }
+        final kelompok = ref.read(kelompokKknProvider).kelompok;
+        if (kelurahan.isEmpty && kelompok != null) {
+          final loc = kelompok.poskoLocation;
+          if (loc.isNotEmpty && loc != '-') {
+            kelurahan = loc;
           }
+        }
+        if (rw.isEmpty && kelompok != null && kelompok.cakupanRw.isNotEmpty) {
+          rw = kelompok.cakupanRw.join(', ');
         }
 
         ref
@@ -301,27 +301,6 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
           ),
           onPressed: () => Navigator.pop(context),
         ),
-        actions: isAktivasiBinMode
-            ? [
-                TextButton.icon(
-                  onPressed: () =>
-                      Navigator.pushNamed(context, '/ketersediaan-qr'),
-                  icon: const Icon(
-                    Icons.qr_code_2,
-                    color: AppColors.primaryGreen,
-                    size: 20,
-                  ),
-                  label: const Text(
-                    'Daftar QR',
-                    style: TextStyle(
-                      color: AppColors.primaryGreen,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-              ]
-            : null,
       ),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -804,6 +783,88 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                                 height: 46,
                                 child: ElevatedButton.icon(
                                   onPressed: () {
+                                    // Validasi: Mahasiswa HANYA boleh aktivasi warga di RW penugasannya sendiri (atau cakupan kelompok jika Multi-RW)
+                                    final studentRwClean = userRw
+                                        .replaceAll(RegExp(r'[^\d,]'), '')
+                                        .split(',')
+                                        .map((s) => s.replaceAll(RegExp(r'^0+'), '').trim())
+                                        .where((s) => s.isNotEmpty)
+                                        .toSet();
+
+                                    final wargaRwClean = warga.rw
+                                        .replaceAll(RegExp(r'[^\d,]'), '')
+                                        .split(',')
+                                        .map((s) => s.replaceAll(RegExp(r'^0+'), '').trim())
+                                        .where((s) => s.isNotEmpty)
+                                        .toSet();
+
+                                    final kelompok = ref.read(kelompokKknProvider).kelompok;
+                                    final kelompokCakupanSet = (kelompok?.cakupanRw ?? const [])
+                                        .map((s) => s.replaceAll(RegExp(r'[^\d]'), '').replaceFirst(RegExp(r'^0+'), '').trim())
+                                        .where((s) => s.isNotEmpty)
+                                        .toSet();
+
+                                    final effectiveStudentRw = studentRwClean.isNotEmpty
+                                        ? studentRwClean
+                                        : kelompokCakupanSet;
+
+                                    if (effectiveStudentRw.isNotEmpty &&
+                                        wargaRwClean.isNotEmpty &&
+                                        !effectiveStudentRw.contains(wargaRwClean.first)) {
+                                      final isSingle = studentRwClean.isNotEmpty;
+                                      final scopeTitle = isSingle
+                                          ? 'RW 0${studentRwClean.join(', RW 0')}'
+                                          : 'RW ${kelompokCakupanSet.map((r) => '0$r').join(', ')}';
+                                      final errorDesc = isSingle
+                                          ? 'Warga binaan ${warga.wargaName} berada di RW 0${wargaRwClean.first}, sedangkan wilayah penugasan KKN Anda adalah $scopeTitle.\n\nAnda HANYA diperbolehkan melakukan aktivasi tempat sampah untuk warga di wilayah penugasan Anda.'
+                                          : 'Warga binaan ${warga.wargaName} berada di RW 0${wargaRwClean.first}, di luar wilayah cakupan kelompok KKN Anda ($scopeTitle).\n\nAnda HANYA diperbolehkan melakukan aktivasi tempat sampah untuk warga di wilayah binaan kelompok Anda.';
+
+                                      showDialog(
+                                        context: context,
+                                        builder: (dialogCtx) => AlertDialog(
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(16),
+                                          ),
+                                          title: const Row(
+                                            children: [
+                                              Icon(
+                                                Icons.warning_amber_rounded,
+                                                color: AppColors.warningOrange,
+                                                size: 28,
+                                              ),
+                                              SizedBox(width: 10),
+                                              Expanded(
+                                                child: Text(
+                                                  'Di Luar Wilayah Penugasan',
+                                                  style: TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          content: Text(errorDesc),
+                                          actions: [
+                                            ElevatedButton(
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: AppColors.primaryGreen,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.circular(10),
+                                                ),
+                                              ),
+                                              onPressed: () => Navigator.pop(dialogCtx),
+                                              child: const Text(
+                                                'Mengerti',
+                                                style: TextStyle(color: Colors.white),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                      return;
+                                    }
+
                                     Navigator.pushNamed(
                                       context,
                                       AppRoutes.aktivasiWarga,
@@ -811,6 +872,9 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                                         'warga': {
                                           'id': warga.wargaId,
                                           'name': warga.wargaName,
+                                          'rw': warga.rw,
+                                          'kelurahan': warga.kelurahan,
+                                          'address': warga.address,
                                         },
                                       },
                                     );

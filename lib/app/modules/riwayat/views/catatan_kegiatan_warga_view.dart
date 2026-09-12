@@ -168,7 +168,7 @@ class CatatanKegiatanWargaView extends ConsumerWidget {
                               const SizedBox(width: 4),
                               Expanded(
                                 child: Text(
-                                  'Titik Lokasi QR: ${entry.location ?? "-6.8915, 107.6107 (Coblong)"}',
+                                  'Titik Lokasi QR: ${entry.location ?? "-"}',
                                   style: const TextStyle(
                                     fontSize: 12,
                                     color: AppColors.textSecondary,

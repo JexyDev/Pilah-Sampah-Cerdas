@@ -829,33 +829,42 @@ class ApiBinRepository implements BinRepository {
   @override
   Future<List<BinPresetEntity>> getBinPresetsTabung() async {
     try {
-      final response = await apiClient.dio.get('/api/v1/bins/presets/tabung');
+      final response = await apiClient.dio.get(ApiEndpoints.binsPresetsTabung);
       final data = response.data;
       if (data != null && data['status'] == 'success') {
         final List<dynamic> items = data['data'] ?? [];
-
-        return items.map((json) => BinPresetEntity.fromJson(json)).toList();
+        if (items.isNotEmpty) {
+          return items
+              .map((json) =>
+                  BinPresetEntity.fromJson(json as Map<String, dynamic>))
+              .toList();
+        }
       }
-      return [];
+      return BinPresetEntity.defaultTabungPresets;
     } catch (e) {
       debugPrint('Error getBinPresetsTabung: $e');
-      return [];
+      return BinPresetEntity.defaultTabungPresets;
     }
   }
 
   @override
   Future<List<BinPresetEntity>> getBinPresetsKotak() async {
     try {
-      final response = await apiClient.dio.get('/api/v1/bins/presets/kotak');
+      final response = await apiClient.dio.get(ApiEndpoints.binsPresetsKotak);
       final data = response.data;
       if (data != null && data['status'] == 'success') {
         final List<dynamic> items = data['data'] ?? [];
-        return items.map((json) => BinPresetEntity.fromJson(json)).toList();
+        if (items.isNotEmpty) {
+          return items
+              .map((json) =>
+                  BinPresetEntity.fromJson(json as Map<String, dynamic>))
+              .toList();
+        }
       }
-      return [];
+      return BinPresetEntity.defaultKotakPresets;
     } catch (e) {
       debugPrint('Error getBinPresetsKotak: $e');
-      return [];
+      return BinPresetEntity.defaultKotakPresets;
     }
   }
 

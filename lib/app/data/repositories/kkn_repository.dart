@@ -104,7 +104,7 @@ abstract class KknRepository {
   Future<KelompokKknData?> getKelompokKkn();
 
   /// Mengambil data kuota dan daftar 20 QR Code Stiker kelompok
-  Future<KelompokQrResponse> getKelompokQrCodes();
+  Future<KelompokQrResponse> getKelompokQrCodes({String? kelompokId});
 
   /// Mengambil data wilayah dan posko kelompok KKN (GET /api/v1/kkn/wilayah-kelompok)
   Future<WilayahKelompokModel?> getWilayahKelompok();

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 
 class LocationService {
@@ -7,43 +8,110 @@ class LocationService {
 
   static final LocationService instance = LocationService._();
 
-  /// Meminta izin lokasi dengan alert dialog edukasi sebelumnya
+  /// Meminta izin lokasi dengan alert dialog edukasi sesuai peran pengguna
   Future<LocationPermission> checkAndRequestPermission(
-    BuildContext context,
-  ) async {
+    BuildContext context, {
+    String? role,
+    String? customMessage,
+    bool mandatory = false,
+  }) async {
     bool serviceEnabled;
     LocationPermission permission;
 
     // Test if location services are enabled.
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
+      if (context.mounted) {
+        await showDialog(
+          context: context,
+          barrierDismissible: !mandatory,
+          builder: (ctx) => PopScope(
+            canPop: !mandatory,
+            child: AlertDialog(
+              title: const Text(
+                'GPS Tidak Aktif',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              content: const Text(
+                'Layanan GPS pada HP Anda sedang mati. Silakan aktifkan GPS agar dapat menggunakan aplikasi.',
+              ),
+              actions: [
+                if (!mandatory)
+                  TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: const Text('Batal', style: TextStyle(color: Colors.grey)),
+                  ),
+                ElevatedButton(
+                  onPressed: () async {
+                    Navigator.of(ctx).pop();
+                    final isNowEnabled =
+                        await Geolocator.isLocationServiceEnabled();
+                    if (!isNowEnabled) {
+                      Geolocator.openLocationSettings();
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Aktifkan GPS'),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
       return LocationPermission.unableToDetermine;
     }
 
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
-      // Tampilkan dialog penjelasan terlebih dahulu
+      // Tampilkan dialog penjelasan sesuai role
       if (context.mounted) {
+        String message;
+        if (customMessage != null && customMessage.isNotEmpty) {
+          message = customMessage;
+        } else {
+          final r =
+              role?.toLowerCase().replaceAll('_', '').replaceAll(' ', '') ?? '';
+          if (r.contains('petugas')) {
+            message =
+                'Izin lokasi digunakan untuk memvalidasi lokasi penimbangan sampah dan pencatatan operasional pemilahan sampah.';
+          } else if (r.contains('mahasiswa') || r.contains('kkn')) {
+            message =
+                'Lokasi kamu dipantau selama aplikasi dibuka untuk keperluan absensi kegiatan KKN secara real-time berdasarkan radius kegiatan.';
+          } else {
+            // Role Warga (role default di mobile)
+            message =
+                'Izin lokasi digunakan untuk mendeteksi alamat tempat sampah dan memverifikasi setoran pemilahan sampah Anda secara akurat.';
+          }
+        }
+
         await showDialog(
           context: context,
-          barrierDismissible: false,
-          builder: (ctx) => AlertDialog(
-            title: const Text(
-              'Izin Lokasi Diperlukan',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            content: const Text(
-              'Lokasi kamu dipantau selama aplikasi dibuka untuk keperluan absensi kegiatan KKN secara real-time berdasarkan radius kegiatan.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text(
-                  'Saya Mengerti',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
+          barrierDismissible: !mandatory,
+          builder: (ctx) => PopScope(
+            canPop: !mandatory,
+            child: AlertDialog(
+              title: const Text(
+                'Izin Lokasi Diperlukan',
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
-            ],
+              content: Text(message),
+              actions: [
+                ElevatedButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text(
+                    'Lanjutkan & Izinkan',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       }
@@ -58,34 +126,39 @@ class LocationService {
       if (context.mounted) {
         await showDialog(
           context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text(
-              'Izin Lokasi Diblokir',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            content: const Text(
-              'Fitur ini wajib menggunakan GPS. Silakan buka Pengaturan HP Anda dan izinkan akses lokasi.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text(
-                  'Batal',
-                  style: TextStyle(color: Colors.grey),
-                ),
+          barrierDismissible: !mandatory,
+          builder: (ctx) => PopScope(
+            canPop: !mandatory,
+            child: AlertDialog(
+              title: const Text(
+                'Izin Lokasi Diblokir',
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.of(ctx).pop();
-                  Geolocator.openAppSettings();
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('Pengaturan'),
+              content: const Text(
+                'Fitur ini wajib menggunakan GPS. Silakan buka Pengaturan HP Anda dan izinkan akses lokasi.',
               ),
-            ],
+              actions: [
+                if (!mandatory)
+                  TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: const Text(
+                      'Batal',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(ctx).pop();
+                    Geolocator.openAppSettings();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Buka Pengaturan'),
+                ),
+              ],
+            ),
           ),
         );
       }
@@ -135,6 +208,42 @@ class LocationService {
       return pos;
     } catch (_) {
       return null;
+    }
+  }
+
+  /// Mengonversi koordinat (lat, lng) ke nama alamat ringkas (reverse geocoding)
+  /// Format disesuaikan dengan standar tampilan di modul Mahasiswa.
+  Future<String?> getAddressFromCoordinates(double lat, double lng) async {
+    // ponytail: reverse geocoding placemark; fallback jika gagal/offline
+    try {
+      final placemarks = await Geocoding().placemarkFromCoordinates(lat, lng);
+      if (placemarks.isNotEmpty) {
+        final p = placemarks.first;
+        String address = '';
+        if (p.street != null && p.street!.isNotEmpty) {
+          address = p.street!;
+          if (p.country != null && p.country!.isNotEmpty) {
+            address = address.replaceAll(', ${p.country!}', '').trim();
+            if (address.endsWith(',')) {
+              address = address.substring(0, address.length - 1);
+            }
+          }
+        } else {
+          final parts = <String>[];
+          if (p.subLocality != null && p.subLocality!.isNotEmpty) {
+            parts.add(p.subLocality!);
+          }
+          if (p.locality != null && p.locality!.isNotEmpty) {
+            parts.add(p.locality!);
+          }
+          address = parts.join(', ');
+        }
+        if (address.isEmpty) address = 'Lokasi tidak diketahui';
+        return address;
+      }
+      return 'Lokasi tidak ditemukan';
+    } catch (_) {
+      return 'Gagal memuat alamat';
     }
   }
 }

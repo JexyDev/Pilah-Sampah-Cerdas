@@ -22,7 +22,11 @@ import '../shared/widgets/empty_state.dart';
 import '../../core/utils/network_exception_helper.dart';
 import '../../core/utils/scan_guard.dart';
 import '../mahasiswa/controllers/location_ping_controller.dart';
+import 'package:geolocator/geolocator.dart';
+import '../../core/utils/platform_utils.dart';
+import '../../data/services/location_service.dart';
 import '../shared/controllers/user_location_controller.dart';
+import '../shared/widgets/user_location_card.dart';
 
 /// Halaman beranda — sesuai desain:
 /// Header biru, avatar+nama+RW, stats card, Aksi Cepat, Riwayat.
@@ -35,16 +39,62 @@ class BerandaView extends ConsumerStatefulWidget {
   ConsumerState<BerandaView> createState() => _BerandaViewState();
 }
 
-class _BerandaViewState extends ConsumerState<BerandaView> {
+class _BerandaViewState extends ConsumerState<BerandaView>
+    with WidgetsBindingObserver {
+  bool _isCheckingLocation = false;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final user = ref.read(authProvider).user;
-      if (user?.role == UserRole.mahasiswaKkn) {
-        ref.read(locationPingControllerProvider.notifier).startTracking();
-      }
+      _checkLocationIfNeeded();
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkLocationIfNeeded();
+    }
+  }
+
+  Future<void> _checkLocationIfNeeded() async {
+    if (!mounted || _isCheckingLocation) return;
+    final user = ref.read(authProvider).user;
+    if (user?.role == UserRole.mahasiswaKkn) {
+      ref.read(locationPingControllerProvider.notifier).startTracking();
+      return;
+    }
+
+    if (PlatformUtils.isMobile && user?.role == UserRole.warga) {
+      _isCheckingLocation = true;
+      try {
+        final perm = await LocationService.instance.checkAndRequestPermission(
+          context,
+          role: 'warga',
+          mandatory: true,
+        );
+        if (perm == LocationPermission.whileInUse ||
+            perm == LocationPermission.always) {
+          if (mounted) {
+            ref.read(userLocationProvider.notifier).refreshLocation();
+          }
+        }
+      } finally {
+        if (mounted) {
+          _isCheckingLocation = false;
+        }
+      }
+    } else {
+      ref.read(userLocationProvider.notifier).refreshLocation();
+    }
   }
 
   @override
@@ -60,6 +110,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
       backgroundColor: AppColors.backgroundCanvas,
       body: RefreshIndicator(
         onRefresh: () async {
+          ref.read(userLocationProvider.notifier).refreshLocation();
           ref.invalidate(binsProvider);
           ref.invalidate(totalPointsProvider);
           ref.invalidate(dailyPointsProvider);
@@ -339,6 +390,50 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                                         );
                                       }).toList(),
                                     ),
+                                  ),
+                                  Builder(
+                                    builder: (context) {
+                                      final hasOrganic = activeBins.any((b) => b.binType == WasteType.organic);
+                                      final hasNonOrganic = activeBins.any((b) => b.binType == WasteType.nonOrganic);
+                                      final isMissingOne = (hasOrganic && !hasNonOrganic) || (!hasOrganic && hasNonOrganic);
+                                      if (!isMissingOne) return const SizedBox.shrink();
+
+                                      final missingName = hasOrganic ? 'Anorganik (Kuning)' : 'Organik (Hijau)';
+                                      final targetType = hasOrganic ? 'non_organic' : 'organic';
+
+                                      return Container(
+                                        margin: const EdgeInsets.only(top: 10),
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFFFFBEB),
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(color: AppColors.warningYellow.withValues(alpha: 0.6)),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            const Icon(Icons.info_outline_rounded, color: AppColors.warningYellow, size: 20),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Text(
+                                                'Lengkapi tempat sampah $missingName Anda agar dapat mulai memilah sampah.',
+                                                style: const TextStyle(fontSize: 12, color: AppColors.textPrimary, fontWeight: FontWeight.w500),
+                                              ),
+                                            ),
+                                            TextButton(
+                                              onPressed: () => Navigator.of(context).pushNamed(
+                                                AppRoutes.ukurKapasitas,
+                                                arguments: {'targetType': targetType},
+                                              ),
+                                              style: TextButton.styleFrom(
+                                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                                visualDensity: VisualDensity.compact,
+                                              ),
+                                              child: const Text('Aktivasi', style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.bold, fontSize: 12)),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
                                   ),
                                 ],
                               );
@@ -722,71 +817,6 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
-                    Consumer(
-                      builder: (context, ref, child) {
-                        final locationState = ref.watch(userLocationProvider);
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.location_on_rounded,
-                                  size: 11,
-                                  color: AppColors.textSecondary,
-                                ),
-                                const SizedBox(width: 4),
-                                Expanded(
-                                  child: Text(
-                                    locationState.isFetchingAddress
-                                        ? 'Mencari alamat...'
-                                        : (locationState.currentAddress ??
-                                              'Lokasi belum diperbarui'),
-                                    style: const TextStyle(
-                                      fontSize: 10.5,
-                                      color: AppColors.textSecondary,
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                GestureDetector(
-                                  behavior: HitTestBehavior.opaque,
-                                  onTap: () {
-                                    ref
-                                        .read(userLocationProvider.notifier)
-                                        .fetchAddress();
-                                  },
-                                  child: const Padding(
-                                    padding: EdgeInsets.only(left: 8.0),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          Icons.refresh_rounded,
-                                          size: 13,
-                                          color: AppColors.primaryBlue,
-                                        ),
-                                        SizedBox(width: 3),
-                                        Text(
-                                          'Perbarui',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w600,
-                                            color: AppColors.primaryBlue,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        );
-                      },
-                    ),
                   ],
                 ),
               ),
@@ -905,6 +935,29 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                 ],
               ),
             ],
+          ),
+          const SizedBox(height: 10),
+          // Baris 2: Lokasi Domisili & GPS Card Terstruktur Warga (2 Tier)
+          Consumer(
+            builder: (context, ref, _) {
+              final locState = ref.watch(userLocationProvider);
+              final rwText = user?.formattedRw.isNotEmpty == true && user?.formattedRw != '-'
+                  ? 'RW ${user!.formattedRw}'
+                  : (user?.rw.isNotEmpty == true && user?.rw != '-' ? 'RW ${user!.rw}' : '');
+              final kelText = user?.kelurahan.isNotEmpty == true && user?.kelurahan != '-'
+                  ? (user!.kelurahan.toLowerCase().startsWith('kel') ? user.kelurahan : 'Kel. ${user.kelurahan}')
+                  : '';
+              final wilayahList = [kelText, rwText].where((s) => s.isNotEmpty).toList();
+              final wilayahTitle = wilayahList.isNotEmpty ? wilayahList.join(' • ') : 'Wilayah Warga';
+
+              return UserLocationCard(
+                wilayahTitle: wilayahTitle,
+                isFetchingAddress: locState.isFetchingAddress,
+                address: locState.address,
+                position: locState.position,
+                onRefresh: () => ref.read(userLocationProvider.notifier).refreshLocation(context: context),
+              );
+            },
           ),
         ],
       ),

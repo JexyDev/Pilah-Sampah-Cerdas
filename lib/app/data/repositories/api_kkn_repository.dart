@@ -437,15 +437,17 @@ class ApiKknRepository implements KknRepository {
     double? lat,
     double? lng,
   }) async {
+    final payload = <String, dynamic>{
+      'wargaId': wargaId,
+      'binOrganikId': binOrganikId,
+      'binAnorganikId': binAnorganikId,
+    };
+    if (lat != null && lat != 0.0) payload['latitude'] = lat;
+    if (lng != null && lng != 0.0) payload['longitude'] = lng;
+
     final response = await apiClient.dio.post(
       ApiEndpoints.kknActivateBin,
-      data: {
-        'wargaId': wargaId,
-        'binOrganikId': binOrganikId,
-        'binAnorganikId': binAnorganikId,
-        'latitude': lat ?? 0.0,
-        'longitude': lng ?? 0.0,
-      },
+      data: payload,
     );
     return response.statusCode == 200 || response.statusCode == 201;
   }
@@ -516,10 +518,15 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<KelompokQrResponse> getKelompokQrCodes() async {
+  Future<KelompokQrResponse> getKelompokQrCodes({String? kelompokId}) async {
     try {
+      final queryParams = <String, dynamic>{};
+      if (kelompokId != null && kelompokId.isNotEmpty) {
+        queryParams['kelompokId'] = kelompokId;
+      }
       final response = await apiClient.dio.get(
         ApiEndpoints.kknMyKelompokQrCodes,
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
       );
       if (response.statusCode == 200 && response.data != null) {
         return KelompokQrResponse.fromJson(
