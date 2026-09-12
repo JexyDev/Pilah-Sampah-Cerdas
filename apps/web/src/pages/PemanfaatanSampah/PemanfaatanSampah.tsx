@@ -39,6 +39,17 @@ import PageHeader from "../../components/common/PageHeader";
 import { ThemeTileLayer, GOOGLE_SATELLITE_URL } from "../../components/common/ThemeTileLayer";
 import { createFacilityIcon, KELURAHAN_GEODATA } from "../../constants/coblongGeoData";
 import { resolveImageUrl } from "../../utils/imageUrl";
+import {
+  formatRwLabel,
+  isKelurahanMatching,
+  isRwMatching,
+  isKelompokCoveringRw,
+  getRwOptionsForKelurahan,
+  fetchMasterWilayah,
+  type MasterKelurahanItem,
+  type MasterRwItem,
+} from "../../utils/areaFilterUtils";
+import { formatWilayahName, formatKelompokName } from "../../utils/textFormatter";
 
 export interface FacilityItem {
   id: string;
@@ -220,8 +231,11 @@ export const PemanfaatanSampah: React.FC = () => {
   // Filter & Search
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedJenis, setSelectedJenis] = useState("ALL");
+  const [selectedKelurahan, setSelectedKelurahan] = useState("ALL");
   const [selectedRwId, setSelectedRwId] = useState("ALL");
   const [selectedKelompokId, setSelectedKelompokId] = useState("ALL");
+  const [masterKelurahanList, setMasterKelurahanList] = useState<MasterKelurahanItem[]>([]);
+  const [masterRwList, setMasterRwList] = useState<MasterRwItem[]>([]);
 
   // Kelompok list for filter dropdown
   const [kelompokList, setKelompokList] = useState<KelompokItem[]>([]);
@@ -265,20 +279,29 @@ export const PemanfaatanSampah: React.FC = () => {
   useEffect(() => {
     fetchItems();
     fetchKelompok();
+    fetchMasterWilayah().then(({ kelurahans, rws }) => {
+      setMasterKelurahanList(kelurahans);
+      setMasterRwList(rws);
+    });
   }, []);
 
-  // Derive unique RW list from loaded facility items
-  const rwOptions = useMemo(() => {
-    const map = new Map<number, string>();
-    items.forEach((item) => {
-      if (item.rw?.id && item.rw?.name) {
-        map.set(item.rw.id, item.rw.name);
+  // Derive dynamic RW list based on selected Kelurahan
+  const rwFilterOptions = useMemo(() => {
+    return getRwOptionsForKelurahan(selectedKelurahan, masterRwList);
+  }, [selectedKelurahan, masterRwList]);
+
+  // Derive filtered Kelompok list based on selected Kelurahan & RW
+  const filteredKelompokOptions = useMemo(() => {
+    return kelompokList.filter((k: any) => {
+      if (selectedKelurahan !== "ALL" && !isKelurahanMatching(k.kelurahan, selectedKelurahan)) {
+        return false;
       }
+      if (selectedRwId !== "ALL" && !isKelompokCoveringRw(k, selectedRwId)) {
+        return false;
+      }
+      return true;
     });
-    return Array.from(map.entries())
-      .map(([id, name]) => ({ id, name }))
-      .sort((a, b) => a.id - b.id);
-  }, [items]);
+  }, [kelompokList, selectedKelurahan, selectedRwId]);
 
   // Metrik Penghitungan Fasilitas Persampahan
   const metrics = useMemo(() => {
@@ -326,20 +349,40 @@ export const PemanfaatanSampah: React.FC = () => {
         matchJenis = item.jenis === selectedJenis;
       }
 
-      const matchRw =
-        selectedRwId === "ALL" || String(item.rw?.id) === selectedRwId;
+      let matchKelurahan = true;
+      if (selectedKelurahan !== "ALL") {
+        const itemKelName = (item as any).kelurahan || (item.rw as any)?.kelurahan?.name;
+        if (itemKelName) {
+          matchKelurahan = isKelurahanMatching(itemKelName, selectedKelurahan);
+        } else if (item.rw?.id) {
+          const rwObj = masterRwList.find((r) => r.id === item.rw?.id);
+          if (rwObj?.kelurahanName) {
+            matchKelurahan = isKelurahanMatching(rwObj.kelurahanName, selectedKelurahan);
+          } else {
+            matchKelurahan = isKelurahanMatching(item.alamat, selectedKelurahan);
+          }
+        } else {
+          matchKelurahan = isKelurahanMatching(item.alamat, selectedKelurahan);
+        }
+      }
+
+      let matchRw = true;
+      if (selectedRwId !== "ALL") {
+        const itemRwStr = item.rw?.name ? String(item.rw.name) : (item.rw?.id ? String(item.rw.id) : "");
+        matchRw = isRwMatching(itemRwStr, selectedRwId);
+      }
 
       const matchKelompok =
         selectedKelompokId === "ALL" || item.kelompokId === selectedKelompokId;
 
-      return matchSearch && matchJenis && matchRw && matchKelompok;
+      return matchSearch && matchJenis && matchKelurahan && matchRw && matchKelompok;
     });
-  }, [items, searchQuery, selectedJenis, selectedRwId, selectedKelompokId]);
+  }, [items, searchQuery, selectedJenis, selectedKelurahan, selectedRwId, selectedKelompokId, masterRwList]);
 
   // Reset pagination on search / filter
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, selectedJenis, selectedRwId, selectedKelompokId, itemsPerPage]);
+  }, [searchQuery, selectedJenis, selectedKelurahan, selectedRwId, selectedKelompokId, itemsPerPage]);
 
   // Pagination logic
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / itemsPerPage));
@@ -800,6 +843,27 @@ export const PemanfaatanSampah: React.FC = () => {
                   </select>
                 </div>
 
+                {/* Filter Kelurahan */}
+                <div className="relative flex items-center">
+                  <MapPin size={14} className="absolute left-2.5 text-slate-400 pointer-events-none" />
+                  <select
+                    value={selectedKelurahan}
+                    onChange={(e) => {
+                      setSelectedKelurahan(e.target.value);
+                      setSelectedRwId("ALL");
+                      setCurrentPage(1);
+                    }}
+                    className="pl-7 pr-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold outline-none focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 text-slate-800 dark:text-slate-100 transition-all cursor-pointer"
+                  >
+                    <option value="ALL">Semua Kelurahan</option>
+                    {masterKelurahanList.map((k) => (
+                      <option key={k.id} value={k.name}>
+                        Kel. {formatWilayahName(k.name)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 {/* Filter Wilayah (RW) */}
                 <div className="relative flex items-center">
                   <Globe size={14} className="absolute left-2.5 text-slate-400 pointer-events-none" />
@@ -808,10 +872,10 @@ export const PemanfaatanSampah: React.FC = () => {
                     onChange={(e) => { setSelectedRwId(e.target.value); setCurrentPage(1); }}
                     className="pl-7 pr-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold outline-none focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 text-slate-800 dark:text-slate-100 transition-all cursor-pointer"
                   >
-                    <option value="ALL">Semua Wilayah</option>
-                    {rwOptions.map((rw) => (
-                      <option key={rw.id} value={String(rw.id)}>
-                        {rw.name.startsWith("RW") || rw.name.startsWith("Kel.") ? rw.name : `RW ${rw.name}`}
+                    <option value="ALL">Semua RW</option>
+                    {rwFilterOptions.map((rw) => (
+                      <option key={rw} value={rw}>
+                        {formatRwLabel(rw)}
                       </option>
                     ))}
                   </select>
@@ -827,9 +891,9 @@ export const PemanfaatanSampah: React.FC = () => {
                       className="pl-7 pr-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold outline-none focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 text-slate-800 dark:text-slate-100 transition-all cursor-pointer"
                     >
                       <option value="ALL">Semua Kelompok</option>
-                      {kelompokList.map((kel) => (
+                      {filteredKelompokOptions.map((kel) => (
                         <option key={kel.id} value={kel.id}>
-                          {kel.name}
+                          {formatKelompokName(kel.name)}
                         </option>
                       ))}
                     </select>
@@ -837,11 +901,12 @@ export const PemanfaatanSampah: React.FC = () => {
                 )}
 
                 {/* Tombol Reset Filter (tampil jika ada filter aktif) */}
-                {(selectedJenis !== "ALL" || selectedRwId !== "ALL" || selectedKelompokId !== "ALL") && (
+                {(selectedJenis !== "ALL" || selectedKelurahan !== "ALL" || selectedRwId !== "ALL" || selectedKelompokId !== "ALL") && (
                   <button
                     type="button"
                     onClick={() => {
                       setSelectedJenis("ALL");
+                      setSelectedKelurahan("ALL");
                       setSelectedRwId("ALL");
                       setSelectedKelompokId("ALL");
                       setCurrentPage(1);

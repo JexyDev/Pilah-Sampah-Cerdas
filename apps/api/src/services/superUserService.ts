@@ -1564,10 +1564,33 @@ export class SuperUserService {
       let rwId: number | null = null;
       let kelurahanId: string | null = null;
 
+      let cakupanList: string[] = [];
+      if (Array.isArray(kelompok.cakupanRw)) {
+        cakupanList = (kelompok.cakupanRw as any[]).map((r) => String(r).trim().toLowerCase());
+      } else if (typeof kelompok.cakupanRw === "string") {
+        try {
+          const parsed = JSON.parse(kelompok.cakupanRw);
+          if (Array.isArray(parsed)) {
+            cakupanList = parsed.map((r: any) => String(r).trim().toLowerCase());
+          }
+        } catch {
+          cakupanList = kelompok.cakupanRw.split(",").map((s) => s.trim().toLowerCase());
+        }
+      }
+
+      const distinctStudentRws = new Set(
+        kelompok.students.map((s) => s.assignedRwId).filter(Boolean)
+      );
+      const isMultiRw = cakupanList.length > 1 || distinctStudentRws.size > 1;
+
       const firstStudentWithRw = kelompok.students.find((s) => s.assignedRwId);
-      if (firstStudentWithRw?.assignedRwId) {
+      if (firstStudentWithRw?.assignedRw?.kelurahanId) {
+        kelurahanId = firstStudentWithRw.assignedRw.kelurahanId;
+      }
+
+      // If single RW, pre-assign rwId. If multi-RW, leave null (Shared Pool)
+      if (!isMultiRw && firstStudentWithRw?.assignedRwId) {
         rwId = firstStudentWithRw.assignedRwId;
-        kelurahanId = firstStudentWithRw.assignedRw?.kelurahanId || null;
       }
 
       if (!kelurahanId && kelompok.kelurahan) {

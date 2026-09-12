@@ -397,13 +397,28 @@ export class AuthController {
           ? String(rawFoto)
           : undefined;
 
+      // Accept wilayah fields from body
+      const rawKelurahan = req.body.kelurahan;
+      const rawRw = req.body.rw;
+      const rawKecamatan = req.body.kecamatan;
+
+      const wilayah =
+        rawKelurahan || rawRw || rawKecamatan
+          ? {
+              kelurahan: rawKelurahan ? String(rawKelurahan).trim() : undefined,
+              rw: rawRw ? String(rawRw).trim() : undefined,
+              kecamatan: rawKecamatan ? String(rawKecamatan).trim() : undefined,
+            }
+          : undefined;
+
       const updatedUser = await authService.updateProfile(
         userId,
         rawName ? String(rawName).trim() : undefined,
         rawPhone ? normalizePhone(String(rawPhone)) : undefined,
         rawAddress ? String(rawAddress).trim() : undefined,
         finalFoto,
-        familySizeNum
+        familySizeNum,
+        wilayah
       );
 
       const fSize = (updatedUser as any).jumlahAnggotaKeluarga ?? familySizeNum ?? 1;

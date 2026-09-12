@@ -31,13 +31,11 @@ import {
   X,
   Crown,
   ChevronLeft,
-  FileCheck,
   Award,
   Trophy,
   Filter,
   XCircle,
   AlertCircle,
-  SlidersHorizontal,
   Phone,
 } from "lucide-react";
 import {
@@ -58,6 +56,8 @@ import { useNavigate, Link } from "react-router-dom";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
 import { dplService, type GroupSummary, type StudentDetail } from "../../services/dplService";
+import LeaderboardWidget from "../../components/LeaderboardWidget";
+import { fetchMasterWilayah, type MasterKelurahanItem } from "../../utils/areaFilterUtils";
 
 interface KknExecutiveData {
   lastUpdated: string;
@@ -268,7 +268,8 @@ export const DashboardEksekutifKkn: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
-  // Master RW List dari API Area
+  // Master Wilayah & RW List dari fetchMasterWilayah
+  const [masterKelurahans, setMasterKelurahans] = useState<MasterKelurahanItem[]>([]);
   const [masterRwList, setMasterRwList] = useState<Array<{ id: number; name: string; kelurahanName: string }>>([]);
 
   // Kelompok KKN & Mahasiswa List untuk Section Daftar Kelompok & DPL Pengampu
@@ -296,9 +297,22 @@ export const DashboardEksekutifKkn: React.FC = () => {
   const [dplModalPage, setDplModalPage] = useState(1);
   const DPL_MODAL_PER_PAGE = 8;
 
-  // Ambil data master RW dari /areas/rw
+  // Ambil data master Wilayah & RW
   useEffect(() => {
-    const fetchMasterRw = async () => {
+    fetchMasterWilayah().then(({ kelurahans, rws }) => {
+      setMasterKelurahans(kelurahans);
+      if (rws.length > 0) {
+        setMasterRwList(
+          rws.map((r) => ({
+            id: Number(r.id),
+            name: r.name,
+            kelurahanName: r.kelurahanName || r.kelurahanNama || "",
+          }))
+        );
+      }
+    });
+
+    const fetchMasterRwFallback = async () => {
       try {
         const res = await api.get("/areas/rw");
         if (res.data?.success && Array.isArray(res.data?.data)) {
@@ -307,13 +321,13 @@ export const DashboardEksekutifKkn: React.FC = () => {
             name: r.name,
             kelurahanName: r.kelurahan?.name || "",
           }));
-          setMasterRwList(mapped);
+          setMasterRwList((prev) => (prev.length === 0 ? mapped : prev));
         }
       } catch (err) {
         console.error("Gagal memuat master RW:", err);
       }
     };
-    fetchMasterRw();
+    fetchMasterRwFallback();
   }, []);
 
   // Filter RW dinamis: Hanya tampilkan opsi RW jika kelurahan spesifik telah dipilih
@@ -836,6 +850,15 @@ export const DashboardEksekutifKkn: React.FC = () => {
             <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
             <span>Perbarui Data</span>
           </button>
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={downloading}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-extrabold text-xs rounded-full shadow-xs transition-all cursor-pointer disabled:opacity-50"
+          >
+            <Download size={14} />
+            <span>{downloading ? "Mengunduh..." : "Unduh Laporan"}</span>
+          </button>
         </div>
       </div>
 
@@ -871,12 +894,22 @@ export const DashboardEksekutifKkn: React.FC = () => {
             className="bg-transparent outline-none cursor-pointer pr-1 text-xs font-bold text-slate-700 dark:text-slate-200 w-full"
           >
             <option value="Semua Kelurahan">Semua Kelurahan</option>
-            <option value="Cipaganti">Kel. Cipaganti</option>
-            <option value="Dago">Kel. Dago</option>
-            <option value="Lebakgede">Kel. Lebakgede</option>
-            <option value="Lebak Siliwangi">Kel. Lebak Siliwangi</option>
-            <option value="Sadang Serang">Kel. Sadang Serang</option>
-            <option value="Sekeloa">Kel. Sekeloa</option>
+            {masterKelurahans.length > 0 ? (
+              masterKelurahans.map((kel) => (
+                <option key={kel.id || kel.name} value={kel.name}>
+                  Kel. {kel.name}
+                </option>
+              ))
+            ) : (
+              <>
+                <option value="Cipaganti">Kel. Cipaganti</option>
+                <option value="Dago">Kel. Dago</option>
+                <option value="Lebak Gede">Kel. Lebak Gede</option>
+                <option value="Lebak Siliwangi">Kel. Lebak Siliwangi</option>
+                <option value="Sadang Serang">Kel. Sadang Serang</option>
+                <option value="Sekeloa">Kel. Sekeloa</option>
+              </>
+            )}
           </select>
         </div>
 

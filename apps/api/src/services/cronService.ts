@@ -582,7 +582,7 @@ export class CronService {
       });
       const { calculateDistance } = await import("./kknAttendanceService.js");
       for (const att of activeAttendances) {
-        if (!att.schedule) continue;
+        if (!att.schedule || !att.schedule.latitude || !att.schedule.longitude) continue;
         // Skip geofence penalty if the activity has already ended
         if (this.isActivityFinished(att.schedule)) {
           console.log(
@@ -591,8 +591,8 @@ export class CronService {
           continue;
         }
         const radius = att.schedule.radius ? Number(att.schedule.radius) : 100;
-        const centerLat = att.schedule.latitude ? Number(att.schedule.latitude) : -6.8915;
-        const centerLng = att.schedule.longitude ? Number(att.schedule.longitude) : 107.6107;
+        const centerLat = Number(att.schedule.latitude);
+        const centerLng = Number(att.schedule.longitude);
         const logs = await prisma.studentLocation.findMany({
           where: {
             studentId: att.studentId,

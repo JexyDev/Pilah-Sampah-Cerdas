@@ -203,10 +203,10 @@ export class KknService {
         });
     const contributionPoints = pointsSum._sum.points || 0;
 
-    const poskoLat = student?.assignedRw?.latitude ? Number(student.assignedRw.latitude) : -6.8906;
+    const poskoLat = student?.assignedRw?.latitude ? Number(student.assignedRw.latitude) : null;
     const poskoLng = student?.assignedRw?.longitude
       ? Number(student.assignedRw.longitude)
-      : 107.615;
+      : null;
 
     const areaName = student?.assignedRw?.name
       ? student.assignedRw.name
@@ -375,14 +375,14 @@ export class KknService {
           ? Number(household.latitude)
           : u.rw?.latitude
             ? Number(u.rw.latitude)
-            : -6.891234;
+            : null;
       const lng = primaryBin.longitude
         ? Number(primaryBin.longitude)
         : household?.longitude
           ? Number(household.longitude)
           : u.rw?.longitude
             ? Number(u.rw.longitude)
-            : 107.610123;
+            : null;
 
       const setoranLogs = u.setoranOtomatis || [];
       const totalKg = setoranLogs.reduce(
@@ -732,14 +732,14 @@ export class KknService {
         ? Number(primaryBin.latitude)
         : warga.rw?.latitude
           ? Number(warga.rw.latitude)
-          : -6.891234;
+          : null;
     const lng = household?.longitude
       ? Number(household.longitude)
       : primaryBin?.longitude
         ? Number(primaryBin.longitude)
         : warga.rw?.longitude
           ? Number(warga.rw.longitude)
-          : 107.610123;
+          : null;
 
     // 1. Agregasi totalKg dan totalActivities
     const totalSetoranAgg = await prisma.setoranOtomatis.aggregate({
@@ -1183,14 +1183,14 @@ export class KknService {
           ? Number(primaryBin.latitude)
           : w.rw?.latitude
             ? Number(w.rw.latitude)
-            : -6.891234;
+            : null;
       const lng = household?.longitude
         ? Number(household.longitude)
         : primaryBin?.longitude
           ? Number(primaryBin.longitude)
           : w.rw?.longitude
             ? Number(w.rw.longitude)
-            : 107.610123;
+            : null;
 
       return {
         id: w.id,
@@ -1290,39 +1290,32 @@ export class KknService {
       let bin = await tx.bin.findUnique({ where: { qrCode } });
 
       if (!bin) {
-        let category = await tx.wasteCategory.findFirst({ where: { name: "ORGANIC" } });
-        if (!category) category = await tx.wasteCategory.findFirst();
-
-        bin = await tx.bin.create({
-          data: {
-            qrCode,
-            status: "ACTIVE_BOUND",
-            categoryId: category?.id,
-            userId: wargaId,
-            registeredByStudentId: kknUserId,
-          },
-        });
-      } else {
-        // Guard: reject if bin already owned by a different warga
-        if (
-          bin.userId &&
-          bin.userId !== wargaId &&
-          ["ACTIVE_BOUND", "PENDING_APPROVAL"].includes(bin.status)
-        ) {
-          throw new Error(
-            "Tempat sampah ini sudah dimiliki oleh warga lain dan tidak bisa diklaim ulang."
-          );
-        }
-
-        await tx.bin.update({
-          where: { id: bin.id },
-          data: {
-            userId: wargaId,
-            status: "ACTIVE_BOUND",
-            registeredByStudentId: kknUserId,
-          },
-        });
+        throw new Error(
+          `Tempat sampah dengan kode ${qrCode} tidak terdaftar di sistem. Pastikan stiker QR valid dan resmi.`
+        );
       }
+
+      // Guard: reject if bin already owned by a different warga
+      if (
+        bin.userId &&
+        bin.userId !== wargaId &&
+        ["ACTIVE_BOUND", "PENDING_APPROVAL"].includes(bin.status)
+      ) {
+        throw new Error(
+          "Tempat sampah ini sudah dimiliki oleh warga lain dan tidak bisa diklaim ulang."
+        );
+      }
+
+      await tx.bin.update({
+        where: { id: bin.id },
+        data: {
+          userId: wargaId,
+          status: "ACTIVE_BOUND",
+          registeredByStudentId: kknUserId,
+          rwId: targetWarga.rwId ?? bin.rwId,
+          ...(latitude && longitude ? { latitude, longitude } : {}),
+        },
+      });
 
       const existingOwnership = await tx.binOwnership.findFirst({
         where: { binId: bin.id, userId: wargaId },
@@ -1344,20 +1337,34 @@ export class KknService {
           });
           assignedRwId = student?.assignedRwId || student?.user?.rwId;
         }
-        if (!assignedRwId) {
-          const firstRw = await tx.rw.findFirst({ select: { id: true } });
-          assignedRwId = firstRw?.id || 1;
-        }
+
+        const targetRwRecord = assignedRwId
+          ? await tx.rw.findUnique({ where: { id: assignedRwId } })
+          : null;
+
+        const effectiveLat =
+          latitude != null && latitude !== 0
+            ? latitude
+            : targetRwRecord?.latitude != null
+            ? Number(targetRwRecord.latitude)
+            : 0;
+        const effectiveLng =
+          longitude != null && longitude !== 0
+            ? longitude
+            : targetRwRecord?.longitude != null
+            ? Number(targetRwRecord.longitude)
+            : 0;
+
         await tx.household.create({
           data: {
             userId: wargaId,
-            address: targetWarga.address || "Bandung, Jawa Barat",
-            rwId: assignedRwId,
-            latitude: latitude ?? -6.8903,
-            longitude: longitude ?? 107.611,
+            address: targetWarga.address || "-",
+            rwId: assignedRwId ?? undefined,
+            latitude: effectiveLat,
+            longitude: effectiveLng,
           },
         });
-      } else if (latitude != null && longitude != null) {
+      } else if (latitude != null && longitude != null && latitude !== 0 && longitude !== 0) {
         await tx.household.updateMany({
           where: { userId: wargaId },
           data: { latitude, longitude },
@@ -1390,6 +1397,10 @@ export class KknService {
       const targetWarga = await this.resolveWargaUser(tx, wargaIdInput);
       const wargaId = targetWarga.id;
 
+      if (binOrganikId.trim().toUpperCase() === binAnorganikId.trim().toUpperCase()) {
+        throw new Error("Kode QR untuk Tempat Sampah Organik dan Anorganik harus berbeda.");
+      }
+
       const bins = await tx.bin.findMany({
         where: {
           OR: [
@@ -1402,43 +1413,95 @@ export class KknService {
       if (bins.length < 2) {
         const found = bins.map((b) => b.qrCode).concat(bins.map((b) => b.id));
         const missing = [binOrganikId, binAnorganikId].filter((x) => !found.includes(x));
+        throw new Error(
+          `Tempat sampah dengan kode ${missing.join(", ")} tidak terdaftar di sistem. Pastikan Anda melakukan scan stiker QR resmi yang sudah dicetak.`
+        );
+      }
 
-        for (const mCode of missing) {
-          const lower = mCode.toLowerCase();
-          const isAnorg =
-            lower.includes("anorganik") ||
-            lower.includes("non_organic") ||
-            lower.includes("anorg") ||
-            lower.includes("ano") ||
-            lower.includes("agn") ||
-            lower.includes("ang") ||
-            lower.includes("non") ||
-            lower.includes("2");
-          const isOrg =
-            !isAnorg &&
-            (lower.includes("organik") ||
-              lower.includes("org") ||
-              lower.includes("ogn") ||
-              lower.includes("1"));
-          let category = await tx.wasteCategory.findFirst({
-            where: { name: isOrg ? "ORGANIC" : "NON_ORGANIC" },
-          });
-          if (!category) category = await tx.wasteCategory.findFirst();
+      // ============================================================================
+      // 1. RESOLVE DATA MAHASISWA & RW PENUGASAN (KHUSUS AKTIVASI VIA MAHASISWA KKN)
+      // ============================================================================
+      let studentAssignedRwId: number | null = null;
+      let kelompokCakupanRwList: string[] = [];
 
-          const newBin = await tx.bin.create({
-            data: {
-              qrCode: mCode.startsWith("TS-") || mCode.startsWith("BSK-") ? mCode : `TS-${mCode}`,
-              status: "ACTIVE_BOUND",
-              categoryId: category?.id,
-              userId: wargaId,
-              registeredByStudentId: kknUserId,
-              latitude: latitude ?? -6.8903,
-              longitude: longitude ?? 107.611,
-            },
-          });
-          bins.push(newBin);
+      if (kknUserId) {
+        const student = await tx.studentKkn.findUnique({
+          where: { userId: kknUserId },
+          include: {
+            assignedRw: { select: { id: true, name: true, kelurahanId: true } },
+            kelompok: { select: { id: true, cakupanRw: true } },
+          },
+        });
+
+        if (student) {
+          studentAssignedRwId = student.assignedRwId;
+
+          // Parse cakupan_rw kelompok jika kelompok bertipe Multi-RW
+          if (student.kelompok?.cakupanRw) {
+            if (Array.isArray(student.kelompok.cakupanRw)) {
+              kelompokCakupanRwList = (student.kelompok.cakupanRw as any[]).map((r: any) =>
+                String(r).replace(/[^\d]/g, "").replace(/^0+/, "").trim()
+              );
+            } else if (typeof student.kelompok.cakupanRw === "string") {
+              try {
+                const parsed = JSON.parse(student.kelompok.cakupanRw);
+                kelompokCakupanRwList = Array.isArray(parsed)
+                  ? parsed.map((r: any) => String(r).replace(/[^\d]/g, "").replace(/^0+/, "").trim())
+                  : [];
+              } catch {
+                kelompokCakupanRwList = student.kelompok.cakupanRw
+                  .split(",")
+                  .map((r: string) => r.replace(/[^\d]/g, "").replace(/^0+/, "").trim());
+              }
+            }
+          }
+
+          // A. Validasi Kelompok: Tempat sampah harus milik kelompok KKN mahasiswa ini
+          for (const b of bins) {
+            if (b.kelompokId && student.kelompokId && b.kelompokId !== student.kelompokId) {
+              throw new Error(
+                `Tempat sampah ${b.qrCode} bukan milik kelompok KKN Anda dan tidak dapat diaktivasi.`
+              );
+            }
+          }
+
+          // B. Validasi Wilayah Penugasan Mahasiswa vs Domisili Warga:
+          const effectiveWargaRwId = targetWarga.rwId;
+          const targetWargaRwRecord = targetWarga.rwId
+            ? await tx.rw.findUnique({ where: { id: targetWarga.rwId } })
+            : null;
+          const wargaRwNumber = targetWargaRwRecord?.name?.replace(/[^\d]/g, "").replace(/^0+/, "") || "";
+
+          if (studentAssignedRwId) {
+            // Skenario 1: Mahasiswa memiliki RW penugasan spesifik -> HANYA boleh aktivasi di RW-nya!
+            if (effectiveWargaRwId && studentAssignedRwId !== effectiveWargaRwId) {
+              const studentRwName =
+                student.assignedRw?.name?.replace(/[^\d]/g, "").replace(/^0+/, "") ||
+                studentAssignedRwId;
+              const wargaRwName = wargaRwNumber || effectiveWargaRwId;
+              throw new Error(
+                `Aktivasi ditolak: Anda hanya berhak mengaktivasi warga di wilayah penugasan Anda (RW 0${studentRwName}). Warga ini berdomisili di RW 0${wargaRwName}.`
+              );
+            }
+          } else if (kelompokCakupanRwList.length > 0 && wargaRwNumber) {
+            // Skenario 2: Mahasiswa Multi-RW kelompok -> Wajib berada dalam salah satu cakupan RW kelompok
+            if (!kelompokCakupanRwList.includes(wargaRwNumber)) {
+              throw new Error(
+                `Aktivasi ditolak: Warga berada di RW 0${wargaRwNumber}, di luar wilayah cakupan kelompok KKN Anda (RW ${kelompokCakupanRwList
+                  .map((r) => "0" + r)
+                  .join(", ")}).`
+              );
+            }
+          }
         }
       }
+
+      // ============================================================================
+      // 2. VALIDASI STIKER TEMPAT SAMPAH & PEMBARUAN STATUS (ACTIVE_BOUND)
+      // ============================================================================
+      const targetWargaRwRecord = targetWarga.rwId
+        ? await tx.rw.findUnique({ where: { id: targetWarga.rwId } })
+        : null;
 
       for (const bin of bins) {
         // Guard: reject if bin already owned by a different warga
@@ -1452,12 +1515,31 @@ export class KknService {
           );
         }
 
+        // Guard: Validasi Kesesuaian Stiker jika sudah terkunci ke RW tertentu (Bukan Shared Pool)
+        if (bin.rwId !== null && bin.rwId !== undefined) {
+          // 1. Jika mahasiswa punya penugasan tunggal, stiker harus sama dengan penugasan mahasiswa
+          if (studentAssignedRwId && bin.rwId !== studentAssignedRwId) {
+            throw new Error(
+              `BIN_RW_MISMATCH: Stiker tempat sampah ${bin.qrCode} dialokasikan khusus untuk RW lain, bukan untuk wilayah penugasan Anda.`
+            );
+          }
+          // 2. Stiker harus sama dengan RW domisili warga
+          if (targetWarga.rwId && bin.rwId !== targetWarga.rwId) {
+            throw new Error(
+              `BIN_RW_MISMATCH: Stiker tempat sampah ${bin.qrCode} dialokasikan khusus untuk RW yang berbeda dari domisili warga ini.`
+            );
+          }
+        }
+
+        // UPDATE STATUS TEMPAT SAMPAH + ASSIGN RW WARGA SECARA DINAMIS
         await tx.bin.update({
           where: { id: bin.id },
           data: {
             userId: wargaId,
             status: "ACTIVE_BOUND",
             registeredByStudentId: kknUserId,
+            rwId: targetWarga.rwId ?? bin.rwId,
+            kelurahanId: targetWargaRwRecord?.kelurahanId ?? bin.kelurahanId,
             ...(latitude && longitude ? { latitude, longitude } : {}),
           },
         });
@@ -1482,20 +1564,30 @@ export class KknService {
           });
           assignedRwId = student?.assignedRwId || student?.user?.rwId;
         }
-        if (!assignedRwId) {
-          const firstRw = await tx.rw.findFirst({ select: { id: true } });
-          assignedRwId = firstRw?.id || 1;
-        }
+
+        const effectiveLat =
+          latitude != null && latitude !== 0
+            ? latitude
+            : targetWargaRwRecord?.latitude != null
+            ? Number(targetWargaRwRecord.latitude)
+            : 0;
+        const effectiveLng =
+          longitude != null && longitude !== 0
+            ? longitude
+            : targetWargaRwRecord?.longitude != null
+            ? Number(targetWargaRwRecord.longitude)
+            : 0;
+
         await tx.household.create({
           data: {
             userId: wargaId,
-            address: targetWarga.address || "Bandung, Jawa Barat",
-            rwId: assignedRwId,
-            latitude: latitude ?? -6.8903,
-            longitude: longitude ?? 107.611,
+            address: targetWarga.address || "-",
+            rwId: assignedRwId ?? undefined,
+            latitude: effectiveLat,
+            longitude: effectiveLng,
           },
         });
-      } else if (latitude != null && longitude != null) {
+      } else if (latitude != null && longitude != null && latitude !== 0 && longitude !== 0) {
         await tx.household.updateMany({
           where: { userId: wargaId },
           data: { latitude, longitude },
@@ -1829,29 +1921,34 @@ export class KknService {
         });
       }
 
-      // Extract coordinates from GPS payload
+      // Extract coordinates from GPS payload or RW center
+      const rwRec = resolvedRwId ? await tx.rw.findUnique({ where: { id: resolvedRwId } }) : null;
       const latVal =
-        data.latitude !== undefined && data.latitude !== null
+        data.latitude !== undefined && data.latitude !== null && Number(data.latitude) !== 0
           ? Number(data.latitude)
-          : data.lat !== undefined && data.lat !== null
+          : data.lat !== undefined && data.lat !== null && Number(data.lat) !== 0
             ? Number(data.lat)
-            : -6.8903;
+            : rwRec?.latitude != null
+              ? Number(rwRec.latitude)
+              : 0;
       const lngVal =
-        data.longitude !== undefined && data.longitude !== null
+        data.longitude !== undefined && data.longitude !== null && Number(data.longitude) !== 0
           ? Number(data.longitude)
-          : data.lng !== undefined && data.lng !== null
+          : data.lng !== undefined && data.lng !== null && Number(data.lng) !== 0
             ? Number(data.lng)
-            : data.lon !== undefined && data.lon !== null
+            : data.lon !== undefined && data.lon !== null && Number(data.lon) !== 0
               ? Number(data.lon)
-              : 107.611;
+              : rwRec?.longitude != null
+                ? Number(rwRec.longitude)
+                : 0;
 
       let household = await tx.household.findFirst({ where: { userId: warga.id } });
       if (!household) {
         household = await tx.household.create({
           data: {
             userId: warga.id,
-            address: data.address || warga.address || "Bandung, Jawa Barat",
-            rwId: resolvedRwId || 1,
+            address: data.address || warga.address || "-",
+            rwId: resolvedRwId,
             latitude: latVal,
             longitude: lngVal,
           },
@@ -2679,12 +2776,12 @@ export class KknService {
       ? Number(registeredPosko.latitude)
       : student.assignedRw?.latitude
         ? Number(student.assignedRw.latitude)
-        : -6.8906;
+        : null;
     const poskoLng = registeredPosko?.longitude
       ? Number(registeredPosko.longitude)
       : student.assignedRw?.longitude
         ? Number(student.assignedRw.longitude)
-        : 107.6123;
+        : null;
     const poskoLocationName =
       registeredPosko?.nama ||
       (student.assignedRw?.name
@@ -5602,8 +5699,8 @@ export class KknService {
     }
 
     // 1. Resolve Titik Pusat Posko
-    let poskoLat: number = -6.8915; // default Coblong
-    let poskoLng: number = 107.6107;
+    let poskoLat: number | null = null;
+    let poskoLng: number | null = null;
 
     if (kelompok.poskoKkn?.latitude != null && kelompok.poskoKkn?.longitude != null) {
       poskoLat = Number(kelompok.poskoKkn.latitude);
@@ -5627,31 +5724,6 @@ export class KknService {
     } else if (student?.assignedRw?.latitude != null && student?.assignedRw?.longitude != null) {
       poskoLat = Number(student.assignedRw.latitude);
       poskoLng = Number(student.assignedRw.longitude);
-    } else {
-      // Fallback berdasarkan kelurahan / nama kelompok
-      const kel = (kelompok.kelurahan || kelompok.name || "").toLowerCase();
-      if (kel.includes("dago")) {
-        poskoLat = -6.8833;
-        poskoLng = 107.6167;
-      } else if (kel.includes("cipaganti")) {
-        poskoLat = -6.8912;
-        poskoLng = 107.6035;
-      } else if (kel.includes("lebak gede") || kel.includes("lebakgede")) {
-        poskoLat = -6.8875;
-        poskoLng = 107.6133;
-      } else if (kel.includes("lebak siliwangi")) {
-        poskoLat = -6.8892;
-        poskoLng = 107.6083;
-      } else if (kel.includes("sadang serang")) {
-        poskoLat = -6.8917;
-        poskoLng = 107.625;
-      } else if (kel.includes("sekeloa")) {
-        poskoLat = -6.89;
-        poskoLng = 107.62;
-      } else if (kel.includes("cibiru")) {
-        poskoLat = -6.914744;
-        poskoLng = 107.60981;
-      }
     }
 
     // 2. Resolve Batas Geografis (Polygon vs Radius)
@@ -5745,7 +5817,17 @@ export class KknService {
         bins: {
           include: {
             category: true,
-            user: { select: { id: true, name: true, phone: true, address: true } },
+            user: {
+              select: {
+                id: true,
+                name: true,
+                phone: true,
+                address: true,
+                rwId: true,
+                rw: { select: { id: true, name: true } },
+              },
+            },
+            rw: { select: { id: true, name: true } },
           },
           orderBy: { qrCode: "asc" },
         },
@@ -5765,6 +5847,11 @@ export class KknService {
 
     const items = kelompok.bins.map((b, idx) => {
       const isAnorg = isAnorganikBin(b);
+      const effectiveRw = b.user?.rw || b.rw;
+      const nomorRw = effectiveRw?.name
+        ? effectiveRw.name.replace(/[^\d]/g, "").padStart(2, "0")
+        : null;
+
       return {
         id: b.id,
         nomorUrut: idx + 1,
@@ -5775,12 +5862,16 @@ export class KknService {
         hexColor: isAnorg ? "#F59E0B" : "#10B981",
         status: b.status, // "PRINTED" | "ACTIVE_BOUND"
         isAvailable: b.status === "PRINTED",
+        rwId: b.rwId ?? b.user?.rwId ?? null,
+        nomorRw,
         terikatWarga: b.user
           ? {
               id: b.user.id,
               nama: b.user.name,
               telepon: b.user.phone || "-",
               alamat: b.user.address || "-",
+              rwId: b.user.rwId || b.rwId || null,
+              nomorRw,
             }
           : null,
         tanggalAktivasi: b.status === "ACTIVE_BOUND" ? b.updatedAt : null,
