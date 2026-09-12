@@ -210,6 +210,48 @@ router.post("/logout", authController.logout);
  *         description: Valid token
  *       401:
  *         description: Unauthorized
+ *   put:
+ *     summary: Update profil user saat ini (Tahap 2 registrasi warga — lengkapi data wilayah)
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               phone:
+ *                 type: string
+ *               address:
+ *                 type: string
+ *                 description: Alamat lengkap warga
+ *               kelurahan:
+ *                 type: string
+ *                 description: "Nama kelurahan (contoh: Sadang Serang)"
+ *               rw:
+ *                 type: string
+ *                 description: "Nomor RW (contoh: 01, 02, RW 03)"
+ *               kecamatan:
+ *                 type: string
+ *                 description: "Nama kecamatan (contoh: Coblong)"
+ *               familySize:
+ *                 type: integer
+ *                 description: Jumlah anggota keluarga
+ *               fotoProfil:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Profil berhasil diperbarui (termasuk upsert household jika data wilayah dikirim)
+ *       400:
+ *         description: Validasi gagal
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: User tidak ditemukan
  */
 router.get("/me", authMiddleware, authController.getCurrentUser);
 router.put("/me", authMiddleware, authController.updateCurrentUserProfile);
