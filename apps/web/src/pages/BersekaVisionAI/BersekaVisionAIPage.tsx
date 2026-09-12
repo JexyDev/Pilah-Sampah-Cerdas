@@ -8,7 +8,7 @@
  * Standar Warna: Organik (Hijau), Anorganik (Kuning), Residu (Merah)
  */
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import styles from "./BersekaVisionAI.module.css";
 
 interface BoundingBoxObject {
@@ -36,13 +36,42 @@ interface VisionDetectionData {
 const BersekaVisionAIPage: React.FC = () => {
   const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState<string>("Mengoptimalkan foto...");
   const [result, setResult] = useState<VisionDetectionData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [filterCategory, setFilterCategory] = useState<"ALL" | "ORGANIK" | "ANORGANIK" | "RESIDU">("ALL");
+  const [copied, setCopied] = useState<boolean>(false);
 
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const dropzoneRef = useRef<HTMLDivElement>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
+
+  // Siklus teks progres analisis AISAh agar pengguna mengetahui proses komputasi AI
+  useEffect(() => {
+    let timer1: NodeJS.Timeout;
+    let timer2: NodeJS.Timeout;
+    let timer3: NodeJS.Timeout;
+
+    if (loading) {
+      setLoadingStep("Mengunggah dan membaca piksel foto sampah...");
+      timer1 = setTimeout(() => {
+        setLoadingStep("AISAh Vision Engine mengidentifikasi komponen objek...");
+      }, 900);
+      timer2 = setTimeout(() => {
+        setLoadingStep("Mengklasifikasikan bahan ke Organik, Anorganik, dan Residu...");
+      }, 2000);
+      timer3 = setTimeout(() => {
+        setLoadingStep("Menghitung rasio komposisi dan rekomendasi Tempat Sampah...");
+      }, 3200);
+    }
+
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
+    };
+  }, [loading]);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -73,28 +102,80 @@ const BersekaVisionAIPage: React.FC = () => {
     }
   };
 
-  const handleFileSelect = (file: File) => {
+  /**
+   * Kompresi foto otomatis di browser sebelum diunggah ke server API
+   * Memastikan foto kamera HP (12MP - 50MP, 8MB+) diperkecil secara efisien (<350KB)
+   * tanpa menurunkan akurasi pengenalan objek.
+   */
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const maxDimension = 1280;
+          let { width, height } = img;
+          if (width > maxDimension || height > maxDimension) {
+            if (width > height) {
+              height = Math.round((height * maxDimension) / width);
+              width = maxDimension;
+            } else {
+              width = Math.round((width * maxDimension) / height);
+              height = maxDimension;
+            }
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) {
+            resolve(event.target?.result as string);
+            return;
+          }
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedB64 = canvas.toDataURL("image/jpeg", 0.82);
+          resolve(compressedB64);
+        };
+        img.onerror = () => resolve(event.target?.result as string);
+        img.src = event.target?.result as string;
+      };
+      reader.onerror = (err) => reject(err);
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleFileSelect = async (file: File) => {
     if (!file.type.startsWith("image/")) {
       setError("Format file tidak didukung. Harap pilih file foto gambar (JPG, PNG, WebP).");
       return;
     }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const b64 = e.target?.result as string;
-      setPreview(b64);
-      setResult(null);
+
+    try {
+      setLoading(true);
       setError(null);
+      setResult(null);
+      setCopied(false);
       setFilterCategory("ALL");
-      runVisionAnalysis(b64);
-    };
-    reader.readAsDataURL(file);
+
+      // Auto-compress
+      const compressedB64 = await compressImage(file);
+      setPreview(compressedB64);
+
+      // Gulir otomatis ke panel hasil pada perangkat mobile (layar sempit)
+      if (window.innerWidth < 1024 && resultsRef.current) {
+        setTimeout(() => {
+          resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 150);
+      }
+
+      await runVisionAnalysis(compressedB64);
+    } catch (err: any) {
+      setError(err.message || "Gagal memproses file foto.");
+      setLoading(false);
+    }
   };
 
   const runVisionAnalysis = async (base64Image: string) => {
-    setLoading(true);
-    setError(null);
-    setResult(null);
-
     try {
       const token = localStorage.getItem("token") || localStorage.getItem("psc_access_token");
       const headers: Record<string, string> = {
@@ -118,11 +199,33 @@ const BersekaVisionAIPage: React.FC = () => {
       }
 
       setResult(resData.data);
+
+      // Pastikan hasil terlihat di HP setelah loading selesai
+      if (window.innerWidth < 1024 && resultsRef.current) {
+        setTimeout(() => {
+          resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 100);
+      }
     } catch (err: any) {
       setError(err.message || "Terjadi kendala koneksi ke server AI.");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCopySummary = () => {
+    if (!result) return;
+    const itemsList = result.objects.map((o) => `${o.label} (${o.category})`).join(", ");
+    const text = `📋 HASIL ANALISIS AISAh VISION AI (BERSEKA)
+• Rekomendasi Utama: Tempat Sampah ${result.rekomendasi_tempat_sampah.toUpperCase()}
+• Komposisi: Organik ${result.organik_percent}% | Anorganik ${result.anorganik_percent}% | Residu ${result.residu_percent}%
+• Komponen Terdeteksi (${result.objects.length}): ${itemsList}
+• Estimasi Volume: ${result.estimatedVolumeLiter} Liter
+• Ringkasan: ${result.ringkasan_eksekutif}`;
+
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 3000);
   };
 
   const getSummaryCardClass = (category: string) => {
@@ -181,7 +284,7 @@ const BersekaVisionAIPage: React.FC = () => {
         </div>
         <h1>Deteksi Cerdas Pemilahan Sampah</h1>
         <p>
-          Arahkan kamera smartphone ke tumpukan atau sampel sampah. AISAh secara instan mengidentifikasi
+          Arahkan kamera smartphone ke sampel atau tumpukan sampah. AISAh secara instan mengidentifikasi
           komponen material dan memberikan rekomendasi Tempat Sampah yang sesuai standar nasional.
         </p>
       </header>
@@ -273,14 +376,12 @@ const BersekaVisionAIPage: React.FC = () => {
         </div>
 
         {/* Kolom Kanan: Hasil Analisis Cerdas AISAh */}
-        <div className={styles.resultsSection}>
+        <div ref={resultsRef} className={styles.resultsSection}>
           {loading && (
             <div className={styles.loadingBox}>
               <div className={styles.spinner}></div>
               <h3>AISAh Sedang Menganalisis Foto...</h3>
-              <p>
-                Mendeteksi komponen bahan sampah dan menghitung proporsi 3 kategori secara akurat.
-              </p>
+              <p className={styles.loadingStepText}>{loadingStep}</p>
             </div>
           )}
 
@@ -305,6 +406,32 @@ const BersekaVisionAIPage: React.FC = () => {
                 </div>
 
                 <p className={styles.ringkasanText}>{result.ringkasan_eksekutif}</p>
+
+                {/* Tombol Salin Laporan Analisis */}
+                <div className={styles.cardActionRow}>
+                  <button
+                    type="button"
+                    className={`${styles.btnCopy} ${copied ? styles.btnCopySuccess : ""}`}
+                    onClick={handleCopySummary}
+                  >
+                    {copied ? (
+                      <>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                        <span>Tersalin ke Clipboard!</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                        </svg>
+                        <span>Salin Hasil Analisis</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
 
               {/* Bar Komposisi Dinamis 3 Warna (Hijau, Kuning, Merah) */}
