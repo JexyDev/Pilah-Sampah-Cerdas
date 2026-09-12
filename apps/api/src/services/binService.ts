@@ -212,6 +212,22 @@ export class BinService {
         });
       }
 
+      if (bin.userId) {
+        const remainingBins = await tx.bin.count({
+          where: {
+            userId: bin.userId,
+            status: { in: ["ACTIVE_BOUND", "PENDING_APPROVAL"] },
+            id: { not: bin.id },
+          },
+        });
+        if (remainingBins === 0) {
+          await tx.user.update({
+            where: { id: bin.userId },
+            data: { lifecycleState: "COMMUNITY_ACTIVE_NO_BIN" },
+          });
+        }
+      }
+
       return updatedBin;
     });
   }
@@ -238,6 +254,11 @@ export class BinService {
     evidencePhotoUrl?: string,
     detections?: Array<{ detectedType: string; volumeEstimate: number; confidence?: number }>
   ) {
+    const scanUser = await prisma.user.findUnique({ where: { id: userId } });
+    if (!scanUser) {
+      throw new Error("USER_NOT_FOUND");
+    }
+
     if (!householdId) {
       const existingHh = await prisma.household.findFirst({ where: { userId } });
       if (existingHh) {
@@ -252,19 +273,19 @@ export class BinService {
             ? userLat
             : u?.rw?.latitude != null
             ? Number(u.rw.latitude)
-            : 0;
+            : -6.8903;
         const lng =
           userLng != null && userLng !== 0
             ? userLng
             : u?.rw?.longitude != null
             ? Number(u.rw.longitude)
-            : 0;
+            : 107.611;
 
         const newHh = await prisma.household.create({
           data: {
             userId,
-            address: u?.address || "-",
-            rwId: u?.rwId ?? undefined,
+            address: u?.address || scanUser?.address || "Bandung, Jawa Barat",
+            rwId: u?.rwId ?? scanUser?.rwId ?? 1,
             latitude: lat,
             longitude: lng,
           },
@@ -512,7 +533,10 @@ export class BinService {
         const rawConf = (det.confidence ?? aiConfidence)!;
         const confScale = rawConf > 1 ? rawConf / 100 : rawConf;
         const rate = 100 * multiplier;
-        const calculatedPoints = Math.max(1, Math.round(vol * rate * confScale));
+        let calculatedPoints = Math.max(1, Math.round(vol * rate * confScale));
+        if ((scanUser as any).lifecycleState !== "FULLY_ACTIVE") {
+          calculatedPoints = 0;
+        }
 
         const requestId = uuidv4();
         const result = await binRepository.recordScanTransaction(
@@ -679,7 +703,10 @@ export class BinService {
     const rawConf = aiConfidence!;
     const confScale = rawConf > 1 ? rawConf / 100 : rawConf;
     const rate = 100 * multiplier;
-    const calculatedPoints = Math.max(1, Math.round(estimatedVolume * rate * confScale));
+    let calculatedPoints = Math.max(1, Math.round(estimatedVolume * rate * confScale));
+    if ((scanUser as any).lifecycleState !== "FULLY_ACTIVE") {
+      calculatedPoints = 0;
+    }
 
     // 8. Record transaction (WasteLog, PointHistory, Notification)
     const requestId = uuidv4();
@@ -923,6 +950,12 @@ export class BinService {
         });
         updatedBins.push(updatedBin);
       }
+
+      await tx.user.update({
+        where: { id: user.id },
+        data: { lifecycleState: "FULLY_ACTIVE" },
+      });
+
       return updatedBins;
     });
 

@@ -15,7 +15,6 @@ import {
   Layers,
   List,
   Table as TableIcon,
-  Download,
   Search,
   CheckCircle2,
   FileSpreadsheet,
@@ -41,6 +40,10 @@ import { ThemeTileLayer, GOOGLE_SATELLITE_URL } from "../../components/common/Th
 import L from "leaflet";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { sortKelompokList } from "../../utils/sortUtils";
+import {
+  fetchMasterWilayah,
+  isKelurahanMatching,
+} from "../../utils/areaFilterUtils";
 import {
   TIMELINE_KKN_HEADER,
   TIMELINE_KKN_DATA,
@@ -202,6 +205,11 @@ const JadwalKegiatan: React.FC = () => {
 
   const fetchKelurahans = async () => {
     try {
+      const { kelurahans } = await fetchMasterWilayah();
+      if (kelurahans.length > 0) {
+        setKelurahanOptions(kelurahans.map((k) => k.name || k.nama));
+        return;
+      }
       const res = await api.get("/areas/kelurahan");
       const list = res.data?.data || res.data || [];
       if (Array.isArray(list) && list.length > 0) {
@@ -216,6 +224,23 @@ const JadwalKegiatan: React.FC = () => {
       // keep fallback
     }
   };
+
+  // Cascading groups based on selected Kelurahan
+  const availableGroups = React.useMemo(() => {
+    if (selectedKelurahan === "ALL") return groups;
+    return groups.filter((g) => isKelurahanMatching(g.kelurahan, selectedKelurahan));
+  }, [groups, selectedKelurahan]);
+
+  // Auto reset selectedScope when Kelurahan changes and selected group is no longer valid
+  useEffect(() => {
+    if (
+      selectedScope !== "ALL" &&
+      selectedScope !== "GLOBAL" &&
+      !availableGroups.some((g) => g.id === selectedScope)
+    ) {
+      setSelectedScope("ALL");
+    }
+  }, [selectedKelurahan, availableGroups, selectedScope]);
 
   const fetchGroups = async () => {
     try {
@@ -502,49 +527,6 @@ const JadwalKegiatan: React.FC = () => {
       toast.error("Gagal export Excel: " + err.message);
     }
   };
-
-  const handleExportTimelineCsv = () => {
-    const headers = [
-      "No",
-      "Kelurahan",
-      "Kelompok",
-      "Tahap / Minggu",
-      "Tanggal",
-      "Fase",
-      "Bidang Kegiatan",
-      "Kegiatan Utama",
-      "Output / Target",
-      "PIC / Keterangan",
-      "URL Google Drive",
-      "Status",
-    ];
-    const rows = timelineList.map((item, idx) => [
-      idx + 1,
-      `"${(item.kelurahan || item.kelompok?.kelurahan || "Semua Kelurahan").replace(/"/g, '""')}"`,
-      `"${item.kelompok ? "Kelompok " + item.kelompok.name : "Global (Semua Kelompok)"}"`,
-      `"${(item.tahapMinggu || "").replace(/"/g, '""')}"`,
-      `"${(item.tanggal || "").replace(/"/g, '""')}"`,
-      `"${(item.fase || "").replace(/"/g, '""')}"`,
-      `"${(item.bidangKegiatan || "Tata Kelola & Koordinasi").replace(/"/g, '""')}"`,
-      `"${(item.kegiatanUtama || "").replace(/"/g, '""')}"`,
-      `"${(item.outputTarget || "").replace(/"/g, '""')}"`,
-      `"${(item.picKeterangan || "").replace(/"/g, '""')}"`,
-      `"${(item.linkGoogleDrive || "-").replace(/"/g, '""')}"`,
-      `"${item.statusPelaksanaan || "BELUM_DIMULAI"}"`,
-    ]);
-
-    const csvContent =
-      "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Timeline_KKN_${new Date().toISOString().split("T")[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("Tabel Timeline KKN berhasil diunduh (CSV)");
-  };
-
 
   const [geofenceMode, setGeofenceMode] = useState<"CIRCLE" | "POLYGON">("CIRCLE");
   const [manualLat, setManualLat] = useState<string>("");
@@ -1114,7 +1096,7 @@ const JadwalKegiatan: React.FC = () => {
                 >
                   <option value="ALL">🌐 Semua Kelompok / Global</option>
                   <option value="GLOBAL">🏛️ Acuan Global KKN</option>
-                  {groups.map((g) => (
+                  {availableGroups.map((g) => (
                     <option key={g.id} value={g.id}>
                       👥 {g.name} {g.kelurahan ? `(${g.kelurahan})` : ""}
                     </option>

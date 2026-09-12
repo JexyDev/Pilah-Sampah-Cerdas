@@ -4878,6 +4878,8 @@ export class KknAttendanceService {
    */
   async getLaporanPresensi(params: {
     kelompokId?: string;
+    kelurahan?: string;
+    rw?: string;
     dplUserId?: string;
     startDate?: string;
     endDate?: string;
@@ -4930,6 +4932,85 @@ export class KknAttendanceService {
       }
     }
 
+    // 1b. Filter by Kelurahan and/or RW (Hierarki: Kelurahan -> RW -> Kelompok)
+    const hasKelurahanFilter = Boolean(
+      params.kelurahan && params.kelurahan !== "ALL" && params.kelurahan !== "Semua Kelurahan"
+    );
+    const hasRwFilter = Boolean(params.rw && params.rw !== "ALL" && params.rw !== "Semua RW");
+
+    if (hasKelurahanFilter || hasRwFilter) {
+      const cleanRw = params.rw ? params.rw.replace(/\D/g, "") : "";
+      const cleanRwNum = cleanRw ? parseInt(cleanRw, 10) : NaN;
+
+      const kelompokWhere: any = {};
+      if (hasKelurahanFilter) {
+        kelompokWhere.kelurahan = { contains: params.kelurahan!.trim(), mode: "insensitive" };
+      }
+
+      const matchingGroups = await prisma.kelompokKkn.findMany({
+        where: kelompokWhere,
+        select: { id: true, cakupanRw: true, kelurahan: true },
+      });
+
+      let targetGroupIds = matchingGroups.map((g) => g.id);
+
+      if (hasRwFilter && cleanRw) {
+        const groupsWithRw = matchingGroups.filter((g) => {
+          if (!g.cakupanRw) return false;
+          let rws: string[] = [];
+          if (Array.isArray(g.cakupanRw)) {
+            rws = g.cakupanRw.map(String);
+          } else if (typeof g.cakupanRw === "string") {
+            try {
+              const parsed = JSON.parse(g.cakupanRw);
+              rws = Array.isArray(parsed) ? parsed.map(String) : [String(parsed)];
+            } catch {
+              rws = [g.cakupanRw];
+            }
+          }
+          return rws.some(
+            (r) =>
+              r.replace(/\D/g, "") === cleanRw ||
+              (!isNaN(cleanRwNum) && parseInt(r.replace(/\D/g, ""), 10) === cleanRwNum)
+          );
+        });
+        targetGroupIds = groupsWithRw.map((g) => g.id);
+      }
+
+      const studentOr: any[] = [];
+      if (targetGroupIds.length > 0) {
+        studentOr.push({ kelompokId: { in: targetGroupIds } });
+      }
+      if (hasRwFilter && cleanRw) {
+        const rwOrConditions: any[] = [
+          { assignedRw: { name: { contains: cleanRw, mode: "insensitive" } } },
+        ];
+        if (!isNaN(cleanRwNum)) {
+          rwOrConditions.push({ assignedRwId: cleanRwNum });
+        }
+        studentOr.push({
+          AND: [
+            ...(hasKelurahanFilter
+              ? [{ kelompok: { kelurahan: { contains: params.kelurahan!.trim(), mode: "insensitive" } } }]
+              : []),
+            { OR: rwOrConditions },
+          ],
+        });
+      }
+
+      const areaStudents = await prisma.studentKkn.findMany({
+        where: studentOr.length > 0 ? { OR: studentOr } : { id: "impossible-none" },
+        select: { userId: true },
+      });
+      const areaIds = areaStudents.map((s) => s.userId);
+
+      if (where.studentId?.in) {
+        where.studentId = { in: where.studentId.in.filter((id: string) => areaIds.includes(id)) };
+      } else {
+        where.studentId = { in: areaIds };
+      }
+    }
+
     // 2. Filter Tanggal (WIB)
     if (params.startDate || params.endDate) {
       where.attendedAt = {};
@@ -4957,13 +5038,14 @@ export class KknAttendanceService {
       }
     }
 
-    // 4. Search Filter (Nama / NIM)
+    // 4. Search Filter (Nama / NIM / Jurusan)
     if (params.search && params.search.trim().length > 0) {
       const q = params.search.trim();
       where.student = {
         OR: [
           { name: { contains: q, mode: "insensitive" } },
           { studentProfile: { nim: { contains: q, mode: "insensitive" } } },
+          { studentProfile: { jurusan: { contains: q, mode: "insensitive" } } },
         ],
       };
     }
@@ -4996,11 +5078,13 @@ export class KknAttendanceService {
                   nim: true,
                   jurusan: true,
                   isKetua: true,
+                  assignedRw: { select: { id: true, name: true } },
                   kelompok: {
                     select: {
                       id: true,
                       name: true,
                       kelurahan: true,
+                      cakupanRw: true,
                       dpl: { select: { id: true, name: true, phone: true } },
                     },
                   },
@@ -5030,11 +5114,13 @@ export class KknAttendanceService {
                   nim: true,
                   jurusan: true,
                   isKetua: true,
+                  assignedRw: { select: { id: true, name: true } },
                   kelompok: {
                     select: {
                       id: true,
                       name: true,
                       kelurahan: true,
+                      cakupanRw: true,
                       dpl: { select: { id: true, name: true } },
                     },
                   },
@@ -5061,6 +5147,59 @@ export class KknAttendanceService {
     let totalMenitKumulatif = 0;
 
     const studentAggMap = new Map<string, any>();
+
+    // Pre-seed seluruh mahasiswa dalam kelompok jika kelompokId dipilih spesifik
+    if (params.kelompokId && params.kelompokId !== "ALL") {
+      try {
+        const groupStudents = await prisma.studentKkn.findMany({
+          where: { kelompokId: params.kelompokId },
+          include: {
+            user: { select: { id: true, name: true, fotoProfil: true } },
+            assignedRw: { select: { id: true, name: true } },
+            kelompok: {
+              select: {
+                id: true,
+                name: true,
+                kelurahan: true,
+                cakupanRw: true,
+                dpl: { select: { id: true, name: true } },
+              },
+            },
+          },
+        });
+        for (const s of groupStudents) {
+          if (!studentAggMap.has(s.userId)) {
+            studentAggMap.set(s.userId, {
+              studentId: s.userId,
+              namaMahasiswa: s.user?.name || "Mahasiswa",
+              nim: s.nim || "-",
+              jurusan: s.jurusan || "-",
+              fotoProfil: s.user?.fotoProfil || null,
+              isKetua: s.isKetua || false,
+              kelompok: s.kelompok
+                ? {
+                    id: s.kelompok.id,
+                    name: s.kelompok.name,
+                    kelurahan: s.kelompok.kelurahan,
+                    cakupanRw: (s.kelompok as any).cakupanRw || [],
+                    dplName: (s.kelompok as any).dpl?.name || "-",
+                  }
+                : null,
+              assignedRw: s.assignedRw?.name || null,
+              totalSessions: 0,
+              totalMinutes: 0,
+              hadirMemenuhi: 0,
+              hadirKurang: 0,
+              berlangsung: 0,
+              terjeda: 0,
+              izinSakit: 0,
+            });
+          }
+        }
+      } catch (err) {
+        console.error("[kknAttendanceService] Gagal pre-seed group students:", err);
+      }
+    }
 
     for (const r of allSummaryRecords) {
       const st = String(r.status || "").toUpperCase();
@@ -5120,9 +5259,11 @@ export class KknAttendanceService {
                 id: kknGroup.id,
                 name: kknGroup.name,
                 kelurahan: kknGroup.kelurahan,
+                cakupanRw: (kknGroup as any).cakupanRw || [],
                 dplName: (kknGroup as any).dpl?.name || "-",
               }
             : null,
+          assignedRw: r.student?.studentProfile?.assignedRw?.name || null,
           totalSessions: 0,
           totalMinutes: 0,
           hadirMemenuhi: 0,
@@ -5276,9 +5417,11 @@ export class KknAttendanceService {
               id: kknGroup.id,
               name: kknGroup.name,
               kelurahan: kknGroup.kelurahan,
+              cakupanRw: (kknGroup as any).cakupanRw || [],
               dplName: (kknGroup as any).dpl?.name ?? "-",
             }
           : null,
+        assignedRw: att.student?.studentProfile?.assignedRw?.name ?? null,
         scheduleId: att.scheduleId,
         namaKegiatan: att.schedule?.title ?? "Kegiatan Harian Lapangan",
         tanggal: att.attendedAt
