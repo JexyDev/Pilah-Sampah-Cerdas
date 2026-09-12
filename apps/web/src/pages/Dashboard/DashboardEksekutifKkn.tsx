@@ -445,22 +445,23 @@ export const DashboardEksekutifKkn: React.FC = () => {
   // Filter & Pagination DPL Modal (Terisi & Kosong)
   const currentDplSourceList = useMemo(() => {
     if (dplLogbookModalTab === "TERISI") {
-      return data?.resumeDpl?.dplTerisiList || [];
+      return Array.isArray(data?.resumeDpl?.dplTerisiList) ? data.resumeDpl.dplTerisiList : [];
     }
-    return data?.resumeDpl?.dplKosongList || [];
+    return Array.isArray(data?.resumeDpl?.dplKosongList) ? data.resumeDpl.dplKosongList : [];
   }, [data?.resumeDpl?.dplTerisiList, data?.resumeDpl?.dplKosongList, dplLogbookModalTab]);
 
   const filteredDplList = useMemo(() => {
+    if (!currentDplSourceList.length) return [];
     if (!dplModalSearchQuery.trim()) return currentDplSourceList;
     const q = dplModalSearchQuery.toLowerCase();
     return currentDplSourceList.filter((d) => {
-      const matchName = d.name.toLowerCase().includes(q);
-      const matchNip = d.nip.toLowerCase().includes(q);
-      const matchProdi = (d.programStudi || "").toLowerCase().includes(q);
-      const matchKelompok = d.kelompok.some(
-        (k) => k.name.toLowerCase().includes(q) || k.kelurahan.toLowerCase().includes(q)
+      const matchName = (d?.name || "").toLowerCase().includes(q);
+      const matchNip = (d?.nip || "").toLowerCase().includes(q);
+      const matchProdi = (d?.programStudi || "").toLowerCase().includes(q);
+      const matchKelompok = Array.isArray(d?.kelompok) && d.kelompok.some(
+        (k) => (k?.name || "").toLowerCase().includes(q) || (k?.kelurahan || "").toLowerCase().includes(q)
       );
-      return matchName || matchNip || matchProdi || matchKelompok;
+      return matchName || matchNip || matchProdi || Boolean(matchKelompok);
     });
   }, [currentDplSourceList, dplModalSearchQuery]);
 
