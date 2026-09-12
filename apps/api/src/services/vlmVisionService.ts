@@ -50,32 +50,25 @@ export class VlmVisionService {
       ? imageBase64
       : `data:image/jpeg;base64,${imageBase64}`;
 
-    const prompt = `Lakukan visual grounding deteksi objek sampah pada gambar ini dengan presisi batas fisik objek.
-Aturan Deteksi Presisi:
-1. Temukan 3 hingga 8 objek sampah individual yang paling jelas terlihat di gambar.
-2. Tentukan koordinat tight bounding box [ymin, xmin, ymax, xmax] (skala integer 0 sampai 1000) yang tepat melingkupi batas fisik terluar setiap benda:
-   - ymin: batas paling atas benda (0 = tepi atas gambar, 1000 = tepi bawah)
-   - xmin: batas paling kiri benda (0 = tepi kiri gambar, 1000 = tepi kanan)
-   - ymax: batas paling bawah benda
-   - xmax: batas paling kanan benda
-   JANGAN membuat kotak perkiraan seragam 100x100 atau kelipatan 50 kasar. Sesuaikan ukuran dan rasio kotak dengan bentuk fisik asli benda.
-3. Klasifikasikan setiap objek ke salah satu dari 3 kategori tepat:
-   - "ANORGANIK": botol/gelas plastik, kantong kresek, kaleng, kardus, kertas, botol kaca/pecahan kaca, perabot/logam daur ulang, karung.
-   - "RESIDU": kemasan sachet multilapis (kopi/snack foil), popok, puntung rokok, baterai bekas, limbah B3/elektronik rusak parah, benda tidak bernilai daur ulang.
-   - "ORGANIK": sisa makanan, kulit buah, sayuran, daun, sisa nasi, ampas alami.
-4. Sebutkan nama spesifik benda dalam Bahasa Indonesia (misal: "botol air mineral", "kantong kresek kuning", "karung putih", "baterai bekas", "kaca pecah").
-5. Berikan ringkasan eksekutif sampah yang objektif dan solutif (1-2 kalimat).
+    const prompt = `Lakukan analisis klasifikasi sampah multi-kategori pada gambar ini secara objektif dan mendalam.
+Panduan Klasifikasi:
+1. Temukan 3 hingga 10 komponen/benda sampah individual yang terlihat di foto.
+2. Klasifikasikan setiap benda secara tepat ke salah satu dari 3 kategori:
+   - "ORGANIK": sisa makanan, kulit buah (pisang, jeruk, tomat, dll), daun/ranting, sayuran, ampas alami, sisa nasi, tulang, sisa bahan hayati.
+   - "ANORGANIK": botol/gelas plastik, kantong kresek, kaleng, kardus, kertas bersih, botol/pecahan kaca, perabot/logam daur ulang, karung, wadah plastik.
+   - "RESIDU": kemasan sachet multilapis (foil kopi/snack), popok/pembalut, puntung rokok, baterai bekas, limbah B3/elektronik rusak parah, styrofoam kotor berminyak, sampah tidak dapat didaur ulang.
+3. Sebutkan nama spesifik setiap benda dalam Bahasa Indonesia (misal: "kulit pisang", "daun sayuran", "botol plastik", "kemasan sachet kopi", "baterai bekas").
+4. Berikan ringkasan eksekutif sampah yang objektif, profesional, dan solutif (1-2 kalimat).
 
-Keluarkan HANYA JSON murni tanpa markdown/teks lain:
+Keluarkan HANYA JSON murni tanpa markdown atau teks pengantar apapun:
 {
   "objects": [
     {
-      "box_2d": [ymin, xmin, ymax, xmax],
       "label": "nama benda spesifik",
-      "category": "ANORGANIK | RESIDU | ORGANIK"
+      "category": "ORGANIK | ANORGANIK | RESIDU"
     }
   ],
-  "ringkasan_eksekutif": "Ringkasan komposisi sampah."
+  "ringkasan_eksekutif": "Ringkasan komposisi sampah dan anjuran pembuangannya."
 }`.trim();
 
     try {
@@ -96,7 +89,7 @@ Keluarkan HANYA JSON murni tanpa markdown/teks lain:
               ],
             },
           ],
-          max_tokens: 800,
+          max_tokens: 500,
           temperature: 0.1,
         }),
       });
@@ -142,11 +135,11 @@ Keluarkan HANYA JSON murni tanpa markdown/teks lain:
   private formatAndValidateResult(parsed: any, latencyMs: number): VisionDetectionResult {
     let rawObjects: any[] = Array.isArray(parsed.objects) ? parsed.objects : [];
     const validObjects: BoundingBoxObject[] = rawObjects
-      .filter((obj) => Array.isArray(obj.box_2d) && obj.box_2d.length === 4)
+      .filter((obj) => obj && typeof obj === "object" && (obj.label || obj.name))
       .map((obj) => {
         let cat: "ORGANIK" | "ANORGANIK" | "RESIDU" = "ANORGANIK";
         const rawCat = String(obj.category || "").toUpperCase().trim();
-        const rawLabel = String(obj.label || "Sampah").toLowerCase().trim();
+        const rawLabel = String(obj.label || obj.name || "Sampah").toLowerCase().trim();
 
         // 1. Prioritaskan pengecekan ANORGANIK lebih dulu agar "ANORGANIK" tidak terkena ".includes('ORGANIK')"
         if (
@@ -170,7 +163,7 @@ Keluarkan HANYA JSON murni tanpa markdown/teks lain:
           cat = "ORGANIK";
         }
 
-        // 2. Koreksi semantik label jika model AI keliru mengklasifikasikan bahan sintetis
+        // 2. Koreksi semantik label jika model AI keliru mengklasifikasikan bahan sintetis/alami
         if (
           rawLabel.includes("plastik") ||
           rawLabel.includes("botol") ||
@@ -202,12 +195,16 @@ Keluarkan HANYA JSON murni tanpa markdown/teks lain:
           rawLabel.includes("sayur") ||
           rawLabel.includes("daun") ||
           rawLabel.includes("makanan") ||
-          rawLabel.includes("nasi")
+          rawLabel.includes("nasi") ||
+          rawLabel.includes("tomat") ||
+          rawLabel.includes("jeruk") ||
+          rawLabel.includes("pisang")
         ) {
           cat = "ORGANIK";
         }
 
-        const box = obj.box_2d.map((val: any) => {
+        const rawBox = Array.isArray(obj.box_2d) && obj.box_2d.length === 4 ? obj.box_2d : [0, 0, 0, 0];
+        const box = rawBox.map((val: any) => {
           const num = Number(val);
           return Math.max(0, Math.min(1000, isNaN(num) ? 0 : Math.round(num)));
         }) as [number, number, number, number];
@@ -216,11 +213,11 @@ Keluarkan HANYA JSON murni tanpa markdown/teks lain:
           box_2d: box,
           label: rawLabel,
           category: cat,
-          confidence: 0.92,
+          confidence: 0.94,
         };
       });
 
-    // 3. SINKRONISASI MATEMATIS PERSENTASE DARI OBJEK YANG TERDETEKSI (MENCEGAH ANOMALI ORGANIK 10% TAPI OBJEK ORGANIK 0)
+    // 3. SINKRONISASI MATEMATIS PERSENTASE DARI OBJEK YANG TERDETEKSI (MENCEGAH ANOMALI KETIDAKSESUAIAN METRIK)
     let orgPct = 0;
     let inorgPct = 0;
     let resPct = 0;
@@ -228,51 +225,38 @@ Keluarkan HANYA JSON murni tanpa markdown/teks lain:
     const orgObjects = validObjects.filter((o) => o.category === "ORGANIK");
     const inorgObjects = validObjects.filter((o) => o.category === "ANORGANIK");
     const resObjects = validObjects.filter((o) => o.category === "RESIDU");
+    const totalCount = validObjects.length;
 
-    if (validObjects.length > 0) {
-      let orgWeight = 0;
-      let inorgWeight = 0;
-      let resWeight = 0;
+    if (totalCount > 0) {
+      orgPct = Math.round((orgObjects.length / totalCount) * 100);
+      inorgPct = Math.round((inorgObjects.length / totalCount) * 100);
+      resPct = Math.max(0, 100 - orgPct - inorgPct);
 
-      for (const o of validObjects) {
-        const h = Math.max(0, (o.box_2d[2] - o.box_2d[0]) / 1000);
-        const w = Math.max(0, (o.box_2d[3] - o.box_2d[1]) / 1000);
-        const area = Math.max(0.01, h * w);
-        if (o.category === "ORGANIK") orgWeight += area;
-        else if (o.category === "RESIDU") resWeight += area;
-        else inorgWeight += area;
-      }
-
-      const totalWeight = orgWeight + inorgWeight + resWeight;
-      if (totalWeight > 0) {
-        orgPct = Math.round((orgWeight / totalWeight) * 100);
-        inorgPct = Math.round((inorgWeight / totalWeight) * 100);
-        resPct = Math.max(0, 100 - orgPct - inorgPct);
-
-        // Strict enforcement: Jika kategori objek 0, persentase HARUS 0%
-        if (orgObjects.length === 0) {
-          orgPct = 0;
-          if (inorgWeight + resWeight > 0) {
-            inorgPct = Math.round((inorgWeight / (inorgWeight + resWeight)) * 100);
-            resPct = 100 - inorgPct;
-          } else {
-            inorgPct = 100;
-            resPct = 0;
-          }
-        }
-        if (inorgObjects.length === 0) {
-          inorgPct = 0;
-          resPct = 100 - orgPct;
-        }
-        if (resObjects.length === 0) {
+      // Strict enforcement: Jika kategori objek 0, persentase HARUS 0%
+      if (orgObjects.length === 0) {
+        orgPct = 0;
+        const subTotal = inorgObjects.length + resObjects.length;
+        if (subTotal > 0) {
+          inorgPct = Math.round((inorgObjects.length / subTotal) * 100);
+          resPct = 100 - inorgPct;
+        } else {
+          inorgPct = 100;
           resPct = 0;
-          inorgPct = 100 - orgPct;
         }
+      }
+      if (inorgObjects.length === 0) {
+        inorgPct = 0;
+        resPct = 100 - orgPct;
+      }
+      if (resObjects.length === 0) {
+        resPct = 0;
+        inorgPct = 100 - orgPct;
       }
     } else {
       // Fallback jika tidak ada objek terdeteksi sama sekali
       orgPct = Number(parsed.organik_percent) || 0;
       inorgPct = Number(parsed.anorganik_percent) || 100;
+      resPct = Number(parsed.residu_percent) || 0;
     }
 
     let katUtama: "ORGANIK" | "ANORGANIK" | "RESIDU" = "ANORGANIK";
