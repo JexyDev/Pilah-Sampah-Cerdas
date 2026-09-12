@@ -104,7 +104,8 @@ class _BerandaViewState extends ConsumerState<BerandaView>
     final wasteLogsAsync = ref.watch(wasteLogsProvider);
     final bool isOnline = ref.watch(isOnlineProvider);
     final int unreadCount = ref.watch(wargaUnreadNotificationCountProvider);
-    final hasActiveBin = ref.watch(binsProvider).value?.any((bin) => bin.isActive) ?? false;
+    final hasActiveBin =
+        ref.watch(binsProvider).value?.any((bin) => bin.isActive) ?? false;
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       body: RefreshIndicator(
@@ -128,6 +129,82 @@ class _BerandaViewState extends ConsumerState<BerandaView>
               child: _buildHeader(context, ref, user, isOnline, unreadCount),
             ),
 
+            // Banner CTA bergabung komunitas — muncul jika belum punya householdId
+            if (user?.householdId == null || (user!.householdId!.isEmpty))
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.primaryGreen,
+                          AppColors.primaryGreen.withValues(alpha: 0.8),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primaryGreen.withValues(alpha: 0.3),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.group_add_rounded,
+                            color: Colors.white, size: 28),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Belum bergabung komunitas',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'Lengkapi data untuk mengaktifkan Tempat Sampah Anda.',
+                                style: TextStyle(
+                                    color: Colors.white70, fontSize: 12),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: () => Navigator.of(context)
+                              .pushNamed(AppRoutes.komunitasOnboarding),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: AppColors.primaryGreen,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10)),
+                            elevation: 0,
+                          ),
+                          child: const Text(
+                            'Bergabung',
+                            style: TextStyle(
+                                fontWeight: FontWeight.w700, fontSize: 13),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
             SliverPadding(
               padding: const EdgeInsets.all(AppDimensions.md),
               sliver: SliverList(
@@ -147,7 +224,6 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                     ),
                   ),
                   const SizedBox(height: AppDimensions.md),
-
 
                   // ──────────────── Aksi Cepat ─────────────────────────────────
                   const Text(
@@ -174,15 +250,19 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                               final activeBins = bins
                                   .where((bin) => bin.isActive)
                                   .toList();
-                              if (activeBins.isEmpty) {
-                                if (user?.role == UserRole.warga) {
+                              if (user?.role == UserRole.warga) {
+                                if (user!.lifecycleState == WargaLifecycle.registered || (user.householdId == null || user.householdId!.isEmpty)) {
                                   return _GabungKomunitasCard();
+                                } else if (user.lifecycleState == WargaLifecycle.communityActiveNoBin || activeBins.isEmpty) {
+                                  return _TempatSampahBelumTerpasangCard();
                                 }
+                              } else if (activeBins.isEmpty) {
                                 return Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
                                         const Text(
                                           'Tempat Sampah Anda',
@@ -193,8 +273,16 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                                           ),
                                         ),
                                         TextButton(
-                                          onPressed: () => Navigator.of(context).pushNamed(AppRoutes.kelolaBin),
-                                          child: const Text('Kelola', style: TextStyle(color: AppColors.primaryGreen, fontSize: 13)),
+                                          onPressed: () => Navigator.of(
+                                            context,
+                                          ).pushNamed(AppRoutes.kelolaBin),
+                                          child: const Text(
+                                            'Kelola',
+                                            style: TextStyle(
+                                              color: AppColors.primaryGreen,
+                                              fontSize: 13,
+                                            ),
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -204,25 +292,42 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                                       padding: const EdgeInsets.all(16),
                                       decoration: BoxDecoration(
                                         color: const Color(0xFFFFFBEB),
-                                        border: Border.all(color: AppColors.warningYellow.withValues(alpha: 0.5)),
+                                        border: Border.all(
+                                          color: AppColors.warningYellow
+                                              .withValues(alpha: 0.5),
+                                        ),
                                         borderRadius: BorderRadius.circular(16),
                                       ),
                                       child: const Row(
                                         children: [
-                                          Icon(Icons.warning_amber_rounded, color: AppColors.warningYellow, size: 28),
+                                          Icon(
+                                            Icons.warning_amber_rounded,
+                                            color: AppColors.warningYellow,
+                                            size: 28,
+                                          ),
                                           SizedBox(width: 12),
                                           Expanded(
                                             child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
                                                 Text(
                                                   'Belum Aktivasi Tempat Sampah',
-                                                  style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700, fontSize: 14),
+                                                  style: TextStyle(
+                                                    color:
+                                                        AppColors.textPrimary,
+                                                    fontWeight: FontWeight.w700,
+                                                    fontSize: 14,
+                                                  ),
                                                 ),
                                                 SizedBox(height: 2),
                                                 Text(
                                                   'Silakan ketuk "Kelola" untuk menambah.',
-                                                  style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                                                  style: TextStyle(
+                                                    color:
+                                                        AppColors.textSecondary,
+                                                    fontSize: 12,
+                                                  ),
                                                 ),
                                               ],
                                             ),
@@ -238,7 +343,8 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       const Text(
                                         'Tempat Sampah Anda',
@@ -249,8 +355,16 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                                         ),
                                       ),
                                       TextButton(
-                                        onPressed: () => Navigator.of(context).pushNamed(AppRoutes.kelolaBin),
-                                        child: const Text('Kelola', style: TextStyle(color: AppColors.primaryGreen, fontSize: 13)),
+                                        onPressed: () => Navigator.of(
+                                          context,
+                                        ).pushNamed(AppRoutes.kelolaBin),
+                                        child: const Text(
+                                          'Kelola',
+                                          style: TextStyle(
+                                            color: AppColors.primaryGreen,
+                                            fontSize: 13,
+                                          ),
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -261,9 +375,16 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                                     child: Row(
                                       children: activeBins.map((bin) {
                                         return Padding(
-                                          padding: const EdgeInsets.only(right: 12),
+                                          padding: const EdgeInsets.only(
+                                            right: 12,
+                                          ),
                                           child: SizedBox(
-                                            width: (MediaQuery.of(context).size.width * 0.42).clamp(140.0, 180.0),
+                                            width:
+                                                (MediaQuery.of(
+                                                          context,
+                                                        ).size.width *
+                                                        0.42)
+                                                    .clamp(140.0, 180.0),
                                             child: _BerandaBinCard(bin: bin),
                                           ),
                                         );
@@ -326,101 +447,103 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                     },
                   ),
 
-
                   if (hasActiveBin) ...[
                     const SizedBox(height: AppDimensions.lg),
 
-                  // ─── Statistik Saya ──────────────────────────────────────────
-                  const Text(
-                    'Statistik Saya',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: AppDimensions.sm),
-                  wasteLogsAsync.when(
-                    skipLoadingOnReload: true,
-                    data: (logs) => _buildStatistikSaya(context, logs),
-                    loading: () => const SkeletonLoading(
-                      height: 120,
-                      width: double.infinity,
-                      borderRadius: BorderRadius.all(Radius.circular(16)),
-                    ),
-                    error: (_, __) => const SizedBox.shrink(),
-                  ),
-
-                  const SizedBox(height: AppDimensions.lg),
-
-                  // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Riwayat Terakhir ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          'Riwayat Terakhir',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                    // ─── Statistik Saya ──────────────────────────────────────────
+                    const Text(
+                      'Statistik Saya',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
                       ),
-                      const SizedBox(width: 8),
-                      TextButton(
-                        onPressed: widget.onNavigateToHistory,
-                        child: const Text(
-                          'Lihat Semua',
-                          style: TextStyle(
-                            color: AppColors.primaryGreen,
-                            fontSize: 13,
+                    ),
+                    const SizedBox(height: AppDimensions.sm),
+                    wasteLogsAsync.when(
+                      skipLoadingOnReload: true,
+                      data: (logs) => _buildStatistikSaya(context, logs),
+                      loading: () => const SkeletonLoading(
+                        height: 120,
+                        width: double.infinity,
+                        borderRadius: BorderRadius.all(Radius.circular(16)),
+                      ),
+                      error: (_, __) => const SizedBox.shrink(),
+                    ),
+
+                    const SizedBox(height: AppDimensions.lg),
+
+                    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Riwayat Terakhir ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            'Riwayat Terakhir',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppDimensions.sm),
+                        const SizedBox(width: 8),
+                        TextButton(
+                          onPressed: widget.onNavigateToHistory,
+                          child: const Text(
+                            'Lihat Semua',
+                            style: TextStyle(
+                              color: AppColors.primaryGreen,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppDimensions.sm),
 
-                  wasteLogsAsync.when(
-                    skipLoadingOnReload: true,
-                    data: (logs) => logs.isEmpty
-                        ? _buildEmptyLogs(context)
-                        : Column(
-                            children: logs
-                                .take(5)
-                                .map(
-                                  (log) => Padding(
-                                    padding: const EdgeInsets.only(
-                                      bottom: 16.0,
+                    wasteLogsAsync.when(
+                      skipLoadingOnReload: true,
+                      data: (logs) => logs.isEmpty
+                          ? _buildEmptyLogs(context)
+                          : Column(
+                              children: logs
+                                  .take(5)
+                                  .map(
+                                    (log) => Padding(
+                                      padding: const EdgeInsets.only(
+                                        bottom: 16.0,
+                                      ),
+                                      child: _RiwayatCard(log: log),
                                     ),
-                                    child: _RiwayatCard(log: log),
-                                  ),
-                                )
-                                .toList(),
-                          ),
-                    loading: () => Column(
-                      children: List.generate(
-                        3,
-                        (index) => const Padding(
-                          padding: EdgeInsets.only(bottom: 8.0),
-                          child: SkeletonLoading(
-                            height: 70,
-                            width: double.infinity,
-                            borderRadius: BorderRadius.all(Radius.circular(12)),
+                                  )
+                                  .toList(),
+                            ),
+                      loading: () => Column(
+                        children: List.generate(
+                          3,
+                          (index) => const Padding(
+                            padding: EdgeInsets.only(bottom: 8.0),
+                            child: SkeletonLoading(
+                              height: 70,
+                              width: double.infinity,
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(12),
+                              ),
+                            ),
                           ),
                         ),
                       ),
+                      error: (_, __) => EmptyState(
+                        message: 'Gagal memuat riwayat.',
+                        icon: Icons.refresh_rounded,
+                        buttonText: 'Coba Lagi',
+                        onButtonPressed: () =>
+                            ref.invalidate(wasteLogsProvider),
+                      ),
                     ),
-                    error: (_, __) => EmptyState(
-                      message: 'Gagal memuat riwayat.',
-                      icon: Icons.refresh_rounded,
-                      buttonText: 'Coba Lagi',
-                      onButtonPressed: () => ref.invalidate(wasteLogsProvider),
-                    ),
-                  ),
                   ],
                   const SizedBox(height: 80),
                 ]),
@@ -1056,7 +1179,22 @@ class _BerandaViewState extends ConsumerState<BerandaView>
         Expanded(
           child: GestureDetector(
             onTap: isOnline
-                ? () => ScanGuard.handleScanNavigation(context, ref)
+                ? () {
+                    if (user?.role == UserRole.warga && user?.lifecycleState != WargaLifecycle.fullyActive) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Tempat Sampah belum terpasang. Anda tidak akan mendapat poin jika memaksa scan.',
+                          ),
+                          backgroundColor: AppColors.warningYellow,
+                        ),
+                      );
+                      // Fallback: we still allow navigation but with warning?
+                      // The prompt says "atau disable tombol scan". Let's disable it by returning early.
+                      return;
+                    }
+                    ScanGuard.handleScanNavigation(context, ref);
+                  }
                 : null,
             child: AnimatedOpacity(
               opacity: isOnline ? 1.0 : 0.5,
@@ -1131,10 +1269,7 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: Colors.grey.shade200,
-                    width: 1.5,
-                  ),
+                  border: Border.all(color: Colors.grey.shade200, width: 1.5),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.03),
@@ -1563,7 +1698,7 @@ class _GabungKomunitasCard extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () =>
-                    Navigator.of(context).pushNamed(AppRoutes.ukurKapasitas),
+                    Navigator.of(context).pushNamed(AppRoutes.komunitasOnboarding),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: AppColors.primaryGreen,
@@ -1587,6 +1722,103 @@ class _GabungKomunitasCard extends StatelessWidget {
                     ),
                     SizedBox(width: 4),
                     Icon(Icons.arrow_forward_rounded, size: 16),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Card: Tempat Sampah Belum Terpasang (Reset Bin) ─────────────────────────
+class _TempatSampahBelumTerpasangCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFBEB), // Light warning yellow background
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: AppColors.warningYellow.withValues(alpha: 0.5),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.warningYellow.withValues(alpha: 0.1),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Icon + Title
+            const Row(
+              children: [
+                Icon(
+                  Icons.warning_amber_rounded,
+                  color: AppColors.warningYellow,
+                  size: 28,
+                ),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Tempat Sampah Belum Terpasang',
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      height: 1.2,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+
+            // Deskripsi
+            const Text(
+              'Anda sudah bergabung dalam komunitas, tetapi tempat sampah Anda belum dipasang atau telah di-reset. Anda belum bisa mendapatkan poin. Silakan scan QR code di tempat sampah yang baru untuk melanjutkan.',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 13,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Tombol CTA
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.of(context).pushNamed(AppRoutes.aktivasiBin),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.warningYellow,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 13),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.qr_code_scanner_rounded, size: 18),
+                    SizedBox(width: 8),
+                    Text(
+                      'Scan QR Tempat Sampah',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
+                    ),
                   ],
                 ),
               ),

@@ -723,10 +723,11 @@ class ApiAuthRepository implements AuthRepository {
     String? kelurahan,
     String? rw,
     String? jenjangPendidikan,
+    int? familySize,
   }) async {
     try {
       final response = await apiClient.dio.put(
-        '/auth/profile',
+        '/auth/me',
         data: {
           'name': name,
           'phone': PhoneFormatter.prepareLoginPhoneInput(phone),
@@ -735,6 +736,7 @@ class ApiAuthRepository implements AuthRepository {
           if (kelurahan != null) 'kelurahan': kelurahan,
           if (rw != null) 'rw': rw,
           if (jenjangPendidikan != null) 'jenjangPendidikan': jenjangPendidikan,
+          if (familySize != null) 'familySize': familySize,
         },
       );
       if (response.statusCode == 200) {
@@ -1198,6 +1200,7 @@ class ApiAuthRepository implements AuthRepository {
       fakultas: fakultas,
       universitas: universitas,
       jenjangPendidikan: jenjang,
+      lifecycleState: WargaLifecycleExtension.fromApi(userMap['lifecycleState']?.toString()),
       pendampingName:
           userMap['pendampingName']?.toString() ??
           userMap['mahasiswaPendamping']?.toString(),
@@ -1262,6 +1265,7 @@ class ApiAuthRepository implements AuthRepository {
             pendampingName: fetched.pendampingName,
             familySize: fetched.familySize,
             role: fetched.role,
+            lifecycleState: fetched.lifecycleState,
             nim: fetched.nim.isNotEmpty ? fetched.nim : user.nim,
             jurusan: fetched.jurusan.isNotEmpty
                 ? fetched.jurusan

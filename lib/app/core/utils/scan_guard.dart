@@ -62,6 +62,18 @@ class ScanGuard {
       );
       return;
     }
+    
+    // Check if user is Warga but not fullyActive (e.g. communityActiveNoBin or registered)
+    if (user?.role == UserRole.warga && user?.lifecycleState != WargaLifecycle.fullyActive) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tempat Sampah belum terpasang. Anda tidak akan mendapat poin jika memaksa scan.'),
+          backgroundColor: AppColors.warningYellow,
+        ),
+      );
+      return;
+    }
+
     final bins = ref.read(binsProvider).value ?? [];
     final hasOrganic = bins.any(
       (b) => b.binType == WasteType.organic && b.isActive,

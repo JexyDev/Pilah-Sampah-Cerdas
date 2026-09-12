@@ -61,6 +61,7 @@ import '../modules/mahasiswa/views/riwayat_pemanfaatan_view.dart';
 
 /// Peta route terpusat untuk MaterialApp.
 import '../modules/manajemen_tempat_sampah/views/manajemen_tempat_sampah_view.dart';
+import '../modules/onboarding/views/komunitas_onboarding_view.dart';
 
 class AppPages {
   AppPages._();
@@ -241,6 +242,9 @@ class AppPages {
 
       case AppRoutes.manajemenTempatSampah:
         return _buildRoute(const ManajemenTempatlSampahView(), settings);
+
+      case AppRoutes.komunitasOnboarding:
+        return _buildRoute(const KomunitasOnboardingView(), settings);
 
       default:
         return _buildRoute(const _NotFoundScreen(), settings);
