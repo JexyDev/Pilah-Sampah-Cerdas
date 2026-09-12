@@ -394,8 +394,8 @@ export const scheduleService = {
         const officialPosko = poskoMap.get(group.id);
         const facilityPosko = group.facilities?.[0];
 
-        let poskoLat = -6.8915; // default Coblong
-        let poskoLng = 107.6107;
+        let poskoLat: number | null = null;
+        let poskoLng: number | null = null;
         let poskoName = `Posko KKN ${group.name}`;
         let poskoRadius = 500;
 
@@ -409,34 +409,6 @@ export const scheduleService = {
           poskoLng = Number(facilityPosko.longitude);
           poskoName = facilityPosko.nama || poskoName;
           poskoRadius = Math.max(50, Number((facilityPosko as any)?.radius) || 500);
-        } else {
-          // Fallback kelurahan resmi
-          const kel = (group.kelurahan || group.name || "").toLowerCase();
-          if (kel.includes("dago")) {
-            poskoLat = -6.8833;
-            poskoLng = 107.6167;
-            poskoName = `Posko KKN ${group.name} - Kel. Dago`;
-          } else if (kel.includes("cipaganti")) {
-            poskoLat = -6.8912;
-            poskoLng = 107.6035;
-            poskoName = `Posko KKN ${group.name} - Kel. Cipaganti`;
-          } else if (kel.includes("lebak gede") || kel.includes("lebakgede")) {
-            poskoLat = -6.8875;
-            poskoLng = 107.6133;
-            poskoName = `Posko KKN ${group.name} - Kel. Lebak Gede`;
-          } else if (kel.includes("lebak siliwangi")) {
-            poskoLat = -6.8892;
-            poskoLng = 107.6083;
-            poskoName = `Posko KKN ${group.name} - Kel. Lebak Siliwangi`;
-          } else if (kel.includes("sadang serang")) {
-            poskoLat = -6.8917;
-            poskoLng = 107.625;
-            poskoName = `Posko KKN ${group.name} - Kel. Sadang Serang`;
-          } else if (kel.includes("sekeloa")) {
-            poskoLat = -6.89;
-            poskoLng = 107.62;
-            poskoName = `Posko KKN ${group.name} - Kel. Sekeloa`;
-          }
         }
 
         if (existingList.length > 0) {

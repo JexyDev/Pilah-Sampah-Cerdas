@@ -203,10 +203,10 @@ export class KknService {
         });
     const contributionPoints = pointsSum._sum.points || 0;
 
-    const poskoLat = student?.assignedRw?.latitude ? Number(student.assignedRw.latitude) : -6.8906;
+    const poskoLat = student?.assignedRw?.latitude ? Number(student.assignedRw.latitude) : null;
     const poskoLng = student?.assignedRw?.longitude
       ? Number(student.assignedRw.longitude)
-      : 107.615;
+      : null;
 
     const areaName = student?.assignedRw?.name
       ? student.assignedRw.name
@@ -375,14 +375,14 @@ export class KknService {
           ? Number(household.latitude)
           : u.rw?.latitude
             ? Number(u.rw.latitude)
-            : -6.891234;
+            : null;
       const lng = primaryBin.longitude
         ? Number(primaryBin.longitude)
         : household?.longitude
           ? Number(household.longitude)
           : u.rw?.longitude
             ? Number(u.rw.longitude)
-            : 107.610123;
+            : null;
 
       const setoranLogs = u.setoranOtomatis || [];
       const totalKg = setoranLogs.reduce(
@@ -732,14 +732,14 @@ export class KknService {
         ? Number(primaryBin.latitude)
         : warga.rw?.latitude
           ? Number(warga.rw.latitude)
-          : -6.891234;
+          : null;
     const lng = household?.longitude
       ? Number(household.longitude)
       : primaryBin?.longitude
         ? Number(primaryBin.longitude)
         : warga.rw?.longitude
           ? Number(warga.rw.longitude)
-          : 107.610123;
+          : null;
 
     // 1. Agregasi totalKg dan totalActivities
     const totalSetoranAgg = await prisma.setoranOtomatis.aggregate({
@@ -1183,14 +1183,14 @@ export class KknService {
           ? Number(primaryBin.latitude)
           : w.rw?.latitude
             ? Number(w.rw.latitude)
-            : -6.891234;
+            : null;
       const lng = household?.longitude
         ? Number(household.longitude)
         : primaryBin?.longitude
           ? Number(primaryBin.longitude)
           : w.rw?.longitude
             ? Number(w.rw.longitude)
-            : 107.610123;
+            : null;
 
       return {
         id: w.id,
@@ -2775,12 +2775,12 @@ export class KknService {
       ? Number(registeredPosko.latitude)
       : student.assignedRw?.latitude
         ? Number(student.assignedRw.latitude)
-        : -6.8906;
+        : null;
     const poskoLng = registeredPosko?.longitude
       ? Number(registeredPosko.longitude)
       : student.assignedRw?.longitude
         ? Number(student.assignedRw.longitude)
-        : 107.6123;
+        : null;
     const poskoLocationName =
       registeredPosko?.nama ||
       (student.assignedRw?.name
@@ -5698,8 +5698,8 @@ export class KknService {
     }
 
     // 1. Resolve Titik Pusat Posko
-    let poskoLat: number = -6.8915; // default Coblong
-    let poskoLng: number = 107.6107;
+    let poskoLat: number | null = null;
+    let poskoLng: number | null = null;
 
     if (kelompok.poskoKkn?.latitude != null && kelompok.poskoKkn?.longitude != null) {
       poskoLat = Number(kelompok.poskoKkn.latitude);
@@ -5723,31 +5723,6 @@ export class KknService {
     } else if (student?.assignedRw?.latitude != null && student?.assignedRw?.longitude != null) {
       poskoLat = Number(student.assignedRw.latitude);
       poskoLng = Number(student.assignedRw.longitude);
-    } else {
-      // Fallback berdasarkan kelurahan / nama kelompok
-      const kel = (kelompok.kelurahan || kelompok.name || "").toLowerCase();
-      if (kel.includes("dago")) {
-        poskoLat = -6.8833;
-        poskoLng = 107.6167;
-      } else if (kel.includes("cipaganti")) {
-        poskoLat = -6.8912;
-        poskoLng = 107.6035;
-      } else if (kel.includes("lebak gede") || kel.includes("lebakgede")) {
-        poskoLat = -6.8875;
-        poskoLng = 107.6133;
-      } else if (kel.includes("lebak siliwangi")) {
-        poskoLat = -6.8892;
-        poskoLng = 107.6083;
-      } else if (kel.includes("sadang serang")) {
-        poskoLat = -6.8917;
-        poskoLng = 107.625;
-      } else if (kel.includes("sekeloa")) {
-        poskoLat = -6.89;
-        poskoLng = 107.62;
-      } else if (kel.includes("cibiru")) {
-        poskoLat = -6.914744;
-        poskoLng = 107.60981;
-      }
     }
 
     // 2. Resolve Batas Geografis (Polygon vs Radius)
