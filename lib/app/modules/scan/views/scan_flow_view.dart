@@ -874,12 +874,24 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                     }
                   }
 
+                  // Pastikan koordinat GPS akurat sudah didapatkan
+                  double? finalLat = _userLat;
+                  double? finalLng = _userLng;
+
+                  if (finalLat == null || finalLng == null || finalLat == 0.0) {
+                    final pos = await _fetchGps(requestPermissionIfNeeded: true);
+                    if (pos != null) {
+                      finalLat = pos.latitude;
+                      finalLng = pos.longitude;
+                    }
+                  }
+
                   await ref
                       .read(scanFlowProvider.notifier)
                       .scanAndCommit(
                         qrCode: qrCode,
-                        userLat: _userLat ?? -6.8903,
-                        userLng: _userLng ?? 107.611,
+                        userLat: finalLat ?? 0.0,
+                        userLng: finalLng ?? 0.0,
                       );
 
                   // if there's an error, return false to reset the scanner so the user can scan again

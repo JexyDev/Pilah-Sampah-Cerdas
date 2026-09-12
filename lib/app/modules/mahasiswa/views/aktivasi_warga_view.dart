@@ -5,6 +5,7 @@ import '../../../core/values/app_colors.dart';
 import '../../shared/widgets/qr_scanner_widget.dart';
 import '../../shared/widgets/feature_rating_dialog.dart';
 import '../controllers/aktivasi_warga_controller.dart';
+import '../controllers/kelompok_kkn_controller.dart';
 import '../controllers/kelompok_stiker_qr_controller.dart';
 import '../controllers/mahasiswa_controller.dart';
 import '../controllers/mahasiswa_notifikasi_controller.dart';
@@ -100,13 +101,23 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
     final studentUser = ref.read(authProvider).user;
     final studentRwSet = _extractRwSet(studentUser?.rw);
     final targetRwSet = _extractRwSet(targetRw);
+    final kelompok = ref.read(kelompokKknProvider).kelompok;
+    final kelompokCakupanSet = (kelompok?.cakupanRw ?? const [])
+        .map((r) => _cleanRw(r))
+        .where((r) => r.isNotEmpty)
+        .toSet();
+    final effectiveStudentRwSet =
+        studentRwSet.isNotEmpty ? studentRwSet : kelompokCakupanSet;
 
     // 3a. Validasi Mahasiswa vs Warga:
-    // Mahasiswa HANYA boleh melakukan aktivasi pada warga di RW penugasannya sendiri!
-    if (studentRwSet.isNotEmpty &&
+    if (effectiveStudentRwSet.isNotEmpty &&
         targetRwSet.isNotEmpty &&
-        !studentRwSet.contains(targetRwSet.first)) {
-      return 'Aktivasi Ditolak!\n\nWarga ini berada di RW 0${targetRwSet.join(', RW 0')}, sedangkan wilayah penugasan KKN Anda adalah RW 0${studentRwSet.join(', RW 0')}.\n\nAnda HANYA diperbolehkan melakukan aktivasi tempat sampah untuk warga di wilayah penugasan Anda!';
+        !effectiveStudentRwSet.contains(targetRwSet.first)) {
+      if (studentRwSet.isNotEmpty) {
+        return 'Aktivasi Ditolak!\n\nWarga ini berada di RW 0${targetRwSet.join(', RW 0')}, sedangkan wilayah penugasan KKN Anda adalah RW 0${studentRwSet.join(', RW 0')}.\n\nAnda HANYA diperbolehkan melakukan aktivasi tempat sampah untuk warga di wilayah penugasan Anda!';
+      } else {
+        return 'Aktivasi Ditolak!\n\nWarga ini berada di RW 0${targetRwSet.join(', RW 0')}, di luar wilayah cakupan kelompok KKN Anda (RW ${kelompokCakupanSet.map((r) => '0$r').join(', ')}).\n\nAnda HANYA diperbolehkan melakukan aktivasi tempat sampah untuk warga di wilayah binaan kelompok Anda!';
+      }
     }
 
     final qrItems = ref.read(kelompokStikerQrProvider).qrData?.items;
@@ -131,16 +142,17 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
               (matchedItem.rwId != null ? matchedItem.rwId.toString() : ''),
         );
 
-        if (studentRwSet.isNotEmpty &&
-            itemRw.isNotEmpty &&
-            !studentRwSet.contains(itemRw)) {
-          return 'Stiker QR ($qr) dialokasikan khusus untuk RW 0$itemRw, sedangkan wilayah penugasan Anda adalah RW 0${studentRwSet.join(', RW 0')}.\n\nAnda HANYA dapat menggunakan stiker tempat sampah untuk wilayah penugasan Anda!';
-        }
+        // Jika itemRw ada (bukan Shared Pool), validasi kesesuaian wilayah
+        if (itemRw.isNotEmpty) {
+          if (effectiveStudentRwSet.isNotEmpty &&
+              !effectiveStudentRwSet.contains(itemRw)) {
+            return 'Stiker QR ($qr) dialokasikan khusus untuk RW 0$itemRw, bukan untuk wilayah penugasan Anda.\n\nHarap gunakan stiker tempat sampah yang dialokasikan untuk wilayah Anda atau stiker Shared Pool.';
+          }
 
-        if (targetRwSet.isNotEmpty &&
-            itemRw.isNotEmpty &&
-            !targetRwSet.contains(itemRw)) {
-          return 'Stiker QR ($qr) dialokasikan khusus untuk RW 0$itemRw, sedangkan Warga binaan berada di RW 0${targetRwSet.join(', RW 0')}.\n\nStiker tempat sampah TIDAK DAPAT digunakan di luar wilayah RW domisili warga!';
+          if (targetRwSet.isNotEmpty &&
+              !targetRwSet.contains(itemRw)) {
+            return 'Stiker QR ($qr) dialokasikan khusus untuk RW 0$itemRw, sedangkan Warga binaan berada di RW 0${targetRwSet.join(', RW 0')}.\n\nStiker tempat sampah TIDAK DAPAT digunakan di luar wilayah RW domisili warga!';
+          }
         }
       } else {
         // Cek 3d: Stiker tidak ada di data alokasi kelompok, cek pola teks QR
@@ -149,8 +161,8 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
         if (match != null) {
           final codeRw = _cleanRw(match.group(1));
           if (codeRw.isNotEmpty) {
-            if (studentRwSet.isNotEmpty && !studentRwSet.contains(codeRw)) {
-              return 'Stiker QR ($qr) terdeteksi khusus untuk RW 0$codeRw, sedangkan wilayah penugasan Anda adalah RW 0${studentRwSet.join(', RW 0')}.\n\nAnda HANYA dapat menggunakan stiker untuk wilayah penugasan Anda!';
+            if (effectiveStudentRwSet.isNotEmpty && !effectiveStudentRwSet.contains(codeRw)) {
+              return 'Stiker QR ($qr) terdeteksi khusus untuk RW 0$codeRw, bukan untuk wilayah penugasan Anda.\n\nHarap gunakan stiker untuk wilayah penugasan Anda!';
             }
             if (targetRwSet.isNotEmpty && !targetRwSet.contains(codeRw)) {
               return 'Stiker QR ($qr) terdeteksi khusus untuk RW 0$codeRw, sedangkan Warga berada di RW 0${targetRwSet.join(', RW 0')}.\n\nStiker tempat sampah TIDAK DAPAT digunakan di luar wilayah RW domisili warga!';
@@ -165,8 +177,8 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
       if (match != null) {
         final codeRw = _cleanRw(match.group(1));
         if (codeRw.isNotEmpty) {
-          if (studentRwSet.isNotEmpty && !studentRwSet.contains(codeRw)) {
-            return 'Stiker QR ($qr) terdeteksi khusus untuk RW 0$codeRw, sedangkan wilayah penugasan Anda adalah RW 0${studentRwSet.join(', RW 0')}.\n\nAnda HANYA dapat menggunakan stiker untuk wilayah penugasan Anda!';
+          if (effectiveStudentRwSet.isNotEmpty && !effectiveStudentRwSet.contains(codeRw)) {
+            return 'Stiker QR ($qr) terdeteksi khusus untuk RW 0$codeRw, bukan untuk wilayah penugasan Anda.\n\nHarap gunakan stiker untuk wilayah penugasan Anda!';
           }
           if (targetRwSet.isNotEmpty && !targetRwSet.contains(codeRw)) {
             return 'Stiker QR ($qr) terdeteksi khusus untuk RW 0$codeRw, sedangkan Warga berada di RW 0${targetRwSet.join(', RW 0')}.\n\nStiker tempat sampah TIDAK DAPAT digunakan di luar wilayah RW domisili warga!';
@@ -766,6 +778,7 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
 
     final user = ref.watch(authProvider).user;
     final kelompokQr = ref.watch(kelompokStikerQrProvider).qrData?.kelompok;
+    final kelompokKkn = ref.watch(kelompokKknProvider).kelompok;
     String effectiveRw = wargaRw;
     if (effectiveRw.isEmpty) {
       effectiveRw = user?.rw ?? '';
@@ -774,6 +787,10 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
         kelompokQr != null &&
         kelompokQr.cakupanRw.isNotEmpty) {
       effectiveRw = kelompokQr.cakupanRw.join(', ');
+    } else if (effectiveRw.isEmpty &&
+        kelompokKkn != null &&
+        kelompokKkn.cakupanRw.isNotEmpty) {
+      effectiveRw = kelompokKkn.cakupanRw.join(', ');
     }
     final rwDisplay = _formatRwDisplay(effectiveRw);
 

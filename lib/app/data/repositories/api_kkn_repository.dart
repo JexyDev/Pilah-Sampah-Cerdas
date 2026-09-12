@@ -437,15 +437,17 @@ class ApiKknRepository implements KknRepository {
     double? lat,
     double? lng,
   }) async {
+    final payload = <String, dynamic>{
+      'wargaId': wargaId,
+      'binOrganikId': binOrganikId,
+      'binAnorganikId': binAnorganikId,
+    };
+    if (lat != null && lat != 0.0) payload['latitude'] = lat;
+    if (lng != null && lng != 0.0) payload['longitude'] = lng;
+
     final response = await apiClient.dio.post(
       ApiEndpoints.kknActivateBin,
-      data: {
-        'wargaId': wargaId,
-        'binOrganikId': binOrganikId,
-        'binAnorganikId': binAnorganikId,
-        'latitude': lat ?? 0.0,
-        'longitude': lng ?? 0.0,
-      },
+      data: payload,
     );
     return response.statusCode == 200 || response.statusCode == 201;
   }

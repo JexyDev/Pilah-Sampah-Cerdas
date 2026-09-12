@@ -49,7 +49,6 @@ import '../modules/mahasiswa/views/mahasiswa_notifikasi_view.dart';
 import '../modules/petugas_pemilahan/views/petugas_notification_view.dart';
 import '../modules/petugas_pemilahan/views/pengajuan_warga_view.dart';
 import '../modules/mahasiswa/views/pengajuan_program_kerja_view.dart';
-import '../modules/mahasiswa/views/kelompok_stiker_qr_view.dart';
 import '../modules/mahasiswa/views/riwayat_program_kerja_view.dart';
 import '../modules/mahasiswa/views/logbook_pemanfaatan_view.dart';
 import '../modules/mahasiswa/views/catat_panen_view.dart';
@@ -61,7 +60,6 @@ import '../modules/mahasiswa/views/proker_detail_view.dart';
 import '../modules/mahasiswa/views/riwayat_pemanfaatan_view.dart';
 
 /// Peta route terpusat untuk MaterialApp.
-import '../modules/profil/views/ketersediaan_qr_view.dart';
 import '../modules/manajemen_tempat_sampah/views/manajemen_tempat_sampah_view.dart';
 
 class AppPages {
@@ -182,10 +180,6 @@ class AppPages {
         return _buildRoute(const RiwayatPetugasPemilahanView(), settings);
       case AppRoutes.petugasPemilahanGantiPassword:
         return _buildRoute(const GantiPasswordPetugasView(), settings);
-      case AppRoutes.ketersediaanQr:
-        return _buildRoute(const KetersediaanQrView(), settings);
-      case AppRoutes.kelompokStikerQr:
-        return _buildRoute(const KelompokStikerQrView(), settings);
       case AppRoutes.pengajuanWarga:
         return _buildRoute(const PengajuanWargaView(), settings);
       case AppRoutes.monitoringDampakKelurahan:
