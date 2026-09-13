@@ -713,24 +713,27 @@ export class AuthService {
     const resolvedRw =
       rwName || (user.rwId ? `RW 0${user.rwId}` : roleName === "WARGA" ? "RW 03" : "");
 
+    const lifecycleState = (user as any).lifecycleState || "REGISTERED";
+    const isRegisteredWarga = roleName === "WARGA" && lifecycleState === "REGISTERED";
+
     return {
       id: user.id,
       name: user.name,
       role: user.role.name,
       phone: user.phone,
-      address: user.address,
+      address: isRegisteredWarga ? null : user.address,
       fotoProfil: user.fotoProfil,
-      familySize: user.jumlahAnggotaKeluarga || 1,
-      jumlahAnggotaKeluarga: user.jumlahAnggotaKeluarga || 1,
+      familySize: isRegisteredWarga ? null : (user.jumlahAnggotaKeluarga || null),
+      jumlahAnggotaKeluarga: isRegisteredWarga ? null : (user.jumlahAnggotaKeluarga || null),
       qrCode: `USER:${user.id}`,
-      provinsi: user.provinsi || "Jawa Barat",
-      kabupaten: user.kabupaten || "Kota Bandung",
-      kecamatan: kecamatanName,
-      kelurahan: resolvedKelurahan,
-      rw: resolvedRw,
-      rwId: user.rwId || user.studentProfile?.assignedRwId || null,
-      rwName: resolvedRw,
-      kelurahanName: resolvedKelurahan,
+      provinsi: isRegisteredWarga ? null : (user.provinsi || "Jawa Barat"),
+      kabupaten: isRegisteredWarga ? null : (user.kabupaten || "Kota Bandung"),
+      kecamatan: isRegisteredWarga ? null : kecamatanName,
+      kelurahan: isRegisteredWarga ? null : resolvedKelurahan,
+      rw: isRegisteredWarga ? null : resolvedRw,
+      rwId: isRegisteredWarga ? null : (user.rwId || user.studentProfile?.assignedRwId || null),
+      rwName: isRegisteredWarga ? null : resolvedRw,
+      kelurahanName: isRegisteredWarga ? null : resolvedKelurahan,
       points: totalPoints,
       totalPoints,
       pointKkn: totalPoints,
@@ -771,16 +774,17 @@ export class AuthService {
       dplKelompok: user.dplKelompok || [],
       studentProfile: studentProfile || null,
       petugasProfile: user.petugasProfile || null,
-      lifecycleState: (user as any).lifecycleState || "REGISTERED",
+      lifecycleState,
       assignedZone:
         user.petugasProfile?.assignedZone ||
         (resolvedRw ? `${resolvedRw}, Kel. ${resolvedKelurahan}` : "Kecamatan Coblong"),
       kpiScore: user.petugasProfile?.kpiScore ? Number(user.petugasProfile.kpiScore) : 100,
       streakInfo,
       pendamping,
-      pendampingName: pendamping?.name || null,
+      pendampingName: isRegisteredWarga ? null : (pendamping?.name || null),
     };
   }
+
 
   /**
    * Update user password
