@@ -56,40 +56,11 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-          cache-dependency-path: 'package-lock.json'
-
-      - name: Build & Package Frontend Web
-        env:
-          NODE_OPTIONS: "--max-old-space-size=4096"
-        run: |
-          npm ci --prefer-offline 2>/dev/null || npm install --legacy-peer-deps
-          cd apps/web
-          VITE_API_BASE_URL=/api/v1 npm run build
-          test -f dist/index.html || { echo "Build failed: dist/index.html missing"; exit 1; }
-          tar -czf dist.tar.gz -C dist .
-
       - name: Install sshpass
         run: |
           if ! command -v sshpass &> /dev/null; then
             sudo apt-get install -y --no-install-recommends sshpass 2>/dev/null || (sudo apt-get update -qq && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends sshpass)
           fi
-
-      - name: Upload Frontend Archive to Staging VPS
-        continue-on-error: true
-        env:
-          VPS_HOST: ${{ secrets.STAGING_VPS_HOST || secrets.VPS_HOST }}
-          VPS_USER: ${{ secrets.STAGING_VPS_USERNAME || secrets.VPS_USERNAME }}
-          VPS_PASS: ${{ secrets.STAGING_VPS_PASSWORD || secrets.VPS_PASSWORD }}
-        run: |
-          for i in 1 2 3; do
-            echo "Attempt $i to upload staging frontend archive..."
-            timeout 60s sshpass -p "$VPS_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=20 -o ServerAliveInterval=10 -o ServerAliveCountMax=2 -o PreferredAuthentications=password -o PubkeyAuthentication=no apps/web/dist.tar.gz "$VPS_USER@$VPS_HOST:/tmp/frontend-dist.tar.gz" && break || sleep 3
-          done || echo "WARNING: SCP upload timed out, will build directly on VPS..."
 
       - name: Update Backend & Deploy Web on Staging VPS
         env:
@@ -142,25 +113,20 @@ jobs:
             fi
             mkdir -p "$TARGET_WEB_DIR/downloads"
 
-            if [ -f /tmp/frontend-dist.tar.gz ]; then
-              APK_NAME="berseka-staging-arm64-v8a.apk"
-              if [ -f "$TARGET_WEB_DIR/downloads/$APK_NAME" ]; then
-                cp "$TARGET_WEB_DIR/downloads/$APK_NAME" "/tmp/$APK_NAME"
-              fi
+            echo "Building frontend directly on staging VPS..."
+            cd "$REPO_DIR/apps/web"
+            NODE_OPTIONS="--max-old-space-size=4096" VITE_API_BASE_URL=/api/v1 npm run build
 
-              tar -xzf /tmp/frontend-dist.tar.gz -C "$TARGET_WEB_DIR/"
-              mkdir -p "$TARGET_WEB_DIR/downloads"
+            APK_NAME="berseka-staging-arm64-v8a.apk"
+            if [ -f "$TARGET_WEB_DIR/downloads/$APK_NAME" ]; then
+              cp "$TARGET_WEB_DIR/downloads/$APK_NAME" "/tmp/$APK_NAME"
+            fi
 
-              if [ -f "/tmp/$APK_NAME" ]; then
-                cp "/tmp/$APK_NAME" "$TARGET_WEB_DIR/downloads/$APK_NAME"
-                rm -f "/tmp/$APK_NAME"
-              fi
-              rm -f /tmp/frontend-dist.tar.gz
-            else
-              echo "Archive /tmp/frontend-dist.tar.gz not found, building web directly on server..."
-              cd "$REPO_DIR/apps/web"
-              npm run build || true
-              cp -r dist/* "$TARGET_WEB_DIR/" 2>/dev/null || true
+            cp -r dist/* "$TARGET_WEB_DIR/" 2>/dev/null || true
+
+            if [ -f "/tmp/$APK_NAME" ]; then
+              cp "/tmp/$APK_NAME" "$TARGET_WEB_DIR/downloads/$APK_NAME"
+              rm -f "/tmp/$APK_NAME"
             fi
 
             test -f "$TARGET_WEB_DIR/index.html" || { echo "Staging frontend missing index.html"; exit 1; }

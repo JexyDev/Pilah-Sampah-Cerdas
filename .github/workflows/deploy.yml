@@ -67,40 +67,11 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-          cache-dependency-path: 'package-lock.json'
-
-      - name: Build & Package Frontend Web
-        env:
-          NODE_OPTIONS: "--max-old-space-size=4096"
-        run: |
-          npm ci --prefer-offline 2>/dev/null || npm install --legacy-peer-deps
-          cd apps/web
-          VITE_API_BASE_URL=/api/v1 npm run build
-          test -f dist/index.html || { echo "Build failed: dist/index.html missing"; exit 1; }
-          tar -czf dist.tar.gz -C dist .
-
       - name: Install sshpass
         run: |
           if ! command -v sshpass &> /dev/null; then
             sudo apt-get install -y --no-install-recommends sshpass 2>/dev/null || (sudo apt-get update -qq && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends sshpass)
           fi
-
-      - name: Upload Frontend Archive to VPS
-        continue-on-error: true
-        env:
-          VPS_HOST: ${{ secrets.VPS_HOST }}
-          VPS_USER: ${{ secrets.VPS_USERNAME }}
-          VPS_PASS: ${{ secrets.VPS_PASSWORD }}
-        run: |
-          for i in 1 2 3; do
-            echo "Attempt $i to upload frontend archive..."
-            timeout 60s sshpass -p "$VPS_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=20 -o ServerAliveInterval=10 -o ServerAliveCountMax=2 -o PreferredAuthentications=password -o PubkeyAuthentication=no apps/web/dist.tar.gz "$VPS_USER@$VPS_HOST:/tmp/frontend-dist.tar.gz" && break || sleep 3
-          done || echo "WARNING: SCP upload timed out, will build directly on VPS..."
 
       - name: Update Backend & Deploy Web on VPS
         env:
@@ -184,48 +155,37 @@ jobs:
             echo "$VPS_PASS" | sudo -S mkdir -p /var/www/html /var/www/pilah-sampah-cerdas/frontend/dist
             mkdir -p "$REPO_DIR/apps/web/dist"
 
-            if [ -f /tmp/frontend-dist.tar.gz ] && tar -tzf /tmp/frontend-dist.tar.gz &>/dev/null; then
-              echo "Extracting frontend archive from GitHub Actions..."
-              tar -xzf /tmp/frontend-dist.tar.gz -C "$REPO_DIR/apps/web/dist/"
+            echo "Building frontend directly on VPS..."
+            cd "$REPO_DIR/apps/web"
+            NODE_OPTIONS="--max-old-space-size=4096" VITE_API_BASE_URL=/api/v1 npm run build
 
-              # Backup APK dari semua lokasi yang mungkin sebelum rm -rf
-              APK_NAME="berseka-release-arm64-v8a.apk"
-              APK_TMP="/tmp/$APK_NAME"
-              if [ -f "/var/www/html/downloads/$APK_NAME" ]; then
-                cp "/var/www/html/downloads/$APK_NAME" "$APK_TMP"
-                echo "APK backed up from /var/www/html/downloads/"
-              elif [ -f "$REPO_DIR/apps/api/uploads/$APK_NAME" ]; then
-                cp "$REPO_DIR/apps/api/uploads/$APK_NAME" "$APK_TMP"
-                echo "APK backed up from apps/api/uploads/"
-              fi
+            # Backup APK dari semua lokasi yang mungkin sebelum rm -rf
+            APK_NAME="berseka-release-arm64-v8a.apk"
+            APK_TMP="/tmp/$APK_NAME"
+            if [ -f "/var/www/html/downloads/$APK_NAME" ]; then
+              cp "/var/www/html/downloads/$APK_NAME" "$APK_TMP"
+              echo "APK backed up from /var/www/html/downloads/"
+            elif [ -f "$REPO_DIR/apps/api/uploads/$APK_NAME" ]; then
+              cp "$REPO_DIR/apps/api/uploads/$APK_NAME" "$APK_TMP"
+              echo "APK backed up from apps/api/uploads/"
+            fi
 
-              echo "$VPS_PASS" | sudo -S rm -rf /var/www/html/* /var/www/pilah-sampah-cerdas/frontend/dist/*
-              echo "$VPS_PASS" | sudo -S cp -r "$REPO_DIR/apps/web/dist"/* /var/www/html/
-              echo "$VPS_PASS" | sudo -S cp -r "$REPO_DIR/apps/web/dist"/* /var/www/pilah-sampah-cerdas/frontend/dist/
+            echo "$VPS_PASS" | sudo -S rm -rf /var/www/html/* /var/www/pilah-sampah-cerdas/frontend/dist/*
+            echo "$VPS_PASS" | sudo -S cp -r "$REPO_DIR/apps/web/dist"/* /var/www/html/
+            echo "$VPS_PASS" | sudo -S cp -r "$REPO_DIR/apps/web/dist"/* /var/www/pilah-sampah-cerdas/frontend/dist/
 
-              # Restore APK dari backup /tmp (prioritas) atau uploads
-              echo "$VPS_PASS" | sudo -S mkdir -p /var/www/html/downloads /var/www/pilah-sampah-cerdas/frontend/dist/downloads
-              if [ -f "$APK_TMP" ]; then
-                echo "Restoring APK from backup..."
-                echo "$VPS_PASS" | sudo -S cp "$APK_TMP" /var/www/html/downloads/$APK_NAME
-                echo "$VPS_PASS" | sudo -S cp "$APK_TMP" /var/www/pilah-sampah-cerdas/frontend/dist/downloads/$APK_NAME
-                # Sync balik ke uploads agar konsisten
-                mkdir -p "$REPO_DIR/apps/api/uploads"
-                cp "$APK_TMP" "$REPO_DIR/apps/api/uploads/$APK_NAME"
-                rm -f "$APK_TMP"
-              else
-                echo "WARNING: APK tidak ditemukan di semua lokasi. Download page akan kosong sampai mobile CI jalan."
-              fi
-              rm -f /tmp/frontend-dist.tar.gz
-            elif [ ! -f /var/www/html/index.html ]; then
-              echo "Archive not found or corrupted, building frontend directly on VPS..."
-              cd "$REPO_DIR"
-              npm install --legacy-peer-deps --prefer-offline 2>/dev/null || true
-              cd "$REPO_DIR/apps/web"
-              NODE_OPTIONS="--max-old-space-size=4096" VITE_API_BASE_URL=/api/v1 npm run build
-              echo "$VPS_PASS" | sudo -S rm -rf /var/www/html/* /var/www/pilah-sampah-cerdas/frontend/dist/*
-              echo "$VPS_PASS" | sudo -S cp -r "$REPO_DIR/apps/web/dist"/* /var/www/html/
-              echo "$VPS_PASS" | sudo -S cp -r "$REPO_DIR/apps/web/dist"/* /var/www/pilah-sampah-cerdas/frontend/dist/
+            # Restore APK dari backup /tmp (prioritas) atau uploads
+            echo "$VPS_PASS" | sudo -S mkdir -p /var/www/html/downloads /var/www/pilah-sampah-cerdas/frontend/dist/downloads
+            if [ -f "$APK_TMP" ]; then
+              echo "Restoring APK from backup..."
+              echo "$VPS_PASS" | sudo -S cp "$APK_TMP" /var/www/html/downloads/$APK_NAME
+              echo "$VPS_PASS" | sudo -S cp "$APK_TMP" /var/www/pilah-sampah-cerdas/frontend/dist/downloads/$APK_NAME
+              # Sync balik ke uploads agar konsisten
+              mkdir -p "$REPO_DIR/apps/api/uploads"
+              cp "$APK_TMP" "$REPO_DIR/apps/api/uploads/$APK_NAME"
+              rm -f "$APK_TMP"
+            else
+              echo "WARNING: APK tidak ditemukan di semua lokasi. Download page akan kosong sampai mobile CI jalan."
             fi
 
             test -f /var/www/html/index.html || { echo "Frontend missing index.html"; exit 1; }
