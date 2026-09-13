@@ -897,7 +897,7 @@ export const kknExecutiveService = {
         title: `${countPendingProkerDb} Usulan Program Kerja Belum Disetujui`,
         subtitle: "Menunggu telaah dan persetujuan DPL",
         type: "warning",
-        link: "/pelaksanaan/program-kerja?status=BELUM_DISETUJUI",
+        link: "/pelaksanaan/program-kerja?statusUsulan=BELUM_DISETUJUI",
       },
       {
         id: "proker_ditolak",
@@ -906,7 +906,7 @@ export const kknExecutiveService = {
         title: `${countRejectedProkerDb} Usulan Program Kerja Ditolak`,
         subtitle: "Memerlukan revisi dari kelompok mahasiswa",
         type: "danger",
-        link: "/pelaksanaan/program-kerja?status=DITOLAK",
+        link: "/pelaksanaan/program-kerja?statusUsulan=DITOLAK",
       },
       {
         id: "low_attendance_group",

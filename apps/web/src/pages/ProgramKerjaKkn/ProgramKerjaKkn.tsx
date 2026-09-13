@@ -112,7 +112,7 @@ export const ProgramKerjaKkn: React.FC = () => {
   );
   const [sourceFilter, setSourceFilter] = useState<string>("ALL");
   const [statusUsulanFilter, setStatusUsulanFilter] = useState<string>(
-    searchParams.get("statusUsulan") || "ALL"
+    searchParams.get("statusUsulan") || searchParams.get("status") || "ALL"
   );
   const [statusPelaksanaanFilter, setStatusPelaksanaanFilter] = useState<string>(
     searchParams.get("statusPelaksanaan") || "ALL"
@@ -132,7 +132,7 @@ export const ProgramKerjaKkn: React.FC = () => {
     if (kId) {
       setSelectedKelompokId(kId);
     }
-    const su = searchParams.get("statusUsulan");
+    const su = searchParams.get("statusUsulan") || searchParams.get("status");
     if (su) {
       setStatusUsulanFilter(su);
     }
@@ -772,7 +772,14 @@ export const ProgramKerjaKkn: React.FC = () => {
         (item.sumber || "Mahasiswa").toLowerCase() === sourceFilter.toLowerCase();
 
       const normU = normalizeStatusUsulan(item.statusUsulan, item.status);
-      const matchesUsulan = statusUsulanFilter === "ALL" || normU === statusUsulanFilter;
+      const isAutoKadaluarsaDitolak =
+        item.status === "DITOLAK" ||
+        item.statusUsulan === "KADALUARSA_OTOMATIS" ||
+        item.statusUsulan === "KADALUARSA";
+      const matchesUsulan =
+        statusUsulanFilter === "ALL" ||
+        normU === statusUsulanFilter ||
+        (statusUsulanFilter === "DITOLAK" && isAutoKadaluarsaDitolak);
 
       const normP = normalizeStatusPelaksanaan(item.statusPelaksanaan, item.status);
       const matchesPelaksanaan =

@@ -2471,9 +2471,9 @@ export const dplService = {
             { status: { in: ["DITERIMA", "SEDANG_BERJALAN", "SELESAI"] } },
           ],
         });
-      } else if (u === "DITOLAK" || u === "TIDAK_DISETUJUI") {
+      } else if (u === "DITOLAK" || u === "TIDAK_DISETUJUI" || u === "KADALUARSA" || u === "KADALUARSA_OTOMATIS") {
         andConditions.push({
-          OR: [{ statusUsulan: { in: ["DITOLAK", "TIDAK_DISETUJUI"] } }, { status: "DITOLAK" }],
+          OR: [{ statusUsulan: { in: ["DITOLAK", "TIDAK_DISETUJUI", "KADALUARSA_OTOMATIS", "KADALUARSA"] } }, { status: "DITOLAK" }],
         });
       } else if (u === "BELUM_DISETUJUI" || u === "MENUNGGU" || u === "PENDING") {
         andConditions.push({
