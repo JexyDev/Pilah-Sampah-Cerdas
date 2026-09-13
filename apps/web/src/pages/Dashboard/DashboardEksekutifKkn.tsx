@@ -562,12 +562,17 @@ export const DashboardEksekutifKkn: React.FC = () => {
       name: string;
       dplName: string;
       avgScore: number;
+      poinProker?: number;
+      rataRataPoinAnggota?: number;
       membersCount: number;
     }>;
     dpl: Array<{
       id: string;
       name: string;
       points: number;
+      poinLogbook?: number;
+      poinKelompok?: number;
+      hasLogbook?: boolean;
       totalGroups: number;
       totalStudents: number;
     }>;
@@ -2375,7 +2380,10 @@ export const DashboardEksekutifKkn: React.FC = () => {
                         {g.membersCount} Mahasiswa
                       </td>
                       <td className="py-2.5 px-3 text-right">
-                        <span className="px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-black text-xs border border-blue-200 dark:border-blue-700/40">
+                        <span
+                          className="px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-black text-xs border border-blue-200 dark:border-blue-700/40 cursor-help"
+                          title={`Poin Kelompok = (Poin Proker × 60%) + (Rerata Anggota × 40%) = (${g.poinProker ?? 0} × 60%) + (${g.rataRataPoinAnggota ?? 0} × 40%) = ${g.avgScore}`}
+                        >
                           {g.avgScore} Poin
                         </span>
                       </td>
@@ -2440,7 +2448,10 @@ export const DashboardEksekutifKkn: React.FC = () => {
                         {d.totalStudents} Mahasiswa
                       </td>
                       <td className="py-2.5 px-3 text-right">
-                        <span className="px-2.5 py-1 rounded-lg bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 font-black text-xs border border-teal-200 dark:border-teal-700/40">
+                        <span
+                          className="px-2.5 py-1 rounded-lg bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 font-black text-xs border border-teal-200 dark:border-teal-700/40 cursor-help"
+                          title={`Poin DPL = (Poin Logbook × 60%) + (Poin Kelompok × 40%) = (${d.poinLogbook ?? (d.hasLogbook ? 6 : 0)} × 60%) + (${d.poinKelompok ?? 0} × 40%) = ${d.points}`}
+                        >
                           {d.points} Poin
                         </span>
                       </td>
