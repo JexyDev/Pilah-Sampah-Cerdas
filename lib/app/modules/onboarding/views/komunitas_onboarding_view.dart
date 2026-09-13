@@ -304,9 +304,9 @@ class _KomunitasOnboardingViewState
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
-        backgroundColor: AppColors.primaryGreen,
-        foregroundColor: Colors.white,
-        title: const Text('Bergabung Komunitas'),
+        backgroundColor: Colors.white,
+        foregroundColor: AppColors.textPrimary,
+        title: Image.asset('assets/logo/BersekaNew-logo-text-bg-transparent.png', height: 32),
         centerTitle: true,
         elevation: 0,
       ),

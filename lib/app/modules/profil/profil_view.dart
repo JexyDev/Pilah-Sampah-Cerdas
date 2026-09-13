@@ -522,7 +522,10 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                           _InfoTile(
                             Icons.family_restroom_rounded,
                             'Jumlah Anggota Keluarga',
-                            '${user?.familySize ?? 1} Orang',
+                            (user?.lifecycleState != WargaLifecycle.registered &&
+                                    user!.familySize > 0)
+                                ? '${user.familySize} Orang'
+                                : '-',
                           ),
                           _divider(),
                         ],
@@ -589,88 +592,33 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                           bold: true,
                         ),
                         _divider(),
-                        _InfoTile(
-                          Icons.map_rounded,
-                          'Provinsi',
-                          user?.provinsi != null && user!.provinsi.isNotEmpty
-                              ? user.provinsi
-                              : '-',
-                        ),
-                        _divider(),
-                        _InfoTile(
-                          Icons.location_city_rounded,
-                          'Kota/Kabupaten',
-                          user?.kota != null && user!.kota.isNotEmpty
-                              ? user.kota
-                              : '-',
-                        ),
-                        _divider(),
-                        _InfoTile(
-                          Icons.map_rounded,
-                          'Kecamatan',
-                          user?.kecamatan != null && user!.kecamatan.isNotEmpty
-                              ? user.kecamatan
-                                    .replaceAll(
-                                      RegExp(
-                                        r'^(?:Kec\.|Kecamatan)\s+',
-                                        caseSensitive: false,
-                                      ),
-                                      '',
-                                    )
-                                    .trim()
-                              : '-',
-                        ),
-                        _divider(),
-                        _InfoTile(
-                          Icons.map_outlined,
-                          'Kelurahan',
-                          (user?.kelurahan != null &&
-                                  user!.kelurahan.isNotEmpty &&
-                                  user.kelurahan != '-')
-                              ? user.kelurahan
-                                    .replaceAll(
-                                      RegExp(
-                                        r'^(?:Kel\.|Kelurahan|Desa)\s+',
-                                        caseSensitive: false,
-                                      ),
-                                      '',
-                                    )
-                                    .trim()
-                              : '-',
-                        ),
-                        _divider(),
-                        _InfoTile(
-                          Icons.location_city_rounded,
-                          user?.role == UserRole.mahasiswaKkn
-                              ? 'RW Dampingan'
-                              : 'RW',
-                          (user?.rw != null &&
-                                  user!.rw.isNotEmpty &&
-                                  user.rw != '-')
-                              ? user.formattedRw
-                              : '-',
-                        ),
-                        _divider(),
-                        if (user?.role == UserRole.warga) ...[
+                        // Alamat hanya tampil jika sudah bergabung komunitas
+                        if (user?.role != UserRole.warga ||
+                            user?.lifecycleState != WargaLifecycle.registered) ...[
                           _InfoTile(
-                            Icons.school_outlined,
-                            'Mahasiswa Pendamping',
-                            user?.pendampingName != null &&
-                                    user!.pendampingName!.isNotEmpty
-                                ? user.pendampingName!
+                            Icons.map_rounded,
+                            'Provinsi',
+                            user?.provinsi != null && user!.provinsi.isNotEmpty
+                                ? user.provinsi
                                 : '-',
                           ),
                           _divider(),
-                        ],
-                        if (user?.role != UserRole.mahasiswaKkn) ...[
                           _InfoTile(
-                            Icons.home_outlined,
-                            'Alamat Lengkap',
-                            user?.address != null && user!.address.isNotEmpty
-                                ? user.address
+                            Icons.location_city_rounded,
+                            'Kota/Kabupaten',
+                            user?.kota != null && user!.kota.isNotEmpty
+                                ? user.kota
+                                : '-',
+                          ),
+                          _divider(),
+                          _InfoTile(
+                            Icons.map_rounded,
+                            'Kecamatan',
+                            user?.kecamatan != null && user!.kecamatan.isNotEmpty
+                                ? user.kecamatan
                                       .replaceAll(
                                         RegExp(
-                                          r',\s*(?:Kec\.|Kecamatan)\s+.*$',
+                                          r'^(?:Kec\.|Kecamatan)\s+',
                                           caseSensitive: false,
                                         ),
                                         '',
@@ -678,6 +626,65 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                                       .trim()
                                 : '-',
                           ),
+                          _divider(),
+                          _InfoTile(
+                            Icons.map_outlined,
+                            'Kelurahan',
+                            (user?.kelurahan != null &&
+                                    user!.kelurahan.isNotEmpty &&
+                                    user.kelurahan != '-')
+                                ? user.kelurahan
+                                      .replaceAll(
+                                        RegExp(
+                                          r'^(?:Kel\.|Kelurahan|Desa)\s+',
+                                          caseSensitive: false,
+                                        ),
+                                        '',
+                                      )
+                                      .trim()
+                                : '-',
+                          ),
+                          _divider(),
+                          _InfoTile(
+                            Icons.location_city_rounded,
+                            user?.role == UserRole.mahasiswaKkn
+                                ? 'RW Dampingan'
+                                : 'RW',
+                            (user?.rw != null &&
+                                    user!.rw.isNotEmpty &&
+                                    user.rw != '-')
+                                ? user.formattedRw
+                                : '-',
+                          ),
+                          _divider(),
+                          if (user?.role == UserRole.warga) ...[
+                            _InfoTile(
+                              Icons.school_outlined,
+                              'Mahasiswa Pendamping',
+                              user?.pendampingName != null &&
+                                      user!.pendampingName!.isNotEmpty
+                                  ? user.pendampingName!
+                                  : '-',
+                            ),
+                            _divider(),
+                          ],
+                          if (user?.role != UserRole.mahasiswaKkn) ...[
+                            _InfoTile(
+                              Icons.home_outlined,
+                              'Alamat Lengkap',
+                              user?.address != null && user!.address.isNotEmpty
+                                  ? user.address
+                                        .replaceAll(
+                                          RegExp(
+                                            r',\s*(?:Kec\.|Kecamatan)\s+.*$',
+                                            caseSensitive: false,
+                                          ),
+                                          '',
+                                        )
+                                        .trim()
+                                  : '-',
+                            ),
+                          ],
                         ],
                       ],
                     ),

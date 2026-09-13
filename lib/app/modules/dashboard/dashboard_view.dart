@@ -23,6 +23,8 @@ import '../petugas_pemilahan/views/petugas_pemilahan_poin_view.dart';
 import '../petugas_pemilahan/views/petugas_pemilahan_profil_view.dart';
 import '../../routes/app_routes.dart';
 import '../../core/utils/update_checker.dart';
+import '../../core/widgets/curved_text.dart';
+import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.dart';
 
 /// Shell utama â€” Bottom Nav: Home, History, FAB QR hijau, Profile, Poin.
 /// Sesuai desain: FAB bulat hijau di tengah.
@@ -122,7 +124,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
       bottomNavigationBar: _buildBottomBar(role),
       floatingActionButton: showFab ? _buildFab(isOnline, role) : null,
       floatingActionButtonLocation: showFab
-          ? FloatingActionButtonLocation.centerDocked
+          ? const _LoweredCenterDockedLocation()
           : null,
     );
   }
@@ -132,9 +134,9 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
         ? AppColors.residuColor
         : AppColors.primaryGreen;
 
-    return Container(
-      width: 60,
-      height: 60,
+    final fabWidget = Container(
+      width: 68,
+      height: 68,
       decoration: BoxDecoration(
         color: isOnline ? fabColor : AppColors.textHint,
         shape: BoxShape.circle,
@@ -174,89 +176,121 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
                   padding: const EdgeInsets.all(10.0),
                   child: SvgPicture.asset(
                     'assets/logo_aisah/SVG/AISAH-logo-white.svg',
-                    width: 24,
-                    height: 24,
+                    width: 32,
+                    height: 32,
                   ),
                 ),
         ),
       ),
     );
+
+    if (role == UserRole.petugasPemilahan) {
+      return fabWidget;
+    }
+
+    return SizedBox(
+      width: 68,
+      height: 68,
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.center,
+        children: [
+          fabWidget,
+          const Positioned(
+            top: -10,
+            left: -20,
+            right: -20,
+            child: CurvedText(
+              text: 'Pindai Sampah',
+              radius: 50,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+          const Positioned(
+            bottom: -20,
+            left: -20,
+            right: -20,
+            child: Text(
+              'AISAh',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-  BottomAppBar _buildBottomBar(UserRole role) {
-    final bool isWarga = role == UserRole.warga;
+  Widget _buildBottomBar(UserRole role) {
     final bool isPetugas = role == UserRole.petugasPemilahan;
-    final bool isMahasiswa = role == UserRole.mahasiswaKkn;
-    final bool hasFab = isWarga || isPetugas || isMahasiswa;
-    final double screenWidth = MediaQuery.of(context).size.width;
+    final bool hasFab = role == UserRole.warga || isPetugas || role == UserRole.mahasiswaKkn;
 
-    return BottomAppBar(
-      shape: hasFab ? const CircularNotchedRectangle() : null,
-      notchMargin: hasFab ? 6 : 0,
-      color: Colors.white,
+    // Definisikan item-item bottom nav sesuai role
+    final List<Map<String, dynamic>> navItems = [
+      {
+        'active': Icons.home_rounded,
+        'inactive': Icons.home_outlined,
+        'label': isPetugas ? 'Beranda' : 'Home',
+      },
+      {
+        'active': Icons.history_rounded,
+        'inactive': Icons.history_outlined,
+        'label': isPetugas ? 'Riwayat' : 'History',
+      },
+      // Note: Index 2 is skipped by AnimatedBottomNavigationBar if GapLocation.center is used.
+      // We map builder indices: 0 -> 0, 1 -> 1, 2 -> 3, 3 -> 4
+      {
+        'active': isPetugas ? Icons.monetization_on_rounded : null,
+        'inactive': isPetugas ? Icons.monetization_on_outlined : null,
+        'label': 'Poin',
+        'activeAsset': isPetugas ? null : 'assets/icons/medal_active.png',
+        'inactiveAsset': isPetugas ? null : 'assets/icons/medal.png',
+      },
+      {
+        'active': Icons.person_rounded,
+        'inactive': Icons.person_outline_rounded,
+        'label': isPetugas ? 'Profil' : 'Profile',
+      },
+    ];
+
+    return AnimatedBottomNavigationBar.builder(
+      itemCount: 4,
+      tabBuilder: (int index, bool isActive) {
+        final item = navItems[index];
+        // Map builder index to actual screen index:
+        // Builder index 0,1 -> Screen index 0,1
+        // Builder index 2,3 -> Screen index 3,4
+        final actualIndex = index < 2 ? index : index + 1;
+        
+        return _navItem(
+          actualIndex,
+          item['active'] as IconData?,
+          item['inactive'] as IconData?,
+          item['label'] as String,
+          activeAsset: item['activeAsset'] as String?,
+          inactiveAsset: item['inactiveAsset'] as String?,
+        );
+      },
+      activeIndex: _selectedIndex < 2 ? _selectedIndex : _selectedIndex - 1,
+      gapLocation: hasFab ? GapLocation.center : GapLocation.none,
+      notchSmoothness: NotchSmoothness.softEdge,
+      leftCornerRadius: 0,
+      rightCornerRadius: 0,
+      onTap: (index) {
+        final actualIndex = index < 2 ? index : index + 1;
+        _onTabTap(actualIndex);
+      },
+      backgroundColor: Colors.white,
       elevation: 8,
-      child: SizedBox(
-        height: AppDimensions.bottomNavHeight,
-        child: Row(
-          children: [
-            Expanded(
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _navItem(
-                      0,
-                      Icons.home_rounded,
-                      Icons.home_outlined,
-                      role == UserRole.petugasPemilahan ? 'Beranda' : 'Home',
-                    ),
-                  ),
-                  Expanded(
-                    child: _navItem(
-                      1,
-                      Icons.history_rounded,
-                      Icons.history_outlined,
-                      role == UserRole.petugasPemilahan ? 'Riwayat' : 'History',
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (hasFab) SizedBox(width: screenWidth < 360 ? 44 : 56), // Responsive FAB hole
-            Expanded(
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _navItem(
-                      3,
-                      role == UserRole.petugasPemilahan
-                          ? Icons.monetization_on_rounded
-                          : null,
-                      role == UserRole.petugasPemilahan
-                          ? Icons.monetization_on_outlined
-                          : null,
-                      'Poin', // Semua role dinamakan 'Poin'
-                      activeAsset: role == UserRole.petugasPemilahan
-                          ? null
-                          : 'assets/icons/medal_active.png',
-                      inactiveAsset: role == UserRole.petugasPemilahan
-                          ? null
-                          : 'assets/icons/medal.png',
-                    ),
-                  ),
-                  Expanded(
-                    child: _navItem(
-                      4,
-                      Icons.person_rounded,
-                      Icons.person_outline_rounded,
-                      role == UserRole.petugasPemilahan ? 'Profil' : 'Profile',
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+      height: AppDimensions.bottomNavHeight,
     );
   }
 
@@ -429,5 +463,17 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
         ),
       ],
     );
+  }
+}
+
+class _LoweredCenterDockedLocation extends FloatingActionButtonLocation {
+  const _LoweredCenterDockedLocation();
+
+  @override
+  Offset getOffset(ScaffoldPrelayoutGeometry scaffoldGeometry) {
+    final Offset centerDockedOffset = FloatingActionButtonLocation.centerDocked
+        .getOffset(scaffoldGeometry);
+    // Geser ke bawah 12px agar lebih tenggelam ke dalam bottom bar
+    return centerDockedOffset.translate(0, 12);
   }
 }

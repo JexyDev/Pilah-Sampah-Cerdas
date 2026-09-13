@@ -226,18 +226,19 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                   const SizedBox(height: AppDimensions.md),
 
                   // ──────────────── Aksi Cepat ─────────────────────────────────
-                  const Text(
-                    'Aksi Cepat',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+                  if (user?.lifecycleState != WargaLifecycle.registered) ...[
+                    const Text(
+                      'Aksi Cepat',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: AppDimensions.sm),
-                  _buildAksiCepat(context, ref, isOnline),
-
-                  const SizedBox(height: AppDimensions.lg),
+                    const SizedBox(height: AppDimensions.sm),
+                    _buildAksiCepat(context, ref, isOnline),
+                    const SizedBox(height: AppDimensions.lg),
+                  ],
 
                   // ──────────────── Tempat Sampah Anda ─────────────────────────
                   Consumer(
@@ -1682,9 +1683,9 @@ class _GabungKomunitasCard extends StatelessWidget {
             ),
             const SizedBox(height: 10),
 
-            // Deskripsi
+            // Deskripsi Singkat
             const Text(
-              'Aktifkan Tempat Sampah pintarmu dan mulai berkontribusi nyata untuk lingkungan. Setiap sampah yang kamu pilah, poinmu bertambah dan lingkungan semakin bersih!',
+              'Aktifkan Tempat Sampah pintarmu dan mulai berkontribusi nyata untuk lingkungan.',
               style: TextStyle(
                 color: Colors.white70,
                 fontSize: 13,
@@ -1692,6 +1693,23 @@ class _GabungKomunitasCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
+            
+            // Daftar Manfaat & Fitur
+            const Text(
+              'Manfaat & Fitur:',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 10),
+            _buildBenefitItem(Icons.qr_code_scanner_rounded, 'Pindai Sampah Cerdas', 'Deteksi jenis & estimasi berat sampah otomatis dengan AI.'),
+            const SizedBox(height: 8),
+            _buildBenefitItem(Icons.monetization_on_rounded, 'Kumpulkan Poin', 'Dapatkan poin yang bisa ditukar dari setiap sampah yang kamu pilah.'),
+            const SizedBox(height: 8),
+            _buildBenefitItem(Icons.nature_people_rounded, 'Dampak Lingkungan', 'Pantau kontribusimu dalam menjaga kebersihan lingkungan sekitar.'),
+            const SizedBox(height: 20),
 
             // Tombol CTA
             SizedBox(
@@ -1729,6 +1747,40 @@ class _GabungKomunitasCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildBenefitItem(IconData icon, String title, String desc) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: Colors.white, size: 20),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                desc,
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 12,
+                  height: 1.3,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -1797,7 +1849,7 @@ class _TempatSampahBelumTerpasangCard extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () => Navigator.of(context).pushNamed(AppRoutes.aktivasiBin),
+                onPressed: () => Navigator.of(context).pushNamed(AppRoutes.ukurKapasitas),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.warningYellow,
                   foregroundColor: Colors.white,

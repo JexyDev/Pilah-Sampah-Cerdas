@@ -62,18 +62,6 @@ class ScanGuard {
       );
       return;
     }
-    
-    // Check if user is Warga but not fullyActive (e.g. communityActiveNoBin or registered)
-    if (user?.role == UserRole.warga && user?.lifecycleState != WargaLifecycle.fullyActive) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Tempat Sampah belum terpasang. Anda tidak akan mendapat poin jika memaksa scan.'),
-          backgroundColor: AppColors.warningYellow,
-        ),
-      );
-      return;
-    }
-
     final bins = ref.read(binsProvider).value ?? [];
     final hasOrganic = bins.any(
       (b) => b.binType == WasteType.organic && b.isActive,
@@ -138,9 +126,14 @@ class ScanGuard {
         ),
       );
     } else if (!hasOrganic || !hasNonOrganic) {
-      // Guest Mode: Warga belum punya bin aktif — arahkan ke ScanTrialView
-      // (uji coba AI tanpa menyimpan data ke backend)
-      Navigator.pushNamed(context, AppRoutes.scanTrial);
+      final lifecycleState = user?.lifecycleState ?? WargaLifecycle.registered;
+      if (lifecycleState == WargaLifecycle.registered) {
+        // Belum bergabung komunitas sama sekali → mode uji coba AI
+        Navigator.pushNamed(context, AppRoutes.scanTrial);
+      } else {
+        // Sudah gabung komunitas tapi bin belum ada/aktif → ukur dulu sebelum aktivasi
+        Navigator.pushNamed(context, AppRoutes.ukurKapasitas);
+      }
     } else {
       Navigator.pushNamed(context, AppRoutes.scan);
     }
