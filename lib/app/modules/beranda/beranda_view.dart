@@ -1849,7 +1849,7 @@ class _TempatSampahBelumTerpasangCard extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () => Navigator.of(context).pushNamed(AppRoutes.aktivasiBin),
+                onPressed: () => Navigator.of(context).pushNamed(AppRoutes.ukurKapasitas),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.warningYellow,
                   foregroundColor: Colors.white,

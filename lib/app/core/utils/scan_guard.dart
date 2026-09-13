@@ -126,9 +126,14 @@ class ScanGuard {
         ),
       );
     } else if (!hasOrganic || !hasNonOrganic) {
-      // Guest Mode: Warga belum punya bin aktif — arahkan ke ScanTrialView
-      // (uji coba AI tanpa menyimpan data ke backend)
-      Navigator.pushNamed(context, AppRoutes.scanTrial);
+      final lifecycleState = user?.lifecycleState ?? WargaLifecycle.registered;
+      if (lifecycleState == WargaLifecycle.registered) {
+        // Belum bergabung komunitas sama sekali → mode uji coba AI
+        Navigator.pushNamed(context, AppRoutes.scanTrial);
+      } else {
+        // Sudah gabung komunitas tapi bin belum ada/aktif → ukur dulu sebelum aktivasi
+        Navigator.pushNamed(context, AppRoutes.ukurKapasitas);
+      }
     } else {
       Navigator.pushNamed(context, AppRoutes.scan);
     }
