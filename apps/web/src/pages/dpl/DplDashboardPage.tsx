@@ -2020,8 +2020,8 @@ export const DplDashboardPage: React.FC = () => {
                         </span>
                         <span className="text-[10px] text-slate-400">pts</span>
                       </div>
-                      <div className="text-[9px] text-slate-400 truncate" title={`Proker: ${g.poinProker || 0} (60%) • Rerata: ${g.rataRataPoinAnggota || 0} (40%)`}>
-                        Proker 60% • Anggota 40%
+                      <div className="text-[9px] text-slate-400 truncate" title={`Poin Kelompok = (Poin Proker × 60%) + (Rata-rata Poin Anggota × 40%) = (${g.poinProker || 0} × 60%) + (${g.rataRataPoinAnggota || 0} × 40%) = ${g.totalGroupPoints !== undefined ? g.totalGroupPoints : 0}`}>
+                        (Proker × 60%) + (Anggota × 40%)
                       </div>
                     </div>
                     <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60">
@@ -2034,8 +2034,8 @@ export const DplDashboardPage: React.FC = () => {
                         </span>
                         <span className="text-[10px] text-slate-400">pts</span>
                       </div>
-                      <div className="text-[9px] text-slate-400 truncate" title={`Logbook: ${g.poinLogbookDpl || 0} (60%) • Kelompok: ${g.totalGroupPoints || 0} (40%)`}>
-                        Logbook {g.hasLogbookDpl ? "✓" : "0"} • Kel. 40%
+                      <div className="text-[9px] text-slate-400 truncate" title={`Poin DPL = (Poin Logbook × 60%) + (Poin Kelompok × 40%) = (${g.poinLogbookDpl || 0} × 60%) + (${g.totalGroupPoints || 0} × 40%) = ${g.poinDpl !== undefined ? g.poinDpl : 0}`}>
+                        (Logbook × 60%) + (Kelompok × 40%)
                       </div>
                     </div>
                   </div>

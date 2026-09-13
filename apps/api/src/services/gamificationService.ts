@@ -1,4 +1,5 @@
 import { prisma } from "../lib/prisma.js";
+import { calculateGroupPoints, calculateDplPoints } from "./dplService.js";
 /**
  * Project: BERSEKA
  * Developed by: PT Makerindo
@@ -395,6 +396,7 @@ export const gamificationService = {
 
     studentLeaderboard.sort((a, b) => b.finalScore - a.finalScore);
 
+    // 2. Kelompok KKN Leaderboard (Formula Resmi: Poin Kelompok = (Proker * 0.6) + (Rata-rata Anggota * 0.4))
     const groups = await prisma.kelompokKkn.findMany({
       include: {
         dpl: {
@@ -404,59 +406,38 @@ export const gamificationService = {
           },
         },
         students: {
-          include: {
-            user: {
-              include: {
-                attendances: true,
-                registeredBins: true,
-              },
-            },
+          select: {
+            userId: true,
           },
         },
       },
     });
 
-    const kelompokLeaderboard = groups.map((g: any) => {
-      let totalGroupScore = 0;
-      const studentCount = g.students.length;
+    const kelompokLeaderboard = await Promise.all(
+      groups.map(async (g: any) => {
+        const studentUserIds = g.students.map((s: any) => s.userId);
+        const groupPointsData = await calculateGroupPoints(g.id, undefined, studentUserIds);
+        const dplName = g.dpl?.name || g.dplNamaMentah || null;
 
-      g.students.forEach((s: any) => {
-        let totalHours = 0;
-        s.user?.attendances?.forEach((att: any) => {
-          if (att.checkOutAt && att.attendedAt) {
-            const diffMs = new Date(att.checkOutAt).getTime() - new Date(att.attendedAt).getTime();
-            totalHours += diffMs / (1000 * 60 * 60);
-          }
-        });
-
-        const activeBinsCount = (s.user?.registeredBins || []).filter(
-          (b: any) => b.status === "ACTIVE_BOUND"
-        ).length;
-        const dplScore = Number(s.assessmentScore || 0);
-
-        const finalScore = totalHours * 0.4 + activeBinsCount * 0.3 + dplScore * 0.3;
-        totalGroupScore += finalScore;
-      });
-
-      const avgScore = studentCount > 0 ? totalGroupScore / studentCount : 0;
-      const dplName = g.dpl?.name || g.dplNamaMentah || null;
-
-      return {
-        id: g.id,
-        name: g.name,
-        dplName: dplName
-          ? dplName.toLowerCase().startsWith("dpl")
-            ? dplName
-            : `DPL: ${dplName}`
-          : "DPL: Belum Ditugaskan",
-        avgScore: parseFloat(avgScore.toFixed(2)),
-        membersCount: studentCount,
-      };
-    });
+        return {
+          id: g.id,
+          name: g.name,
+          dplName: dplName
+            ? dplName.toLowerCase().startsWith("dpl")
+              ? dplName
+              : `DPL: ${dplName}`
+            : "DPL: Belum Ditugaskan",
+          avgScore: groupPointsData.totalGroupPoints,
+          poinProker: groupPointsData.poinProker,
+          rataRataPoinAnggota: groupPointsData.rataRataPoinAnggota,
+          membersCount: studentUserIds.length,
+        };
+      })
+    );
 
     kelompokLeaderboard.sort((a, b) => b.avgScore - a.avgScore);
 
-    // 3. DPL (Dosen Pendamping Lapangan) Leaderboard
+    // 3. DPL (Dosen Pendamping Lapangan) Leaderboard (Formula Resmi: Poin DPL = (Logbook * 0.6) + (Poin Kelompok * 0.4))
     const dplUsers = await prisma.user.findMany({
       where: { role: { name: "DPL" } },
       select: {
@@ -468,14 +449,7 @@ export const gamificationService = {
             name: true,
             students: {
               select: {
-                id: true,
-                assessmentScore: true,
-                user: {
-                  select: {
-                    registeredBins: { select: { status: true } },
-                    attendances: { select: { attendedAt: true, checkOutAt: true } },
-                  },
-                },
+                userId: true,
               },
             },
           },
@@ -483,40 +457,37 @@ export const gamificationService = {
       },
     });
 
-    const dplLeaderboard = dplUsers
-      .map((d: any) => {
-        let totalScoreSum = 0;
+    const dplLeaderboard = await Promise.all(
+      dplUsers.map(async (d: any) => {
+        let totalGroupPointsSum = 0;
         let totalStudentCount = 0;
-        d.dplKelompok.forEach((kel: any) => {
-          kel.students.forEach((s: any) => {
-            totalStudentCount++;
-            let totalHours = 0;
-            s.user.attendances.forEach((att: any) => {
-              if (att.checkOutAt && att.attendedAt) {
-                const diffMs =
-                  new Date(att.checkOutAt).getTime() - new Date(att.attendedAt).getTime();
-                totalHours += diffMs / (1000 * 60 * 60);
-              }
-            });
-            const activeBins = s.user.registeredBins.filter(
-              (b: any) => b.status === "ACTIVE_BOUND"
-            ).length;
-            const score =
-              totalHours * 0.4 + activeBins * 0.3 + Number(s.assessmentScore || 0) * 0.3;
-            totalScoreSum += score;
-          });
-        });
 
-        const avgDplScore = totalStudentCount > 0 ? totalScoreSum / totalStudentCount : 0;
+        for (const kel of d.dplKelompok) {
+          totalStudentCount += kel.students.length;
+          const studentUserIds = kel.students.map((s: any) => s.userId);
+          const grpRes = await calculateGroupPoints(kel.id, undefined, studentUserIds);
+          totalGroupPointsSum += grpRes.totalGroupPoints;
+        }
+
+        const avgGroupPoints =
+          d.dplKelompok.length > 0 ? totalGroupPointsSum / d.dplKelompok.length : 0;
+
+        const dplPointsData = await calculateDplPoints(d.id, undefined, avgGroupPoints);
+
         return {
           id: d.id,
           name: d.name,
-          points: parseFloat(avgDplScore.toFixed(2)),
+          points: dplPointsData.poinDpl,
+          poinLogbook: dplPointsData.poinLogbookDpl,
+          poinKelompok: dplPointsData.poinKelompok,
+          hasLogbook: dplPointsData.hasLogbookDpl,
           totalGroups: d.dplKelompok.length,
           totalStudents: totalStudentCount,
         };
       })
-      .sort((a: any, b: any) => b.points - a.points);
+    );
+
+    dplLeaderboard.sort((a: any, b: any) => b.points - a.points);
 
     return {
       students: studentLeaderboard,
