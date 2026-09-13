@@ -1209,7 +1209,7 @@ const KknDashboardContent: React.FC = () => {
             </h2>
           </div>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
-            Grafik kepatuhan &amp; volume sampah per kelurahan serta leaderboard Top 10 untuk warga, petugas, RW, kelurahan, dan mahasiswa KKN.
+            Grafik kepatuhan &amp; volume sampah per kelurahan serta leaderboard Top 10 untuk warga, petugas, RW, dan kelurahan.
           </p>
         </div>
 
