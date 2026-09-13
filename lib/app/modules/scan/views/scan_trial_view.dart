@@ -847,41 +847,31 @@ class _GabungKomunitasCta extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF16A34A), Color(0xFF15803D)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryGreen.withValues(alpha: 0.3),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
+        border: Border.all(
+          color: AppColors.primaryGreen.withValues(alpha: 0.2),
+          width: 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
-            children: [
-              Text('🌿', style: TextStyle(fontSize: 22)),
-              SizedBox(width: 8),
-              Text(
-                'Bergabung ke Komunitas',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
+          Image.asset(
+            'assets/logo/BersekaNew-logo-text-bg-transparent.png',
+            height: 32,
           ),
           const SizedBox(height: 8),
           const Text(
             'Aktifkan Tempat Sampah pintarmu agar setiap kontribusimu dihitung, poinmu terkumpul, dan lingkunganmu semakin bersih!',
-            style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.4),
           ),
           const SizedBox(height: 14),
           SizedBox(
@@ -938,8 +928,8 @@ class _GabungKomunitasCta extends StatelessWidget {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: AppColors.primaryGreen,
+                    backgroundColor: AppColors.primaryGreen,
+                    foregroundColor: Colors.white,
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(vertical: 13),
                     shape: RoundedRectangleBorder(
