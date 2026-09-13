@@ -453,59 +453,6 @@ export const LeaderboardWidget: React.FC<LeaderboardWidgetProps> = ({ mode = "al
         </>
       )}
 
-      {/* Top 10 Akademik & Pendampingan */}
-      {mode !== "sampah" && (
-        <div className="space-y-3 pt-1">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-xl bg-emerald-700 text-white shadow-xs">
-              <GraduationCap size={16} />
-            </div>
-            <div>
-              <h3 className="font-extrabold text-[15px] text-slate-800 dark:text-slate-100 tracking-tight leading-tight">
-                Top 10 Akademik &amp; Pendampingan
-              </h3>
-              <p className="text-[11px] text-slate-500 leading-none mt-0.5">
-                Ranking dan performa peserta dari ekosistem pendampingan mahasiswa.
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 items-stretch min-w-0">
-            {/* 1. Top 10 Mahasiswa */}
-            <ColumnCard
-              title="Top 10 Mahasiswa"
-              icon={<GraduationCap size={14} />}
-              iconBg="bg-emerald-600"
-              barColor="#10b981"
-              items={mahasiswaList}
-              maxPoints={mahasiswaList[0]?.points || 0}
-              linkTo="/peringkat?system=system2&tab=students"
-            />
-
-            {/* 2. Top 10 Kelompok Mahasiswa */}
-            <ColumnCard
-              title="Top 10 Kelompok Mahasiswa"
-              icon={<Users size={14} />}
-              iconBg="bg-emerald-600"
-              barColor="#10b981"
-              items={kelompokList}
-              maxPoints={kelompokList[0]?.points || 0}
-              linkTo="/peringkat?system=system2&tab=groups"
-            />
-
-            {/* 3. Top 10 Dosen Pendamping Lapangan (DPL) */}
-            <ColumnCard
-              title="Top 10 Dosen Pendamping Lapangan (DPL)"
-              icon={<Award size={14} />}
-              iconBg="bg-teal-600"
-              barColor="#10b981"
-              items={dplList}
-              maxPoints={dplList[0]?.points || 0}
-              linkTo="/peringkat?system=system2&tab=dpl"
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 };

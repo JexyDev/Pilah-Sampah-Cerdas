@@ -2225,7 +2225,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
             </div>
             <div>
               <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                Papan Peringkat (Leaderboard) Keaktifan Lapangan
+                Papan Peringkat
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40">
                   Real-Time
                 </span>
