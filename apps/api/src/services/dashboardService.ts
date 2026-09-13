@@ -58,7 +58,7 @@ function isWilayahFiltered(wilayah?: string): boolean {
  *
  * ponytail: mirrors transactionController.ts. Extract to shared util if a 3rd module needs it.
  */
-function classifyWaste(log: {
+export function classifyWaste(log: {
   hasilKlasifikasiAi?: string | null;
   kategoriAktual?: string | null;
 }): "organik" | "anorganik" | null {
@@ -334,41 +334,37 @@ export const dashboardService = {
       },
     });
 
-    // 6. Lokasi Terdaftar (RT/RW) - RW Binaan KKN (21 RW Binaan di Kecamatan Coblong)
-    let lokasiTerdaftar = 21;
-    if (isFiltered) {
-      if (rwIds.length > 0) {
-        lokasiTerdaftar = rwIds.length;
-      } else if (kelurahanNames.length > 0) {
-        const kelNameLower = kelurahanNames[0].toLowerCase().replace(/\s+/g, "");
-        if (kelNameLower.includes("cipaganti")) lokasiTerdaftar = 8;
-        else if (kelNameLower.includes("dago")) lokasiTerdaftar = 13;
-        else if (kelNameLower.includes("lebakgede")) lokasiTerdaftar = 13;
-        else if (kelNameLower.includes("lebaksiliwangi")) lokasiTerdaftar = 4;
-        else if (kelNameLower.includes("sadangserang")) lokasiTerdaftar = 21;
-        else if (kelNameLower.includes("sekeloa")) lokasiTerdaftar = 16;
-        else lokasiTerdaftar = 21;
-      }
+    // 6. Lokasi Terdaftar (RW) — dihitung nyata dari tabel RW, bukan hardcode.
+    // Versi sebelumnya memakai tabel angka statis per kelurahan sehingga tidak
+    // ikut berubah saat RW ditambah/dihapus di database.
+    let lokasiTerdaftar: number;
+    if (isFiltered && rwIds.length > 0) {
+      lokasiTerdaftar = rwIds.length;
+    } else if (isFiltered && kelurahanIds.length > 0) {
+      lokasiTerdaftar = await prisma.rw.count({
+        where: { kelurahanId: { in: kelurahanIds } },
+      });
+    } else {
+      lokasiTerdaftar = await prisma.rw.count();
     }
 
-    // 7. Setoran Hari Ini (Kg) — selalu dibatasi hari berjalan, terlepas dari
-    // filter periode dashboard. Sebelumnya hanya menyalin wasteLogsWhere,
-    // sehingga saat period=semua kartu ini menampilkan total sepanjang masa.
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
-    const endOfToday = new Date();
-    endOfToday.setHours(23, 59, 59, 999);
+    // 7. Setoran pada periode terpilih (Kg).
+    // Kartu ini ADAPTIF: labelnya di UI ikut berubah mengikuti filter periode
+    // ("Total Pemilahan" saat semua waktu, "Pemilahan Hari Ini" saat harian,
+    // dst). Jadi nilainya memang harus mengikuti dateFilter yang sama —
+    // mengunci ke hari berjalan akan membuat label "Total Pemilahan"
+    // menampilkan 0 Kg padahal data sepanjang masa tersedia.
+    const setoranPeriodeWhere: any = { ...wasteLogsWhere };
 
-    const setoranHariIniWhere: any = { ...wasteLogsWhere };
-    setoranHariIniWhere.createdAt = { gte: startOfToday, lte: endOfToday };
-
-    const wasteLogsToday = await prisma.setoranOtomatis.aggregate({
-      where: setoranHariIniWhere,
+    const wasteLogsPeriode = await prisma.setoranOtomatis.aggregate({
+      where: setoranPeriodeWhere,
       _sum: {
         berat: true,
       },
     });
-    const setoranHariIniKg = wasteLogsToday._sum.berat ? Number(wasteLogsToday._sum.berat) : 0;
+    const setoranHariIniKg = wasteLogsPeriode._sum.berat
+      ? Number(wasteLogsPeriode._sum.berat)
+      : 0;
 
     // 8. Total Poin Warga & Petugas Pemilah (Aktual dari pemilahan warga dan petugas pemilah saja)
     const pointsWhere: any = {
@@ -590,6 +586,7 @@ export const dashboardService = {
         berat: true,
         confidenceAi: true,
         hasilKlasifikasiAi: true,
+        kategoriAktual: true,
         bin: {
           select: {
             category: {
@@ -620,37 +617,55 @@ export const dashboardService = {
 
     let compliantCount = 0;
     let nonCompliantCount = 0;
+    let unverifiedCount = 0;
     let organikBinTotal = 0;
     let organikBinCorrect = 0;
     let anorganikBinTotal = 0;
     let anorganikBinCorrect = 0;
 
     setoranWithBin.forEach((log: any) => {
-      const targetCategory = (log.bin?.category?.name || "Organik").toLowerCase();
+      // Kategori tempat sampah tujuan (apa yang SEHARUSNYA dibuang di sini)
+      const binName = (log.bin?.category?.name || "").toLowerCase();
+      let binKategori: "organik" | "anorganik" | null = null;
+      if (binName.includes("anorganik") || binName.includes("non organik")) {
+        binKategori = "anorganik";
+      } else if (binName.includes("organik")) {
+        binKategori = "organik";
+      }
 
-      // Ambil nilai akurasi (pastikan formatnya persentase 0-100)
-      const conf =
-        log.confidenceAi !== null && log.confidenceAi !== undefined
-          ? Number(log.confidenceAi)
-          : 100;
-      const accuracy = conf > 1 ? conf : conf * 100;
-      // RULE BARU: Benar jika >= 50%, Gagal/Salah jika < 50%
-      const isMatch = accuracy >= 50;
-      if (targetCategory.includes("organik") && !targetCategory.includes("anorganik")) {
+      // Apa yang SEBENARNYA dibuang, menurut AI / koreksi petugas
+      const hasilKelas = classifyWaste(log);
+
+      // Tanpa salah satu sisi, kepatuhan tidak dapat dinilai — jangan ditebak.
+      if (!binKategori || !hasilKelas) {
+        unverifiedCount++;
+        return;
+      }
+
+      // Kepatuhan = isi setoran cocok dengan kategori tempat sampahnya.
+      // Sebelumnya hanya `confidenceAi >= 50`, yang mengukur keyakinan model
+      // terhadap prediksinya — bukan apakah warga membuang di tempat yang benar.
+      const isMatch = binKategori === hasilKelas;
+
+      if (binKategori === "organik") {
         organikBinTotal++;
         if (isMatch) organikBinCorrect++;
-      } else if (targetCategory.includes("anorganik")) {
+      } else {
         anorganikBinTotal++;
         if (isMatch) anorganikBinCorrect++;
       }
+
       if (isMatch) {
-        compliantCount++; // Masuk Statistik Benar
+        compliantCount++;
       } else {
-        nonCompliantCount++; // Masuk Statistik Salah/Gagal
+        nonCompliantCount++;
       }
     });
 
-    const totalCheck = setoranWithBin.length;
+    // Denominator = hanya setoran yang dapat dinilai (punya kategori bin DAN
+    // label AI). Memakai setoranWithBin.length akan menekan skor karena data
+    // tak terverifikasi ikut terhitung sebagai tidak patuh.
+    const totalCheck = compliantCount + nonCompliantCount;
     const sortingComplianceRate =
       totalCheck > 0 ? parseFloat(((compliantCount / totalCheck) * 100).toFixed(2)) : 0;
     const organikComplianceRate =
@@ -698,7 +713,9 @@ export const dashboardService = {
       const b = surveyBaselines.find((s) =>
         s.namaKelurahan.toLowerCase().replace(/\s+/g, "").includes(normK)
       );
-      let baselineRate = 24.0;
+      // Default 0, bukan angka tebakan. Sebelumnya 24.0 yang tampil di grafik
+      // seolah-olah hasil survei nyata padahal survei kelurahan belum ada.
+      let baselineRate = 0;
       if (b?.pemilahanSampah?.persentasePemilahan) {
         const val = Number(b.pemilahanSampah.persentasePemilahan);
         baselineRate = val <= 1 ? Number((val * 100).toFixed(1)) : Number(val.toFixed(1));
@@ -722,24 +739,43 @@ export const dashboardService = {
         kelSetoran.reduce((acc: number, s: any) => acc + Number(s.berat || 0), 0).toFixed(2)
       );
 
+      // Jumlah setoran yang benar-benar dapat dinilai di kelurahan ini.
+      // Diekspor supaya konsumen dapat menghitung rata-rata BERBOBOT; rata-rata
+      // sederhana antar kelurahan membuat kelurahan bervolume kecil punya
+      // pengaruh setara dengan yang bervolume besar.
+      let kelDinilai = 0;
+      let kelPatuh = 0;
+
       // Jika ada input survei endline resmi
       if (e?.pemilahanSampah?.persentasePemilahan) {
         const val = Number(e.pemilahanSampah.persentasePemilahan);
         endlineRate = val <= 1 ? Number((val * 100).toFixed(1)) : Number(val.toFixed(1));
         hasEndline = true;
       } else if (kelSetoran.length > 0) {
-        // Jika belum ada survei endline, hitung kepatuhan real waktu nyata dari deteksi AI setoran warga
-        let compliantSetoranCount = 0;
+        // Belum ada survei endline — pakai kepatuhan real-time dengan aturan
+        // pencocokan yang SAMA dengan metrik global di atas.
         kelSetoran.forEach((s: any) => {
-          const conf = Number(s.confidenceAi ?? 1);
-          const acc = conf > 1 ? conf : conf * 100;
-          if (acc >= 50) compliantSetoranCount++;
+          const binName = (s.bin?.category?.name || "").toLowerCase();
+          let binKategori: "organik" | "anorganik" | null = null;
+          if (binName.includes("anorganik") || binName.includes("non organik")) {
+            binKategori = "anorganik";
+          } else if (binName.includes("organik")) {
+            binKategori = "organik";
+          }
+
+          const hasilKelas = classifyWaste(s);
+          if (!binKategori || !hasilKelas) return;
+
+          kelDinilai++;
+          if (binKategori === hasilKelas) kelPatuh++;
         });
-        endlineRate = Number(((compliantSetoranCount / kelSetoran.length) * 100).toFixed(1));
+
+        endlineRate =
+          kelDinilai > 0 ? Number(((kelPatuh / kelDinilai) * 100).toFixed(1)) : 0;
       }
 
       const status: "Terverifikasi Real" | "Belum Terverifikasi" =
-        endlineRate > 0 || totalKg > 0 ? "Terverifikasi Real" : "Belum Terverifikasi";
+        hasEndline || kelDinilai > 0 ? "Terverifikasi Real" : "Belum Terverifikasi";
 
       return {
         id: k.id,
@@ -749,6 +785,9 @@ export const dashboardService = {
         totalKg,
         hasEndline,
         status,
+        // bobot untuk agregasi lintas kelurahan
+        setoranDinilai: kelDinilai,
+        setoranPatuh: kelPatuh,
       };
     });
 
@@ -786,8 +825,16 @@ export const dashboardService = {
         compliantCount: compliantCount,
         nonCompliantCount: nonCompliantCount,
         totalCount: totalCheck,
+        // setoran yang tidak dapat dinilai (bin/label AI tidak dikenali)
+        unverifiedCount: unverifiedCount,
         organikRate: organikComplianceRate,
         anorganikRate: anorganikComplianceRate,
+        // Jumlah SETORAN yang dinilai per kategori — ini denominator dari
+        // organikRate/anorganikRate.
+        organikSetoranDinilai: organikBinTotal,
+        anorganikSetoranDinilai: anorganikBinTotal,
+        // Jumlah UNIT tempat sampah fisik terpasang. Metrik inventaris,
+        // BUKAN denominator persentase di atas — jangan dicampur di satu kalimat.
         organikBinTotal: realOrganikBinCount,
         anorganikBinTotal: realAnorganikBinCount,
       },

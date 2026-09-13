@@ -1,5 +1,11 @@
 -- CreateEnum
-CREATE TYPE "WargaLifecycle" AS ENUM ('REGISTERED', 'COMMUNITY_ACTIVE_NO_BIN', 'FULLY_ACTIVE');
+DO $$ BEGIN
+  CREATE TYPE "WargaLifecycle" AS ENUM ('REGISTERED', 'COMMUNITY_ACTIVE_NO_BIN', 'FULLY_ACTIVE');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
 -- AlterTable
-ALTER TABLE "User" ADD COLUMN "lifecycleState" "WargaLifecycle" NOT NULL DEFAULT 'REGISTERED';
+-- Tabel User dipetakan ke "pengguna" via @@map di schema.prisma.
+-- Versi sebelumnya menarget "User" sehingga gagal: relation "User" does not exist.
+ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "lifecycleState" "WargaLifecycle" NOT NULL DEFAULT 'REGISTERED';
