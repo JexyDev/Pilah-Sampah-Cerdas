@@ -28,8 +28,8 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
   bool _hasExplicitTarget = false;
   bool _targetResolvedFromBins = false;
 
-  // Toggle apakah ukuran Organik & Anorganik identik (Default: true)
-  bool _sameSizeForBoth = true;
+  // Toggle apakah ukuran Organik & Anorganik identik (Default: false)
+  bool _sameSizeForBoth = false;
   int _activeBinTab =
       0; // 0 = Organik, 1 = Anorganik (jika _sameSizeForBoth == false)
 
@@ -285,18 +285,46 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
     double orgVol = 0.0;
     double anorgVol = 0.0;
 
+    String? orgShape;
+    double? orgDiameter;
+    double? orgHeight;
+    double? orgLength;
+    double? orgWidth;
+
+    String? anorgShape;
+    double? anorgDiameter;
+    double? anorgHeight;
+    double? anorgLength;
+    double? anorgWidth;
+
     if (isOrgOnly) {
       orgVol = _getCapacityFor(isOrganik: true, shape: _selectedShape);
       if (orgVol <= 0.0) {
         _showError('Mohon isi ukuran dimensi Tempat Sampah Organik');
         return;
       }
+      orgShape = _selectedShape;
+      orgDiameter = _selectedShape == 'tabung' ? double.tryParse(_diameterCtrl.text) : null;
+      orgHeight = double.tryParse(_tinggiCtrl.text);
+      orgLength = _selectedShape == 'kotak' ? double.tryParse(_panjangCtrl.text) : null;
+      orgWidth = _selectedShape == 'kotak' ? double.tryParse(_lebarCtrl.text) : null;
     } else if (isNonOrgOnly) {
       anorgVol = _getCapacityFor(isOrganik: false, shape: _selectedShape);
       if (anorgVol <= 0.0) {
         _showError('Mohon isi ukuran dimensi Tempat Sampah Anorganik');
         return;
       }
+      anorgShape = _selectedShape;
+      anorgDiameter = _selectedShape == 'tabung'
+          ? (double.tryParse(_anorgDiameterCtrl.text) ?? double.tryParse(_diameterCtrl.text))
+          : null;
+      anorgHeight = double.tryParse(_anorgTinggiCtrl.text) ?? double.tryParse(_tinggiCtrl.text);
+      anorgLength = _selectedShape == 'kotak'
+          ? (double.tryParse(_anorgPanjangCtrl.text) ?? double.tryParse(_panjangCtrl.text))
+          : null;
+      anorgWidth = _selectedShape == 'kotak'
+          ? (double.tryParse(_anorgLebarCtrl.text) ?? double.tryParse(_lebarCtrl.text))
+          : null;
     } else {
       orgVol = _getCapacityFor(isOrganik: true, shape: _selectedShape);
       anorgVol = _sameSizeForBoth
@@ -311,6 +339,26 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
         _showError('Mohon isi ukuran dimensi Tempat Sampah Anorganik');
         return;
       }
+
+      orgShape = _selectedShape;
+      orgDiameter = _selectedShape == 'tabung' ? double.tryParse(_diameterCtrl.text) : null;
+      orgHeight = double.tryParse(_tinggiCtrl.text);
+      orgLength = _selectedShape == 'kotak' ? double.tryParse(_panjangCtrl.text) : null;
+      orgWidth = _selectedShape == 'kotak' ? double.tryParse(_lebarCtrl.text) : null;
+
+      if (_sameSizeForBoth) {
+        anorgShape = orgShape;
+        anorgDiameter = orgDiameter;
+        anorgHeight = orgHeight;
+        anorgLength = orgLength;
+        anorgWidth = orgWidth;
+      } else {
+        anorgShape = _selectedShape;
+        anorgDiameter = _selectedShape == 'tabung' ? double.tryParse(_anorgDiameterCtrl.text) : null;
+        anorgHeight = double.tryParse(_anorgTinggiCtrl.text);
+        anorgLength = _selectedShape == 'kotak' ? double.tryParse(_anorgPanjangCtrl.text) : null;
+        anorgWidth = _selectedShape == 'kotak' ? double.tryParse(_anorgLebarCtrl.text) : null;
+      }
     }
 
     // Lanjut ke aktivasi barcode (sesuai mode pilihan warga: 1 atau 2 tempat sampah)
@@ -323,6 +371,16 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
         'anorgCapacity': anorgVol,
         'hasOrganic': isNonOrgOnly,
         'hasAnorganic': isOrgOnly,
+        'orgShape': orgShape,
+        'orgDiameter': orgDiameter,
+        'orgHeight': orgHeight,
+        'orgLength': orgLength,
+        'orgWidth': orgWidth,
+        'anorgShape': anorgShape,
+        'anorgDiameter': anorgDiameter,
+        'anorgHeight': anorgHeight,
+        'anorgLength': anorgLength,
+        'anorgWidth': anorgWidth,
       },
     );
   }

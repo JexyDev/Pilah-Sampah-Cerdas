@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import '../../../data/providers/repository_providers.dart';
 import '../../../data/services/location_service.dart';
 import '../../auth/controllers/auth_controller.dart';
 
@@ -83,6 +84,28 @@ class UserLocationNotifier extends StateNotifier<UserLocationState> {
         isFetchingAddress: false,
         clearError: true,
       );
+
+      if (_ref != null &&
+          address != null &&
+          address.isNotEmpty &&
+          address != 'Lokasi tidak ditemukan' &&
+          address != 'Gagal memuat alamat') {
+        final authState = _ref.read(authProvider);
+        if (authState.isAuthenticated && authState.user != null) {
+          try {
+            await _ref.read(authRepositoryProvider).updateProfile(
+                  name: authState.user!.name,
+                  phone: authState.user!.phone,
+                  address: address,
+                );
+            await _ref.read(authProvider.notifier).fetchProfile();
+          } catch (err) {
+            debugPrint(
+              '[UserLocationNotifier] Gagal sync alamat ke server: $err',
+            );
+          }
+        }
+      }
     } catch (e) {
       state = state.copyWith(
         isFetchingAddress: false,

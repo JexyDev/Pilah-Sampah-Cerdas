@@ -452,7 +452,7 @@ class ApiBinRepository implements BinRepository {
         throw BinException(
           'LOCATION_OUT_OF_RANGE',
           serverMsg ??
-              'Anda berada lebih dari 50 meter dari tempat sampah. Harap mendekat ke lokasi tempat sampah.',
+              'Anda berada di luar jangkauan lokasi tempat sampah. Harap mendekat ke lokasi tempat sampah.',
         );
       }
       if (errorCode == 'RESOURCE_NOT_FOUND' ||
@@ -916,6 +916,11 @@ class ApiBinRepository implements BinRepository {
     required String qrCode,
     required WasteType binType,
     required double maxCapacityLiter,
+    String? shape,
+    double? diameter,
+    double? height,
+    double? width,
+    double? length,
   }) async {
     try {
       await apiClient.dio.post(
@@ -924,6 +929,11 @@ class ApiBinRepository implements BinRepository {
           'qrCode': qrCode,
           'binType': binType == WasteType.organic ? 'ORGANIC' : 'NON_ORGANIC',
           'maxCapacityLiter': maxCapacityLiter,
+          if (shape != null) 'shape': shape,
+          if (diameter != null) 'diameter': diameter,
+          if (height != null) 'height': height,
+          if (width != null) 'width': width,
+          if (length != null) 'length': length,
         },
       );
     } on DioException catch (e) {
