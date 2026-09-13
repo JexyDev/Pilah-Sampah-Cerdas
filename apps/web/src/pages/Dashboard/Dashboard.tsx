@@ -33,6 +33,7 @@ export interface KelurahanBaselineData {
   id: string;
   kelurahan: string;
   baselineRate: number; // Persentase pemilahan survei baseline pra-intervensi
+  baselineKg?: number; // Volume sampah terpilah survei baseline (Organik + Anorganik) (Kg/Hari)
   endlineRate: number; // Persentase kepatuhan pemilahan real-time
   totalKg?: number; // Total akumulasi volume sampah terdata aktual (Kg)
   status: "Terverifikasi Real" | "Belum Terverifikasi";
@@ -51,12 +52,12 @@ export interface KelurahanBaselineData {
  * Lihat kebijakan anti-dummy di AGENTS.md.
  */
 export const KELURAHAN_BASELINE_DATA: KelurahanBaselineData[] = [
-  { id: "kel-cipaganti", kelurahan: "Cipaganti", baselineRate: 13.67, endlineRate: 100, totalKg: 0.50, status: "Terverifikasi Real" },
-  { id: "kel-dago", kelurahan: "Dago", baselineRate: 10.00, endlineRate: 0, totalKg: 0, status: "Belum Terverifikasi" },
-  { id: "kel-lebakgede", kelurahan: "Lebak Gede", baselineRate: 21.60, endlineRate: 100, totalKg: 4.00, status: "Terverifikasi Real" },
-  { id: "kel-lebaksiliwangi", kelurahan: "Lebak Siliwangi", baselineRate: 15.00, endlineRate: 100, totalKg: 6.79, status: "Terverifikasi Real" },
-  { id: "kel-sadangserang", kelurahan: "Sadang Serang", baselineRate: 24.80, endlineRate: 100, totalKg: 48.50, status: "Terverifikasi Real" },
-  { id: "kel-sekeloa", kelurahan: "Sekeloa", baselineRate: 17.80, endlineRate: 100, totalKg: 5.50, status: "Terverifikasi Real" },
+  { id: "kel-cipaganti", kelurahan: "Cipaganti", baselineRate: 13.67, baselineKg: 0, endlineRate: 100, totalKg: 0.50, status: "Terverifikasi Real" },
+  { id: "kel-dago", kelurahan: "Dago", baselineRate: 10.00, baselineKg: 500, endlineRate: 0, totalKg: 0, status: "Belum Terverifikasi" },
+  { id: "kel-lebakgede", kelurahan: "Lebak Gede", baselineRate: 21.60, baselineKg: 250, endlineRate: 100, totalKg: 4.00, status: "Terverifikasi Real" },
+  { id: "kel-lebaksiliwangi", kelurahan: "Lebak Siliwangi", baselineRate: 15.00, baselineKg: 10, endlineRate: 100, totalKg: 6.79, status: "Terverifikasi Real" },
+  { id: "kel-sadangserang", kelurahan: "Sadang Serang", baselineRate: 24.80, baselineKg: 7298.5, endlineRate: 100, totalKg: 48.50, status: "Terverifikasi Real" },
+  { id: "kel-sekeloa", kelurahan: "Sekeloa", baselineRate: 17.80, baselineKg: 9723.4, endlineRate: 100, totalKg: 5.50, status: "Terverifikasi Real" },
 ];
 
 const DEFAULT_WILAYAH_OPTIONS: SelectOption[] = [
@@ -3120,8 +3121,12 @@ const Dashboard: React.FC = () => {
                       <td className="py-3 px-3 text-center font-semibold text-slate-700 dark:text-slate-300 border-r border-slate-200/60 dark:border-slate-800/60">
                         {formattedBaseline}
                       </td>
-                      <td className="py-3 px-3 text-center text-slate-400 font-medium border-r border-slate-200/60 dark:border-slate-800/60">
-                        —
+                      <td className="py-3 px-3 text-center font-semibold text-slate-700 dark:text-slate-300 border-r border-slate-200/60 dark:border-slate-800/60">
+                        {item.baselineKg && item.baselineKg > 0 ? (
+                          `${item.baselineKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })}`
+                        ) : (
+                          "—"
+                        )}
                       </td>
                       <td className="py-3 px-3 text-center font-extrabold text-emerald-600 dark:text-emerald-400 border-r border-slate-200/60 dark:border-slate-800/60">
                         {item.endlineRate > 0 ? (

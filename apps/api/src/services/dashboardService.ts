@@ -702,7 +702,7 @@ export const dashboardService = {
     ];
 
     const surveyBaselines = await prisma.surveiKelurahan.findMany({
-      include: { pemilahanSampah: true },
+      include: { pemilahanSampah: true, volumeSampah: true },
     });
     const surveyEndlines = await prisma.endlineSurveiKelurahan.findMany({
       include: { pemilahanSampah: true },
@@ -716,6 +716,15 @@ export const dashboardService = {
       // Default 0, bukan angka tebakan.
       // Catatan: Survei baseline Cipaganti ditetapkan 13.67% (rentang 10-20% baseline lapangan).
       let baselineRate = 0;
+      let baselineKg = 0;
+
+      if (b?.volumeSampah) {
+        const org = Number(b.volumeSampah.organikKgPerHari || 0);
+        const anorgRaw = Number(b.volumeSampah.anorganikKgPerHari || 0);
+        const anorg = anorgRaw > 10000 ? 0 : anorgRaw;
+        baselineKg = Number((org + anorg).toFixed(2));
+      }
+
       if (b?.pemilahanSampah?.persentasePemilahan) {
         const val = Number(b.pemilahanSampah.persentasePemilahan);
         baselineRate = val <= 1 ? Number((val * 100).toFixed(2)) : Number(val.toFixed(2));
@@ -723,14 +732,19 @@ export const dashboardService = {
         baselineRate = 13.67;
       } else if (normK.includes("dago")) {
         baselineRate = 10.0;
+        if (!baselineKg) baselineKg = 500.0;
       } else if (normK.includes("lebakgede")) {
         baselineRate = 21.6;
+        if (!baselineKg) baselineKg = 250.0;
       } else if (normK.includes("lebaksiliwangi")) {
         baselineRate = 15.0;
+        if (!baselineKg) baselineKg = 10.0;
       } else if (normK.includes("sadangserang")) {
         baselineRate = 24.8;
+        if (!baselineKg) baselineKg = 7298.5;
       } else if (normK.includes("sekeloa")) {
         baselineRate = 17.8;
+        if (!baselineKg) baselineKg = 9723.4;
       }
 
       const e = surveyEndlines.find((s) =>
@@ -793,6 +807,7 @@ export const dashboardService = {
         id: k.id,
         kelurahan: k.name,
         baselineRate,
+        baselineKg,
         endlineRate,
         totalKg,
         hasEndline,
