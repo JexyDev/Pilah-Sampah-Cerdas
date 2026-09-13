@@ -3182,10 +3182,10 @@ const Dashboard: React.FC = () => {
                 </p>
               </div>
               <div className="bg-blue-100/60 dark:bg-blue-900/40 p-2.5 rounded-xl border border-blue-200/80 dark:border-blue-700/40 text-xs font-bold text-blue-900 dark:text-blue-200">
-                Belum dapat dihitung: data sampah baseline belum tersedia.
+                Skala data berbeda: Baseline mengukur estimasi timbulan total kelurahan (kg/hari), sedangkan Giat KKN mengukur sampel fisik setoran.
               </div>
               <p className="text-[10.5px] text-slate-500 dark:text-slate-400">
-                Nilai positif menunjukkan tambahan sampah terpilah.
+                Tanda — mencegah angka minus raksasa akibat perbedaan cakupan skala data.
               </p>
             </div>
           </div>
