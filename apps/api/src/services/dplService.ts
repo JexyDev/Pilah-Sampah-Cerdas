@@ -639,9 +639,14 @@ export async function getKelompokWhere(dplUserId: string, role?: any) {
 /**
  * Formula Poin Kelompok & Poin DPL KKN:
  * 1. Poin Kelompok = (Poin Proker * 0.6) + (Rata-rata Poin Anggota * 0.4)
- *    Poin Proker dihitung dari status pelaksanaan proker yang disetujui (Disetujui=1, Sedang Berlangsung=2, Selesai=3, jika tidak ada=0).
+ *    Poin Proker bersifat sekuens berurut:
+ *    - Status usulan DISETUJUI = +1 poin
+ *    - Status pelaksanaan SEDANG_BERJALAN = +1 poin (sekuens berjalan)
+ *    - Status pelaksanaan SELESAI = +1 poin (sekuens tuntas)
+ *    Contoh: 2 disetujui (belum jalan) + 2 sedang berlangsung = 2(1) + 2(1+1) = 2 + 4 = 6 atau
+ *    bila dihitung jumlah tahapan aktual: 2 proker disetujui + 2 sedang berlangsung = 4 poin proker.
  * 2. Poin DPL = (Poin Logbook DPL * 0.6) + (Poin Kelompok * 0.4)
- *    Poin Logbook DPL: Jika tersedia logbook DPL = 6 poin, jika tidak ada = 0 poin.
+ *    Poin Logbook DPL: Setiap 1 logbook DPL = 5 poin (1 log = 5, 2 log = 10, dst).
  */
 export async function calculateGroupPoints(
   kelompokId: string,
@@ -666,7 +671,6 @@ export async function calculateGroupPoints(
     let prokerApprovedCount = 0;
     let prokerSedangBerjalanCount = 0;
     let prokerSelesaiCount = 0;
-    let poinProker = 0;
 
     for (const p of prokers) {
       const legacySt = String(p.status || "").toUpperCase();
@@ -699,16 +703,17 @@ export async function calculateGroupPoints(
 
         if (pl === "SELESAI") {
           prokerSelesaiCount++;
-          poinProker += 3;
         } else if (pl === "SEDANG_BERJALAN") {
           prokerSedangBerjalanCount++;
-          poinProker += 2;
-        } else {
-          // Disetujui tapi belum mulai
-          poinProker += 1;
         }
       }
     }
+
+    // Poin Proker sekuensial (Disetujui, Berlangsung, Selesai):
+    // Setiap proker disetujui = 1 poin, jika sedang berlangsung = +1 poin, jika selesai = +2 poin
+    // Atau penjumlahan jumlah status: prokerApprovedCount + prokerSedangBerjalanCount + prokerSelesaiCount
+    // Contoh arahan atasan: disetujui = 2, sedang berlangsung = 2 -> proker itu = 4.
+    const poinProker = prokerApprovedCount + prokerSedangBerjalanCount + prokerSelesaiCount;
 
     // 2. Ambil studentUserIds kelompok jika belum dioper
     let studentUserIds = studentUserIdsInput;
@@ -763,6 +768,7 @@ export async function calculateDplPoints(
   poinLogbookDpl: number;
   poinKelompok: number;
   hasLogbookDpl: boolean;
+  logbookCount: number;
 }> {
   try {
     let resolvedGroupPoints = groupPoints;
@@ -795,7 +801,8 @@ export async function calculateDplPoints(
     });
 
     const hasLogbookDpl = logbookCount > 0;
-    const poinLogbookDpl = hasLogbookDpl ? 6 : 0;
+    // Arahan Atasan: Setiap 1 logs DPL = 5 poin (1 logs = 5, 2 logs = 10, dst)
+    const poinLogbookDpl = logbookCount * 5;
     const poinDpl = Math.round((poinLogbookDpl * 0.6 + poinKelompok * 0.4) * 10) / 10;
 
     return {
@@ -803,6 +810,7 @@ export async function calculateDplPoints(
       poinLogbookDpl,
       poinKelompok,
       hasLogbookDpl,
+      logbookCount,
     };
   } catch (err) {
     console.warn("[calculateDplPoints] Error:", err);
@@ -811,6 +819,7 @@ export async function calculateDplPoints(
       poinLogbookDpl: 0,
       poinKelompok: groupPoints || 0,
       hasLogbookDpl: false,
+      logbookCount: 0,
     };
   }
 }

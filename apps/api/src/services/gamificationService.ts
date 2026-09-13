@@ -481,6 +481,7 @@ export const gamificationService = {
           poinLogbook: dplPointsData.poinLogbookDpl,
           poinKelompok: dplPointsData.poinKelompok,
           hasLogbook: dplPointsData.hasLogbookDpl,
+          logbookCount: dplPointsData.logbookCount || 0,
           totalGroups: d.dplKelompok.length,
           totalStudents: totalStudentCount,
         };
