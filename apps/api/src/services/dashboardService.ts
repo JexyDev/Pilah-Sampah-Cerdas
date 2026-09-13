@@ -718,9 +718,19 @@ export const dashboardService = {
       let baselineRate = 0;
       if (b?.pemilahanSampah?.persentasePemilahan) {
         const val = Number(b.pemilahanSampah.persentasePemilahan);
-        baselineRate = val <= 1 ? Number((val * 100).toFixed(1)) : Number(val.toFixed(1));
+        baselineRate = val <= 1 ? Number((val * 100).toFixed(2)) : Number(val.toFixed(2));
       } else if (normK.includes("cipaganti")) {
         baselineRate = 13.67;
+      } else if (normK.includes("dago")) {
+        baselineRate = 10.0;
+      } else if (normK.includes("lebakgede")) {
+        baselineRate = 21.6;
+      } else if (normK.includes("lebaksiliwangi")) {
+        baselineRate = 15.0;
+      } else if (normK.includes("sadangserang")) {
+        baselineRate = 24.8;
+      } else if (normK.includes("sekeloa")) {
+        baselineRate = 17.8;
       }
 
       const e = surveyEndlines.find((s) =>

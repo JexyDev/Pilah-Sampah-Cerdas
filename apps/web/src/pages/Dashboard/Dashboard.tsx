@@ -51,12 +51,12 @@ export interface KelurahanBaselineData {
  * Lihat kebijakan anti-dummy di AGENTS.md.
  */
 export const KELURAHAN_BASELINE_DATA: KelurahanBaselineData[] = [
-  { id: "kel-cipaganti", kelurahan: "Cipaganti", baselineRate: 13.67, endlineRate: 0, totalKg: 0, status: "Belum Terverifikasi" },
-  { id: "kel-dago", kelurahan: "Dago", baselineRate: 0, endlineRate: 0, totalKg: 0, status: "Belum Terverifikasi" },
-  { id: "kel-lebakgede", kelurahan: "Lebak Gede", baselineRate: 0, endlineRate: 0, totalKg: 0, status: "Belum Terverifikasi" },
-  { id: "kel-lebaksiliwangi", kelurahan: "Lebak Siliwangi", baselineRate: 0, endlineRate: 0, totalKg: 0, status: "Belum Terverifikasi" },
-  { id: "kel-sadangserang", kelurahan: "Sadang Serang", baselineRate: 0, endlineRate: 0, totalKg: 0, status: "Belum Terverifikasi" },
-  { id: "kel-sekeloa", kelurahan: "Sekeloa", baselineRate: 0, endlineRate: 0, totalKg: 0, status: "Belum Terverifikasi" },
+  { id: "kel-cipaganti", kelurahan: "Cipaganti", baselineRate: 13.67, endlineRate: 100, totalKg: 0.50, status: "Terverifikasi Real" },
+  { id: "kel-dago", kelurahan: "Dago", baselineRate: 10.00, endlineRate: 0, totalKg: 0, status: "Belum Terverifikasi" },
+  { id: "kel-lebakgede", kelurahan: "Lebak Gede", baselineRate: 21.60, endlineRate: 100, totalKg: 4.00, status: "Terverifikasi Real" },
+  { id: "kel-lebaksiliwangi", kelurahan: "Lebak Siliwangi", baselineRate: 15.00, endlineRate: 100, totalKg: 6.79, status: "Terverifikasi Real" },
+  { id: "kel-sadangserang", kelurahan: "Sadang Serang", baselineRate: 24.80, endlineRate: 100, totalKg: 48.50, status: "Terverifikasi Real" },
+  { id: "kel-sekeloa", kelurahan: "Sekeloa", baselineRate: 17.80, endlineRate: 100, totalKg: 5.50, status: "Terverifikasi Real" },
 ];
 
 const DEFAULT_WILAYAH_OPTIONS: SelectOption[] = [
@@ -3057,70 +3057,87 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Tabel Rekapitulasi Data Kelurahan Lengkap dengan Volume Sampah */}
-        <div className="space-y-3 pt-2">
+        {/* Tabel Evaluasi Kepatuhan Pemilahan & Sampah Terpilah (1:1 Match Image) */}
+        <div className="space-y-4 pt-2">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <h4 className="font-extrabold text-[15px] text-slate-900 dark:text-slate-100 tracking-tight">
-                Rekapitulasi Kepatuhan Pemilahan & Volume Sampah per Kelurahan
+              <h4 className="font-extrabold text-[17px] text-slate-900 dark:text-slate-100 tracking-tight">
+                Evaluasi Kepatuhan Pemilahan &amp; Sampah Terpilah
               </h4>
-              <p className="text-[11.5px] text-slate-500 dark:text-slate-400">
-                Agregat evaluasi perbandingan survei baseline, real-time kepatuhan AI, serta total volume sampah terpilah di 6 kelurahan Kecamatan Coblong.
+              <p className="text-[12px] text-slate-500 dark:text-slate-400">
+                Perbandingan baseline dan hasil giat KKN per kelurahan • Kecamatan Coblong
               </p>
             </div>
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl self-start sm:self-auto border border-slate-200 dark:border-slate-700">
-              Total Wilayah: <span className="font-extrabold text-slate-800 dark:text-slate-200">{kelurahanBaselineList.length} Kelurahan</span>
+            <span className="text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 px-3 py-1 rounded-full self-start sm:self-auto border border-blue-200/80 dark:border-blue-800/60">
+              6 Kelurahan
             </span>
           </div>
 
-          <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
+          <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-100/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 font-extrabold border-b border-slate-200 dark:border-slate-800">
-                  <th className="py-3 px-4 text-center w-12">No</th>
-                  <th className="py-3 px-4">Kelurahan</th>
-                  <th className="py-3 px-4 text-center bg-slate-200/50 dark:bg-slate-700/40">Survei Baseline</th>
-                  <th className="py-3 px-4 text-center bg-emerald-50/60 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300">Kepatuhan Real</th>
-                  <th className="py-3 px-4 text-center">Peningkatan (Δ)</th>
-                  <th className="py-3 px-4 text-center bg-blue-50/60 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300">Total Volume (Kg)</th>
-                  <th className="py-3 px-4 text-center">Status Capaian</th>
+                {/* Header Row 1 */}
+                <tr className="border-b border-slate-200 dark:border-slate-800 text-[11px] font-extrabold text-slate-700 dark:text-slate-200">
+                  <th rowSpan={2} className="py-3 px-3 text-center w-10 bg-slate-50/80 dark:bg-slate-800/80 border-r border-slate-200 dark:border-slate-800">No</th>
+                  <th rowSpan={2} className="py-3 px-4 font-bold bg-slate-50/80 dark:bg-slate-800/80 border-r border-slate-200 dark:border-slate-800">Kelurahan</th>
+                  <th colSpan={2} className="py-2.5 px-4 text-center uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-r border-slate-200 dark:border-slate-800">
+                    BASELINE
+                  </th>
+                  <th colSpan={2} className="py-2.5 px-4 text-center uppercase tracking-wider bg-emerald-50/80 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-200 border-r border-slate-200 dark:border-slate-800">
+                    GIAT KKN
+                  </th>
+                  <th colSpan={2} className="py-2.5 px-4 text-center uppercase tracking-wider bg-blue-50/80 dark:bg-blue-950/60 text-blue-900 dark:text-blue-200">
+                    PERUBAHAN / DAMPAK TERAMATI
+                  </th>
+                </tr>
+                {/* Header Row 2 */}
+                <tr className="border-b border-slate-200 dark:border-slate-800 text-[11px] font-extrabold text-slate-600 dark:text-slate-400">
+                  <th className="py-2 px-3 text-center bg-slate-50/50 dark:bg-slate-800/40 border-r border-slate-200 dark:border-slate-800">Kepatuhan awal (%)</th>
+                  <th className="py-2 px-3 text-center bg-slate-50/50 dark:bg-slate-800/40 border-r border-slate-200 dark:border-slate-800">Sampah awal (kg)</th>
+                  <th className="py-2 px-3 text-center bg-emerald-50/30 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800">Kepatuhan (%)</th>
+                  <th className="py-2 px-3 text-center bg-emerald-50/30 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800">Sampah terpilah (kg)</th>
+                  <th className="py-2 px-3 text-center bg-blue-50/30 dark:bg-blue-950/30 text-blue-800 dark:text-blue-300 border-r border-slate-200 dark:border-slate-800">Δ Kepatuhan (pp)</th>
+                  <th className="py-2 px-3 text-center bg-blue-50/30 dark:bg-blue-950/30 text-blue-800 dark:text-blue-300">Δ Sampah (kg)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200/70 dark:divide-slate-800">
                 {kelurahanBaselineList.map((item, idx) => {
-                  const delta = +(item.endlineRate - item.baselineRate).toFixed(1);
+                  const deltaPp = +(item.endlineRate - item.baselineRate).toFixed(2);
                   const itemKg = Number(item.totalKg || 0);
+                  const formattedBaseline = item.baselineRate.toFixed(2).replace(".", ",") + "%";
+                  const formattedDelta = deltaPp >= 0 ? `+${deltaPp.toFixed(2).replace(".", ",")}` : deltaPp.toFixed(2).replace(".", ",");
+                  const formattedKg = itemKg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
                   return (
                     <tr
                       key={item.id}
-                      className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors"
+                      className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors text-xs"
                     >
-                      <td className="py-3 px-4 text-center text-slate-400 font-medium">{idx + 1}</td>
-                      <td className="py-3 px-4 font-bold text-slate-800 dark:text-slate-200">
-                        Kelurahan {item.kelurahan}
+                      <td className="py-3 px-3 text-center text-slate-400 font-medium border-r border-slate-200/60 dark:border-slate-800/60">{idx + 1}</td>
+                      <td className="py-3 px-4 font-bold text-slate-800 dark:text-slate-200 border-r border-slate-200/60 dark:border-slate-800/60">
+                        {item.kelurahan}
                       </td>
-                      <td className="py-3 px-4 text-center font-bold text-slate-600 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-800/30">
-                        {item.baselineRate}%
+                      <td className="py-3 px-3 text-center font-semibold text-slate-700 dark:text-slate-300 border-r border-slate-200/60 dark:border-slate-800/60">
+                        {formattedBaseline}
                       </td>
-                      <td className="py-3 px-4 text-center font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-950/20">
-                        {item.endlineRate > 0 ? `${item.endlineRate}%` : <span className="text-slate-400 font-normal italic text-[11px]">Belum Terdata</span>}
+                      <td className="py-3 px-3 text-center text-slate-400 font-medium border-r border-slate-200/60 dark:border-slate-800/60">
+                        —
                       </td>
-                      <td className="py-3 px-4 text-center font-extrabold text-teal-600 dark:text-teal-400">
-                        {item.endlineRate > 0 ? (delta >= 0 ? `+${delta}%` : `${delta}%`) : <span className="text-slate-400 font-normal text-[11px]">-</span>}
+                      <td className="py-3 px-3 text-center font-extrabold text-emerald-600 dark:text-emerald-400 border-r border-slate-200/60 dark:border-slate-800/60">
+                        {item.endlineRate > 0 ? (
+                          `${item.endlineRate}%`
+                        ) : (
+                          <span className="text-slate-400 font-normal italic">Belum terdata</span>
+                        )}
                       </td>
-                      <td className="py-3 px-4 text-center font-black text-blue-600 dark:text-blue-400 bg-blue-50/20 dark:bg-blue-950/10">
-                        {itemKg > 0 ? `${itemKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} Kg` : <span className="text-slate-400 font-normal text-[11px]">0.00 Kg</span>}
+                      <td className="py-3 px-3 text-center font-bold text-slate-800 dark:text-slate-200 border-r border-slate-200/60 dark:border-slate-800/60">
+                        {formattedKg}
                       </td>
-                      <td className="py-3 px-4 text-center">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold ${
-                            item.status === "Terverifikasi Real"
-                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/50"
-                              : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
-                          }`}
-                        >
-                          <CheckCircle2 size={11} /> {item.status === "Terverifikasi Real" ? "Terverifikasi Real" : "Belum Ada Setoran"}
-                        </span>
+                      <td className="py-3 px-3 text-center font-extrabold text-blue-600 dark:text-blue-400 border-r border-slate-200/60 dark:border-slate-800/60">
+                        {item.endlineRate > 0 ? formattedDelta : "—"}
+                      </td>
+                      <td className="py-3 px-3 text-center text-slate-400 font-medium">
+                        —
                       </td>
                     </tr>
                   );
@@ -3129,17 +3146,48 @@ const Dashboard: React.FC = () => {
             </table>
           </div>
 
-          {/* Keterangan Footer di Bawah Tabel */}
-          <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-[11px] text-slate-500 dark:text-slate-400">
-            <div className="flex items-center gap-1.5 font-medium">
-              <span className="font-extrabold text-slate-700 dark:text-slate-300">*Keterangan:</span>
-              <span><strong>Survei Baseline:</strong> Berbasis survei kondisi awal kelurahan.</span>
-              <span className="text-slate-300 dark:text-slate-700">|</span>
-              <span><strong>Kepatuhan Real:</strong> Berbasis sampel data pemilahan selama giat KKN.</span>
+          {/* Dua Kartu Penjelas Metodologi Side-by-Side */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+            {/* Kartu Left: Delta Kepatuhan */}
+            <div className="bg-emerald-50/40 dark:bg-emerald-950/20 rounded-2xl p-4 border border-emerald-200/70 dark:border-emerald-800/40 space-y-2">
+              <div>
+                <h5 className="font-black text-sm text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5">
+                  <span className="text-emerald-600 dark:text-emerald-400 text-base">Δ</span> Kepatuhan
+                </h5>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Kepatuhan giat KKN – kepatuhan awal
+                </p>
+              </div>
+              <div className="bg-emerald-100/60 dark:bg-emerald-900/40 p-2.5 rounded-xl border border-emerald-200/80 dark:border-emerald-700/40 text-xs font-bold text-emerald-900 dark:text-emerald-200">
+                Contoh Cipaganti: 100% − 13,67% = +86,33 pp
+              </div>
+              <p className="text-[10.5px] text-slate-500 dark:text-slate-400">
+                pp = poin persentase, bukan persen kenaikan relatif.
+              </p>
             </div>
-            <span className="text-[10.5px] italic text-slate-400 dark:text-slate-500">
-              *Data baseline Cipaganti: 13,67%.
-            </span>
+
+            {/* Kartu Right: Delta Sampah */}
+            <div className="bg-blue-50/40 dark:bg-blue-950/20 rounded-2xl p-4 border border-blue-200/70 dark:border-blue-800/40 space-y-2">
+              <div>
+                <h5 className="font-black text-sm text-blue-900 dark:text-blue-200 flex items-center gap-1.5">
+                  <span className="text-blue-600 dark:text-blue-400 text-base">Δ</span> Sampah
+                </h5>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Sampah terpilah giat KKN – sampah terpilah awal
+                </p>
+              </div>
+              <div className="bg-blue-100/60 dark:bg-blue-900/40 p-2.5 rounded-xl border border-blue-200/80 dark:border-blue-700/40 text-xs font-bold text-blue-900 dark:text-blue-200">
+                Belum dapat dihitung: data sampah baseline belum tersedia.
+              </div>
+              <p className="text-[10.5px] text-slate-500 dark:text-slate-400">
+                Nilai positif menunjukkan tambahan sampah terpilah.
+              </p>
+            </div>
+          </div>
+
+          {/* Bar Catatan Formal Metodologi */}
+          <div className="bg-slate-100/70 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-200 dark:border-slate-700 text-[10.5px] text-slate-600 dark:text-slate-400 leading-relaxed">
+            <strong>Catatan:</strong> kg mengukur berat/massa, bukan volume. Tanda — berarti data belum tersedia atau delta belum dapat dihitung. Perbandingan memerlukan indikator, cakupan sampel, dan durasi pengamatan yang setara. Kepatuhan 100% berlaku pada sampel tercatat; perubahan belum membuktikan dampak kausal KKN.
           </div>
         </div>
       </div>
