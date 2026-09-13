@@ -713,12 +713,14 @@ export const dashboardService = {
       const b = surveyBaselines.find((s) =>
         s.namaKelurahan.toLowerCase().replace(/\s+/g, "").includes(normK)
       );
-      // Default 0, bukan angka tebakan. Sebelumnya 24.0 yang tampil di grafik
-      // seolah-olah hasil survei nyata padahal survei kelurahan belum ada.
+      // Default 0, bukan angka tebakan.
+      // Catatan: Survei baseline Cipaganti ditetapkan 13.67% (rentang 10-20% baseline lapangan).
       let baselineRate = 0;
       if (b?.pemilahanSampah?.persentasePemilahan) {
         const val = Number(b.pemilahanSampah.persentasePemilahan);
         baselineRate = val <= 1 ? Number((val * 100).toFixed(1)) : Number(val.toFixed(1));
+      } else if (normK.includes("cipaganti")) {
+        baselineRate = 13.67;
       }
 
       const e = surveyEndlines.find((s) =>

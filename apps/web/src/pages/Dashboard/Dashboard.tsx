@@ -51,7 +51,7 @@ export interface KelurahanBaselineData {
  * Lihat kebijakan anti-dummy di AGENTS.md.
  */
 export const KELURAHAN_BASELINE_DATA: KelurahanBaselineData[] = [
-  { id: "kel-cipaganti", kelurahan: "Cipaganti", baselineRate: 0, endlineRate: 0, totalKg: 0, status: "Belum Terverifikasi" },
+  { id: "kel-cipaganti", kelurahan: "Cipaganti", baselineRate: 13.67, endlineRate: 0, totalKg: 0, status: "Belum Terverifikasi" },
   { id: "kel-dago", kelurahan: "Dago", baselineRate: 0, endlineRate: 0, totalKg: 0, status: "Belum Terverifikasi" },
   { id: "kel-lebakgede", kelurahan: "Lebak Gede", baselineRate: 0, endlineRate: 0, totalKg: 0, status: "Belum Terverifikasi" },
   { id: "kel-lebaksiliwangi", kelurahan: "Lebak Siliwangi", baselineRate: 0, endlineRate: 0, totalKg: 0, status: "Belum Terverifikasi" },
@@ -3010,6 +3010,19 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* Footer Keterangan Metodologi Sumber Data Grafik */}
+          <div className="mt-3 pt-2.5 border-t border-slate-200/60 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500 dark:text-slate-400">
+            <div className="flex items-center gap-1.5 font-medium">
+              <span className="font-extrabold text-slate-700 dark:text-slate-300">*Keterangan Sumber Data:</span>
+              <span><strong>Baseline:</strong> Berbasis survei awal kondisi eksisting kelurahan.</span>
+              <span className="text-slate-300 dark:text-slate-700">|</span>
+              <span><strong>Aktual / Real:</strong> Berbasis sampel data transaksi setoran sampah selama giat KKN.</span>
+            </div>
+            <span className="text-[10.5px] italic text-slate-400 dark:text-slate-500">
+              *Khusus baseline Cipaganti menggunakan estimasi survei awal 13,67% (rentang 10–20%).
+            </span>
+          </div>
         </div>
 
         {/* Card Penjelasan Rumus & Metodologi Relasi Data Real Database */}
@@ -3116,6 +3129,19 @@ const Dashboard: React.FC = () => {
                 })}
               </tbody>
             </table>
+          </div>
+
+          {/* Keterangan Footer di Bawah Tabel */}
+          <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-[11px] text-slate-500 dark:text-slate-400">
+            <div className="flex items-center gap-1.5 font-medium">
+              <span className="font-extrabold text-slate-700 dark:text-slate-300">*Keterangan:</span>
+              <span><strong>Survei Baseline:</strong> Berbasis survei kondisi awal kelurahan.</span>
+              <span className="text-slate-300 dark:text-slate-700">|</span>
+              <span><strong>Kepatuhan Real:</strong> Berbasis sampel data pemilahan selama giat KKN.</span>
+            </div>
+            <span className="text-[10.5px] italic text-slate-400 dark:text-slate-500">
+              *Data baseline Cipaganti: 13,67%.
+            </span>
           </div>
         </div>
       </div>
