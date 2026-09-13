@@ -224,7 +224,7 @@ export const AiConsoleChat: React.FC<AiConsoleChatProps> = ({ contextType, kelom
                     }`}
                   >
                     <span className="font-medium">
-                      {m.sender === "user" ? userName : m.model || "BERSEKA AI"}
+                      {m.sender === "user" ? userName : "BERSEKA AI"}
                     </span>
                     <span className="font-mono">{m.timestamp}</span>
                   </div>

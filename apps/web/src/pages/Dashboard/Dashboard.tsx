@@ -3141,8 +3141,12 @@ const Dashboard: React.FC = () => {
                       <td className="py-3 px-3 text-center font-extrabold text-blue-600 dark:text-blue-400 border-r border-slate-200/60 dark:border-slate-800/60">
                         {item.endlineRate > 0 ? formattedDelta : "—"}
                       </td>
-                      <td className="py-3 px-3 text-center text-slate-400 font-medium">
-                        —
+                      <td className="py-3 px-3 text-center font-extrabold text-blue-600 dark:text-blue-400">
+                        {itemKg > 0 ? (
+                          `+${formattedKg}`
+                        ) : (
+                          "—"
+                        )}
                       </td>
                     </tr>
                   );
@@ -3182,10 +3186,10 @@ const Dashboard: React.FC = () => {
                 </p>
               </div>
               <div className="bg-blue-100/60 dark:bg-blue-900/40 p-2.5 rounded-xl border border-blue-200/80 dark:border-blue-700/40 text-xs font-bold text-blue-900 dark:text-blue-200">
-                Skala data berbeda: Baseline mengukur estimasi timbulan total kelurahan (kg/hari), sedangkan Giat KKN mengukur sampel fisik setoran.
+                Tambahan Sampah Terpilah (Kg) hasil akumulasi nyata setoran fisik warga & mahasiswa selama giat KKN.
               </div>
               <p className="text-[10.5px] text-slate-500 dark:text-slate-400">
-                Tanda — mencegah angka minus raksasa akibat perbedaan cakupan skala data.
+                Nilai positif (+kg) mencerminkan akumulasi tambahan sampah terpilah aktual yang berhasil disetorkan selama giat KKN.
               </p>
             </div>
           </div>
