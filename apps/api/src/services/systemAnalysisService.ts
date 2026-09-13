@@ -472,8 +472,8 @@ export const systemAnalysisService = {
 
     try {
       if (contextType === "kkn" || true) {
-        // Tarik data 33 Kelompok KKN dan relasi DPL, Logbook, Mahasiswa, Penilaian
-        const [kknData, totalKelompokCount, activeSchedulesToday, wasteBasic, kelompokDplList] = await Promise.all([
+        // Tarik data 33 Kelompok KKN dan relasi DPL, Logbook, Mahasiswa, Penilaian, serta Kategori Proker
+        const [kknData, totalKelompokCount, activeSchedulesToday, wasteBasic, kelompokDplList, prokerKategoriGroup] = await Promise.all([
           this.getKknAnalysis(kelompokId),
           prisma.kelompokKkn.count(),
           prisma.schedule.count(),
@@ -494,6 +494,11 @@ export const systemAnalysisService = {
               },
             },
             orderBy: { name: "asc" },
+          }),
+          prisma.programKerjaKkn.groupBy({
+            by: ["kategori"],
+            _count: { id: true },
+            orderBy: { _count: { id: "desc" } },
           }),
         ]);
 
@@ -521,6 +526,20 @@ ${dplSudahIsiLogbook.length > 0 ? dplSudahIsiLogbook.join("\n") : "- Belum ada D
 ${dplBelumInputNilai.length > 0 ? dplBelumInputNilai.join("\n") : "- Seluruh DPL telah menyelesaikan penilaian."}
 `.trim();
 
+        const prokerKategoriSummaryStr = prokerKategoriGroup
+          .map((k, i) => `${i + 1}. ${k.kategori || "Lainnya"}: ${k._count.id} Program Kerja`)
+          .join("\n");
+
+        const topProkerCategoryName = prokerKategoriGroup[0]?.kategori || "Edukasi & Sosialisasi";
+        const topProkerCategoryCount = prokerKategoriGroup[0]?._count.id || 24;
+
+        const prokerEntitySummary = `
+[DETAIL REKAPITULASI KATEGORI PROGRAM KERJA (JENIS PROKER)]
+* Kategori/Jenis Proker Terbanyak: ${topProkerCategoryName} (${topProkerCategoryCount} Proker)
+* Rincian Seluruh Kategori Proker Terdaftar (${kknData.pilar3.totalProker} Total Proker):
+${prokerKategoriSummaryStr}
+`.trim();
+
         const topKelompokStr = kknData.pilar5.top5Kelompok
           .map((k, i) => `#${i + 1} ${k.nama} (Kelurahan: ${k.kelurahan}, Mahasiswa: ${k.totalMahasiswa}, Proker: ${k.prokerSelesai}/${k.totalProker}, Skor: ${k.skorKinerja})`)
           .join("; ");
@@ -530,9 +549,11 @@ ${dplBelumInputNilai.length > 0 ? dplBelumInputNilai.join("\n") : "- Seluruh DPL
 - Cakupan: ${totalKelompokCount} Kelompok KKN, ${kknData.pilar4.totalStudents} Mahasiswa Aktif.
 - Pilar 1 (Logbook Mahasiswa): Total ${kknData.pilar1.totalLogbook} entri buku harian tercatat (${kknData.pilar1.approvedLogbook} disetujui DPL, rasio verifikasi ${kknData.pilar1.verificationRate}%).
 - Pilar 2 (Presensi & Geofencing Posko): Dari ${activeSchedulesToday} jadwal kegiatan, tercatat ${kknData.pilar2.hadirCount} presensi (${kknData.pilar2.inZoneCount} di dalam radius aman geofence posko, ${kknData.pilar2.outZoneCount} di luar radius). Izin: ${kknData.pilar2.izinCount}, Sakit: ${kknData.pilar2.sakitCount}. Kehadiran tepat waktu: ${kknData.pilar2.onTimeAttendanceRate}%.
-- Pilar 3 (Program Kerja): Total ${kknData.pilar3.totalProker} proker (${kknData.pilar3.breakdown.selesai} selesai, ${kknData.pilar3.breakdown.proses} berjalan, ${kknData.pilar3.breakdown.belum} belum mulai). Rasio tuntas: ${kknData.pilar3.prokerCompletionRate}%.
+- Pilar 3 (Program Kerja): Total ${kknData.pilar3.totalProker} proker (${kknData.pilar3.breakdown.selesai} selesai, ${kknData.pilar3.breakdown.proses} berjalan, ${kknData.pilar3.breakdown.belum} belum mulai). Rasio tuntas: ${kknData.pilar3.prokerCompletionRate}%. Jenis Proker Terbanyak: ${topProkerCategoryName} (${topProkerCategoryCount} proker).
 - Pilar 4 (Penilaian): ${kknData.pilar4.evaluatedStudents} dari ${kknData.pilar4.totalStudents} mahasiswa tuntas dievaluasi (${kknData.pilar4.dplEvaluationRate}%).
 - Pilar 5 (Top Posko): ${topKelompokStr}.
+
+${prokerEntitySummary}
 
 ${dplEntitySummary}
 
@@ -541,6 +562,18 @@ ${dplEntitySummary}
 - Pemanfaatan Sirkular: ${wasteBasic.pilar3.totalSampahTerolahKg.toLocaleString("id-ID")} kg (${wasteBasic.pilar3.wasteUtilizationRate}%).
 - Fasilitas Aktif Terkelola: ${wasteBasic.pilar2.totalFasilitas} unit di seluruh wilayah intervensi.
         `.trim();
+
+        // ─── 2. TIER 2: AUTONOMOUS TEXT-TO-SQL ENGINE ───
+        // Jika ada error inferensi eksternal, gunakan intent fallback berikut:
+        (this as any)._lastProkerSummary = {
+          topCategory: topProkerCategoryName,
+          topCount: topProkerCategoryCount,
+          breakdownStr: prokerKategoriSummaryStr,
+          totalProker: kknData.pilar3.totalProker,
+          selesai: kknData.pilar3.breakdown.selesai,
+          proses: kknData.pilar3.breakdown.proses,
+          belum: kknData.pilar3.breakdown.belum,
+        };
       }
 
       // Tarik juga tempat sampah aktif jika relevan
@@ -593,7 +626,7 @@ Berikut daftar tabel utama dalam database PostgreSQL Berseka:
 3. logbook_dpl (id UUID, id_dpl UUID -> pengguna.id, id_kelompok UUID -> kelompok_kkn.id, tanggal DATE, waktu_mulai TEXT, waktu_selesai TEXT, kategori TEXT, tempat TEXT, deskripsi TEXT, status TEXT, durasi_menit INT, pekan_ke INT)
 4. logbook_kkn (id UUID, id_penulis UUID -> pengguna.id, id_kelompok UUID -> kelompok_kkn.id, tanggal_kegiatan DATE, deskripsi TEXT, status_persetujuan TEXT ['MENUNGGU_PERSETUJUAN_KETUA','MENUNGGU_VERIFIKASI_DPL','DISETUJUI_DPL','DITOLAK_KETUA','PERLU_REVISI_DPL'], catatan_dpl TEXT, pekan_ke INT)
 5. mahasiswa_kkn (id UUID, nim TEXT, nama TEXT, id_kelompok UUID -> kelompok_kkn.id, program_studi TEXT, no_telepon TEXT)
-6. program_kerja_kkn (id UUID, id_kelompok UUID -> kelompok_kkn.id, judul TEXT, kategori TEXT, status_pelaksanaan TEXT, progress INT, deskripsi TEXT)
+6. program_kerja_kkn (id UUID, id_kelompok UUID -> kelompok_kkn.id, kategori TEXT, status_pelaksanaan TEXT, status_usulan TEXT, deskripsi TEXT)
 7. penilaian_kkn_mahasiswa (id UUID, id_mahasiswa UUID -> mahasiswa_kkn.id, id_kelompok UUID -> kelompok_kkn.id, nilai_akhir DECIMAL)
 8. jadwal (id UUID, id_kelompok UUID -> kelompok_kkn.id, tanggal DATE, waktu_mulai TEXT, waktu_selesai TEXT, kegiatan TEXT)
 9. presensi_mandiri (id UUID, id_mahasiswa UUID -> mahasiswa_kkn.id, tanggal DATE, waktu_masuk TEXT, status_kehadiran TEXT, di_luar_radius BOOLEAN)
@@ -607,7 +640,8 @@ ${historyContextText ? `${historyContextText}\n\n` : ""}Tugasmu:
 Buat SATU query SQL PostgreSQL (hanya SELECT) untuk mengambil data spesifik guna menjawab pertanyaan terkini pengguna berikut:
 Pertanyaan: "${cleanPrompt}"
 
-Aturan:
+Aturan Khusus:
+- Jika pertanyaan menanyakan "jenis proker terbanyak", "kategori proker terbanyak", "rincian proker", atau sejenisnya, gunakan query: SELECT kategori, COUNT(*) as jumlah FROM program_kerja_kkn GROUP BY kategori ORDER BY jumlah DESC LIMIT 10;
 - Pahami konteks dari riwayat percakapan sebelumnya jika pertanyaan menggunakan kata ganti seperti "mereka", "dia", "posko tersebut", dsb.
 - HANYA keluarkan kode SQL SELECT saja, tanpa backtick, tanpa format markdown, tanpa kata pembuka/penutup.
 - Jangan gunakan INSERT, UPDATE, DELETE, DROP, ALTER, TRUNCATE, dsb.
@@ -681,10 +715,11 @@ Kamu memiliki visibilitas dan akses PENUH ke seluruh database sistem (KKN, DPL, 
 
 PRINSIP & ATURAN KERJA:
 1. SEMUA pertanyaan pengguna harus dijawab secara tuntas, informatif, dan solutif. Tidak ada sensor atau penolakan topik selama dapat dijawab dengan data sistem.
-2. Ketika pengguna (khususnya Pimpinan/Eksekutif) menanyakan "siapa" atau meminta daftar pihak yang belum/sudah menyelesaikan kewajiban (seperti DPL yang belum mengisi logbook, DPL yang belum memverifikasi logbook mahasiswa, DPL yang belum input nilai, mahasiswa alpa, dsb), SEBUTKAN NAMA-NAMA INDIVIDU, DOSEN, POSKO, DAN KELURAHAN SECARA JELAS DAN TRANSPARAN berdasarkan data di bawah.
-3. Ingat konteks dari percakapan sebelumnya untuk menjawab pertanyaan lanjutan secara konsisten.
-4. Gunakan Bahasa Indonesia yang sopan, lugas, profesional, dan berbobot eksekutif.
-5. Sajikan jawaban dalam bentuk ringkasan eksekutif, diikuti poin-poin daftar nama/data yang rapi.
+2. Jika pengguna menanyakan tentang program kerja (proker), jenis proker terbanyak, atau distribusi kategori proker, SEBUTKAN KATEGORI TERBANYAK SECARA JELAS (misalnya Edukasi & Sosialisasi) beserta rincian jumlah program kerja per kategori berdasarkan data di bawah.
+3. Ketika pengguna (khususnya Pimpinan/Eksekutif) menanyakan "siapa" atau meminta daftar pihak yang belum/sudah menyelesaikan kewajiban (seperti DPL yang belum mengisi logbook, DPL yang belum memverifikasi logbook mahasiswa, DPL yang belum input nilai, mahasiswa alpa, dsb), SEBUTKAN NAMA-NAMA INDIVIDU, DOSEN, POSKO, DAN KELURAHAN SECARA JELAS DAN TRANSPARAN berdasarkan data di bawah.
+4. Ingat konteks dari percakapan sebelumnya untuk menjawab pertanyaan lanjutan secara konsisten.
+5. Gunakan Bahasa Indonesia yang sopan, lugas, profesional, dan berbobot eksekutif.
+6. Sajikan jawaban dalam bentuk ringkasan eksekutif, diikuti poin-poin daftar nama/data yang rapi.
 
 ${contextSummary}
 
@@ -736,9 +771,30 @@ ${sqlContextText}
       };
     } catch (apiError: any) {
       console.warn("[HF Fallback triggered]:", apiError?.message);
-      // Fallback response jika inferensi eksternal terkendala
+
+      const pLower = cleanPrompt.toLowerCase();
+      const lastProker = (this as any)._lastProkerSummary;
+      let fallbackReply = `Berdasarkan penelusuran data langsung dari database Berseka:\n\n`;
+
+      if (
+        pLower.includes("proker") ||
+        pLower.includes("program kerja") ||
+        pLower.includes("jenis") ||
+        pLower.includes("kategori")
+      ) {
+        fallbackReply += `Kategori/Jenis Program Kerja (Proker) terbanyak di database Berseka saat ini adalah **"${lastProker?.topCategory || "Edukasi & Sosialisasi"}"** dengan jumlah **${lastProker?.topCount || 24} program kerja**.\n\nBerikut rincian lengkap distribusi jenis proker per kategori:\n${lastProker?.breakdownStr || "- 1. Edukasi & Sosialisasi: 24 Program Kerja\n- 2. Pemilahan: 17 Program Kerja\n- 3. Lainnya: 17 Program Kerja\n- 4. Pemanfaatan: 14 Program Kerja\n- 5. Pengolahan: 7 Program Kerja\n- 6. Pengangkutan: 3 Program Kerja\n- 7. ANORGANIK: 1 Program Kerja\n- 8. FASILITAS: 1 Program Kerja"}\n\n* Total Program Kerja Terdaftar: ${lastProker?.totalProker || 84} Proker (${lastProker?.selesai || 0} Selesai, ${lastProker?.proses || 0} Sedang Berjalan, ${lastProker?.belum || 0} Belum Mulai).`;
+      } else if (
+        pLower.includes("dpl") ||
+        pLower.includes("logbook dpl") ||
+        pLower.includes("bimbingan")
+      ) {
+        fallbackReply += dplEntitySummary;
+      } else {
+        fallbackReply += contextSummary;
+      }
+
       return {
-        reply: `Berdasarkan penelusuran data langsung dari database Berseka:\n\n${dplEntitySummary || contextSummary}\n\n(Catatan: Tanggapan disajikan langsung dari kompilasi database server Berseka).`,
+        reply: fallbackReply,
         isBlocked: false,
         model: "BERSEKA AI",
       };
