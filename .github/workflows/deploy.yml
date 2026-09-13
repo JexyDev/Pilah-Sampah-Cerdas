@@ -89,12 +89,16 @@ jobs:
           fi
 
       - name: Upload Frontend Archive to VPS
+        continue-on-error: true
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USERNAME }}
           VPS_PASS: ${{ secrets.VPS_PASSWORD }}
         run: |
-          sshpass -p "$VPS_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o PreferredAuthentications=password -o PubkeyAuthentication=no apps/web/dist.tar.gz "$VPS_USER@$VPS_HOST:/tmp/frontend-dist.tar.gz"
+          for i in 1 2 3; do
+            echo "Attempt $i to upload frontend archive..."
+            sshpass -p "$VPS_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=3 -o PreferredAuthentications=password -o PubkeyAuthentication=no apps/web/dist.tar.gz "$VPS_USER@$VPS_HOST:/tmp/frontend-dist.tar.gz" && break || sleep 3
+          done || echo "WARNING: SCP upload timed out, will build directly on VPS..."
 
       - name: Update Backend & Deploy Web on VPS
         env:
@@ -211,6 +215,14 @@ jobs:
                 echo "WARNING: APK tidak ditemukan di semua lokasi. Download page akan kosong sampai mobile CI jalan."
               fi
               rm -f /tmp/frontend-dist.tar.gz
+            elif [ ! -f /var/www/html/index.html ]; then
+              echo "Archive not found or corrupted, building frontend directly on VPS..."
+              cd "$REPO_DIR/apps/web"
+              npm install --silent --legacy-peer-deps --prefer-offline 2>/dev/null || true
+              VITE_API_BASE_URL=/api/v1 npm run build
+              echo "$VPS_PASS" | sudo -S rm -rf /var/www/html/* /var/www/pilah-sampah-cerdas/frontend/dist/*
+              echo "$VPS_PASS" | sudo -S cp -r "$REPO_DIR/apps/web/dist"/* /var/www/html/
+              echo "$VPS_PASS" | sudo -S cp -r "$REPO_DIR/apps/web/dist"/* /var/www/pilah-sampah-cerdas/frontend/dist/
             fi
 
             test -f /var/www/html/index.html || { echo "Frontend missing index.html"; exit 1; }
