@@ -7,6 +7,8 @@ import '../../../routes/app_routes.dart';
 import '../../scan/controllers/scan_controller.dart';
 import '../../shared/widgets/inline_camera_widget.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../auth/controllers/auth_controller.dart';
+import '../../../data/models/user_entity.dart';
 import '../../shared/controllers/connectivity_controller.dart';
 
 /// Halaman Scan AI Trial — khusus untuk Warga yang belum aktivasi Tempat Sampah (Guest Mode).
@@ -831,7 +833,6 @@ class _TrialModeBanner extends StatelessWidget {
                 color: AppColors.primaryGreen,
                 fontWeight: FontWeight.w600,
               ),
-            ),
           ),
         ],
       ),
@@ -886,8 +887,12 @@ class _GabungKomunitasCta extends StatelessWidget {
           const SizedBox(height: 14),
           SizedBox(
             width: double.infinity,
+
             child: Consumer(
               builder: (context, ref, _) {
+                final user = ref.watch(authControllerProvider);
+                final isRegisteredOnly = user?.lifecycleState == WargaLifecycle.registered;
+
                 final bins = ref.watch(binsProvider).value ?? [];
                 final hasOrganic = bins.any(
                   (b) => b.binType == WasteType.organic && b.isActive,
@@ -897,15 +902,19 @@ class _GabungKomunitasCta extends StatelessWidget {
                 );
 
                 String ctaLabel = 'Gabung Sekarang →';
-                if (hasOrganic && !hasNonOrganic) {
-                  ctaLabel = 'Lengkapi Tempat Sampah Anorganik →';
-                } else if (!hasOrganic && hasNonOrganic) {
-                  ctaLabel = 'Lengkapi Tempat Sampah Organik →';
+                if (!isRegisteredOnly) {
+                  if (hasOrganic && !hasNonOrganic) {
+                    ctaLabel = 'Lengkapi Tempat Sampah Anorganik →';
+                  } else if (!hasOrganic && hasNonOrganic) {
+                    ctaLabel = 'Lengkapi Tempat Sampah Organik →';
+                  }
                 }
 
                 return ElevatedButton(
                   onPressed: () {
-                    if (hasOrganic && !hasNonOrganic) {
+                    if (isRegisteredOnly) {
+                      Navigator.pushNamed(context, AppRoutes.komunitasOnboarding);
+                    } else if (hasOrganic && !hasNonOrganic) {
                       Navigator.pushNamed(
                         context,
                         AppRoutes.ukurKapasitas,
