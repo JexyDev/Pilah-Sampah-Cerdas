@@ -33,34 +33,46 @@ async function callMultiOpenSourceLlm(
 ): Promise<{ text: string; provider: string; model: string }> {
   const errors: string[] = [];
 
-  // 1. Candidate 1: Groq API (High Speed Open Source Models: llama-3.3-70b-versatile, qwen-2.5-coder-32b)
+  // 1. Candidate 1: Groq API (High Speed Open Source Models: openai/gpt-oss-120b, qwen/qwen3.6-27b, groq/compound)
   const groqKey = process.env.GROQ_API_KEY?.trim();
   if (groqKey) {
-    const groqModel = process.env.GROQ_MODEL?.trim() || "llama-3.3-70b-versatile";
-    try {
-      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${groqKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: groqModel,
-          messages,
-          max_tokens: maxTokens,
-          temperature,
-        }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        const text = data.choices?.[0]?.message?.content;
-        if (text) return { text, provider: "Groq Open-Source Engine", model: groqModel };
-      } else {
-        const errText = await res.text();
-        errors.push(`Groq (${res.status}): ${errText}`);
+    const groqCandidateModels = [
+      process.env.GROQ_MODEL?.trim(),
+      "openai/gpt-oss-120b",
+      "qwen/qwen3.6-27b",
+      "groq/compound"
+    ].filter(Boolean) as string[];
+
+    for (const groqModel of groqCandidateModels) {
+      try {
+        const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${groqKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: groqModel,
+            messages,
+            max_tokens: maxTokens,
+            temperature,
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          let text = data.choices?.[0]?.message?.content;
+          if (text) {
+            // Remove internal reasoning thoughts if present
+            text = text.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+            return { text, provider: "Groq Open-Source Engine", model: groqModel };
+          }
+        } else {
+          const errText = await res.text();
+          errors.push(`Groq (${groqModel} [${res.status}]): ${errText}`);
+        }
+      } catch (e: any) {
+        errors.push(`Groq Error (${groqModel}): ${e.message}`);
       }
-    } catch (e: any) {
-      errors.push(`Groq Error: ${e.message}`);
     }
   }
 
@@ -717,18 +729,21 @@ ${prokerKategoriSummaryStr}
           .map((k, i) => `#${i + 1} ${k.nama} (Kelurahan: ${k.kelurahan}, Mahasiswa: ${k.totalMahasiswa}, Proker: ${k.prokerSelesai}/${k.totalProker}, Skor: ${k.skorKinerja})`)
           .join("; ");
 
+        const pLower = cleanPrompt.toLowerCase();
+        const isDplQuery = pLower.includes("dpl") || pLower.includes("bimbingan") || pLower.includes("dosen") || pLower.includes("nilai") || pLower.includes("posko");
+        const isWasteQuery = pLower.includes("sampah") || pLower.includes("bin") || pLower.includes("fasilitas") || pLower.includes("daur");
+
         contextSummary = `
 [DATA MAKRO DATABASE KKN BERSEKA]
 - Cakupan: ${totalKelompokCount} Kelompok KKN, ${kknData.pilar4.totalStudents} Mahasiswa Aktif.
 - Pilar 1 (Logbook Mahasiswa): Total ${kknData.pilar1.totalLogbook} entri buku harian tercatat (${kknData.pilar1.approvedLogbook} disetujui DPL, rasio verifikasi ${kknData.pilar1.verificationRate}%).
-- Pilar 2 (Presensi & Geofencing Posko): Dari ${activeSchedulesToday} jadwal kegiatan, tercatat ${kknData.pilar2.hadirCount} presensi (${kknData.pilar2.inZoneCount} di dalam radius aman geofence posko, ${kknData.pilar2.outZoneCount} di luar radius). Izin: ${kknData.pilar2.izinCount}, Sakit: ${kknData.pilar2.sakitCount}. Kehadiran tepat waktu: ${kknData.pilar2.onTimeAttendanceRate}%.
-- Pilar 3 (Program Kerja): Total ${kknData.pilar3.totalProker} proker (${kknData.pilar3.breakdown.selesai} selesai, ${kknData.pilar3.breakdown.proses} berjalan, ${kknData.pilar3.breakdown.belum} belum mulai). Rasio tuntas: ${kknData.pilar3.prokerCompletionRate}%. Jenis Proker Terbanyak: ${topProkerCategoryName} (${topProkerCategoryCount} proker).
+- Pilar 2 (Presensi & Geofencing Posko): Dari ${activeSchedulesToday} jadwal kegiatan, tercatat ${kknData.pilar2.hadirCount} presensi (${kknData.pilar2.inZoneCount} di dalam radius aman geofence posko, ${kknData.pilar2.outZoneCount} di luar radius). Izin: ${kknData.pilar2.izinCount}, Sakit: ${kknData.pilar2.sakitCount}.
+- Pilar 3 (Program Kerja): Total ${kknData.pilar3.totalProker} proker (${kknData.pilar3.breakdown.selesai} selesai, ${kknData.pilar3.breakdown.proses} berjalan, ${kknData.pilar3.breakdown.belum} belum mulai). Jenis Proker Terbanyak: ${topProkerCategoryName} (${topProkerCategoryCount} proker).
 - Pilar 4 (Penilaian): ${kknData.pilar4.evaluatedStudents} dari ${kknData.pilar4.totalStudents} mahasiswa tuntas dievaluasi (${kknData.pilar4.dplEvaluationRate}%).
 - Pilar 5 (Top Posko): ${topKelompokStr}.
 
 ${prokerEntitySummary}
-
-${dplEntitySummary}
+${isDplQuery ? `\n${dplEntitySummary}` : ""}
 
 [DATA TATA KELOLA SAMPAH BERSEKA]
 - Total Sampah Masuk: ${wasteBasic.pilar3.totalSampahMasukKg.toLocaleString("id-ID")} kg (Organik: ${wasteBasic.pilar3.organikKg.toLocaleString("id-ID")} kg, Anorganik: ${wasteBasic.pilar3.anorganikKg.toLocaleString("id-ID")} kg).
@@ -737,7 +752,6 @@ ${dplEntitySummary}
         `.trim();
 
         // ─── 2. TIER 2: AUTONOMOUS TEXT-TO-SQL ENGINE ───
-        // Jika ada error inferensi eksternal, gunakan intent fallback berikut:
         (this as any)._lastProkerSummary = {
           topCategory: topProkerCategoryName,
           topCount: topProkerCategoryCount,
@@ -749,29 +763,31 @@ ${dplEntitySummary}
         };
       }
 
-      // Tarik juga tempat sampah aktif jika relevan
-      const binsKritis = await prisma.bin.findMany({
-        where: { status: { in: ["ACTIVE_BOUND", "PENDING_APPROVAL"] } },
-        select: {
-          qrCode: true,
-          status: true,
-          currentVolumeLiter: true,
-          maxCapacityLiter: true,
-          binType: true,
-          kelurahan: { select: { name: true } },
-          rw: { select: { name: true } },
-        },
-        take: 10,
-        orderBy: { currentVolumeLiter: "desc" },
-      });
+      const pLower = cleanPrompt.toLowerCase();
+      if (pLower.includes("sampah") || pLower.includes("bin") || pLower.includes("kritis")) {
+        const binsKritis = await prisma.bin.findMany({
+          where: { status: { in: ["ACTIVE_BOUND", "PENDING_APPROVAL"] } },
+          select: {
+            qrCode: true,
+            status: true,
+            currentVolumeLiter: true,
+            maxCapacityLiter: true,
+            binType: true,
+            kelurahan: { select: { name: true } },
+            rw: { select: { name: true } },
+          },
+          take: 5,
+          orderBy: { currentVolumeLiter: "desc" },
+        });
 
-      if (binsKritis.length > 0) {
-        wasteEntitySummary = `\n\n[SAMPEL TEMPAT SAMPAH AKTIF / TERISI TINGGI]:\n` +
-          binsKritis.map((b) => {
-            const fillPct = Number(b.maxCapacityLiter) > 0 ? Math.round((Number(b.currentVolumeLiter) / Number(b.maxCapacityLiter)) * 100) : 0;
-            return `- ${b.qrCode} (Status: ${b.status}, Volume: ${b.currentVolumeLiter}/${b.maxCapacityLiter} L [${fillPct}%], Tipe: ${b.binType || "-"}, Kelurahan: ${b.kelurahan?.name || "-"} RW ${b.rw?.name || "-"})`;
-          }).join("\n");
-        contextSummary += wasteEntitySummary;
+        if (binsKritis.length > 0) {
+          wasteEntitySummary = `\n\n[SAMPEL TEMPAT SAMPAH AKTIF]:\n` +
+            binsKritis.map((b) => {
+              const fillPct = Number(b.maxCapacityLiter) > 0 ? Math.round((Number(b.currentVolumeLiter) / Number(b.maxCapacityLiter)) * 100) : 0;
+              return `- ${b.qrCode} (Volume: ${b.currentVolumeLiter}/${b.maxCapacityLiter} L [${fillPct}%], Kelurahan: ${b.kelurahan?.name || "-"})`;
+            }).join("\n");
+          contextSummary += wasteEntitySummary;
+        }
       }
     } catch (dbErr: any) {
       console.warn("[AI Context Fetch Warning]:", dbErr?.message);
@@ -894,11 +910,15 @@ ${sqlContextText}
           { role: "user", content: cleanPrompt },
         ],
         0.2,
-        1500
+        500
       );
 
+      const cleanText = (llmChatRes.text || "")
+        .replace(/<think>[\s\S]*?<\/think>/gi, "")
+        .trim();
+
       return {
-        reply: llmChatRes.text,
+        reply: cleanText,
         isBlocked: false,
         model: `BERSEKA AI (${llmChatRes.provider} - ${llmChatRes.model})`,
         sqlExecuted: dynamicSqlResult.sql || null,
