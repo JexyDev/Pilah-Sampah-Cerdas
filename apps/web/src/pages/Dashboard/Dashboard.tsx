@@ -36,57 +36,27 @@ export interface KelurahanBaselineData {
   endlineRate: number; // Persentase kepatuhan pemilahan real-time
   totalKg?: number; // Total akumulasi volume sampah terdata aktual (Kg)
   status: "Terverifikasi Real" | "Belum Terverifikasi";
+  hasEndline?: boolean; // true bila berasal dari survei endline resmi
+  setoranDinilai?: number; // jumlah pemilahan yang dapat dinilai (bobot agregasi)
+  setoranPatuh?: number; // jumlah pemilahan yang sesuai kategori tempat sampah
 }
 
+/**
+ * Kerangka kelurahan untuk fallback tampilan saat API belum termuat.
+ *
+ * PENTING: hanya berisi identitas wilayah. Seluruh angka bernilai 0 dan
+ * berstatus "Belum Terverifikasi" — sebelumnya struktur ini memuat angka
+ * kepatuhan dan volume karangan (mis. 58.3%, 43.5 Kg) yang ditandai
+ * "Terverifikasi Real", sehingga tampak seperti data asli saat API gagal.
+ * Lihat kebijakan anti-dummy di AGENTS.md.
+ */
 export const KELURAHAN_BASELINE_DATA: KelurahanBaselineData[] = [
-  {
-    id: "kel-cipaganti",
-    kelurahan: "Cipaganti",
-    baselineRate: 24.0,
-    endlineRate: 0,
-    totalKg: 0.5,
-    status: "Terverifikasi Real",
-  },
-  {
-    id: "kel-dago",
-    kelurahan: "Dago",
-    baselineRate: 10.0,
-    endlineRate: 0,
-    totalKg: 0,
-    status: "Belum Terverifikasi",
-  },
-  {
-    id: "kel-lebakgede",
-    kelurahan: "Lebak Gede",
-    baselineRate: 21.6,
-    endlineRate: 0,
-    totalKg: 4.0,
-    status: "Terverifikasi Real",
-  },
-  {
-    id: "kel-lebaksiliwangi",
-    kelurahan: "Lebak Siliwangi",
-    baselineRate: 15.0,
-    endlineRate: 58.3,
-    totalKg: 6.79,
-    status: "Terverifikasi Real",
-  },
-  {
-    id: "kel-sadangserang",
-    kelurahan: "Sadang Serang",
-    baselineRate: 24.8,
-    endlineRate: 21.7,
-    totalKg: 43.5,
-    status: "Terverifikasi Real",
-  },
-  {
-    id: "kel-sekeloa",
-    kelurahan: "Sekeloa",
-    baselineRate: 17.8,
-    endlineRate: 42.9,
-    totalKg: 4.5,
-    status: "Terverifikasi Real",
-  },
+  { id: "kel-cipaganti", kelurahan: "Cipaganti", baselineRate: 0, endlineRate: 0, totalKg: 0, status: "Belum Terverifikasi" },
+  { id: "kel-dago", kelurahan: "Dago", baselineRate: 0, endlineRate: 0, totalKg: 0, status: "Belum Terverifikasi" },
+  { id: "kel-lebakgede", kelurahan: "Lebak Gede", baselineRate: 0, endlineRate: 0, totalKg: 0, status: "Belum Terverifikasi" },
+  { id: "kel-lebaksiliwangi", kelurahan: "Lebak Siliwangi", baselineRate: 0, endlineRate: 0, totalKg: 0, status: "Belum Terverifikasi" },
+  { id: "kel-sadangserang", kelurahan: "Sadang Serang", baselineRate: 0, endlineRate: 0, totalKg: 0, status: "Belum Terverifikasi" },
+  { id: "kel-sekeloa", kelurahan: "Sekeloa", baselineRate: 0, endlineRate: 0, totalKg: 0, status: "Belum Terverifikasi" },
 ];
 
 const DEFAULT_WILAYAH_OPTIONS: SelectOption[] = [
@@ -1844,8 +1814,11 @@ const Dashboard: React.FC = () => {
           compliantCount: 0,
           nonCompliantCount: 0,
           totalCount: 0,
+          unverifiedCount: 0,
           organikRate: 0,
           anorganikRate: 0,
+          organikSetoranDinilai: 0,
+          anorganikSetoranDinilai: 0,
           organikBinTotal: 0,
           anorganikBinTotal: 0,
         },
@@ -2053,8 +2026,18 @@ const Dashboard: React.FC = () => {
       : 0;
 
   const validEndlines = kelurahanBaselineList.filter((k) => k.endlineRate > 0);
+
+  // Rata-rata BERBOBOT terhadap jumlah pemilahan yang dinilai. Rata-rata
+  // sederhana membuat kelurahan dengan 1 setoran punya pengaruh setara dengan
+  // kelurahan 50 setoran — itu sebabnya angka agregat sempat jauh lebih tinggi
+  // daripada skor kepatuhan global.
+  const totalDinilai = validEndlines.reduce((acc, curr) => acc + (curr.setoranDinilai || 0), 0);
+  const totalPatuh = validEndlines.reduce((acc, curr) => acc + (curr.setoranPatuh || 0), 0);
+
   const avgEndline =
-    validEndlines.length > 0
+    totalDinilai > 0
+      ? +((totalPatuh / totalDinilai) * 100).toFixed(1)
+      : validEndlines.length > 0
       ? +(validEndlines.reduce((acc, curr) => acc + (curr.endlineRate || 0), 0) / validEndlines.length).toFixed(1)
       : 0;
 
@@ -2720,7 +2703,7 @@ const Dashboard: React.FC = () => {
                 />
               </div>
               <p className="text-[10px] text-emerald-700/80 dark:text-emerald-300/80 font-medium leading-tight">
-                Kesesuaian hasil AI terdeteksi Organik pada Tempat Sampah berkategori Organik ({stats?.kepatuhanPemilahan?.organikBinTotal ?? 0} Tempat Sampah terdata).
+                Dari {stats?.kepatuhanPemilahan?.organikSetoranDinilai ?? 0} pemilahan yang dinilai pada Tempat Sampah berkategori Organik, sekian persen isinya benar-benar Organik ({stats?.kepatuhanPemilahan?.organikBinTotal ?? 0} unit terpasang).
               </p>
             </div>
 
@@ -2742,7 +2725,7 @@ const Dashboard: React.FC = () => {
                 />
               </div>
               <p className="text-[10px] text-amber-700/80 dark:text-amber-300/80 font-medium leading-tight">
-                Kesesuaian hasil AI terdeteksi Anorganik pada Tempat Sampah berkategori Anorganik ({stats?.kepatuhanPemilahan?.anorganikBinTotal ?? 0} Tempat Sampah terdata).
+                Dari {stats?.kepatuhanPemilahan?.anorganikSetoranDinilai ?? 0} pemilahan yang dinilai pada Tempat Sampah berkategori Anorganik, sekian persen isinya benar-benar Anorganik ({stats?.kepatuhanPemilahan?.anorganikBinTotal ?? 0} unit terpasang).
               </p>
             </div>
           </div>
