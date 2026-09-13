@@ -20,6 +20,8 @@ export const dashboardController = {
         !w ||
         w === "ALL" ||
         w === "Semua Kelurahan" ||
+        w === "Semua Wilayah" ||
+        w === "Seluruh Wilayah" ||
         w === "Kecamatan Coblong" ||
         w === "semua" ||
         w === "all";

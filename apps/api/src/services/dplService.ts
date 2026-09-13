@@ -639,13 +639,12 @@ export async function getKelompokWhere(dplUserId: string, role?: any) {
 /**
  * Formula Poin Kelompok & Poin DPL KKN:
  * 1. Poin Kelompok = (Poin Proker * 0.6) + (Rata-rata Poin Anggota * 0.4)
- *    Poin Proker bersifat sekuens berurut:
+ *    Poin Proker bersifat sekuens berurut (kumulatif):
  *    - Status usulan DISETUJUI = +1 poin
- *    - Status pelaksanaan SEDANG_BERJALAN = +1 poin (sekuens berjalan)
- *    - Status pelaksanaan SELESAI = +1 poin (sekuens tuntas)
- *    Contoh: 2 disetujui (belum jalan) + 2 sedang berlangsung = 2(1) + 2(1+1) = 2 + 4 = 6 atau
- *    bila dihitung jumlah tahapan aktual: 2 proker disetujui + 2 sedang berlangsung = 4 poin proker.
- * 2. Poin DPL = (Poin Logbook DPL * 0.6) + (Poin Kelompok * 0.4)
+ *    - Status pelaksanaan SEDANG_BERJALAN = +1 poin lagi (total 2 poin)
+ *    - Status pelaksanaan SELESAI = +1 poin lagi (total 3 poin)
+ *    Contoh: 2 proker disetujui & 2 sedang berlangsung = 2(1) + 2(2) = 4 poin proker.
+ * 2. Poin DPL = (Poin Logbook DPL * 0.5) + (Poin Kelompok * 0.5)
  *    Poin Logbook DPL: Setiap 1 logbook DPL = 5 poin (1 log = 5, 2 log = 10, dst).
  */
 export async function calculateGroupPoints(
@@ -709,11 +708,11 @@ export async function calculateGroupPoints(
       }
     }
 
-    // Poin Proker sekuensial (Disetujui, Berlangsung, Selesai):
-    // Setiap proker disetujui = 1 poin, jika sedang berlangsung = +1 poin, jika selesai = +2 poin
-    // Atau penjumlahan jumlah status: prokerApprovedCount + prokerSedangBerjalanCount + prokerSelesaiCount
-    // Contoh arahan atasan: disetujui = 2, sedang berlangsung = 2 -> proker itu = 4.
-    const poinProker = prokerApprovedCount + prokerSedangBerjalanCount + prokerSelesaiCount;
+    // Poin Proker sekuensial (Disetujui (+1), Berlangsung (+1, total 2), Selesai (+1, total 3)):
+    // prokerApprovedCount mencakup semua yang disetujui (+1)
+    // prokerSedangBerjalanCount menambah +1 untuk yang sedang berjalan
+    // prokerSelesaiCount menambah +2 untuk yang selesai (berjalan +1 & selesai +1)
+    const poinProker = prokerApprovedCount + prokerSedangBerjalanCount + (prokerSelesaiCount * 2);
 
     // 2. Ambil studentUserIds kelompok jika belum dioper
     let studentUserIds = studentUserIdsInput;
@@ -802,8 +801,9 @@ export async function calculateDplPoints(
 
     const hasLogbookDpl = logbookCount > 0;
     // Arahan Atasan: Setiap 1 logs DPL = 5 poin (1 logs = 5, 2 logs = 10, dst)
+    // Formula Poin DPL Revisi (50:50 ratio): (Poin Logbook DPL * 0.5) + (Poin Kelompok * 0.5)
     const poinLogbookDpl = logbookCount * 5;
-    const poinDpl = Math.round((poinLogbookDpl * 0.6 + poinKelompok * 0.4) * 10) / 10;
+    const poinDpl = Math.round((poinLogbookDpl * 0.5 + poinKelompok * 0.5) * 10) / 10;
 
     return {
       poinDpl,

@@ -1882,8 +1882,7 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     // Role non-operasional dialihkan / tidak memuat stats sampah
-    // Khusus PIMPINAN / PEMIMPIN: tetap memuat fetchStats() jika sub-tab tata-kelola-sampah aktif
-    const isPimpinanUser = user?.peran === "PIMPINAN" || user?.peran === "PEMIMPIN";
+    // PIMPINAN / PEMIMPIN / DEVELOPER / SUPER_USER memuat fetchStats() agar data rekapitulasi kelurahan konsisten
     if (
       user?.peran === "WARGA" ||
       user?.peran === "MAHASISWA_KKN" ||
@@ -1891,8 +1890,7 @@ const Dashboard: React.FC = () => {
       user?.peran === "RW" ||
       user?.peran === "DPL" ||
       user?.peran === "DOSEN_PEMBIMBING" ||
-      user?.peran === "PANITIA_TASKFORCE" ||
-      (isPimpinanUser && activeSubTab !== "tata-kelola-sampah")
+      user?.peran === "PANITIA_TASKFORCE"
     ) {
       setLoading(false);
       return;
