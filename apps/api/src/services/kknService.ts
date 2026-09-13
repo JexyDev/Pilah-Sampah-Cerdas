@@ -1381,6 +1381,11 @@ export class KknService {
         });
       }
 
+      await tx.user.update({
+        where: { id: wargaId },
+        data: { lifecycleState: "FULLY_ACTIVE" },
+      });
+
       return bin;
     });
   }
@@ -1605,6 +1610,11 @@ export class KknService {
       }
       await tx.pointHistory.create({
         data: { userId: wargaId, points: 10, description: "Mendapatkan 2 Tempat Sampah" },
+      });
+
+      await tx.user.update({
+        where: { id: wargaId },
+        data: { lifecycleState: "FULLY_ACTIVE" },
       });
     });
   }

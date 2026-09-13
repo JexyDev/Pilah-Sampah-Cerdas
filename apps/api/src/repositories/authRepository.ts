@@ -584,6 +584,11 @@ export class AuthRepository {
             },
           });
         }
+
+        await tx.user.update({
+          where: { id: user.id },
+          data: { lifecycleState: "FULLY_ACTIVE" },
+        });
       }
 
       return user;
