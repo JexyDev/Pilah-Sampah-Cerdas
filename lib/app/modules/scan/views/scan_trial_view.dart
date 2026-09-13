@@ -78,8 +78,6 @@ class _ScanTrialViewState extends ConsumerState<ScanTrialView> {
     }
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     // Watch provider agar state tidak otomatis di-dispose saat async gap
@@ -833,6 +831,7 @@ class _TrialModeBanner extends StatelessWidget {
                 color: AppColors.primaryGreen,
                 fontWeight: FontWeight.w600,
               ),
+            ),
           ),
         ],
       ),
@@ -890,8 +889,9 @@ class _GabungKomunitasCta extends StatelessWidget {
 
             child: Consumer(
               builder: (context, ref, _) {
-                final user = ref.watch(authControllerProvider);
-                final isRegisteredOnly = user?.lifecycleState == WargaLifecycle.registered;
+                final user = ref.watch(authProvider).user;
+                final isRegisteredOnly =
+                    user?.lifecycleState == WargaLifecycle.registered;
 
                 final bins = ref.watch(binsProvider).value ?? [];
                 final hasOrganic = bins.any(
@@ -913,7 +913,10 @@ class _GabungKomunitasCta extends StatelessWidget {
                 return ElevatedButton(
                   onPressed: () {
                     if (isRegisteredOnly) {
-                      Navigator.pushNamed(context, AppRoutes.komunitasOnboarding);
+                      Navigator.pushNamed(
+                        context,
+                        AppRoutes.komunitasOnboarding,
+                      );
                     } else if (hasOrganic && !hasNonOrganic) {
                       Navigator.pushNamed(
                         context,
