@@ -3108,6 +3108,14 @@ const Dashboard: React.FC = () => {
                   const formattedBaseline = item.baselineRate.toFixed(2).replace(".", ",") + "%";
                   const formattedDelta = deltaPp >= 0 ? `+${deltaPp.toFixed(2).replace(".", ",")}` : deltaPp.toFixed(2).replace(".", ",");
                   const formattedKg = itemKg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                  const hasBaselineKg = item.baselineKg !== undefined && item.baselineKg !== null && item.baselineKg > 0;
+                  const hasEndlineData = item.endlineRate > 0 || itemKg > 0;
+                  const deltaKg = hasBaselineKg && hasEndlineData ? +(itemKg - item.baselineKg!).toFixed(2) : null;
+                  const formattedDeltaKg = deltaKg !== null
+                    ? (deltaKg >= 0
+                        ? `+${deltaKg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        : deltaKg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
+                    : "—";
 
                   return (
                     <tr
@@ -3141,8 +3149,14 @@ const Dashboard: React.FC = () => {
                       <td className="py-3 px-3 text-center font-extrabold text-blue-600 dark:text-blue-400 border-r border-slate-200/60 dark:border-slate-800/60">
                         {item.endlineRate > 0 ? formattedDelta : "—"}
                       </td>
-                      <td className="py-3 px-3 text-center font-extrabold text-slate-400">
-                        —
+                      <td className={`py-3 px-3 text-center font-extrabold ${
+                        deltaKg === null
+                          ? "text-slate-400"
+                          : deltaKg >= 0
+                          ? "text-blue-600 dark:text-blue-400"
+                          : "text-rose-600 dark:text-rose-400"
+                      }`}>
+                        {formattedDeltaKg}
                       </td>
                     </tr>
                   );
@@ -3178,14 +3192,14 @@ const Dashboard: React.FC = () => {
                   <span className="text-blue-600 dark:text-blue-400 text-base">Δ</span> Sampah
                 </h5>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Sampah terpilah giat KKN – sampah terpilah awal
+                  Sampah terpilah giat KKN – sampah awal
                 </p>
               </div>
               <div className="bg-blue-100/60 dark:bg-blue-900/40 p-2.5 rounded-xl border border-blue-200/80 dark:border-blue-700/40 text-xs font-bold text-blue-900 dark:text-blue-200">
-                Belum dapat dihitung: data sampah baseline belum tersedia.
+                Contoh Lebak Siliwangi: 6,79 kg − 10,00 kg = -3,21 kg
               </div>
               <p className="text-[10.5px] text-slate-500 dark:text-slate-400">
-                Nilai positif menunjukkan tambahan sampah terpilah.
+                Nilai negatif terjadi karena sampah awal mencakup estimasi timbulan total harian, sedangkan giat KKN mengukur akumulasi fisik tempat sampah KKN.
               </p>
             </div>
           </div>
