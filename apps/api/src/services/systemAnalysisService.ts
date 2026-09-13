@@ -17,6 +17,179 @@ if (typeof (BigInt.prototype as any).toJSON !== "function") {
   };
 }
 
+interface OpenSourceLlmMessage {
+  role: "system" | "user" | "assistant";
+  content: string;
+}
+
+/**
+ * Multi-Provider Open-Source LLM Failover Engine
+ * Support: Groq (Llama-3.3-70B, Qwen-2.5-Coder-32B), OpenRouter Free, Ollama Local, Hugging Face Token Pool
+ */
+async function callMultiOpenSourceLlm(
+  messages: OpenSourceLlmMessage[],
+  temperature = 0.2,
+  maxTokens = 1500
+): Promise<{ text: string; provider: string; model: string }> {
+  const errors: string[] = [];
+
+  // 1. Candidate 1: Groq API (High Speed Open Source Models: llama-3.3-70b-versatile, qwen-2.5-coder-32b)
+  const groqKey = process.env.GROQ_API_KEY?.trim();
+  if (groqKey) {
+    const groqModel = process.env.GROQ_MODEL?.trim() || "llama-3.3-70b-versatile";
+    try {
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${groqKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: groqModel,
+          messages,
+          max_tokens: maxTokens,
+          temperature,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const text = data.choices?.[0]?.message?.content;
+        if (text) return { text, provider: "Groq Open-Source Engine", model: groqModel };
+      } else {
+        const errText = await res.text();
+        errors.push(`Groq (${res.status}): ${errText}`);
+      }
+    } catch (e: any) {
+      errors.push(`Groq Error: ${e.message}`);
+    }
+  }
+
+  // 2. Candidate 2: OpenRouter API (Open-Source Models Free Tier)
+  const openRouterKey = process.env.OPENROUTER_API_KEY?.trim();
+  if (openRouterKey) {
+    const routerModel = process.env.OPENROUTER_MODEL?.trim() || "meta-llama/llama-3.3-70b-instruct:free";
+    try {
+      const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${openRouterKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: routerModel,
+          messages,
+          max_tokens: maxTokens,
+          temperature,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const text = data.choices?.[0]?.message?.content;
+        if (text) return { text, provider: "OpenRouter Open-Source Engine", model: routerModel };
+      } else {
+        const errText = await res.text();
+        errors.push(`OpenRouter (${res.status}): ${errText}`);
+      }
+    } catch (e: any) {
+      errors.push(`OpenRouter Error: ${e.message}`);
+    }
+  }
+
+  // 3. Candidate 3: Ollama / Local Open-Source OpenAI Endpoint
+  const ollamaUrl = process.env.OLLAMA_HOST || process.env.LOCAL_LLM_URL;
+  if (ollamaUrl) {
+    try {
+      const endpoint = ollamaUrl.endsWith("/v1/chat/completions")
+        ? ollamaUrl
+        : `${ollamaUrl.replace(/\/$/, "")}/v1/chat/completions`;
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: process.env.LOCAL_LLM_MODEL || "qwen2.5-coder:32b",
+          messages,
+          max_tokens: maxTokens,
+          temperature,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const text = data.choices?.[0]?.message?.content;
+        if (text) return { text, provider: "Local Ollama Engine", model: "qwen2.5-coder" };
+      }
+    } catch (e: any) {
+      errors.push(`Ollama Error: ${e.message}`);
+    }
+  }
+
+  // 4. Candidate 4: Hugging Face Multi-Token Pool (Token rotation)
+  const rawHfTokens = process.env.HUGGINGFACE_API_KEY || "";
+  const hfTokens = rawHfTokens
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean);
+  const hfModel = process.env.HUGGINGFACE_MODEL || "Qwen/Qwen2.5-Coder-32B-Instruct";
+
+  for (const token of hfTokens) {
+    // Try Router Endpoint
+    try {
+      const res = await fetch("https://router.huggingface.co/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: hfModel,
+          messages,
+          max_tokens: maxTokens,
+          temperature,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const text = data.choices?.[0]?.message?.content;
+        if (text) return { text, provider: "Hugging Face Router", model: hfModel };
+      } else {
+        const errText = await res.text();
+        errors.push(`HF Router key (...${token.slice(-4)}) [${res.status}]: ${errText}`);
+      }
+    } catch (e: any) {
+      errors.push(`HF Router error: ${e.message}`);
+    }
+
+    // Try Direct Serverless Model Endpoint
+    try {
+      const directUrl = `https://api-inference.huggingface.co/models/${hfModel}/v1/chat/completions`;
+      const res = await fetch(directUrl, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: hfModel,
+          messages,
+          max_tokens: maxTokens,
+          temperature,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const text = data.choices?.[0]?.message?.content;
+        if (text) return { text, provider: "Hugging Face Direct Model Engine", model: hfModel };
+      } else {
+        const errText = await res.text();
+        errors.push(`HF Direct key (...${token.slice(-4)}) [${res.status}]: ${errText}`);
+      }
+    } catch (e: any) {
+      errors.push(`HF Direct error: ${e.message}`);
+    }
+  }
+
+  throw new Error(`Seluruh Open-Source LLM Provider mengalami kendala:\n${errors.join("\n")}`);
+}
+
 export const systemAnalysisService = {
   /**
    * Sub-Sistem KKN: 5 Pilar Operasional
@@ -607,18 +780,17 @@ ${dplEntitySummary}
     // ─── 2. TIER 2: AUTONOMOUS TEXT-TO-SQL ENGINE ───
     let dynamicSqlResult: { sql?: string; rows?: any[]; error?: string } = {};
 
-    if (hfToken) {
-      try {
-        let historyContextText = "";
-        if (history && history.length > 0) {
-          const recentTurns = history.slice(-4);
-          historyContextText = `
+    try {
+      let historyContextText = "";
+      if (history && history.length > 0) {
+        const recentTurns = history.slice(-4);
+        historyContextText = `
 Riwayat percakapan sebelumnya:
 ${recentTurns.map((h) => `${h.role === "user" ? "Pengguna" : "Asisten"}: ${h.content.slice(0, 300)}`).join("\n")}
-          `.trim();
-        }
+        `.trim();
+      }
 
-        const sqlGenPrompt = `
+      const sqlGenPrompt = `
 Kamu adalah SQL Analyst PostgreSQL untuk sistem terintegrasi Berseka.
 Berikut daftar tabel utama dalam database PostgreSQL Berseka:
 1. pengguna (id UUID, nama TEXT, email TEXT, role TEXT ['DPL','DOSEN_PEMBIMBING','MAHASISWA','PIMPINAN','ADMIN_KKN','SUPER_ADMIN'], nip TEXT, prodi TEXT, telepon TEXT)
@@ -647,51 +819,32 @@ Aturan Khusus:
 - Jangan gunakan INSERT, UPDATE, DELETE, DROP, ALTER, TRUNCATE, dsb.
 - Gunakan LIMIT 50.
 - Jika pertanyaan tidak memerlukan query SQL database (misal ucapan halo, terima kasih), jawab persis: NONE.
-        `.trim();
+      `.trim();
 
-        const sqlRes = await fetch("https://router.huggingface.co/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${hfToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: hfModel,
-            messages: [{ role: "user", content: sqlGenPrompt }],
-            max_tokens: 300,
-            temperature: 0.1,
-          }),
-        });
+      const llmSqlRes = await callMultiOpenSourceLlm([{ role: "user", content: sqlGenPrompt }], 0.1, 300);
+      let rawSql = (llmSqlRes.text || "NONE").replace(/```(?:sql)?/gi, "").replace(/```/g, "").trim();
 
-        if (sqlRes.ok) {
-          const sqlJson = await sqlRes.json();
-          let rawSql = sqlJson.choices?.[0]?.message?.content?.trim() || "NONE";
-          rawSql = rawSql.replace(/```(?:sql)?/gi, "").replace(/```/g, "").trim();
+      const isSelect = /^select\b/i.test(rawSql);
+      const hasForbidden = /\b(insert|update|delete|drop|alter|create|truncate|grant|revoke|execute|copy)\b/i.test(rawSql);
 
-          // Validasi keamanan: hanya SELECT dan tanpa keyword berbahaya
-          const isSelect = /^select\b/i.test(rawSql);
-          const hasForbidden = /\b(insert|update|delete|drop|alter|create|truncate|grant|revoke|execute|copy)\b/i.test(rawSql);
-
-          if (isSelect && !hasForbidden && rawSql !== "NONE") {
-            try {
-              console.log("[AI Autonomous SQL Query]:", rawSql);
-              const rows: any = await prisma.$queryRawUnsafe(rawSql);
-              const safeSerialized = JSON.stringify(Array.isArray(rows) ? rows.slice(0, 50) : [rows], (_, v) =>
-                typeof v === "bigint" ? (Number.isSafeInteger(Number(v)) ? Number(v) : v.toString()) : v
-              );
-              dynamicSqlResult = {
-                sql: rawSql,
-                rows: JSON.parse(safeSerialized),
-              };
-            } catch (queryErr: any) {
-              console.warn("[AI SQL Execution Warning]:", queryErr.message);
-              dynamicSqlResult = { sql: rawSql, error: queryErr.message };
-            }
-          }
+      if (isSelect && !hasForbidden && rawSql !== "NONE") {
+        try {
+          console.log(`[AI Autonomous SQL Query via ${llmSqlRes.provider} (${llmSqlRes.model})]:`, rawSql);
+          const rows: any = await prisma.$queryRawUnsafe(rawSql);
+          const safeSerialized = JSON.stringify(Array.isArray(rows) ? rows.slice(0, 50) : [rows], (_, v) =>
+            typeof v === "bigint" ? (Number.isSafeInteger(Number(v)) ? Number(v) : v.toString()) : v
+          );
+          dynamicSqlResult = {
+            sql: rawSql,
+            rows: JSON.parse(safeSerialized),
+          };
+        } catch (queryErr: any) {
+          console.warn("[AI SQL Execution Warning]:", queryErr.message);
+          dynamicSqlResult = { sql: rawSql, error: queryErr.message };
         }
-      } catch (sqlAgentErr: any) {
-        console.warn("[AI Text-to-SQL Agent Warning]:", sqlAgentErr.message);
       }
+    } catch (sqlAgentErr: any) {
+      console.warn("[AI Text-to-SQL Agent Warning]:", sqlAgentErr.message);
     }
 
     // ─── 3. TIER 3: FINAL SYNTHESIS GROUNDING ───
@@ -734,43 +887,24 @@ ${sqlContextText}
           content: h.content,
         }));
 
-      const response = await fetch("https://router.huggingface.co/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${hfToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: hfModel,
-          messages: [
-            { role: "system", content: systemInstruction },
-            ...sanitizedHistory,
-            { role: "user", content: cleanPrompt },
-          ],
-          max_tokens: 1500,
-          temperature: 0.2,
-        }),
-      });
-
-      if (!response.ok) {
-        const errText = await response.text();
-        console.error("[HF AI Chat Error]:", response.status, errText);
-        throw new Error(`Inference service returned status ${response.status}`);
-      }
-
-      const result = await response.json();
-      const assistantMessage =
-        result.choices?.[0]?.message?.content ||
-        "Maaf, tidak dapat menghasilkan tanggapan dari model saat ini.";
+      const llmChatRes = await callMultiOpenSourceLlm(
+        [
+          { role: "system", content: systemInstruction },
+          ...sanitizedHistory,
+          { role: "user", content: cleanPrompt },
+        ],
+        0.2,
+        1500
+      );
 
       return {
-        reply: assistantMessage,
+        reply: llmChatRes.text,
         isBlocked: false,
-        model: "BERSEKA AI",
+        model: `BERSEKA AI (${llmChatRes.provider} - ${llmChatRes.model})`,
         sqlExecuted: dynamicSqlResult.sql || null,
       };
     } catch (apiError: any) {
-      console.warn("[HF Fallback triggered]:", apiError?.message);
+      console.warn("[Open-Source LLM Fallback triggered]:", apiError?.message);
 
       const pLower = cleanPrompt.toLowerCase();
       const lastProker = (this as any)._lastProkerSummary;
@@ -796,7 +930,7 @@ ${sqlContextText}
       return {
         reply: fallbackReply,
         isBlocked: false,
-        model: "BERSEKA AI",
+        model: "BERSEKA AI (Autonomous Offline DB Engine)",
       };
     }
   },
