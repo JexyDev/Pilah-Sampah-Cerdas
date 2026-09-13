@@ -45,18 +45,32 @@ function isWilayahFiltered(wilayah?: string): boolean {
   return true;
 }
 
-// ponytail: majority-rule classification, mirrors transactionController.ts. Extract to shared util if a 3rd module needs it.
-function isOrganikMajority(log: {
+/**
+ * Klasifikasi setoran ke Organik / Anorganik berdasarkan LABEL hasil AI.
+ *
+ * Catatan penting: `confidenceAi` adalah tingkat keyakinan model terhadap
+ * prediksinya, BUKAN proporsi organik dalam setoran. Versi sebelumnya
+ * menghitung `100 - confidence` untuk label anorganik, sehingga deteksi
+ * anorganik berkeyakinan rendah (mis. 30%) terbalik menjadi organik 70%.
+ *
+ * Mengembalikan null bila label tidak dikenali/kosong, supaya setoran tanpa
+ * hasil AI tidak diam-diam dihitung sebagai organik.
+ *
+ * ponytail: mirrors transactionController.ts. Extract to shared util if a 3rd module needs it.
+ */
+function classifyWaste(log: {
   hasilKlasifikasiAi?: string | null;
-  confidenceAi?: any;
-}): boolean {
-  const conf =
-    log.confidenceAi !== null && log.confidenceAi !== undefined ? Number(log.confidenceAi) : 95;
-  const confVal = conf <= 1 ? conf * 100 : conf;
-  const rawClass = (log.hasilKlasifikasiAi || "organik").toLowerCase();
-  const isOrgRaw = rawClass.includes("organik") && !rawClass.includes("anorganik");
-  const organikPercent = isOrgRaw ? confVal : 100 - confVal;
-  return organikPercent >= 50;
+  kategoriAktual?: string | null;
+}): "organik" | "anorganik" | null {
+  // kategoriAktual = koreksi manual petugas, lebih tepercaya dari tebakan AI
+  const raw = (log.kategoriAktual || log.hasilKlasifikasiAi || "").toLowerCase().trim();
+  if (!raw) return null;
+  // urutan penting: "anorganik" mengandung substring "organik"
+  if (raw.includes("anorganik") || raw.includes("non-organik") || raw.includes("non organik")) {
+    return "anorganik";
+  }
+  if (raw.includes("organik")) return "organik";
+  return null;
 }
 
 async function resolveAreaContext(wilayah?: string): Promise<ResolvedAreaContext> {
@@ -292,7 +306,10 @@ export const dashboardService = {
     if (isFiltered && binMatch) {
       binsWhere.OR = [binMatch, ...(rtRwMatch ? [{ rw: rtRwMatch }] : [])];
     }
-    if (dateFilter) binsWhere.createdAt = dateFilter;
+    // Catatan: SENGAJA tidak memakai dateFilter di sini. Bin adalah inventaris
+    // infrastruktur, bukan peristiwa. Memfilter bin.createdAt dengan periode
+    // dashboard membuat "Tempat Sampah Aktif" hanya menghitung unit yang baru
+    // dipasang pada rentang itu — hampir selalu nol pada instalasi mapan.
 
     const bins = await prisma.bin.findMany({
       where: binsWhere,
@@ -334,8 +351,17 @@ export const dashboardService = {
       }
     }
 
-    // 7. Setoran Hari Ini (Kg) (Using dateFilter or Today)
+    // 7. Setoran Hari Ini (Kg) — selalu dibatasi hari berjalan, terlepas dari
+    // filter periode dashboard. Sebelumnya hanya menyalin wasteLogsWhere,
+    // sehingga saat period=semua kartu ini menampilkan total sepanjang masa.
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+
     const setoranHariIniWhere: any = { ...wasteLogsWhere };
+    setoranHariIniWhere.createdAt = { gte: startOfToday, lte: endOfToday };
+
     const wasteLogsToday = await prisma.setoranOtomatis.aggregate({
       where: setoranHariIniWhere,
       _sum: {
@@ -385,13 +411,18 @@ export const dashboardService = {
     let organikKg = 0;
     let anorganikKg = 0;
     let residuKg = 0;
+    let takTerklasifikasiKg = 0;
 
     wasteByCategory.forEach((log: any) => {
       const kg = Number(log.berat);
-      if (isOrganikMajority(log)) {
+      const kelas = classifyWaste(log);
+      if (kelas === "organik") {
         organikKg += kg;
-      } else {
+      } else if (kelas === "anorganik") {
         anorganikKg += kg;
+      } else {
+        // label AI kosong/tak dikenali — jangan dipaksa masuk salah satu kategori
+        takTerklasifikasiKg += kg;
       }
     });
 
@@ -827,7 +858,12 @@ export const dashboardService = {
       id: trx.id,
       nama: trx.warga?.name || "Warga",
       waktu: trx.createdAt,
-      tipe: isOrganikMajority(trx) ? "Organik" : "Anorganik",
+      tipe:
+        classifyWaste(trx) === "organik"
+          ? "Organik"
+          : classifyWaste(trx) === "anorganik"
+          ? "Anorganik"
+          : "Belum Terklasifikasi",
       volume: "-",
       poin: `+${trx.poin}`,
     }));
@@ -917,9 +953,10 @@ export const dashboardService = {
 
       logs.forEach((log: any) => {
         const kg = Number(log.berat);
-        if (isOrganikMajority(log)) {
+        const kelas = classifyWaste(log);
+        if (kelas === "organik") {
           organicWeight += kg;
-        } else {
+        } else if (kelas === "anorganik") {
           inorganicWeight += kg;
         }
       });
@@ -968,9 +1005,10 @@ export const dashboardService = {
 
     wasteLogs.forEach((log: any) => {
       const kg = Number(log.berat);
-      if (isOrganikMajority(log)) {
+      const kelas = classifyWaste(log);
+      if (kelas === "organik") {
         organikKg += kg;
-      } else {
+      } else if (kelas === "anorganik") {
         anorganikKg += kg;
       }
     });

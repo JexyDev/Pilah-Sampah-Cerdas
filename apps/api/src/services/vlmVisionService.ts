@@ -31,8 +31,23 @@ export interface VisionDetectionResult {
 }
 
 export class VlmVisionService {
-  private readonly hfModel = "Qwen/Qwen2.5-VL-72B-Instruct";
-  private readonly routerUrl = "https://router.huggingface.co/v1/chat/completions";
+  private getVendorConfig() {
+    const provider = (process.env.AI_VENDOR_PROVIDER || "VENDOR").toUpperCase();
+    const endpoint =
+      process.env.AI_VENDOR_ENDPOINT ||
+      process.env.VLM_API_ENDPOINT ||
+      "https://router.huggingface.co/v1/chat/completions";
+    const apiKey =
+      process.env.AI_VENDOR_API_KEY ||
+      process.env.HUGGINGFACE_API_KEY ||
+      "";
+    const model =
+      process.env.AI_VENDOR_MODEL ||
+      process.env.VLM_MODEL ||
+      "Qwen/Qwen2.5-VL-72B-Instruct";
+
+    return { provider, endpoint, apiKey, model };
+  }
 
   /**
    * Deteksi sampah 3 kategori + visual grounding bounding box
@@ -40,10 +55,14 @@ export class VlmVisionService {
    */
   async detectWasteWithBoundingBox(imageBase64: string): Promise<VisionDetectionResult> {
     const t0 = Date.now();
-    const token = process.env.HUGGINGFACE_API_KEY;
+    const { provider, endpoint, apiKey, model } = this.getVendorConfig();
 
-    if (!token) {
-      throw new Error("HUGGINGFACE_API_KEY belum dikonfigurasi di server.");
+    if (provider === "MOCK" || !apiKey) {
+      if (provider !== "MOCK" && !apiKey) {
+        console.warn("[VlmVisionService Warning]: Neither AI_VENDOR_API_KEY nor HUGGINGFACE_API_KEY is configured. Returning mock detection result.");
+      }
+      const latencyMs = Math.max(150, Date.now() - t0);
+      return this.generateFallbackResult(latencyMs);
     }
 
     const formattedImageUrl = imageBase64.startsWith("data:")
@@ -72,14 +91,18 @@ Keluarkan HANYA JSON murni tanpa markdown atau teks pengantar apapun:
 }`.trim();
 
     try {
-      const response = await fetch(this.routerUrl, {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (apiKey) {
+        headers["Authorization"] = `Bearer ${apiKey}`;
+      }
+
+      const response = await fetch(endpoint, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify({
-          model: this.hfModel,
+          model,
           messages: [
             {
               role: "user",
@@ -97,7 +120,7 @@ Keluarkan HANYA JSON murni tanpa markdown atau teks pengantar apapun:
       if (!response.ok) {
         const errorText = await response.text();
         console.error("[VlmVisionService Error]:", response.status, errorText);
-        throw new Error(`HF Router returned status ${response.status}: ${errorText}`);
+        throw new Error(`AI Vendor returned status ${response.status}: ${errorText}`);
       }
 
       const json = await response.json();
