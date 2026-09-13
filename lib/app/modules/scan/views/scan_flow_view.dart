@@ -1456,7 +1456,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                 child: const Column(
                   children: [
                     Text(
-                      'Anda berada lebih dari 50 meter dari tempat sampah yang ingin dipindai.',
+                      'Anda berada di luar jangkauan lokasi tempat sampah yang ingin dipindai.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 13,
@@ -1476,7 +1476,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                         SizedBox(width: 4),
                         Flexible(
                           child: Text(
-                            'Harap mendekat ke lokasi tempat sampah (radius ≤ 50 m).',
+                            'Harap mendekat ke lokasi tempat sampah Anda.',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 11,

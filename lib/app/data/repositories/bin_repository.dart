@@ -100,6 +100,11 @@ abstract class BinRepository {
     required String qrCode,
     required WasteType binType,
     required double maxCapacityLiter,
+    String? shape,
+    double? diameter,
+    double? height,
+    double? width,
+    double? length,
   });
 }
 

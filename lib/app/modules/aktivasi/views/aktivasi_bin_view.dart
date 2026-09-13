@@ -243,6 +243,16 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final double orgCapacity = args?['orgCapacity'] ?? 20.0;
     final double anorgCapacity = args?['anorgCapacity'] ?? 20.0;
+    final String? orgShape = args?['orgShape'];
+    final double? orgDiameter = args?['orgDiameter'];
+    final double? orgHeight = args?['orgHeight'];
+    final double? orgLength = args?['orgLength'];
+    final double? orgWidth = args?['orgWidth'];
+    final String? anorgShape = args?['anorgShape'];
+    final double? anorgDiameter = args?['anorgDiameter'];
+    final double? anorgHeight = args?['anorgHeight'];
+    final double? anorgLength = args?['anorgLength'];
+    final double? anorgWidth = args?['anorgWidth'];
 
     if (PlatformUtils.isMobile) {
       setState(() => _localLoading = true);
@@ -282,6 +292,16 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
           longitude: lng,
           orgCapacity: orgCapacity,
           anorgCapacity: anorgCapacity,
+          orgShape: orgShape,
+          orgDiameter: orgDiameter,
+          orgHeight: orgHeight,
+          orgLength: orgLength,
+          orgWidth: orgWidth,
+          anorgShape: anorgShape,
+          anorgDiameter: anorgDiameter,
+          anorgHeight: anorgHeight,
+          anorgLength: anorgLength,
+          anorgWidth: anorgWidth,
         );
     if (ref.read(aktivasiBinProvider).isSuccess) {
       // Refresh semua data yang terpengaruh setelah tempat sampah baru diaktivasi
