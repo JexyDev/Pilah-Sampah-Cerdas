@@ -51,6 +51,7 @@ abstract class AuthRepository {
     String? rw,
     String? jenjangPendidikan,
     int? familySize,
+    String? role,
   });
 
   /// Request token untuk lupa kata sandi.

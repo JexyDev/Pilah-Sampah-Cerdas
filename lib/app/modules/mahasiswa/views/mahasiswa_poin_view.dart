@@ -7,7 +7,7 @@ import '../../../data/providers/repository_providers.dart';
 import '../../../data/models/point_history_entity.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../riwayat/controllers/riwayat_controller.dart'
-    show pointHistoryProvider;
+    show pointHistoryProvider, totalPointsProvider;
 import '../controllers/mahasiswa_controller.dart';
 import '../controllers/riwayat_kkn_controller.dart';
 import '../../../core/utils/input_sanitizer.dart';
@@ -39,8 +39,12 @@ class MahasiswaPoinView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final mhsState = ref.watch(mahasiswaControllerProvider);
     final user = ref.watch(authProvider).user;
+    final totalPtsAsync = ref.watch(totalPointsProvider);
 
-    final personalPoints = mhsState.dashboard?.contributionPoints ?? 0;
+    final personalPoints =
+        mhsState.dashboard?.contributionPoints ??
+        totalPtsAsync.value ??
+        0;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -49,6 +53,7 @@ class MahasiswaPoinView extends ConsumerWidget {
           await ref.read(mahasiswaControllerProvider.notifier).fetchAll();
           if (user != null) {
             ref.invalidate(pointHistoryProvider);
+            ref.invalidate(totalPointsProvider);
             await ref.read(riwayatKknControllerProvider.notifier).refresh();
             ref.invalidate(pengajuanIzinCountProvider);
           }
@@ -191,22 +196,46 @@ class MahasiswaPoinView extends ConsumerWidget {
   }
 
   Widget _buildStatsRow(MahasiswaState mhsState, WidgetRef ref) {
-    final points = mhsState.dashboard?.contributionPoints ?? 0;
-
     final asyncHistory = ref.watch(pointHistoryProvider);
+    int presensiHariCount = 0;
     int laporanCount = 0;
     int wargaCount = 0;
 
     if (asyncHistory.hasValue && asyncHistory.value != null) {
+      final Set<String> presensiDates = {};
       for (final ph in asyncHistory.value!) {
         final lowerDesc = ph.description.toLowerCase();
-        if (lowerDesc.contains('pemanfaatan')) {
+        if (lowerDesc.contains('kehadiran') ||
+            lowerDesc.contains('check-in') ||
+            lowerDesc.contains('presensi')) {
+          final dateKey =
+              '${ph.createdAt.year}-${ph.createdAt.month}-${ph.createdAt.day}';
+          presensiDates.add(dateKey);
+        } else if (lowerDesc.contains('pemanfaatan')) {
           laporanCount++;
         } else if (lowerDesc.contains('aktivasi')) {
           wargaCount++;
         }
       }
+      presensiHariCount = presensiDates.length;
     }
+
+    // Ambil data hari kehadiran aktual langsung dari backend timesheetSummary jika tersedia
+    final summary = mhsState.timesheetSummary;
+    final students = summary?['students'] as List?;
+    final studentData = (students != null && students.isNotEmpty)
+        ? students.first as Map<String, dynamic>
+        : null;
+    final int backendDaysAttended =
+        (studentData?['totalDaysAttended'] as num?)?.toInt() ?? 0;
+    final int displayPresensiHari =
+        backendDaysAttended > 0 ? backendDaysAttended : presensiHariCount;
+
+    // Ambil data warga tempat sampah terdaftar langsung dari backend dashboard jika tersedia
+    final int backendRegisteredBins =
+        mhsState.dashboard?.totalRegisteredBins ?? 0;
+    final int displayWargaCount =
+        backendRegisteredBins > 0 ? backendRegisteredBins : wargaCount;
 
     final izinCount = ref.watch(pengajuanIzinCountProvider).value ?? 0;
 
@@ -220,7 +249,7 @@ class MahasiswaPoinView extends ConsumerWidget {
             Expanded(
               child: _StatCard(
                 topText: 'Hari',
-                middleText: '${(points / 10).floor()}',
+                middleText: '$displayPresensiHari',
                 bottomText: 'Presensi',
                 color: AppColors.primaryGreen,
               ),
@@ -229,7 +258,7 @@ class MahasiswaPoinView extends ConsumerWidget {
             Expanded(
               child: _StatCard(
                 topText: 'Warga',
-                middleText: '$wargaCount',
+                middleText: '$displayWargaCount',
                 bottomText: 'Tempat Sampah',
                 color: AppColors.primaryBlueDark,
               ),
@@ -399,7 +428,7 @@ class MahasiswaPoinView extends ConsumerWidget {
           SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Poin KKN diperoleh dari presensi geofence (+10 PTS), aktivasi tempat sampah warga (+10 PTS), dan laporan pemanfaatan daur ulang.',
+              'Poin KKN diperoleh secara otomatis dari aktivitas presensi kehadiran, pengisian logbook, aktivasi tempat sampah warga, serta pencatatan panen hasil.',
               style: TextStyle(
                 fontSize: 11,
                 color: AppColors.primaryGreen,
@@ -589,26 +618,42 @@ class _PoinHistoryItem extends StatelessWidget {
       'dd MMM yyyy, HH:mm',
     ).format(item.createdAt.toLocal());
 
-    // Map description to standardized title
+    // Map description to standardized title and icon
     String title = InputSanitizer.cleanSystemMessage(item.description);
     IconData icon = Icons.check_circle_outline_rounded;
+    final lowerTitle = title.toLowerCase();
 
-    if (title.toLowerCase().contains('aktivasi')) {
+    if (lowerTitle.contains('aktivasi')) {
       title = 'Aktivasi Tempat Sampah Warga';
       icon = Icons.qr_code_scanner_rounded;
-    } else if (title.toLowerCase().contains('pemanfaatan')) {
-      if (!title.toLowerCase().startsWith('laporan')) {
+    } else if (lowerTitle.contains('pemanfaatan')) {
+      if (!lowerTitle.startsWith('laporan')) {
         title = 'Laporan Pemanfaatan Sampah: $title';
       }
       icon = Icons.recycling_rounded;
-    } else if (title.toLowerCase().contains('geofence') ||
-        title.toLowerCase().contains('presensi')) {
-      title = 'Ping Lokasi Posko / Presensi';
-      icon = Icons.location_on_rounded;
-    } else if (title.toLowerCase().contains('registrasi')) {
+    } else if (lowerTitle.contains('panen')) {
+      if (!lowerTitle.startsWith('hasil panen')) {
+        title = 'Hasil Panen Budidaya: $title';
+      }
+      icon = Icons.eco_rounded;
+    } else if (lowerTitle.contains('logbook')) {
+      icon = Icons.menu_book_rounded;
+    } else if (lowerTitle.contains('durasi')) {
+      icon = Icons.timer_outlined;
+    } else if (lowerTitle.contains('geofence') ||
+        lowerTitle.contains('presensi') ||
+        lowerTitle.contains('kehadiran') ||
+        lowerTitle.contains('check-in')) {
+      icon = Icons.how_to_reg_rounded;
+    } else if (lowerTitle.contains('registrasi')) {
       title = 'Bonus Registrasi Akun Mahasiswa KKN';
       icon = Icons.card_giftcard_rounded;
+    } else if (item.points < 0 || lowerTitle.contains('penalti')) {
+      icon = Icons.warning_amber_rounded;
     }
+
+    final isNegative = item.points < 0;
+    final badgeColor = isNegative ? AppColors.dangerRed : AppColors.primaryGreen;
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -629,10 +674,10 @@ class _PoinHistoryItem extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.primaryGreen.withValues(alpha: 0.1),
+              color: badgeColor.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: AppColors.primaryGreen, size: 20),
+            child: Icon(icon, color: badgeColor, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -661,11 +706,11 @@ class _PoinHistoryItem extends StatelessWidget {
             ),
           ),
           Text(
-            '+${item.points} PTS',
-            style: const TextStyle(
+            '${isNegative ? "" : "+"}${item.points} PTS',
+            style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.bold,
-              color: AppColors.primaryGreen,
+              color: badgeColor,
             ),
           ),
         ],

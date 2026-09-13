@@ -216,7 +216,9 @@ class LocationService {
   Future<String?> getAddressFromCoordinates(double lat, double lng) async {
     // ponytail: reverse geocoding placemark; fallback jika gagal/offline
     try {
-      final placemarks = await Geocoding().placemarkFromCoordinates(lat, lng);
+      final placemarks = await Geocoding()
+          .placemarkFromCoordinates(lat, lng)
+          .timeout(const Duration(seconds: 6));
       if (placemarks.isNotEmpty) {
         final p = placemarks.first;
         String address = '';

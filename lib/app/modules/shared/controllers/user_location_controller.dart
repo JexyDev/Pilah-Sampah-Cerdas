@@ -54,7 +54,6 @@ class UserLocationNotifier extends StateNotifier<UserLocationState> {
         if (permission == LocationPermission.denied ||
             permission == LocationPermission.deniedForever) {
           state = state.copyWith(
-            isFetchingAddress: false,
             error: 'Izin lokasi tidak diberikan',
           );
           return;
@@ -64,7 +63,6 @@ class UserLocationNotifier extends StateNotifier<UserLocationState> {
       final pos = await LocationService.instance.getCurrentLocation();
       if (pos == null) {
         state = state.copyWith(
-          isFetchingAddress: false,
           error: 'Lokasi tidak terdeteksi. Aktifkan GPS Anda.',
         );
         return;
@@ -77,17 +75,44 @@ class UserLocationNotifier extends StateNotifier<UserLocationState> {
         pos.longitude,
       );
 
+      final bool isValidAddress = address != null &&
+          address.isNotEmpty &&
+          !address.startsWith('Gagal') &&
+          !address.startsWith('Lokasi tidak');
+
+      if (isValidAddress) {
+        final user = _ref?.read(authProvider).user;
+        if (user != null) {
+          try {
+            await _ref?.read(authProvider.notifier).updateProfile(
+              name: user.name,
+              phone: user.phone,
+              address: address,
+              kecamatan: user.kecamatan,
+              kelurahan: user.kelurahan,
+              rw: user.rw,
+              jenjangPendidikan: user.jenjangPendidikan,
+              familySize: user.familySize,
+            );
+          } catch (_) {
+            // Abaikan error jaringan saat sync profil latar belakang
+          }
+        }
+      }
+
       state = state.copyWith(
         position: pos,
         address: address,
-        isFetchingAddress: false,
         clearError: true,
       );
     } catch (e) {
       state = state.copyWith(
-        isFetchingAddress: false,
         error: 'Gagal memperbarui alamat',
       );
+    } finally {
+      if (state.isFetchingAddress) {
+        state = state.copyWith(isFetchingAddress: false);
+      }
     }
   }
 }

@@ -95,11 +95,16 @@ abstract class BinRepository {
   /// Ambil active reset request dari local storage
   Future<BinResetEntity?> getActiveResetRequest(String userId);
 
-  /// Set kapasitas tempat sampah setelah aktivasi.
+  /// Set kapasitas dan dimensi fisik tempat sampah setelah aktivasi.
   Future<void> measureBin({
     required String qrCode,
     required WasteType binType,
     required double maxCapacityLiter,
+    String? shape,
+    double? diameter,
+    double? length,
+    double? width,
+    double? height,
   });
 }
 

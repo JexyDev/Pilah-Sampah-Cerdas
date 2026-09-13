@@ -724,6 +724,7 @@ class ApiAuthRepository implements AuthRepository {
     String? rw,
     String? jenjangPendidikan,
     int? familySize,
+    String? role,
   }) async {
     try {
       final response = await apiClient.dio.put(
@@ -737,6 +738,7 @@ class ApiAuthRepository implements AuthRepository {
           if (rw != null) 'rw': rw,
           if (jenjangPendidikan != null) 'jenjangPendidikan': jenjangPendidikan,
           if (familySize != null) 'familySize': familySize,
+          if (role != null) 'role': role,
         },
       );
       if (response.statusCode == 200) {
@@ -753,6 +755,11 @@ class ApiAuthRepository implements AuthRepository {
             currentUserMap['phone'] = updatedData['phone'] ?? phone;
             if (updatedData['address'] != null) {
               currentUserMap['address'] = updatedData['address'];
+            }
+            if (role != null) {
+              currentUserMap['role'] = role;
+            } else if (updatedData['role'] != null) {
+              currentUserMap['role'] = updatedData['role'];
             }
             await secureStorage.write(
               key: AppConfig.userDataKey,

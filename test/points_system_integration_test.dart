@@ -48,26 +48,27 @@ void main() {
         contains('Reward validasi pengosongan'),
       );
 
-      // 3. Reward presensi masuk & kepulangan Mahasiswa KKN (+10 poin)
+      // 3. Reward presensi masuk (+4) & durasi kepulangan (+3) Mahasiswa KKN
       final checkInReward = PointHistoryEntity(
         id: 'ph-att-in',
         userId: 'mhs-123',
-        points: 10,
+        points: 4,
         wasteType: WasteType.organic,
-        description: 'Bonus kehadiran (Check-In) KKN: Posko Coblong',
+        description: 'Poin kehadiran KKN (Check-In): Posko Coblong',
         createdAt: DateTime.now(),
       );
       final checkOutReward = PointHistoryEntity(
         id: 'ph-att-out',
         userId: 'mhs-123',
-        points: 10,
+        points: 3,
         wasteType: WasteType.organic,
-        description: 'Bonus kepulangan (Check-Out) presensi KKN: Posko Coblong',
+        description:
+            'Poin durasi harian terpenuhi presensi KKN: Posko Coblong',
         createdAt: DateTime.now(),
       );
-      expect(checkInReward.points, equals(10));
-      expect(checkOutReward.points, equals(10));
-      expect(checkInReward.points + checkOutReward.points, equals(20));
+      expect(checkInReward.points, equals(4));
+      expect(checkOutReward.points, equals(3));
+      expect(checkInReward.points + checkOutReward.points, equals(7));
     });
   });
 }

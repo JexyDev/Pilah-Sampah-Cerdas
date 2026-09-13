@@ -21,6 +21,8 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
 
   // Selected shape: 'tabung' (Keranjang Bulat) atau 'kotak' (Bak Kotak)
   String _selectedShape = 'tabung';
+  String _orgShape = 'tabung';
+  String _anorgShape = 'kotak';
 
   // Target kategori wadah yang didaftarkan: 'organic', 'non_organic', atau 'both'
   String _targetCategory = 'both';
@@ -28,8 +30,8 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
   bool _hasExplicitTarget = false;
   bool _targetResolvedFromBins = false;
 
-  // Toggle apakah ukuran Organik & Anorganik identik (Default: true)
-  bool _sameSizeForBoth = true;
+  // Toggle apakah ukuran Organik & Anorganik identik (Default: false sesuai fisik wadah berbeda)
+  bool _sameSizeForBoth = false;
   int _activeBinTab =
       0; // 0 = Organik, 1 = Anorganik (jika _sameSizeForBoth == false)
 
@@ -56,6 +58,12 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
     return isOrgActive ? _orgPresetIndex : _anorgPresetIndex;
   }
 
+  String get _currentActiveShape {
+    final bool isBoth = _targetCategory == 'both';
+    final bool isOrgActive = !isBoth || _sameSizeForBoth || _activeBinTab == 0;
+    return isOrgActive ? _orgShape : _anorgShape;
+  }
+
   // Presets dynamic dari API dengan nilai baku default resmi (SNI/Standar Berseka)
   List<BinPresetEntity> _roundPresets = BinPresetEntity.defaultTabungPresets;
   List<BinPresetEntity> _boxPresets = BinPresetEntity.defaultKotakPresets;
@@ -77,10 +85,13 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
     try {
       if (isAnorgTab) {
         _anorgPresetIndex = index;
+        _anorgShape = shape;
       } else {
         _orgPresetIndex = index;
+        _orgShape = shape;
         if (updateBoth) {
           _anorgPresetIndex = index;
+          _anorgShape = shape;
         }
       }
 
@@ -88,12 +99,18 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
         if (isAnorgTab) {
           _anorgDiameterCtrl.text = p.d.toStringAsFixed(0);
           _anorgTinggiCtrl.text = p.t.toStringAsFixed(0);
+          _anorgPanjangCtrl.clear();
+          _anorgLebarCtrl.clear();
         } else {
           _diameterCtrl.text = p.d.toStringAsFixed(0);
           _tinggiCtrl.text = p.t.toStringAsFixed(0);
+          _panjangCtrl.clear();
+          _lebarCtrl.clear();
           if (updateBoth) {
             _anorgDiameterCtrl.text = p.d.toStringAsFixed(0);
             _anorgTinggiCtrl.text = p.t.toStringAsFixed(0);
+            _anorgPanjangCtrl.clear();
+            _anorgLebarCtrl.clear();
           }
         }
       } else {
@@ -101,14 +118,17 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
           _anorgPanjangCtrl.text = p.p.toStringAsFixed(0);
           _anorgLebarCtrl.text = p.l.toStringAsFixed(0);
           _anorgTinggiCtrl.text = p.t.toStringAsFixed(0);
+          _anorgDiameterCtrl.clear();
         } else {
           _panjangCtrl.text = p.p.toStringAsFixed(0);
           _lebarCtrl.text = p.l.toStringAsFixed(0);
           _tinggiCtrl.text = p.t.toStringAsFixed(0);
+          _diameterCtrl.clear();
           if (updateBoth) {
             _anorgPanjangCtrl.text = p.p.toStringAsFixed(0);
             _anorgLebarCtrl.text = p.l.toStringAsFixed(0);
             _anorgTinggiCtrl.text = p.t.toStringAsFixed(0);
+            _anorgDiameterCtrl.clear();
           }
         }
       }
@@ -120,11 +140,16 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
   @override
   void initState() {
     super.initState();
-    // Terapkan ukuran standar baku resmi (Sedang) ke controller saat inisialisasi awal
+    // Terapkan ukuran standar Organik (bulat) dan Anorganik (kotak) sesuai preset bawaan
     _applyPresetByIndex(
       _orgPresetIndex,
-      shape: _selectedShape,
-      updateBoth: true,
+      shape: _orgShape,
+      updateBoth: false,
+    );
+    _applyPresetByIndex(
+      _anorgPresetIndex,
+      shape: _anorgShape,
+      updateBoth: false,
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) => _fetchPresets());
@@ -153,12 +178,18 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
         _isLoadingPresets = false;
       });
       // Jika user masih berada pada preset standar (belum custom manual), sinkronkan dengan data server
-      final currentIdx = _currentPresetIndex;
-      if (currentIdx >= 0 && !_showCustomSizeForm) {
+      if (_orgPresetIndex >= 0 && !_showCustomSizeForm) {
         _applyPresetByIndex(
-          currentIdx,
-          shape: _selectedShape,
-          updateBoth: _sameSizeForBoth,
+          _orgPresetIndex,
+          shape: _orgShape,
+          updateBoth: false,
+        );
+      }
+      if (!_sameSizeForBoth && _anorgPresetIndex >= 0 && !_showCustomSizeForm) {
+        _applyPresetByIndex(
+          _anorgPresetIndex,
+          shape: _anorgShape,
+          updateBoth: false,
         );
       }
     }
@@ -167,10 +198,10 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
   void _onOrgDimensionChanged() {
     if (_isApplyingPreset) return;
     if (_orgPresetIndex >= 0) {
-      final presets = _selectedShape == 'tabung' ? _roundPresets : _boxPresets;
+      final presets = _orgShape == 'tabung' ? _roundPresets : _boxPresets;
       if (_orgPresetIndex < presets.length) {
         final p = presets[_orgPresetIndex];
-        final bool stillMatches = _selectedShape == 'tabung'
+        final bool stillMatches = _orgShape == 'tabung'
             ? _diameterCtrl.text == p.d.toStringAsFixed(0) &&
                   _tinggiCtrl.text == p.t.toStringAsFixed(0)
             : _panjangCtrl.text == p.p.toStringAsFixed(0) &&
@@ -187,10 +218,10 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
   void _onAnorgDimensionChanged() {
     if (_isApplyingPreset) return;
     if (_anorgPresetIndex >= 0) {
-      final presets = _selectedShape == 'tabung' ? _roundPresets : _boxPresets;
+      final presets = _anorgShape == 'tabung' ? _roundPresets : _boxPresets;
       if (_anorgPresetIndex < presets.length) {
         final p = presets[_anorgPresetIndex];
-        final bool stillMatches = _selectedShape == 'tabung'
+        final bool stillMatches = _anorgShape == 'tabung'
             ? _anorgDiameterCtrl.text == p.d.toStringAsFixed(0) &&
                   _anorgTinggiCtrl.text == p.t.toStringAsFixed(0)
             : _anorgPanjangCtrl.text == p.p.toStringAsFixed(0) &&
@@ -286,22 +317,22 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
     double anorgVol = 0.0;
 
     if (isOrgOnly) {
-      orgVol = _getCapacityFor(isOrganik: true, shape: _selectedShape);
+      orgVol = _getCapacityFor(isOrganik: true, shape: _orgShape);
       if (orgVol <= 0.0) {
         _showError('Mohon isi ukuran dimensi Tempat Sampah Organik');
         return;
       }
     } else if (isNonOrgOnly) {
-      anorgVol = _getCapacityFor(isOrganik: false, shape: _selectedShape);
+      anorgVol = _getCapacityFor(isOrganik: false, shape: _anorgShape);
       if (anorgVol <= 0.0) {
         _showError('Mohon isi ukuran dimensi Tempat Sampah Anorganik');
         return;
       }
     } else {
-      orgVol = _getCapacityFor(isOrganik: true, shape: _selectedShape);
+      orgVol = _getCapacityFor(isOrganik: true, shape: _orgShape);
       anorgVol = _sameSizeForBoth
           ? orgVol
-          : _getCapacityFor(isOrganik: false, shape: _selectedShape);
+          : _getCapacityFor(isOrganik: false, shape: _anorgShape);
 
       if (orgVol <= 0.0) {
         _showError('Mohon isi ukuran dimensi Tempat Sampah Organik');
@@ -313,7 +344,72 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
       }
     }
 
-    // Lanjut ke aktivasi barcode (sesuai mode pilihan warga: 1 atau 2 tempat sampah)
+    // Ekstraksi dimensi fisik Organik
+    final String orgShape = _orgShape;
+    double? orgDiameter;
+    double? orgHeight;
+    double? orgLength;
+    double? orgWidth;
+
+    if (orgShape == 'tabung') {
+      if (_orgPresetIndex >= 0 && _orgPresetIndex < _roundPresets.length) {
+        final p = _roundPresets[_orgPresetIndex];
+        orgDiameter = p.d;
+        orgHeight = p.t;
+      } else {
+        orgDiameter = double.tryParse(_diameterCtrl.text);
+        orgHeight = double.tryParse(_tinggiCtrl.text);
+      }
+    } else {
+      if (_orgPresetIndex >= 0 && _orgPresetIndex < _boxPresets.length) {
+        final p = _boxPresets[_orgPresetIndex];
+        orgLength = p.p;
+        orgWidth = p.l;
+        orgHeight = p.t;
+      } else {
+        orgLength = double.tryParse(_panjangCtrl.text);
+        orgWidth = double.tryParse(_lebarCtrl.text);
+        orgHeight = double.tryParse(_tinggiCtrl.text);
+      }
+    }
+
+    // Ekstraksi dimensi fisik Anorganik
+    final String anorgShape = _sameSizeForBoth ? orgShape : _anorgShape;
+    double? anorgDiameter;
+    double? anorgHeight;
+    double? anorgLength;
+    double? anorgWidth;
+
+    if (_sameSizeForBoth) {
+      anorgDiameter = orgDiameter;
+      anorgHeight = orgHeight;
+      anorgLength = orgLength;
+      anorgWidth = orgWidth;
+    } else {
+      if (anorgShape == 'tabung') {
+        if (_anorgPresetIndex >= 0 && _anorgPresetIndex < _roundPresets.length) {
+          final p = _roundPresets[_anorgPresetIndex];
+          anorgDiameter = p.d;
+          anorgHeight = p.t;
+        } else {
+          anorgDiameter = double.tryParse(_anorgDiameterCtrl.text);
+          anorgHeight = double.tryParse(_anorgTinggiCtrl.text);
+        }
+      } else {
+        if (_anorgPresetIndex >= 0 && _anorgPresetIndex < _boxPresets.length) {
+          final p = _boxPresets[_anorgPresetIndex];
+          anorgLength = p.p;
+          anorgWidth = p.l;
+          anorgHeight = p.t;
+        } else {
+          anorgLength = double.tryParse(_anorgPanjangCtrl.text);
+          anorgWidth = double.tryParse(_anorgLebarCtrl.text);
+          anorgHeight = double.tryParse(_anorgTinggiCtrl.text);
+        }
+      }
+    }
+
+    // Lanjut ke aktivasi barcode lengkap dengan payload dimensi
     Navigator.pushReplacementNamed(
       context,
       AppRoutes.aktivasiBin,
@@ -323,6 +419,16 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
         'anorgCapacity': anorgVol,
         'hasOrganic': isNonOrgOnly,
         'hasAnorganic': isOrgOnly,
+        'orgShape': orgShape,
+        'orgDiameter': orgDiameter,
+        'orgHeight': orgHeight,
+        'orgLength': orgLength,
+        'orgWidth': orgWidth,
+        'anorgShape': anorgShape,
+        'anorgDiameter': anorgDiameter,
+        'anorgHeight': anorgHeight,
+        'anorgLength': anorgLength,
+        'anorgWidth': anorgWidth,
       },
     );
   }
@@ -676,8 +782,12 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
     return GestureDetector(
       onTap: () => setState(() {
         _selectedShape = id;
+        _orgShape = id;
+        if (_sameSizeForBoth) {
+          _anorgShape = id;
+        }
         final targetIdx = _currentPresetIndex >= 0 ? _currentPresetIndex : 1;
-        _applyPresetByIndex(targetIdx, shape: id, updateBoth: true);
+        _applyPresetByIndex(targetIdx, shape: id, updateBoth: _sameSizeForBoth);
       }),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -973,7 +1083,8 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
   }
 
   Widget _buildPresetSizeSelector() {
-    final presets = _selectedShape == 'tabung' ? _roundPresets : _boxPresets;
+    final shape = _currentActiveShape;
+    final presets = shape == 'tabung' ? _roundPresets : _boxPresets;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -1050,7 +1161,7 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
                       setState(() {
                         _applyPresetByIndex(
                           idx,
-                          shape: _selectedShape,
+                          shape: shape,
                           updateBoth: _sameSizeForBoth,
                         );
                       });
@@ -1130,12 +1241,13 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
     final pCtrl = isOrgActive ? _panjangCtrl : _anorgPanjangCtrl;
     final lCtrl = isOrgActive ? _lebarCtrl : _anorgLebarCtrl;
 
+    final shape = _currentActiveShape;
     final double currentCapacity = _getCapacityFor(
       isOrganik: isOrgActive,
-      shape: _selectedShape,
+      shape: shape,
     );
 
-    final String diagramImagePath = _selectedShape == 'tabung'
+    final String diagramImagePath = shape == 'tabung'
         ? 'assets/step_2/wadah_bulat.jpg'
         : 'assets/step_2/wadah_kotak.jpg';
 
@@ -1175,7 +1287,7 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
                             CustomPaint(
                               size: const Size(220, 140),
                               painter: _BinDimensionDiagramPainter(
-                                shape: _selectedShape,
+                                shape: shape,
                               ),
                             ),
                       ),
@@ -1223,7 +1335,13 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
                               _sameSizeForBoth = val;
                               if (val) {
                                 _activeBinTab = 0;
+                                _anorgShape = _orgShape;
                                 _anorgPresetIndex = _orgPresetIndex;
+                                _applyPresetByIndex(
+                                  _orgPresetIndex,
+                                  shape: _orgShape,
+                                  updateBoth: true,
+                                );
                               }
                             });
                           },
@@ -1255,6 +1373,8 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 12),
+                    _buildStep2ShapeSelector(),
                   ],
                 ] else ...[
                   // Single bin mode banner
@@ -1303,6 +1423,8 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
                       ],
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  _buildStep2ShapeSelector(),
                 ],
                 const SizedBox(height: 16),
                 _buildPresetSizeSelector(),
@@ -1342,7 +1464,7 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
                   const SizedBox(height: 10),
 
                   // Form Input Dimensi sesuai bentuk wadah
-                  if (_selectedShape == 'tabung') ...[
+                  if (shape == 'tabung') ...[
                     _buildDimensionField(
                       label: 'Diameter (cm)',
                       hint: 'Contoh: 40',
@@ -1532,6 +1654,162 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildStep2ShapeSelector() {
+    final shape = _currentActiveShape;
+    final isOrgActive =
+        _targetCategory != 'both' || _sameSizeForBoth || _activeBinTab == 0;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.category_outlined,
+                size: 16,
+                color: AppColors.textSecondary,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Bentuk Tempat Sampah (${isOrgActive ? 'Organik' : 'Anorganik'}):',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: _buildShapeOptionChip(
+                  id: 'tabung',
+                  label: 'Bulat / Tabung',
+                  icon: Icons.circle_outlined,
+                  isSelected: shape == 'tabung',
+                  onTap: () {
+                    if (shape == 'tabung') return;
+                    setState(() {
+                      if (isOrgActive) {
+                        _orgShape = 'tabung';
+                        if (_sameSizeForBoth) _anorgShape = 'tabung';
+                        _applyPresetByIndex(
+                          _orgPresetIndex >= 0 ? _orgPresetIndex : 1,
+                          shape: 'tabung',
+                          updateBoth: _sameSizeForBoth,
+                        );
+                      } else {
+                        _anorgShape = 'tabung';
+                        _applyPresetByIndex(
+                          _anorgPresetIndex >= 0 ? _anorgPresetIndex : 1,
+                          shape: 'tabung',
+                          updateBoth: false,
+                        );
+                      }
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildShapeOptionChip(
+                  id: 'kotak',
+                  label: 'Kotak / Persegi',
+                  icon: Icons.crop_square_rounded,
+                  isSelected: shape == 'kotak',
+                  onTap: () {
+                    if (shape == 'kotak') return;
+                    setState(() {
+                      if (isOrgActive) {
+                        _orgShape = 'kotak';
+                        if (_sameSizeForBoth) _anorgShape = 'kotak';
+                        _applyPresetByIndex(
+                          _orgPresetIndex >= 0 ? _orgPresetIndex : 1,
+                          shape: 'kotak',
+                          updateBoth: _sameSizeForBoth,
+                        );
+                      } else {
+                        _anorgShape = 'kotak';
+                        _applyPresetByIndex(
+                          _anorgPresetIndex >= 0 ? _anorgPresetIndex : 1,
+                          shape: 'kotak',
+                          updateBoth: false,
+                        );
+                      }
+                    });
+                  },
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildShapeOptionChip({
+    required String id,
+    required String label,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primaryGreen.withValues(alpha: 0.1)
+              : Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isSelected
+                ? AppColors.primaryGreen
+                : const Color(0xFFCBD5E1),
+            width: isSelected ? 1.8 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: isSelected
+                  ? AppColors.primaryGreen
+                  : AppColors.textSecondary,
+            ),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                label,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: isSelected
+                      ? AppColors.primaryGreen
+                      : AppColors.textPrimary,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

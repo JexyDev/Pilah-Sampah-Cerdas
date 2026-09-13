@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/utils/input_sanitizer.dart';
-
+import '../../../data/models/user_entity.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../routes/app_routes.dart';
 import '../../auth/controllers/auth_controller.dart';
@@ -29,6 +29,7 @@ class _KomunitasOnboardingViewState
 
   String? _selectedKelurahan;
   String? _selectedRw;
+  String _selectedRole = 'WARGA';
 
   final List<String> _provinsiList = [];
   final List<String> _kotaList = [];
@@ -99,6 +100,12 @@ class _KomunitasOnboardingViewState
   @override
   void initState() {
     super.initState();
+    final currentRole = ref.read(authProvider).user?.role;
+    if (currentRole == UserRole.petugasPemilahan) {
+      _selectedRole = 'PETUGAS_PEMILAHAN';
+    } else {
+      _selectedRole = 'WARGA';
+    }
     _loadTerritories();
   }
 
@@ -240,13 +247,20 @@ class _KomunitasOnboardingViewState
       return;
     }
 
+    final isPetugas = _selectedRole == 'PETUGAS_PEMILAHAN';
+    final targetRole = isPetugas ? UserRole.petugasPemilahan : UserRole.warga;
+
     final address = InputSanitizer.sanitize(_alamatController.text);
     if (address.isEmpty) {
-      _showError('Alamat rumah wajib diisi');
+      _showError(isPetugas
+          ? 'Alamat domisili / pos petugas wajib diisi'
+          : 'Alamat rumah wajib diisi');
       return;
     }
-    final familyCount = int.tryParse(_familySizeController.text.trim());
-    if (familyCount == null || familyCount < 1) {
+    final familyCount = isPetugas
+        ? 1
+        : int.tryParse(_familySizeController.text.trim());
+    if (!isPetugas && (familyCount == null || familyCount < 1)) {
       _showError('Jumlah anggota keluarga minimal 1');
       return;
     }
@@ -269,14 +283,22 @@ class _KomunitasOnboardingViewState
             kelurahan: _selectedKelurahan,
             rw: _selectedRw != null ? 'RW $_selectedRw' : null,
             familySize: familyCount,
+            role: targetRole,
           );
 
       if (ok && mounted) {
-        // Refresh profil untuk mendapatkan householdId terbaru
+        // Refresh profil untuk mendapatkan data terbaru
         await ref.read(authProvider.notifier).fetchProfile();
 
         if (mounted) {
-          Navigator.of(context).pushReplacementNamed(AppRoutes.ukurKapasitas);
+          if (isPetugas) {
+            Navigator.of(context).pushNamedAndRemoveUntil(
+              AppRoutes.dashboard,
+              (route) => false,
+            );
+          } else {
+            Navigator.of(context).pushReplacementNamed(AppRoutes.ukurKapasitas);
+          }
         }
       } else if (mounted) {
         _showError('Gagal memperbarui data. Silakan coba lagi.');
@@ -330,15 +352,17 @@ class _KomunitasOnboardingViewState
                               AppColors.primaryGreen.withValues(alpha: 0.2),
                         ),
                       ),
-                      child: const Row(
+                      child: Row(
                         children: [
-                          Icon(Icons.info_rounded,
+                          const Icon(Icons.info_rounded,
                               color: AppColors.primaryGreen, size: 20),
-                          SizedBox(width: 10),
+                          const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              'Lengkapi data wilayah Anda untuk bergabung komunitas Berseka dan mulai aktivasi Tempat Sampah.',
-                              style: TextStyle(
+                              _selectedRole == 'PETUGAS_PEMILAHAN'
+                                  ? 'Lengkapi data wilayah tugas Anda untuk bergabung komunitas Berseka sebagai Petugas Pemilah.'
+                                  : 'Lengkapi data wilayah Anda untuk bergabung komunitas Berseka dan mulai aktivasi Tempat Sampah.',
+                              style: const TextStyle(
                                   fontSize: 13,
                                   color: AppColors.primaryGreen),
                             ),
@@ -476,15 +500,55 @@ class _KomunitasOnboardingViewState
                     ),
                     const SizedBox(height: 16),
 
+                    // Peran di Komunitas
+                    _buildLabel('Peran di Komunitas'),
+                    const SizedBox(height: 6),
+                    DropdownButtonFormField<String>(
+                      initialValue: _selectedRole,
+                      isExpanded: true,
+                      decoration: _dropdownDecoration().copyWith(
+                        prefixIcon: const Icon(
+                          Icons.badge_outlined,
+                          color: AppColors.textSecondary,
+                          size: 20,
+                        ),
+                      ),
+                      hint: const Text('Pilih Peran', style: TextStyle(fontSize: 14)),
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'WARGA',
+                          child: Text('Warga'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'PETUGAS_PEMILAHAN',
+                          child: Text('Petugas Pemilah'),
+                        ),
+                      ],
+                      onChanged: (val) {
+                        if (val != null) {
+                          setState(() {
+                            _selectedRole = val;
+                          });
+                        }
+                      },
+                      validator: (v) =>
+                          (v == null || v.isEmpty) ? 'Peran wajib dipilih' : null,
+                    ),
+                    const SizedBox(height: 12),
+
                     // Alamat
-                    _buildLabel('Alamat Rumah'),
+                    _buildLabel(_selectedRole == 'PETUGAS_PEMILAHAN'
+                        ? 'Alamat Domisili / Pos Petugas'
+                        : 'Alamat Rumah'),
                     const SizedBox(height: 6),
                     TextFormField(
                       controller: _alamatController,
                       textCapitalization: TextCapitalization.sentences,
                       maxLines: 2,
                       decoration: InputDecoration(
-                        hintText: 'Contoh: Jl. Merdeka No. 10',
+                        hintText: _selectedRole == 'PETUGAS_PEMILAHAN'
+                            ? 'Contoh: Jl. Merdeka No. 10 / Pos RW 02'
+                            : 'Contoh: Jl. Merdeka No. 10',
                         hintStyle: const TextStyle(fontSize: 14),
                         filled: true,
                         fillColor: const Color(0xFFF8FAFC),
@@ -502,46 +566,53 @@ class _KomunitasOnboardingViewState
                         ),
                       ),
                       validator: (v) => (v == null || v.trim().isEmpty)
-                          ? 'Alamat wajib diisi'
+                          ? (_selectedRole == 'PETUGAS_PEMILAHAN'
+                              ? 'Alamat domisili / pos petugas wajib diisi'
+                              : 'Alamat rumah wajib diisi')
                           : null,
                     ),
                     const SizedBox(height: 12),
 
-                    // Jumlah Keluarga
-                    _buildLabel('Jumlah Anggota Keluarga'),
-                    const SizedBox(height: 6),
-                    TextFormField(
-                      controller: _familySizeController,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      decoration: InputDecoration(
-                        hintText: 'Contoh: 4',
-                        hintStyle: const TextStyle(fontSize: 14),
-                        filled: true,
-                        fillColor: const Color(0xFFF8FAFC),
-                        prefixIcon: const Icon(Icons.people_outline_rounded,
-                            color: AppColors.textSecondary, size: 20),
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide:
-                              const BorderSide(color: Color(0xFFE2E8F0)),
+                    // Jumlah Keluarga (hanya untuk Warga)
+                    if (_selectedRole == 'WARGA') ...[
+                      _buildLabel('Jumlah Anggota Keluarga'),
+                      const SizedBox(height: 6),
+                      TextFormField(
+                        controller: _familySizeController,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                        decoration: InputDecoration(
+                          hintText: 'Contoh: 4',
+                          hintStyle: const TextStyle(fontSize: 14),
+                          filled: true,
+                          fillColor: const Color(0xFFF8FAFC),
+                          prefixIcon: const Icon(Icons.people_outline_rounded,
+                              color: AppColors.textSecondary, size: 20),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide:
+                                const BorderSide(color: Color(0xFFE2E8F0)),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                                color: AppColors.primaryGreen, width: 1.5),
+                          ),
                         ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                              color: AppColors.primaryGreen, width: 1.5),
-                        ),
+                        validator: (v) {
+                          if (_selectedRole != 'WARGA') return null;
+                          if (v == null || v.trim().isEmpty) return 'Wajib diisi';
+                          final n = int.tryParse(v.trim());
+                          if (n == null || n < 1) return 'Minimal 1';
+                          return null;
+                        },
                       ),
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) return 'Wajib diisi';
-                        final n = int.tryParse(v.trim());
-                        if (n == null || n < 1) return 'Minimal 1';
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 28),
+                      const SizedBox(height: 28),
+                    ] else ...[
+                      const SizedBox(height: 20),
+                    ],
 
                     // Tombol Submit
                     SizedBox(
@@ -564,15 +635,19 @@ class _KomunitasOnboardingViewState
                                 child: CircularProgressIndicator(
                                     strokeWidth: 2, color: Colors.white),
                               )
-                            : const Row(
+                            : Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Text('Bergabung & Aktivasi',
-                                      style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w700)),
-                                  SizedBox(width: 8),
-                                  Icon(Icons.arrow_forward_rounded, size: 20),
+                                  Text(
+                                    _selectedRole == 'PETUGAS_PEMILAHAN'
+                                        ? 'Bergabung sebagai Petugas'
+                                        : 'Bergabung & Aktivasi Tempat Sampah',
+                                    style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Icon(Icons.arrow_forward_rounded, size: 20),
                                 ],
                               ),
                       ),

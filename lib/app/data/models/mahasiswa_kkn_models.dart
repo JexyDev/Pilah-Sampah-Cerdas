@@ -933,17 +933,22 @@ class KelompokKknData extends Equatable {
   final String dplNip;
   final String dplPhone;
   final String poskoLocation;
-  final int totalGroupPoints;
+  final double totalGroupPoints;
   final List<KelompokMemberData> members;
   final List<String> cakupanRw;
 
   /// Link Google Drive folder kelompok, null jika belum diset Admin.
   final String? linkGoogleDrive;
 
-  /// Penjumlahan Poin Kelompok (Fallback Client-Side Sum)
-  int get calculatedTotalPoints {
-    if (totalGroupPoints > 0) return totalGroupPoints;
-    return members.fold(0, (sum, m) => sum + m.individualPoints);
+  /// Poin Kelompok bersumber langsung dari perhitungan terbobot backend API (60% Proker + 40% Rata-rata Anggota)
+  double get calculatedTotalPoints => totalGroupPoints;
+
+  /// Format teks angka poin kelompok: tampilkan tanpa desimal jika bulat (misal 14), atau 1 desimal jika pecahan (misal 14.4)
+  String get formattedTotalPoints {
+    if (totalGroupPoints % 1 == 0) {
+      return totalGroupPoints.toInt().toString();
+    }
+    return totalGroupPoints.toStringAsFixed(1);
   }
 
   factory KelompokKknData.fromJson(Map<String, dynamic> json) {
@@ -1070,9 +1075,9 @@ class KelompokKknData extends Equatable {
           json['kelurahan']?.toString() ??
           '-',
       totalGroupPoints:
-          (json['totalGroupPoints'] as num?)?.toInt() ??
-          (json['totalPoints'] as num?)?.toInt() ??
-          0,
+          (json['totalGroupPoints'] as num?)?.toDouble() ??
+          (json['totalPoints'] as num?)?.toDouble() ??
+          0.0,
       members: membersList,
       linkGoogleDrive: driveUrl,
       cakupanRw: parsedCakupan,

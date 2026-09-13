@@ -259,6 +259,16 @@ class AktivasiBinNotifier extends StateNotifier<AktivasiBinState> {
     double? longitude,
     required double orgCapacity,
     required double anorgCapacity,
+    String? orgShape,
+    double? orgDiameter,
+    double? orgHeight,
+    double? orgLength,
+    double? orgWidth,
+    String? anorgShape,
+    double? anorgDiameter,
+    double? anorgHeight,
+    double? anorgLength,
+    double? anorgWidth,
   }) async {
     state = const AktivasiBinState(isLoading: true);
     try {
@@ -276,12 +286,17 @@ class AktivasiBinNotifier extends StateNotifier<AktivasiBinState> {
         longitude: longitude,
       );
 
-      // Panggil measureBin sesuai parameter tanpa menebak string
+      // Panggil measureBin lengkap dengan atribut dimensi fisik
       if (qrOrganik != null && qrOrganik.isNotEmpty) {
         await _binRepository.measureBin(
           qrCode: qrOrganik,
           binType: WasteType.organic,
           maxCapacityLiter: orgCapacity,
+          shape: orgShape,
+          diameter: orgDiameter,
+          height: orgHeight,
+          length: orgLength,
+          width: orgWidth,
         );
       }
 
@@ -290,6 +305,11 @@ class AktivasiBinNotifier extends StateNotifier<AktivasiBinState> {
           qrCode: qrAnorganik,
           binType: WasteType.nonOrganic,
           maxCapacityLiter: anorgCapacity,
+          shape: anorgShape,
+          diameter: anorgDiameter,
+          height: anorgHeight,
+          length: anorgLength,
+          width: anorgWidth,
         );
       }
       state = AktivasiBinState(

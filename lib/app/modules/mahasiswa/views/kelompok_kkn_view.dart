@@ -395,7 +395,7 @@ class KelompokKknView extends ConsumerWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              '${kelompokData.calculatedTotalPoints} Poin',
+                              '${kelompokData.formattedTotalPoints} Poin',
                               style: const TextStyle(
                                 fontSize: 26,
                                 fontWeight: FontWeight.w800,
@@ -404,9 +404,9 @@ class KelompokKknView extends ConsumerWidget {
                               ),
                             ),
                             const SizedBox(height: 2),
-                            Text(
-                              'Penjumlahan poin individu ${membersToDisplay.length} anggota kelompok',
-                              style: const TextStyle(
+                            const Text(
+                              'Akumulasi 60% Program Kerja dan 40% Rata-rata Poin Anggota',
+                              style: TextStyle(
                                 fontSize: 11,
                                 color: Colors.black45,
                               ),

@@ -2,14 +2,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_app_sampah/app/data/models/kelompok_mahasiswa_models.dart';
 
 void main() {
-  group('Akumulasi Poin Kelompok Mahasiswa (A.12)', () {
+  group('Poin Kelompok Mahasiswa KKN (Formula Resmi Backend: 60% Proker + 40% Rata-rata Anggota)', () {
     test(
-      'SUM poin individu anggota menghasilkan total poin kelompok yang tepat',
+      'Kalkulasi terbobot 60% Proker + 40% Rata-rata Anggota menghasilkan nilai yang akurat',
       () {
         const kelompok1 = KelompokMahasiswaLeaderboardEntity(
           kelompokId: 'K01',
           namaKelompok: 'Kelompok KKN 01 - Coblong',
           namaDpl: 'Dr. Ir. Ahmad, M.T.',
+          poinProker: 10,
           anggota: [
             MahasiswaAnggotaEntity(
               id: 'm1',
@@ -35,62 +36,50 @@ void main() {
           ],
         );
 
-        // Verify SUM calculation: 150 + 200 + 100 = 450
-        expect(kelompok1.totalPoinKelompok, equals(450));
+        // Rata-rata anggota = (150 + 200 + 100) / 3 = 150.0
+        // Poin Proker = 10 * 0.6 = 6.0
+        // Rata-rata Anggota = 150 * 0.4 = 60.0
+        // Total Poin Kelompok = 6.0 + 60.0 = 66.0
+        expect(kelompok1.rataRataPoinAnggota, equals(150.0));
+        expect(kelompok1.totalPoinKelompok, equals(66.0));
       },
     );
+
+    test('Poin kelompok mengutamakan nilai langsung dari backend API jika tersedia', () {
+      const kelompokWithBackend = KelompokMahasiswaLeaderboardEntity(
+        kelompokId: 'K01',
+        namaKelompok: 'Kelompok KKN 01 - Coblong',
+        namaDpl: 'Dr. Ir. Ahmad, M.T.',
+        totalPoinBackend: 84.5,
+        anggota: [],
+      );
+
+      expect(kelompokWithBackend.totalPoinKelompok, equals(84.5));
+    });
 
     test('Leaderboard kelompok terurut berdasarkan total poin terbanyak', () {
       const k01 = KelompokMahasiswaLeaderboardEntity(
         kelompokId: 'K01',
         namaKelompok: 'Kelompok 01',
         namaDpl: 'DPL 1',
-        anggota: [
-          MahasiswaAnggotaEntity(
-            id: 'm1',
-            nim: '111',
-            nama: 'A',
-            kelompokId: 'K01',
-            poinIndividu: 100,
-          ),
-          MahasiswaAnggotaEntity(
-            id: 'm2',
-            nim: '112',
-            nama: 'B',
-            kelompokId: 'K01',
-            poinIndividu: 50,
-          ),
-        ], // Total = 150
+        totalPoinBackend: 45.0,
+        anggota: [],
       );
 
       const k02 = KelompokMahasiswaLeaderboardEntity(
         kelompokId: 'K02',
         namaKelompok: 'Kelompok 02',
         namaDpl: 'DPL 2',
-        anggota: [
-          MahasiswaAnggotaEntity(
-            id: 'm3',
-            nim: '221',
-            nama: 'C',
-            kelompokId: 'K02',
-            poinIndividu: 300,
-          ),
-          MahasiswaAnggotaEntity(
-            id: 'm4',
-            nim: '222',
-            nama: 'D',
-            kelompokId: 'K02',
-            poinIndividu: 200,
-          ),
-        ], // Total = 500
+        totalPoinBackend: 88.5,
+        anggota: [],
       );
 
       final sorted = sortGroupLeaderboard([k01, k02]);
 
       expect(sorted.first.kelompokId, equals('K02'));
-      expect(sorted.first.totalPoinKelompok, equals(500));
+      expect(sorted.first.totalPoinKelompok, equals(88.5));
       expect(sorted.last.kelompokId, equals('K01'));
-      expect(sorted.last.totalPoinKelompok, equals(150));
+      expect(sorted.last.totalPoinKelompok, equals(45.0));
     });
   });
 }

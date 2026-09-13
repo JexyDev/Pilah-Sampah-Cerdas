@@ -27,20 +27,40 @@ class KelompokMahasiswaLeaderboardEntity extends Equatable {
     required this.namaKelompok,
     required this.namaDpl,
     required this.anggota,
+    this.poinProker = 0,
+    this.totalPoinBackend,
   });
 
   final String kelompokId;
   final String namaKelompok;
   final String namaDpl;
   final List<MahasiswaAnggotaEntity> anggota;
+  final int poinProker;
+  final double? totalPoinBackend;
 
-  /// Akumulasi Poin Kelompok = SUM(poin individu seluruh anggota) (A.12)
-  int get totalPoinKelompok {
-    return anggota.fold<int>(0, (sum, item) => sum + item.poinIndividu);
+  /// Rata-rata Poin Anggota Kelompok
+  double get rataRataPoinAnggota {
+    if (anggota.isEmpty) return 0.0;
+    final totalIndividu =
+        anggota.fold<int>(0, (sum, item) => sum + item.poinIndividu);
+    return totalIndividu / anggota.length;
+  }
+
+  /// Formula Resmi Backend: (Poin Proker * 0.6) + (Rata-rata Poin Anggota * 0.4)
+  double get totalPoinKelompok {
+    if (totalPoinBackend != null) return totalPoinBackend!;
+    final score = (poinProker * 0.6) + (rataRataPoinAnggota * 0.4);
+    return double.parse(score.toStringAsFixed(1));
   }
 
   @override
-  List<Object?> get props => [kelompokId, totalPoinKelompok, anggota];
+  List<Object?> get props => [
+    kelompokId,
+    totalPoinKelompok,
+    anggota,
+    poinProker,
+    totalPoinBackend,
+  ];
 }
 
 /// Helper function untuk kalkulasi dan pemeringkatan Leaderboard Kelompok

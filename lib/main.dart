@@ -30,6 +30,8 @@ import 'app/modules/mahasiswa/controllers/riwayat_kkn_controller.dart';
 import 'app/modules/notifikasi/controllers/warga_notifikasi_controller.dart';
 import 'app/modules/mahasiswa/controllers/mahasiswa_notifikasi_controller.dart';
 import 'app/modules/petugas_pemilahan/controllers/petugas_pemilahan_notifikasi_controller.dart';
+import 'app/modules/petugas_pemilahan/controllers/petugas_pemilahan_controller.dart';
+import 'app/modules/mahasiswa/controllers/kelompok_kkn_controller.dart';
 import 'app/modules/auth/controllers/auth_controller.dart';
 import 'app/data/services/local_notification_cache_service.dart';
 import 'app/data/services/firebase_notification_service.dart';
@@ -227,16 +229,32 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
             ref.invalidate(prokerDataListProvider);
             ref.invalidate(mahasiswaNotificationsProvider);
             debugPrint('-> Mahasiswa proker providers invalidated.');
+          } else if (event == 'REFRESH_POIN_MAHASISWA') {
+            ref.invalidate(mahasiswaNotificationsProvider);
+            ref.invalidate(pointHistoryProvider);
+            ref.invalidate(totalPointsProvider);
+            ref.invalidate(dailyPointsProvider);
+            ref.invalidate(mahasiswaControllerProvider);
+            ref.invalidate(kelompokKknProvider);
+            debugPrint('-> Mahasiswa point providers invalidated.');
           } else if (event == 'REFRESH_IZIN_MAHASISWA' ||
-              event == 'REFRESH_POIN_MAHASISWA' ||
               event == 'REFRESH_PRESENSI_MAHASISWA') {
             ref.invalidate(mahasiswaNotificationsProvider);
+            ref.invalidate(mahasiswaControllerProvider);
+            ref.invalidate(riwayatKknControllerProvider);
             debugPrint('-> Mahasiswa providers refresh event received: $event');
+          } else if (event == 'REFRESH_POIN_PETUGAS' ||
+              event == 'REFRESH_PETUGAS') {
+            ref.invalidate(petugasPemilahanNotificationsProvider);
+            ref.invalidate(petugasPemilahanControllerProvider);
+            ref.invalidate(petugasPointHistoryProvider);
+            debugPrint('-> Petugas providers invalidated.');
           } else if (event == 'MULTI_POSKO_UPDATED') {
             debugPrint(
               '-> Multi-Posko Updated event received. Delegating to KknLocationController/KelompokController if active.',
             );
-            // Jika diperlukan, bisa di-invalidate atau call re-sync posko di sini
+            ref.invalidate(kelompokKknProvider);
+            ref.invalidate(kknLocationProvider);
           }
           return;
         }
@@ -316,14 +334,19 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
         // Jika FCM membawa data payload event, invalidate provider terkait
         // agar data di Beranda, Riwayat, dan Poin langsung segar.
         final event = message.data['event'] as String?;
-        if (event == 'TRANSACTION_SUCCESS') {
+        if (event == 'TRANSACTION_SUCCESS' || isPoin) {
           ref.invalidate(wasteLogsProvider);
           ref.invalidate(totalPointsProvider);
           ref.invalidate(pointHistoryProvider);
           ref.invalidate(dailyPointsProvider);
           ref.invalidate(binsProvider);
+          ref.invalidate(mahasiswaControllerProvider);
+          ref.invalidate(kelompokKknProvider);
+          ref.invalidate(petugasPemilahanControllerProvider);
+          ref.invalidate(petugasPointHistoryProvider);
         } else if (event == 'BIN_EMPTIED' || event == 'RESET_APPROVED') {
           ref.invalidate(binsProvider);
+          ref.invalidate(petugasPemilahanControllerProvider);
         } else if (event == 'REFRESH_KEGIATAN_MAHASISWA') {
           ref.invalidate(riwayatKknControllerProvider);
           ref.invalidate(logbookListProvider);
@@ -331,6 +354,18 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
         } else if (event == 'REFRESH_PROKER_MAHASISWA') {
           ref.invalidate(prokerDataListProvider);
           ref.invalidate(mahasiswaNotificationsProvider);
+        } else if (event == 'REFRESH_POIN_MAHASISWA') {
+          ref.invalidate(mahasiswaNotificationsProvider);
+          ref.invalidate(pointHistoryProvider);
+          ref.invalidate(totalPointsProvider);
+          ref.invalidate(dailyPointsProvider);
+          ref.invalidate(mahasiswaControllerProvider);
+          ref.invalidate(kelompokKknProvider);
+        } else if (event == 'REFRESH_POIN_PETUGAS' ||
+            event == 'REFRESH_PETUGAS') {
+          ref.invalidate(petugasPemilahanNotificationsProvider);
+          ref.invalidate(petugasPemilahanControllerProvider);
+          ref.invalidate(petugasPointHistoryProvider);
         }
       });
 

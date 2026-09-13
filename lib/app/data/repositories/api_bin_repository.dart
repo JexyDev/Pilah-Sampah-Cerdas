@@ -916,6 +916,11 @@ class ApiBinRepository implements BinRepository {
     required String qrCode,
     required WasteType binType,
     required double maxCapacityLiter,
+    String? shape,
+    double? diameter,
+    double? length,
+    double? width,
+    double? height,
   }) async {
     try {
       await apiClient.dio.post(
@@ -924,6 +929,11 @@ class ApiBinRepository implements BinRepository {
           'qrCode': qrCode,
           'binType': binType == WasteType.organic ? 'ORGANIC' : 'NON_ORGANIC',
           'maxCapacityLiter': maxCapacityLiter,
+          if (shape != null) 'shape': shape,
+          if (diameter != null) 'diameter': diameter,
+          if (length != null) 'length': length,
+          if (width != null) 'width': width,
+          if (height != null) 'height': height,
         },
       );
     } on DioException catch (e) {
