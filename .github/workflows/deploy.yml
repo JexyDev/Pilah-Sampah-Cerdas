@@ -26,7 +26,7 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   validate:
@@ -99,7 +99,7 @@ jobs:
         run: |
           for i in 1 2 3; do
             echo "Attempt $i to upload frontend archive..."
-            sshpass -p "$VPS_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=3 -o PreferredAuthentications=password -o PubkeyAuthentication=no apps/web/dist.tar.gz "$VPS_USER@$VPS_HOST:/tmp/frontend-dist.tar.gz" && break || sleep 3
+            timeout 60s sshpass -p "$VPS_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=20 -o ServerAliveInterval=10 -o ServerAliveCountMax=2 -o PreferredAuthentications=password -o PubkeyAuthentication=no apps/web/dist.tar.gz "$VPS_USER@$VPS_HOST:/tmp/frontend-dist.tar.gz" && break || sleep 3
           done || echo "WARNING: SCP upload timed out, will build directly on VPS..."
 
       - name: Update Backend & Deploy Web on VPS
