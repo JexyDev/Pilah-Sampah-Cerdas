@@ -55,6 +55,7 @@ export const KelompokQrDistributionTab: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>("SEMUA");
   const [gdriveFilter, setGdriveFilter] = useState<string>("ALL");
   const [kelurahanFilter, setKelurahanFilter] = useState<string>("SEMUA");
+  const [rwFilter, setRwFilter] = useState<string>("SEMUA");
 
   // Inline editing GDrive
   const [editingGdriveId, setEditingGdriveId] = useState<string | null>(null);
@@ -113,16 +114,54 @@ export const KelompokQrDistributionTab: React.FC = () => {
     return Array.from(setK).sort();
   }, [data]);
 
+  // Unique RW list for dropdown
+  const uniqueRws = useMemo(() => {
+    const setRw = new Set<string>();
+    data.forEach((k) => {
+      if (kelurahanFilter !== "SEMUA" && k.kelurahan && !k.kelurahan.toLowerCase().includes(kelurahanFilter.toLowerCase())) {
+        return;
+      }
+      if (k.cakupanRw) {
+        try {
+          const parsed = typeof k.cakupanRw === "string" ? JSON.parse(k.cakupanRw) : k.cakupanRw;
+          if (Array.isArray(parsed)) {
+            parsed.forEach((r: any) => setRw.add(String(r).padStart(2, "0")));
+          } else {
+            setRw.add(String(parsed).padStart(2, "0"));
+          }
+        } catch {}
+      }
+    });
+    return Array.from(setRw).sort((a, b) => Number(a) - Number(b));
+  }, [data, kelurahanFilter]);
+
+  // Filtered data by RW on client
+  const filteredData = useMemo(() => {
+    if (rwFilter === "SEMUA") return data;
+    return data.filter((item) => {
+      if (!item.cakupanRw) return false;
+      try {
+        const parsed = typeof item.cakupanRw === "string" ? JSON.parse(item.cakupanRw) : item.cakupanRw;
+        if (Array.isArray(parsed)) {
+          return parsed.some((r: any) => String(r).padStart(2, "0") === rwFilter.padStart(2, "0"));
+        }
+        return String(parsed).padStart(2, "0") === rwFilter.padStart(2, "0");
+      } catch {
+        return false;
+      }
+    });
+  }, [data, rwFilter]);
+
   // Statistics calculation
   const stats = useMemo(() => {
-    const total = data.length;
-    const siapUnduh = data.filter((k) => k.statusDistribusi === "SIAP_UNDUH").length;
-    const sudahUnduh = data.filter((k) => k.statusDistribusi === "SUDAH_DIUNDUH").length;
-    const belumGenerate = data.filter((k) => k.statusDistribusi === "BELUM_GENERATE").length;
-    const tanpaGdrive = data.filter((k) => !k.linkGoogleDrive).length;
+    const total = filteredData.length;
+    const siapUnduh = filteredData.filter((k) => k.statusDistribusi === "SIAP_UNDUH").length;
+    const sudahUnduh = filteredData.filter((k) => k.statusDistribusi === "SUDAH_DIUNDUH").length;
+    const belumGenerate = filteredData.filter((k) => k.statusDistribusi === "BELUM_GENERATE").length;
+    const tanpaGdrive = filteredData.filter((k) => !k.linkGoogleDrive).length;
 
     return { total, siapUnduh, sudahUnduh, belumGenerate, tanpaGdrive };
-  }, [data]);
+  }, [filteredData]);
 
   // Action: Generate 20 QR Bundle
   const handleGenerate10Qr = async (kelompok: KelompokDistributionItem) => {
@@ -321,9 +360,9 @@ export const KelompokQrDistributionTab: React.FC = () => {
             </div>
           </div>
 
-          {/* Filters Bar */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
-            {/* Search Input */}
+          {/* Filters Bar: Search ➔ Kelurahan ➔ RW ➔ Status Distribusi ➔ Link GDrive */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-1">
+            {/* 1. Search Input */}
             <form onSubmit={handleSearchSubmit} className="relative">
               <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
               <input
@@ -335,7 +374,44 @@ export const KelompokQrDistributionTab: React.FC = () => {
               />
             </form>
 
-            {/* Filter Status Distribusi */}
+            {/* 2. Filter Kelurahan */}
+            <div className="flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5">
+              <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <select
+                value={kelurahanFilter}
+                onChange={(e) => {
+                  setKelurahanFilter(e.target.value);
+                  setRwFilter("SEMUA");
+                }}
+                className="w-full text-xs bg-transparent text-slate-700 dark:text-slate-200 outline-hidden font-medium cursor-pointer"
+              >
+                <option value="SEMUA">Semua Kelurahan</option>
+                {uniqueKelurahans.map((kel) => (
+                  <option key={kel} value={kel}>
+                    {kel}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* 3. Filter RW */}
+            <div className="flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5">
+              <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <select
+                value={rwFilter}
+                onChange={(e) => setRwFilter(e.target.value)}
+                className="w-full text-xs bg-transparent text-slate-700 dark:text-slate-200 outline-hidden font-medium cursor-pointer"
+              >
+                <option value="SEMUA">Semua RW</option>
+                {uniqueRws.map((rw) => (
+                  <option key={rw} value={rw}>
+                    RW {rw}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* 4. Filter Status Distribusi */}
             <div className="flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5">
               <Filter className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               <select
@@ -350,7 +426,7 @@ export const KelompokQrDistributionTab: React.FC = () => {
               </select>
             </div>
 
-            {/* Filter Google Drive Link */}
+            {/* 5. Filter Google Drive Link */}
             <div className="flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5">
               <Link2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               <select
@@ -363,36 +439,19 @@ export const KelompokQrDistributionTab: React.FC = () => {
                 <option value="NO">Belum Ada Link GDrive</option>
               </select>
             </div>
-
-            {/* Filter Kelurahan */}
-            <div className="flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5">
-              <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-              <select
-                value={kelurahanFilter}
-                onChange={(e) => setKelurahanFilter(e.target.value)}
-                className="w-full text-xs bg-transparent text-slate-700 dark:text-slate-200 outline-hidden font-medium cursor-pointer"
-              >
-                <option value="SEMUA">Semua Kelurahan</option>
-                {uniqueKelurahans.map((kel) => (
-                  <option key={kel} value={kel}>
-                    {kel}
-                  </option>
-                ))}
-              </select>
-            </div>
           </div>
         </div>
 
         {/* Table Content */}
         <div className="overflow-x-auto">
-          {loading && data.length === 0 ? (
+          {loading && filteredData.length === 0 ? (
             <div className="p-12 text-center text-slate-400 space-y-2">
               <RefreshCw className="w-8 h-8 animate-spin mx-auto text-emerald-600 mb-2" />
               <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                 Memuat data distribusi kelompok KKN...
               </p>
             </div>
-          ) : data.length === 0 ? (
+          ) : filteredData.length === 0 ? (
             <div className="p-8">
               <EmptyTableState
                 icon={<FolderArchive className="w-12 h-12 text-slate-300 dark:text-slate-600" />}
@@ -414,7 +473,7 @@ export const KelompokQrDistributionTab: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-normal text-slate-700 dark:text-slate-300">
-                {data.map((item, idx) => {
+                {filteredData.map((item, idx) => {
                   const isComplete = item.totalBins >= 20;
                   const isGenerating = generatingId === item.id;
                   const isDownloading = downloadingZipId === item.id;

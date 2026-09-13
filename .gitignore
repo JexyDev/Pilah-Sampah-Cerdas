@@ -74,6 +74,7 @@ deploy_*.js
 deploy_*.cjs
 check_*.js
 sync_*.js
+scripts/db_tunnel.cjs
 scripts/vps/
 scripts/tools/*
 !scripts/tools/safety_guard.cjs

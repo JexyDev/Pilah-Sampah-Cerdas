@@ -41,6 +41,7 @@ const MasterDatasetKlasifikasi = React.lazy(() => import("../pages/MasterDataset
 const Notifikasi = React.lazy(() => import("../pages/Notifikasi/Notifikasi"));
 const Pengaturan = React.lazy(() => import("../pages/Pengaturan/Pengaturan"));
 const SimulasiModelAI = React.lazy(() => import("../pages/SimulasiModelAI/SimulasiModelAI"));
+const BersekaVisionAIPage = React.lazy(() => import("../pages/BersekaVisionAI/BersekaVisionAIPage"));
 const PenggunaOnline = React.lazy(() => import("../pages/PenggunaOnline/PenggunaOnline"));
 const SetorSampah = React.lazy(() => import("../pages/SetorSampah/SetorSampah"));
 const KknDashboard = React.lazy(() => import("../pages/KknDashboard/KknDashboard"));
@@ -243,6 +244,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/dashboard" element={<Navigate to="/dasbor" replace />} />
         <Route path="/dasbor-kkn-eksekutif" element={<Navigate to="/dasbor?tab=kkn" replace />} />
         <Route path="/dashboard-eksekutif-kkn" element={<Navigate to="/dasbor?tab=kkn" replace />} />
+        <Route path="/dasbor-tata-kelola-sampah" element={<Navigate to="/dasbor?tab=tata-kelola-sampah" replace />} />
         <Route path="/manajemen-lokasi" element={<Navigate to="/master-data/rukun-warga" replace />} />
         <Route path="/setor" element={<Navigate to="/penyetoran-sampah" replace />} />
         <Route
@@ -715,6 +717,7 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
+        <Route path="/berseka-vision-ai" element={<BersekaVisionAIPage />} />
         <Route path="/panduan" element={<PanduanPage />} />
         <Route
           path="/manajemen-ekosistem-kkn"

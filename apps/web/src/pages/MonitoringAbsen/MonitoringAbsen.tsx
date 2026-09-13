@@ -71,14 +71,10 @@ import { dplService, type ConfigTargets } from "../../services/dplService";
 import { wsClient } from "../../utils/websocket";
 import { ModalPresensiCrud, type AttendanceRecordForCrud } from "./ModalPresensiCrud";
 import {
-  toTitleCase,
   formatPersonName,
-  formatKelompokName,
   formatWilayahName,
-  formatProdiName,
-  formatStatusName,
 } from "../../utils/textFormatter";
-import { sortNatural, sortKelompokList, extractGroupNumber } from "../../utils/sortUtils";
+import { sortNatural, sortKelompokList } from "../../utils/sortUtils";
 import {
   KELURAHAN_GEODATA,
   createKknMhsIcon as createStudentIcon,
@@ -86,6 +82,15 @@ import {
   createFacilityIcon,
   formatKelompokDisplayName,
 } from "../../constants/coblongGeoData";
+import {
+  formatRwLabel,
+  isKelurahanMatching,
+  isKelompokCoveringRw,
+  getRwOptionsForKelurahan,
+  fetchMasterWilayah,
+  type MasterKelurahanItem,
+  type MasterRwItem,
+} from "../../utils/areaFilterUtils";
 
 // Fix Leaflet default icon issues in Vite
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -255,6 +260,7 @@ interface StudentLoc {
   latitude: string;
   longitude: string;
   recordedAt: string;
+  kelompokId?: string;
   student: {
     id: string;
     name: string;
@@ -263,6 +269,12 @@ interface StudentLoc {
     studentProfile?: {
       nim: string;
       jurusan: string;
+      kelompokId?: string;
+      kelompok?: {
+        id: string;
+        name: string;
+        kelurahan?: string;
+      };
     };
   };
 }
@@ -280,6 +292,9 @@ interface AttendanceRecord {
   statusDisplay?: string;
   isMemenuhiDurasi?: boolean;
   actualInZoneMinutes?: number;
+  deskripsiKegiatan?: string | null;
+  fotoUrl?: string | null;
+  jedaLogs?: any[];
   currentStatus:
     | "MASIH_DI_LOKASI"
     | "SUDAH_MENINGGALKAN_RADIUS"
@@ -294,6 +309,7 @@ interface AttendanceRecord {
   student: {
     id: string;
     name: string;
+    isKetua?: boolean;
     studentProfile?: {
       nim: string;
       jurusan: string;
@@ -503,14 +519,6 @@ const calculateDurationMinutes = (tmStr?: string, tsStr?: string) => {
   return Math.max(0, Math.min(480, diffMins));
 };
 
-const formatDurationText = (minutes: number) => {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  if (h === 0) return `${m} Menit`;
-  if (m === 0) return `${h} Jam`;
-  return `${h} Jam ${m} Menit`;
-};
-
 const getCenterFromSchedule = (sched?: ScheduleActivity): [number, number] => {
   if (!sched) return [-6.8915, 107.6107];
   if (sched.polygon && Array.isArray(sched.polygon) && sched.polygon.length > 0) {
@@ -626,6 +634,59 @@ const MonitoringAbsen: React.FC = () => {
     }
   };
 
+  const [groups, setGroups] = useState<any[]>([]);
+  const [selectedKelurahan, setSelectedKelurahan] = useState<string>("ALL");
+  const [selectedRw, setSelectedRw] = useState<string>("ALL");
+  const [masterKelurahanList, setMasterKelurahanList] = useState<MasterKelurahanItem[]>([]);
+  const [masterRwList, setMasterRwList] = useState<MasterRwItem[]>([]);
+
+  const rwOptions = useMemo(() => {
+    return getRwOptionsForKelurahan(selectedKelurahan, masterRwList);
+  }, [selectedKelurahan, masterRwList]);
+
+  const availableGroups = useMemo(() => {
+    return groups.filter((g) => {
+      if (selectedKelurahan !== "ALL" && !isKelurahanMatching(g.kelurahan, selectedKelurahan)) {
+        return false;
+      }
+      if (selectedRw !== "ALL" && !isKelompokCoveringRw(g, selectedRw)) {
+        return false;
+      }
+      return true;
+    });
+  }, [groups, selectedKelurahan, selectedRw]);
+
+  const handleSelectKelurahan = (kel: string) => {
+    setSelectedKelurahan(kel);
+    setSelectedRw("ALL");
+    if (selectedKelompokId) {
+      const cur = groups.find((g) => g.id === selectedKelompokId);
+      if (cur && kel !== "ALL" && !isKelurahanMatching(cur.kelurahan, kel)) {
+        handleSelectKelompok("");
+      }
+    }
+  };
+
+  const handleSelectRw = (rwVal: string) => {
+    setSelectedRw(rwVal);
+    if (selectedKelompokId) {
+      const cur = groups.find((g) => g.id === selectedKelompokId);
+      if (cur && rwVal !== "ALL" && !isKelompokCoveringRw(cur, rwVal)) {
+        handleSelectKelompok("");
+      }
+    }
+  };
+
+  const handleSelectKelompokCascaded = (id: string) => {
+    handleSelectKelompok(id);
+    if (id) {
+      const cur = groups.find((g) => g.id === id);
+      if (cur?.kelurahan && selectedKelurahan === "ALL") {
+        setSelectedKelurahan(cur.kelurahan);
+      }
+    }
+  };
+
   const [schedules, setSchedules] = useState<ScheduleActivity[]>([]);
   const [selectedScheduleId, setSelectedScheduleId] = useState<string>("");
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
@@ -672,7 +733,6 @@ const MonitoringAbsen: React.FC = () => {
   const [endDate, setEndDate] = useState<string>("");
   const [startTime, setStartTime] = useState<string>("08:00");
   const [endTime, setEndTime] = useState<string>("12:00");
-  const [groups, setGroups] = useState<any[]>([]);
   const [facilities, setFacilities] = useState<any[]>([]);
   const [selectedPos, setSelectedPos] = useState<[number, number][]>([]);
   const [deleteScheduleId, setDeleteScheduleId] = useState<string | null>(null);
@@ -1357,6 +1417,10 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     fetchGroups();
     fetchFacilities();
     fetchConfigTargets();
+    fetchMasterWilayah().then(({ kelurahans, rws }) => {
+      setMasterKelurahanList(kelurahans);
+      setMasterRwList(rws);
+    });
   }, []);
 
   const [syncingSchedules, setSyncingSchedules] = useState(false);
@@ -2445,23 +2509,81 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             </div>
           )}
 
-          {/* Filter Kelompok KKN (Multi-Tenant Selector untuk Developer / Super User / DLH / Camat) */}
+          {/* Filter Wilayah & Kelompok Berjenjang: Kelurahan ➔ RW ➔ Kelompok KKN */}
           {!isDpl ? (
-            <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs w-full sm:w-auto min-w-0">
-              <Users size={14} className="text-emerald-600 shrink-0" />
-              <span className="text-[11px] font-bold text-slate-500 shrink-0">Kelompok:</span>
-              <select
-                value={selectedKelompokId}
-                onChange={(e) => handleSelectKelompok(e.target.value)}
-                className="bg-transparent text-xs font-black text-slate-800 dark:text-slate-100 outline-none cursor-pointer pr-1 w-full sm:w-auto sm:max-w-[220px] truncate min-w-0"
-              >
-                <option value="">Semua Kelompok (Seluruh Wilayah)</option>
-                {groups.map((g) => (
-                  <option key={g.id} value={g.id}>
-                    {formatKelompokDisplayName(g)}
-                  </option>
-                ))}
-              </select>
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+              {/* 1. Kelurahan */}
+              <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/80 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+                <MapPin size={13} className="text-emerald-600 shrink-0" />
+                <span className="text-[11px] font-bold text-slate-500 shrink-0">Kel:</span>
+                <select
+                  value={selectedKelurahan}
+                  onChange={(e) => handleSelectKelurahan(e.target.value)}
+                  className="bg-transparent text-xs font-black text-slate-800 dark:text-slate-100 outline-none cursor-pointer pr-1 max-w-[130px] truncate"
+                  title="Pilih Kelurahan"
+                >
+                  <option value="ALL">Semua Kelurahan</option>
+                  {masterKelurahanList.map((k) => (
+                    <option key={k.id} value={k.name}>
+                      Kel. {formatWilayahName(k.name)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 2. RW */}
+              <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/80 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+                <Home size={13} className="text-emerald-600 shrink-0" />
+                <span className="text-[11px] font-bold text-slate-500 shrink-0">RW:</span>
+                <select
+                  value={selectedRw}
+                  onChange={(e) => handleSelectRw(e.target.value)}
+                  className="bg-transparent text-xs font-black text-slate-800 dark:text-slate-100 outline-none cursor-pointer pr-1 max-w-[110px] truncate"
+                  title="Pilih RW"
+                >
+                  <option value="ALL">Semua RW</option>
+                  {rwOptions.map((rw) => (
+                    <option key={rw} value={rw}>
+                      {formatRwLabel(rw)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 3. Kelompok KKN */}
+              <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/80 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs min-w-0">
+                <Users size={13} className="text-emerald-600 shrink-0" />
+                <span className="text-[11px] font-bold text-slate-500 shrink-0">Kelompok:</span>
+                <select
+                  value={selectedKelompokId}
+                  onChange={(e) => handleSelectKelompokCascaded(e.target.value)}
+                  className="bg-transparent text-xs font-black text-slate-800 dark:text-slate-100 outline-none cursor-pointer pr-1 max-w-[160px] sm:max-w-[200px] truncate min-w-0"
+                  title="Pilih Kelompok KKN"
+                >
+                  <option value="">Semua Kelompok</option>
+                  {availableGroups.map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {formatKelompokDisplayName(g)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Reset filter wilayah if any active */}
+              {(selectedKelurahan !== "ALL" || selectedRw !== "ALL" || selectedKelompokId) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedKelurahan("ALL");
+                    setSelectedRw("ALL");
+                    handleSelectKelompok("");
+                  }}
+                  className="px-2 py-1.5 rounded-xl text-[11px] font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                  title="Reset Filter Wilayah & Kelompok"
+                >
+                  Reset
+                </button>
+              )}
             </div>
           ) : (
             <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 text-emerald-900 shadow-2xs w-full sm:w-auto">
@@ -4169,6 +4291,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                   const isBelumAdaJadwal = rec.status === "BELUM_ADA_JADWAL";
                   const isTidakAdaKegiatan = statusUpper === "TIDAK_ADA_KEGIATAN" || statusUpper === "SKIP_KEGIATAN";
                   const hasValidSession = (Boolean(rec.attendedAt) || isActivePresence || isCompleted) && !isLeaveOrPending && !isTanpaKeterangan && !isBelumAdaJadwal && !isTidakAdaKegiatan;
+                  const isAttended = Boolean(rec.attendedAt) || isActivePresence || isCompleted;
 
                   const liveElapsedMins = rec.attendedAt
                     ? calculateDurationMinutes(rec.attendedAt, rec.completedAt)

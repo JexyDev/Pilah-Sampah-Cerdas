@@ -48,6 +48,7 @@ import {
   KELURAHAN_GEODATA,
   createHouseholdPinIcon,
 } from "../../constants/coblongGeoData";
+import { fetchMasterWilayah, type MasterKelurahanItem } from "../../utils/areaFilterUtils";
 
 interface KPIStats {
   totalWarga: number;
@@ -126,6 +127,7 @@ const Monitoring: React.FC = () => {
 
   const userKelurahan = user?.kelurahan || (user?.address?.includes("Cipaganti") || user?.name?.includes("Cipaganti") ? "Cipaganti" : "Cipaganti");
   const [dplKelurahans, setDplKelurahans] = useState<string[]>([]);
+  const [masterKelurahans, setMasterKelurahans] = useState<MasterKelurahanItem[]>([]);
 
   // Filter & Search States
   const [selectedMapKelurahan, setSelectedMapKelurahan] = useState<string>(isLurah ? userKelurahan : "Semua Kelurahan");
@@ -196,6 +198,10 @@ const Monitoring: React.FC = () => {
   }, [user, isLurah, isDpl, isRw, isCamat, userKelurahan, selectedMapKelurahan, dplKelurahans]);
 
   useEffect(() => {
+    fetchMasterWilayah().then(({ kelurahans }) => {
+      if (kelurahans.length > 0) setMasterKelurahans(kelurahans);
+    });
+
     if (isDpl) {
       let initialList: string[] = [];
       if (user?.dplKelompok && Array.isArray(user.dplKelompok) && user.dplKelompok.length > 0) {
@@ -765,12 +771,25 @@ const Monitoring: React.FC = () => {
                     ) : (
                       <>
                         <option value="Semua Kelurahan">Semua Kelurahan</option>
-                        <option value="Dago">Kel. Dago</option>
-                        <option value="Sadang Serang">Kel. Sadang Serang</option>
-                        <option value="Sekeloa">Kel. Sekeloa</option>
-                        <option value="Lebak Gede">Kel. Lebak Gede</option>
-                        <option value="Lebak Siliwangi">Kel. Lebak Siliwangi</option>
-                        <option value="Cipaganti">Kel. Cipaganti</option>
+                        {masterKelurahans.length > 0 ? (
+                          masterKelurahans.map((kel) => {
+                            const valName = kel.name || kel.nama;
+                            return (
+                              <option key={kel.id || valName} value={valName}>
+                                Kel. {valName}
+                              </option>
+                            );
+                          })
+                        ) : (
+                          <>
+                            <option value="Dago">Kel. Dago</option>
+                            <option value="Sadang Serang">Kel. Sadang Serang</option>
+                            <option value="Sekeloa">Kel. Sekeloa</option>
+                            <option value="Lebak Gede">Kel. Lebak Gede</option>
+                            <option value="Lebak Siliwangi">Kel. Lebak Siliwangi</option>
+                            <option value="Cipaganti">Kel. Cipaganti</option>
+                          </>
+                        )}
                       </>
                     )}
                   </select>

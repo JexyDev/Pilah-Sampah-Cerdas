@@ -239,10 +239,16 @@ export const kknAttendanceController = {
         return;
       }
 
-      const defaultLat = -6.975412;
-      const defaultLng = 107.632145;
-      const validLat = finalLat !== null && !isNaN(finalLat) ? finalLat : defaultLat;
-      const validLng = finalLng !== null && !isNaN(finalLng) ? finalLng : defaultLng;
+      if (finalLat === null || isNaN(finalLat) || finalLng === null || isNaN(finalLng)) {
+        res.status(400).json({
+          success: false,
+          error: "VALIDATION_ERROR",
+          message: "Koordinat GPS lokasi presensi wajib dikirimkan secara akurat",
+        });
+        return;
+      }
+      const validLat = finalLat;
+      const validLng = finalLng;
 
       const result = await kknAttendanceService.recordAttendance({
         studentId: targetStudentId,
@@ -482,6 +488,8 @@ export const kknAttendanceController = {
       const currentUserId = (req as any).user?.userId || (req as any).user?.id;
       const dplUserId = isDpl ? currentUserId : undefined;
       const kelompokId = req.query.kelompokId as string | undefined;
+      const kelurahan = req.query.kelurahan as string | undefined;
+      const rw = req.query.rw as string | undefined;
       const startDate = req.query.startDate as string | undefined;
       const endDate = req.query.endDate as string | undefined;
       const status = req.query.status as string | undefined;
@@ -491,6 +499,8 @@ export const kknAttendanceController = {
 
       const result = await kknAttendanceService.getLaporanPresensi({
         kelompokId,
+        kelurahan,
+        rw,
         dplUserId,
         startDate,
         endDate,

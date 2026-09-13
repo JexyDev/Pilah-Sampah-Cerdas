@@ -42,22 +42,27 @@ import {
   Clock,
   RefreshCw,
   Radio,
-  Layers,
-  FileCheck,
-  CheckSquare,
-  Square
+  FileCheck
 } from "lucide-react";
 import L from "leaflet";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
 import { useAuthStore } from "../../store/useAuthStore";
 import { Pagination } from "../../components/common/Pagination";
-import PageHeader from "../../components/common/PageHeader";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { ThemeTileLayer, GOOGLE_SATELLITE_URL } from "../../components/common/ThemeTileLayer";
 import { KELURAHAN_GEODATA, CoblongGeo, createFacilityIcon } from "../../constants/coblongGeoData";
-import { resolveImageUrl, handlePoskoImageError, getPoskoFallbackImage } from "../../utils/imageUrl";
+import { resolveImageUrl, handlePoskoImageError } from "../../utils/imageUrl";
 import { sortKelompokList } from "../../utils/sortUtils";
+import {
+  formatRwLabel,
+  isRwMatching,
+  getRwOptionsForKelurahan,
+  fetchMasterWilayah,
+  type MasterKelurahanItem,
+  type MasterRwItem,
+} from "../../utils/areaFilterUtils";
+import { formatWilayahName } from "../../utils/textFormatter";
 
 export interface PoskoItem {
   id: string;
@@ -232,11 +237,18 @@ export const PoskoKknPage: React.FC = () => {
   const [showPoskoLayer, setShowPoskoLayer] = useState(true);
   const [showFacilitiesLayer, setShowFacilitiesLayer] = useState(true);
   const [showGeofenceLayer, setShowGeofenceLayer] = useState(true);
-  const [showBoundaryLayer, setShowBoundaryLayer] = useState(true);
+  const [showBoundaryLayer] = useState(true);
 
   // Filter & Search States
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedKelurahan, setSelectedKelurahan] = useState("ALL");
+  const [selectedRw, setSelectedRw] = useState("ALL");
+  const [masterKelurahanList, setMasterKelurahanList] = useState<MasterKelurahanItem[]>([]);
+  const [masterRwList, setMasterRwList] = useState<MasterRwItem[]>([]);
+
+  const filterRwOptions = useMemo(() => {
+    return getRwOptionsForKelurahan(selectedKelurahan, masterRwList);
+  }, [selectedKelurahan, masterRwList]);
 
   // Pagination States
   const [currentPage, setCurrentPage] = useState(1);
@@ -326,6 +338,10 @@ export const PoskoKknPage: React.FC = () => {
     fetchPoskoList();
     fetchFacilities();
     fetchKelompokList();
+    fetchMasterWilayah().then(({ kelurahans, rws }) => {
+      setMasterKelurahanList(kelurahans);
+      setMasterRwList(rws);
+    });
   }, [fetchPoskoList, fetchFacilities, fetchKelompokList]);
 
   // ============================================================================
@@ -410,14 +426,19 @@ export const PoskoKknPage: React.FC = () => {
         matchKelurahan = itemKel.includes(filterKel) || filterKel.includes(itemKel);
       }
 
-      return matchSearch && matchKelurahan;
+      let matchRw = true;
+      if (selectedRw !== "ALL") {
+        matchRw = isRwMatching(item.rwName, selectedRw);
+      }
+
+      return matchSearch && matchKelurahan && matchRw;
     });
-  }, [items, searchQuery, selectedKelurahan]);
+  }, [items, searchQuery, selectedKelurahan, selectedRw]);
 
   // Reset pagination on search/filter
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, selectedKelurahan, itemsPerPage]);
+  }, [searchQuery, selectedKelurahan, selectedRw, itemsPerPage]);
 
   // Pagination logic
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / itemsPerPage));
@@ -2118,19 +2139,50 @@ export const PoskoKknPage: React.FC = () => {
                 )}
               </div>
 
+              {/* Filter Kelurahan */}
               <select
                 value={selectedKelurahan}
-                onChange={(e) => setSelectedKelurahan(e.target.value)}
+                onChange={(e) => {
+                  setSelectedKelurahan(e.target.value);
+                  setSelectedRw("ALL");
+                }}
                 className="px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-semibold outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/10 text-slate-800 dark:text-slate-100 transition-all cursor-pointer"
               >
                 <option value="ALL">Semua Kelurahan</option>
-                <option value="Dago">Kel. Dago</option>
-                <option value="Cipaganti">Kel. Cipaganti</option>
-                <option value="Sekeloa">Kel. Sekeloa</option>
-                <option value="Sadang Serang">Kel. Sadang Serang</option>
-                <option value="Lebak Gede">Kel. Lebak Gede</option>
-                <option value="Lebak Siliwangi">Kel. Lebak Siliwangi</option>
+                {masterKelurahanList.map((k) => (
+                  <option key={k.id} value={k.name}>
+                    Kel. {formatWilayahName(k.name)}
+                  </option>
+                ))}
               </select>
+
+              {/* Filter RW */}
+              <select
+                value={selectedRw}
+                onChange={(e) => setSelectedRw(e.target.value)}
+                className="px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-semibold outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/10 text-slate-800 dark:text-slate-100 transition-all cursor-pointer"
+              >
+                <option value="ALL">Semua RW</option>
+                {filterRwOptions.map((rw) => (
+                  <option key={rw} value={rw}>
+                    {formatRwLabel(rw)}
+                  </option>
+                ))}
+              </select>
+
+              {(selectedKelurahan !== "ALL" || selectedRw !== "ALL") && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedKelurahan("ALL");
+                    setSelectedRw("ALL");
+                  }}
+                  className="px-2.5 py-2 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                  title="Reset Filter Wilayah"
+                >
+                  Reset
+                </button>
+              )}
 
               {/* Developer / Admin CRUD Button */}
               {isDeveloperOrAdmin && (
@@ -2751,12 +2803,11 @@ export const PoskoKknPage: React.FC = () => {
                     onChange={(e) => setFormData((prev) => ({ ...prev, kelurahan: e.target.value }))}
                     className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-semibold outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/10 text-slate-900 dark:text-slate-100 transition-all cursor-pointer"
                   >
-                    <option value="Dago">Kel. Dago</option>
-                    <option value="Cipaganti">Kel. Cipaganti</option>
-                    <option value="Sekeloa">Kel. Sekeloa</option>
-                    <option value="Sadang Serang">Kel. Sadang Serang</option>
-                    <option value="Lebak Gede">Kel. Lebak Gede</option>
-                    <option value="Lebak Siliwangi">Kel. Lebak Siliwangi</option>
+                    {masterKelurahanList.map((k) => (
+                      <option key={k.id} value={k.name}>
+                        Kel. {formatWilayahName(k.name)}
+                      </option>
+                    ))}
                   </select>
                 </div>
 

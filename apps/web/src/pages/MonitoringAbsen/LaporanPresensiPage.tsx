@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import {
   FileText,
   Search,
-  Download,
   Printer,
   FileSpreadsheet,
   RotateCcw,
@@ -32,10 +31,9 @@ import {
   Save,
   SlidersHorizontal,
   MapPin,
+  Layers,
   Info,
-  ShieldCheck,
   Eye,
-  User as UserIcon,
 } from "lucide-react";
 import api from "../../services/api";
 import toast from "react-hot-toast";
@@ -52,6 +50,16 @@ import {
   formatProdiName,
 } from "../../utils/textFormatter";
 import { sortKelompokList, sortStudentsRoster } from "../../utils/sortUtils";
+import {
+  formatRwLabel,
+  isKelurahanMatching,
+  isRwMatching,
+  isKelompokCoveringRw,
+  getRwOptionsForKelurahan,
+  fetchMasterWilayah,
+  type MasterKelurahanItem,
+  type MasterRwItem,
+} from "../../utils/areaFilterUtils";
 
 export interface LaporanItem {
   id: string;
@@ -61,10 +69,12 @@ export interface LaporanItem {
   jurusan: string;
   fotoProfil: string | null;
   isKetua: boolean;
+  assignedRw?: string | null;
   kelompok: {
     id: string;
     name: string;
     kelurahan: string;
+    cakupanRw?: any;
     dplName: string;
   } | null;
   scheduleId: string;
@@ -76,6 +86,8 @@ export interface LaporanItem {
   durasiFormatted: string;
   durasiAktualMenit?: number;
   durasiAktualFormatted?: string;
+  durasiJedaMenit?: number;
+  durasiJedaFormatted?: string;
   targetMinMenit?: number;
   rasioKehadiran?: number;
   status: string;
@@ -98,10 +110,12 @@ export interface StudentAggregate {
   jurusan: string;
   isKetua: boolean;
   fotoProfil: string | null;
+  assignedRw?: string | null;
   kelompok: {
     id: string;
     name: string;
     kelurahan: string;
+    cakupanRw?: any;
     dplName: string;
   } | null;
   totalSessions: number;
@@ -170,6 +184,9 @@ export const LaporanPresensiPage: React.FC = () => {
   });
   const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
   const [selectedKelurahan, setSelectedKelurahan] = useState<string>("ALL");
+  const [selectedRw, setSelectedRw] = useState<string>("ALL");
+  const [masterKelurahanList, setMasterKelurahanList] = useState<MasterKelurahanItem[]>([]);
+  const [masterRwList, setMasterRwList] = useState<MasterRwItem[]>([]);
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [datePreset, setDatePreset] = useState<"ALL" | "TODAY" | "7DAYS" | "30DAYS">("TODAY");
@@ -371,6 +388,17 @@ export const LaporanPresensiPage: React.FC = () => {
 
   useEffect(() => {
     fetchConfigTargets();
+    const fetchMasterRw = async () => {
+      try {
+        const res = await api.get("/areas/rw");
+        if (res.data?.success && Array.isArray(res.data?.data)) {
+          setMasterRwList(res.data.data);
+        }
+      } catch (err) {
+        console.error("Gagal memuat master RW:", err);
+      }
+    };
+    fetchMasterRw();
   }, []);
 
   // Compute period target hours dynamically from Rule Engine / Config Targets
@@ -428,10 +456,72 @@ export const LaporanPresensiPage: React.FC = () => {
     return val > 0 ? val.toFixed(1) : "0";
   }, [datePreset, startDate, endDate, studentAggregates.length, summary.totalMahasiswa, summary.totalJamKumulatif, summary.totalPresensi]);
 
-  // Quick select kelompok with localStorage persistence for developer
+  // Daftar kelurahan unik dari master database & groups untuk filter dropdown
+  const kelurahanOptions = useMemo(() => {
+    const set = new Set<string>();
+    masterKelurahanList.forEach((m) => {
+      if (m.name) set.add(m.name);
+    });
+    groups.forEach((g: any) => {
+      if (g.kelurahan) set.add(g.kelurahan);
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [masterKelurahanList, groups]);
+
+  // Daftar RW tersedia berdasarkan kelurahan yang dipilih
+  const availableRwOptions = useMemo(() => {
+    return getRwOptionsForKelurahan(selectedKelurahan, masterRwList, groups);
+  }, [selectedKelurahan, masterRwList, groups]);
+
+  // Filter kelompok yang sesuai dengan Kelurahan dan RW yang dipilih
+  const filteredGroupOptions = useMemo(() => {
+    let list = groups;
+    if (selectedKelurahan !== "ALL") {
+      list = list.filter((g) => isKelurahanMatching(g.kelurahan, selectedKelurahan));
+    }
+    if (selectedRw !== "ALL") {
+      list = list.filter((g) => isKelompokCoveringRw(g, selectedRw));
+    }
+    return list;
+  }, [groups, selectedKelurahan, selectedRw]);
+
+  // Handler pemilihan Kelurahan (Level 1 Wilayah)
+  const handleSelectKelurahan = (kel: string) => {
+    setSelectedKelurahan(kel);
+    setSelectedRw("ALL");
+    setPage(1);
+    // Jika kelompok yang sedang dipilih tidak cocok dengan kelurahan baru, reset ke ALL
+    if (selectedKelompok !== "ALL") {
+      const currGroup = groups.find((g) => g.id === selectedKelompok);
+      if (currGroup && kel !== "ALL" && !isKelurahanMatching(currGroup.kelurahan, kel)) {
+        setSelectedKelompok("ALL");
+      }
+    }
+  };
+
+  // Handler pemilihan RW (Level 2 Wilayah)
+  const handleSelectRw = (rw: string) => {
+    setSelectedRw(rw);
+    setPage(1);
+    // Jika kelompok yang sedang dipilih tidak mencakup RW baru, reset ke ALL
+    if (selectedKelompok !== "ALL") {
+      const currGroup = groups.find((g) => g.id === selectedKelompok);
+      if (currGroup && rw !== "ALL" && !isKelompokCoveringRw(currGroup, rw)) {
+        setSelectedKelompok("ALL");
+      }
+    }
+  };
+
+  // Handler pemilihan Kelompok KKN (Level 3 Posko/Kelompok)
   const handleSelectKelompok = (id: string) => {
     setSelectedKelompok(id);
     setPage(1);
+    if (id !== "ALL") {
+      const grp = groups.find((g) => g.id === id);
+      if (grp && grp.kelurahan && selectedKelurahan === "ALL") {
+        setSelectedKelurahan(grp.kelurahan);
+      }
+    }
     if (!isDpl && typeof window !== "undefined") {
       try {
         localStorage.setItem("berseka_dev_selected_kelompok", id === "ALL" ? "" : id);
@@ -507,6 +597,12 @@ export const LaporanPresensiPage: React.FC = () => {
       if (selectedKelompok && selectedKelompok !== "ALL") {
         params.kelompokId = selectedKelompok;
       }
+      if (selectedKelurahan && selectedKelurahan !== "ALL") {
+        params.kelurahan = selectedKelurahan;
+      }
+      if (selectedRw && selectedRw !== "ALL") {
+        params.rw = selectedRw;
+      }
       if (selectedStatus && selectedStatus !== "ALL") {
         params.status = selectedStatus;
       }
@@ -541,7 +637,7 @@ export const LaporanPresensiPage: React.FC = () => {
     } finally {
       if (!silent) setLoading(false);
     }
-  }, [page, limit, selectedKelompok, selectedStatus, startDate, endDate, debouncedSearchQuery]);
+  }, [page, limit, selectedKelompok, selectedKelurahan, selectedRw, selectedStatus, startDate, endDate, debouncedSearchQuery]);
 
   const fetchLaporanRef = useRef(fetchLaporan);
   useEffect(() => {
@@ -551,6 +647,17 @@ export const LaporanPresensiPage: React.FC = () => {
   useEffect(() => {
     fetchGroups();
   }, [fetchGroups]);
+
+  useEffect(() => {
+    fetchMasterWilayah()
+      .then(({ kelurahans, rws }) => {
+        setMasterKelurahanList(kelurahans);
+        setMasterRwList(rws);
+      })
+      .catch((err) => {
+        console.error("Gagal memuat master wilayah:", err);
+      });
+  }, []);
 
   useEffect(() => {
     fetchLaporan();
@@ -602,9 +709,10 @@ export const LaporanPresensiPage: React.FC = () => {
   }, [isDeveloper, summary.berlangsung, summary.terjeda]);
 
   const handleResetFilter = () => {
+    setSelectedKelurahan("ALL");
+    setSelectedRw("ALL");
     setSelectedKelompok("ALL");
     setSelectedStatus("ALL");
-    setSelectedKelurahan("ALL");
     setDatePreset("TODAY");
     const nowWib = new Date(Date.now() + 7 * 60 * 60 * 1000);
     const todayStr = nowWib.toISOString().slice(0, 10);
@@ -624,11 +732,17 @@ export const LaporanPresensiPage: React.FC = () => {
     let list = studentAggregates;
     // Filter berdasarkan kelurahan
     if (selectedKelurahan !== "ALL") {
+      list = list.filter((s) => isKelurahanMatching(s.kelompok?.kelurahan, selectedKelurahan));
+    }
+    // Filter berdasarkan RW
+    if (selectedRw !== "ALL") {
       list = list.filter(
-        (s) =>
-          s.kelompok?.kelurahan &&
-          s.kelompok.kelurahan.toLowerCase() === selectedKelurahan.toLowerCase()
+        (s) => isRwMatching(s.assignedRw, selectedRw) || isKelompokCoveringRw(s.kelompok, selectedRw)
       );
+    }
+    // Filter berdasarkan kelompok
+    if (selectedKelompok !== "ALL") {
+      list = list.filter((s) => s.kelompok?.id === selectedKelompok);
     }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
@@ -638,7 +752,8 @@ export const LaporanPresensiPage: React.FC = () => {
           s.nim.toLowerCase().includes(q) ||
           s.jurusan.toLowerCase().includes(q) ||
           (s.kelompok?.name && s.kelompok.name.toLowerCase().includes(q)) ||
-          (s.kelompok?.kelurahan && s.kelompok.kelurahan.toLowerCase().includes(q))
+          (s.kelompok?.kelurahan && s.kelompok.kelurahan.toLowerCase().includes(q)) ||
+          (s.assignedRw && String(s.assignedRw).toLowerCase().includes(q))
       );
     }
     return sortStudentsRoster(list, {
@@ -647,31 +762,14 @@ export const LaporanPresensiPage: React.FC = () => {
       getName: (s) => s.namaMahasiswa,
       getNim: (s) => s.nim,
     });
-  }, [studentAggregates, searchQuery, selectedKelurahan]);
-
-  // Quick Action: View detailed log for specific student
-  const handleViewStudentDetails = (studentName: string) => {
-    setSearchQuery(studentName);
-    setActiveTab("LOG_DETAIL");
-    setPage(1);
-    toast.success(`Menampilkan log presensi harian untuk: ${studentName}`);
-  };
-
-  // Daftar kelurahan unik dari groups untuk filter dropdown
-  const kelurahanOptions = useMemo(() => {
-    const set = new Set<string>();
-    groups.forEach((g: any) => {
-      if (g.kelurahan) set.add(g.kelurahan);
-    });
-    return Array.from(set).sort();
-  }, [groups]);
+  }, [studentAggregates, searchQuery, selectedKelurahan, selectedRw, selectedKelompok]);
 
   // Gating status: Ekspor hanya aktif jika tanggal awal DAN tanggal akhir telah diisi
   const isExportDisabled = !startDate || !endDate;
 
   const handleExportExcel = () => {
     // Validasi: filter tanggal wajib diisi sebelum ekspor
-    if (!startDate || !endDate) {
+    if (isExportDisabled) {
       toast.error("Pilih tanggal awal dan tanggal akhir terlebih dahulu sebelum mengekspor.");
       return;
     }
@@ -688,8 +786,9 @@ export const LaporanPresensiPage: React.FC = () => {
         "Nama Mahasiswa",
         "Jabatan",
         "Jurusan / Program Studi",
-        "Kelompok KKN",
         "Kelurahan",
+        "RW",
+        "Kelompok KKN",
         "Dosen Pendamping Lapangan (DPL)",
         "Total Hari/Sesi Hadir",
         "Total Menit Aktual (DA)",
@@ -707,14 +806,20 @@ export const LaporanPresensiPage: React.FC = () => {
       const rows = filteredStudentAggregates.map((s, idx) => {
         const percent = Math.min(100, Math.max(0, Number(((s.totalHours / (periodTargetHours || 1)) * 100).toFixed(1))));
         const statusAkhir = s.totalHours >= periodTargetHours ? "TARGET TERCAPAI" : percent >= 70 ? "ON TRACK" : "PERLU PENINGKATAN";
+        const rwVal = s.assignedRw
+          ? formatRwLabel(s.assignedRw)
+          : s.kelompok?.cakupanRw
+            ? (Array.isArray(s.kelompok.cakupanRw) ? s.kelompok.cakupanRw.map(formatRwLabel).join(", ") : formatRwLabel(s.kelompok.cakupanRw))
+            : "-";
         return [
           idx + 1,
           s.nim,
           s.namaMahasiswa,
           s.isKetua ? "Ketua Kelompok" : "Anggota",
           s.jurusan,
-          s.kelompok?.name ?? "-",
           s.kelompok?.kelurahan ?? "-",
+          rwVal,
+          s.kelompok?.name ?? "-",
           s.kelompok?.dplName ?? "-",
           s.totalSessions,
           s.totalMinutes,
@@ -738,8 +843,9 @@ export const LaporanPresensiPage: React.FC = () => {
         { wch: 28 },
         { wch: 16 },
         { wch: 24 },
-        { wch: 22 },
         { wch: 18 },
+        { wch: 14 },
+        { wch: 22 },
         { wch: 26 },
         { wch: 14 },
         { wch: 16 },
@@ -769,8 +875,9 @@ export const LaporanPresensiPage: React.FC = () => {
         "NIM",
         "Nama Mahasiswa",
         "Jurusan / Prodi",
-        "Kelompok KKN",
         "Kelurahan",
+        "RW",
+        "Kelompok KKN",
         "DPL",
         "Jam Masuk (JM)",
         "Jam Pulang (JP)",
@@ -791,6 +898,11 @@ export const LaporanPresensiPage: React.FC = () => {
         const jedaMins = it.durasiJedaMenit ?? 0;
         const rasio = Math.min(100, Math.max(0, it.rasioKehadiran ?? Number(((actualMins / targetMin) * 100).toFixed(1))));
         const keterpenuhan = it.isMemenuhiDurasi ? "MEMENUHI (>= 4 Jam)" : "KURANG DARI TARGET (< 4 Jam)";
+        const rwVal = it.assignedRw
+          ? formatRwLabel(it.assignedRw)
+          : it.kelompok?.cakupanRw
+            ? (Array.isArray(it.kelompok.cakupanRw) ? it.kelompok.cakupanRw.map(formatRwLabel).join(", ") : formatRwLabel(it.kelompok.cakupanRw))
+            : "-";
 
         return [
           (page - 1) * limit + idx + 1,
@@ -798,8 +910,9 @@ export const LaporanPresensiPage: React.FC = () => {
           it.nim,
           it.namaMahasiswa,
           it.jurusan,
-          it.kelompok?.name ?? "-",
           it.kelompok?.kelurahan ?? "-",
+          rwVal,
+          it.kelompok?.name ?? "-",
           it.kelompok?.dplName ?? "-",
           it.jamMasuk,
           it.jamPulang === "-" ? "Sedang Lapangan" : it.jamPulang,
@@ -823,8 +936,9 @@ export const LaporanPresensiPage: React.FC = () => {
         { wch: 16 },
         { wch: 28 },
         { wch: 24 },
-        { wch: 22 },
         { wch: 18 },
+        { wch: 14 },
+        { wch: 22 },
         { wch: 26 },
         { wch: 14 },
         { wch: 14 },
@@ -1129,26 +1243,7 @@ export const LaporanPresensiPage: React.FC = () => {
             </div>
           </div>
 
-          {/* 2. Kelompok KKN */}
-          <div className="flex-1 min-w-[150px]">
-            <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5 truncate">
-              Kelompok KKN {isDpl && <span className="text-emerald-600 font-semibold">(Binaan)</span>}
-            </label>
-            <select
-              value={selectedKelompok}
-              onChange={(e) => handleSelectKelompok(e.target.value)}
-              className="w-full h-10 px-3 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-slate-800 dark:text-slate-100 focus:bg-white focus:border-emerald-500 outline-none transition font-medium shadow-2xs cursor-pointer truncate"
-            >
-              <option value="ALL">🌟 Semua Kelompok ({groups.length} Posko)</option>
-              {groups.map((g) => (
-                <option key={g.id} value={g.id}>
-                  {g.name} - Kel. {g.kelurahan ?? "-"}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* 3. Filter Kelurahan */}
+          {/* 2. Filter Kelurahan */}
           <div className="flex-1 min-w-[140px]">
             <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5 flex items-center gap-1">
               <MapPin size={11} className="text-emerald-600" />
@@ -1161,16 +1256,60 @@ export const LaporanPresensiPage: React.FC = () => {
             </label>
             <select
               value={selectedKelurahan}
-              onChange={(e) => {
-                setSelectedKelurahan(e.target.value);
-                setPage(1);
-              }}
+              onChange={(e) => handleSelectKelurahan(e.target.value)}
               className="w-full h-10 px-3 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-slate-800 dark:text-slate-100 focus:bg-white focus:border-emerald-500 outline-none transition font-medium shadow-2xs cursor-pointer truncate"
             >
               <option value="ALL">📍 Semua Kelurahan</option>
               {kelurahanOptions.map((kel) => (
                 <option key={kel} value={kel}>
                   Kel. {kel}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* 3. Filter RW */}
+          <div className="flex-1 min-w-[130px]">
+            <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5 flex items-center gap-1">
+              <Layers size={11} className="text-emerald-600" />
+              RW
+              {selectedRw !== "ALL" && (
+                <span className="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                  Aktif
+                </span>
+              )}
+            </label>
+            <select
+              value={selectedRw}
+              onChange={(e) => handleSelectRw(e.target.value)}
+              disabled={availableRwOptions.length === 0}
+              className="w-full h-10 px-3 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-slate-800 dark:text-slate-100 focus:bg-white focus:border-emerald-500 outline-none transition font-medium shadow-2xs cursor-pointer truncate disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <option value="ALL">
+                {selectedKelurahan !== "ALL" ? `Semua RW (Kel. ${selectedKelurahan})` : "Semua RW"}
+              </option>
+              {availableRwOptions.map((rw) => (
+                <option key={rw} value={rw}>
+                  {formatRwLabel(rw)}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* 4. Kelompok KKN */}
+          <div className="flex-1 min-w-[160px]">
+            <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5 truncate">
+              Kelompok KKN {isDpl && <span className="text-emerald-600 font-semibold">(Binaan)</span>}
+            </label>
+            <select
+              value={selectedKelompok}
+              onChange={(e) => handleSelectKelompok(e.target.value)}
+              className="w-full h-10 px-3 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-slate-800 dark:text-slate-100 focus:bg-white focus:border-emerald-500 outline-none transition font-medium shadow-2xs cursor-pointer truncate"
+            >
+              <option value="ALL">🌟 Semua Kelompok ({filteredGroupOptions.length} Posko)</option>
+              {filteredGroupOptions.map((g) => (
+                <option key={g.id} value={g.id}>
+                  {g.name} - Kel. {g.kelurahan ?? "-"}
                 </option>
               ))}
             </select>
@@ -1224,9 +1363,9 @@ export const LaporanPresensiPage: React.FC = () => {
             <button
               type="button"
               onClick={handleExportExcel}
-              disabled={!startDate || !endDate}
+              disabled={isExportDisabled}
               className="h-10 px-3.5 flex-1 text-xs font-bold rounded-xl border transition shadow-2xs flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/60 cursor-pointer active:scale-95 whitespace-nowrap"
-              title={(!startDate || !endDate) ? "Pilih rentang tanggal terlebih dahulu untuk mengekspor" : "Ekspor data ke format Excel XLSX"}
+              title={isExportDisabled ? "Pilih rentang tanggal terlebih dahulu untuk mengekspor" : "Ekspor data ke format Excel XLSX"}
             >
               <FileSpreadsheet size={14} />
               <span>Ekspor XLSX</span>
@@ -1275,6 +1414,7 @@ export const LaporanPresensiPage: React.FC = () => {
                 <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider text-[10px]">
                   <th className="py-3.5 px-4 w-12 text-center text-emerald-700">#</th>
                   <th className="py-3.5 px-4 min-w-[200px]">Mahasiswa &amp; NIM</th>
+                  <th className="py-3.5 px-4 min-w-[140px]">Wilayah (Kel / RW)</th>
                   <th className="py-3.5 px-4 min-w-[150px]">Kelompok &amp; DPL</th>
                   <th className="py-3.5 px-4 text-center">Total Hari/Sesi</th>
                   <th className="py-3.5 px-4 text-center min-w-[130px]">Total Akumulasi Aktual (DA)</th>
@@ -1289,14 +1429,14 @@ export const LaporanPresensiPage: React.FC = () => {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
                 {loading ? (
                   <tr>
-                    <td colSpan={9} className="py-14 text-center text-slate-400">
+                    <td colSpan={10} className="py-14 text-center text-slate-400">
                       <RefreshCw size={24} className="animate-spin text-emerald-600 mx-auto mb-2" />
                       <span className="font-semibold">Menghitung dan memuat data akumulasi mahasiswa...</span>
                     </td>
                   </tr>
                 ) : filteredStudentAggregates.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="py-12">
+                    <td colSpan={10} className="py-12">
                       <EmptyTableState
                         title="Tidak Ada Data Akumulasi Mahasiswa"
                         description="Tidak ditemukan riwayat kehadiran mahasiswa untuk filter yang dipilih."
@@ -1351,13 +1491,27 @@ export const LaporanPresensiPage: React.FC = () => {
                           </div>
                         </td>
 
+                        {/* Wilayah (Kelurahan & RW) */}
+                        <td className="py-3.5 px-4">
+                          <div className="font-bold text-slate-800 dark:text-slate-200">
+                            {student.kelompok?.kelurahan ? formatWilayahName(`Kel. ${student.kelompok.kelurahan}`) : "-"}
+                          </div>
+                          <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold">
+                            {student.assignedRw
+                              ? formatRwLabel(student.assignedRw)
+                              : student.kelompok?.cakupanRw
+                                ? (Array.isArray(student.kelompok.cakupanRw) ? student.kelompok.cakupanRw.map(formatRwLabel).join(", ") : formatRwLabel(student.kelompok.cakupanRw))
+                                : "-"}
+                          </p>
+                        </td>
+
                         {/* Kelompok & DPL */}
                         <td className="py-3.5 px-4">
                           <div className="font-bold text-slate-800 dark:text-slate-200">
                             {student.kelompok?.name ? formatKelompokName(student.kelompok.name) : "Tanpa Kelompok"}
                           </div>
                           <p className="text-[11px] text-slate-400">
-                            {student.kelompok?.kelurahan ? formatWilayahName(`Kel. ${student.kelompok.kelurahan}`) : "-"} • DPL: {formatPersonName(student.kelompok?.dplName)}
+                            DPL: {formatPersonName(student.kelompok?.dplName)}
                           </p>
                         </td>
 
@@ -1493,6 +1647,7 @@ export const LaporanPresensiPage: React.FC = () => {
                 <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[10px]">
                   <th className="py-3.5 px-4 w-12 text-center text-emerald-700">#</th>
                   <th className="py-3.5 px-4 min-w-[190px]">Mahasiswa &amp; NIM</th>
+                  <th className="py-3.5 px-4 min-w-[140px]">Wilayah (Kel / RW)</th>
                   <th className="py-3.5 px-4 min-w-[150px]">Kelompok &amp; DPL</th>
                   <th className="py-3.5 px-4">Tanggal</th>
                   <th className="py-3.5 px-4 text-center">Jam Masuk (JM)</th>
@@ -1513,14 +1668,14 @@ export const LaporanPresensiPage: React.FC = () => {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
                 {loading ? (
                   <tr>
-                    <td colSpan={13} className="py-12 text-center text-slate-400">
+                    <td colSpan={14} className="py-12 text-center text-slate-400">
                       <RefreshCw size={24} className="animate-spin text-emerald-600 mx-auto mb-2" />
                       <span>Memuat data log presensi detail...</span>
                     </td>
                   </tr>
                 ) : items.length === 0 ? (
                   <tr>
-                    <td colSpan={13} className="py-12">
+                    <td colSpan={14} className="py-12">
                       <EmptyTableState
                         title="Tidak Ada Log Sesi Presensi"
                         description="Tidak ditemukan riwayat kehadiran dengan filter yang dipilih."
@@ -1580,6 +1735,20 @@ export const LaporanPresensiPage: React.FC = () => {
                           </div>
                         </td>
 
+                        {/* Wilayah (Kelurahan & RW) */}
+                        <td className="py-3.5 px-4">
+                          <div className="font-bold text-slate-800 dark:text-slate-200">
+                            Kel. {item.kelompok?.kelurahan ?? "-"}
+                          </div>
+                          <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold">
+                            {item.assignedRw
+                              ? formatRwLabel(item.assignedRw)
+                              : item.kelompok?.cakupanRw
+                                ? (Array.isArray(item.kelompok.cakupanRw) ? item.kelompok.cakupanRw.map(formatRwLabel).join(", ") : formatRwLabel(item.kelompok.cakupanRw))
+                                : "-"}
+                          </p>
+                        </td>
+
                         {/* Kelompok & DPL */}
                         <td className="py-3.5 px-4">
                           <div className="flex items-center gap-1.5 flex-wrap">
@@ -1593,7 +1762,7 @@ export const LaporanPresensiPage: React.FC = () => {
                             )}
                           </div>
                           <p className="text-[11px] text-slate-400">
-                            Kel. {item.kelompok?.kelurahan ?? "-"} • DPL: {item.kelompok?.dplName ?? "-"}
+                            DPL: {item.kelompok?.dplName ?? "-"}
                           </p>
                         </td>
 
@@ -2096,9 +2265,22 @@ export const LaporanPresensiPage: React.FC = () => {
                   <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">
                     NIM: {selectedStudentForLog.nim} • {formatProdiName(selectedStudentForLog.jurusan)}
                   </p>
-                  <p className="text-[11px] text-slate-400">
-                    {selectedStudentForLog.kelompok?.name ? formatKelompokName(selectedStudentForLog.kelompok.name) : "Tanpa Kelompok"} • DPL: {formatPersonName(selectedStudentForLog.kelompok?.dplName)}
-                  </p>
+                  <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                      📍 {selectedStudentForLog.kelompok?.kelurahan ? `Kel. ${formatWilayahName(selectedStudentForLog.kelompok.kelurahan)}` : "Kelurahan -"}
+                    </span>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                      🏡 {formatRwLabel(selectedStudentForLog.assignedRw || selectedStudentForLog.kelompok?.cakupanRw)}
+                    </span>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-850">
+                      👥 {selectedStudentForLog.kelompok?.name ? formatKelompokName(selectedStudentForLog.kelompok.name) : "Tanpa Kelompok"}
+                    </span>
+                    {selectedStudentForLog.kelompok?.dplName && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+                        DPL: {formatPersonName(selectedStudentForLog.kelompok.dplName)}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
               <button

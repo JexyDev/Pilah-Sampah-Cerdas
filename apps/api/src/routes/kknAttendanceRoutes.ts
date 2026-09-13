@@ -426,13 +426,18 @@ router.get(
         },
       });
 
-      // Calculate geofence status if we have location
+      // Calculate geofence status if we have location and schedule has valid coordinates
       let geofenceStatus = null;
-      if (latestLocation && activeSchedules.length > 0) {
+      if (
+        latestLocation &&
+        activeSchedules.length > 0 &&
+        activeSchedules[0].latitude &&
+        activeSchedules[0].longitude
+      ) {
         const { calculateDistance } = await import("../services/kknAttendanceService.js");
         const firstSchedule = activeSchedules[0];
-        const geofenceLat = firstSchedule.latitude ? Number(firstSchedule.latitude) : -6.8915;
-        const geofenceLng = firstSchedule.longitude ? Number(firstSchedule.longitude) : 107.6107;
+        const geofenceLat = Number(firstSchedule.latitude);
+        const geofenceLng = Number(firstSchedule.longitude);
         const geofenceRadius = firstSchedule.radius ? Number(firstSchedule.radius) : 100;
 
         const distance = calculateDistance(

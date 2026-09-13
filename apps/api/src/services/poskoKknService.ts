@@ -1029,9 +1029,9 @@ export class PoskoKknService {
 
       // Determine center coordinate & geofence source
       const primaryPosko = allPoskoList.find((p) => p.isUtama) || allPoskoList[0] || null;
-      let centerLat = -6.8915; // default Coblong
-      let centerLng = 107.6107;
-      let geofenceSource: "POSKO_RESMI" | "JADWAL_KEGIATAN" | "ESTIMASI_KELURAHAN" | "DEFAULT_COBLONG" = "DEFAULT_COBLONG";
+      let centerLat: number | null = null;
+      let centerLng: number | null = null;
+      let geofenceSource: "POSKO_RESMI" | "JADWAL_KEGIATAN" | "NONE" = "NONE";
       let radius = 200;
       let schedulePolygon: any = null;
 
@@ -1041,10 +1041,10 @@ export class PoskoKknService {
         radius = Number(activeSchedule.radius) || 200;
         geofenceSource = "JADWAL_KEGIATAN";
         if (activeSchedule.polygon) schedulePolygon = activeSchedule.polygon;
-      } else if (primaryPosko) {
-        centerLat = primaryPosko.latitude;
-        centerLng = primaryPosko.longitude;
-        radius = primaryPosko.radius || 200;
+      } else if (primaryPosko && primaryPosko.latitude && primaryPosko.longitude) {
+        centerLat = Number(primaryPosko.latitude);
+        centerLng = Number(primaryPosko.longitude);
+        radius = Number(primaryPosko.radius) || 200;
         geofenceSource = "POSKO_RESMI";
       }
 

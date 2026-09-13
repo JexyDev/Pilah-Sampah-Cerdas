@@ -19,6 +19,7 @@ interface LeaderboardItem {
   name: string;
   subtitle?: string;
   points: number;
+  totalKg?: number;
 }
 
 interface ColumnCardProps {
@@ -50,63 +51,63 @@ const ColumnCard: React.FC<ColumnCardProps> = ({
   const getRankBadge = (rank: number) => {
     if (rank === 1) {
       return (
-        <span className="w-6 h-6 rounded-full bg-amber-100 text-amber-900 font-bold text-[11px] flex items-center justify-center shadow-2xs border border-amber-200 shrink-0">
-          🥇
+        <span className="w-6 h-6 rounded-lg bg-amber-500/15 text-amber-700 dark:text-amber-400 font-black text-xs flex items-center justify-center border border-amber-500/30 ring-1 ring-amber-400/20 shrink-0 shadow-2xs">
+          1
         </span>
       );
     }
     if (rank === 2) {
       return (
-        <span className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-bold text-[11px] flex items-center justify-center shadow-2xs border border-slate-200 dark:border-slate-800 shrink-0">
-          🥈
+        <span className="w-6 h-6 rounded-lg bg-slate-200/90 dark:bg-slate-700/80 text-slate-700 dark:text-slate-200 font-black text-xs flex items-center justify-center border border-slate-300 dark:border-slate-600 shrink-0 shadow-2xs">
+          2
         </span>
       );
     }
     if (rank === 3) {
       return (
-        <span className="w-6 h-6 rounded-full bg-amber-50 text-amber-900 font-bold text-[11px] flex items-center justify-center shadow-2xs border border-amber-200 shrink-0">
-          🥉
+        <span className="w-6 h-6 rounded-lg bg-amber-800/15 dark:bg-amber-700/20 text-amber-800 dark:text-amber-300 font-black text-xs flex items-center justify-center border border-amber-700/30 shrink-0 shadow-2xs">
+          3
         </span>
       );
     }
     return (
-      <span className="w-6 text-center font-bold text-slate-400 shrink-0 text-xs group-hover:text-emerald-600">
+      <span className="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800/70 text-slate-500 dark:text-slate-400 font-bold text-[11px] flex items-center justify-center border border-slate-200/60 dark:border-slate-800 shrink-0 group-hover:border-slate-300">
         {rank}
       </span>
     );
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs hover:shadow-md p-5 flex flex-col justify-between transition-all duration-200 h-full relative">
+    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs hover:shadow-md p-5 flex flex-col justify-between transition-all duration-200 h-full relative group/card">
       {/* Header */}
-      <div className="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800 shrink-0">
+      <div className="flex justify-between items-center pb-3.5 border-b border-slate-100 dark:border-slate-800 shrink-0">
         <div className="flex items-center gap-2.5 min-w-0">
           <div className={`p-2 rounded-xl ${iconBg} text-white shadow-xs shrink-0 flex items-center justify-center`}>
             {icon}
           </div>
-          <div>
-            <h5 className="font-extrabold text-[14px] text-slate-800 dark:text-slate-100 tracking-tight truncate" title={title}>
+          <div className="min-w-0">
+            <h5 className="font-extrabold text-[14px] text-slate-900 dark:text-slate-100 tracking-tight truncate" title={title}>
               {title}
             </h5>
-            <p className="text-[10px] text-slate-400 dark:text-slate-400 font-medium leading-none mt-0.5">
-              Skala Acuan: Top 1 = <span className="font-bold text-slate-600 dark:text-slate-300">{topScore.toLocaleString("id-ID")} {unitLabel}</span>
+            <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-medium leading-none mt-1 truncate">
+              Top 1: <span className="font-bold text-slate-600 dark:text-slate-300">{topScore.toLocaleString("id-ID")} {unitLabel}</span>
             </p>
           </div>
         </div>
         <Link
           to={linkTo}
-          className="text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
-          title="Lihat Detail"
+          className="text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors p-1.5 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-950/40 shrink-0"
+          title="Lihat Detail Peringkat"
         >
-          <ChevronRight size={18} />
+          <ChevronRight size={17} />
         </Link>
       </div>
 
       {/* Item List */}
-      <div className="my-3 flex-1 flex flex-col justify-start space-y-1.5 min-h-[240px]">
+      <div className="my-3 flex-1 flex flex-col justify-start space-y-1 min-h-[250px]">
         {displayItems.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-slate-400 italic text-xs py-8">
-            Belum ada data poin terverifikasi.
+          <div className="flex-1 flex flex-col items-center justify-center text-slate-400 italic text-xs py-10 space-y-1">
+            <span>Belum ada data peringkat.</span>
           </div>
         ) : (
           displayItems.map((item, idx) => {
@@ -120,46 +121,53 @@ const ColumnCard: React.FC<ColumnCardProps> = ({
                 to={`${linkTo}&search=${encodeURIComponent(item.name)}`}
                 onMouseEnter={() => setHoveredIndex(idx)}
                 onMouseLeave={() => setHoveredIndex(null)}
-                className={`flex items-center gap-2 text-xs group px-2.5 py-2 rounded-xl transition-all duration-150 border min-w-0 ${
+                className={`flex items-center gap-2.5 text-xs group px-2.5 py-2 rounded-xl transition-all duration-150 border min-w-0 ${
                   isHovered
-                    ? "bg-slate-50 dark:bg-slate-800/80 border-slate-300/80 dark:border-slate-700 shadow-xs scale-[1.01]"
-                    : "bg-white dark:bg-slate-900 border-transparent hover:bg-slate-50/60 dark:hover:bg-slate-800/40"
+                    ? "bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 shadow-2xs"
+                    : "bg-white dark:bg-slate-900 border-transparent hover:bg-slate-50/70 dark:hover:bg-slate-800/40"
                 }`}
                 title={`Lihat detail peringkat untuk ${item.name}`}
               >
-                {/* Rank Icon / Medal */}
+                {/* Rank Badge */}
                 {getRankBadge(item.rank)}
 
-                {/* Name & Subtitle - Generous room to avoid text clipping */}
+                {/* Name & Subtitle */}
                 <div className="flex-1 min-w-0 pr-1">
-                  <p className="font-extrabold text-slate-800 dark:text-slate-100 text-[12px] sm:text-[12.5px] leading-snug group-hover:text-emerald-600 dark:group-hover:text-emerald-400 truncate" title={item.name}>
+                  <p className="font-extrabold text-slate-800 dark:text-slate-100 text-[12.5px] leading-snug group-hover:text-emerald-600 dark:group-hover:text-emerald-400 truncate" title={item.name}>
                     {item.name}
                   </p>
-                  {item.subtitle && (
-                    <p className="text-[10px] sm:text-[10.5px] text-slate-400 dark:text-slate-400 leading-tight font-medium truncate mt-0.5" title={item.subtitle}>
-                      {item.subtitle}
-                    </p>
-                  )}
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    {item.subtitle && (
+                      <p className="text-[10px] text-slate-400 dark:text-slate-400 leading-tight font-medium truncate" title={item.subtitle}>
+                        {item.subtitle}
+                      </p>
+                    )}
+                    {item.totalKg != null && item.totalKg > 0 && (
+                      <span className="inline-flex items-center px-1.5 py-0.2 rounded-md bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 text-[9.5px] font-bold border border-sky-200 dark:border-sky-800/40">
+                        {item.totalKg.toFixed(1)} Kg
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Compact Point & Ratio Display */}
                 <div className="shrink-0 flex flex-col items-end text-right pl-1">
                   <div className="flex items-baseline gap-1">
-                    <span className={`font-black text-[12px] sm:text-[12.5px] font-mono leading-none ${item.points < 0 ? "text-rose-600 dark:text-rose-400" : "text-slate-900 dark:text-slate-100"}`}>
+                    <span className={`font-black text-[12.5px] font-mono leading-none ${item.points < 0 ? "text-rose-600 dark:text-rose-400" : "text-slate-900 dark:text-slate-100"}`}>
                       {item.points.toLocaleString("id-ID")}
                     </span>
-                    <span className="text-[8.5px] sm:text-[9px] font-bold text-slate-400 uppercase">
+                    <span className="text-[8.5px] font-bold text-slate-400 uppercase">
                       {unitLabel}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1 mt-1">
+                  <div className="flex items-center gap-1.5 mt-1">
                     <div className="w-12 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-200/60 dark:border-slate-700">
                       <div
                         className="h-full rounded-full transition-all duration-500"
                         style={{ width: `${barPct}%`, backgroundColor: barColor }}
                       />
                     </div>
-                    <span className="text-[8.5px] sm:text-[9px] font-bold text-slate-400 w-5 text-right">{rawPct}%</span>
+                    <span className="text-[8.5px] font-bold text-slate-400 w-5 text-right font-mono">{rawPct}%</span>
                   </div>
                 </div>
               </Link>
@@ -169,16 +177,16 @@ const ColumnCard: React.FC<ColumnCardProps> = ({
       </div>
 
       {/* Card Footer */}
-      <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] shrink-0">
-        <span className="text-slate-400 font-medium flex items-center gap-1.5">
+      <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] shrink-0">
+        <span className="text-slate-400 font-medium flex items-center gap-1.5 text-[10.5px]">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          Akumulasi Terverifikasi Real-time
+          Terverifikasi Real-time
         </span>
         <Link
           to={linkTo}
-          className="font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors flex items-center gap-0.5"
+          className="font-extrabold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors flex items-center gap-1 text-[11px]"
         >
-          Detail Lengkap <ChevronRight size={14} />
+          Lihat Peringkat <ChevronRight size={13} />
         </Link>
       </div>
     </div>
@@ -239,6 +247,7 @@ export const LeaderboardWidget: React.FC<LeaderboardWidgetProps> = ({ mode = "al
               name: cleanRw,
               subtitle: cleanKel,
               points: Number(r.totalPoints || 0),
+              totalKg: Number(r.totalKg || 0),
             };
           });
           setRwList(apiRw);
@@ -252,6 +261,7 @@ export const LeaderboardWidget: React.FC<LeaderboardWidgetProps> = ({ mode = "al
               name: cleanKel,
               subtitle: k.kecamatanName || "Wilayah Operasional",
               points: Number(k.totalPoints || 0),
+              totalKg: Number(k.totalKg || 0),
             };
           });
           setKelurahanList(apiKel);
@@ -349,6 +359,7 @@ export const LeaderboardWidget: React.FC<LeaderboardWidgetProps> = ({ mode = "al
       return lurahRwItems.slice(0, 10).map((r) => ({
         name: r.name,
         points: r.points || 0,
+        totalKg: r.totalKg || 0,
       }));
     }
     return COBLONG_6_KELURAHAN.map((kelName) => {
@@ -358,12 +369,13 @@ export const LeaderboardWidget: React.FC<LeaderboardWidgetProps> = ({ mode = "al
       return {
         name: kelName,
         points: match ? Number(match.points || 0) : 0,
+        totalKg: match ? Number(match.totalKg || 0) : 0,
       };
     });
   }, [isLurah, lurahRwItems, kelurahanList]);
 
   const maxVolumeKg = useMemo(() => {
-    const vals = activeChartData.map((k) => k.points);
+    const vals = activeChartData.map((k) => k.totalKg);
     const max = Math.max(...vals, 0);
     return max > 0 ? max : 10;
   }, [activeChartData]);
@@ -374,175 +386,8 @@ export const LeaderboardWidget: React.FC<LeaderboardWidgetProps> = ({ mode = "al
     <div className="space-y-6 w-full">
       {mode !== "kkn" && (
         <>
-          {/* ----------------- TOP SECTION: 2 BAR CHARTS ----------------- */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        
-        {/* Chart 1: Kepatuhan Pemilahan */}
-        <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-xs flex flex-col justify-between">
-          <div className="flex items-start justify-between gap-3 min-h-[58px]">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-xs shrink-0">
-                <span className="material-symbols-outlined text-xl">bar_chart</span>
-              </div>
-              <div>
-                <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100 leading-snug">
-                  {isLurah
-                    ? `Grafik Kepatuhan Pemilahan per Rukun Warga (Kel. ${userKelurahan || "Cipaganti"})`
-                    : "Grafik Kepatuhan Pemilahan per Kelurahan"}
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                  {isLurah
-                    ? "Performa kepatuhan pemilahan tiap RW di wilayah kelurahan"
-                    : "Persentase kepatuhan dalam pemilahan sampah real-time"}
-                </p>
-              </div>
-            </div>
-
-            <div className="px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-700/30 text-emerald-800 dark:text-emerald-300 text-xs font-black flex items-center gap-1.5 shrink-0 self-start">
-              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase">Status</span>
-              <span className="text-emerald-700 dark:text-emerald-300">Terverifikasi Real</span>
-            </div>
-          </div>
-
-          {/* Bar Chart Area */}
-          <div className="pt-6 mt-auto space-y-2">
-            <div className="flex gap-2 items-end">
-              <div className="w-12 shrink-0 flex flex-col justify-between text-[9px] text-slate-400 dark:text-slate-500 font-extrabold pr-2 border-r border-slate-200 dark:border-slate-800 h-40 text-right select-none pb-5">
-                <span>100%</span>
-                <span>80%</span>
-                <span>60%</span>
-                <span>40%</span>
-                <span>20%</span>
-                <span>0%</span>
-              </div>
-
-              <div
-                className="flex-1 grid gap-2 items-end h-40 border-b border-slate-200 dark:border-slate-800 pb-1 relative"
-                style={{ gridTemplateColumns: `repeat(${chartColCount}, minmax(0, 1fr))` }}
-              >
-                {activeChartData.map((d, idx) => {
-                  const valPct = d.points > 0 ? Math.min(100, Math.round(d.points)) : 0;
-                  return (
-                    <div key={idx} className="flex flex-col items-center gap-1 group h-full justify-end">
-                      <span className="text-[10px] font-black text-slate-800 dark:text-slate-200 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition truncate w-full text-center">
-                        {valPct}%
-                      </span>
-                      <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-t-lg overflow-hidden h-[80%] flex items-end">
-                        <div
-                          className="w-full bg-gradient-to-t from-emerald-700 to-emerald-500 rounded-t-lg transition-all duration-500 shadow-2xs"
-                          style={{ height: `${valPct}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div
-              className="flex gap-2"
-            >
-              <div className="w-12 shrink-0" />
-              <div
-                className="flex-1 grid gap-2 text-center"
-                style={{ gridTemplateColumns: `repeat(${chartColCount}, minmax(0, 1fr))` }}
-              >
-                {activeChartData.map((item, idx) => (
-                  <span key={idx} className="text-[9px] sm:text-[10px] font-extrabold text-slate-600 dark:text-slate-400 truncate block w-full" title={item.name}>
-                    {item.name}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Chart 2: Volume Sampah */}
-        <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-xs flex flex-col justify-between">
-          <div className="flex items-start justify-between gap-3 min-h-[58px]">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-sky-600 text-white flex items-center justify-center shadow-xs shrink-0">
-                <span className="material-symbols-outlined text-xl">delete</span>
-              </div>
-              <div>
-                <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100 leading-snug">
-                  {isLurah
-                    ? `Grafik Volume Sampah per Rukun Warga (Kel. ${userKelurahan || "Cipaganti"})`
-                    : "Grafik Volume Sampah per Kelurahan"}
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                  {isLurah
-                    ? "Total volume sampah terkumpul per RW binaan (Kg)"
-                    : "Total volume sampah terkumpul real (Kg)"}
-                </p>
-              </div>
-            </div>
-
-            <div className="px-3 py-1.5 rounded-full bg-sky-50 dark:bg-sky-950/60 border border-sky-200 dark:border-sky-700/30 text-sky-800 dark:text-sky-300 text-xs font-black flex items-center gap-1.5 shrink-0 self-start">
-              <span className="text-[10px] text-sky-600 dark:text-sky-400 font-bold uppercase">Total</span>
-              <span className="text-sky-700 dark:text-sky-300">
-                {activeChartData.reduce((acc, k) => acc + (k.points || 0), 0).toFixed(2)} Kg
-              </span>
-            </div>
-          </div>
-
-          {/* Bar Chart Area */}
-          <div className="pt-6 mt-auto space-y-2">
-            <div className="flex gap-2 items-end">
-              <div className="w-12 shrink-0 flex flex-col justify-between text-[9px] text-slate-400 dark:text-slate-500 font-extrabold pr-2 border-r border-slate-200 dark:border-slate-800 h-40 text-right select-none pb-5">
-                <span>{maxVolumeKg.toFixed(0)} Kg</span>
-                <span>{(maxVolumeKg * 0.8).toFixed(0)}</span>
-                <span>{(maxVolumeKg * 0.6).toFixed(0)}</span>
-                <span>{(maxVolumeKg * 0.4).toFixed(0)}</span>
-                <span>{(maxVolumeKg * 0.2).toFixed(0)}</span>
-                <span>0</span>
-              </div>
-
-              <div
-                className="flex-1 grid gap-2 items-end h-40 border-b border-slate-200 dark:border-slate-800 pb-1 relative"
-                style={{ gridTemplateColumns: `repeat(${chartColCount}, minmax(0, 1fr))` }}
-              >
-                {activeChartData.map((d, idx) => {
-                  const heightPct = d.points > 0 ? Math.min(100, Math.round((d.points / maxVolumeKg) * 100)) : 0;
-                  return (
-                    <div key={idx} className="flex flex-col items-center gap-1 group h-full justify-end">
-                      <span className="text-[10px] font-black text-slate-800 dark:text-slate-200 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition truncate w-full text-center">
-                        {(d.points || 0).toFixed(2)} Kg
-                      </span>
-                      <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-t-lg overflow-hidden h-[80%] flex items-end">
-                        <div
-                          className="w-full bg-gradient-to-t from-sky-700 to-sky-500 rounded-t-lg transition-all duration-500 shadow-2xs"
-                          style={{ height: `${heightPct}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div
-              className="flex gap-2"
-            >
-              <div className="w-12 shrink-0" />
-              <div
-                className="flex-1 grid gap-2 text-center"
-                style={{ gridTemplateColumns: `repeat(${chartColCount}, minmax(0, 1fr))` }}
-              >
-                {activeChartData.map((item, idx) => (
-                  <span key={idx} className="text-[9px] sm:text-[10px] font-extrabold text-slate-600 dark:text-slate-400 truncate block w-full" title={item.name}>
-                    {item.name}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      {/* Top 10 Warga & Wilayah */}
-      <div className="space-y-3">
+          {/* Top 10 Warga & Wilayah */}
+          <div className="space-y-3">
         <div className="flex items-center gap-2">
           <div className="p-1.5 rounded-xl bg-emerald-600 text-white shadow-xs">
             <Star size={16} className="fill-current" />

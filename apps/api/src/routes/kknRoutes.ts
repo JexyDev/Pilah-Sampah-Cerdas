@@ -181,6 +181,13 @@ router.post(
   kknController.activateBin
 );
 
+router.post(
+  "/activate-bin",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknController.activateBin
+);
+
 /**
  * @swagger
  * /api/v1/kkn/warga/{wargaId}:

@@ -207,6 +207,7 @@ const MasterData: React.FC = () => {
                     <th className="py-3 px-4">No. WhatsApp</th>
                     <th className="py-3 px-4">Kelompok KKN</th>
                     <th className="py-3 px-4">Wilayah Tugas</th>
+                    <th className="py-3 px-4">SKS Diambil</th>
                     <th className="py-3 px-4 text-center">Status</th>
                     {!isReadOnly && <th className="py-3 px-4 text-center w-24">Aksi</th>}
                   </tr>
@@ -214,14 +215,14 @@ const MasterData: React.FC = () => {
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs font-medium">
                   {loadingMahasiswa ? (
                     <tr>
-                      <td colSpan={8} className="py-12 text-center text-slate-400">
+                      <td colSpan={9} className="py-12 text-center text-slate-400">
                         <Loader2 className="animate-spin text-primary mx-auto mb-2" size={24} />
                         Memuat data mahasiswa...
                       </td>
                     </tr>
                   ) : filteredMahasiswas.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="py-12 text-center text-slate-400 font-semibold">
+                      <td colSpan={9} className="py-12 text-center text-slate-400 font-semibold">
                         Tidak ada data mahasiswa yang ditemukan.
                       </td>
                     </tr>
@@ -261,6 +262,13 @@ const MasterData: React.FC = () => {
                           ) : (
                             <span className="text-slate-400 italic">Belum diset</span>
                           )}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className="bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 px-2.5 py-1 rounded-lg border border-sky-200 dark:border-sky-800/80 font-bold text-[10px] whitespace-nowrap inline-block shadow-2xs">
+                            {mhs.studentProfile?.sks && mhs.studentProfile.sks > 0
+                              ? `${mhs.studentProfile.sks} SKS`
+                              : "Reguler (0 SKS)"}
+                          </span>
                         </td>
                         <td className="py-3.5 px-4 text-center">
                           <span
@@ -455,9 +463,17 @@ const MasterData: React.FC = () => {
                   <span className="text-slate-500">Dosen Pendamping Lapangan (DPL)</span>
                   <span className="font-semibold text-purple-700">{selectedMhsDetail.studentProfile?.kelompok?.dpl?.name || "Belum Ada DPL"}</span>
                 </div>
-                <div className="flex justify-between py-1">
+                <div className="flex justify-between py-1 border-b border-slate-50">
                   <span className="text-slate-500">Wilayah Penugasan</span>
                   <span className="font-bold text-slate-800 dark:text-slate-100">{selectedMhsDetail.rtRw?.name || "-"}</span>
+                </div>
+                <div className="flex justify-between py-1">
+                  <span className="text-slate-500">SKS Yang Diambil</span>
+                  <span className="font-bold text-sky-600 dark:text-sky-400">
+                    {selectedMhsDetail.studentProfile?.sks && selectedMhsDetail.studentProfile.sks > 0
+                      ? `${selectedMhsDetail.studentProfile.sks} SKS`
+                      : "Reguler (0 SKS)"}
+                  </span>
                 </div>
               </div>
 

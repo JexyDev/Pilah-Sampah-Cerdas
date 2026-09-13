@@ -130,4 +130,20 @@ router.post(
   aiController.classifyMock
 );
 
+/**
+ * @swagger
+ * /api/v1/ai/vision-detect:
+ *   post:
+ *     summary: Deteksi Sampah 3 Klasifikasi (Organik, Anorganik, Residu) + Bounding Box
+ *     tags: [AI]
+ *     responses:
+ *       200:
+ *         description: Berhasil menganalisis visual sampah
+ */
+router.post(
+  "/vision-detect",
+  uploadAvatarMiddleware.single("image"),
+  aiController.detectVisionBbox
+);
+
 export default router;

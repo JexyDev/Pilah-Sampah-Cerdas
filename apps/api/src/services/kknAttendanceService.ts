@@ -1326,8 +1326,8 @@ export class KknAttendanceService {
     const configLngStr = await configService.getConfig("default_activity_longitude");
     const configRadiusStr = await configService.getConfig("default_activity_radius");
 
-    const defaultLat = configLatStr ? parseFloat(configLatStr) : -6.8915; // Bandung / Coblong
-    const defaultLng = configLngStr ? parseFloat(configLngStr) : 107.6107;
+    const defaultLat = configLatStr ? parseFloat(configLatStr) : null;
+    const defaultLng = configLngStr ? parseFloat(configLngStr) : null;
     const defaultRadius = configRadiusStr ? parseInt(configRadiusStr, 10) : 500;
 
     const effectiveLat = schedule.latitude
@@ -1700,7 +1700,7 @@ export class KknAttendanceService {
           },
         });
 
-        // Award points if not already awarded
+        // Award points if not already awarded (+4 poin kehadiran)
         if (!isAutoAlpa) {
           const existingPoint = await tx.pointHistory.findFirst({
             where: {
@@ -1712,9 +1712,9 @@ export class KknAttendanceService {
             await tx.pointHistory.create({
               data: {
                 userId: studentId,
-                points: 10,
-                description: `Bonus kehadiran KKN: ${actLoc?.title || scheduleId} (${method})`,
-                kategori: "PARTISIPASI_STREAK",
+                points: 4,
+                description: `Poin kehadiran KKN (Check-In): ${actLoc?.title || scheduleId} (${method})`,
+                kategori: "KKN_PRESENSI_HADIR",
                 redeemable: false,
               },
             });
@@ -1757,14 +1757,14 @@ export class KknAttendanceService {
         },
       });
 
-      // Award +10 points to student on Check-In if NOT ALPA
+      // Award +4 points to student on Check-In if NOT ALPA
       if (!isAutoAlpa) {
         await tx.pointHistory.create({
           data: {
             userId: studentId,
-            points: 10,
-            description: `Bonus kehadiran (Check-In) KKN: ${actLoc?.title || scheduleId} (${method})`,
-            kategori: "PARTISIPASI_STREAK",
+            points: 4,
+            description: `Poin kehadiran (Check-In) KKN: ${actLoc?.title || scheduleId} (${method})`,
+            kategori: "KKN_PRESENSI_HADIR",
             redeemable: false,
           },
         });
@@ -2043,8 +2043,8 @@ export class KknAttendanceService {
     let logsCalculatedMins = 0;
     if (schedule && (todayLogsForCheckout?.length ?? 0) >= 2) {
       const checkoutGeofence = {
-        latitude: schedule.latitude ? Number(schedule.latitude) : -6.8915,
-        longitude: schedule.longitude ? Number(schedule.longitude) : 107.6107,
+        latitude: schedule.latitude ? Number(schedule.latitude) : null,
+        longitude: schedule.longitude ? Number(schedule.longitude) : null,
         radius: schedule.radius ? Number(schedule.radius) : 500,
         polygon: schedule.polygon,
       };
@@ -2201,25 +2201,27 @@ export class KknAttendanceService {
       },
     });
 
-    // Award +10 points to student on Check-Out (Kepulangan) if not already awarded today
-    const existingCheckoutPoint = await prisma.pointHistory.findFirst({
-      where: {
-        userId: studentId,
-        description: { contains: `(Check-Out)` },
-        createdAt: { gte: startOfDay },
-      },
-    });
-
-    if (!existingCheckoutPoint) {
-      await prisma.pointHistory.create({
-        data: {
+    // Award +3 points to student on Check-Out ONLY IF duration targets met (HADIR_MEMENUHI)
+    if (isMemenuhi) {
+      const existingCheckoutPoint = await prisma.pointHistory.findFirst({
+        where: {
           userId: studentId,
-          points: 10,
-          description: `Bonus kepulangan (Check-Out) presensi KKN: ${updated.schedule?.title || updated.scheduleId}`,
-          kategori: "PARTISIPASI_STREAK",
-          redeemable: false,
+          kategori: "KKN_DURASI_MEMENUHI",
+          createdAt: { gte: startOfDay },
         },
       });
+
+      if (!existingCheckoutPoint) {
+        await prisma.pointHistory.create({
+          data: {
+            userId: studentId,
+            points: 3,
+            description: `Poin durasi harian terpenuhi (${durationMinutes} menit): ${updated.schedule?.title || updated.scheduleId}`,
+            kategori: "KKN_DURASI_MEMENUHI",
+            redeemable: false,
+          },
+        });
+      }
     }
 
     // Broadcast checkout event via WebSocket
@@ -3302,43 +3304,15 @@ export class KknAttendanceService {
 
       const registeredPosko =
         group?.poskoKkn || (group as any)?.poskoMulti?.[0] || group?.facilities?.[0];
-      let poskoLat = -6.8915; // default Coblong
-      let poskoLng = 107.6107;
+      let poskoLat: number | null = null;
+      let poskoLng: number | null = null;
       let poskoName = `Posko KKN ${group?.name || "Mahasiswa"}`;
       const poskoRadius = Math.max(150, Number((registeredPosko as any)?.radius) || 500);
 
-      if (registeredPosko) {
+      if (registeredPosko && registeredPosko.latitude && registeredPosko.longitude) {
         poskoLat = Number(registeredPosko.latitude);
         poskoLng = Number(registeredPosko.longitude);
         poskoName = registeredPosko.nama || poskoName;
-      } else {
-        // Fallback berdasarkan kelurahan resmi
-        const kel = (group?.kelurahan || group?.name || "").toLowerCase();
-        if (kel.includes("dago")) {
-          poskoLat = -6.8833;
-          poskoLng = 107.6167;
-          poskoName = `Posko KKN ${group?.name || "Dago"} - Kel. Dago`;
-        } else if (kel.includes("cipaganti")) {
-          poskoLat = -6.8912;
-          poskoLng = 107.6035;
-          poskoName = `Posko KKN ${group?.name || "Cipaganti"} - Kel. Cipaganti`;
-        } else if (kel.includes("lebak gede") || kel.includes("lebakgede")) {
-          poskoLat = -6.8875;
-          poskoLng = 107.6133;
-          poskoName = `Posko KKN ${group?.name || "Lebak Gede"} - Kel. Lebak Gede`;
-        } else if (kel.includes("lebak siliwangi")) {
-          poskoLat = -6.8892;
-          poskoLng = 107.6083;
-          poskoName = `Posko KKN ${group?.name || "Lebak Siliwangi"} - Kel. Lebak Siliwangi`;
-        } else if (kel.includes("sadang serang")) {
-          poskoLat = -6.8917;
-          poskoLng = 107.625;
-          poskoName = `Posko KKN ${group?.name || "Sadang Serang"} - Kel. Sadang Serang`;
-        } else if (kel.includes("sekeloa")) {
-          poskoLat = -6.89;
-          poskoLng = 107.62;
-          poskoName = `Posko KKN ${group?.name || "Sekeloa"} - Kel. Sekeloa`;
-        }
       }
 
       // Upsert automatic daily schedule in database for today
@@ -3605,13 +3579,13 @@ export class KknAttendanceService {
           ? Number(sch.latitude)
           : officialPosko?.latitude
             ? Number(officialPosko.latitude)
-            : -6.8906;
+            : null;
       const lngNum =
         sch.longitude != null
           ? Number(sch.longitude)
           : officialPosko?.longitude
             ? Number(officialPosko.longitude)
-            : 107.615;
+            : null;
       const poskoRadiusNum =
         sch.radius != null
           ? Math.max(50, Number(sch.radius))
@@ -4148,12 +4122,12 @@ export class KknAttendanceService {
       },
     });
 
-    // Award +10 points to student on Check-In (Mulai Kegiatan) if not already awarded today
+    // Award +4 points to student on Check-In (Mulai Kegiatan) if not already awarded today
     const startOfDay = new Date(`${todayStr}T00:00:00+07:00`);
     const existingCheckInPoint = await prisma.pointHistory.findFirst({
       where: {
         userId: studentUserId,
-        description: { contains: `(Check-In)` },
+        kategori: "KKN_PRESENSI_HADIR",
         createdAt: { gte: startOfDay },
       },
     });
@@ -4162,9 +4136,9 @@ export class KknAttendanceService {
       await prisma.pointHistory.create({
         data: {
           userId: studentUserId,
-          points: 10,
-          description: `Bonus kehadiran (Check-In) KKN: ${schedule.title || scheduleId}`,
-          kategori: "PARTISIPASI_STREAK",
+          points: 4,
+          description: `Poin kehadiran KKN (Check-In): ${schedule.title || scheduleId}`,
+          kategori: "KKN_PRESENSI_HADIR",
           redeemable: false,
         },
       });
@@ -4906,6 +4880,8 @@ export class KknAttendanceService {
    */
   async getLaporanPresensi(params: {
     kelompokId?: string;
+    kelurahan?: string;
+    rw?: string;
     dplUserId?: string;
     startDate?: string;
     endDate?: string;
@@ -4958,6 +4934,85 @@ export class KknAttendanceService {
       }
     }
 
+    // 1b. Filter by Kelurahan and/or RW (Hierarki: Kelurahan -> RW -> Kelompok)
+    const hasKelurahanFilter = Boolean(
+      params.kelurahan && params.kelurahan !== "ALL" && params.kelurahan !== "Semua Kelurahan"
+    );
+    const hasRwFilter = Boolean(params.rw && params.rw !== "ALL" && params.rw !== "Semua RW");
+
+    if (hasKelurahanFilter || hasRwFilter) {
+      const cleanRw = params.rw ? params.rw.replace(/\D/g, "") : "";
+      const cleanRwNum = cleanRw ? parseInt(cleanRw, 10) : NaN;
+
+      const kelompokWhere: any = {};
+      if (hasKelurahanFilter) {
+        kelompokWhere.kelurahan = { contains: params.kelurahan!.trim(), mode: "insensitive" };
+      }
+
+      const matchingGroups = await prisma.kelompokKkn.findMany({
+        where: kelompokWhere,
+        select: { id: true, cakupanRw: true, kelurahan: true },
+      });
+
+      let targetGroupIds = matchingGroups.map((g) => g.id);
+
+      if (hasRwFilter && cleanRw) {
+        const groupsWithRw = matchingGroups.filter((g) => {
+          if (!g.cakupanRw) return false;
+          let rws: string[] = [];
+          if (Array.isArray(g.cakupanRw)) {
+            rws = g.cakupanRw.map(String);
+          } else if (typeof g.cakupanRw === "string") {
+            try {
+              const parsed = JSON.parse(g.cakupanRw);
+              rws = Array.isArray(parsed) ? parsed.map(String) : [String(parsed)];
+            } catch {
+              rws = [g.cakupanRw];
+            }
+          }
+          return rws.some(
+            (r) =>
+              r.replace(/\D/g, "") === cleanRw ||
+              (!isNaN(cleanRwNum) && parseInt(r.replace(/\D/g, ""), 10) === cleanRwNum)
+          );
+        });
+        targetGroupIds = groupsWithRw.map((g) => g.id);
+      }
+
+      const studentOr: any[] = [];
+      if (targetGroupIds.length > 0) {
+        studentOr.push({ kelompokId: { in: targetGroupIds } });
+      }
+      if (hasRwFilter && cleanRw) {
+        const rwOrConditions: any[] = [
+          { assignedRw: { name: { contains: cleanRw, mode: "insensitive" } } },
+        ];
+        if (!isNaN(cleanRwNum)) {
+          rwOrConditions.push({ assignedRwId: cleanRwNum });
+        }
+        studentOr.push({
+          AND: [
+            ...(hasKelurahanFilter
+              ? [{ kelompok: { kelurahan: { contains: params.kelurahan!.trim(), mode: "insensitive" } } }]
+              : []),
+            { OR: rwOrConditions },
+          ],
+        });
+      }
+
+      const areaStudents = await prisma.studentKkn.findMany({
+        where: studentOr.length > 0 ? { OR: studentOr } : { id: "impossible-none" },
+        select: { userId: true },
+      });
+      const areaIds = areaStudents.map((s) => s.userId);
+
+      if (where.studentId?.in) {
+        where.studentId = { in: where.studentId.in.filter((id: string) => areaIds.includes(id)) };
+      } else {
+        where.studentId = { in: areaIds };
+      }
+    }
+
     // 2. Filter Tanggal (WIB)
     if (params.startDate || params.endDate) {
       where.attendedAt = {};
@@ -4985,13 +5040,14 @@ export class KknAttendanceService {
       }
     }
 
-    // 4. Search Filter (Nama / NIM)
+    // 4. Search Filter (Nama / NIM / Jurusan)
     if (params.search && params.search.trim().length > 0) {
       const q = params.search.trim();
       where.student = {
         OR: [
           { name: { contains: q, mode: "insensitive" } },
           { studentProfile: { nim: { contains: q, mode: "insensitive" } } },
+          { studentProfile: { jurusan: { contains: q, mode: "insensitive" } } },
         ],
       };
     }
@@ -5024,11 +5080,13 @@ export class KknAttendanceService {
                   nim: true,
                   jurusan: true,
                   isKetua: true,
+                  assignedRw: { select: { id: true, name: true } },
                   kelompok: {
                     select: {
                       id: true,
                       name: true,
                       kelurahan: true,
+                      cakupanRw: true,
                       dpl: { select: { id: true, name: true, phone: true } },
                     },
                   },
@@ -5058,11 +5116,13 @@ export class KknAttendanceService {
                   nim: true,
                   jurusan: true,
                   isKetua: true,
+                  assignedRw: { select: { id: true, name: true } },
                   kelompok: {
                     select: {
                       id: true,
                       name: true,
                       kelurahan: true,
+                      cakupanRw: true,
                       dpl: { select: { id: true, name: true } },
                     },
                   },
@@ -5089,6 +5149,59 @@ export class KknAttendanceService {
     let totalMenitKumulatif = 0;
 
     const studentAggMap = new Map<string, any>();
+
+    // Pre-seed seluruh mahasiswa dalam kelompok jika kelompokId dipilih spesifik
+    if (params.kelompokId && params.kelompokId !== "ALL") {
+      try {
+        const groupStudents = await prisma.studentKkn.findMany({
+          where: { kelompokId: params.kelompokId },
+          include: {
+            user: { select: { id: true, name: true, fotoProfil: true } },
+            assignedRw: { select: { id: true, name: true } },
+            kelompok: {
+              select: {
+                id: true,
+                name: true,
+                kelurahan: true,
+                cakupanRw: true,
+                dpl: { select: { id: true, name: true } },
+              },
+            },
+          },
+        });
+        for (const s of groupStudents) {
+          if (!studentAggMap.has(s.userId)) {
+            studentAggMap.set(s.userId, {
+              studentId: s.userId,
+              namaMahasiswa: s.user?.name || "Mahasiswa",
+              nim: s.nim || "-",
+              jurusan: s.jurusan || "-",
+              fotoProfil: s.user?.fotoProfil || null,
+              isKetua: s.isKetua || false,
+              kelompok: s.kelompok
+                ? {
+                    id: s.kelompok.id,
+                    name: s.kelompok.name,
+                    kelurahan: s.kelompok.kelurahan,
+                    cakupanRw: (s.kelompok as any).cakupanRw || [],
+                    dplName: (s.kelompok as any).dpl?.name || "-",
+                  }
+                : null,
+              assignedRw: s.assignedRw?.name || null,
+              totalSessions: 0,
+              totalMinutes: 0,
+              hadirMemenuhi: 0,
+              hadirKurang: 0,
+              berlangsung: 0,
+              terjeda: 0,
+              izinSakit: 0,
+            });
+          }
+        }
+      } catch (err) {
+        console.error("[kknAttendanceService] Gagal pre-seed group students:", err);
+      }
+    }
 
     for (const r of allSummaryRecords) {
       const st = String(r.status || "").toUpperCase();
@@ -5148,9 +5261,11 @@ export class KknAttendanceService {
                 id: kknGroup.id,
                 name: kknGroup.name,
                 kelurahan: kknGroup.kelurahan,
+                cakupanRw: (kknGroup as any).cakupanRw || [],
                 dplName: (kknGroup as any).dpl?.name || "-",
               }
             : null,
+          assignedRw: r.student?.studentProfile?.assignedRw?.name || null,
           totalSessions: 0,
           totalMinutes: 0,
           hadirMemenuhi: 0,
@@ -5304,9 +5419,11 @@ export class KknAttendanceService {
               id: kknGroup.id,
               name: kknGroup.name,
               kelurahan: kknGroup.kelurahan,
+              cakupanRw: (kknGroup as any).cakupanRw || [],
               dplName: (kknGroup as any).dpl?.name ?? "-",
             }
           : null,
+        assignedRw: att.student?.studentProfile?.assignedRw?.name ?? null,
         scheduleId: att.scheduleId,
         namaKegiatan: att.schedule?.title ?? "Kegiatan Harian Lapangan",
         tanggal: att.attendedAt
@@ -5574,8 +5691,8 @@ export class KknAttendanceService {
       deskripsiKegiatan,
       fotoUrl,
       method = "MANUAL_ADMIN",
-      latitude = -6.8903,
-      longitude = 107.611,
+      latitude,
+      longitude,
     } = payload;
 
     if (!studentId || !scheduleId) {
@@ -5601,6 +5718,13 @@ export class KknAttendanceService {
           : "HADIR_TIDAK_MEMENUHI"
         : "BERLANGSUNG");
 
+    const targetSchedule = await prisma.schedule.findUnique({
+      where: { id: scheduleId },
+      select: { latitude: true, longitude: true },
+    });
+    const finalLat = latitude != null ? Number(latitude) : targetSchedule?.latitude ? Number(targetSchedule.latitude) : null;
+    const finalLng = longitude != null ? Number(longitude) : targetSchedule?.longitude ? Number(targetSchedule.longitude) : null;
+
     const record = await prisma.activityAttendance.upsert({
       where: {
         studentId_scheduleId: {
@@ -5618,8 +5742,8 @@ export class KknAttendanceService {
         deskripsiKegiatan: deskripsiKegiatan || null,
         fotoUrl: fotoUrl || null,
         method,
-        latitude: Number(latitude),
-        longitude: Number(longitude),
+        latitude: finalLat,
+        longitude: finalLng,
         jedaLogs: {
           createdManuallyBy: authorUserId,
           createdAt: new Date().toISOString(),
@@ -6154,8 +6278,8 @@ export class KknAttendanceService {
                 scheduleId: sched.id,
                 attendedAt: startOfDay,
                 method: "LEAVE_AUTO",
-                latitude: sched.latitude || -6.89,
-                longitude: sched.longitude || 107.61,
+                latitude: sched.latitude ? Number(sched.latitude) : null,
+                longitude: sched.longitude ? Number(sched.longitude) : null,
                 status: leaveStatus,
                 actualInZoneMinutes: 240,
                 deskripsiKegiatan: `Izin/Sakit Disetujui DPL: ${approvedLeave.reason || "-"}`,
@@ -6199,8 +6323,8 @@ export class KknAttendanceService {
               scheduleId: sched.id,
               attendedAt: startOfDay,
               method: "ALPA_AUTO",
-              latitude: sched.latitude || -6.89,
-              longitude: sched.longitude || 107.61,
+              latitude: sched.latitude ? Number(sched.latitude) : null,
+              longitude: sched.longitude ? Number(sched.longitude) : null,
               status: "ALPA",
               actualInZoneMinutes: 0,
               deskripsiKegiatan:

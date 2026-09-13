@@ -636,6 +636,185 @@ export async function getKelompokWhere(dplUserId: string, role?: any) {
   };
 }
 
+/**
+ * Formula Poin Kelompok & Poin DPL KKN:
+ * 1. Poin Kelompok = (Poin Proker * 0.6) + (Rata-rata Poin Anggota * 0.4)
+ *    Poin Proker dihitung dari status pelaksanaan proker yang disetujui (Disetujui=1, Sedang Berlangsung=2, Selesai=3, jika tidak ada=0).
+ * 2. Poin DPL = (Poin Logbook DPL * 0.6) + (Poin Kelompok * 0.4)
+ *    Poin Logbook DPL: Jika tersedia logbook DPL = 6 poin, jika tidak ada = 0 poin.
+ */
+export async function calculateGroupPoints(
+  kelompokId: string,
+  prokerListInput?: any[],
+  studentUserIdsInput?: string[]
+): Promise<{
+  totalGroupPoints: number;
+  poinProker: number;
+  rataRataPoinAnggota: number;
+  prokerApprovedCount: number;
+  prokerSedangBerjalanCount: number;
+  prokerSelesaiCount: number;
+}> {
+  try {
+    // 1. Ambil proker kelompok jika belum dioper
+    const prokers =
+      prokerListInput ||
+      (await prisma.programKerjaKkn.findMany({
+        where: { kelompokId },
+      }));
+
+    let prokerApprovedCount = 0;
+    let prokerSedangBerjalanCount = 0;
+    let prokerSelesaiCount = 0;
+    let poinProker = 0;
+
+    for (const p of prokers) {
+      const legacySt = String(p.status || "").toUpperCase();
+      let u = (p as any).statusUsulan;
+      if (!u) {
+        if (
+          legacySt === "DITERIMA" ||
+          legacySt === "DISETUJUI" ||
+          legacySt === "SEDANG_BERJALAN" ||
+          legacySt === "SELESAI"
+        )
+          u = "DISETUJUI";
+        else if (legacySt === "DITOLAK" || legacySt === "TIDAK_DISETUJUI") u = "DITOLAK";
+        else u = "BELUM_DISETUJUI";
+      }
+
+      if (u === "DISETUJUI" || u === "DITERIMA") {
+        prokerApprovedCount++;
+        let pl = (p as any).statusPelaksanaan;
+        if (!pl) {
+          if (legacySt === "SELESAI") pl = "SELESAI";
+          else if (
+            legacySt === "SEDANG_BERJALAN" ||
+            legacySt === "SEDANG_DILAKSANAKAN" ||
+            legacySt === "BERJALAN"
+          )
+            pl = "SEDANG_BERJALAN";
+          else pl = "BELUM_MULAI";
+        }
+
+        if (pl === "SELESAI") {
+          prokerSelesaiCount++;
+          poinProker += 3;
+        } else if (pl === "SEDANG_BERJALAN") {
+          prokerSedangBerjalanCount++;
+          poinProker += 2;
+        } else {
+          // Disetujui tapi belum mulai
+          poinProker += 1;
+        }
+      }
+    }
+
+    // 2. Ambil studentUserIds kelompok jika belum dioper
+    let studentUserIds = studentUserIdsInput;
+    if (!studentUserIds) {
+      const students = await prisma.studentKkn.findMany({
+        where: { kelompokId },
+        select: { userId: true },
+      });
+      studentUserIds = students.map((s) => s.userId);
+    }
+
+    let rataRataPoinAnggota = 0;
+    if (studentUserIds.length > 0) {
+      const pointSum = await prisma.pointHistory.aggregate({
+        where: { userId: { in: studentUserIds } },
+        _sum: { points: true },
+      });
+      const totalPointsAll = Number(pointSum._sum.points || 0);
+      rataRataPoinAnggota = Math.round((totalPointsAll / studentUserIds.length) * 10) / 10;
+    }
+
+    const totalGroupPoints =
+      Math.round((poinProker * 0.6 + rataRataPoinAnggota * 0.4) * 10) / 10;
+
+    return {
+      totalGroupPoints,
+      poinProker,
+      rataRataPoinAnggota,
+      prokerApprovedCount,
+      prokerSedangBerjalanCount,
+      prokerSelesaiCount,
+    };
+  } catch (err) {
+    console.warn("[calculateGroupPoints] Error:", err);
+    return {
+      totalGroupPoints: 0,
+      poinProker: 0,
+      rataRataPoinAnggota: 0,
+      prokerApprovedCount: 0,
+      prokerSedangBerjalanCount: 0,
+      prokerSelesaiCount: 0,
+    };
+  }
+}
+
+export async function calculateDplPoints(
+  dplUserId: string,
+  kelompokId?: string,
+  groupPoints?: number
+): Promise<{
+  poinDpl: number;
+  poinLogbookDpl: number;
+  poinKelompok: number;
+  hasLogbookDpl: boolean;
+}> {
+  try {
+    let resolvedGroupPoints = groupPoints;
+    let targetKelompokId = kelompokId;
+
+    if (resolvedGroupPoints === undefined && dplUserId) {
+      const grp = await prisma.kelompokKkn.findFirst({
+        where: { dplId: dplUserId },
+        select: { id: true },
+      });
+      if (grp) {
+        targetKelompokId = grp.id;
+        const groupRes = await calculateGroupPoints(grp.id);
+        resolvedGroupPoints = groupRes.totalGroupPoints;
+      } else {
+        resolvedGroupPoints = 0;
+      }
+    }
+
+    const poinKelompok = resolvedGroupPoints || 0;
+
+    // Cek ketersediaan logbook DPL
+    const logbookWhere: any = { dplId: dplUserId };
+    if (targetKelompokId) {
+      logbookWhere.kelompokId = targetKelompokId;
+    }
+
+    const logbookCount = await prisma.logbookDpl.count({
+      where: logbookWhere,
+    });
+
+    const hasLogbookDpl = logbookCount > 0;
+    const poinLogbookDpl = hasLogbookDpl ? 6 : 0;
+    const poinDpl = Math.round((poinLogbookDpl * 0.6 + poinKelompok * 0.4) * 10) / 10;
+
+    return {
+      poinDpl,
+      poinLogbookDpl,
+      poinKelompok,
+      hasLogbookDpl,
+    };
+  } catch (err) {
+    console.warn("[calculateDplPoints] Error:", err);
+    return {
+      poinDpl: 0,
+      poinLogbookDpl: 0,
+      poinKelompok: groupPoints || 0,
+      hasLogbookDpl: false,
+    };
+  }
+}
+
 export const dplService = {
   /**
    * 1. Ringkasan Kelompok Dampingan (Murni scoped ke kelompok DPL sendiri)
@@ -1098,6 +1277,12 @@ export const dplService = {
           };
         });
 
+        // Kalkulasi Poin Kelompok & Poin DPL berdasarkan formula resmi
+        const groupPointsData = await calculateGroupPoints(grp.id, prokerList, studentUserIds);
+        const dplPointsData = grp.dplId
+          ? await calculateDplPoints(grp.dplId, grp.id, groupPointsData.totalGroupPoints)
+          : { poinDpl: 0, poinLogbookDpl: 0, poinKelompok: groupPointsData.totalGroupPoints, hasLogbookDpl: false };
+
         return {
           id: grp.id,
           name: grp.name,
@@ -1162,7 +1347,12 @@ export const dplService = {
           anorganikBinsCount,
           totalWasteWeight,
           avgAttendanceRate,
-          totalGroupPoints: pointSum._sum.points || 0,
+          totalGroupPoints: groupPointsData.totalGroupPoints,
+          poinProker: groupPointsData.poinProker,
+          rataRataPoinAnggota: groupPointsData.rataRataPoinAnggota,
+          poinDpl: dplPointsData.poinDpl,
+          poinLogbookDpl: dplPointsData.poinLogbookDpl,
+          hasLogbookDpl: dplPointsData.hasLogbookDpl,
           prokerBelumMulaiCount,
           prokerSedangBerjalanCount,
           prokerSelesaiCount,
@@ -3378,10 +3568,9 @@ export const dplService = {
         ) {
           const calcScore =
             0.25 * effectiveKehadiran +
-            0.15 * effectivePoin +
-            0.2 * indivGabungan +
-            0.2 * prokerGabungan +
-            0.2 * kelompokGabungan;
+            0.25 * indivGabungan +
+            0.25 * prokerGabungan +
+            0.25 * kelompokGabungan;
           finalScore = Math.round(calcScore * 10) / 10;
           if (finalScore >= 80) gradeLetter = "A";
           else if (finalScore >= 70) gradeLetter = "B";

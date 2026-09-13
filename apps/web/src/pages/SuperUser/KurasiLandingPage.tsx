@@ -15,10 +15,7 @@ import {
   Plus,
   Trash2,
   Edit,
-  CheckCircle2,
-  Calendar,
   MapPin,
-  Download,
   AlertCircle,
   Save,
   RefreshCw,
@@ -26,19 +23,12 @@ import {
   ShoppingBag,
   Layers,
   Newspaper,
-  MessageSquare,
   HelpCircle,
   Eye,
-  ExternalLink,
   ChevronRight,
   ChevronLeft,
-  Award,
-  Tag,
-  Clock,
   X,
   ShieldCheck,
-  TrendingUp,
-  FileText,
   UploadCloud,
   FolderOpen,
   Link2,
@@ -48,12 +38,10 @@ import {
   BookOpen,
   Filter,
   RotateCcw,
-  Building2,
   Users
 } from "lucide-react";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
-import { useAuthStore } from "../../store/useAuthStore";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import {
   loadCmsContent,
@@ -64,7 +52,6 @@ import {
   type MarketProductItem,
   type ActionCampaignItem,
   type NewsArticleItem,
-  type LiveLogItem,
   type FaqItem,
   type LandingContentPayload,
 } from "../../utils/cmsStorage";
@@ -364,15 +351,12 @@ const ImageUploadPicker: React.FC<ImageUploadPickerProps> = ({
 // ── Main Page Component ───────────────────────────────────────────────────────
 
 export const KurasiLandingPage: React.FC = () => {
-  const { user } = useAuthStore();
-  const isAdmin = true; // Enabled for testing and Super Admin access
-
   // Tab State
   const [activeTab, setActiveTab] = useState<"pasar" | "hero" | "campaign" | "news" | "ticker_faq">("pasar");
 
   // Main CMS Data State
   const [content, setContent] = useState<LandingContentPayload>(DEFAULT_CMS_CONTENT);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading] = useState<boolean>(false);
   const [saving, setSaving] = useState<boolean>(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
 
@@ -465,8 +449,9 @@ export const KurasiLandingPage: React.FC = () => {
   const [prokerSources, setProkerSources] = useState<any[]>([]);
   const [loadingSources, setLoadingSources] = useState<boolean>(false);
   const [importSearchTerm, setImportSearchTerm] = useState<string>("");
-  const [importFilterKelompok, setImportFilterKelompok] = useState<string>("");
   const [importFilterKelurahan, setImportFilterKelurahan] = useState<string>("");
+  const [importFilterRw, setImportFilterRw] = useState<string>("");
+  const [importFilterKelompok, setImportFilterKelompok] = useState<string>("");
   const [importFilterKategori, setImportFilterKategori] = useState<string>("");
   const [importPage, setImportPage] = useState<number>(1);
   const importPageSize = 8;
@@ -541,10 +526,33 @@ export const KurasiLandingPage: React.FC = () => {
     return Array.from(set).sort((a, b) => a.localeCompare(b, "id"));
   }, [prokerSources]);
 
+  // Distinct list of RW from logbooks and prokers
+  const availableRwList = useMemo(() => {
+    const set = new Set<string>();
+    const checkItem = (item: any) => {
+      const rwVal = item.rw || item.rwName || item.cakupanRw;
+      if (rwVal) {
+        if (Array.isArray(rwVal)) {
+          rwVal.forEach((r: any) => set.add(String(r).padStart(2, "0")));
+        } else {
+          set.add(String(rwVal).padStart(2, "0"));
+        }
+      }
+      const text = `${item.tempat || ""} ${item.deskripsi || ""}`;
+      const match = text.match(/\bRW\s*0?(\d{1,2})\b/i);
+      if (match) {
+        set.add(match[1].padStart(2, "0"));
+      }
+    };
+    logbookSources.forEach(checkItem);
+    prokerSources.forEach(checkItem);
+    return Array.from(set).sort((a, b) => Number(a) - Number(b));
+  }, [logbookSources, prokerSources]);
+
   // Reset pagination to page 1 whenever any filter or search changes
   useEffect(() => {
     setImportPage(1);
-  }, [importSourceType, importFilterKelompok, importFilterKelurahan, importFilterKategori, importSearchTerm]);
+  }, [importSourceType, importFilterKelompok, importFilterKelurahan, importFilterRw, importFilterKategori, importSearchTerm]);
 
   // Filtered source items
   const filteredImportItems = useMemo(() => {
@@ -556,7 +564,28 @@ export const KurasiLandingPage: React.FC = () => {
         if (!itemKelurahan.includes(importFilterKelurahan.toLowerCase())) return false;
       }
 
-      // 2. Filter Kelompok KKN
+      // 2. Filter RW
+      if (importFilterRw) {
+        const itemRw = item.rw || item.rwName || item.cakupanRw;
+        let matchRw = false;
+        if (itemRw) {
+          if (Array.isArray(itemRw)) {
+            matchRw = itemRw.some((r: any) => String(r).padStart(2, "0") === importFilterRw.padStart(2, "0"));
+          } else {
+            matchRw = String(itemRw).padStart(2, "0") === importFilterRw.padStart(2, "0");
+          }
+        }
+        if (!matchRw) {
+          const text = `${item.tempat || ""} ${item.deskripsi || ""}`;
+          const match = text.match(/\bRW\s*0?(\d{1,2})\b/i);
+          if (match && match[1].padStart(2, "0") === importFilterRw.padStart(2, "0")) {
+            matchRw = true;
+          }
+        }
+        if (!matchRw) return false;
+      }
+
+      // 3. Filter Kelompok KKN
       if (importFilterKelompok) {
         const matchId = String(item.kelompokId || "") === importFilterKelompok;
         const matchNama = (item.kelompokNama || "") === importFilterKelompok;
@@ -602,7 +631,7 @@ export const KurasiLandingPage: React.FC = () => {
 
       return true;
     });
-  }, [importSourceType, logbookSources, prokerSources, importFilterKelompok, importFilterKelurahan, importFilterKategori, importSearchTerm]);
+  }, [importSourceType, logbookSources, prokerSources, importFilterKelompok, importFilterKelurahan, importFilterRw, importFilterKategori, importSearchTerm]);
 
   // Paginated list
   const totalImportPages = Math.max(1, Math.ceil(filteredImportItems.length / importPageSize));
@@ -612,12 +641,13 @@ export const KurasiLandingPage: React.FC = () => {
   }, [filteredImportItems, importPage, importPageSize]);
 
   const hasActiveImportFilters = Boolean(
-    importFilterKelompok || importFilterKelurahan || importFilterKategori || importSearchTerm.trim()
+    importFilterKelompok || importFilterKelurahan || importFilterRw || importFilterKategori || importSearchTerm.trim()
   );
 
   const handleResetImportFilters = () => {
     setImportFilterKelompok("");
     setImportFilterKelurahan("");
+    setImportFilterRw("");
     setImportFilterKategori("");
     setImportSearchTerm("");
     setImportPage(1);
@@ -641,9 +671,6 @@ export const KurasiLandingPage: React.FC = () => {
       fetchImportSources();
     }
   };
-
-  // Alias for backward compatibility
-  const handleOpenImportNews = () => handleOpenImportModal("news");
 
   // Helper mapping category for campaigns
   const mapProkerToCampaignCategory = (rawCat?: string, desc?: string): { category: "organic" | "recycle" | "kkn" | "education"; categoryLabel: string; categoryColor: string } => {
@@ -2647,142 +2674,163 @@ export const KurasiLandingPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Comprehensive & Detailed Filter Bar */}
-            <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2.5 shrink-0">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-                {/* 1. Search Query */}
-                <div className="relative">
-                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="text"
-                    value={importSearchTerm}
-                    onChange={(e) => setImportSearchTerm(e.target.value)}
-                    placeholder="Cari kata kunci, nama, RW..."
-                    className="w-full pl-8.5 pr-7 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#005841] focus:ring-1 focus:ring-[#005841]/20 transition"
-                  />
-                  {importSearchTerm && (
-                    <button
-                      type="button"
-                      onClick={() => setImportSearchTerm("")}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
-                    >
-                      <X size={13} />
-                    </button>
-                  )}
+            {/* Filter Bar: 5 Grid Columns (Search ➔ Kelurahan ➔ RW ➔ Kelompok KKN ➔ Kategori) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2.5">
+              {/* 1. Search Query */}
+              <div className="relative">
+                <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                  <Search size={13} />
                 </div>
+                <input
+                  type="text"
+                  placeholder="Cari kata kunci..."
+                  value={importSearchTerm}
+                  onChange={(e) => setImportSearchTerm(e.target.value)}
+                  className="w-full pl-7.5 pr-6 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#005841] focus:ring-1 focus:ring-[#005841]/20 transition"
+                />
+                {importSearchTerm && (
+                  <button
+                    type="button"
+                    onClick={() => setImportSearchTerm("")}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
 
-                {/* 2. Filter Kelurahan */}
-                <div className="relative">
-                  <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-emerald-700 pointer-events-none">
-                    <Building2 size={13} />
-                  </div>
+              {/* 2. Filter Kelurahan */}
+              <div className="relative">
+                <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-emerald-700 pointer-events-none">
+                  <MapPin size={13} />
+                </div>
+                <select
+                  value={importFilterKelurahan}
+                  onChange={(e) => {
+                    setImportFilterKelurahan(e.target.value);
+                    setImportFilterRw("");
+                  }}
+                  className="w-full pl-7.5 pr-6 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#005841] focus:ring-1 focus:ring-[#005841]/20 cursor-pointer transition truncate"
+                >
+                  <option value="">Semua Kelurahan ({availableKelurahanList.length})</option>
+                  {availableKelurahanList.map((kel) => (
+                    <option key={kel} value={kel}>
+                      {kel}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 3. Filter RW */}
+              <div className="relative">
+                <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-emerald-700 pointer-events-none">
+                  <Layers size={13} />
+                </div>
+                <select
+                  value={importFilterRw}
+                  onChange={(e) => setImportFilterRw(e.target.value)}
+                  className="w-full pl-7.5 pr-6 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#005841] focus:ring-1 focus:ring-[#005841]/20 cursor-pointer transition truncate"
+                >
+                  <option value="">Semua RW</option>
+                  {availableRwList.map((rw) => (
+                    <option key={rw} value={rw}>
+                      RW {rw}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 4. Filter Kelompok KKN */}
+              <div className="relative">
+                <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-emerald-700 pointer-events-none">
+                  <Users size={13} />
+                </div>
+                <select
+                  value={importFilterKelompok}
+                  onChange={(e) => setImportFilterKelompok(e.target.value)}
+                  className="w-full pl-7.5 pr-6 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#005841] focus:ring-1 focus:ring-[#005841]/20 cursor-pointer transition truncate"
+                >
+                  <option value="">Semua Kelompok KKN ({availableKelompokList.length})</option>
+                  {availableKelompokList
+                    .filter((k) => !importFilterKelurahan || (k.kelurahan && k.kelurahan.toLowerCase().includes(importFilterKelurahan.toLowerCase())))
+                    .map((k) => (
+                      <option key={k.id} value={k.id}>
+                        {k.nama} {k.kelurahan ? `(${k.kelurahan})` : ""}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              {/* 5. Filter Kategori (Proker) / Tipe (Logbook) */}
+              <div className="relative">
+                <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-emerald-700 pointer-events-none">
+                  <Filter size={13} />
+                </div>
+                {importSourceType === "proker" ? (
                   <select
-                    value={importFilterKelurahan}
-                    onChange={(e) => {
-                      setImportFilterKelurahan(e.target.value);
-                      if (importFilterKelompok) {
-                        const kelItem = availableKelompokList.find((k) => k.id === importFilterKelompok || k.nama === importFilterKelompok);
-                        if (kelItem?.kelurahan && e.target.value && !kelItem.kelurahan.toLowerCase().includes(e.target.value.toLowerCase())) {
-                          setImportFilterKelompok("");
-                        }
-                      }
-                    }}
+                    value={importFilterKategori}
+                    onChange={(e) => setImportFilterKategori(e.target.value)}
                     className="w-full pl-7.5 pr-6 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#005841] focus:ring-1 focus:ring-[#005841]/20 cursor-pointer transition truncate"
                   >
-                    <option value="">Semua Kelurahan ({availableKelurahanList.length})</option>
-                    {availableKelurahanList.map((kel) => (
-                      <option key={kel} value={kel}>
-                        Kel. {kel}
+                    <option value="">Semua Kategori Proker ({availableProkerCategories.length})</option>
+                    {availableProkerCategories.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
                       </option>
                     ))}
                   </select>
-                </div>
-
-                {/* 3. Filter Kelompok KKN */}
-                <div className="relative">
-                  <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-emerald-700 pointer-events-none">
-                    <Users size={13} />
-                  </div>
+                ) : (
                   <select
-                    value={importFilterKelompok}
-                    onChange={(e) => setImportFilterKelompok(e.target.value)}
+                    value={importFilterKategori}
+                    onChange={(e) => setImportFilterKategori(e.target.value)}
                     className="w-full pl-7.5 pr-6 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#005841] focus:ring-1 focus:ring-[#005841]/20 cursor-pointer transition truncate"
                   >
-                    <option value="">Semua Kelompok KKN ({availableKelompokList.length})</option>
-                    {availableKelompokList
-                      .filter((k) => !importFilterKelurahan || (k.kelurahan && k.kelurahan.toLowerCase().includes(importFilterKelurahan.toLowerCase())))
-                      .map((k) => (
-                        <option key={k.id} value={k.id}>
-                          {k.nama} {k.kelurahan ? `(${k.kelurahan})` : ""}
-                        </option>
-                      ))}
+                    <option value="">Semua Logbook</option>
+                    <option value="with_photo">📷 Hanya Ada Foto Bukti Asli</option>
+                    <option value="pemanfaatan">♻️ Aksi Pemanfaatan &amp; Pengolahan</option>
                   </select>
-                </div>
-
-                {/* 4. Filter Kategori (Proker) / Tipe (Logbook) */}
-                <div className="relative">
-                  <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-emerald-700 pointer-events-none">
-                    <Filter size={13} />
-                  </div>
-                  {importSourceType === "proker" ? (
-                    <select
-                      value={importFilterKategori}
-                      onChange={(e) => setImportFilterKategori(e.target.value)}
-                      className="w-full pl-7.5 pr-6 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#005841] focus:ring-1 focus:ring-[#005841]/20 cursor-pointer transition truncate"
-                    >
-                      <option value="">Semua Kategori Proker ({availableProkerCategories.length})</option>
-                      {availableProkerCategories.map((cat) => (
-                        <option key={cat} value={cat}>
-                          {cat}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <select
-                      value={importFilterKategori}
-                      onChange={(e) => setImportFilterKategori(e.target.value)}
-                      className="w-full pl-7.5 pr-6 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#005841] focus:ring-1 focus:ring-[#005841]/20 cursor-pointer transition truncate"
-                    >
-                      <option value="">Semua Logbook</option>
-                      <option value="with_photo">📷 Hanya Ada Foto Bukti Asli</option>
-                      <option value="pemanfaatan">♻️ Aksi Pemanfaatan &amp; Pengolahan</option>
-                    </select>
-                  )}
-                </div>
+                )}
               </div>
+            </div>
 
-              {/* Active Filter Indicators & Reset Action */}
-              <div className="flex items-center justify-between gap-2 flex-wrap text-[11px] pt-1 border-t border-slate-200/60 font-semibold text-slate-600">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span>
-                    Menampilkan <strong className="text-emerald-800">{filteredImportItems.length}</strong> dari{" "}
-                    <strong>{importSourceType === "logbook" ? logbookSources.length : prokerSources.length}</strong>{" "}
-                    {importSourceType === "logbook" ? "Logbook Kegiatan" : "Program Kerja"}
+            {/* Active Filter Indicators & Reset Action */}
+            <div className="flex items-center justify-between gap-2 flex-wrap text-[11px] pt-1 border-t border-slate-200/60 font-semibold text-slate-600">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span>
+                  Menampilkan <strong className="text-emerald-800">{filteredImportItems.length}</strong> dari{" "}
+                  <strong>{importSourceType === "logbook" ? logbookSources.length : prokerSources.length}</strong>{" "}
+                  {importSourceType === "logbook" ? "Logbook Kegiatan" : "Program Kerja"}
+                </span>
+                {importFilterKelurahan && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                    Kel. {importFilterKelurahan}
+                    <button type="button" onClick={() => setImportFilterKelurahan("")} className="hover:text-red-600 cursor-pointer">✕</button>
                   </span>
-                  {importFilterKelurahan && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                      Kel. {importFilterKelurahan}
-                      <button type="button" onClick={() => setImportFilterKelurahan("")} className="hover:text-red-600 cursor-pointer">✕</button>
-                    </span>
-                  )}
-                  {importFilterKelompok && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 text-[10px] font-bold">
-                      {availableKelompokList.find((k) => k.id === importFilterKelompok || k.nama === importFilterKelompok)?.nama || "Kelompok Terpilih"}
-                      <button type="button" onClick={() => setImportFilterKelompok("")} className="hover:text-red-600 cursor-pointer">✕</button>
-                    </span>
-                  )}
-                  {importFilterKategori && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-100 text-purple-800 text-[10px] font-bold">
-                      {importFilterKategori === "with_photo" ? "Ada Foto Bukti" : importFilterKategori === "pemanfaatan" ? "Pemanfaatan" : importFilterKategori}
-                      <button type="button" onClick={() => setImportFilterKategori("")} className="hover:text-red-600 cursor-pointer">✕</button>
-                    </span>
-                  )}
-                  {importSearchTerm && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 text-[10px] font-bold">
-                      "{importSearchTerm}"
-                      <button type="button" onClick={() => setImportSearchTerm("")} className="hover:text-red-600 cursor-pointer">✕</button>
-                    </span>
-                  )}
+                )}
+                {importFilterRw && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-teal-100 text-teal-800 text-[10px] font-bold">
+                    RW {importFilterRw}
+                    <button type="button" onClick={() => setImportFilterRw("")} className="hover:text-red-600 cursor-pointer">✕</button>
+                  </span>
+                )}
+                {importFilterKelompok && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 text-[10px] font-bold">
+                    {availableKelompokList.find((k) => k.id === importFilterKelompok || k.nama === importFilterKelompok)?.nama || "Kelompok Terpilih"}
+                    <button type="button" onClick={() => setImportFilterKelompok("")} className="hover:text-red-600 cursor-pointer">✕</button>
+                  </span>
+                )}
+                {importFilterKategori && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-100 text-purple-800 text-[10px] font-bold">
+                    {importFilterKategori === "with_photo" ? "Ada Foto Bukti" : importFilterKategori === "pemanfaatan" ? "Pemanfaatan" : importFilterKategori}
+                    <button type="button" onClick={() => setImportFilterKategori("")} className="hover:text-red-600 cursor-pointer">✕</button>
+                  </span>
+                )}
+                {importSearchTerm && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 text-[10px] font-bold">
+                    "{importSearchTerm}"
+                    <button type="button" onClick={() => setImportSearchTerm("")} className="hover:text-red-600 cursor-pointer">✕</button>
+                  </span>
+                )}
                 </div>
 
                 {hasActiveImportFilters && (
@@ -2796,7 +2844,6 @@ export const KurasiLandingPage: React.FC = () => {
                   </button>
                 )}
               </div>
-            </div>
 
             {/* List Body */}
             <div className="flex-1 overflow-y-auto pr-1 space-y-3 min-h-[300px]">
@@ -3035,7 +3082,7 @@ export const KurasiLandingPage: React.FC = () => {
           cancelText="Batal"
           type="danger"
           onConfirm={handleConfirmDelete}
-          onCancel={() => setDeleteConfig(null)}
+          onClose={() => setDeleteConfig(null)}
         />
       )}
 
@@ -3049,7 +3096,7 @@ export const KurasiLandingPage: React.FC = () => {
           cancelText="Batal"
           type="warning"
           onConfirm={handleResetToDefaults}
-          onCancel={() => setShowResetModal(false)}
+          onClose={() => setShowResetModal(false)}
         />
       )}
     </div>
