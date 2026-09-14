@@ -232,6 +232,7 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
     required double actualWeightKg,
     required String classification,
     required String photoPath,
+    required String photoTimbanganPath,
     double? latitude,
     double? longitude,
   }) async {
@@ -243,6 +244,7 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
         actualWeightKg: actualWeightKg,
         classification: classification,
         photoPath: photoPath,
+        photoTimbanganPath: photoTimbanganPath,
         latitude: latitude,
         longitude: longitude,
       );
@@ -391,7 +393,7 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
     }
   }
 
-  Future<bool> claimPengajuanReset(
+  Future<Map<String, dynamic>?> claimPengajuanReset(
     String pengajuanId, {
     String? emptyBinPhotoPath,
     String? scannedQrCode,
@@ -401,7 +403,7 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       final repo = _ref.read(petugasPemilahanRepositoryProvider);
-      final ok = await repo.claimPengajuanReset(
+      final result = await repo.claimPengajuanReset(
         pengajuanId,
         emptyBinPhotoPath: emptyBinPhotoPath,
         scannedQrCode: scannedQrCode,
@@ -412,13 +414,13 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
       // agar tidak terjadi duplikasi dengan notifikasi server.
       await refreshAll();
       state = state.copyWith(isLoading: false);
-      return ok;
+      return result;
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
         errorMessage: NetworkExceptionHelper.getErrorMessage(e),
       );
-      return false;
+      return null;
     }
   }
 }

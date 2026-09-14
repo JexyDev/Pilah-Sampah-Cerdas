@@ -335,6 +335,7 @@ class ApiWasteLogRepository implements WasteLogRepository {
       wasteType: wasteType,
       description: desc,
       createdAt: createdAt,
+      kategori: json['kategori']?.toString(),
     );
   }
 

@@ -8,7 +8,6 @@ import '../../../data/services/notification_engine.dart' as import_engine;
 import '../../../routes/app_routes.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/utils/platform_utils.dart';
-import '../../../data/services/location_service.dart';
 import '../../../data/models/bin_entity.dart';
 import '../../scan/controllers/scan_controller.dart';
 import '../../shared/controllers/connectivity_controller.dart';

@@ -525,20 +525,33 @@ class _PoinHistoryItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final String descLower = item.description.toLowerCase();
 
-    // Cek tipe transaksi berdasarkan deskripsi
+    final String kat = (item.kategori ?? '').toUpperCase();
     bool isAktivasi =
-        descLower.contains('aktivasi') || descLower.contains('activation');
+        kat.contains('AKTIVASI') ||
+        descLower.contains('aktivasi') ||
+        descLower.contains('activation');
     bool isPunishment =
         item.points < 0 ||
+        kat.contains('PENALTY') ||
         descLower.contains('penalti') ||
         descLower.contains('punishment');
     bool isRedeem = descLower.contains('redeem') || descLower.contains('tukar');
     bool isPresensi =
-        descLower.contains('presensi') || descLower.contains('geofence');
+        kat.contains('PRESENSI') ||
+        kat.contains('DURASI') ||
+        descLower.contains('presensi') ||
+        descLower.contains('geofence') ||
+        descLower.contains('check-in');
+    bool isLogbook =
+        kat.contains('LOGBOOK') || descLower.contains('logbook');
+    bool isPanenOrPemanfaatan =
+        kat.contains('PEMANFAATAN') ||
+        descLower.contains('pemanfaatan') ||
+        descLower.contains('panen');
 
     // Fallback: Jika deskripsi kosong atau tidak jelas, tapi poinnya tepat 10 (dan bukan penalti),
     // asumsikan ini adalah Aktivasi Tempat Sampah (sesuai role Warga/Mahasiswa).
-    if (!isAktivasi && !isPunishment && !isRedeem && !isPresensi) {
+    if (!isAktivasi && !isPunishment && !isRedeem && !isPresensi && !isLogbook && !isPanenOrPemanfaatan) {
       if (item.points == 10 &&
           !descLower.contains('setor') &&
           !descLower.contains('sampah')) {
@@ -550,32 +563,33 @@ class _PoinHistoryItem extends StatelessWidget {
 
     final Color color = isPunishment
         ? AppColors.dangerRed
-        : (isAktivasi || isPresensi
+        : (isAktivasi || isPresensi || isLogbook
               ? Colors.blue
-              : (isOrganic
-                    ? AppColors.organicColor
-                    : AppColors.nonOrganicColor));
+              : (isPanenOrPemanfaatan
+                    ? AppColors.warningOrange
+                    : (isOrganic
+                          ? AppColors.organicColor
+                          : AppColors.nonOrganicColor)));
+
+    final bool isWaste = descLower.contains('setor') || descLower.contains('sampah');
 
     final IconData iconData = isPunishment
         ? Icons.warning_rounded
-        : (isAktivasi
-              ? Icons.qr_code_scanner_rounded
-              : (isPresensi
-                    ? Icons.location_on_rounded
-                    : Icons.delete_rounded));
+        : (isLogbook
+            ? Icons.verified_rounded
+            : (isPanenOrPemanfaatan
+                ? Icons.eco_rounded
+                : (isAktivasi
+                    ? Icons.qr_code_scanner_rounded
+                    : (isPresensi
+                        ? Icons.location_on_rounded
+                        : (isRedeem ? Icons.card_giftcard_rounded : (isWaste ? Icons.delete_rounded : Icons.star_rounded))))));
 
-    String title = isOrganic
-        ? 'Setor Sampah Organik'
-        : 'Setor Sampah Anorganik';
-    if (isAktivasi) {
-      title = 'Aktivasi Tempat Sampah Berhasil';
-    } else if (isPunishment) {
-      title = 'Penalti Pengurangan Poin';
-    } else if (isPresensi) {
-      title = 'Presensi Berhasil';
-    } else if (isRedeem) {
-      title = 'Penukaran Poin';
-    }
+    // Gunakan deskripsi langsung dari backend agar teks poin KKN (Logbook, Proker) tampil akurat!
+    // Jika kosong, baru fallback.
+    String title = item.description.isNotEmpty 
+        ? item.description 
+        : (isOrganic ? 'Setor Sampah Organik' : 'Poin Aktivitas');
 
     return Container(
       padding: const EdgeInsets.all(16),

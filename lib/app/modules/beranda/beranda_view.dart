@@ -1111,25 +1111,30 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                 rwText,
               ].where((s) => s.isNotEmpty).toList();
               final wilayahTitle = isUnjoined
-                  ? 'Data lokasi belum diketahui, Ayo Gabung Komunitas'
+                  ? 'Belum Bergabung Komunitas'
                   : (wilayahList.isNotEmpty
                         ? wilayahList.join(' • ')
                         : 'Wilayah Warga');
 
-              // Alamat lengkap (domisili/KTP) tetap tidak terpengaruh oleh live location ini.
-              // Live location ini hanya mengubah koordinat terkini menjadi alamat.
-              final displayAddress = locState.address;
+              final registeredAddress = (user?.address ?? '').trim();
+              final displayAddress = isUnjoined
+                  ? locState.address
+                  : (registeredAddress.isNotEmpty
+                        ? registeredAddress
+                        : locState.address);
 
               return UserLocationCard(
                 wilayahTitle: wilayahTitle,
-                isFetchingAddress: locState.isFetchingAddress,
+                isFetchingAddress:
+                    isUnjoined ? locState.isFetchingAddress : false,
                 address: displayAddress,
                 position: locState.position,
-                isHomeAddress:
-                    false, // Menandakan bahwa ini adalah live location, bukan fixed home address
-                onRefresh: () => ref
-                    .read(userLocationProvider.notifier)
-                    .refreshLocation(context: context),
+                isHomeAddress: !isUnjoined,
+                onRefresh: isUnjoined
+                    ? () => ref
+                          .read(userLocationProvider.notifier)
+                          .refreshLocation(context: context)
+                    : null,
               );
             },
           ),
@@ -1492,6 +1497,7 @@ class _StatItem extends StatelessWidget {
   const _StatItem({
     required this.icon,
     required this.iconColor,
+    // ignore: unused_element_parameter
     this.value = '',
     this.numericValue,
     required this.label,

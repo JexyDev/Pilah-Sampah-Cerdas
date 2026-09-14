@@ -275,8 +275,8 @@ class _MahasiswaNotifikasiViewState
                           }
                           if (context.mounted) {
                             final typeU = item.type.toUpperCase();
-                            // ponytail: route by domain type; upgrade if backend provides dedicated deeplink uri in NotificationEntity.
-                            if (typeU == 'POIN_KKN' || typeU == 'PUNISHMENT') {
+                            // Route by domain type so mahasiswa lands on relevant page
+                            if (typeU.contains('POIN') || typeU == 'PUNISHMENT') {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -289,10 +289,22 @@ class _MahasiswaNotifikasiViewState
                                 context,
                                 AppRoutes.dataLogbookHarian,
                               );
-                            } else if (typeU.contains('PROKER')) {
+                            } else if (typeU.contains('PROKER') ||
+                                typeU.contains('PROGRAM')) {
                               Navigator.pushNamed(
                                 context,
                                 AppRoutes.dataProker,
+                              );
+                            } else if (typeU.contains('IZIN')) {
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.pengajuanIzin,
+                              );
+                            } else if (typeU.contains('PEMANFAATAN') ||
+                                typeU.contains('PANEN')) {
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.riwayatPemanfaatan,
                               );
                             } else {
                               Navigator.pushNamed(

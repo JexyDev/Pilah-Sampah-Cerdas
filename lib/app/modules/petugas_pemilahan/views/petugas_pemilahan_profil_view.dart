@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -23,6 +24,7 @@ class _PetugasPemilahanProfilViewState
   final ImagePicker _picker = ImagePicker();
   bool _isUploading = false;
   File? _localImage;
+  String _version = '';
 
   void _showAvatarOptions() {
     final user = ref.read(authProvider).user;
@@ -425,6 +427,23 @@ class _PetugasPemilahanProfilViewState
   }
 
   @override
+  
+  @override
+  void initState() {
+    super.initState();
+    _initPackageInfo();
+  }
+
+  Future<void> _initPackageInfo() async {
+    final info = await PackageInfo.fromPlatform();
+    if (mounted) {
+      setState(() {
+        _version = 'Versi ${info.version} • Petugas Pemilahan';
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
     final rw = user?.rw.isNotEmpty == true ? user!.rw : '-';
@@ -756,10 +775,10 @@ class _PetugasPemilahanProfilViewState
                   ),
                   const SizedBox(height: AppDimensions.xl),
 
-                  const Center(
+                  Center(
                     child: Column(
                       children: [
-                        Text(
+                        const Text(
                           '© 2026 Universitas Komputer Indonesia',
                           style: TextStyle(
                             fontSize: 11,
@@ -767,10 +786,10 @@ class _PetugasPemilahanProfilViewState
                             color: AppColors.textSecondary,
                           ),
                         ),
-                        SizedBox(height: 4),
+                        const SizedBox(height: 4),
                         Text(
-                          'Versi 1.0.0 • Petugas Pemilahan',
-                          style: TextStyle(fontSize: 10, color: AppColors.textHint),
+                          _version,
+                          style: const TextStyle(fontSize: 10, color: AppColors.textHint),
                         ),
                       ],
                     ),

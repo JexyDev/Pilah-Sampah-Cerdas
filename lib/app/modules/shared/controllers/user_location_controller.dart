@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
-import '../../../data/providers/repository_providers.dart';
 import '../../../data/services/location_service.dart';
-import '../../../data/models/user_entity.dart';
 import '../../auth/controllers/auth_controller.dart';
 
 /// State lokasi dan alamat untuk Warga & Petugas Pemilah

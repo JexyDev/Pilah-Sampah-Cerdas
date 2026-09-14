@@ -67,7 +67,7 @@ class UserLocationCard extends StatelessWidget {
             children: [
               const Icon(
                 Icons.location_on,
-                size: 13,
+                size: 16,
                 color: AppColors.primaryGreen,
               ),
               const SizedBox(width: 4),
@@ -75,7 +75,7 @@ class UserLocationCard extends StatelessWidget {
                 child: Text(
                   wilayahTitle.isNotEmpty ? wilayahTitle : 'Wilayah Belum Diatur',
                   style: const TextStyle(
-                    fontSize: 11,
+                    fontSize: 13,
                     fontWeight: FontWeight.w700,
                     color: AppColors.primaryGreen,
                   ),
@@ -94,14 +94,14 @@ class UserLocationCard extends StatelessWidget {
                       children: [
                         Icon(
                           Icons.refresh_rounded,
-                          size: 13,
+                          size: 14,
                           color: AppColors.primaryBlue,
                         ),
                         SizedBox(width: 3),
                         Text(
                           'Perbarui',
                           style: TextStyle(
-                            fontSize: 10,
+                            fontSize: 12,
                             fontWeight: FontWeight.w600,
                             color: AppColors.primaryBlue,
                           ),
@@ -112,7 +112,7 @@ class UserLocationCard extends StatelessWidget {
                 ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           // Tier 2: Alamat Lengkap (Multiline 2 Baris agar tidak terpotong)
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -121,16 +121,16 @@ class UserLocationCard extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 1),
                 child: Icon(
                   isHomeAddress ? Icons.home_rounded : Icons.my_location_rounded,
-                  size: 11,
+                  size: 14,
                   color: AppColors.textSecondary,
                 ),
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   displayText,
                   style: const TextStyle(
-                    fontSize: 10.5,
+                    fontSize: 12,
                     color: AppColors.textSecondary,
                     height: 1.25,
                   ),
