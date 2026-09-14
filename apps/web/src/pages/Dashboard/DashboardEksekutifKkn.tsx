@@ -985,10 +985,10 @@ export const DashboardEksekutifKkn: React.FC = () => {
             </p>
             <div className="mt-0.5 leading-tight">
               <p className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 tracking-tight">
-                {summary.totalWilayah.kelurahanCount || 6} Kelurahan
+                {summary.totalWilayah.kelurahanCount} Kelurahan
               </p>
               <p className="text-xs font-bold text-slate-500 dark:text-slate-400">
-                {summary.totalWilayah.rwCount || 21} RW
+                {summary.totalWilayah.rwCount} RW
               </p>
             </div>
           </div>

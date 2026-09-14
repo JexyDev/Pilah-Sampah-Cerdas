@@ -153,17 +153,60 @@ export const kknExecutiveService = {
     const realStudentUserIds = students.map((s) => s.userId).filter(Boolean);
     const realStudentUserIdsSet = new Set(realStudentUserIds);
 
-    // 5. Total Wilayah (Kelurahan & RW)
+    // 5. Total Wilayah (Kelurahan & RW) - 100% Real Fetch Database PostgreSQL
     const allKelurahans = ["Cipaganti", "Dago", "Lebakgede", "Lebak Siliwangi", "Sadang Serang", "Sekeloa"];
+
+    // Kumpulkan distinct RW dari kelompok dengan menyertakan konteks Kelurahan agar nomor RW antar-kelurahan tidak saling menimpa
     const distinctRws = new Set<string>();
     kelompokList.forEach((k) => {
       if (Array.isArray(k.cakupanRw)) {
-        k.cakupanRw.forEach((rw) => distinctRws.add(String(rw)));
+        const kelKey = (k.kelurahan || "").trim().toLowerCase();
+        k.cakupanRw.forEach((rw) => {
+          if (rw !== undefined && rw !== null && String(rw).trim() !== "") {
+            distinctRws.add(`${kelKey}_${String(rw).trim()}`);
+          }
+        });
       }
     });
 
-    const kelurahanCount = isFilteredKel ? (kelompokList.length > 0 ? 1 : 0) : 6;
-    const rwCount = isFilteredRw ? (kelompokList.length > 0 ? 1 : 0) : distinctRws.size;
+    const totalKelurahanDb = await prisma.kelurahan.count();
+    const totalRwKecamatan = await prisma.rw.count();
+
+    let kelurahanCount = totalKelurahanDb;
+    if (isFilteredKel) {
+      kelurahanCount = kelompokList.length > 0 ? 1 : 0;
+    } else if (isFilteredKelompok) {
+      const distinctKel = new Set(kelompokList.map((k) => (k.kelurahan || "").trim()).filter(Boolean));
+      kelurahanCount = distinctKel.size;
+    }
+
+    let rwCount = 0;
+    if (isFilteredRw) {
+      rwCount = kelompokList.length > 0 ? 1 : 0;
+    } else if (isFilteredKelompok) {
+      // Jika difilter per kelompok spesifik, ambil RW cakupan kelompok tersebut
+      rwCount = distinctRws.size;
+    } else if (isFilteredKel) {
+      // Jika difilter per kelurahan, ambil total RW riil kelurahan tersebut dari tabel rw
+      const isLebakGede = kelFilterNormalized.toLowerCase().replace(/\s+/g, "") === "lebakgede";
+      rwCount = await prisma.rw.count({
+        where: isLebakGede
+          ? {
+              OR: [
+                { kelurahan: { name: { contains: "Lebak Gede", mode: "insensitive" } } },
+                { kelurahan: { name: { contains: "Lebakgede", mode: "insensitive" } } },
+              ],
+            }
+          : {
+              kelurahan: {
+                name: { contains: kelFilterNormalized, mode: "insensitive" },
+              },
+            },
+      });
+    } else {
+      // Kondisi default (Semua Kelurahan): Total seluruh RW riil terdaftar di kecamatan dari tabel rw (84 RW)
+      rwCount = totalRwKecamatan;
+    }
 
     // 6. Sebaran Program Studi Mahasiswa
     const prodiMap = new Map<string, number>();
@@ -935,7 +978,7 @@ export const kknExecutiveService = {
         totalWilayah: {
           kelurahanCount,
           rwCount,
-          totalRwKecamatan: 84,
+          totalRwKecamatan,
           label: `${kelurahanCount} Kelurahan • ${rwCount} RW`,
         },
         totalKelompok: {
