@@ -1,4 +1,4 @@
-import { X, Star, Banknote, Recycle, AlertCircle, Eye, LineChart, BarChart, Leaf, TrendingUp, TrendingDown, Wallet, Zap, MapPin, AlertTriangle, Truck, Pencil, Trash2, Calendar, ChevronRight, GraduationCap, Search, CheckCircle2, Sparkles, RotateCcw, Award, BookOpen, RefreshCcw, RefreshCw, Settings, Save, Loader2, Building2, History, Home, Bell, Megaphone, Archive, Send, User, Users, ShoppingBag, Info } from "lucide-react";
+import { X, Star, Banknote, Recycle, AlertCircle, Eye, LineChart, BarChart, Leaf, TrendingUp, TrendingDown, Wallet, Zap, MapPin, AlertTriangle, Truck, Pencil, Trash2, Calendar, ChevronRight, GraduationCap, Search, CheckCircle2, Sparkles, RotateCcw, Award, BookOpen, RefreshCcw, RefreshCw, Settings, Save, Loader2, Building2, History, Home, Bell, Megaphone, Archive, Send, Users, ShoppingBag, Info } from "lucide-react";
 
 /**
  * Project: BERSEKA
@@ -1593,9 +1593,8 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const userPeran = (user?.peran || user?.role || "").toUpperCase();
-  const isPimpinan = userPeran === "PIMPINAN" || userPeran === "PEMIMPIN";
-  const isSuperOrDev = userPeran === "SUPER_USER" || userPeran === "DEVELOPER";
+  const isPimpinan = user?.peran === "PIMPINAN" || user?.peran === "PEMIMPIN";
+  const isSuperOrDev = user?.peran === "SUPER_USER" || user?.peran === "DEVELOPER";
   const canAccessKknSub = isPimpinan || isSuperOrDev;
 
   const tabParam = searchParams.get("tab");
@@ -1766,22 +1765,6 @@ const Dashboard: React.FC = () => {
           trendLabel: periodTrendLabel,
           trendUp: true,
         },
-        kknUsers: kpi.kknUsers
-          ? {
-              total: Number(kpi.kknUsers.total ?? 0).toLocaleString("id-ID"),
-              mahasiswa: Number(kpi.kknUsers.mahasiswa ?? 0).toLocaleString("id-ID"),
-              dpl: Number(kpi.kknUsers.dpl ?? 0).toLocaleString("id-ID"),
-            }
-          : null,
-        peringkatMahasiswa: kpi.peringkatMahasiswa
-          ? {
-              topName: kpi.peringkatMahasiswa.topName || "-",
-              topNim: kpi.peringkatMahasiswa.topNim || "-",
-              topKelompok: kpi.peringkatMahasiswa.topKelompok || "-",
-              topScore: Number(kpi.peringkatMahasiswa.topScore ?? 0).toFixed(1),
-              totalStudents: kpi.peringkatMahasiswa.totalStudents ?? 0,
-            }
-          : null,
         tempatSampahAktif: {
           value: (kpi.tempatSampahAktif ?? 0).toLocaleString("id-ID"),
           trend: "Teraktivasi Warga",
@@ -2254,48 +2237,16 @@ const Dashboard: React.FC = () => {
         Ringkasan Operasional Pemilahan Sampah
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 relative z-10">
-        {isPimpinan || isSuperOrDev ? (
-          <div className="bg-white dark:bg-slate-900 shadow-xs rounded-2xl p-5 border border-slate-200 dark:border-slate-800 border-t-4 border-t-blue-500 flex flex-col justify-between h-full hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group">
-            <Link to="/pengguna?role=mahasiswa" className="block">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 bg-blue-500 text-white rounded-xl flex items-center justify-center shrink-0 shadow-xs">
-                  <Users size={22} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p
-                    title="PENGGUNA KKN"
-                    className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-extrabold uppercase tracking-wider leading-snug line-clamp-2 min-h-[2.4em] flex items-center"
-                  >
-                    PENGGUNA KKN
-                  </p>
-                  <h4 className="text-[22px] sm:text-[24px] font-black text-slate-900 dark:text-slate-100 tracking-tight mt-0.5 leading-none">
-                    {stats?.kknUsers?.total ?? "-"}
-                  </h4>
-                </div>
-              </div>
-            </Link>
-
-            <div className="flex items-center gap-1.5 mt-3 border-t border-slate-100 dark:border-slate-800 pt-2.5 text-[10.5px]">
-              <TrendingUp size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-              <span className="font-bold text-emerald-600 dark:text-emerald-400 truncate flex items-center gap-1.5">
-                <span>{stats?.kknUsers?.mahasiswa ?? 0} Mahasiswa</span>
-                <span>•</span>
-                <span>{stats?.kknUsers?.dpl ?? 0} DPL</span>
-              </span>
-            </div>
-          </div>
-        ) : (
-          <KpiCard
-            iconName="group"
-            color="blue"
-            label="Total Pengguna"
-            value={stats?.totalPengguna?.value}
-            trend={stats?.totalPengguna?.trend}
-            trendLabel={stats?.totalPengguna?.trendLabel}
-            trendUp={stats?.totalPengguna?.trendUp}
-            linkTo="/pengguna"
-          />
-        )}
+        <KpiCard
+          iconName="group"
+          color="blue"
+          label="Total Pengguna"
+          value={stats?.totalPengguna?.value}
+          trend={stats?.totalPengguna?.trend}
+          trendLabel={stats?.totalPengguna?.trendLabel}
+          trendUp={stats?.totalPengguna?.trendUp}
+          linkTo="/pengguna"
+        />
         <KpiCard
           iconName="delete"
           color="emerald"
@@ -2333,55 +2284,16 @@ const Dashboard: React.FC = () => {
           trendUp={stats?.setoranHariIni?.trendUp}
           linkTo="/monitoring-pemilahan/rekapitulasi-setoran"
         />
-        {isPimpinan || isSuperOrDev ? (
-          <div className="bg-white dark:bg-slate-900 shadow-xs rounded-2xl p-5 border border-slate-200 dark:border-slate-800 border-t-4 border-t-amber-500 flex flex-col justify-between h-full hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
-            <div>
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 bg-amber-500 text-white rounded-xl flex items-center justify-center shrink-0 shadow-xs">
-                  <Award size={22} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p
-                    title="PERINGKAT MAHASISWA"
-                    className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-extrabold uppercase tracking-wider leading-snug line-clamp-2 min-h-[2.4em] flex items-center"
-                  >
-                    PERINGKAT MAHASISWA
-                  </p>
-                  <h4
-                    className="text-[19px] sm:text-[21px] font-black text-slate-900 dark:text-slate-100 tracking-tight mt-0.5 leading-none truncate"
-                    title={stats?.peringkatMahasiswa?.topName || "Peringkat Mahasiswa KKN"}
-                  >
-                    {stats?.peringkatMahasiswa?.topName
-                      ? `#1 ${stats.peringkatMahasiswa.topName.split(" ").slice(0, 2).join(" ")}`
-                      : "Top 10"}
-                  </h4>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-1.5 mt-3 border-t border-slate-100 dark:border-slate-800 pt-2.5 text-[10.5px]">
-              <TrendingUp size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-              <span className="font-bold text-emerald-600 dark:text-emerald-400 truncate flex items-center gap-1.5">
-                <span>{stats?.peringkatMahasiswa?.topScore ?? 0} Pts</span>
-                <span>•</span>
-                <span className="truncate">
-                  {stats?.peringkatMahasiswa?.topKelompok || "Mahasiswa KKN"}
-                </span>
-              </span>
-            </div>
-          </div>
-        ) : (
-          <KpiCard
-            iconName="stars"
-            color="yellow"
-            label="Total Poin"
-            value={stats?.totalPoin?.value}
-            trend={stats?.totalPoin?.trend}
-            trendLabel={stats?.totalPoin?.trendLabel}
-            trendUp={stats?.totalPoin?.trendUp}
-            linkTo="/peringkat?system=system1&tab=citizens"
-          />
-        )}
+        <KpiCard
+          iconName="stars"
+          color="yellow"
+          label="Total Poin"
+          value={stats?.totalPoin?.value}
+          trend={stats?.totalPoin?.trend}
+          trendLabel={stats?.totalPoin?.trendLabel}
+          trendUp={stats?.totalPoin?.trendUp}
+          linkTo="/peringkat?system=system1&tab=citizens"
+        />
       </div>
 
       {/* 3. Charts & Komposisi Grid (2 Columns, 6 cols each) */}

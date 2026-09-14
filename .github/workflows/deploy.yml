@@ -153,6 +153,7 @@ jobs:
 
             echo "=== 4. Deploying Frontend Web to Nginx ==="
             echo "$VPS_PASS" | sudo -S mkdir -p /var/www/html /var/www/pilah-sampah-cerdas/frontend/dist
+            echo "$VPS_PASS" | sudo -S rm -rf "$REPO_DIR/apps/web/dist" 2>/dev/null || rm -rf "$REPO_DIR/apps/web/dist" 2>/dev/null || true
             mkdir -p "$REPO_DIR/apps/web/dist"
 
             echo "Building frontend directly on VPS..."
