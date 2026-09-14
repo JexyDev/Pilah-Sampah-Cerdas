@@ -550,7 +550,8 @@ export class BinService {
           calculatedPoints,
           targetBin.category?.name || "Umum",
           confScale,
-          evidencePhotoUrl
+          evidencePhotoUrl,
+          det.detectedType
         );
 
         totalWeightKg += weightKg;
@@ -721,7 +722,8 @@ export class BinService {
       calculatedPoints,
       bin.category.name,
       aiConfidence,
-      evidencePhotoUrl
+      evidencePhotoUrl,
+      detectedType
     );
 
     // Send push notification if user has FCM token
