@@ -491,7 +491,7 @@ class _ScanTrialViewState extends ConsumerState<ScanTrialView> {
             ),
             const SizedBox(height: 12),
             const Text(
-              'AI sedang mendeteksi jenis dan berat\nsampah dari foto Anda.',
+              'AI sedang mendeteksi jenis\nsampah dari foto Anda.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13,
@@ -643,58 +643,37 @@ class _ScanTrialViewState extends ConsumerState<ScanTrialView> {
                   const Divider(height: 1, color: AppColors.border),
                   const SizedBox(height: 16),
 
-                  // Confidence & Estimasi Berat
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildDetailItem(
-                          icon: Icons.psychology_rounded,
-                          label: 'KUALITAS AI',
-                          value: '',
-                          valueWidget: Row(
-                            children: [
-                              ...List.generate(5, (index) {
-                                final double conf =
-                                    (result.confidence as num?)?.toDouble() ??
-                                    0.0;
-                                final stars = (conf * 5).round().clamp(0, 5);
-                                return Icon(
-                                  Icons.star_rounded,
-                                  size: 14,
-                                  color: index < stars
-                                      ? Colors.amber
-                                      : Colors.grey.shade300,
-                                );
-                              }),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${(((result.confidence as num?)?.toDouble() ?? 0.0) * 100).toStringAsFixed(0)}%',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                            ],
+                  // Kualitas AI
+                  _buildDetailItem(
+                    icon: Icons.psychology_rounded,
+                    label: 'KUALITAS AI',
+                    value: '',
+                    valueWidget: Row(
+                      children: [
+                        ...List.generate(5, (index) {
+                          final double conf =
+                              (result.confidence as num?)?.toDouble() ??
+                              0.0;
+                          final stars = (conf * 5).round().clamp(0, 5);
+                          return Icon(
+                            Icons.star_rounded,
+                            size: 14,
+                            color: index < stars
+                                ? Colors.amber
+                                : Colors.grey.shade300,
+                          );
+                        }),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${(((result.confidence as num?)?.toDouble() ?? 0.0) * 100).toStringAsFixed(0)}%',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
                           ),
                         ),
-                      ),
-                      Expanded(
-                        child: _buildDetailItem(
-                          icon: Icons.scale_rounded,
-                          label: 'EST. BERAT',
-                          valueWidget: Text(
-                            '${result.displayWeightKg.toStringAsFixed(2)} KG',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          value: '',
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 16),
 
