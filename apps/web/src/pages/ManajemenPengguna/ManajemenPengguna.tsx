@@ -136,41 +136,36 @@ const normalizeRoleFromUrl = (param: string | null): string => {
 
 const ManajemenPengguna: React.FC = () => {
   const { user, updateUser: updateStoreUser } = useAuthStore();
-  const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "RT", "PETUGAS_RESIDU", "MAHASISWA_KKN", "WARGA"].includes(user?.peran || "");
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const userPeran = ((user?.peran || (user as any)?.role || "") as string).toUpperCase();
+  const isPimpinanUser = ["PEMIMPIN", "PIMPINAN"].includes(userPeran);
+  const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "RT", "PETUGAS_RESIDU", "MAHASISWA_KKN", "WARGA", "PIMPINAN", "PEMIMPIN"].includes(userPeran);
 
   const allowedRoleTabs = useMemo(() => {
-    const peran = user?.peran || "";
-    if (peran === "DEVELOPER") {
+    if (userPeran === "DEVELOPER") {
       return [
         "DEVELOPER", "SUPER_USER", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL",
         "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "MAHASISWA_KKN", "WARGA"
       ];
     }
-    if (peran === "SUPER_USER") {
+    if (userPeran === "SUPER_USER") {
       return [
         "SUPER_USER", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL",
         "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "MAHASISWA_KKN", "WARGA"
       ];
     }
-    if (peran === "PEMIMPIN" || peran === "PIMPINAN") {
-      return [
-        "PEMIMPIN",
-        "PANITIA_TASKFORCE",
-        "DPL",
-        "MAHASISWA_KKN",
-        "WARGA",
-        "PETUGAS_RESIDU",
-      ];
+    if (isPimpinanUser) {
+      return ["MAHASISWA_KKN", "DPL"];
     }
-    if (peran === "PANITIA_TASKFORCE") {
+    if (userPeran === "PANITIA_TASKFORCE") {
       return ["PANITIA_TASKFORCE", "DPL", "MAHASISWA_KKN"];
     }
-    if (peran === "RW") {
+    if (userPeran === "RW") {
       return ["WARGA", "PETUGAS_RESIDU"];
     }
     return ["WARGA"];
-  }, [user?.peran]);
+  }, [userPeran, isPimpinanUser]);
 
   const rawRoleParam = searchParams.get("role") || searchParams.get("roleName") || searchParams.get("type");
   const roleFromUrl = rawRoleParam ? normalizeRoleFromUrl(rawRoleParam) : (allowedRoleTabs[0] || "SUPER_USER");
@@ -186,11 +181,13 @@ const ManajemenPengguna: React.FC = () => {
   useEffect(() => {
     if (rawRoleParam) {
       const normalized = normalizeRoleFromUrl(rawRoleParam);
-      if (normalized !== selectedRole) {
+      if (!allowedRoleTabs.includes(normalized)) {
+        setSelectedRole(allowedRoleTabs[0] || "MAHASISWA_KKN");
+      } else if (normalized !== selectedRole) {
         setSelectedRole(normalized);
       }
     } else if (!allowedRoleTabs.includes(selectedRole)) {
-      setSelectedRole(allowedRoleTabs[0] || "SUPER_USER");
+      setSelectedRole(allowedRoleTabs[0] || "MAHASISWA_KKN");
     }
   }, [rawRoleParam, allowedRoleTabs]);
   const [selectedStatus, setSelectedStatus] = useState("Semua");
@@ -1244,6 +1241,41 @@ const ManajemenPengguna: React.FC = () => {
         </div>
       </div>
 
+      {/* Khusus Role Pimpinan: Role Switcher KKN (Mahasiswa vs DPL) */}
+      {isPimpinanUser && (
+        <div className="bg-slate-100/90 dark:bg-slate-800/90 p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 flex items-center gap-1.5 w-fit shadow-2xs">
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedRole("MAHASISWA_KKN");
+              setSearchParams({ role: "mahasiswa" });
+            }}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
+              selectedRole === "MAHASISWA_KKN"
+                ? "bg-white dark:bg-slate-900 text-[#009966] dark:text-emerald-400 shadow-xs border border-slate-200/80 dark:border-slate-700 font-black"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-white/60 dark:hover:bg-slate-700/60"
+            }`}
+          >
+            <User size={15} className={selectedRole === "MAHASISWA_KKN" ? "text-[#009966] dark:text-emerald-400" : "text-slate-400"} />
+            <span>Mahasiswa KKN</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedRole("DPL");
+              setSearchParams({ role: "dpl" });
+            }}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
+              selectedRole === "DPL"
+                ? "bg-white dark:bg-slate-900 text-[#009966] dark:text-emerald-400 shadow-xs border border-slate-200/80 dark:border-slate-700 font-black"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-white/60 dark:hover:bg-slate-700/60"
+            }`}
+          >
+            <Users size={15} className={selectedRole === "DPL" ? "text-[#009966] dark:text-emerald-400" : "text-slate-400"} />
+            <span>Dosen Pendamping Lapangan (DPL)</span>
+          </button>
+        </div>
+      )}
 
       {/* Filter Bar */}
       <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
