@@ -781,19 +781,6 @@ export class LogbookService {
         .catch(() => {});
     }
 
-    // Berikan poin gamifikasi jika langsung disetujui DPL
-    if (statusApproval === StatusLogbookKkn.DISETUJUI_DPL) {
-      await prisma.pointHistory
-        .create({
-          data: {
-            userId: targetUserId,
-            points: 15,
-            description: `Logbook Terverifikasi: Pekan ${pekanKe}`,
-            kategori: "LOGBOOK_TERVERIFIKASI",
-          },
-        })
-        .catch(() => {});
-    }
 
     // 4. Notifikasi
     if (!isDeveloper && targetDplId) {
@@ -1137,20 +1124,6 @@ export class LogbookService {
         catatanDpl: catatanDpl || undefined,
       },
     });
-
-    // Berikan poin gamifikasi ke penulis jika disetujui DPL
-    if (action === "APPROVE") {
-      await prisma.pointHistory
-        .create({
-          data: {
-            userId: logbook.penulisId,
-            points: 15,
-            description: `Logbook Terverifikasi DPL: Pekan ${logbook.pekanKe}`,
-            kategori: "LOGBOOK_TERVERIFIKASI",
-          },
-        })
-        .catch(() => {});
-    }
 
     // Notifikasi in-app DB & Push Notification FCM ke Penulis
     const notifTitleDpl =
