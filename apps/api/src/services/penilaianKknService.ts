@@ -328,7 +328,7 @@ export const penilaianKknService = {
         kelompokId: kelompok?.id || "",
         rw: rw?.name || "RW -",
         kelurahan: kelurahan?.name || "Coblong",
-        dplNama: dpl?.name || kelompok?.dplNamaMentah || "Dosen Pendamping Lapangan",
+        dplNama: dpl?.name || kelompok?.dplNamaMentah || "Dosen Pembimbing Lapangan",
         dplNip: dpl?.nip || "-",
         periodeKkn: "03 - 31 Agustus 2026",
         namaMitraPenilai: assessment.namaMitraPenilai || namaMitra,
@@ -1131,7 +1131,7 @@ export const penilaianKknService = {
           (k.students?.[0]?.assignedRw?.name
             ? [k.students[0].assignedRw.name]
             : ["RW 01", "RW 02"]),
-        dplNama: k.dpl?.name || k.dplNamaMentah || "Dosen Pendamping Lapangan",
+        dplNama: k.dpl?.name || k.dplNamaMentah || "Dosen Pembimbing Lapangan",
         dplNip: k.dpl?.nip || "-",
         dplId: k.dplId || k.dpl?.id || null,
         totalAnggota: (k.students || []).length,

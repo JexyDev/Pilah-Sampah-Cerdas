@@ -198,7 +198,7 @@ export const TaskforceDashboardPage: React.FC = () => {
               Dasbor Pengelolaan KKN
             </h1>
             <p className="text-emerald-100 text-sm mt-2 max-w-2xl font-medium leading-relaxed">
-              Pusat kendali operasional panitia untuk mengelola {totalKelompok} Kelompok KKN, {totalDplCount} Dosen Pendamping Lapangan (DPL), {totalStudentsCount} Mahasiswa, serta validasi survei kelurahan.
+              Pusat kendali operasional panitia untuk mengelola {totalKelompok} Kelompok KKN, {totalDplCount} Dosen Pembimbing Lapangan (DPL), {totalStudentsCount} Mahasiswa, serta validasi survei kelurahan.
             </p>
           </div>
 
@@ -239,7 +239,7 @@ export const TaskforceDashboardPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Card 2: Dosen Pendamping Lapangan (DPL) */}
+        {/* Card 2: Dosen Pembimbing Lapangan (DPL) */}
         <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between hover:shadow-md transition">
           <div className="flex items-center justify-between">
             <span className="text-xs uppercase font-extrabold text-indigo-600 dark:text-indigo-400 tracking-wider">

@@ -466,8 +466,13 @@ export class ResiduService {
             weightKg: Number(s.berat),
             actualWeightKg: Number(s.berat),
             points: Number(s.berat) * 2 + (s.fotoResiduUrl ? 10 : 0),
+            pointsEarned: Number(s.berat) * 2 + (s.fotoResiduUrl ? 10 : 0),
             fotoResiduUrl: s.fotoResiduUrl,
             imagePhotoUrl: s.fotoResiduUrl,
+            image: s.fotoResiduUrl,
+            imageTimbangan: s.imageTimbanganUrl || s.fotoResiduUrl,
+            image_url: s.fotoResiduUrl,
+            image_timbangan_url: s.imageTimbanganUrl || s.fotoResiduUrl,
             latitude: lat,
             longitude: long,
             status: "TERKIRIM",
@@ -677,6 +682,7 @@ export class ResiduService {
       actualWeightKg: number | string;
       classification?: string;
       imagePhotoUrl?: string;
+      imageTimbanganUrl?: string;
       rw?: string;
       kelurahan?: string;
       notes?: string;
@@ -737,6 +743,7 @@ export class ResiduService {
         diinputOleh: user.name,
         rwId: targetRwId,
         fotoResiduUrl: data.imagePhotoUrl || "/uploads/default-residu.jpg",
+        imageTimbanganUrl: data.imageTimbanganUrl || null,
         berat: weightKg,
         unit: "Kg",
         kategori: data.classification || "Residu",
@@ -806,6 +813,12 @@ export class ResiduService {
       longitude: longNum,
       pointsEarned,
       points: pointsEarned,
+      image: setoran.fotoResiduUrl,
+      imageTimbangan: setoran.imageTimbanganUrl || setoran.fotoResiduUrl,
+      image_url: setoran.fotoResiduUrl,
+      image_timbangan_url: setoran.imageTimbanganUrl || setoran.fotoResiduUrl,
+      fotoResiduUrl: setoran.fotoResiduUrl,
+      imagePhotoUrl: setoran.fotoResiduUrl,
       globalBinTotalKg: Number(globalBinTotalKg.toFixed(2)),
       kpiScore: (user.petugasProfile?.kpiScore
         ? Number(user.petugasProfile.kpiScore)

@@ -2802,8 +2802,8 @@ export class KknService {
     return {
       groupId: group.id,
       groupName: group.name,
-      dosenPembimbing: group.dpl?.name || group.dplNamaMentah || "Dosen Pendamping Lapangan",
-      dplName: group.dpl?.name || group.dplNamaMentah || "Dosen Pendamping Lapangan",
+      dosenPembimbing: group.dpl?.name || group.dplNamaMentah || "Dosen Pembimbing Lapangan",
+      dplName: group.dpl?.name || group.dplNamaMentah || "Dosen Pembimbing Lapangan",
       dplNip: group.dpl?.nip || "-",
       dplPhone: group.dpl?.phone || null,
       dpl: group.dpl

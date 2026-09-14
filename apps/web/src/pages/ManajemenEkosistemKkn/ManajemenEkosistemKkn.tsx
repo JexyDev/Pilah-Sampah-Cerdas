@@ -478,7 +478,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
         nip: dplForm.nip || `NIP-${Date.now()}`,
         universityId: "PSC-UNIVERSITY"
       });
-      toast.success("Dosen Pendamping Lapangan (DPL) berhasil didaftarkan!");
+      toast.success("Dosen Pembimbing Lapangan (DPL) berhasil didaftarkan!");
       setIsDplModalOpen(false);
       setDplForm({ name: "", email: "", phone: "", password: "", nip: "" });
       fetchDpls();
