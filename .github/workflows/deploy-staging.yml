@@ -115,6 +115,8 @@ jobs:
 
             echo "Building frontend directly on staging VPS..."
             cd "$REPO_DIR/apps/web"
+            echo "$VPS_PASS" | sudo -S rm -rf "$REPO_DIR/apps/web/dist" 2>/dev/null || rm -rf "$REPO_DIR/apps/web/dist" 2>/dev/null || true
+            mkdir -p "$REPO_DIR/apps/web/dist"
             NODE_OPTIONS="--max-old-space-size=4096" VITE_API_BASE_URL=/api/v1 npm run build
 
             APK_NAME="berseka-staging-arm64-v8a.apk"
