@@ -1111,7 +1111,7 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                 rwText,
               ].where((s) => s.isNotEmpty).toList();
               final wilayahTitle = isUnjoined
-                  ? 'Belum Bergabung Komunitas'
+                  ? 'Data lokasi belum diketahui, Ayo Gabung Komunitas'
                   : (wilayahList.isNotEmpty
                         ? wilayahList.join(' • ')
                         : 'Wilayah Warga');
@@ -1129,12 +1129,11 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                     isUnjoined ? locState.isFetchingAddress : false,
                 address: displayAddress,
                 position: locState.position,
-                isHomeAddress: !isUnjoined,
-                onRefresh: isUnjoined
-                    ? () => ref
-                          .read(userLocationProvider.notifier)
-                          .refreshLocation(context: context)
-                    : null,
+                isHomeAddress:
+                    false, // Menandakan bahwa ini adalah live location, bukan fixed home address
+                onRefresh: () => ref
+                    .read(userLocationProvider.notifier)
+                    .refreshLocation(context: context),
               );
             },
           ),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../../core/values/app_colors.dart';
+import '../../../data/providers/repository_providers.dart';
 import '../../../data/models/point_history_entity.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../riwayat/controllers/riwayat_controller.dart'
@@ -10,6 +11,23 @@ import '../../riwayat/controllers/riwayat_controller.dart'
 import '../controllers/mahasiswa_controller.dart';
 import '../controllers/riwayat_kkn_controller.dart';
 import '../../../core/utils/input_sanitizer.dart';
+
+final pengajuanIzinCountProvider = FutureProvider.autoDispose<int>((ref) async {
+  try {
+    final repo = ref.read(kknRepositoryProvider);
+    final list = await repo.getPengajuanIzin();
+    final approvedList = list.where((item) {
+      if (item is Map<String, dynamic>) {
+        final status = (item['status'] ?? '').toString().toUpperCase();
+        return status == 'APPROVED' || status == 'DISETUJUI';
+      }
+      return true;
+    }).toList();
+    return approvedList.length;
+  } catch (e) {
+    return 0;
+  }
+});
 
 /// Halaman Poin KKN Mahasiswa — Mengikuti gaya visual Page Poin Warga:
 /// Header Putih Bersih, Total Poin KKN + Status Ranking, Stats 3 Kolom,
@@ -47,6 +65,10 @@ class MahasiswaPoinView extends ConsumerWidget {
               padding: const EdgeInsets.all(16),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
+                  // ── 2. Stats 3 Kolom ──────────────────────────────
+                  _buildStatsRow(mhsState, ref),
+                  const SizedBox(height: 16),
+
                   // ── 3. Info Banner Poin KKN ─────────────────────────
                   _buildInfoBanner(),
                   const SizedBox(height: 20),
@@ -165,6 +187,219 @@ class MahasiswaPoinView extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildStatsRow(MahasiswaState mhsState, WidgetRef ref) {
+    final asyncHistory = ref.watch(pointHistoryProvider);
+    int laporanCount = 0;
+    int wargaCount = 0;
+    final presensiDates = <String>{};
+
+    if (asyncHistory.hasValue && asyncHistory.value != null) {
+      for (final ph in asyncHistory.value!) {
+        final lowerDesc = ph.description.toLowerCase();
+        final kat = (ph.kategori ?? '').toUpperCase();
+        if (lowerDesc.contains('pemanfaatan') || lowerDesc.contains('panen')) {
+          laporanCount++;
+        } else if (lowerDesc.contains('aktivasi') || lowerDesc.contains('pendampingan')) {
+          wargaCount++;
+        }
+
+        final isPresensi = kat.contains('PRESENSI') ||
+            kat.contains('DURASI') ||
+            lowerDesc.contains('kehadiran') ||
+            lowerDesc.contains('check-in') ||
+            lowerDesc.contains('presensi');
+        if (isPresensi) {
+          final d = ph.createdAt.toLocal();
+          presensiDates.add('${d.year}-${d.month}-${d.day}');
+        }
+      }
+    }
+
+    // Ambil hari presensi dari timesheetSummary atau tanggal kehadiran unik
+    int totalDaysAttended = 0;
+    final students = mhsState.timesheetSummary?['students'];
+    if (students is List && students.isNotEmpty) {
+      final me = students.first;
+      totalDaysAttended = (me['totalDaysAttended'] as num?)?.toInt() ??
+          (me['fulfilledTargetDays'] as num?)?.toInt() ??
+          0;
+    }
+
+    final hariPresensi = totalDaysAttended > 0
+        ? totalDaysAttended
+        : presensiDates.length;
+
+    final izinCount = ref.watch(pengajuanIzinCountProvider).value ?? 0;
+
+    // Total Input = Laporan Pemanfaatan Sampah + Warga Binaan yang Diaktivasi
+    final totalInputCount = laporanCount + wargaCount;
+
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _StatCard(
+                topText: 'Hari',
+                middleText: '$hariPresensi',
+                bottomText: 'Presensi',
+                color: AppColors.primaryGreen,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _StatCard(
+                topText: 'Warga',
+                middleText: '$wargaCount',
+                bottomText: 'Tempat Sampah',
+                color: AppColors.primaryBlueDark,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _StatCard(
+                topText: 'Laporan',
+                middleText: '$laporanCount',
+                bottomText: 'Pemanfaatan',
+                color: AppColors.warningOrange,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+
+        // ── Requirement B: Statistik Tambahan (Pengajuan Izin & Total Input Data) ──
+        Row(
+          children: [
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.border),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.warningYellow.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.note_alt_rounded,
+                        color: AppColors.warningYellow,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'IZIN / SAKIT',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '$izinCount Kali',
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.border),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGreen.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.post_add_rounded,
+                        color: AppColors.primaryGreen,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'TOTAL INPUT',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '$totalInputCount Kali',
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -295,6 +530,74 @@ class MahasiswaPoinView extends ConsumerWidget {
               .toList(),
         );
       },
+    );
+  }
+}
+
+class _StatCard extends StatelessWidget {
+  const _StatCard({
+    required this.topText,
+    required this.middleText,
+    required this.bottomText,
+    required this.color,
+  });
+
+  final String topText;
+  final String middleText;
+  final String bottomText;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            topText,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 10,
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.bold, // 1: Bold
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            middleText,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600, // 2: Semi-bold
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            bottomText,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 10,
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w400, // 3: Regular
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
