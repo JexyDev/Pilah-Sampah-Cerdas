@@ -106,8 +106,9 @@ class _BerandaViewState extends ConsumerState<BerandaView>
     final int unreadCount = ref.watch(wargaUnreadNotificationCountProvider);
     final hasActiveBin =
         ref.watch(binsProvider).value?.any((bin) => bin.isActive) ?? false;
-    return Scaffold(
-      backgroundColor: AppColors.backgroundCanvas,
+    try {
+      return Scaffold(
+        backgroundColor: AppColors.backgroundCanvas,
       body: RefreshIndicator(
         onRefresh: () async {
           ref.read(userLocationProvider.notifier).refreshLocation();
@@ -130,7 +131,7 @@ class _BerandaViewState extends ConsumerState<BerandaView>
             ),
 
             // Banner CTA bergabung komunitas — muncul jika belum punya householdId
-            if (user?.householdId == null || (user!.householdId!.isEmpty))
+            if ((user?.householdId ?? '').isEmpty)
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -187,6 +188,8 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white,
                             foregroundColor: AppColors.primaryGreen,
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 8),
                             shape: RoundedRectangleBorder(
@@ -251,10 +254,13 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                               final activeBins = bins
                                   .where((bin) => bin.isActive)
                                   .toList();
-                              if (user?.role == UserRole.warga) {
-                                if (user!.lifecycleState == WargaLifecycle.registered || (user.householdId == null || user.householdId!.isEmpty)) {
+                              if (user?.role == UserRole.warga || user?.role == UserRole.unknown) {
+                                final isRegisteredOrNoHh =
+                                    user?.lifecycleState == WargaLifecycle.registered ||
+                                        (user?.householdId ?? '').isEmpty;
+                                if (isRegisteredOrNoHh) {
                                   return _GabungKomunitasCard();
-                                } else if (user.lifecycleState == WargaLifecycle.communityActiveNoBin || activeBins.isEmpty) {
+                                } else if (user?.lifecycleState == WargaLifecycle.communityActiveNoBin || activeBins.isEmpty) {
                                   return _TempatSampahBelumTerpasangCard();
                                 }
                               } else if (activeBins.isEmpty) {
@@ -554,6 +560,34 @@ class _BerandaViewState extends ConsumerState<BerandaView>
         ),
       ),
     );
+    } catch (e, st) {
+      debugPrint('[BerandaView] Fatal build error: $e\n$st');
+      return Scaffold(
+        backgroundColor: AppColors.backgroundCanvas,
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline_rounded, color: AppColors.dangerRed, size: 48),
+                  const SizedBox(height: 16),
+                  const Text('Gagal Memuat Beranda', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Text('$e', textAlign: TextAlign.center, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => setState(() {}),
+                    child: const Text('Coba Lagi'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
   }
 
   Widget _buildStatistikSaya(BuildContext context, List<WasteLogEntity> logs) {
@@ -942,14 +976,19 @@ class _BerandaViewState extends ConsumerState<BerandaView>
           Consumer(
             builder: (context, ref, _) {
               final locState = ref.watch(userLocationProvider);
-              final rwText = user?.formattedRw.isNotEmpty == true && user?.formattedRw != '-'
-                  ? 'RW ${user!.formattedRw}'
-                  : (user?.rw.isNotEmpty == true && user?.rw != '-' ? 'RW ${user!.rw}' : '');
-              final kelText = user?.kelurahan.isNotEmpty == true && user?.kelurahan != '-'
-                  ? (user!.kelurahan.toLowerCase().startsWith('kel') ? user.kelurahan : 'Kel. ${user.kelurahan}')
+              final isUnjoined = (user?.role == UserRole.warga || user?.role == UserRole.unknown) &&
+                  (user?.lifecycleState == WargaLifecycle.registered ||
+                      (user?.householdId ?? '').isEmpty);
+              final rawRw = user?.formattedRw ?? user?.rw ?? '';
+              final rwText = rawRw.isNotEmpty && rawRw != '-' ? 'RW $rawRw' : '';
+              final rawKel = user?.kelurahan ?? '';
+              final kelText = rawKel.isNotEmpty && rawKel != '-'
+                  ? (rawKel.toLowerCase().startsWith('kel') ? rawKel : 'Kel. $rawKel')
                   : '';
               final wilayahList = [kelText, rwText].where((s) => s.isNotEmpty).toList();
-              final wilayahTitle = wilayahList.isNotEmpty ? wilayahList.join(' • ') : 'Wilayah Warga';
+              final wilayahTitle = isUnjoined
+                  ? 'Belum Bergabung Komunitas'
+                  : (wilayahList.isNotEmpty ? wilayahList.join(' • ') : 'Wilayah Warga');
 
               return UserLocationCard(
                 wilayahTitle: wilayahTitle,
@@ -1340,6 +1379,13 @@ class _StatItem extends StatelessWidget {
   final String label;
   final Color? valueColor;
 
+  String _formatNumber(int val) {
+    return val.toString().replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]}.',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Expanded(
@@ -1365,7 +1411,7 @@ class _StatItem extends StatelessWidget {
                       return FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Text(
-                          NumberFormat('#,###', 'id_ID').format(val),
+                          _formatNumber(val),
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
