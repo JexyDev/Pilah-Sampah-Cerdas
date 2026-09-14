@@ -388,6 +388,9 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
     final userAsync = ref.watch(authProvider);
     final user = userAsync.user;
     final binsAsync = ref.watch(binsProvider);
+    final isUnjoined = (user?.role == UserRole.warga || user?.role == UserRole.unknown) &&
+        (user?.lifecycleState == WargaLifecycle.registered ||
+            (user?.householdId ?? '').isEmpty);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -693,7 +696,7 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                   const SizedBox(height: 20),
 
                   // ─── Tempat Sampah Saya ──────────────────────────────────────
-                  if (user?.role != UserRole.mahasiswaKkn) ...[
+                  if (user?.role != UserRole.mahasiswaKkn && !isUnjoined) ...[
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [_sectionLabel('TEMPAT SAMPAH SAYA')],
@@ -768,7 +771,7 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                           ),
                           const Divider(height: 1, indent: 56),
                         ],
-                        if (user?.role == UserRole.warga) ...[
+                        if (user?.role == UserRole.warga && !isUnjoined) ...[
                           // Tambah Tempat Sampah Baru
                           _MenuTile(
                             icon: Icons.qr_code_scanner_rounded,
