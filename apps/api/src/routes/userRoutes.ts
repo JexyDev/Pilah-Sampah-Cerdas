@@ -137,5 +137,6 @@ router.put(
  */
 router.put("/profile", authMiddleware, authController.updateProfile);
 router.get("/:id/onboarding-status", authMiddleware, userController.getOnboardingStatus);
+router.post("/komunitas/register", authMiddleware, userController.registerKomunitas);
 
 export default router;
