@@ -58,7 +58,7 @@ const Informasi: React.FC = () => {
       case "DPL":
       case "DOSEN_PEMBIMBING":
         return {
-          title: "Dosen Pendamping Lapangan (DPL)",
+          title: "Dosen Pembimbing Lapangan (DPL)",
           desc: "Panduan pendampingan akademik, verifikasi logbook presensi, validasi pengajuan izin mahasiswa, dan pengisian nilai akhir program KKN.",
           icon: GraduationCap,
           color: "bg-indigo-50 text-indigo-700 border-indigo-200",
@@ -621,7 +621,7 @@ const Informasi: React.FC = () => {
                 {[
                   { role: "Warga", icon: Users, desc: "Akses Mobile: Foto sampah AI, scan QR Tempat Sampah, riwayat setoran, poin reward, dan ide daur ulang." },
                   { role: "Mahasiswa KKN", icon: GraduationCap, desc: "Akses Mobile & Web: Presensi GPS, pendampingan aktivasi QR warga, verifikasi tempat sampah, dan pengisian survei." },
-                  { role: "Dosen Pendamping Lapangan (DPL)", icon: UserCheck, desc: "Akses Web Portal: Monitoring mahasiswa dampingan, penilaian kinerja KKN, validasi permohonan izin/sakit." },
+                  { role: "Dosen Pembimbing Lapangan (DPL)", icon: UserCheck, desc: "Akses Web Portal: Monitoring mahasiswa dampingan, penilaian kinerja KKN, validasi permohonan izin/sakit." },
                   { role: "Petugas Residu", icon: Truck, desc: "Akses Mobile & Web: Jadwal pengangkutan, rute TPS, klaim tugas penjemputan, dan input timbangan fisik." },
                   { role: "Rukun Warga (RW)", icon: Building2, desc: "Akses Web: Persetujuan tempat sampah warga, monitoring kepatuhan RW, fasilitas pengolahan, dan ide inovasi." },
                   { role: "Lurah & Camat", icon: Building, desc: "Akses Web Read-Only: Monitoring spasial agregasi wilayah, statistik median kepatuhan, dan eskalasi layanan." },
@@ -771,7 +771,7 @@ const Informasi: React.FC = () => {
               desc: "Monitoring eksekutif wilayah: pemantauan spasial real-time, indeks kepatuhan median warga per RW, dan evaluasi eskalasi layanan pengangkutan.",
             },
             {
-              label: "Dosen Pendamping Lapangan (DPL)",
+              label: "Dosen Pembimbing Lapangan (DPL)",
               icon: GraduationCap,
               color: "bg-indigo-50 text-indigo-700 border-indigo-200",
               desc: "Verifikasi logbook presensi harian mahasiswa, validasi pengajuan izin/sakit, dan pengisian nilai akhir program KKN sesuai periode akademik.",

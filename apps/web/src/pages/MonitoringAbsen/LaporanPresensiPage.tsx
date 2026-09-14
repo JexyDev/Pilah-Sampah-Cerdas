@@ -789,7 +789,7 @@ export const LaporanPresensiPage: React.FC = () => {
         "Kelurahan",
         "RW",
         "Kelompok KKN",
-        "Dosen Pendamping Lapangan (DPL)",
+        "Dosen Pembimbing Lapangan (DPL)",
         "Total Hari/Sesi Hadir",
         "Total Menit Aktual (DA)",
         "Total Jam Aktual",

@@ -228,12 +228,17 @@ export class ResiduController {
       const petugasUserId = req.user!.userId;
 
       let imagePhotoUrl = req.body.imagePhotoUrl || req.body.image || req.body.photoPath;
+      let imageTimbanganUrl = req.body.imageTimbanganUrl || req.body.imageTimbangan || req.body.image_timbangan;
+
       if (req.file) {
         imagePhotoUrl = `/uploads/${req.file.filename}`;
       } else if (req.files) {
         const filesObj = req.files as any;
         const f = filesObj.image?.[0] || filesObj.evidence?.[0] || filesObj.imagePhotoUrl?.[0];
         if (f) imagePhotoUrl = `/uploads/${f.filename}`;
+
+        const fTimbangan = filesObj.imageTimbangan?.[0] || filesObj.image_timbangan?.[0];
+        if (fTimbangan) imageTimbanganUrl = `/uploads/${fTimbangan.filename}`;
       }
 
       if (!imagePhotoUrl) {
@@ -245,6 +250,7 @@ export class ResiduController {
         actualWeightKg: req.body.actualWeightKg || req.body.weight,
         classification: req.body.classification || req.body.kategori,
         imagePhotoUrl,
+        imageTimbanganUrl,
         rw: req.body.rw,
         kelurahan: req.body.kelurahan,
         notes: req.body.notes,
