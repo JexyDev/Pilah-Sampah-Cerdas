@@ -77,11 +77,10 @@ export function evaluateSortingStatus(
 
   // 3. Determine is_correct
   // Syarat Pemilahan Salah (is_correct: false):
-  // - Jika akurasi (confidence score) murni dari respons Model AI kurang dari 50% (< 0.50).
-  // - ATAU Jika respons AI mendeteksi user salah memasukkan jenis sampah ke tong yang tidak sesuai (discrepancy_status bernilai selain "NONE").
+  // - Jika respons AI mendeteksi user salah memasukkan jenis sampah ke tong yang tidak sesuai (discrepancy_status bernilai selain "NONE").
   // Syarat Pemilahan Berhasil/Benar (is_correct: true):
-  // - Jika akurasi murni dari Model AI lebih dari atau sama dengan 50% (>= 0.50) DAN tidak ada pelanggaran jenis tong sampah (discrepancy_status bernilai "NONE").
-  const isConfidenceValid = aiConfidence >= 0.50;
+  // - tidak ada pelanggaran jenis tong sampah (discrepancy_status bernilai "NONE").
+  const isConfidenceValid = aiConfidence >= 0.00; // Relaxed AI confidence requirement to prevent incorrect rejection
   const isDiscrepancyNone = finalDiscrepancy.toUpperCase() === "NONE";
   const isCorrect = isConfidenceValid && isDiscrepancyNone;
 

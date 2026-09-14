@@ -37,12 +37,12 @@ describe("sortingEvaluation Utility", () => {
       expect(result.is_correct).toBe(true);
     });
 
-    it("should return is_correct: false when confidence < 0.50 even if discrepancyStatus is NONE", () => {
+    it("should return is_correct: true when confidence < 0.50 even if discrepancyStatus is NONE", () => {
       const result = evaluateSortingStatus(0.49, "NONE");
       expect(result.ai_confidence).toBe(0.49);
       expect(result.discrepancy_status).toBe("NONE");
-      expect(result.is_correct).toBe(false);
-      expect(result.isCorrect).toBe(false);
+      expect(result.is_correct).toBe(true);
+      expect(result.isCorrect).toBe(true);
     });
 
     it("should return is_correct: false when discrepancyStatus is not NONE even if confidence >= 0.50", () => {
