@@ -396,7 +396,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
           <tr><td class="label">NIM</td><td>${selectedStudent.nim}</td></tr>
           <tr><td class="label">Kelompok KKN</td><td>${selectedStudent.kelompok}</td></tr>
           <tr><td class="label">Judul Laporan</td><td><strong>${getCleanTitle(selectedStudent.judulLaporan)}</strong></td></tr>
-          <tr><td class="label">Dosen Pendamping (DPL)</td><td>${selectedStudent.dplNama || "Dosen Pendamping Lapangan"}</td></tr>
+          <tr><td class="label">Dosen Pembimbing (DPL)</td><td>${selectedStudent.dplNama || "Dosen Pembimbing Lapangan"}</td></tr>
         </table>
         <table class="score-table">
           <thead>
@@ -428,9 +428,9 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
             <p style="font-size: 8pt; color: #64748b; margin: 0;">NIM. ${selectedStudent.nim}</p>
           </div>
           <div>
-            <p>Dosen Pendamping Lapangan,</p>
+            <p>Dosen Pembimbing Lapangan,</p>
             <div class="sig-space"></div>
-            <p style="font-weight: bold; text-decoration: underline; margin: 0;">${selectedStudent.dplNama || "Dosen Pendamping Lapangan"}</p>
+            <p style="font-weight: bold; text-decoration: underline; margin: 0;">${selectedStudent.dplNama || "Dosen Pembimbing Lapangan"}</p>
             <p style="font-size: 8pt; color: #64748b; margin: 0;">DPL KKN Tematik</p>
           </div>
         </div>
@@ -493,7 +493,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
           <tr><td class="label">Penyusun</td><td><strong>${student.nama}</strong> (NIM: ${student.nim})</td></tr>
           <tr><td class="label">Program Studi / Fakultas</td><td>${student.jurusan || "Teknik Informatika"} / ${student.fakultas || "Teknik & Ilmu Komputer"}</td></tr>
           <tr><td class="label">Kelompok Binaan</td><td>${student.kelompok}</td></tr>
-          <tr><td class="label">Dosen Pendamping (DPL)</td><td>${student.dplNama || "Dosen Pendamping Lapangan"} (NIP: ${student.dplNip || "-"})</td></tr>
+          <tr><td class="label">Dosen Pembimbing (DPL)</td><td>${student.dplNama || "Dosen Pembimbing Lapangan"} (NIP: ${student.dplNip || "-"})</td></tr>
           <tr><td class="label">Status Evaluasi</td><td>${student.statusTelaah || student.status || "Terverifikasi Resmi"}</td></tr>
           <tr><td class="label">Tautan Dokumen Sumber</td><td>${student.fileUrl || "-"}</td></tr>
         </table>
@@ -508,7 +508,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
           Seluruh rangkaian kegiatan pendampingan masyarakat, sosialisasi pemilahan sampah dari sumber rumah tangga, pendataan warga binaan, serta pencatatan timbulan residu telah dilaksanakan dan dilaporkan secara berkala sesuai ketentuan kurikulum KKN Tematik 2026.
         </p>
 
-        <div class="section-heading">III. Evaluasi &amp; Catatan Dosen Pendamping</div>
+        <div class="section-heading">III. Evaluasi &amp; Catatan Dosen Pembimbing</div>
         <p class="content-text">
           ${student.catatan || "Laporan akhir telah ditelaah dan memenuhi standar kelayakan laporan program KKN Tematik BERSEKA Kota Bandung."}
         </p>
@@ -520,8 +520,8 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
             <p class="sig-sub">NIM. ${student.nim}</p>
           </div>
           <div>
-            <p class="sig-sub">Dosen Pendamping Lapangan,</p>
-            <div class="sig-name">${student.dplNama || "Dosen Pendamping Lapangan"}</div>
+            <p class="sig-sub">Dosen Pembimbing Lapangan,</p>
+            <div class="sig-name">${student.dplNama || "Dosen Pembimbing Lapangan"}</div>
             <p class="sig-sub">NIP. ${student.dplNip || "DPL KKN"}</p>
           </div>
         </div>
@@ -1403,9 +1403,9 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
                     </div>
 
                     <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-700/80 space-y-1">
-                      <span className="text-slate-500 font-semibold block text-[11px]">Dosen Pendamping Lapangan</span>
+                      <span className="text-slate-500 font-semibold block text-[11px]">Dosen Pembimbing Lapangan</span>
                       <span className="font-bold text-slate-900 dark:text-slate-100 block">
-                        {selectedStudent.dplNama || "Dosen Pendamping Lapangan"}
+                        {selectedStudent.dplNama || "Dosen Pembimbing Lapangan"}
                       </span>
                       <span className="font-mono text-slate-500 block">NIP: {selectedStudent.dplNip || "-"}</span>
                     </div>

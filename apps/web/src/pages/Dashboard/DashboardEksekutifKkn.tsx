@@ -1416,7 +1416,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
           <div className="flex items-center gap-2 mb-2">
             <Users size={16} className="text-blue-600 dark:text-blue-400" />
             <h2 className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100">
-              Sebaran Dosen Pendamping Lapangan (DPL) per Wilayah
+              Sebaran Dosen Pembimbing Lapangan (DPL) per Wilayah
             </h2>
           </div>
 
@@ -2272,7 +2272,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
               }`}
             >
               <GraduationCap size={14} />
-              <span>Dosen Pendamping Lapangan</span>
+              <span>Dosen Pembimbing Lapangan</span>
             </button>
           </div>
         </div>

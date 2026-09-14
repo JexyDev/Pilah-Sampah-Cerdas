@@ -2467,7 +2467,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 Monitoring & Validasi Presensi Mahasiswa
               </h1>
               <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-                {isDpl ? "Dosen Pendamping Lapangan (DPL)" : "Monitoring Wilayah"}
+                {isDpl ? "Dosen Pembimbing Lapangan (DPL)" : "Monitoring Wilayah"}
               </span>
             </div>
             <p className="text-xs text-slate-500 font-medium mt-0.5">
