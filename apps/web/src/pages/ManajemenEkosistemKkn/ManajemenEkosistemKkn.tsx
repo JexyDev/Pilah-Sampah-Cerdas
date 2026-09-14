@@ -533,7 +533,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
         <div>
           <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Kelompok Dampingan KKN</h1>
           <p className="text-slate-500 text-xs mt-1">
-            Pengelolaan kelompok mahasiswa KKN, alokasi wilayah dampingan, dan struktur dosen pendamping lapangan.
+            Pengelolaan kelompok mahasiswa KKN, alokasi wilayah dampingan, dan struktur dosen pembimbing lapangan.
           </p>
         </div>
       </div>
