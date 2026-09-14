@@ -244,7 +244,7 @@ Berdasarkan **Term of Reference (TOR) KKN Berdampak Coblong**, adopsi 11 poin fi
 
 ---
 
-## 5️⃣ DPL — Dosen Pendamping Lapangan (Jalur Akademik)
+## 5️⃣ DPL — Dosen Pembimbing Lapangan (Jalur Akademik)
 
 ### Identitas
 | Atribut | Nilai |

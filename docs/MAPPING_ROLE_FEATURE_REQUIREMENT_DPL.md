@@ -1,4 +1,4 @@
-# Mapping Role Feature Requirement BERSEKA — DPL (Dosen Pendamping Lapangan)
+# Mapping Role Feature Requirement BERSEKA — DPL (Dosen Pembimbing Lapangan)
 
 > Dokumen ini adalah **turunan khusus role DPL**, diekstrak dari dokumen induk **Mapping Role Feature Requirement BERSEKA**. Auth, hierarki, dan hak akses di sini mengikuti versi terbaru dokumen induk (pasca-rekonsiliasi Web vs Mobile). Jika ada revisi hierarki/role lain di masa depan, dokumen ini perlu disinkronkan ulang dari sana.
 
