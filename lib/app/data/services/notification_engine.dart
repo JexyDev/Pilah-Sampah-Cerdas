@@ -161,13 +161,13 @@ class NotificationEngine {
         );
       } else if (roleName == 'PETUGAS_PEMILAHAN' ||
           roleName == 'PETUGAS_RESIDU') {
-        // 3. Pengingat Petugas Pemilah (06:00 WIB)
+        // 3. Pengingat Petugas Pemilah (16:00 WIB)
         tz.TZDateTime scheduledPetugas = tz.TZDateTime(
           tz.local,
           now.year,
           now.month,
           now.day,
-          6,
+          16,
           0,
         );
         if (scheduledPetugas.isBefore(now)) {
@@ -177,7 +177,7 @@ class NotificationEngine {
         const AndroidNotificationDetails androidPetugas =
             AndroidNotificationDetails(
               'reminder_petugas_channel',
-              'Jadwal Cek Antrean & Timbangan',
+              'Jadwal Cek Antrean & Tempat Sampah',
               importance: Importance.max,
               priority: Priority.high,
               icon: '@mipmap/ic_launcher',
@@ -186,9 +186,9 @@ class NotificationEngine {
 
         await _flutterLocalNotificationsPlugin.zonedSchedule(
           id: 3,
-          title: 'Waktunya Bertugas! 🚛',
+          title: 'Cek Tempat Sampah Warga! 🚮',
           body:
-              'Pengingat: Cek antrean & input timbangan warga hari ini. Tidak ada input seharian = penalti pengurangan poin.',
+              'Waktunya mengecek dan verifikasi status tempat sampah warga di aplikasi.',
           scheduledDate: scheduledPetugas,
           notificationDetails: const NotificationDetails(
             android: androidPetugas,

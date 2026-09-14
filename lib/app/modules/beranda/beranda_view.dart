@@ -1373,6 +1373,7 @@ class _StatItem extends StatelessWidget {
   const _StatItem({
     required this.icon,
     required this.iconColor,
+    // ignore: unused_element_parameter
     this.value = '',
     this.numericValue,
     required this.label,

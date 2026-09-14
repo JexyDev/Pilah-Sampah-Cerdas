@@ -4,6 +4,7 @@ import '../../../core/values/app_colors.dart';
 import '../../notifikasi/controllers/notifikasi_controller.dart';
 import '../controllers/petugas_pemilahan_notifikasi_controller.dart';
 import 'package:intl/intl.dart';
+import '../../../data/models/notification_entity.dart';
 import '../../../routes/app_routes.dart';
 
 /// Halaman Notifikasi Khusus Petugas Pemilahan Hilir.
@@ -17,6 +18,37 @@ class PetugasNotificationView extends ConsumerStatefulWidget {
 
 class _PetugasNotificationViewState
     extends ConsumerState<PetugasNotificationView> {
+
+  bool _isTimbangan(NotificationEntity n) {
+    final t = n.type.toUpperCase();
+    final title = n.title.toLowerCase();
+    final desc = n.desc.toLowerCase();
+    return t.contains('TIMBANGAN') || t.contains('PEMILAHAN') || title.contains('timbangan') || title.contains('pemilahan') || desc.contains('timbangan') || desc.contains('pemilahan');
+  }
+
+  bool _isPengosongan(NotificationEntity n) {
+    if (_isTimbangan(n)) return false;
+    final t = n.type.toUpperCase();
+    final title = n.title.toLowerCase();
+    final desc = n.desc.toLowerCase();
+    return t.contains('PENGOSONGAN') || t.contains('PENGAJUAN') || t.contains('RESET') || t.contains('PENUH') || t.contains('KRITIS') || t.contains('ANGKUT') || title.contains('pengosongan') || title.contains('pengajuan') || title.contains('tempat sampah') || title.contains('kritis') || title.contains('angkut') || title.contains('jadwal') || desc.contains('pengosongan') || desc.contains('pengajuan') || desc.contains('tempat sampah') || desc.contains('angkut');
+  }
+
+  bool _isPunishment(NotificationEntity n) {
+    if (_isTimbangan(n)) return false;
+    final t = n.type.toUpperCase();
+    final title = n.title.toLowerCase();
+    final desc = n.desc.toLowerCase();
+    return t.contains('PUNISHMENT') || title.contains('penalti') || desc.contains('penalti');
+  }
+
+  bool _isPoin(NotificationEntity n) {
+    if (_isTimbangan(n) || _isPengosongan(n) || _isPunishment(n)) return false;
+    final t = n.type.toUpperCase();
+    final title = n.title.toLowerCase();
+    return t.contains('POIN') || n.icon == 'star' || t == 'POIN_BERTAMBAH' || title.contains('poin');
+  }
+
   String _selectedFilter = 'Semua';
   final List<String> _filters = [
     'Semua',
@@ -180,36 +212,10 @@ class _PetugasNotificationViewState
                 data: (list) {
                   final filteredList = list.where((n) {
                     if (_selectedFilter == 'Semua') return true;
-                    final typeUpper = n.type.toUpperCase();
-                    final titleLower = n.title.toLowerCase();
-                    final descLower = n.desc.toLowerCase();
-
-                    final isTimbangan = typeUpper.contains('TIMBANGAN') ||
-                        typeUpper.contains('PEMILAHAN') ||
-                        titleLower.contains('timbangan') ||
-                        titleLower.contains('pemilahan') ||
-                        descLower.contains('timbangan') ||
-                        descLower.contains('pemilahan');
-
-                    final isPengosongan = !isTimbangan &&
-                        (typeUpper.contains('PENGOSONGAN') ||
-                            typeUpper.contains('PENGAJUAN') ||
-                            typeUpper.contains('RESET') ||
-                            typeUpper.contains('PENUH') ||
-                            typeUpper.contains('KRITIS') ||
-                            titleLower.contains('pengosongan') ||
-                            titleLower.contains('pengajuan') ||
-                            titleLower.contains('tempat sampah') ||
-                            titleLower.contains('kritis') ||
-                            descLower.contains('pengosongan') ||
-                            descLower.contains('pengajuan'));
-
-                    if (_selectedFilter == 'Pengosongan') {
-                      return isPengosongan;
-                    }
-                    if (_selectedFilter == 'Timbangan') {
-                      return isTimbangan;
-                    }
+                    final timbangan = _isTimbangan(n);
+                    final pengosongan = _isPengosongan(n);
+                    if (_selectedFilter == 'Pengosongan') return pengosongan || _isPoin(n);
+                    if (_selectedFilter == 'Timbangan') return timbangan;
                     return true;
                   }).toList();
 
@@ -333,188 +339,130 @@ class _PetugasNotificationViewState
                         borderRadius: BorderRadius.circular(12),
                         child: Builder(
                           builder: (context) {
-                            final typeU = notif.type.toUpperCase();
-                            final titleL = notif.title.toLowerCase();
-                            final descL = notif.desc.toLowerCase();
-
-                            final isTimbangan = typeU.contains('TIMBANGAN') ||
-                                typeU.contains('PEMILAHAN') ||
-                                titleL.contains('timbangan') ||
-                                titleL.contains('pemilahan') ||
-                                descL.contains('timbangan') ||
-                                descL.contains('pemilahan');
-
-                            final isPengosongan = !isTimbangan &&
-                                (typeU.contains('PENGOSONGAN') ||
-                                    typeU.contains('PENGAJUAN') ||
-                                    typeU.contains('RESET') ||
-                                    titleL.contains('pengosongan') ||
-                                    titleL.contains('pengajuan') ||
-                                    descL.contains('pengosongan') ||
-                                    descL.contains('pengajuan'));
-
-                            final isPunishment = !isTimbangan &&
-                                (typeU.contains('PUNISHMENT') ||
-                                    titleL.contains('penalti') ||
-                                    descL.contains('penalti'));
-
-                            final isPoin = !isTimbangan &&
-                                !isPengosongan &&
-                                !isPunishment &&
-                                (typeU.contains('POIN') ||
-                                    notif.icon == 'star' ||
-                                    typeU == 'POIN_BERTAMBAH' ||
-                                    titleL.contains('poin'));
-
-                            final Color categoryColor = isPunishment
-                                ? const Color(0xFFEF4444)
-                                : isPengosongan
-                                ? AppColors.warningOrange
-                                : isPoin
-                                ? AppColors.warningYellow
-                                : AppColors.primaryGreen;
+                            final isPengosongan = _isPengosongan(notif);
+                            final isPunishment = _isPunishment(notif);
+                            final isPoin = _isPoin(notif);
 
                             final Color categoryBg = isPunishment
                                 ? const Color(0xFFFEE2E2)
                                 : isPengosongan
-                                ? AppColors.warningOrange.withValues(alpha: 0.15)
+                                ? AppColors.warningOrange.withValues(alpha: 0.1)
                                 : isPoin
                                 ? AppColors.warningYellow.withValues(alpha: 0.15)
-                                : AppColors.primaryGreen.withValues(alpha: 0.12);
-
-                            final String categoryLabel = isPunishment
-                                ? 'Pelanggaran'
-                                : isPengosongan
-                                ? 'Pengosongan'
-                                : isPoin
-                                ? 'Poin'
-                                : 'Timbangan';
+                                : AppColors.primaryGreen.withValues(alpha: 0.1);
 
                             return Container(
-                              padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
                                 color: notif.isRead
                                     ? Colors.white
-                                    : categoryColor.withValues(alpha: 0.05),
-                                borderRadius: BorderRadius.circular(12),
+                                    : AppColors.primaryGreen.withValues(alpha: 0.04),
+                                borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
                                   color: notif.isRead
                                       ? AppColors.border
-                                      : categoryColor.withValues(alpha: 0.35),
+                                      : AppColors.primaryGreen.withValues(alpha: 0.3),
                                 ),
-                              ),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Container(
-                                    width: 44,
-                                    height: 44,
-                                    decoration: BoxDecoration(
-                                      color: categoryBg,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: isPunishment
-                                        ? const Icon(
-                                            Icons.warning_amber_rounded,
-                                            color: Color(0xFFEF4444),
-                                            size: 22,
-                                          )
-                                        : isPengosongan
-                                        ? const Icon(
-                                            Icons.delete_sweep_rounded,
-                                            color: AppColors.warningOrange,
-                                            size: 22,
-                                          )
-                                        : isPoin
-                                        ? Padding(
-                                            padding: const EdgeInsets.all(10.0),
-                                            child: Image.asset(
-                                              'assets/icons/medal.png',
-                                              color: AppColors.warningYellow,
-                                            ),
-                                          )
-                                        : const Icon(
-                                            Icons.scale_rounded,
-                                            color: AppColors.primaryGreen,
-                                            size: 22,
-                                          ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.04),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
                                   ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(
-                                                horizontal: 7,
-                                                vertical: 2,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: categoryBg,
-                                                borderRadius:
-                                                    BorderRadius.circular(6),
-                                              ),
-                                              child: Text(
-                                                categoryLabel,
-                                                style: TextStyle(
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: categoryColor ==
-                                                          AppColors.warningYellow
-                                                      ? const Color(0xFFD97706)
-                                                      : categoryColor,
-                                                ),
-                                              ),
-                                            ),
-                                            if (!notif.isRead)
-                                              Container(
-                                                width: 8,
-                                                height: 8,
-                                                decoration: BoxDecoration(
-                                                  color: categoryColor,
-                                                  shape: BoxShape.circle,
-                                                ),
-                                              ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 6),
-                                        Text(
-                                          notif.title,
-                                          style: TextStyle(
-                                            fontWeight: notif.isRead
-                                                ? FontWeight.w600
-                                                : FontWeight.bold,
-                                            fontSize: 14,
-                                            color: AppColors.textPrimary,
-                                          ),
-                                        ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      notif.desc,
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: AppColors.textSecondary,
+                                ],
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(14),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      width: 42,
+                                      height: 42,
+                                      decoration: BoxDecoration(
+                                        color: categoryBg,
+                                        borderRadius: BorderRadius.circular(10),
                                       ),
+                                      child: isPunishment
+                                          ? const Icon(
+                                              Icons.warning_amber_rounded,
+                                              color: Color(0xFFEF4444),
+                                              size: 22,
+                                            )
+                                          : isPengosongan
+                                          ? const Icon(
+                                              Icons.delete_sweep_rounded,
+                                              color: AppColors.warningOrange,
+                                              size: 22,
+                                            )
+                                          : isPoin
+                                          ? Padding(
+                                              padding: const EdgeInsets.all(10.0),
+                                              child: Image.asset(
+                                                'assets/icons/medal.png',
+                                                color: AppColors.warningYellow,
+                                              ),
+                                            )
+                                          : const Icon(
+                                              Icons.scale_rounded,
+                                              color: AppColors.primaryGreen,
+                                              size: 22,
+                                            ),
                                     ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      '${DateFormat('d MMMM yyyy, HH:mm', 'id_ID').format(notif.createdAt.toLocal())} WIB',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: AppColors.textSecondary
-                                            .withValues(alpha: 0.7),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  notif.title,
+                                                  style: TextStyle(
+                                                    fontSize: 13,
+                                                    fontWeight: notif.isRead
+                                                        ? FontWeight.w600
+                                                        : FontWeight.bold,
+                                                    color: AppColors.textPrimary,
+                                                  ),
+                                                ),
+                                              ),
+                                              if (!notif.isRead)
+                                                Container(
+                                                  width: 8,
+                                                  height: 8,
+                                                  decoration: const BoxDecoration(
+                                                    color: AppColors.primaryGreen,
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            notif.desc,
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              color: AppColors.textSecondary,
+                                              height: 1.3,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            '${DateFormat('d MMMM yyyy, HH:mm', 'id_ID').format(notif.createdAt.toLocal())} WIB',
+                                            style: const TextStyle(
+                                              fontSize: 10,
+                                              color: AppColors.textHint,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
-                            ],
-                          ),
-                        );
+                            );
                       },
                     ),
                   );

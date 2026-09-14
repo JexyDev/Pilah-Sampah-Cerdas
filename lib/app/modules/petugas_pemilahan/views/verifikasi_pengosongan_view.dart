@@ -39,7 +39,12 @@ class _VerifikasiPengosonganViewState extends ConsumerState<VerifikasiPengosonga
   String get _wargaName => widget.pengajuan['wargaName']?.toString() ?? 'Warga';
   String get _targetBinCode => widget.pengajuan['binCode']?.toString() ?? '';
   String get _targetBinId => widget.pengajuan['binId']?.toString() ?? '';
-  String get _category => widget.pengajuan['category']?.toString() ?? 'Organik';
+  String get _category {
+    final cat = widget.pengajuan['category']?.toString() ?? 'Organik';
+    if (cat.toUpperCase() == 'NON_ORGANIC') return 'Anorganik';
+    if (cat.toUpperCase() == 'ORGANIC') return 'Organik';
+    return cat;
+  }
   String get _alamat => widget.pengajuan['address']?.toString() ?? '';
   String get _rtRw => widget.pengajuan['rtRw']?.toString() ?? '';
 
@@ -670,11 +675,6 @@ class _VerifikasiPengosonganViewState extends ConsumerState<VerifikasiPengosonga
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary),
                   ),
                 ),
-                if (_emptyBinPhotoPath != null)
-                  const Text(
-                    'Terambil ✓',
-                    style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.bold, fontSize: 12),
-                  ),
               ],
             ),
             const SizedBox(height: 10),
@@ -727,7 +727,7 @@ class _VerifikasiPengosonganViewState extends ConsumerState<VerifikasiPengosonga
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Foto Bukti Kosong Terlampir',
+                            'Foto Bukti Terlampir',
                             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primaryGreen),
                           ),
                           SizedBox(height: 2),

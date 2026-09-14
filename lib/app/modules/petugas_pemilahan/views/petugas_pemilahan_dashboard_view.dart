@@ -637,7 +637,7 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                '${item.binCode} • ${item.wasteCategory}',
+                                '${item.binCode} • ${item.wasteCategory.toUpperCase() == "NON_ORGANIC" ? "Anorganik" : item.wasteCategory.toUpperCase() == "ORGANIC" ? "Organik" : item.wasteCategory}',
                                 style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: categoryColor),
                               ),
                               if (item.address.isNotEmpty || item.rw.isNotEmpty) ...[
@@ -1074,6 +1074,9 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                         final rawDate = item['timestamp']?.toString() ?? item['submittedAt']?.toString() ?? item['createdAt']?.toString();
                         final formattedDate = _formatDateTime(rawDate);
 
+                        final isPengosongan = item['type'] == 'PENGAJUAN_RESET' ||
+                            (rawTitle.toLowerCase().contains('pengosongan'));
+
                         return Container(
                           margin: const EdgeInsets.only(bottom: 10),
                           decoration: BoxDecoration(
@@ -1083,15 +1086,15 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                           ),
                           child: ListTile(
                             leading: CircleAvatar(
-                              backgroundColor: AppColors.primaryGreen.withValues(alpha: 0.1),
-                              child: const Icon(
-                                Icons.scale_rounded,
-                                color: AppColors.primaryGreen,
+                              backgroundColor: (isPengosongan ? AppColors.warningOrange : AppColors.primaryGreen).withValues(alpha: 0.1),
+                              child: Icon(
+                                isPengosongan ? Icons.delete_sweep_rounded : Icons.scale_rounded,
+                                color: isPengosongan ? AppColors.warningOrange : AppColors.primaryGreen,
                                 size: 20,
                               ),
                             ),
                             title: Text(
-                              title,
+                              isPengosongan ? 'Pengosongan Tempat Sampah' : title,
                               style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                             ),
                             subtitle: Column(
@@ -1112,26 +1115,20 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                                   ),
                               ],
                             ),
-                            trailing: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  '$weight',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                    color: AppColors.primaryGreen,
-                                  ),
+                            trailing: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                isPengosongan ? 'Terverifikasi' : '$weight Kg',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                  color: AppColors.primaryGreen,
                                 ),
-                                const Text(
-                                  'Kilogram',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: AppColors.textSecondary,
-                                  ),
-                                ),
-                              ],
+                              ),
                             ),
                           ),
                         );

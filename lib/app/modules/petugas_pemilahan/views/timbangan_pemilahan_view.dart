@@ -72,23 +72,8 @@ class _TimbanganPemilahanViewState
 
   Future<void> _loadDraft() async {
     _prefs = await SharedPreferences.getInstance();
-    final weight = _prefs?.getString('draft_weight_pemilahan');
-    final classification = _prefs?.getString('draft_class_pemilahan');
-    final photo = _prefs?.getString('draft_photo_pemilahan');
-    final photoTimbangan = _prefs?.getString('draft_photo_timbangan_pemilahan');
-
-    if (mounted) {
-      setState(() {
-        if (weight != null) _weightController.text = weight;
-        if (classification != null &&
-            _classifications.contains(classification)) {
-          _selectedClassification = classification;
-        }
-        if (photo != null && File(photo).existsSync()) _photoPath = photo;
-        if (photoTimbangan != null && File(photoTimbangan).existsSync()) _photoTimbanganPath = photoTimbangan;
-        _calculatePoints();
-      });
-    }
+    // ponytail: always start fresh - clear any stale draft from previous session
+    await _clearDraft();
   }
 
   void _saveDraft() {
@@ -106,11 +91,12 @@ class _TimbanganPemilahanViewState
     }
   }
 
-  void _clearDraft() {
-    _prefs?.remove('draft_weight_pemilahan');
-    _prefs?.remove('draft_class_pemilahan');
-    _prefs?.remove('draft_photo_pemilahan');
-    _prefs?.remove('draft_photo_timbangan_pemilahan');
+  Future<void> _clearDraft() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('draft_weight_pemilahan');
+    await prefs.remove('draft_class_pemilahan');
+    await prefs.remove('draft_photo_pemilahan');
+    await prefs.remove('draft_photo_timbangan_pemilahan');
   }
 
   @override
@@ -286,14 +272,16 @@ class _TimbanganPemilahanViewState
     if (success && mounted) {
       await _showSuccessDialog(weight);
       if (mounted) {
-        _clearDraft();
-        _weightController.clear();
+        await _clearDraft(); // ponytail: clear BEFORE setState to prevent stale prefs if page is re-opened before async completes
+        _weightController.removeListener(_calculatePoints);
         setState(() {
           _photoPath = null;
           _photoTimbanganPath = null;
           _selectedClassification = _classifications.first;
           _estimatedPoints = 0;
         });
+        _weightController.clear();
+        _weightController.addListener(_calculatePoints);
 
         if (!mounted) return;
         if (Navigator.of(context).canPop()) {
