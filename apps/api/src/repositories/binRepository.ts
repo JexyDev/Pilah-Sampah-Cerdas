@@ -279,7 +279,8 @@ export class BinRepository {
     pointsAwarded: number,
     categoryName: string,
     aiConfidence?: number,
-    evidencePhotoUrl?: string
+    evidencePhotoUrl?: string,
+    detectedType?: string
   ): Promise<{
     setoranOtomatis: SetoranOtomatis;
     points: PointHistory;
@@ -287,18 +288,19 @@ export class BinRepository {
   }> {
     return prisma.$transaction(async (tx) => {
       // 1. Create SetoranOtomatis Log
+      const detectionSource = (detectedType || categoryName || "").toLowerCase();
+      const isAnorganic =
+        detectionSource.includes("anorganik") ||
+        detectionSource.includes("non") ||
+        detectionSource.includes("anorg") ||
+        detectionSource.includes("ano") ||
+        detectionSource.includes("agn");
+
       const setoranOtomatis = await tx.setoranOtomatis.create({
         data: {
           wargaId: userId,
           fotoSampahUrl: evidencePhotoUrl!,
-          hasilKlasifikasiAi:
-            categoryName.toLowerCase().includes("anorganik") ||
-            categoryName.toLowerCase().includes("non") ||
-            categoryName.toLowerCase().includes("anorg") ||
-            categoryName.toLowerCase().includes("ano") ||
-            categoryName.toLowerCase().includes("agn")
-              ? "anorganik"
-              : "organik",
+          hasilKlasifikasiAi: isAnorganic ? "anorganik" : "organik",
           confidenceAi: aiConfidence!,
           berat: weightKg,
           unit: "Kg",
