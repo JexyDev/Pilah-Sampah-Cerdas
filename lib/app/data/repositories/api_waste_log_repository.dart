@@ -150,9 +150,10 @@ class ApiWasteLogRepository implements WasteLogRepository {
 
         if (userEntry != null) {
           final rank = userEntry['rank'];
-          return '$rank';
+          final total = data.length;
+          return '$rank/$total';
         }
-        return '-';
+        return '-/${data.length}';
       }
       return '-';
     } on DioException catch (_) {

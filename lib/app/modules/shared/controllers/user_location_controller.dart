@@ -84,15 +84,7 @@ class UserLocationNotifier extends StateNotifier<UserLocationState> {
         clearError: true,
       );
 
-      if (_ref != null &&
-          address != null &&
-          address.isNotEmpty &&
-          address != 'Lokasi tidak ditemukan' &&
-          address != 'Gagal memuat alamat') {
-        // [REMOVED] Automatic profile address synchronization.
-        // The user profile address should only be managed via manual input, 
-        // not overwritten automatically by device GPS reverse geocoding.
-      }
+
     } catch (e) {
       state = state.copyWith(
         isFetchingAddress: false,

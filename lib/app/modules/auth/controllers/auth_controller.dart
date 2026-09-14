@@ -401,6 +401,21 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  /// Mendaftarkan komunitas (generate komunitas_id unik).
+  Future<bool> registerKomunitas() async {
+    try {
+      final komunitasId = await _authRepository.registerKomunitas();
+      if (state.user != null) {
+        state = state.copyWith(
+          user: state.user!.copyWith(komunitasId: komunitasId),
+        );
+      }
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   /// Upload foto profil
   Future<bool> uploadAvatar(String imagePath) async {
     state = state.copyWith(isLoading: true, clearError: true);

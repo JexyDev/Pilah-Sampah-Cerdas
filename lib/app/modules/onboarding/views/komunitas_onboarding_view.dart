@@ -272,7 +272,14 @@ class _KomunitasOnboardingViewState
           );
 
       if (ok && mounted) {
-        // Refresh profil untuk mendapatkan householdId terbaru
+        // Daftar ke komunitas untuk generate komunitas_id
+        final isRegistered = await ref.read(authProvider.notifier).registerKomunitas();
+        if (!isRegistered && mounted) {
+           _showError('Berhasil update profil tapi gagal auto-generate ID komunitas.');
+           // Tetap lanjut karena profile sudah sukses
+        }
+
+        // Refresh profil untuk mendapatkan householdId terbaru dan data lain
         await ref.read(authProvider.notifier).fetchProfile();
 
         if (mounted) {
