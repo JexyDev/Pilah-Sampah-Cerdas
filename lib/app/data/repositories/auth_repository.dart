@@ -53,6 +53,10 @@ abstract class AuthRepository {
     int? familySize,
   });
 
+  /// Mendaftar komunitas untuk menggenerate komunitas_id unik.
+  /// Returns ID komunitas yang baru di-generate.
+  Future<String> registerKomunitas();
+
   /// Request token untuk lupa kata sandi.
   Future<String?> forgotPassword({required String phone});
 

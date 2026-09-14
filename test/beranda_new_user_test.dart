@@ -38,11 +38,11 @@ void main() {
           wasteLogsProvider.overrideWith(() => MockWasteLogsNotifier()),
           isOnlineProvider.overrideWith((ref) => true),
           wargaUnreadNotificationCountProvider.overrideWith((ref) => 0),
-          userLocationProvider.overrideWith((ref) => MockUserLocationNotifier()),
+          userLocationProvider.overrideWith(
+            (ref) => MockUserLocationNotifier(),
+          ),
         ],
-        child: const MaterialApp(
-          home: DashboardView(),
-        ),
+        child: const MaterialApp(home: DashboardView()),
       ),
     );
 
@@ -50,7 +50,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text('User Baru'), findsOneWidget);
-    expect(find.text('Belum Bergabung Komunitas'), findsOneWidget);
+    expect(find.text('Belum Bergabung Ko  munitas'), findsOneWidget);
     expect(find.text('Gabung Komunitas Berseka'), findsOneWidget);
     expect(find.text('Tempat Sampah Belum Terpasang'), findsNothing);
     expect(find.text('Aksi Cepat'), findsNothing);
@@ -81,11 +81,11 @@ void main() {
           wasteLogsProvider.overrideWith(() => MockWasteLogsNotifier()),
           isOnlineProvider.overrideWith((ref) => true),
           wargaUnreadNotificationCountProvider.overrideWith((ref) => 0),
-          userLocationProvider.overrideWith((ref) => MockUserLocationNotifier()),
+          userLocationProvider.overrideWith(
+            (ref) => MockUserLocationNotifier(),
+          ),
         ],
-        child: const MaterialApp(
-          home: DashboardView(),
-        ),
+        child: const MaterialApp(home: DashboardView()),
       ),
     );
 
@@ -100,7 +100,8 @@ void main() {
   });
 }
 
-class MockAuthNotifier extends StateNotifier<AuthState> implements AuthNotifier {
+class MockAuthNotifier extends StateNotifier<AuthState>
+    implements AuthNotifier {
   MockAuthNotifier(UserEntity user) : super(AuthState(user: user));
 
   @override

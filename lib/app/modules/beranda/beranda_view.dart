@@ -106,6 +106,9 @@ class _BerandaViewState extends ConsumerState<BerandaView>
     final int unreadCount = ref.watch(wargaUnreadNotificationCountProvider);
     final hasActiveBin =
         ref.watch(binsProvider).value?.any((bin) => bin.isActive) ?? false;
+    final isCommunityMember = user != null &&
+        user.lifecycleState != WargaLifecycle.registered &&
+        (user.householdId ?? '').isNotEmpty;
     try {
       return Scaffold(
         backgroundColor: AppColors.backgroundCanvas,
@@ -130,83 +133,6 @@ class _BerandaViewState extends ConsumerState<BerandaView>
               child: _buildHeader(context, ref, user, isOnline, unreadCount),
             ),
 
-            // Banner CTA bergabung komunitas — muncul jika belum punya householdId
-            if ((user?.householdId ?? '').isEmpty)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          AppColors.primaryGreen,
-                          AppColors.primaryGreen.withValues(alpha: 0.8),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primaryGreen.withValues(alpha: 0.3),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.group_add_rounded,
-                            color: Colors.white, size: 28),
-                        const SizedBox(width: 12),
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Belum bergabung komunitas',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              SizedBox(height: 2),
-                              Text(
-                                'Lengkapi data untuk mengaktifkan Tempat Sampah Anda.',
-                                style: TextStyle(
-                                    color: Colors.white70, fontSize: 12),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        ElevatedButton(
-                          onPressed: () => Navigator.of(context)
-                              .pushNamed(AppRoutes.komunitasOnboarding),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: AppColors.primaryGreen,
-                            minimumSize: Size.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 8),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10)),
-                            elevation: 0,
-                          ),
-                          child: const Text(
-                            'Bergabung',
-                            style: TextStyle(
-                                fontWeight: FontWeight.w700, fontSize: 13),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
 
             SliverPadding(
               padding: const EdgeInsets.all(AppDimensions.md),
@@ -227,6 +153,28 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                     ),
                   ),
                   const SizedBox(height: AppDimensions.md),
+
+                  // ─── Statistik Saya ──────────────────────────────────────────
+                  const Text(
+                    'Statistik Saya',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: AppDimensions.sm),
+                  wasteLogsAsync.when(
+                    skipLoadingOnReload: true,
+                    data: (logs) => _buildStatistikSaya(context, logs),
+                    loading: () => const SkeletonLoading(
+                      height: 120,
+                      width: double.infinity,
+                      borderRadius: BorderRadius.all(Radius.circular(16)),
+                    ),
+                    error: (_, __) => const SizedBox.shrink(),
+                  ),
+                  const SizedBox(height: AppDimensions.lg),
 
                   // ──────────────── Aksi Cepat ─────────────────────────────────
                   if (user?.lifecycleState != WargaLifecycle.registered) ...[
@@ -457,30 +405,7 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                   if (hasActiveBin) ...[
                     const SizedBox(height: AppDimensions.lg),
 
-                    // ─── Statistik Saya ──────────────────────────────────────────
-                    const Text(
-                      'Statistik Saya',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: AppDimensions.sm),
-                    wasteLogsAsync.when(
-                      skipLoadingOnReload: true,
-                      data: (logs) => _buildStatistikSaya(context, logs),
-                      loading: () => const SkeletonLoading(
-                        height: 120,
-                        width: double.infinity,
-                        borderRadius: BorderRadius.all(Radius.circular(16)),
-                      ),
-                      error: (_, __) => const SizedBox.shrink(),
-                    ),
-
-                    const SizedBox(height: AppDimensions.lg),
-
-                    // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Riwayat Terakhir ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
+                    // ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ Riwayat Terakhir ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬Â Ã¢â€šÂ¬
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -515,32 +440,32 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                       skipLoadingOnReload: true,
                       data: (logs) => logs.isEmpty
                           ? _buildEmptyLogs(context)
-                          : Column(
-                              children: logs
-                                  .take(5)
-                                  .map(
-                                    (log) => Padding(
-                                      padding: const EdgeInsets.only(
-                                        bottom: 16.0,
-                                      ),
-                                      child: _RiwayatCard(log: log),
-                                    ),
-                                  )
-                                  .toList(),
-                            ),
-                      loading: () => Column(
-                        children: List.generate(
-                          3,
-                          (index) => const Padding(
-                            padding: EdgeInsets.only(bottom: 8.0),
-                            child: SkeletonLoading(
-                              height: 70,
-                              width: double.infinity,
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(12),
+                          : SizedBox(
+                              height: 180, // Membatasi tinggi agar tidak expand penuh
+                              child: ListView.separated(
+                                padding: EdgeInsets.zero,
+                                physics: const BouncingScrollPhysics(),
+                                itemCount: logs.length > 5 ? 5 : logs.length,
+                                separatorBuilder: (context, index) => const SizedBox(height: 12),
+                                itemBuilder: (context, index) {
+                                  return _RiwayatCard(log: logs[index]);
+                                },
                               ),
                             ),
-                          ),
+                      loading: () => SizedBox(
+                        height: 180,
+                        child: ListView.separated(
+                          padding: EdgeInsets.zero,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: 3,
+                          separatorBuilder: (context, index) => const SizedBox(height: 12),
+                          itemBuilder: (context, index) {
+                            return const SkeletonLoading(
+                              height: 70,
+                              width: double.infinity,
+                              borderRadius: BorderRadius.all(Radius.circular(12)),
+                            );
+                          },
                         ),
                       ),
                       error: (_, __) => EmptyState(
@@ -552,6 +477,8 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                       ),
                     ),
                   ],
+                  const SizedBox(height: AppDimensions.lg),
+                  _buildBeritaSection(context, isCommunityMember),
                   const SizedBox(height: 80),
                 ]),
               ),
@@ -718,6 +645,56 @@ class _BerandaViewState extends ConsumerState<BerandaView>
     );
   }
 
+  Widget _buildBeritaSection(BuildContext context, bool isCommunityMember) {
+    final listBerita = [
+      _BeritaData(
+        title: 'Rilis Fitur Baru: Kenali Tempat Sampah Pintar Berseka',
+        description: 'Berseka kini hadir dengan fitur AI untuk mengenali jenis sampah secara otomatis.',
+      ),
+      _BeritaData(
+        title: 'Pasar Berseka: Tukar Poinmu!',
+        description: 'Segera bergabung menjadi member komunitas untuk bisa mengakses Pasar Berseka dan menukarkan poinmu dengan kebutuhan harian!',
+        isPasarBerseka: true,
+      ),
+      _BeritaData(
+        title: 'Dampak Lingkungan Nyata',
+        description: 'Lihat bagaimana kontribusimu membantu mengurangi emisi karbon setiap harinya.',
+      ),
+      _BeritaData(
+        title: 'Tips Memilah Sampah',
+        description: 'Kenali perbedaan sampah organik dan anorganik untuk proses daur ulang yang optimal.',
+      ),
+    ];
+
+    final displayedBerita = listBerita;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Informasi & Berita',
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 160,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: displayedBerita.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 12),
+            itemBuilder: (context, index) {
+              return _BeritaCard(data: displayedBerita[index]);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildHeaderAvatarImage(String? fotoPath) {
     if (fotoPath == null || fotoPath.isEmpty) {
       return const Center(
@@ -777,6 +754,10 @@ class _BerandaViewState extends ConsumerState<BerandaView>
     final roleName = user?.role.displayName ?? 'Warga';
     final fotoUrl = user?.fotoProfil;
     final isCompact = MediaQuery.of(context).size.width < 360;
+
+    final isUnjoined = (user?.role == UserRole.warga || user?.role == UserRole.unknown) &&
+        (user?.lifecycleState == WargaLifecycle.registered ||
+            (user?.householdId ?? '').isEmpty);
 
     return Container(
       color: Colors.white,
@@ -852,6 +833,36 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: isUnjoined ? AppColors.warningYellow.withValues(alpha: 0.1) : AppColors.primaryGreen.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(
+                          color: isUnjoined ? AppColors.warningYellow.withValues(alpha: 0.3) : AppColors.primaryGreen.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Text(
+                        isUnjoined ? 'Belum Bergabung' : 'Sudah Bergabung',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                          color: isUnjoined ? AppColors.warningYellow : AppColors.primaryGreen,
+                        ),
+                      ),
+                    ),
+                    if (!isUnjoined && user?.komunitasId != null && user!.komunitasId!.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'ID: ${user.komunitasId}',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -987,23 +998,20 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                   : '';
               final wilayahList = [kelText, rwText].where((s) => s.isNotEmpty).toList();
               final wilayahTitle = isUnjoined
-                  ? 'Belum Bergabung Komunitas'
-                  : (wilayahList.isNotEmpty ? wilayahList.join(' • ') : 'Wilayah Warga');
+            ? 'Data lokasi belum diketahui, Ayo Gabung Komunitas'
+            : (wilayahList.isNotEmpty ? wilayahList.join(' • ') : 'Wilayah Warga');
 
-              final registeredAddress = (user?.address ?? '').trim();
-              final displayAddress = isUnjoined
-                  ? locState.address
-                  : (registeredAddress.isNotEmpty ? registeredAddress : locState.address);
+              // Alamat lengkap (domisili/KTP) tetap tidak terpengaruh oleh live location ini.
+              // Live location ini hanya mengubah koordinat terkini menjadi alamat.
+              final displayAddress = locState.address;
 
               return UserLocationCard(
                 wilayahTitle: wilayahTitle,
-                isFetchingAddress: isUnjoined ? locState.isFetchingAddress : false,
+                isFetchingAddress: locState.isFetchingAddress,
                 address: displayAddress,
                 position: locState.position,
-                isHomeAddress: !isUnjoined,
-                onRefresh: isUnjoined
-                    ? () => ref.read(userLocationProvider.notifier).refreshLocation(context: context)
-                    : null,
+                isHomeAddress: false, // Menandakan bahwa ini adalah live location, bukan fixed home address
+                onRefresh: () => ref.read(userLocationProvider.notifier).refreshLocation(context: context),
               );
             },
           ),
@@ -1040,10 +1048,10 @@ class _BerandaViewState extends ConsumerState<BerandaView>
           final dailyAsync = ref.watch(dailyPointsProvider);
           final daily = dailyAsync.maybeWhen(data: (v) => v, orElse: () => 0);
 
-          final rankAsync = ref.watch(userLeaderboardRankProvider);
-          final rankValue = rankAsync.maybeWhen(
-            data: (r) => r,
-            orElse: () => '-',
+          final setoranAsync = ref.watch(totalSetoranProvider);
+          final setoranValue = setoranAsync.maybeWhen(
+            data: (v) => v,
+            orElse: () => 0,
           );
 
           return Row(
@@ -1052,7 +1060,7 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                 icon: Icons.star_rounded,
                 iconColor: AppColors.primaryBlue,
                 numericValue: daily,
-                label: 'Hari Ini',
+                label: 'Poin hari ini',
               ),
               _VerticalDivider(),
               _StatItem(
@@ -1064,10 +1072,10 @@ class _BerandaViewState extends ConsumerState<BerandaView>
               ),
               _VerticalDivider(),
               _StatItem(
-                icon: Icons.emoji_events_rounded,
-                iconColor: AppColors.warningYellow,
-                value: rankValue,
-                label: 'Peringkat',
+                icon: Icons.sync_alt_rounded,
+                iconColor: AppColors.primaryGreen,
+                numericValue: setoranValue,
+                label: 'Total Setoran',
               ),
             ],
           );
@@ -1229,16 +1237,7 @@ class _BerandaViewState extends ConsumerState<BerandaView>
             onTap: isOnline
                 ? () {
                     if (user?.role == UserRole.warga && user?.lifecycleState != WargaLifecycle.fullyActive) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Tempat Sampah belum terpasang. Anda tidak akan mendapat poin jika memaksa scan.',
-                          ),
-                          backgroundColor: AppColors.warningYellow,
-                        ),
-                      );
-                      // Fallback: we still allow navigation but with warning?
-                      // The prompt says "atau disable tombol scan". Let's disable it by returning early.
+                      Navigator.of(context).pushNamed(AppRoutes.ukurKapasitas);
                       return;
                     }
                     ScanGuard.handleScanNavigation(context, ref);
@@ -1479,8 +1478,6 @@ class _RiwayatCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // final String displayLocation = ...; (reserved for future location display feature)
-
     final bool isOrganic = log.wasteType == WasteType.organic;
     final Color bgColor = isOrganic
         ? AppColors.organicColor
@@ -1490,41 +1487,82 @@ class _RiwayatCard extends ConsumerWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 6),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Icon Tempat Sampah
+          // Icon Container
           Container(
-            width: 44,
-            height: 44,
+            width: 48,
+            height: 48,
             decoration: BoxDecoration(
-              color: bgColor.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(10),
+              color: bgColor.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
             ),
-            child: Icon(Icons.delete_rounded, color: bgColor, size: 22),
+            child: Icon(
+              isOrganic ? Icons.eco_rounded : Icons.recycling_rounded,
+              color: bgColor,
+              size: 24,
+            ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
                   isOrganic ? 'Sampah Organik' : 'Sampah Anorganik',
                   style: const TextStyle(
                     fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
                 Text(
-                  'Dibuang pada: ${DateFormat('HH:mm', 'id_ID').format(log.createdAt.toLocal())} WIB',
+                  '${DateFormat('dd MMM yyyy, HH:mm', 'id_ID').format(log.createdAt.toLocal())} WIB',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Points
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.primaryBlue.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.star_rounded,
+                  color: AppColors.primaryBlue,
+                  size: 14,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '+${log.pointsAwarded}',
                   style: const TextStyle(
                     fontSize: 12,
-                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.primaryBlue,
                   ),
                 ),
               ],
@@ -1536,12 +1574,43 @@ class _RiwayatCard extends ConsumerWidget {
   }
 }
 
-class _BerandaBinCard extends StatelessWidget {
+class _BerandaBinCard extends StatefulWidget {
   const _BerandaBinCard({required this.bin});
   final BinEntity bin;
 
   @override
+  State<_BerandaBinCard> createState() => _BerandaBinCardState();
+}
+
+class _BerandaBinCardState extends State<_BerandaBinCard> {
+  String _address = 'Memuat lokasi...';
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAddress();
+  }
+
+  Future<void> _fetchAddress() async {
+    try {
+      final addr = await LocationService.instance.getAddressFromCoordinates(widget.bin.lat, widget.bin.lng);
+      if (mounted) {
+        setState(() {
+          _address = addr ?? 'Lokasi tidak diketahui';
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _address = 'Gagal memuat lokasi';
+        });
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final bin = widget.bin;
     final bool isOrganic = bin.binType == WasteType.organic;
     final Color color = isOrganic
         ? AppColors.organicColor
@@ -1628,6 +1697,48 @@ class _BerandaBinCard extends StatelessWidget {
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 12),
+          // Indikator Kapasitas
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: bin.isActive ? bin.capacityPercent.clamp(0.0, 1.0) : 0.0,
+              minHeight: 6,
+              backgroundColor: bin.isActive
+                  ? AppColors.border
+                  : Colors.grey.shade300,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                bin.isActive ? color : Colors.grey,
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            bin.isResetPending
+                ? 'Menunggu diproses'
+                : '${(bin.capacityPercent * 100).toStringAsFixed(0)}% terisi',
+            style: const TextStyle(fontSize: 10, color: AppColors.textPrimary),
+          ),
+          const SizedBox(height: 8),
+          // Lokasi Koordinat (Reverse Geocoding)
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.location_on_rounded, size: 12, color: AppColors.textHint),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  _address,
+                  style: const TextStyle(
+                    fontSize: 9,
+                    color: AppColors.textHint,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -1739,7 +1850,7 @@ class _GabungKomunitasCard extends StatelessWidget {
 
             // Deskripsi Singkat
             const Text(
-              'Aktifkan Tempat Sampah pintarmu dan mulai berkontribusi nyata untuk lingkungan.',
+              'Aplikasi Berseka hadir untuk mendorong budaya memilah sampah dari rumah melalui teknologi cerdas. Bergabunglah dengan komunitas untuk mulai berkontribusi nyata menjaga lingkungan sekaligus mendapatkan berbagai keuntungan eksklusif.',
               style: TextStyle(
                 color: Colors.white70,
                 fontSize: 13,
@@ -1930,6 +2041,196 @@ class _TempatSampahBelumTerpasangCard extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BeritaData {
+  final String title;
+  final String description;
+  final bool isPasarBerseka;
+
+  _BeritaData({
+    required this.title,
+    required this.description,
+    this.isPasarBerseka = false,
+  });
+}
+
+class _BeritaCard extends StatelessWidget {
+  final _BeritaData data;
+
+  const _BeritaCard({required this.data});
+
+  void _showDetail(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      data.isPasarBerseka ? Icons.storefront_rounded : Icons.article_rounded,
+                      color: data.isPasarBerseka ? AppColors.warningYellow : AppColors.primaryGreen,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        data.isPasarBerseka ? 'Eksklusif Member' : 'Info Berseka',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: data.isPasarBerseka ? AppColors.warningYellow : AppColors.primaryGreen,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  data.title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                    height: 1.3,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  data.description,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textSecondary,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryGreen,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: const Text(
+                      'Tutup',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 240,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _showDetail(context),
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      data.isPasarBerseka ? Icons.storefront_rounded : Icons.article_rounded,
+                      color: data.isPasarBerseka ? AppColors.warningYellow : AppColors.primaryGreen,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        data.isPasarBerseka ? 'Eksklusif Member' : 'Info Berseka',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: data.isPasarBerseka ? AppColors.warningYellow : AppColors.primaryGreen,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  data.title,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        data.description,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textSecondary,
+                          height: 1.3,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const Spacer(),
+                      const Text(
+                        'Lihat selengkapnya...',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primaryGreen,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

@@ -19,6 +19,7 @@ import '../../shared/widgets/app_loading.dart';
 import '../../shared/widgets/inline_camera_widget.dart';
 import '../../shared/widgets/qr_scanner_widget.dart';
 import '../../shared/widgets/feature_rating_dialog.dart';
+import '../../shared/controllers/user_location_controller.dart';
 
 /// Alur scan sampah — sesuai desain:
 /// Step 1: Kamera + bottom sheet "Pindai Sampah" + tombol "Deteksi Sampah"
@@ -106,7 +107,8 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
     } catch (_) {}
   }
 
-  /// Minta izin lokasi dan ambil koordinat GPS realtime sekarang.
+  /// Minta izin lokasi dan ambil koordinat GPS realtime sekarang,
+  /// sekaligus menyinkronisasikan (update) dengan Cek Lokasi di Beranda.
   Future<Position?> _fetchGps({bool requestPermissionIfNeeded = true}) async {
     if (!PlatformUtils.isMobile) return null;
     if (!mounted) return null;
@@ -114,62 +116,25 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
     setState(() => _gpsLoading = true);
 
     try {
-      final LocationPermission perm;
       if (requestPermissionIfNeeded) {
-        perm = await LocationService.instance.checkAndRequestPermission(
-          context,
-          role: 'warga',
-        );
+        // Panggil refreshLocation untuk mengambil GPS dan reverse geocoding, 
+        // sehingga Cek Lokasi di beranda juga ikut ter-update (sinkron)
+        await ref.read(userLocationProvider.notifier).refreshLocation(context: context);
       } else {
-        final bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-        if (!serviceEnabled) {
-          if (mounted) setState(() => _gpsLoading = false);
-          return null;
-        }
-        perm = await Geolocator.checkPermission();
+        await ref.read(userLocationProvider.notifier).refreshLocation();
       }
 
-      if (perm == LocationPermission.deniedForever ||
-          perm == LocationPermission.denied ||
-          perm == LocationPermission.unableToDetermine) {
-        if (mounted) setState(() => _gpsLoading = false);
-        return null;
-      }
-
-      // Ambil posisi akurasi tinggi (high) timeLimit 6s
-      Position? pos;
-      try {
-        pos = await Geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.high,
-            timeLimit: Duration(seconds: 6),
-          ),
-        );
-      } catch (_) {
-        try {
-          // Fallback ke medium (Cell/Wi-Fi triangulation) 4s
-          pos = await Geolocator.getCurrentPosition(
-            locationSettings: const LocationSettings(
-              accuracy: LocationAccuracy.medium,
-              timeLimit: Duration(seconds: 4),
-            ),
-          );
-        } catch (_) {
-          // Fallback terakhir ke last known position
-          pos = await Geolocator.getLastKnownPosition();
-        }
-      }
+      final pos = ref.read(userLocationProvider).position;
 
       if (pos != null) {
-        final currentPos = pos;
         if (mounted) {
           setState(() {
-            _userLat = currentPos.latitude;
-            _userLng = currentPos.longitude;
+            _userLat = pos.latitude;
+            _userLng = pos.longitude;
             _gpsLoading = false;
           });
         }
-        return currentPos;
+        return pos;
       }
     } catch (e) {
       debugPrint('[ScanFlowView] GPS fetch error: $e');
@@ -180,6 +145,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
     }
     return null;
   }
+
 
   /// Memastikan koordinat GPS realtime valid dan bukan 0.0 sebelum transaksi dikirim ke backend.
   Future<bool> _ensureRealtimeGps() async {

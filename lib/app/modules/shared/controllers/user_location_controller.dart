@@ -86,32 +86,7 @@ class UserLocationNotifier extends StateNotifier<UserLocationState> {
         clearError: true,
       );
 
-      if (_ref != null &&
-          address != null &&
-          address.isNotEmpty &&
-          address != 'Lokasi tidak ditemukan' &&
-          address != 'Gagal memuat alamat') {
-        final authState = _ref.read(authProvider);
-        final user = authState.user;
-        final isUnjoined = (user?.role == UserRole.warga || user?.role == UserRole.unknown) &&
-            (user?.lifecycleState == WargaLifecycle.registered ||
-                (user?.householdId ?? '').isEmpty);
-        // Hanya sinkronkan alamat GPS ke server jika warga belum terdaftar di komunitas
-        if (authState.isAuthenticated && user != null && isUnjoined) {
-          try {
-            await _ref.read(authRepositoryProvider).updateProfile(
-                  name: user.name,
-                  phone: user.phone,
-                  address: address,
-                );
-            await _ref.read(authProvider.notifier).fetchProfile();
-          } catch (err) {
-            debugPrint(
-              '[UserLocationNotifier] Gagal sync alamat ke server: $err',
-            );
-          }
-        }
-      }
+
     } catch (e) {
       state = state.copyWith(
         isFetchingAddress: false,
