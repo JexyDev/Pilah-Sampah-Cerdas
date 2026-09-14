@@ -1717,7 +1717,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
             role: user.role.name,
             title: 'Absensi KKN Berhasil 📍',
             desc:
-                'Presensi Geofence KKN di $kelurahan ($rw) berhasil tercatat (+10 PTS).',
+                'Presensi Geofence KKN di $kelurahan ($rw) berhasil tercatat (+4 PTS).',
             type: 'PRESENSI_KKN_SUKSES',
           );
           LocalNotificationCacheService().addNotification(
@@ -1725,14 +1725,14 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
             role: user.role.name,
             title: 'Absensi KKN Berhasil ✅',
             desc:
-                'Presensi Geofence KKN di $kelurahan ($rw) berhasil tercatat (+10 PTS).',
+                'Presensi Geofence KKN di $kelurahan ($rw) berhasil tercatat (+4 PTS).',
             type: 'PRESENSI_KKN_SUKSES',
           );
           NotificationEngine().showGenericNotification(
             id: DateTime.now().millisecondsSinceEpoch.remainder(10000),
             title: 'Absensi KKN Berhasil ✅',
             body:
-                'Presensi Geofence KKN di $kelurahan ($rw) berhasil tercatat (+10 PTS).',
+                'Presensi Geofence KKN di $kelurahan ($rw) berhasil tercatat (+4 PTS).',
           );
         }
         ref.invalidate(mahasiswaNotificationsProvider);
