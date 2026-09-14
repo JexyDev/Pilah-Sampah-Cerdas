@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../core/values/app_colors.dart';
 
@@ -14,6 +14,7 @@ class UserLocationCard extends StatelessWidget {
     this.address,
     this.position,
     this.onRefresh,
+    this.isHomeAddress = false,
   });
 
   /// Judul Wilayah (misal: "Kel. Sukasari • RW 03")
@@ -22,7 +23,7 @@ class UserLocationCard extends StatelessWidget {
   /// Status loading saat fetch alamat
   final bool isFetchingAddress;
 
-  /// Alamat hasil konversi reverse geocoding
+  /// Alamat hasil konversi reverse geocoding atau alamat rumah tangga terdaftar
   final String? address;
 
   /// Posisi koordinat GPS saat ini
@@ -30,6 +31,9 @@ class UserLocationCard extends StatelessWidget {
 
   /// Callback ketika tombol "Perbarui" ditekan
   final VoidCallback? onRefresh;
+
+  /// Penanda apakah alamat ini merupakan alamat rumah tangga terdaftar di komunitas
+  final bool isHomeAddress;
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +46,7 @@ class UserLocationCard extends StatelessWidget {
       displayText =
           '${position!.latitude.toStringAsFixed(4)}, ${position!.longitude.toStringAsFixed(4)}';
     } else {
-      displayText = 'Menunggu GPS...';
+      displayText = isHomeAddress ? 'Alamat rumah belum diatur' : 'Menunggu GPS...';
     }
 
     return Container(
@@ -109,14 +113,14 @@ class UserLocationCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 4),
-          // Tier 2: Alamat Lengkap GPS (Multiline 2 Baris agar tidak terpotong)
+          // Tier 2: Alamat Lengkap (Multiline 2 Baris agar tidak terpotong)
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Padding(
-                padding: EdgeInsets.only(top: 1),
+              Padding(
+                padding: const EdgeInsets.only(top: 1),
                 child: Icon(
-                  Icons.my_location_rounded,
+                  isHomeAddress ? Icons.home_rounded : Icons.my_location_rounded,
                   size: 11,
                   color: AppColors.textSecondary,
                 ),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../data/services/location_service.dart';
+import '../../../data/models/user_entity.dart';
 import '../../auth/controllers/auth_controller.dart';
 
 /// State lokasi dan alamat untuk Warga & Petugas Pemilah
@@ -91,11 +92,16 @@ class UserLocationNotifier extends StateNotifier<UserLocationState> {
           address != 'Lokasi tidak ditemukan' &&
           address != 'Gagal memuat alamat') {
         final authState = _ref.read(authProvider);
-        if (authState.isAuthenticated && authState.user != null) {
+        final user = authState.user;
+        final isUnjoined = (user?.role == UserRole.warga || user?.role == UserRole.unknown) &&
+            (user?.lifecycleState == WargaLifecycle.registered ||
+                (user?.householdId ?? '').isEmpty);
+        // Hanya sinkronkan alamat GPS ke server jika warga belum terdaftar di komunitas
+        if (authState.isAuthenticated && user != null && isUnjoined) {
           try {
             await _ref.read(authRepositoryProvider).updateProfile(
-                  name: authState.user!.name,
-                  phone: authState.user!.phone,
+                  name: user.name,
+                  phone: user.phone,
                   address: address,
                 );
             await _ref.read(authProvider.notifier).fetchProfile();

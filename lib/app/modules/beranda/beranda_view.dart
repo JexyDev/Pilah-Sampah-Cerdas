@@ -990,12 +990,20 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                   ? 'Belum Bergabung Komunitas'
                   : (wilayahList.isNotEmpty ? wilayahList.join(' • ') : 'Wilayah Warga');
 
+              final registeredAddress = (user?.address ?? '').trim();
+              final displayAddress = isUnjoined
+                  ? locState.address
+                  : (registeredAddress.isNotEmpty ? registeredAddress : locState.address);
+
               return UserLocationCard(
                 wilayahTitle: wilayahTitle,
-                isFetchingAddress: locState.isFetchingAddress,
-                address: locState.address,
+                isFetchingAddress: isUnjoined ? locState.isFetchingAddress : false,
+                address: displayAddress,
                 position: locState.position,
-                onRefresh: () => ref.read(userLocationProvider.notifier).refreshLocation(context: context),
+                isHomeAddress: !isUnjoined,
+                onRefresh: isUnjoined
+                    ? () => ref.read(userLocationProvider.notifier).refreshLocation(context: context)
+                    : null,
               );
             },
           ),
