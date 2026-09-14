@@ -1043,7 +1043,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             },
             {
               to: "/log-aktivitas/dosen-pendamping-lapangan",
-              label: "Dosen Pendamping Lapangan",
+              label: "Dosen Pembimbing Lapangan",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
@@ -1481,7 +1481,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             { to: "/pengguna?role=dlh", label: "Admin DLH", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PIMPINAN"] as UserRole[] },
             { to: "/pengguna?role=pimpinan", label: "Pimpinan", allowed: ["DEVELOPER", "SUPER_USER", "PIMPINAN"] as UserRole[] },
             { to: "/pengguna?role=taskforce", label: "Task Force", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PIMPINAN"] as UserRole[] },
-            { to: "/pengguna?role=dpl", label: "Dosen Pendamping Lapangan", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PIMPINAN"] as UserRole[] },
+            { to: "/pengguna?role=dpl", label: "Dosen Pembimbing Lapangan", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PIMPINAN"] as UserRole[] },
             { to: "/pengguna?role=mahasiswa", label: "Mahasiswa", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PIMPINAN"] as UserRole[] },
             { to: "/pengguna?role=warga", label: "Warga", allowed: ["DEVELOPER", "SUPER_USER", "RW", "PIMPINAN"] as UserRole[] },
             { to: "/pengguna?role=petugas-pemilah", label: "Petugas Pemilah", allowed: ["DEVELOPER", "SUPER_USER", "RW", "PIMPINAN"] as UserRole[] },
