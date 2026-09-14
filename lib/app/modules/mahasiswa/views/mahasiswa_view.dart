@@ -147,6 +147,8 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                         const SizedBox(height: 8),
                         _buildSummaryCards(state),
                         const SizedBox(height: 8),
+                        _buildKknStatsRow(context, ref),
+                        const SizedBox(height: 8),
                         _buildQuickActions(kknLocationState),
                         const SizedBox(height: 8),
                         _buildWargaSection(state),
@@ -1532,6 +1534,188 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
   }
 }
 
+Widget _buildKknStatsRow(BuildContext context, WidgetRef ref) {
+  final mhsState = ref.watch(mahasiswaControllerProvider);
+  final points = mhsState.dashboard?.contributionPoints ?? 0;
+
+  final asyncHistory = ref.watch(pointHistoryProvider);
+  int laporanCount = 0;
+  int wargaCount = 0;
+
+  if (asyncHistory.hasValue && asyncHistory.value != null) {
+    for (final ph in asyncHistory.value!) {
+      final lowerDesc = ph.description.toLowerCase();
+      if (lowerDesc.contains('pemanfaatan')) {
+        laporanCount++;
+      } else if (lowerDesc.contains('aktivasi')) {
+        wargaCount++;
+      }
+    }
+  }
+
+  final izinCount = ref.watch(pengajuanIzinCountProvider).value ?? 0;
+
+  // Total Input = Laporan Pemanfaatan Sampah + Warga Binaan yang Diaktivasi
+  final totalInputCount = laporanCount + wargaCount;
+
+  return Column(
+    children: [
+      Row(
+        children: [
+          Expanded(
+            child: _KknStatCard(
+              topText: 'Hari',
+              middleText: '${(points / 10).floor()}',
+              bottomText: 'Presensi',
+              color: AppColors.primaryGreen,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _KknStatCard(
+              topText: 'Warga',
+              middleText: '$wargaCount',
+              bottomText: 'Tempat Sampah',
+              color: AppColors.primaryBlueDark,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _KknStatCard(
+              topText: 'Laporan',
+              middleText: '$laporanCount',
+              bottomText: 'Pemanfaatan',
+              color: AppColors.warningOrange,
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 10),
+
+      Row(
+        children: [
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.border),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.warningYellow.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.note_alt_rounded,
+                      color: AppColors.warningYellow,
+                      size: 18,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'IZIN / SAKIT',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '$izinCount Kali',
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.border),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryGreen.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.post_add_rounded,
+                      color: AppColors.primaryGreen,
+                      size: 18,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'TOTAL INPUT',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '$totalInputCount Kali',
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    ],
+  );
+}
 // ═══════════════════════════════════════════════════════════════════════════════
 // Subwidgets
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -1919,6 +2103,74 @@ class _WargaCard extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _KknStatCard extends StatelessWidget {
+  const _KknStatCard({
+    required this.topText,
+    required this.middleText,
+    required this.bottomText,
+    required this.color,
+  });
+
+  final String topText;
+  final String middleText;
+  final String bottomText;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            topText,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 10,
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            middleText,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            bottomText,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 10,
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+        ],
       ),
     );
   }
