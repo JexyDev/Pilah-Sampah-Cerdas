@@ -51,7 +51,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text('User Baru'), findsOneWidget);
-    expect(find.text('Belum Bergabung Ko  munitas'), findsOneWidget);
+    expect(find.text('Belum Bergabung Komunitas'), findsOneWidget);
     expect(find.text('Gabung Komunitas Berseka'), findsOneWidget);
     expect(find.text('Tempat Sampah Belum Terpasang'), findsNothing);
     expect(find.text('Aksi Cepat'), findsNothing);
