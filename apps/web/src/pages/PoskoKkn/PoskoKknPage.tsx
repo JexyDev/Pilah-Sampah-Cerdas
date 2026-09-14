@@ -2594,7 +2594,7 @@ export const PoskoKknPage: React.FC = () => {
                 {/* DPL Pendamping */}
                 <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800 space-y-1.5">
                   <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
-                    Dosen Pendamping Lapangan
+                    Dosen Pembimbing Lapangan
                   </span>
                   <p className="font-extrabold text-sm text-slate-900 dark:text-slate-100">
                     {detailModalPosko.dplName}

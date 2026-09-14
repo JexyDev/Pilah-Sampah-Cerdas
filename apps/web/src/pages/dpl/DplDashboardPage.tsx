@@ -1,6 +1,6 @@
 /**
  * Project: BERSEKA
- * Component: DplDashboardPage (Portal Dosen Pendamping Lapangan)
+ * Component: DplDashboardPage (Portal Dosen Pembimbing Lapangan)
  * Single Navigation via Sidebar - Clean, Simple, & Intuitive UX
  */
 

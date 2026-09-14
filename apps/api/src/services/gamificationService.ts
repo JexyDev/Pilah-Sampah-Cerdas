@@ -437,7 +437,7 @@ export const gamificationService = {
 
     kelompokLeaderboard.sort((a, b) => b.avgScore - a.avgScore);
 
-    // 3. DPL (Dosen Pendamping Lapangan) Leaderboard (Formula Resmi: Poin DPL = (Logbook * 0.5) + (Poin Kelompok * 0.5))
+    // 3. DPL (Dosen Pembimbing Lapangan) Leaderboard (Formula Resmi: Poin DPL = (Logbook * 0.5) + (Poin Kelompok * 0.5))
     const dplUsers = await prisma.user.findMany({
       where: { role: { name: "DPL" } },
       select: {

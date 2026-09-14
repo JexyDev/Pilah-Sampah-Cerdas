@@ -339,7 +339,7 @@ const Leaderboard: React.FC = () => {
       subtitleHeader = "Jumlah Anggota";
       pointsLabel = "Rerata Skor";
     } else if (s2Tab === "dpl") {
-      pageTitle = "Peringkat Dosen Pendamping Lapangan (DPL)";
+      pageTitle = "Peringkat Dosen Pembimbing Lapangan (DPL)";
       pageSubtitle = "Pemeringkatan DPL berdasarkan rerata capaian dan performa kelompok mahasiswa bimbingan";
       nameHeader = "Nama Dosen (DPL)";
       subtitleHeader = "Kelompok Dampingan";

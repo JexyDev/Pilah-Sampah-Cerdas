@@ -1550,15 +1550,44 @@ export class BinService {
     // Notifikasi ke petugas pemilah yang bertugas di RW tersebut
     if (resolvedPetugasId) {
       const wargaName = request.user?.name || "Warga";
+      const notifTitle = "Pengajuan Pengosongan Baru";
+      const notifBody = `Warga (${wargaName}) mengajukan pengosongan Tempat Sampah ${binQr} di wilayah RW Anda.`;
+
       await prisma.notification
         .create({
           data: {
             userId: resolvedPetugasId,
-            title: "Pengajuan Pengosongan Baru",
-            message: `Warga (${wargaName}) mengajukan pengosongan Tempat Sampah ${binQr} di wilayah RW Anda.`,
+            title: notifTitle,
+            message: notifBody,
           },
         })
         .catch(() => {});
+
+      // Push notification via FCM ke token Petugas Pemilah
+      const petugas = await prisma.user.findUnique({
+        where: { id: resolvedPetugasId },
+        select: { fcmToken: true },
+      });
+
+      if (petugas?.fcmToken) {
+        await notificationIntegrationService
+          .sendPushNotification(
+            petugas.fcmToken,
+            notifTitle,
+            notifBody,
+            "PENGAJUAN_PENGOSONGAN_BARU",
+            {
+              event: "NEW_RESET_REQUEST",
+              requestId: request.id,
+              binId: request.binId,
+              binQr,
+              wargaName,
+            }
+          )
+          .catch((err) =>
+            console.error("[FCM createResetRequest] Error sending push to petugas:", err)
+          );
+      }
     }
 
     return request;
