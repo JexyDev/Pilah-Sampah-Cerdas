@@ -209,7 +209,7 @@ jobs:
             sshpass -p "$VPS_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=60 "$VPS_USER@$VPS_HOST" "cat > /tmp/$APK_NAME" < "$APK_FILE"
           fi
 
-          sshpass -p "$VPS_PASS" ssh -T -o StrictHostKeyChecking=no -o ConnectTimeout=30 "$VPS_USER@$VPS_HOST" "VPS_PASS='$VPS_PASS' APK_NAME='$APK_NAME' DEST_DIR='$DEST_DIR' bash -s" << 'EOF'
+          sshpass -p "$VPS_PASS" ssh -T -o StrictHostKeyChecking=no -o ConnectTimeout=30 "$VPS_USER@$VPS_HOST" "VPS_PASS='$VPS_PASS' APK_NAME='$APK_NAME' DEST_DIR='$DEST_DIR' APP_VERSION='${{ env.APP_VERSION }}' RUN_NUMBER='${{ github.run_number }}' bash -s" << 'EOF'
             set -e
             TMP_APK="/tmp/$APK_NAME"
             if [ ! -f "$TMP_APK" ] && [ -f "$HOME/$APK_NAME" ]; then
@@ -230,4 +230,28 @@ jobs:
             rm -f "$TMP_APK"
             echo "APK successfully published to $DEST_DIR/$APK_NAME"
             ls -lh "$DEST_DIR/$APK_NAME"
+
+            echo "=== Updating Release Metadata in Database API ==="
+            FILE_SIZE=$(stat -c%s "$DEST_DIR/$APK_NAME" 2>/dev/null || echo "0")
+            FORMATTED_SIZE=$(numfmt --to=iec-i --suffix=B --format="%.2f" $FILE_SIZE 2>/dev/null || echo "")
+            if [ -z "$FORMATTED_SIZE" ]; then
+              FORMATTED_SIZE=$(awk -v size="$FILE_SIZE" 'BEGIN { printf "%.2f MB", size / 1048576 }')
+            fi
+
+            curl -s -X POST "http://localhost:3000/api/v1/system/publish-release" \
+              -H "Content-Type: application/json" \
+              -H "x-ci-secret: berseka-ci-secret" \
+              -d "{
+                \"latestVersion\": \"$APP_VERSION\",
+                \"version\": \"$APP_VERSION\",
+                \"buildNumber\": $RUN_NUMBER,
+                \"releaseNotes\": \"Auto-build CI/CD universal APK v$APP_VERSION (Build $RUN_NUMBER), pembaruan performa, dan sinkronisasi real-time.\",
+                \"downloadUrl\": \"/downloads/$APK_NAME\",
+                \"apkUrl\": \"/downloads/$APK_NAME\",
+                \"fileSizeBytes\": $FILE_SIZE,
+                \"formattedSize\": \"$FORMATTED_SIZE\",
+                \"forceUpdate\": false
+              }" || echo "Warning: Failed to notify backend API of new release"
+
+            echo "=== Mobile APK Release Sync Completed ==="
           EOF
