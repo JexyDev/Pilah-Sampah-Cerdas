@@ -27,7 +27,7 @@ router.use(
  * @swagger
  * tags:
  *   name: DPL
- *   description: API Monitoring & Evaluasi Dosen Pendamping Lapangan (DPL)
+ *   description: API Monitoring & Evaluasi Dosen Pembimbing Lapangan (DPL)
  */
 
 /**

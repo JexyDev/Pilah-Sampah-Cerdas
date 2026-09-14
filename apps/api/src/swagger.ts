@@ -50,7 +50,7 @@ const options: swaggerJSDoc.Options = {
         description: "API Khusus Petugas Residu (Input Timbangan Manual & Web Monitoring Hilir)",
       },
       { name: "Posko KKN", description: "API Posko KKN & Kelompok" },
-      { name: "DPL", description: "API Monitoring & Evaluasi Dosen Pendamping Lapangan (DPL)" },
+      { name: "DPL", description: "API Monitoring & Evaluasi Dosen Pembimbing Lapangan (DPL)" },
       {
         name: "Mahasiswa KKN",
         description: "API Penugasan, QR Batch, Absensi & Dampingan Mahasiswa KKN",
