@@ -120,10 +120,14 @@ export class VendorWasteAiAdapter implements IWasteAiAdapter {
         data.non_organik_percent !== undefined ? Number(data.non_organik_percent) : 100 - orgPct;
       const isOrganic = orgPct >= inorgPct;
 
+      const pctMax = Number((Math.max(orgPct, inorgPct) / 100).toFixed(2));
+      const rawScore = Number(data.confidenceScore);
+      const confScore = !isNaN(rawScore) && rawScore >= 0.1 ? (rawScore > 1 ? Number((rawScore / 100).toFixed(2)) : rawScore) : pctMax;
+
       return {
         requestId: data.requestId || uuidv4(),
         detectedType: isOrganic ? "ORGANIC" : "NON_ORGANIC",
-        confidenceScore: Number(data.confidenceScore || Math.max(orgPct, inorgPct) / 100),
+        confidenceScore: confScore,
         estimatedVolumeLiter: Number(data.estimatedVolumeLiter || 2.0),
         detections: data.detections || [],
         vendorName: data.vendorName || "BERSEKA-v3c",
