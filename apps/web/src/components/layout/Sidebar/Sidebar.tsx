@@ -1468,46 +1468,25 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     },
     {
       header: "MASTER DATA",
-      items: isPimpinan
-        ? [
-            {
-              type: "group",
-              label: "Pengguna",
-              icon: Users,
-              allowed: ["PIMPINAN", "PEMIMPIN"] as UserRole[],
-              children: [
-                {
-                  to: "/pengguna?role=mahasiswa",
-                  label: "Mahasiswa",
-                  allowed: ["PIMPINAN", "PEMIMPIN"] as UserRole[],
-                },
-                {
-                  to: "/pengguna?role=dpl",
-                  label: "Dosen Pendamping Lapangan",
-                  allowed: ["PIMPINAN", "PEMIMPIN"] as UserRole[],
-                },
-              ],
-            },
-          ]
-        : [
-            {
-              type: "group",
-              label: "Pengguna",
-              icon: Users,
-              resource: "manajemen_pengguna",
-              allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "RW"] as UserRole[],
-              children: [
-                { to: "/pengguna?role=developer", label: "Developer", allowed: ["DEVELOPER"] as UserRole[] },
-                { to: "/pengguna?role=su", label: "Super User", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
-                { to: "/pengguna?role=dlh", label: "Admin DLH", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH"] as UserRole[] },
-                { to: "/pengguna?role=pimpinan", label: "Pimpinan", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
-                { to: "/pengguna?role=taskforce", label: "Task Force", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE"] as UserRole[] },
-                { to: "/pengguna?role=dpl", label: "Dosen Pendamping Lapangan", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE"] as UserRole[] },
-                { to: "/pengguna?role=mahasiswa", label: "Mahasiswa", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE"] as UserRole[] },
-                { to: "/pengguna?role=warga", label: "Warga", allowed: ["DEVELOPER", "SUPER_USER", "RW"] as UserRole[] },
-                { to: "/pengguna?role=petugas-pemilah", label: "Petugas Pemilah", allowed: ["DEVELOPER", "SUPER_USER", "RW"] as UserRole[] },
-              ],
-            },
+      items: isPimpinan ? [] : [
+        {
+          type: "group",
+          label: "Pengguna",
+          icon: Users,
+          resource: "manajemen_pengguna",
+          allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PIMPINAN", "RW"] as UserRole[],
+          children: [
+            { to: "/pengguna?role=developer", label: "Developer", allowed: ["DEVELOPER"] as UserRole[] },
+            { to: "/pengguna?role=su", label: "Super User", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
+            { to: "/pengguna?role=dlh", label: "Admin DLH", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PIMPINAN"] as UserRole[] },
+            { to: "/pengguna?role=pimpinan", label: "Pimpinan", allowed: ["DEVELOPER", "SUPER_USER", "PIMPINAN"] as UserRole[] },
+            { to: "/pengguna?role=taskforce", label: "Task Force", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PIMPINAN"] as UserRole[] },
+            { to: "/pengguna?role=dpl", label: "Dosen Pendamping Lapangan", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PIMPINAN"] as UserRole[] },
+            { to: "/pengguna?role=mahasiswa", label: "Mahasiswa", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PIMPINAN"] as UserRole[] },
+            { to: "/pengguna?role=warga", label: "Warga", allowed: ["DEVELOPER", "SUPER_USER", "RW", "PIMPINAN"] as UserRole[] },
+            { to: "/pengguna?role=petugas-pemilah", label: "Petugas Pemilah", allowed: ["DEVELOPER", "SUPER_USER", "RW", "PIMPINAN"] as UserRole[] },
+          ],
+        },
         {
           type: "group",
           label: "Wilayah",

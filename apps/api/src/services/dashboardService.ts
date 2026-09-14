@@ -253,7 +253,7 @@ export const dashboardService = {
       where: hhWhere,
     });
 
-    // Total Users (Keseluruhan Akun Sistem)
+    // Total Users
     const usersWhere: any = {};
     if (isFiltered && rtRwMatch) {
       usersWhere.OR = [{ rw: rtRwMatch }, { households: { some: { rw: rtRwMatch } } }];
@@ -263,168 +263,6 @@ export const dashboardService = {
     const totalUsers = await prisma.user.count({
       where: usersWhere,
     });
-
-    // Kalkulasi Riil Pengguna KKN (Mahasiswa KKN & DPL Aktual - 100% Bebas Dummy/Akun Sistem)
-    let kknKelompokWhere: any = {};
-    if (isFiltered && kelurahanNames.length > 0) {
-      kknKelompokWhere.kelurahan = {
-        in: kelurahanNames,
-        mode: "insensitive",
-      };
-    }
-
-    let kknKelompokList = await prisma.kelompokKkn.findMany({
-      where: kknKelompokWhere,
-      select: {
-        id: true,
-        name: true,
-        kelurahan: true,
-        cakupanRw: true,
-        dplId: true,
-      },
-    });
-
-    // Filter kelompok testing / dummy
-    kknKelompokList = kknKelompokList.filter((k) => {
-      const name = (k.name || "").toLowerCase();
-      return !name.includes("test") && !name.includes("dummy");
-    });
-
-    if (isFiltered && rwIds.length > 0) {
-      const selectedRws = await prisma.rw.findMany({
-        where: { id: { in: rwIds } },
-        select: { id: true, name: true },
-      });
-      const selectedRwNums = selectedRws
-        .map((r) => parseInt(r.name.replace(/\D/g, ""), 10))
-        .filter((n) => !isNaN(n));
-
-      if (selectedRwNums.length > 0) {
-        kknKelompokList = kknKelompokList.filter((k) => {
-          if (!Array.isArray(k.cakupanRw)) return false;
-          return k.cakupanRw.some((item) => {
-            const num = parseInt(String(item).replace(/\D/g, ""), 10);
-            return selectedRwNums.includes(num);
-          });
-        });
-      }
-    }
-
-    const kknKelompokIds = kknKelompokList.map((k) => k.id);
-
-    // 1. DPL Aktual
-    const rawDplIds = Array.from(
-      new Set(kknKelompokList.map((k) => k.dplId).filter(Boolean))
-    ) as string[];
-
-    const dplUsersRaw =
-      rawDplIds.length > 0
-        ? await prisma.user.findMany({
-            where: { id: { in: rawDplIds } },
-            select: { id: true, name: true, email: true },
-          })
-        : [];
-
-    const realDplCount = dplUsersRaw.filter((d) => {
-      const name = (d.name || "").toLowerCase();
-      const email = (d.email || "").toLowerCase();
-      return (
-        !name.includes("test") &&
-        !name.includes("dummy") &&
-        !email.includes("test") &&
-        !email.includes("dummy")
-      );
-    }).length;
-
-    // 2. Mahasiswa KKN Aktual
-    const studentWhere: any = {};
-    if (kknKelompokIds.length > 0) {
-      studentWhere.kelompokId = { in: kknKelompokIds };
-    } else if (isFiltered) {
-      studentWhere.kelompokId = "__none__";
-    }
-
-    const studentsRaw = await prisma.studentKkn.findMany({
-      where: studentWhere,
-      select: {
-        id: true,
-        nim: true,
-        assessmentScore: true,
-        kelompok: { select: { name: true } },
-        user: {
-          select: {
-            name: true,
-            email: true,
-            attendances: {
-              select: { attendedAt: true, checkOutAt: true },
-            },
-            registeredBins: {
-              where: { status: "ACTIVE_BOUND" },
-              select: { id: true },
-            },
-          },
-        },
-      },
-    });
-
-    const validStudents = studentsRaw.filter((s) => {
-      const uName = (s.user?.name || "").toLowerCase();
-      const uEmail = (s.user?.email || "").toLowerCase();
-      const nim = (s.nim || "").toLowerCase();
-      return !(
-        uName.includes("test") ||
-        uName.includes("dummy") ||
-        uEmail.includes("test") ||
-        uEmail.includes("dummy") ||
-        nim.includes("test") ||
-        nim.includes("dummy")
-      );
-    });
-
-    const realMahasiswaCount = validStudents.length;
-
-    // Perhitungan komposit peringkat mahasiswa KKN (jam kehadiran lapangan 40%, tempat sampah aktif 30%, skor DPL 30%)
-    const scoredStudents = validStudents.map((s) => {
-      let totalHours = 0;
-      (s.user?.attendances || []).forEach((att) => {
-        if (att.checkOutAt && att.attendedAt) {
-          const diffMs = new Date(att.checkOutAt).getTime() - new Date(att.attendedAt).getTime();
-          totalHours += diffMs / (1000 * 60 * 60);
-        }
-      });
-      const activeBinsCount = s.user?.registeredBins?.length || 0;
-      const dplScore = Number(s.assessmentScore || 0);
-      const finalScore = totalHours * 0.4 + activeBinsCount * 0.3 + dplScore * 0.3;
-
-      return {
-        id: s.id,
-        name: s.user?.name || "Mahasiswa",
-        nim: s.nim || "-",
-        kelompok: s.kelompok?.name || "Mahasiswa KKN",
-        totalHours: parseFloat(totalHours.toFixed(2)),
-        activeBins: activeBinsCount,
-        finalScore: parseFloat(finalScore.toFixed(2)),
-      };
-    });
-
-    scoredStudents.sort((a, b) => b.finalScore - a.finalScore);
-
-    const peringkatMahasiswa =
-      scoredStudents.length > 0
-        ? {
-            topName: scoredStudents[0].name,
-            topNim: scoredStudents[0].nim,
-            topKelompok: scoredStudents[0].kelompok,
-            topScore: scoredStudents[0].finalScore,
-            totalStudents: scoredStudents.length,
-          }
-        : null;
-
-    const kknUsers = {
-      total: realMahasiswaCount + realDplCount,
-      mahasiswa: realMahasiswaCount,
-      dpl: realDplCount,
-    };
 
     // 2. Sampah Terkumpul (Kg)
     const wasteLogsWhere: any = {};
@@ -984,8 +822,6 @@ export const dashboardService = {
       totalWarga,
       totalRumahTangga,
       totalUsers,
-      kknUsers,
-      peringkatMahasiswa,
       totalSampahKg,
       averageAiAccuracy,
       alertTongPenuh: fullBinsCount,
