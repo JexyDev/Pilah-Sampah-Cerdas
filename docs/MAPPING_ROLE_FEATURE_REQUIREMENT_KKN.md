@@ -17,7 +17,7 @@ Dokumen ini melengkapi `ROLE_MAPPING_BERSEKA.md` dengan pendalaman khusus pada *
    - `id: 1` = `SUPER_USER` (Administrator Sistem)
    - `id: 9` = `PEMIMPIN` (Pimpinan UNIKOM - Monitoring Institusi)
    - `id: 10` = `PANITIA_TASKFORCE` (Admin Operasional KKN)
-   - `id: 8` = `DPL` (Dosen Pendamping Lapangan)
+   - `id: 8` = `DPL` (Dosen Pembimbing Lapangan)
    - `id: 7` = `MAHASISWA_KKN` (Pelaksana Lapangan)
 2. **Platform**:
    - `PANITIA_TASKFORCE`, `PEMIMPIN`, `DPL` -> **Web Dashboard**

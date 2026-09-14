@@ -43,7 +43,7 @@ apps/api/src/
 - `GET /api/v1/kkn/dashboard` — Metric dashboard KKN (Dampingan Warga, QR Assigned)
 - `POST /api/v1/kkn/scan-qr` — Scan & bind QR Tempat Sampah Warga
 
-### 3.3 DPL (Dosen Pendamping Lapangan) (`/dpl`)
+### 3.3 DPL (Dosen Pembimbing Lapangan) (`/dpl`)
 - `GET /api/v1/dpl/dashboard` — Ringkasan progress Mahasiswa KKN dampingan
 - `GET /api/v1/dpl/mahasiswa` — Daftar Mahasiswa KKN di bawah dampingan NIP DPL
 - `GET /api/v1/dpl/logbook` — Review & monitoring logbook kegiatan mahasiswa

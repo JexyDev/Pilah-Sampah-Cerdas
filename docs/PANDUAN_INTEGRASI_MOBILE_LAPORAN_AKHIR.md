@@ -11,7 +11,7 @@
 
 ### Mengapa Laporan Akhir Bersifat Komunal (Kelompok)?
 1. **Satu Laporan per Kelompok**:  
-   Setiap kelompok KKN ditempatkan di 1 wilayah RW binaan dengan 1 Dosen Pendamping Lapangan (DPL). Luaran akademik utama KKN adalah dokumen komprehensif Program Kerja Wilayah, sehingga dokumen Laporan Akhir disusun dan disahkan **secara kolektif per kelompok**.
+   Setiap kelompok KKN ditempatkan di 1 wilayah RW binaan dengan 1 Dosen Pembimbing Lapangan (DPL). Luaran akademik utama KKN adalah dokumen komprehensif Program Kerja Wilayah, sehingga dokumen Laporan Akhir disusun dan disahkan **secara kolektif per kelompok**.
 2. **Kolektif tetapi Fleksibel**:  
    - Siapa pun anggota kelompok (Ketua ataupun perwakilan anggota) dapat mengunggah atau memperbarui dokumen Laporan Akhir (Tautan Google Drive atau File PDF).
    - Ketika 1 mahasiswa mengunggah, seluruh anggota kelompok langsung tersinkronisasi dan melihat status *"Sudah Diunggah"* beserta tautan berkas yang sama.

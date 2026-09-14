@@ -411,7 +411,7 @@ async function main() {
     { roleName: "LURAH", phone: "+628111111124", pass: "password123", name: "Leny Mariana, S.Sos., M.AP." },
     { roleName: "LURAH", phone: "+628111111125", pass: "password123", name: "Tirta Gumelar, S.STP." },
     { roleName: "PANITIA_TASKFORCE", phone: "+628111111127", pass: "password123", name: "Task Force" },
-    { roleName: "DPL", phone: "+628111111128", pass: "password123", name: "Dosen Pendamping Lapangan" },
+    { roleName: "DPL", phone: "+628111111128", pass: "password123", name: "Dosen Pembimbing Lapangan" },
     { roleName: "MPL", phone: "+628111111131", pass: "Password123!", name: "MPL Sadang Serang", address: "Kelurahan Sadang Serang" },
     { roleName: "MPL", phone: "+628111111132", pass: "Password123!", name: "MPL Cipaganti", address: "Kelurahan Cipaganti" },
     { roleName: "MPL", phone: "+628111111133", pass: "Password123!", name: "MPL Dago", address: "Kelurahan Dago" },

@@ -85,7 +85,7 @@ status_history {
 - Admin Kecamatan (monitoring only)
 - SUPER USER (akses penuh)
 - Mahasiswa KKN
-- DPL (Dosen Pendamping Lapangan)
+- DPL (Dosen Pembimbing Lapangan)
 
 **Setiap role independen** � masing-masing punya alur registrasi & data yang berbeda satu sama lain (tidak ada 1 form registrasi generik untuk semua role).
 
