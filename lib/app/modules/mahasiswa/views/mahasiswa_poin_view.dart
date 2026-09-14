@@ -191,22 +191,46 @@ class MahasiswaPoinView extends ConsumerWidget {
   }
 
   Widget _buildStatsRow(MahasiswaState mhsState, WidgetRef ref) {
-    final points = mhsState.dashboard?.contributionPoints ?? 0;
-
     final asyncHistory = ref.watch(pointHistoryProvider);
     int laporanCount = 0;
     int wargaCount = 0;
+    final presensiDates = <String>{};
 
     if (asyncHistory.hasValue && asyncHistory.value != null) {
       for (final ph in asyncHistory.value!) {
         final lowerDesc = ph.description.toLowerCase();
-        if (lowerDesc.contains('pemanfaatan')) {
+        final kat = (ph.kategori ?? '').toUpperCase();
+        if (lowerDesc.contains('pemanfaatan') || lowerDesc.contains('panen')) {
           laporanCount++;
-        } else if (lowerDesc.contains('aktivasi')) {
+        } else if (lowerDesc.contains('aktivasi') || lowerDesc.contains('pendampingan')) {
           wargaCount++;
+        }
+
+        final isPresensi = kat.contains('PRESENSI') ||
+            kat.contains('DURASI') ||
+            lowerDesc.contains('kehadiran') ||
+            lowerDesc.contains('check-in') ||
+            lowerDesc.contains('presensi');
+        if (isPresensi) {
+          final d = ph.createdAt.toLocal();
+          presensiDates.add('${d.year}-${d.month}-${d.day}');
         }
       }
     }
+
+    // Ambil hari presensi dari timesheetSummary atau tanggal kehadiran unik
+    int totalDaysAttended = 0;
+    final students = mhsState.timesheetSummary?['students'];
+    if (students is List && students.isNotEmpty) {
+      final me = students.first;
+      totalDaysAttended = (me['totalDaysAttended'] as num?)?.toInt() ??
+          (me['fulfilledTargetDays'] as num?)?.toInt() ??
+          0;
+    }
+
+    final hariPresensi = totalDaysAttended > 0
+        ? totalDaysAttended
+        : presensiDates.length;
 
     final izinCount = ref.watch(pengajuanIzinCountProvider).value ?? 0;
 
@@ -220,7 +244,7 @@ class MahasiswaPoinView extends ConsumerWidget {
             Expanded(
               child: _StatCard(
                 topText: 'Hari',
-                middleText: '${(points / 10).floor()}',
+                middleText: '$hariPresensi',
                 bottomText: 'Presensi',
                 color: AppColors.primaryGreen,
               ),
@@ -399,7 +423,7 @@ class MahasiswaPoinView extends ConsumerWidget {
           SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Poin KKN harian diperoleh dari Check-In (+4 PTS), Kepulangan/Durasi Terpenuhi (+3 PTS), dan Logbook Harian (+3 PTS) dengan total 10 PTS per hari.',
+              'Poin KKN harian: Check-In (+4 PTS), Durasi Terpenuhi (+3 PTS), dan Logbook Harian (+3 PTS) = 10 PTS/hari. Poin tambahan didapat dari Aktivasi Warga (+10 PTS), Verifikasi DPL (+15 PTS), serta Pemanfaatan & Panen (+25 PTS).',
               style: TextStyle(
                 fontSize: 11,
                 color: AppColors.primaryGreen,
@@ -456,8 +480,8 @@ class MahasiswaPoinView extends ConsumerWidget {
         ),
       ),
       data: (history) {
-        // Filter logs that actually have points awarded for the Poin View
-        final pointLogs = history.where((log) => log.points > 0).toList();
+        // Filter logs that actually have points (termasuk penalti jika ada)
+        final pointLogs = history.where((log) => log.points != 0).toList();
 
         if (pointLogs.isEmpty) {
           return Container(
@@ -589,25 +613,58 @@ class _PoinHistoryItem extends StatelessWidget {
       'dd MMM yyyy, HH:mm',
     ).format(item.createdAt.toLocal());
 
-    // Map description to standardized title
+    final bool isPenalty = item.points < 0;
+    final int absPoints = item.points.abs();
+    final String pointsText = isPenalty ? '-$absPoints PTS' : '+$absPoints PTS';
+    final Color badgeColor = isPenalty ? AppColors.dangerRed : AppColors.primaryGreen;
+
     String title = InputSanitizer.cleanSystemMessage(item.description);
     IconData icon = Icons.check_circle_outline_rounded;
+    Color iconColor = AppColors.primaryGreen;
 
-    if (title.toLowerCase().contains('aktivasi')) {
-      title = 'Aktivasi Tempat Sampah Warga';
-      icon = Icons.qr_code_scanner_rounded;
-    } else if (title.toLowerCase().contains('pemanfaatan')) {
-      if (!title.toLowerCase().startsWith('laporan')) {
-        title = 'Laporan Pemanfaatan Sampah: $title';
-      }
+    final descLower = item.description.toLowerCase();
+    final kat = (item.kategori ?? '').toUpperCase();
+
+    if (isPenalty || kat == 'PENALTY_OUT_OF_ZONE' || descLower.contains('penalti')) {
+      title = title.isNotEmpty ? title : 'Penalti Pelanggaran Zona';
+      icon = Icons.warning_amber_rounded;
+      iconColor = AppColors.dangerRed;
+    } else if (kat == 'LOGBOOK_TERVERIFIKASI' || descLower.contains('verifikasi') || descLower.contains('terverifikasi')) {
+      title = title.isNotEmpty ? title : 'Logbook Terverifikasi DPL';
+      icon = Icons.verified_rounded;
+      iconColor = AppColors.primaryBlueDark;
+    } else if (kat == 'KKN_PRESENSI_HADIR' || descLower.contains('check-in') || descLower.contains('kehadiran')) {
+      title = title.isNotEmpty ? title : 'Presensi Kehadiran (Check-In)';
+      icon = Icons.login_rounded;
+      iconColor = AppColors.primaryGreen;
+    } else if (kat == 'KKN_DURASI_MEMENUHI' || descLower.contains('durasi')) {
+      title = title.isNotEmpty ? title : 'Poin Durasi Kegiatan Terpenuhi';
+      icon = Icons.timer_outlined;
+      iconColor = AppColors.primaryGreen;
+    } else if (kat == 'KKN_LOGBOOK_HARIAN' || (descLower.contains('logbook') && !descLower.contains('pemanfaatan'))) {
+      title = title.isNotEmpty ? title : 'Pengisian Logbook Harian';
+      icon = Icons.menu_book_rounded;
+      iconColor = AppColors.primaryGreen;
+    } else if (descLower.contains('panen')) {
+      title = title.isNotEmpty ? title : 'Panen Hasil KKN';
+      icon = Icons.eco_rounded;
+      iconColor = AppColors.warningOrange;
+    } else if (descLower.contains('pemanfaatan')) {
+      title = title.isNotEmpty ? title : 'Laporan Pemanfaatan Sampah';
       icon = Icons.recycling_rounded;
-    } else if (title.toLowerCase().contains('geofence') ||
-        title.toLowerCase().contains('presensi')) {
-      title = 'Ping Lokasi Posko / Presensi';
+      iconColor = AppColors.warningOrange;
+    } else if (descLower.contains('aktivasi')) {
+      title = title.isNotEmpty ? title : 'Aktivasi Tempat Sampah Warga';
+      icon = Icons.qr_code_scanner_rounded;
+      iconColor = AppColors.primaryBlueDark;
+    } else if (descLower.contains('fasilitas')) {
+      title = title.isNotEmpty ? title : 'Input Fasilitas GIS';
       icon = Icons.location_on_rounded;
-    } else if (title.toLowerCase().contains('registrasi')) {
-      title = 'Bonus Registrasi Akun Mahasiswa KKN';
-      icon = Icons.card_giftcard_rounded;
+      iconColor = AppColors.primaryBlueDark;
+    } else if (descLower.contains('registrasi') || descLower.contains('pendampingan')) {
+      title = title.isNotEmpty ? title : 'Pendampingan Registrasi Warga';
+      icon = Icons.person_add_alt_1_rounded;
+      iconColor = AppColors.primaryBlueDark;
     }
 
     return Container(
@@ -615,7 +672,11 @@ class _PoinHistoryItem extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(
+          color: isPenalty
+              ? AppColors.dangerRed.withValues(alpha: 0.3)
+              : AppColors.border,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
@@ -629,10 +690,10 @@ class _PoinHistoryItem extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.primaryGreen.withValues(alpha: 0.1),
+              color: iconColor.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: AppColors.primaryGreen, size: 20),
+            child: Icon(icon, color: iconColor, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -661,11 +722,11 @@ class _PoinHistoryItem extends StatelessWidget {
             ),
           ),
           Text(
-            '+${item.points} PTS',
-            style: const TextStyle(
+            pointsText,
+            style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.bold,
-              color: AppColors.primaryGreen,
+              color: badgeColor,
             ),
           ),
         ],

@@ -230,6 +230,9 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
           } else if (event == 'REFRESH_IZIN_MAHASISWA' ||
               event == 'REFRESH_POIN_MAHASISWA' ||
               event == 'REFRESH_PRESENSI_MAHASISWA') {
+            ref.invalidate(totalPointsProvider);
+            ref.invalidate(pointHistoryProvider);
+            ref.invalidate(dailyPointsProvider);
             ref.invalidate(mahasiswaNotificationsProvider);
             debugPrint('-> Mahasiswa providers refresh event received: $event');
           } else if (event == 'MULTI_POSKO_UPDATED') {

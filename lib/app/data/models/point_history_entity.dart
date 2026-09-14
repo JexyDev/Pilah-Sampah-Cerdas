@@ -10,6 +10,7 @@ class PointHistoryEntity extends Equatable {
     required this.wasteType,
     required this.description,
     required this.createdAt,
+    this.kategori,
   });
 
   final String id;
@@ -18,6 +19,7 @@ class PointHistoryEntity extends Equatable {
   final WasteType wasteType;
   final String description;
   final DateTime createdAt;
+  final String? kategori;
 
   @override
   List<Object?> get props => [id];
