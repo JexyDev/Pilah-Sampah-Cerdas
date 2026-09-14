@@ -399,7 +399,7 @@ class MahasiswaPoinView extends ConsumerWidget {
           SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Poin KKN diperoleh dari presensi geofence (+10 PTS), aktivasi tempat sampah warga (+10 PTS), dan laporan pemanfaatan daur ulang.',
+              'Poin KKN harian diperoleh dari Check-In (+4 PTS), Kepulangan/Durasi Terpenuhi (+3 PTS), dan Logbook Harian (+3 PTS) dengan total 10 PTS per hari.',
               style: TextStyle(
                 fontSize: 11,
                 color: AppColors.primaryGreen,
