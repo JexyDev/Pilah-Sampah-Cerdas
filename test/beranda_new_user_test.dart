@@ -11,6 +11,7 @@ import 'package:mobile_app_sampah/app/modules/riwayat/controllers/riwayat_contro
 import 'package:mobile_app_sampah/app/modules/shared/controllers/connectivity_controller.dart';
 import 'package:mobile_app_sampah/app/modules/notifikasi/controllers/warga_notifikasi_controller.dart';
 import 'package:mobile_app_sampah/app/modules/shared/controllers/user_location_controller.dart';
+import 'package:mobile_app_sampah/app/modules/shared/widgets/user_location_card.dart';
 
 void main() {
   testWidgets('New registered user on BerandaView', (tester) async {
@@ -97,6 +98,56 @@ void main() {
     expect(find.text('Gabung Komunitas Berseka'), findsOneWidget);
     expect(find.text('Tempat Sampah Belum Terpasang'), findsNothing);
     expect(find.text('Aksi Cepat'), findsNothing);
+  });
+
+  testWidgets('Joined user on BerandaView displays registered household address and home icon', (tester) async {
+    const joinedUser = UserEntity(
+      id: 'joined-user-id',
+      name: 'Warga Aktif',
+      role: UserRole.warga,
+      lifecycleState: WargaLifecycle.communityActiveNoBin,
+      householdId: 'hh-123',
+      address: 'Jl. Cisitu Indah No. 5',
+      rw: '01',
+      kelurahan: 'Dago',
+      kecamatan: 'Coblong',
+      kota: 'Kota Bandung',
+      provinsi: 'Jawa Barat',
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authProvider.overrideWith((ref) => MockAuthNotifier(joinedUser)),
+          totalPointsProvider.overrideWith((ref) => Future.value(0)),
+          dailyPointsProvider.overrideWith((ref) => Future.value(0)),
+          userLeaderboardRankProvider.overrideWith((ref) => Future.value('-')),
+          binsProvider.overrideWith((ref) => Future.value(<BinEntity>[])),
+          wasteLogsProvider.overrideWith(() => MockWasteLogsNotifier()),
+          isOnlineProvider.overrideWith((ref) => true),
+          wargaUnreadNotificationCountProvider.overrideWith((ref) => 0),
+          userLocationProvider.overrideWith((ref) => MockUserLocationNotifier()),
+        ],
+        child: const MaterialApp(
+          home: DashboardView(),
+        ),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.text('Warga Aktif'), findsOneWidget);
+    expect(find.text('Kel. Dago • RW 01'), findsOneWidget);
+    expect(find.text('Jl. Cisitu Indah No. 5'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(UserLocationCard),
+        matching: find.byIcon(Icons.home_rounded),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Perbarui'), findsNothing);
   });
 }
 

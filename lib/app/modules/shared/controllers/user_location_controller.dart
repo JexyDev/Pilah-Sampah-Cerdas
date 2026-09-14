@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
-import '../../../data/providers/repository_providers.dart';
 import '../../../data/services/location_service.dart';
-import '../../../data/models/user_entity.dart';
 import '../../auth/controllers/auth_controller.dart';
 
 /// State lokasi dan alamat untuk Warga & Petugas Pemilah
@@ -91,26 +89,9 @@ class UserLocationNotifier extends StateNotifier<UserLocationState> {
           address.isNotEmpty &&
           address != 'Lokasi tidak ditemukan' &&
           address != 'Gagal memuat alamat') {
-        final authState = _ref.read(authProvider);
-        final user = authState.user;
-        final isUnjoined = (user?.role == UserRole.warga || user?.role == UserRole.unknown) &&
-            (user?.lifecycleState == WargaLifecycle.registered ||
-                (user?.householdId ?? '').isEmpty);
-        // Hanya sinkronkan alamat GPS ke server jika warga belum terdaftar di komunitas
-        if (authState.isAuthenticated && user != null && isUnjoined) {
-          try {
-            await _ref.read(authRepositoryProvider).updateProfile(
-                  name: user.name,
-                  phone: user.phone,
-                  address: address,
-                );
-            await _ref.read(authProvider.notifier).fetchProfile();
-          } catch (err) {
-            debugPrint(
-              '[UserLocationNotifier] Gagal sync alamat ke server: $err',
-            );
-          }
-        }
+        // [REMOVED] Automatic profile address synchronization.
+        // The user profile address should only be managed via manual input, 
+        // not overwritten automatically by device GPS reverse geocoding.
       }
     } catch (e) {
       state = state.copyWith(

@@ -18,7 +18,6 @@ import '../widgets/petugas_whitelist_guard_widget.dart';
 
 import '../../shared/controllers/connectivity_controller.dart';
 import '../../shared/controllers/user_location_controller.dart';
-import '../../shared/widgets/user_location_card.dart';
 
 class PetugasPemilahanDashboardView extends ConsumerStatefulWidget {
   const PetugasPemilahanDashboardView({super.key});
@@ -109,15 +108,8 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
 
   Widget _buildHeader(BuildContext context, WidgetRef ref, UserEntity? user, int unreadCount) {
     final name = user?.name ?? '-';
-    const roleName = 'Petugas Pemilahan';
+    const roleName = 'Petugas Berseka';
     final fotoUrl = user?.fotoProfil;
-    final rwText = user?.formattedRw.isNotEmpty == true && user?.formattedRw != '-'
-        ? 'RW ${user!.formattedRw}'
-        : (user?.rw.isNotEmpty == true && user?.rw != '-' ? 'RW ${user!.rw}' : '');
-    final kelText = user?.kelurahan.isNotEmpty == true && user?.kelurahan != '-'
-        ? (user!.kelurahan.toLowerCase().startsWith('kel') ? user.kelurahan : 'Kel. ${user.kelurahan}')
-        : '';
-    final wilayahBadge = [rwText, kelText].where((s) => s.isNotEmpty).join(', ');
 
     return Container(
       color: Colors.white,
@@ -167,7 +159,7 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
@@ -285,27 +277,142 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          // Baris 2: Lokasi Penugasan & GPS Card Terstruktur Petugas (2 Tier)
-          Consumer(
-            builder: (context, ref, _) {
-              final locState = ref.watch(userLocationProvider);
-              final wilayahTitle = wilayahBadge.isNotEmpty ? wilayahBadge : 'Wilayah Penugasan';
-              return UserLocationCard(
-                wilayahTitle: wilayahTitle,
-                isFetchingAddress: locState.isFetchingAddress,
-                address: locState.address,
-                position: locState.position,
-                onRefresh: () => ref.read(userLocationProvider.notifier).refreshLocation(context: context),
-              );
-            },
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildPointsCard(BuildContext context, int totalPoints) {
+  Widget _buildInfoCard(BuildContext context, WidgetRef ref, UserEntity? user) {
+    final rwText = user?.formattedRw.isNotEmpty == true && user?.formattedRw != '-'
+        ? 'RW ${user!.formattedRw}'
+        : (user?.rw.isNotEmpty == true && user?.rw != '-' ? 'RW ${user!.rw}' : '');
+    final kelText = user?.kelurahan.isNotEmpty == true && user?.kelurahan != '-'
+        ? (user!.kelurahan.toLowerCase().startsWith('kel') ? user.kelurahan : 'Kel. ${user.kelurahan}')
+        : '';
+    final wilayahBadge = [rwText, kelText].where((s) => s.isNotEmpty).join(', ');
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[200]!, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            // Area Penugasan
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.assignment_ind_rounded, color: AppColors.primaryGreen, size: 16),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Area Penugasan',
+                        style: TextStyle(fontSize: 10, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+                      ),
+                      Text(
+                        wilayahBadge.isNotEmpty ? wilayahBadge : 'Belum diatur',
+                        style: const TextStyle(
+                          fontSize: 12, // Adjusted for readability
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Divider(height: 1, color: Colors.grey[200], thickness: 1),
+            ),
+
+            // Posisi Saat Ini
+            Consumer(
+              builder: (context, ref, _) {
+                final locState = ref.watch(userLocationProvider);
+                final isFinding = locState.isFetchingAddress;
+                return GestureDetector(
+                  onTap: () => ref.read(userLocationProvider.notifier).refreshLocation(context: context),
+                  behavior: HitTestBehavior.opaque,
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryBlue.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: isFinding 
+                            ? const SizedBox(
+                                width: 16, height: 16, 
+                                child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryBlue)
+                              )
+                            : const Icon(Icons.my_location_rounded, color: AppColors.primaryBlue, size: 16),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Posisi Saat Ini',
+                              style: TextStyle(fontSize: 10, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+                            ),
+                            Text(
+                              isFinding 
+                                  ? 'Mencari...' 
+                                  : (locState.address ?? 'Ketuk untuk update'),
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: isFinding ? AppColors.textSecondary : AppColors.primaryBlue,
+                              ),
+                              maxLines: 2, // Allow 2 lines for address if needed
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.refresh_rounded, size: 14, color: AppColors.textHint),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPointsCard(BuildContext context, int totalPoints, String? userName) {
+    // Ambil nama depan saja agar tidak terlalu panjang
+    final firstName = (userName ?? '').split(' ').first;
+    final poinLabel = firstName.isNotEmpty ? 'Poin $firstName' : 'Poin Anda';
+
     return GestureDetector(
       onTap: () => Navigator.pushNamed(context, AppRoutes.poin),
       child: Container(
@@ -332,13 +439,17 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Row(
+                Row(
                   children: [
-                    Icon(Icons.monetization_on_rounded, color: AppColors.warningYellow, size: 16),
-                    SizedBox(width: 6),
-                    Text(
-                      'Poin Insentif Pemilahan',
-                      style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
+                    const Icon(Icons.monetization_on_rounded, color: AppColors.warningYellow, size: 16),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        poinLabel,
+                        style: const TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w600),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),
@@ -369,7 +480,7 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      'Total Perolehan Poin Timbangan',
+                      'Dari hasil timbangan sampah',
                       style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -391,52 +502,7 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
   );
 }
 
-  Widget _buildStatCard({required String title, required String value, required String unit, required IconData icon, required Color color}) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(AppDimensions.md),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            )
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
-              child: Icon(icon, color: color, size: 20),
-            ),
-            const SizedBox(height: 12),
-            Text(title, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w500)),
-            const SizedBox(height: 4),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.textPrimary)),
-                  const SizedBox(width: 4),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 2),
-                    child: Text(unit, style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.bold)),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildJadwalSection(BuildContext context, List<PemilahanBinPickup> jadwalList) {
     const sectionTitle = 'Monitoring Tempat Sampah Warga';
@@ -451,13 +517,26 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             const Expanded(
-              child: Text(
-                sectionTitle,
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                  color: AppColors.textPrimary,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    sectionTitle,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    'Pantau kapasitas dan kondisi tempat sampah warga',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(width: 8),
@@ -674,90 +753,217 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverToBoxAdapter(
-              child: _buildHeader(context, ref, user, unreadCount),
+              child: Column(
+                children: [
+                  _buildHeader(context, ref, user, unreadCount),
+                  const SizedBox(height: 12),
+                  _buildInfoCard(context, ref, user),
+                ],
+              ),
             ),
-
-
-
             SliverPadding(
               padding: const EdgeInsets.all(AppDimensions.md),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
                   // Poin Insentif Petugas
-                  _buildPointsCard(context, dashboard?.totalPoints ?? 0),
+                  _buildPointsCard(context, dashboard?.totalPoints ?? 0, user?.name),
                   const SizedBox(height: 18),
 
-                  // Matriks Statistik: Kg Hari Ini & Akumulasi Bulanan (2 Kolom)
+                  // ── 📊 Berat Sampah Terkumpul ──────────────────────────────
+                  const Row(
+                    children: [
+                      Icon(Icons.scale_rounded, size: 18, color: AppColors.primaryGreen),
+                      SizedBox(width: 8),
+                      Text('Berat Sampah Terkumpul', style: TextStyle(
+                        fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary,
+                      )),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Akumulasi sampah yang Anda timbang',
+                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  ),
+                  const SizedBox(height: 12),
+
                   Row(
                     children: [
-                      _buildStatCard(
-                        title: 'Kg Hari Ini',
-                        value: dashboard == null
-                            ? '-'
-                            : dashboard.totalWeightKg.toStringAsFixed(1),
-                        unit: 'Kg',
-                        icon: Icons.scale_rounded,
-                        color: AppColors.primaryGreen,
+                      // ── Hari Ini ──
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.border, width: 1),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Row(
+                                children: [
+                                  Icon(Icons.today_rounded, color: AppColors.primaryGreen, size: 14),
+                                  SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text('Hari Ini', style: TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w500), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.baseline,
+                                textBaseline: TextBaseline.alphabetic,
+                                children: [
+                                  Text(
+                                    dashboard == null ? '-' : dashboard.totalWeightKg.toStringAsFixed(1),
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.textPrimary),
+                                  ),
+                                  const SizedBox(width: 2),
+                                  const Text('Kg', style: TextStyle(fontSize: 10, color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                      const SizedBox(width: 14),
-                      _buildStatCard(
-                        title: 'Bulanan',
-                        value: dashboard == null
-                            ? '-'
-                            : dashboard.monthlyWeightKg.toStringAsFixed(1),
-                        unit: 'Kg/Bulan',
-                        icon: Icons.delete_sweep_rounded,
-                        color: AppColors.warningOrange,
+                      const SizedBox(width: 8),
+                      
+                      // ── Minggu Ini ──
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.border, width: 1),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Row(
+                                children: [
+                                  Icon(Icons.date_range_rounded, color: AppColors.primaryBlue, size: 14),
+                                  SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text('Minggu Ini', style: TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w500), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.baseline,
+                                textBaseline: TextBaseline.alphabetic,
+                                children: [
+                                  Text(
+                                    dashboard == null ? '-' : dashboard.weeklyWeightKg.toStringAsFixed(1),
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.textPrimary),
+                                  ),
+                                  const SizedBox(width: 2),
+                                  const Text('Kg', style: TextStyle(fontSize: 10, color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+
+                      // ── Bulan Ini ──
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.border, width: 1),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Row(
+                                children: [
+                                  Icon(Icons.calendar_month_rounded, color: AppColors.warningOrange, size: 14),
+                                  SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text('Bulan Ini', style: TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w500), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.baseline,
+                                textBaseline: TextBaseline.alphabetic,
+                                children: [
+                                  Text(
+                                    dashboard == null ? '-' : dashboard.monthlyWeightKg.toStringAsFixed(1),
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.textPrimary),
+                                  ),
+                                  const SizedBox(width: 2),
+                                  const Text('Kg', style: TextStyle(fontSize: 10, color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 20),
 
+                  // ── 📋 Menu Tugas ──────────────────────────────────────────
+                  const Row(
+                    children: [
+                      Icon(Icons.assignment_rounded, size: 18, color: AppColors.primaryGreen),
+                      SizedBox(width: 6),
+                      Text('Menu Tugas', style: TextStyle(
+                        fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary,
+                      )),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Kelola pengajuan dan antrean warga',
+                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  ),
+                  const SizedBox(height: 10),
                   // ── Menu Pengajuan Pengosongan Warga ────────────────────────
                   GestureDetector(
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute(builder: (_) => const PengajuanWargaView()),
                     ),
                     child: Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.border),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.03),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
+                        border: Border.all(color: AppColors.border, width: 1),
                       ),
                       child: Row(
                         children: [
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: AppColors.warningOrange.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(12),
+                              color: AppColors.warningOrange.withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.delete_sweep_rounded, color: AppColors.warningOrange, size: 26),
+                            child: const Icon(Icons.delete_sweep_rounded, color: AppColors.warningOrange, size: 24),
                           ),
-                          const SizedBox(width: 14),
+                          const SizedBox(width: 16),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Text(
-                                  'Pengajuan Pengosongan Warga',
+                                  'Pengajuan Pengosongan Tempat Sampah Warga',
                                   style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                                 ),
-                                const SizedBox(height: 2),
+                                const SizedBox(height: 4),
                                 Text(
                                   state.pengajuanList.isEmpty
-                                      ? 'Tidak ada antrean saat ini'
-                                      : '${state.pengajuanList.length} antrean menunggu diproses',
+                                      ? 'Tidak ada pengajuan baru dari warga'
+                                      : '${state.pengajuanList.length} warga meminta pengosongan sampah',
                                   style: TextStyle(
-                                    fontSize: 12,
+                                    fontSize: 13,
                                     color: state.pengajuanList.isEmpty
                                         ? AppColors.textSecondary
                                         : AppColors.warningOrange,
@@ -771,7 +977,8 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                           ),
                           if (state.pengajuanList.isNotEmpty)
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              margin: const EdgeInsets.only(right: 8),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
                                 color: AppColors.warningOrange,
                                 borderRadius: BorderRadius.circular(20),
@@ -781,8 +988,7 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                                 style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                               ),
                             ),
-                          const SizedBox(width: 8),
-                          const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
+                          const Icon(Icons.chevron_right_rounded, color: AppColors.textHint, size: 20),
                         ],
                       ),
                     ),
@@ -798,11 +1004,27 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Expanded(
-                        child: Text(
-                          'Aktivitas Input Terbaru',
-                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: AppColors.textPrimary),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.history_rounded, size: 18, color: AppColors.primaryGreen),
+                                SizedBox(width: 6),
+                                Text(
+                                  'Riwayat Timbangan Sampah',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textPrimary),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'Catatan sampah yang sudah Anda input',
+                              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -835,7 +1057,7 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                       ),
                       child: const Center(
                         child: Text(
-                          'Belum ada aktivitas timbangan yang tercatat hari ini.',
+                          'Belum ada sampah yang ditimbang hari ini.',
                           textAlign: TextAlign.center,
                           style: TextStyle(color: AppColors.textSecondary),
                         ),
@@ -857,13 +1079,7 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.02),
-                                blurRadius: 5,
-                                offset: const Offset(0, 2),
-                              )
-                            ]
+                            border: Border.all(color: AppColors.border, width: 1),
                           ),
                           child: ListTile(
                             leading: CircleAvatar(
@@ -876,7 +1092,7 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                             ),
                             title: Text(
                               title,
-                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                             ),
                             subtitle: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -885,7 +1101,7 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                                 if (subtitle.isNotEmpty) ...[
                                   Text(
                                     subtitle,
-                                    style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                                   ),
                                   const SizedBox(height: 4),
                                 ],
@@ -896,13 +1112,26 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
                                   ),
                               ],
                             ),
-                            trailing: Text(
-                              '$weight Kg',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                                color: AppColors.primaryGreen,
-                              ),
+                            trailing: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  '$weight',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                    color: AppColors.primaryGreen,
+                                  ),
+                                ),
+                                const Text(
+                                  'Kilogram',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         );

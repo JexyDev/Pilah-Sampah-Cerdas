@@ -607,26 +607,21 @@ class _PoinHistoryItem extends StatelessWidget {
                     ? AppColors.organicColor
                     : AppColors.nonOrganicColor));
 
+    final bool isWaste = descLower.contains('setor') || descLower.contains('sampah');
+
     final IconData iconData = isPunishment
         ? Icons.warning_rounded
         : (isAktivasi
-              ? Icons.qr_code_scanner_rounded
-              : (isPresensi
-                    ? Icons.location_on_rounded
-                    : Icons.delete_rounded));
+            ? Icons.qr_code_scanner_rounded
+            : (isPresensi
+                ? Icons.location_on_rounded
+                : (isRedeem ? Icons.card_giftcard_rounded : (isWaste ? Icons.delete_rounded : Icons.star_rounded))));
 
-    String title = isOrganic
-        ? 'Setor Sampah Organik'
-        : 'Setor Sampah Anorganik';
-    if (isAktivasi) {
-      title = 'Aktivasi Tempat Sampah Berhasil';
-    } else if (isPunishment) {
-      title = 'Penalti Pengurangan Poin';
-    } else if (isPresensi) {
-      title = 'Presensi Berhasil';
-    } else if (isRedeem) {
-      title = 'Penukaran Poin';
-    }
+    // Gunakan deskripsi langsung dari backend agar teks poin KKN (Logbook, Proker) tampil akurat!
+    // Jika kosong, baru fallback.
+    String title = item.description.isNotEmpty 
+        ? item.description 
+        : (isOrganic ? 'Setor Sampah Organik' : 'Poin Aktivitas');
 
     return Container(
       padding: const EdgeInsets.all(16),

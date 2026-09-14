@@ -207,7 +207,7 @@ class _VerifikasiPengosonganViewState extends ConsumerState<VerifikasiPengosonga
     );
   }
 
-  Future<void> _showCelebrationDialog() async {
+  Future<void> _showCelebrationDialog({int pointsEarned = 0}) async {
     await showDialog(
       context: context,
       barrierDismissible: false,
@@ -259,25 +259,27 @@ class _VerifikasiPengosonganViewState extends ConsumerState<VerifikasiPengosonga
                   style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryGreen.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(20),
+                if (pointsEarned > 0) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.stars_rounded, color: AppColors.primaryGreen, size: 18),
+                        const SizedBox(width: 6),
+                        Text(
+                          '+$pointsEarned Poin Validasi Diperoleh',
+                          style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryGreen, fontSize: 12),
+                        ),
+                      ],
+                    ),
                   ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.stars_rounded, color: AppColors.primaryGreen, size: 18),
-                      SizedBox(width: 6),
-                      Text(
-                        '+15 Poin Validasi Diperoleh',
-                        style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryGreen, fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ),
+                ],
                 const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
@@ -305,7 +307,7 @@ class _VerifikasiPengosonganViewState extends ConsumerState<VerifikasiPengosonga
 
     setState(() => _isSubmitting = true);
 
-    final ok = await ref
+    final result = await ref
         .read(petugasPemilahanControllerProvider.notifier)
         .claimPengajuanReset(
           _pengajuanId,
@@ -318,9 +320,11 @@ class _VerifikasiPengosonganViewState extends ConsumerState<VerifikasiPengosonga
     if (!mounted) return;
     setState(() => _isSubmitting = false);
 
-    if (ok) {
+    if (result != null) {
+      final pointsEarned = (result['pointsEarned'] as num?)?.toInt() ?? 
+                           (result['points'] as num?)?.toInt() ?? 0;
       ref.read(authProvider.notifier).fetchProfile();
-      await _showCelebrationDialog();
+      await _showCelebrationDialog(pointsEarned: pointsEarned);
       if (mounted) {
         Navigator.of(context).pop(true);
       }
