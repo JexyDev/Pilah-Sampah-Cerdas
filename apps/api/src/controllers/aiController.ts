@@ -107,12 +107,22 @@ export class AiController {
       const estimatedVol = Number((result as any).volumeEstimate) || 2.5;
 
       const weightKg = Number((estimatedVol * densityFactor).toFixed(2)) || (isOrganic ? 1.0 : 0.5);
-      const rawConfidence = (result as any).confidence || 0.94;
-      const confidence = rawConfidence > 1 ? Number((rawConfidence / 100).toFixed(2)) : Number(Number(rawConfidence).toFixed(2));
+      const rawConfidence = (result as any).confidence;
+      const rawOrgPercent = (result as any).organik_percent;
+      const rawNonOrgPercent = (result as any).non_organik_percent;
+
+      let confidence = 0.94;
+      if (rawOrgPercent !== undefined && rawNonOrgPercent !== undefined) {
+        confidence = Number((Math.max(Number(rawOrgPercent), Number(rawNonOrgPercent)) / 100).toFixed(2));
+      } else if (typeof rawConfidence === "number" && !isNaN(rawConfidence)) {
+        confidence = rawConfidence > 1 ? Number((rawConfidence / 100).toFixed(2)) : Number(Number(rawConfidence).toFixed(2));
+      }
       const confidencePercentage = Math.round(confidence * 100);
 
-      const rawOrgPercent = (result as any).organik_percent;
-      const integerOrgPercent = rawOrgPercent !== undefined ? Math.min(100, Math.max(0, Math.round(Number(rawOrgPercent)))) : confidencePercentage;
+      const integerOrgPercent =
+        rawOrgPercent !== undefined
+          ? Math.min(100, Math.max(0, Math.round(Number(rawOrgPercent))))
+          : (isOrganic ? confidencePercentage : 100 - confidencePercentage);
       const organicPercentage = Number((integerOrgPercent / 100).toFixed(2));
       const nonOrganicPercentage = 100 - integerOrgPercent;
 
