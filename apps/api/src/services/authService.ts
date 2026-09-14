@@ -453,20 +453,30 @@ export class AuthService {
         });
       }
 
-      // Update lifecycleState if they are REGISTERED
+      // Update lifecycleState if they are REGISTERED, and sync user.rwId with resolved RW
       const currentUser = await prisma.user.findUnique({
         where: { id: userId },
         select: { lifecycleState: true },
       });
+
+      const userUpdates: any = {};
+      if (resolvedRwId) {
+        userUpdates.rwId = resolvedRwId;
+      }
       if (currentUser?.lifecycleState === "REGISTERED") {
+        userUpdates.lifecycleState = "COMMUNITY_ACTIVE_NO_BIN";
+      }
+
+      if (Object.keys(userUpdates).length > 0) {
         await prisma.user.update({
           where: { id: userId },
-          data: { lifecycleState: "COMMUNITY_ACTIVE_NO_BIN" },
+          data: userUpdates,
         });
       }
     }
 
-    return updatedUser;
+    const finalUser = await authRepository.findUserById(userId);
+    return finalUser || updatedUser;
   }
 
   async getCitizenStreak(userId: string): Promise<number> {
