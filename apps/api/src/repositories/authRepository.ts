@@ -402,6 +402,7 @@ export class AuthRepository {
       address?: string;
       fotoProfil?: string | null;
       jumlahAnggotaKeluarga?: number | null;
+      rwId?: number | null;
     }
   ): Promise<User> {
     return prisma.user.update({
