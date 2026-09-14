@@ -146,19 +146,46 @@ final activeTimelineProvider =
       return repo.getActiveTimeline();
     });
 
-final pengajuanIzinCountProvider = FutureProvider.autoDispose<int>((ref) async {
-  try {
-    final repo = ref.read(kknRepositoryProvider);
-    final list = await repo.getPengajuanIzin();
-    final approvedList = list.where((item) {
-      if (item is Map<String, dynamic>) {
-        final status = (item['status'] ?? '').toString().toUpperCase();
-        return status == 'APPROVED' || status == 'DISETUJUI';
+class PengajuanCountSummary {
+  final int izinCount;
+  final int sakitCount;
+  const PengajuanCountSummary({this.izinCount = 0, this.sakitCount = 0});
+
+  int get totalCount => izinCount + sakitCount;
+}
+
+final pengajuanSummaryProvider =
+    FutureProvider.autoDispose<PengajuanCountSummary>((ref) async {
+      try {
+        final repo = ref.read(kknRepositoryProvider);
+        final list = await repo.getPengajuanIzin();
+        int izin = 0;
+        int sakit = 0;
+
+        for (final item in list) {
+          if (item is Map<String, dynamic>) {
+            final status = (item['status'] ?? '').toString().toUpperCase();
+            final isApproved = status == 'APPROVED' || status == 'DISETUJUI';
+            if (isApproved) {
+              final kat =
+                  (item['kategori'] ?? item['category'] ?? item['type'] ?? '')
+                      .toString()
+                      .toLowerCase();
+              if (kat.contains('sakit')) {
+                sakit++;
+              } else {
+                izin++;
+              }
+            }
+          }
+        }
+        return PengajuanCountSummary(izinCount: izin, sakitCount: sakit);
+      } catch (e) {
+        return const PengajuanCountSummary();
       }
-      return true;
-    }).toList();
-    return approvedList.length;
-  } catch (e) {
-    return 0;
-  }
+    });
+
+final pengajuanIzinCountProvider = FutureProvider.autoDispose<int>((ref) async {
+  final summary = await ref.watch(pengajuanSummaryProvider.future);
+  return summary.totalCount;
 });

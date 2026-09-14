@@ -5,7 +5,6 @@ import '../../../data/providers/repository_providers.dart';
 import '../../riwayat/controllers/riwayat_controller.dart'
     show pointHistoryProvider;
 import 'package:intl/intl.dart';
-import '../../../routes/app_routes.dart';
 
 final riwayatPemanfaatanProvider = FutureProvider.autoDispose<List<dynamic>>((
   ref,
@@ -29,82 +28,6 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
         elevation: 0,
       ),
 
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(13),
-              blurRadius: 10,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          child: Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () => Navigator.pushNamed(
-                    context,
-                    AppRoutes.logbookPemanfaatan,
-                  ),
-                  icon: const Icon(
-                    Icons.recycling,
-                    size: 18,
-                    color: Colors.white,
-                  ),
-                  label: const Text(
-                    'Lapor Data',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryBlue,
-                    elevation: 0,
-                    minimumSize: Size.zero,
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 12,
-                      horizontal: 8,
-                    ),
-                    shape: const StadiumBorder(),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () =>
-                      Navigator.pushNamed(context, AppRoutes.catatPanen),
-                  icon: const Icon(Icons.eco, size: 18, color: Colors.white),
-                  label: const Text(
-                    'Catat Hasil',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryGreen,
-                    elevation: 0,
-                    minimumSize: Size.zero,
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 12,
-                      horizontal: 8,
-                    ),
-                    shape: const StadiumBorder(),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
       body: state.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(

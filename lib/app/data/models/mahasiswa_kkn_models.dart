@@ -1275,3 +1275,91 @@ class JenisFasilitas extends Equatable {
   @override
   List<Object?> get props => [id, key, nama, iconUrl, isActive];
 }
+
+/// ─────────────────────────────────────────────────────────────────────────────
+/// Model untuk data Fasilitas Tata Kelola Sampah (GET / POST /api/v1/facilities)
+/// ─────────────────────────────────────────────────────────────────────────────
+class FasilitasTataKelolaSampah extends Equatable {
+  final String id;
+  final String jenis;
+  final String nama;
+  final String pic;
+  final String? kontak;
+  final String kepemilikan; // "MILIK_RW" atau "PRIBADI"
+  final double kapasitas;
+  final double latitude;
+  final double longitude;
+  final String alamat;
+  final String? foto;
+  final int? rwId;
+
+  const FasilitasTataKelolaSampah({
+    required this.id,
+    required this.jenis,
+    required this.nama,
+    required this.pic,
+    this.kontak,
+    this.kepemilikan = 'PRIBADI',
+    this.kapasitas = 0.0,
+    required this.latitude,
+    required this.longitude,
+    required this.alamat,
+    this.foto,
+    this.rwId,
+  });
+
+  bool get isMilikRw => kepemilikan == 'MILIK_RW';
+  bool get isPribadi => kepemilikan == 'PRIBADI';
+
+  factory FasilitasTataKelolaSampah.fromJson(Map<String, dynamic> json) {
+    return FasilitasTataKelolaSampah(
+      id: json['id']?.toString() ?? '',
+      jenis: json['jenis']?.toString() ?? '',
+      nama: json['nama']?.toString() ?? '',
+      pic: json['pic']?.toString() ?? '',
+      kontak: json['kontak']?.toString(),
+      kepemilikan: json['kepemilikan']?.toString() ?? 'PRIBADI',
+      kapasitas: double.tryParse(json['kapasitas']?.toString() ?? '0') ?? 0.0,
+      latitude: double.tryParse(json['latitude']?.toString() ?? '0') ?? 0.0,
+      longitude: double.tryParse(json['longitude']?.toString() ?? '0') ?? 0.0,
+      alamat: json['alamat']?.toString() ?? '',
+      foto: json['foto']?.toString(),
+      rwId: (json['rwId'] as num?)?.toInt(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'jenis': jenis,
+      'nama': nama,
+      'pic': pic,
+      if (kontak != null) 'kontak': kontak,
+      'kepemilikan': kepemilikan,
+      'kapasitas': kapasitas,
+      'latitude': latitude,
+      'longitude': longitude,
+      'alamat': alamat,
+      if (foto != null) 'foto': foto,
+      if (rwId != null) 'rwId': rwId,
+    };
+  }
+
+  @override
+  List<Object?> get props => [
+        id,
+        jenis,
+        nama,
+        pic,
+        kontak,
+        kepemilikan,
+        kapasitas,
+        latitude,
+        longitude,
+        alamat,
+        foto,
+        rwId,
+      ];
+}
+
+typedef FasilitasWarga = FasilitasTataKelolaSampah;

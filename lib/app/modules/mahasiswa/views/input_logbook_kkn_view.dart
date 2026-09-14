@@ -704,7 +704,7 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
 
                     const SizedBox(height: 16),
                     const Text(
-                      'Fasilitas Warga Terkait',
+                      'Fasilitas Tata Kelola Sampah Terkait',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 13,
@@ -1577,7 +1577,7 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
                     child: Row(
                       children: [
                         const Text(
-                          'Pilih Fasilitas Warga',
+                          'Pilih Fasilitas Tata Kelola Sampah',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -1616,7 +1616,7 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
                           currentSelectedId: _selectedFasilitasId,
                           title: 'Tidak terkait fasilitas',
                           description:
-                              'Logbook ini tidak berhubungan dengan fasilitas warga manapun',
+                              'Logbook ini tidak berhubungan dengan fasilitas tata kelola sampah manapun',
                           icon: Icons.link_off_rounded,
                           onSelect: (id) =>
                               setState(() => _selectedFasilitasId = id),

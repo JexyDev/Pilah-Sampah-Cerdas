@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../routes/app_routes.dart';
+import 'riwayat_pemanfaatan_view.dart' show riwayatPemanfaatanProvider;
 
 final prokerDataListProvider =
     FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
@@ -766,6 +767,8 @@ class _DataProkerViewState extends ConsumerState<DataProkerView> {
   @override
   Widget build(BuildContext context) {
     final listState = ref.watch(prokerDataListProvider);
+    final pemanfaatanAsync = ref.watch(riwayatPemanfaatanProvider);
+    final pemanfaatanCount = pemanfaatanAsync.value?.length ?? 0;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -783,9 +786,32 @@ class _DataProkerViewState extends ConsumerState<DataProkerView> {
         ),
         actions: [
           IconButton(
+            icon: Badge(
+              isLabelVisible: pemanfaatanCount > 0,
+              label: Text(
+                '$pemanfaatanCount',
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              backgroundColor: AppColors.primaryGreen,
+              child: const Icon(Icons.recycling_rounded),
+            ),
+            tooltip: 'Data Pemanfaatan & Hasil ($pemanfaatanCount Data)',
+            onPressed: () async {
+              await Navigator.pushNamed(context, AppRoutes.riwayatPemanfaatan);
+              ref.invalidate(riwayatPemanfaatanProvider);
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.refresh_rounded),
             tooltip: 'Muat Ulang',
-            onPressed: () => ref.invalidate(prokerDataListProvider),
+            onPressed: () {
+              ref.invalidate(prokerDataListProvider);
+              ref.invalidate(riwayatPemanfaatanProvider);
+            },
           ),
         ],
       ),
@@ -874,7 +900,10 @@ class _DataProkerViewState extends ConsumerState<DataProkerView> {
             );
           }
           return RefreshIndicator(
-            onRefresh: () async => ref.invalidate(prokerDataListProvider),
+            onRefresh: () async {
+              ref.invalidate(prokerDataListProvider);
+              ref.invalidate(riwayatPemanfaatanProvider);
+            },
             child: ListView.separated(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
               itemCount: list.length,

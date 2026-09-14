@@ -842,6 +842,15 @@ class _BerandaViewState extends ConsumerState<BerandaView>
         (user?.lifecycleState == WargaLifecycle.registered ||
             (user?.householdId ?? '').isEmpty);
 
+    String displayRole = roleName;
+    if (user?.role == UserRole.warga || user?.role == UserRole.unknown) {
+      if (isUnjoined) {
+        displayRole = '';
+      } else {
+        displayRole = 'Warga Berseka';
+      }
+    }
+
     return Container(
       color: Colors.white,
       padding: EdgeInsets.only(
@@ -868,15 +877,13 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                 clipBehavior: Clip.antiAlias,
                 child: _buildHeaderAvatarImage(fotoUrl),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Wrap(
-                      spacing: 5,
-                      runSpacing: 2,
-                      crossAxisAlignment: WrapCrossAlignment.center,
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
                           _getGreeting(),
@@ -885,24 +892,27 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                             fontSize: 11,
                           ),
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 5,
-                            vertical: 1.5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.warningYellow,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            roleName,
-                            style: const TextStyle(
-                              fontSize: 8,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
+                        if (displayRole.isNotEmpty) ...[
+                          const SizedBox(width: 5),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 5,
+                              vertical: 1.5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.warningYellow,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              displayRole,
+                              style: const TextStyle(
+                                fontSize: 8,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                     const SizedBox(height: 2),
@@ -960,22 +970,22 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 4),
               // ─── Online Indicator & Bell icon ───────────────────────────
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    margin: EdgeInsets.only(right: isCompact ? 8 : 12),
+                    margin: EdgeInsets.only(right: isCompact ? 6 : 8),
                     padding: EdgeInsets.symmetric(
-                      horizontal: isCompact ? 6 : 8,
-                      vertical: 4,
+                      horizontal: isCompact ? 5 : 6,
+                      vertical: 2.5,
                     ),
                     decoration: BoxDecoration(
                       color: isOnline
                           ? AppColors.primaryGreen.withValues(alpha: 0.1)
                           : AppColors.dangerRed.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                       border: Border.all(
                         color: isOnline
                             ? AppColors.primaryGreen.withValues(alpha: 0.3)
@@ -986,8 +996,8 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
-                          width: 8,
-                          height: 8,
+                          width: 6,
+                          height: 6,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: isOnline
@@ -999,19 +1009,19 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                                   color: AppColors.primaryGreen.withValues(
                                     alpha: 0.4,
                                   ),
-                                  blurRadius: 4,
-                                  spreadRadius: 1,
+                                  blurRadius: 3,
+                                  spreadRadius: 0.5,
                                 ),
                             ],
                           ),
                         ),
                         if (!isCompact) ...[
-                          const SizedBox(width: 6),
+                          const SizedBox(width: 4),
                           Text(
                             isOnline ? 'Online' : 'Offline',
                             style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
                               color: isOnline
                                   ? AppColors.primaryGreen
                                   : AppColors.dangerRed,

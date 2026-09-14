@@ -372,7 +372,7 @@ class _LogbookPemanfaatanViewState
 
                     const SizedBox(height: 16),
                     const Text(
-                      'Pilih Fasilitas Warga (Opsional)',
+                      'Pilih Fasilitas Tata Kelola Sampah (Opsional)',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 13,
@@ -394,7 +394,7 @@ class _LogbookPemanfaatanViewState
                           data: (list) {
                             if (list.isEmpty) {
                               return const Text(
-                                'Tidak ada fasilitas warga di RW ini.',
+                                'Tidak ada fasilitas tata kelola sampah di RW ini.',
                                 style: TextStyle(
                                   color: AppColors.textSecondary,
                                   fontSize: 13,
@@ -404,7 +404,7 @@ class _LogbookPemanfaatanViewState
                             }
                             return _buildBottomSheetDropdown(
                               hint: 'Pilih Fasilitas...',
-                              title: 'Fasilitas Warga',
+                              title: 'Fasilitas Tata Kelola Sampah',
                               selectedValue: _selectedFasilitasId,
                               items: list
                                   .map(

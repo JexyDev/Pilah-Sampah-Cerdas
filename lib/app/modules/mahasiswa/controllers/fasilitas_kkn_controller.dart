@@ -67,7 +67,7 @@ class FasilitasKknController extends StateNotifier<FasilitasKknState> {
     }
   }
 
-  /// Mendaftarkan fasilitas warga.
+  /// Mendaftarkan fasilitas tata kelola sampah.
   /// - `rwId` tidak dikirim — backend resolve dari data mahasiswa (JWT).
   /// - `imagePath` wajib — foto fasilitas harus ada.
   Future<bool> registerFasilitas({
@@ -81,6 +81,7 @@ class FasilitasKknController extends StateNotifier<FasilitasKknState> {
     required double latitude,
     required double longitude,
     required String imagePath,
+    String kepemilikan = 'PRIBADI',
   }) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
@@ -90,6 +91,7 @@ class FasilitasKknController extends StateNotifier<FasilitasKknState> {
         'nama': nama,
         'pic': pic,
         'kontak': kontak,
+        'kepemilikan': kepemilikan,
         'kapasitas': kapasitas,
         'latitude': latitude,
         'longitude': longitude,

@@ -35,7 +35,7 @@ class PoinView extends ConsumerWidget {
             SliverToBoxAdapter(
               child: totalAsync.when(
                 skipLoadingOnReload: true,
-                data: (total) => _buildHeader(context, ref, total),
+                data: (total) => _buildHeader(context, total),
                 loading: () => _buildHeaderSkeleton(context),
                 error: (_, __) => _buildHeaderSkeleton(context),
               ),
@@ -225,9 +225,7 @@ class PoinView extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context, WidgetRef ref, int total) {
-    final rankAsync = ref.watch(userLeaderboardRankProvider);
-
+  Widget _buildHeader(BuildContext context, int total) {
     return Container(
       color: Colors.white,
       padding: EdgeInsets.only(
@@ -313,55 +311,6 @@ class PoinView extends ConsumerWidget {
                         style: TextStyle(
                           color: AppColors.textSecondary,
                           fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryGreen.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.emoji_events_rounded,
-                      color: AppColors.warningYellow,
-                      size: 16,
-                    ),
-                    const SizedBox(width: 4),
-                    rankAsync.when(
-                      skipLoadingOnReload: true,
-                      data: (rank) => Text(
-                        rank,
-                        style: const TextStyle(
-                          color: AppColors.primaryGreen,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      loading: () => const SizedBox(
-                        width: 40,
-                        height: 12,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppColors.primaryGreen,
-                        ),
-                      ),
-                      error: (_, __) => const Text(
-                        '-',
-                        style: TextStyle(
-                          color: AppColors.primaryGreen,
-                          fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
