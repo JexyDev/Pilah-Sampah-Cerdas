@@ -376,7 +376,7 @@ Authorization: Bearer <token_jwt>
 ```json
 {
   "success": true,
-  "message": "Pengajuan izin berhasil dikirimkan ke Dosen Pendamping Lapangan (DPL)",
+  "message": "Pengajuan izin berhasil dikirimkan ke Dosen Pembimbing Lapangan (DPL)",
   "data": {
     "id": "izn_501",
     "jenisIzin": "IZIN",

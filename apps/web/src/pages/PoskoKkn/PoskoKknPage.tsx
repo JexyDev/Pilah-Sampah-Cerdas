@@ -711,7 +711,7 @@ export const PoskoKknPage: React.FC = () => {
           <p className="text-slate-500 text-xs mt-1">
             {isDpl
               ? "Pangkalan posko, kontak tim mahasiswa, titik koordinat GPS, dan lokasi kelompok KKN binaan Anda."
-              : "Direktori pangkalan posko kegiatan mahasiswa KKN, kelompok binaan, dosen pendamping lapangan (DPL), dan titik koordinat GPS di seluruh wilayah operasional."}
+              : "Direktori pangkalan posko kegiatan mahasiswa KKN, kelompok binaan, dosen pembimbing lapangan (DPL), dan titik koordinat GPS di seluruh wilayah operasional."}
           </p>
         </div>
       </div>
