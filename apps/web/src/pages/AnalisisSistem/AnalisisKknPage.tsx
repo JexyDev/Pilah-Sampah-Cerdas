@@ -626,7 +626,28 @@ export const AnalisisKknPage: React.FC = () => {
           {/* Konsol Cerdas Analisis AI (Hugging Face) */}
           <AiConsoleChat contextType="kkn" kelompokId={selectedKelompokId || undefined} />
         </div>
-      ) : null}
+      ) : (
+        <div className="bg-white dark:bg-slate-900 p-12 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs text-center space-y-4 max-w-lg mx-auto my-12">
+          <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400 flex items-center justify-center mx-auto">
+            <AlertCircle size={24} />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-base font-black text-slate-900 dark:text-slate-100">
+              Gagal Memuat Data Analisis Kuliah Kerja Nyata
+            </h3>
+            <p className="text-xs text-slate-500 font-medium leading-relaxed">
+              Sistem tidak dapat mengambil data aktual dari basis data. Pastikan koneksi server aktif dan silakan muat ulang.
+            </p>
+          </div>
+          <button
+            onClick={() => fetchData(selectedKelompokId)}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#009966] hover:bg-[#008855] text-white font-extrabold text-xs rounded-full shadow-xs transition-all cursor-pointer"
+          >
+            <RefreshCw size={14} />
+            <span>Coba Lagi</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 };

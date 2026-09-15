@@ -78,7 +78,7 @@ export class AiService {
 
       return result;
     } catch (error: any) {
-      if (process.env.DEMO_EMERGENCY_MODE !== "false" && error.message !== "QUOTA_EXCEEDED") {
+      if (process.env.DEMO_EMERGENCY_MODE === "true" && error.message !== "QUOTA_EXCEEDED") {
         console.warn("[AiService] Demo Emergency Fallback triggered for error:", error.message);
         await aiRepository.logRequest(userId, requestId, finalImageUrl, "SUCCESS").catch(() => {});
         return {
