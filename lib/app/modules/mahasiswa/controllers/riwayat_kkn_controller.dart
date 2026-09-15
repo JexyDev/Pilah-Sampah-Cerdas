@@ -76,7 +76,8 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
             isGpsActive = false; // Indikator ditolak (merah)
           } else {
             title = 'Pengajuan $jenis (Menunggu)';
-            subtitle = 'Pengajuan $labelKategori Anda sedang menunggu review DPL';
+            subtitle =
+                'Pengajuan $labelKategori Anda sedang menunggu review DPL';
             isGpsActive = null; // Indikator pending (oranye)
           }
 
@@ -261,10 +262,15 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
       try {
         final logbookList = await kknRepo.getLogbookList();
         for (final lb in logbookList) {
-          final title = 'Logbook Harian';
-          final desc = lb['deskripsi']?.toString() ?? 'Laporan aktivitas harian';
-          final dateStr = lb['tanggalKegiatan']?.toString() ?? lb['createdAt']?.toString() ?? '';
-          final timestamp = DateTime.tryParse(dateStr)?.toLocal() ?? DateTime.now();
+          const title = 'Logbook Harian';
+          final desc =
+              lb['deskripsi']?.toString() ?? 'Laporan aktivitas harian';
+          final dateStr =
+              lb['tanggalKegiatan']?.toString() ??
+              lb['createdAt']?.toString() ??
+              '';
+          final timestamp =
+              DateTime.tryParse(dateStr)?.toLocal() ?? DateTime.now();
 
           parsedLogs.add(
             KknHistoryLog(
@@ -291,7 +297,8 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
           final teknologi =
               item['teknologi']?.toString() ?? 'Pemanfaatan Sampah';
           final bahanBaku = item['bahanBaku']?.toString().trim() ?? '';
-          final rawBerat = item['volumeBahanBaku'] ??
+          final rawBerat =
+              item['volumeBahanBaku'] ??
               item['jumlahBahanMasukKg'] ??
               item['beratInputKg'] ??
               item['beratBahan'];
@@ -300,24 +307,26 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
               : (rawBerat != null ? num.tryParse(rawBerat.toString()) : null);
           final String beratFormatted = (beratNum != null && beratNum > 0)
               ? (beratNum % 1 == 0
-                  ? '${beratNum.toInt()}'
-                  : beratNum.toStringAsFixed(1))
+                    ? '${beratNum.toInt()}'
+                    : beratNum.toStringAsFixed(1))
               : '';
 
           final hasil = item['hasil'];
           final nilaiEkonomi = item['nilaiEkonomi'] ?? item['luasLahanM2'];
-          final dateStr = item['createdAt']?.toString() ??
+          final dateStr =
+              item['createdAt']?.toString() ??
               item['tanggal']?.toString() ??
               '';
-          final timestamp =
-              (DateTime.tryParse(dateStr) ?? DateTime.now()).toLocal();
+          final timestamp = (DateTime.tryParse(dateStr) ?? DateTime.now())
+              .toLocal();
           final id = item['id']?.toString() ?? '';
 
           final hasHarvest =
               (hasil is num && hasil > 0) || (item['hasHarvested'] == true);
           if (hasHarvest) {
-            final hasilNum =
-                (hasil is num) ? hasil : num.tryParse(hasil.toString()) ?? 0;
+            final hasilNum = (hasil is num)
+                ? hasil
+                : num.tryParse(hasil.toString()) ?? 0;
             final hasilStr = hasilNum % 1 == 0
                 ? '${hasilNum.toInt()}'
                 : hasilNum.toStringAsFixed(1);
