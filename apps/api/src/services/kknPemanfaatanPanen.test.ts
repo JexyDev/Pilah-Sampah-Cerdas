@@ -134,6 +134,12 @@ describe("KKN Service - Pemanfaatan & Panen Group Point Distribution and CRUD", 
     });
     expect(pointsUser2.length).toBe(1);
     expect(pointsUser2[0].points).toBe(2);
+
+    // Verifikasi pemisahan entitas: createLogbookPemanfaatan TIDAK membuat logbook di logbookKkn
+    const autoLogbooks = await prisma.logbookKkn.findMany({
+      where: { kelompokId: testKelompok.id },
+    });
+    expect(autoLogbooks.length).toBe(0);
   });
 
   it("TASK 4 (Rule 2): updateLogbookPemanfaatan should update report data without modifying PointHistory", async () => {
