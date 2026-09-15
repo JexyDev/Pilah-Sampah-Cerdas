@@ -199,6 +199,8 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [activeStudent, setActiveStudent] = useState<StudentRekapItem | null>(null);
   const [evaluatorTab, setEvaluatorTab] = useState<"DPL" | "MPL">(isMplUser ? "MPL" : "DPL");
+  const [bobotDpl, setBobotDpl] = useState<number>(50);
+  const [bobotMpl, setBobotMpl] = useState<number>(50);
 
   // Filters & Pagination
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -250,6 +252,10 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
     try {
       const data = await penilaianKknApiService.getRekapPenilaian();
       const rawList: StudentRekapItem[] = Array.isArray(data) ? data : [];
+      if (rawList.length > 0) {
+        if (rawList[0].bobotDplPersen !== undefined) setBobotDpl(rawList[0].bobotDplPersen);
+        if (rawList[0].bobotMplPersen !== undefined) setBobotMpl(rawList[0].bobotMplPersen);
+      }
       const list = rawList.filter(
         (s) => !isTestStudent(s) && !isTestKelompok({ name: s.kelompok })
       );
