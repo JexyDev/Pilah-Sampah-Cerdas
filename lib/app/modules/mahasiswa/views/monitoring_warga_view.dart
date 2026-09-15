@@ -491,7 +491,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                         ),
                         child: Text(
                           userRw.isNotEmpty
-                              ? (userRw.startsWith('RW')
+                              ? (userRw.trim().toUpperCase().startsWith('RW')
                                     ? userRw
                                     : 'RW $userRw')
                               : '-',
@@ -681,11 +681,11 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                           Builder(
                             builder: (_) {
                               final rtStr = warga.rw.isNotEmpty
-                                  ? (warga.rw.startsWith('RW')
+                                  ? (warga.rw.trim().toUpperCase().startsWith('RW')
                                         ? warga.rw
                                         : 'RW ${warga.rw}')
                                   : (userRw.isNotEmpty
-                                        ? (userRw.startsWith('RW')
+                                        ? (userRw.trim().toUpperCase().startsWith('RW')
                                               ? userRw
                                               : 'RW $userRw')
                                         : '-');
