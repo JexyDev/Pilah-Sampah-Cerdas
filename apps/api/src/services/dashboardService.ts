@@ -1099,45 +1099,70 @@ export const dashboardService = {
     };
   },
   getAnalytics: async () => {
-    // 1. AI Accuracy
+    // 1. AI Accuracy dari data riil aiRequestLog
     const totalAiLogs = await prisma.aiRequestLog.count();
     const successAiLogs = await prisma.aiRequestLog.count({
       where: { resultStatus: "SUCCESS" },
     });
-    const averageAiAccuracy = totalAiLogs > 0 ? (successAiLogs / totalAiLogs) * 100 : 0;
+    const averageAiAccuracy = totalAiLogs > 0 ? Number(((successAiLogs / totalAiLogs) * 100).toFixed(1)) : 100;
 
-    const aiAccuracyTrend = [90, 92, 91, 94, averageAiAccuracy > 0 ? averageAiAccuracy : 95];
+    // AI Accuracy trend 5 hari terakhir
+    const now = new Date();
+    const aiAccuracyTrend: number[] = [];
+    for (let i = 4; i >= 0; i--) {
+      const start = new Date(now);
+      start.setDate(start.getDate() - i);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(start);
+      end.setHours(23, 59, 59, 999);
 
-    // 2. Cache hits / misses
-    const cacheMetrics = Array.from({ length: 14 }).map((_, i) => {
-      const hits = 80 + Math.floor(Math.random() * 15);
-      return { day: String(i + 1), hits, misses: 100 - hits };
-    });
+      const [dayTotal, daySuccess] = await Promise.all([
+        prisma.aiRequestLog.count({ where: { createdAt: { gte: start, lte: end } } }),
+        prisma.aiRequestLog.count({ where: { createdAt: { gte: start, lte: end }, resultStatus: "SUCCESS" } }),
+      ]);
+      aiAccuracyTrend.push(dayTotal > 0 ? Number(((daySuccess / dayTotal) * 100).toFixed(1)) : averageAiAccuracy);
+    }
+
+    // 2. Metrik aktivitas 14 hari terakhir berdasarkan transaksi riil
+    const cacheMetrics = [];
+    for (let i = 13; i >= 0; i--) {
+      const start = new Date(now);
+      start.setDate(start.getDate() - i);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(start);
+      end.setHours(23, 59, 59, 999);
+
+      const txCount = await prisma.setoranOtomatis.count({
+        where: { createdAt: { gte: start, lte: end } },
+      });
+      cacheMetrics.push({ day: String(14 - i), hits: txCount, misses: 0 });
+    }
 
     // 3. System Uptime & Load
     const os = await import("os");
-    const uptimeSeconds = process.uptime();
+    const uptimeSeconds = Math.floor(process.uptime());
     const uptimePercent = 99.98;
 
     const cpus = os.cpus();
     const loadAvg = os.loadavg();
-    const cpuUsage = Math.round((loadAvg[0] / cpus.length) * 100);
+    const cpuUsage = Math.round((loadAvg[0] / (cpus.length || 1)) * 100);
 
-    // 4. Latency
-    const peakLatency = 120 + Math.floor(Math.random() * 200);
+    const activeUsersCount = await prisma.user.count({
+      where: { status: "ACTIVE" },
+    });
 
     return {
       uptimePercent,
       uptimeSeconds,
       aiAccuracy: averageAiAccuracy,
       aiAccuracyTrend,
-      cpuUsage: Math.min(100, cpuUsage),
+      cpuUsage: Math.min(100, Math.max(0, cpuUsage)),
       coreCount: cpus.length,
-      peakLatency,
+      peakLatency: 50,
       cacheMetrics,
-      activeConnections: 120 + Math.floor(Math.random() * 50),
-      networkIncoming: (10 + Math.random() * 40).toFixed(2),
-      networkOutgoing: (5 + Math.random() * 20).toFixed(2),
+      activeConnections: activeUsersCount,
+      networkIncoming: "0.00",
+      networkOutgoing: "0.00",
     };
   },
   getRegions: async () => {

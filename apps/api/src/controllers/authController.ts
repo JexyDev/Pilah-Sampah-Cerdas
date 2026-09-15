@@ -890,18 +890,27 @@ export class AuthController {
       void _noWa;
       void kecamatan;
 
-      // Resolve rwId from string if needed
-      let resolvedRwId = rwId;
-      if (!resolvedRwId) {
-        resolvedRwId = await authService.resolveRtRwId(rwName, kelurahan);
+      // Resolve rwId from string only if explicitly provided (prevent dummy fallback)
+      let resolvedRwId: number | undefined = rwId;
+      if (!resolvedRwId && (rwName || kelurahan)) {
+        try {
+          resolvedRwId = await authService.resolveRtRwId(rwName, kelurahan);
+        } catch {
+          resolvedRwId = undefined;
+        }
       }
 
-      const householdData = {
-        address: userData.address || "",
-        rwId: resolvedRwId,
-        latitude: latitude || 0,
-        longitude: longitude || 0,
-      };
+      // Create household data only if address or resolvedRwId is provided
+      const hasAddress = !!userData.address && userData.address.trim() !== "";
+      const householdData =
+        hasAddress || resolvedRwId
+          ? {
+              address: userData.address || "",
+              rwId: resolvedRwId ?? null,
+              latitude: latitude || 0,
+              longitude: longitude || 0,
+            }
+          : null;
 
       let token = "";
       if (req.cookies && req.cookies.accessToken) {
@@ -921,7 +930,7 @@ export class AuthController {
       const finalKabupaten = userData.kabupaten || kota || undefined;
 
       const result = await authService.registerWarga(
-        { ...userData, kabupaten: finalKabupaten, rwId: resolvedRwId },
+        { ...userData, kabupaten: finalKabupaten, rwId: resolvedRwId ?? null },
         householdData,
         qrCode || undefined,
         wargaSubtype,

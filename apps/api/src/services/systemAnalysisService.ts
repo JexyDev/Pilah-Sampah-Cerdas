@@ -762,14 +762,14 @@ ${dplBelumInputNilai.length > 0 ? dplBelumInputNilai.join("\n") : "- Seluruh DPL
           .map((k, i) => `${i + 1}. ${k.kategori || "Lainnya"}: ${k._count.id} Program Kerja`)
           .join("\n");
 
-        const topProkerCategoryName = prokerKategoriGroup[0]?.kategori || "Edukasi & Sosialisasi";
-        const topProkerCategoryCount = prokerKategoriGroup[0]?._count.id || 24;
+        const topProkerCategoryName = prokerKategoriGroup[0]?.kategori || "Belum Ditentukan";
+        const topProkerCategoryCount = prokerKategoriGroup[0]?._count.id || 0;
 
         const prokerEntitySummary = `
 [DETAIL REKAPITULASI KATEGORI PROGRAM KERJA (JENIS PROKER)]
 * Kategori/Jenis Proker Terbanyak: ${topProkerCategoryName} (${topProkerCategoryCount} Proker)
 * Rincian Seluruh Kategori Proker Terdaftar (${kknData.pilar3.totalProker} Total Proker):
-${prokerKategoriSummaryStr}
+${prokerKategoriSummaryStr || "- Belum ada program kerja terdaftar."}
 `.trim();
 
         const topKelompokStr = kknData.pilar5.top5Kelompok
@@ -987,15 +987,19 @@ ${sqlContextText}
         pLower.includes("jenis") ||
         pLower.includes("kategori")
       ) {
-        fallbackReply += `Kategori/Jenis Program Kerja (Proker) terbanyak di database Berseka saat ini adalah **"${lastProker?.topCategory || "Edukasi & Sosialisasi"}"** dengan jumlah **${lastProker?.topCount || 24} program kerja**.\n\nBerikut rincian lengkap distribusi jenis proker per kategori:\n${lastProker?.breakdownStr || "- 1. Edukasi & Sosialisasi: 24 Program Kerja\n- 2. Pemilahan: 17 Program Kerja\n- 3. Lainnya: 17 Program Kerja\n- 4. Pemanfaatan: 14 Program Kerja\n- 5. Pengolahan: 7 Program Kerja\n- 6. Pengangkutan: 3 Program Kerja\n- 7. ANORGANIK: 1 Program Kerja\n- 8. FASILITAS: 1 Program Kerja"}\n\n* Total Program Kerja Terdaftar: ${lastProker?.totalProker || 84} Proker (${lastProker?.selesai || 0} Selesai, ${lastProker?.proses || 0} Sedang Berjalan, ${lastProker?.belum || 0} Belum Mulai).`;
+        if (lastProker && lastProker.totalProker > 0) {
+          fallbackReply += `Kategori/Jenis Program Kerja (Proker) terbanyak di database Berseka saat ini adalah **"${lastProker.topCategory}"** dengan jumlah **${lastProker.topCount} program kerja**.\n\nBerikut rincian distribusi jenis proker per kategori:\n${lastProker.breakdownStr}\n\n* Total Program Kerja Terdaftar: ${lastProker.totalProker} Proker (${lastProker.selesai} Selesai, ${lastProker.proses} Sedang Berjalan, ${lastProker.belum} Belum Mulai).`;
+        } else {
+          fallbackReply += `Belum ada program kerja yang tercatat di database sistem Berseka saat ini.`;
+        }
       } else if (
         pLower.includes("dpl") ||
         pLower.includes("logbook dpl") ||
         pLower.includes("bimbingan")
       ) {
-        fallbackReply += dplEntitySummary;
+        fallbackReply += dplEntitySummary || "Belum ada data DPL yang tercatat di database.";
       } else {
-        fallbackReply += contextSummary;
+        fallbackReply += contextSummary || "Belum ada ringkasan data sistem yang tercatat di database.";
       }
 
       return {

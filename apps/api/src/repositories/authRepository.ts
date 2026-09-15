@@ -540,13 +540,15 @@ export class AuthRepository {
         },
       });
 
-      // 4. Create Household
-      await tx.household.create({
-        data: {
-          ...householdData,
-          userId: user.id,
-        },
-      });
+      // 4. Create Household (only if householdData provided)
+      if (householdData) {
+        await tx.household.create({
+          data: {
+            ...householdData,
+            userId: user.id,
+          },
+        });
+      }
 
       // 5. Create Bin ownership & Update Bin status
       if (bin) {
@@ -564,9 +566,9 @@ export class AuthRepository {
             data: {
               status: "ACTIVE_BOUND",
               userId: user.id,
-              rwId: user.rwId ?? householdData.rwId,
-              latitude: householdData.latitude,
-              longitude: householdData.longitude,
+              rwId: user.rwId ?? householdData?.rwId ?? null,
+              latitude: householdData?.latitude ?? 0,
+              longitude: householdData?.longitude ?? 0,
             },
           });
 
