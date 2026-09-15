@@ -4614,7 +4614,6 @@ export class KknAttendanceService {
       };
     }
 
-    const penaltyPoints = ruleConfigs.attendanceOutOfZonePenaltyPoints || 10;
     const schedule = await prisma.schedule.findUnique({
       where: { id: scheduleId },
       include: { kelompok: true },
@@ -4625,36 +4624,20 @@ export class KknAttendanceService {
       include: { user: true, kelompok: true },
     });
 
-    const attendance = await prisma.activityAttendance.findFirst({
-      where: {
-        studentId: studentUserId,
-        scheduleId,
-      },
-      orderBy: { attendedAt: "desc" },
-    });
-
-    // Pastikan poin mahasiswa tidak pernah minus akibat penalti zona
-    const pointSumObj = await prisma.pointHistory.aggregate({
-      where: { userId: studentUserId },
-      _sum: { points: true },
-    });
-    const currentPoints = Math.max(0, pointSumObj._sum.points || 0);
-    const deduction = Math.min(Math.abs(penaltyPoints), currentPoints);
-
-    if (deduction > 0) {
-      // Catat ke buku besar point_history
-      await prisma.pointHistory.create({
+    // Catat ke buku besar point_history sebagai catatan peringatan (points: 0) tanpa memotong saldo poin mahasiswa
+    await prisma.pointHistory
+      .create({
         data: {
           userId: studentUserId,
-          points: -deduction,
+          points: 0,
           kategori: "PENALTY_OUT_OF_ZONE",
-          description: `Penalti keluar zona kegiatan '${schedule?.title || "KKN"}' (Kelompok: ${
+          description: `Peringatan keluar zona kegiatan '${schedule?.title || "KKN"}' (Kelompok: ${
             student?.kelompok?.name || schedule?.kelompok?.name || "Binaan"
-          }) melebihi batas waktu toleransi (${outOfZoneMinutes || 5} menit).`,
+          }) melebihi batas waktu toleransi (${outOfZoneMinutes || 5} menit). Saldo poin tidak terpotong.`,
           redeemable: false,
         },
-      });
-    }
+      })
+      .catch(() => {});
 
     // Record into system history / audit trail
     auditTrailService
@@ -4664,7 +4647,7 @@ export class KknAttendanceService {
         scheduleTitle: schedule?.title || "Kegiatan KKN",
         kelompokName: student?.kelompok?.name || schedule?.kelompok?.name || "-",
         outOfZoneMinutes,
-        pointsDeducted: deduction,
+        pointsDeducted: 0,
         studentName: student?.user?.name,
         nim: student?.nim,
       })
@@ -4672,8 +4655,8 @@ export class KknAttendanceService {
 
     return {
       success: true,
-      message: deduction > 0 ? "Pelanggaran zona tercatat. Poin dipotong." : "Pelanggaran zona tercatat (poin 0).",
-      pointsDeducted: deduction,
+      message: "Pelanggaran zona tercatat sebagai catatan evaluasi (saldo poin tidak terpotong).",
+      pointsDeducted: 0,
     };
   }
 

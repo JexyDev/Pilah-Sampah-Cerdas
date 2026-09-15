@@ -767,13 +767,140 @@ export async function calculatePersonalPointsForUsers(
 }
 
 /**
+ * Sinkronisasi Poin Gamifikasi 3 Tahapan Program Kerja KKN:
+ * 1. Tahap Usulan Disetujui: +2 poin per anggota kelompok (kategori: KKN_PROKER)
+ * 2. Tahap Mulai Dikerjakan (Sedang Berjalan): +2 poin per anggota kelompok (kategori: KKN_PROKER)
+ * 3. Tahap Selesai: +2 poin per anggota kelompok (kategori: KKN_PROKER)
+ * Idempotensi dijamin via penandaan [ProkerID:<id>:<STEP>] di deskripsi PointHistory.
+ */
+export async function syncProkerGamificationPoints(
+  prokerId: string,
+  kelompokId: string,
+  statusUsulan?: string | null,
+  statusPelaksanaan?: string | null,
+  prokerJudul?: string
+) {
+  try {
+    const kelompok = await prisma.kelompokKkn.findUnique({
+      where: { id: kelompokId },
+      include: { students: { select: { userId: true } } },
+    });
+    const studentUserIds = (kelompok?.students || []).map((s) => s.userId).filter(Boolean);
+    if (studentUserIds.length === 0) return;
+
+    const normUsulan = String(statusUsulan || "").toUpperCase();
+    const normPelaksanaan = String(statusPelaksanaan || "").toUpperCase();
+    const title = prokerJudul || "Program Kerja";
+
+    // Jika usulan ditolak, cabut seluruh poin proker yang telah diberikan
+    if (normUsulan === "DITOLAK" || normUsulan === "TIDAK_DISETUJUI") {
+      await prisma.pointHistory
+        .deleteMany({
+          where: { description: { contains: `[ProkerID:${prokerId}` } },
+        })
+        .catch(() => {});
+      return;
+    }
+
+    const isApproved =
+      normUsulan === "DISETUJUI" ||
+      normUsulan === "DITERIMA" ||
+      normPelaksanaan === "SEDANG_BERJALAN" ||
+      normPelaksanaan === "SELESAI";
+    const isBerjalan =
+      normPelaksanaan === "SEDANG_BERJALAN" ||
+      normPelaksanaan === "BERJALAN" ||
+      normPelaksanaan === "SELESAI";
+    const isSelesai = normPelaksanaan === "SELESAI";
+
+    // 1. Step 1: Disetujui (+2 PTS)
+    if (isApproved) {
+      const existingStep1 = await prisma.pointHistory.findFirst({
+        where: {
+          description: { contains: `[ProkerID:${prokerId}` },
+          OR: [
+            { description: { contains: `[ProkerID:${prokerId}:DISETUJUI]` } },
+            {
+              AND: [
+                { description: { contains: `[ProkerID:${prokerId}]` } },
+                { description: { not: { contains: "BERJALAN" } } },
+                { description: { not: { contains: "SELESAI" } } },
+              ],
+            },
+          ],
+          kategori: "KKN_PROKER",
+        },
+      });
+      if (!existingStep1) {
+        await prisma.pointHistory
+          .createMany({
+            data: studentUserIds.map((uid) => ({
+              userId: uid,
+              points: 2,
+              description: `Program Kerja Disetujui: ${title} [ProkerID:${prokerId}:DISETUJUI]`,
+              kategori: "KKN_PROKER",
+            })),
+          })
+          .catch(() => {});
+      }
+    }
+
+    // 2. Step 2: Sedang Berjalan (+2 PTS)
+    if (isBerjalan) {
+      const existingStep2 = await prisma.pointHistory.findFirst({
+        where: {
+          description: { contains: `[ProkerID:${prokerId}:BERJALAN]` },
+          kategori: "KKN_PROKER",
+        },
+      });
+      if (!existingStep2) {
+        await prisma.pointHistory
+          .createMany({
+            data: studentUserIds.map((uid) => ({
+              userId: uid,
+              points: 2,
+              description: `Program Kerja Berjalan: ${title} [ProkerID:${prokerId}:BERJALAN]`,
+              kategori: "KKN_PROKER",
+            })),
+          })
+          .catch(() => {});
+      }
+    }
+
+    // 3. Step 3: Selesai (+2 PTS)
+    if (isSelesai) {
+      const existingStep3 = await prisma.pointHistory.findFirst({
+        where: {
+          description: { contains: `[ProkerID:${prokerId}:SELESAI]` },
+          kategori: "KKN_PROKER",
+        },
+      });
+      if (!existingStep3) {
+        await prisma.pointHistory
+          .createMany({
+            data: studentUserIds.map((uid) => ({
+              userId: uid,
+              points: 2,
+              description: `Program Kerja Selesai: ${title} [ProkerID:${prokerId}:SELESAI]`,
+              kategori: "KKN_PROKER",
+            })),
+          })
+          .catch(() => {});
+      }
+    }
+  } catch (err) {
+    console.warn("[syncProkerGamificationPoints] Error:", err);
+  }
+}
+
+/**
  * Formula Poin Kelompok & Poin DPL KKN:
- * 1. Poin Kelompok = (Poin Proker * 0.6) + (Rata-rata Poin Anggota * 0.4)
+ * 1. Poin Kelompok = Poin Proker Utuh (Murni bilangan bulat statis tanpa pengali desimal)
  *    Poin Proker bersifat sekuens berurut (kumulatif):
  *    - Status usulan DISETUJUI = +2 poin
  *    - Status pelaksanaan SEDANG_BERJALAN = +2 poin lagi (total 4 poin)
  *    - Status pelaksanaan SELESAI = +2 poin lagi (total 6 poin)
- *    Contoh: 2 proker disetujui & 2 sedang berlangsung = 2(2) + 2(4) = 12 poin proker.
+ *    Contoh: 2 proker disetujui (+4) & 2 selesai (+12) = 16 poin proker kelompok.
  * 2. Poin DPL = (Poin Logbook DPL * 0.5) + (Poin Kelompok * 0.5)
  *    Poin Logbook DPL: Setiap 1 logbook DPL = 5 poin (1 log = 5, 2 log = 10, dst).
  */
@@ -923,7 +1050,8 @@ export async function calculateGroupPoints(
           : 0;
     }
 
-    const totalGroupPoints = Math.round((poinProker * 0.6 + rataRataPoinAnggota * 0.4) * 10) / 10;
+    // Skor Kelompok murni dijumlahkan utuh dari poin proker tanpa pecahan desimal
+    const totalGroupPoints = poinProker;
 
     return {
       totalGroupPoints,
@@ -3134,6 +3262,18 @@ export const dplService = {
       where: { id },
       data: updateData,
     });
+
+    const parsedJudul = parseProkerDeskripsi(
+      updateData.deskripsi || prokerExisting.deskripsi
+    ).judul;
+    await syncProkerGamificationPoints(
+      id,
+      prokerExisting.kelompokId,
+      effectiveUsulan,
+      effectivePelaksanaan,
+      parsedJudul
+    );
+
     return {
       ...proker,
       statusUsulan: (proker as any).statusUsulan || effectiveUsulan,
@@ -3161,6 +3301,13 @@ export const dplService = {
     if (allowedGroupIds.length > 0 && !allowedGroupIds.includes(prokerExisting.kelompokId)) {
       throw new Error("FORBIDDEN_SCOPE");
     }
+
+    // Bersihkan seluruh poin gamifikasi terkait proker ini
+    await prisma.pointHistory
+      .deleteMany({
+        where: { description: { contains: `[ProkerID:${id}` } },
+      })
+      .catch(() => {});
 
     return await prisma.programKerjaKkn.delete({
       where: { id },
@@ -3256,6 +3403,16 @@ export const dplService = {
       data: updatePayload,
     });
 
+    // Poin Gamifikasi 3 Tahapan Proker (+2 Disetujui, +2 Berjalan, +2 Selesai)
+    const parsedJudul = parseProkerDeskripsi(prokerExisting.deskripsi).judul;
+    await syncProkerGamificationPoints(
+      id,
+      prokerExisting.kelompokId,
+      statusUsulan,
+      newStatusPelaksanaan,
+      parsedJudul
+    );
+
     // Notifikasi & Push Notification ke seluruh Mahasiswa di kelompok KKN ini
     try {
       const kelompok = await prisma.kelompokKkn.findUnique({
@@ -3268,29 +3425,10 @@ export const dplService = {
       const studentUserIds = (kelompok?.students || []).map((s) => s.userId).filter(Boolean);
 
       if (studentUserIds.length > 0) {
-        const parsedJudul = parseProkerDeskripsi(prokerExisting.deskripsi).judul;
         const isApproved = statusUsulan === "DISETUJUI";
         const isRejected = statusUsulan === "DITOLAK";
 
         if (isApproved) {
-          // Poin Gamifikasi: Pengajuan Proker Disetujui bernilai +2 poin per anggota
-          try {
-            const existingPoints = await prisma.pointHistory.findFirst({
-              where: { description: { contains: `[ProkerID:${id}]` } },
-            });
-            if (!existingPoints) {
-              const prokerPointRecords = studentUserIds.map((uid) => ({
-                userId: uid,
-                points: 2,
-                description: `Program Kerja Disetujui: ${parsedJudul} [ProkerID:${id}]`,
-                kategori: "KKN_PROKER",
-              }));
-              await prisma.pointHistory.createMany({ data: prokerPointRecords }).catch(() => {});
-            }
-          } catch (pErr) {
-            console.warn("[dplService.decideProgramKerja] award proker points warning:", pErr);
-          }
-
           const title = "Program Kerja Disetujui! 🎯";
           const message = `Program kerja "${parsedJudul}" untuk kelompok ${kelompok?.name || ""} telah resmi disetujui oleh DPL (${kelompok?.dpl?.name || "DPL"}).`;
           await notificationIntegrationService.sendToUsers({
@@ -3311,13 +3449,6 @@ export const dplService = {
             },
           });
         } else if (isRejected) {
-          // Revoke points if rejected
-          await prisma.pointHistory
-            .deleteMany({
-              where: { description: { contains: `[ProkerID:${id}]` } },
-            })
-            .catch(() => {});
-
           const title = "Program Kerja Belum Disetujui ⚠️";
           const message = `Program kerja "${parsedJudul}" belum disetujui DPL: ${catatanDpl || "Silakan cek catatan evaluasi DPL."}`;
           await notificationIntegrationService.sendToUsers({
@@ -3462,6 +3593,15 @@ export const dplService = {
       where: { id },
       data: updateData,
     });
+
+    const parsedJudul = parseProkerDeskripsi(proker.deskripsi).judul;
+    await syncProkerGamificationPoints(
+      id,
+      proker.kelompokId,
+      (proker as any).statusUsulan || "DISETUJUI",
+      targetStatusPelaksanaan,
+      parsedJudul
+    );
 
     // Notifikasi & Push ke seluruh Mahasiswa di kelompok KKN ini
     try {
@@ -3719,7 +3859,7 @@ export const dplService = {
 
       for (const st of grp.students) {
         const points = await prisma.pointHistory.aggregate({
-          where: { userId: st.userId },
+          where: { userId: st.userId, points: { gt: 0 } },
           _sum: { points: true },
         });
 
