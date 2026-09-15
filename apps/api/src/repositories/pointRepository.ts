@@ -54,7 +54,7 @@ export class PointRepository {
         points: true,
       },
     });
-    return aggregate._sum.points || 0;
+    return Math.max(0, aggregate._sum.points || 0);
   }
 
   /**

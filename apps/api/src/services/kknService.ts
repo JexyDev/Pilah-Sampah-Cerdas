@@ -201,7 +201,7 @@ export class KknService {
           where: { userId },
           _sum: { points: true },
         });
-    const contributionPoints = pointsSum._sum.points || 0;
+    const contributionPoints = Math.max(0, pointsSum._sum.points || 0);
 
     const poskoLat = student?.assignedRw?.latitude ? Number(student.assignedRw.latitude) : null;
     const poskoLng = student?.assignedRw?.longitude
