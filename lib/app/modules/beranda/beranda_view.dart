@@ -1194,7 +1194,7 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                 icon: Icons.sync_alt_rounded,
                 iconColor: AppColors.primaryGreen,
                 numericValue: setoranValue,
-                label: 'Total Setoran',
+                label: 'Total Setoran Sampah',
               ),
             ],
           );

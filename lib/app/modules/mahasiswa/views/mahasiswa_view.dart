@@ -702,13 +702,13 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
                 child: Text(
-                  'Tercapai: $totalFormatted',
+                  'Tercapai: $totalFormatted / $targetTotalHours Jam',
                   style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
@@ -729,7 +729,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
@@ -741,7 +741,74 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
               ),
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.blue.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: Colors.blue.withValues(alpha: 0.1)),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.timer_outlined,
+                      size: 16,
+                      color: AppColors.primaryBlue,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Sesi Hari Ini: ${kknLocationState.inZoneDurationSeconds} mnt / ${kknLocationState.targetDurationMinutes} mnt',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primaryBlue,
+                        ),
+                      ),
+                    ),
+                    if (kknLocationState.isTracking)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryGreen.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          'Aktif',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primaryGreen,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: kknLocationState.targetDurationMinutes > 0
+                        ? (kknLocationState.inZoneDurationSeconds /
+                                kknLocationState.targetDurationMinutes)
+                            .clamp(0.0, 1.0)
+                        : 0.0,
+                    minHeight: 4,
+                    backgroundColor: AppColors.primaryBlue.withValues(alpha: 0.15),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      AppColors.primaryBlue,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
           _buildLocationStatus(locationState, kknLocationState),
         ],
       ),

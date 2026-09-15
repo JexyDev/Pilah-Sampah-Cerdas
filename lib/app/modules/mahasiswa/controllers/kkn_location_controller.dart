@@ -50,7 +50,8 @@ class KknLocationState {
 
   /// Format String Jam Kerja (misal: "7 Jam 30 Menit")
   String get formattedWorkDuration {
-    final mins = totalWorkMinutes;
+    // Note: inZoneDurationSeconds actually stores minutes (mapped from _backendDurationMinutes)
+    final mins = inZoneDurationSeconds;
     if (mins <= 0) return '0 Menit';
     final hours = mins ~/ 60;
     final remainingMins = mins % 60;
