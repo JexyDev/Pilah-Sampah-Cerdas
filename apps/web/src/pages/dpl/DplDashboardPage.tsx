@@ -43,6 +43,7 @@ import {
 } from "../../services/dplService";
 import { resolveImageUrl } from "../../utils/imageUrl";
 import { getPortalLoadingText, getPortalDisplayName } from "../../utils/portalLoading";
+import { isTestKelompok, isTestStudent, isTestProker } from "../../utils/filterTestingUtils";
 
 // ─── Sub-Component: Posko & Fasilitas Gabungan (Tabbed) ──────────────────────
 type FasilitasItem = { id?: string; nama: string; jenis: string; alamat?: string | null; statusApproval: string; latitude?: number | null; longitude?: number | null };
@@ -231,10 +232,16 @@ export const DplDashboardPage: React.FC = () => {
         dplService.getProgramKerja(),
       ]);
 
-      setGroups(groupsData || []);
+      const cleanGroups = (groupsData || []).filter((g: any) => !isTestKelompok(g));
+      const cleanProkers = (prokersData || []).filter(
+        (p: any) =>
+          !isTestProker(p) && !isTestKelompok({ name: p.kelompokName, dplNamaMentah: p.dplNama })
+      );
+
+      setGroups(cleanGroups);
       setAlerts(alertsData || null);
       setApprovalHistory(historyData || []);
-      setProkers(prokersData || []);
+      setProkers(cleanProkers);
       setLoading(false);
 
       // 2. Muat data mahasiswa secara non-blocking di latar belakang
@@ -242,7 +249,8 @@ export const DplDashboardPage: React.FC = () => {
         .getStudents()
         .then((studentsData) => {
           if (studentsData && studentsData.length > 0) {
-            setStudents(studentsData);
+            const cleanStudents = studentsData.filter((s: any) => !isTestStudent(s));
+            setStudents(cleanStudents);
           }
         })
         .catch((err) => {
@@ -269,9 +277,10 @@ export const DplDashboardPage: React.FC = () => {
           .getStudents(selectedGroupForDetail.id)
           .then((res) => {
             if (res && res.length > 0) {
+              const cleanRes = res.filter((s: any) => !isTestStudent(s));
               setStudents((prev) => {
                 const existingIds = new Set(prev.map((p) => p.id));
-                const filtered = res.filter((r) => !existingIds.has(r.id));
+                const filtered = cleanRes.filter((r) => !existingIds.has(r.id));
                 return [...prev, ...filtered];
               });
             }

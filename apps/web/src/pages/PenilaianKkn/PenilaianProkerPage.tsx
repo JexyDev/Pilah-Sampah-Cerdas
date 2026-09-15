@@ -147,10 +147,14 @@ export const PenilaianProkerPage: React.FC = () => {
         statusUsulan: "DISETUJUI",
         statusPelaksanaan: statusPelaksanaanFilter !== "ALL" ? statusPelaksanaanFilter : undefined,
         statusPenilaian: statusPenilaianFilter !== "ALL" ? statusPenilaianFilter : undefined,
-        search: searchQuery.trim() ? searchQuery : undefined,
       });
+      const cleanProker = (data || []).filter(
+        (p: any) =>
+          !isTestProker(p) &&
+          !isTestKelompok({ name: p.kelompokName, dplNamaMentah: p.dplNama })
+      );
 
-      setProkerList(data);
+      setProkerList(cleanProker);
     } catch {
       toast.error("Gagal memuat daftar program kerja");
     } finally {
