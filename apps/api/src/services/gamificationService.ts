@@ -1,5 +1,5 @@
 import { prisma } from "../lib/prisma.js";
-import { calculateGroupPoints, calculateDplPoints } from "./dplService.js";
+import { calculateGroupPoints, calculateDplPoints, calculatePersonalPointsForUsers } from "./dplService.js";
 /**
  * Project: BERSEKA
  * Developed by: PT Makerindo
@@ -364,9 +364,12 @@ export const gamificationService = {
       },
     });
 
+    const studentUserIds = students.map((s: any) => s.userId).filter(Boolean);
+    const personalPointsMap = await calculatePersonalPointsForUsers(studentUserIds);
+
     const studentLeaderboard = students.map((s: any) => {
       let totalHours = 0;
-      s.user.attendances.forEach((att: any) => {
+      s.user?.attendances?.forEach((att: any) => {
         if (att.checkOutAt && att.attendedAt) {
           const diffMs = new Date(att.checkOutAt).getTime() - new Date(att.attendedAt).getTime();
           const diffHrs = diffMs / (1000 * 60 * 60);
@@ -374,23 +377,23 @@ export const gamificationService = {
         }
       });
 
-      const activeBinsCount = s.user.registeredBins.filter(
+      const activeBinsCount = (s.user?.registeredBins || []).filter(
         (b: any) => b.status === "ACTIVE_BOUND"
       ).length;
       const dplScore = Number(s.assessmentScore || 0);
-
-      const finalScore = totalHours * 0.4 + activeBinsCount * 0.3 + dplScore * 0.3;
+      const personalPoints = personalPointsMap.get(s.userId) ?? 0;
 
       return {
         id: s.id,
-        name: s.user.name,
+        name: s.user?.name || "Mahasiswa",
         nim: s.nim,
         kelompok: s.kelompok?.name || "Tanpa Kelompok",
         kelompokId: s.kelompokId,
         totalHours: parseFloat(totalHours.toFixed(2)),
         activeBins: activeBinsCount,
         dplScore,
-        finalScore: parseFloat(finalScore.toFixed(2)),
+        personalPoints,
+        finalScore: personalPoints,
       };
     });
 

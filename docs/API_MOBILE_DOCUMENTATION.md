@@ -171,7 +171,7 @@ Authorization: Bearer <jwt_token_disini>
     "kelompok": {
       "id": "klp_01",
       "nama": "Kelompok 01 Sadang Serang",
-      "dplName": "Dr. Dosen Pendamping, M.T."
+      "dplName": "Dr. Dosen Pembimbing, M.T."
     }
   }
 }
@@ -604,7 +604,7 @@ Authorization: Bearer <jwt_token_disini>
     "id": "klp_01",
     "nama": "Kelompok 01 Coblong",
     "dpl": {
-      "name": "Dr. Dosen Pendamping, M.T.",
+      "name": "Dr. Dosen Pembimbing, M.T.",
       "phone": "+62812345678"
     },
     "anggota": [

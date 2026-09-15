@@ -493,7 +493,7 @@ export const LogAktivitasDpl: React.FC = () => {
             Log Aktivitas DPL
           </h1>
           <p className="text-sm text-slate-500 mt-0.5">
-            Catat, dokumentasikan, dan pantau kegiatan pendampingan mingguan DPL secara terstruktur
+            Catat, dokumentasikan, dan pantau kegiatan pembimbingan mingguan DPL secara terstruktur
           </p>
         </div>
 
@@ -652,7 +652,7 @@ export const LogAktivitasDpl: React.FC = () => {
               <option value="ALL">Semua Kategori</option>
               <option value="Kunjungan Lapangan">Kunjungan Lapangan</option>
               <option value="Koordinasi">Koordinasi</option>
-              <option value="Pendampingan">Pendampingan</option>
+              <option value="Pembimbingan">Pembimbingan</option>
               <option value="Monitoring Lapangan">Monitoring Lapangan</option>
               <option value="Evaluasi Lapangan">Evaluasi Lapangan</option>
             </select>
@@ -845,7 +845,7 @@ export const LogAktivitasDpl: React.FC = () => {
                   {editingLogId ? "Edit Kegiatan Supervisi DPL" : "Catat Kegiatan Supervisi DPL"}
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Lengkapi data dokumentasi kegiatan pendampingan sebelum disimpan ke database.
+                  Lengkapi data dokumentasi kegiatan pembimbingan sebelum disimpan ke database.
                 </p>
               </div>
               <button
@@ -1060,7 +1060,7 @@ export const LogAktivitasDpl: React.FC = () => {
                     >
                       <option value="Kunjungan Lapangan">Kunjungan Lapangan</option>
                       <option value="Koordinasi">Koordinasi</option>
-                      <option value="Pendampingan">Pendampingan</option>
+                      <option value="Pembimbingan">Pembimbingan</option>
                       <option value="Monitoring Lapangan">Monitoring Lapangan</option>
                       <option value="Evaluasi Lapangan">Evaluasi Lapangan</option>
                     </select>
@@ -1114,7 +1114,7 @@ export const LogAktivitasDpl: React.FC = () => {
                 </div>
                 <textarea
                   rows={3}
-                  placeholder="Jelaskan secara rinci agenda pendampingan, temuan di posko, atau observasi lapangan..."
+                  placeholder="Jelaskan secara rinci agenda pembimbingan, temuan di posko, atau observasi lapangan..."
                   value={formDeskripsi}
                   onChange={(e) => {
                     setFormDeskripsi(e.target.value);
@@ -1390,7 +1390,7 @@ export const LogAktivitasDpl: React.FC = () => {
                   <div>
                     <span className="text-slate-400 font-medium block text-[11px]">Jenis Kegiatan</span>
                     <span className="font-bold text-slate-800 text-xs leading-tight block">
-                      {selectedDetailLog.programKerjaDeskripsi || selectedDetailLog.kategori || "Koordinasi dan pendampingan"}
+                      {selectedDetailLog.programKerjaDeskripsi || selectedDetailLog.kategori || "Koordinasi dan pembimbingan"}
                     </span>
                   </div>
                 </div>

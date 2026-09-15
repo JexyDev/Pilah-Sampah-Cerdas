@@ -38,7 +38,7 @@ export const ROLE_DISPLAY_NAMES: Record<string, string> = {
   PETUGAS_RESIDU: "Portal Petugas Residu",
   PETUGAS: "Portal Petugas Residu",
   PEMILAH: "Portal Petugas Pemilah",
-  MPL: "Portal Mitra Pendamping Lapangan",
+  MPL: "Portal Mitra Pembimbing Lapangan",
 };
 
 /**

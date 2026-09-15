@@ -24,7 +24,7 @@ const FASE_OPTIONS = [
   "Pra-Kegiatan",
   "Fase 1: Persiapan & Observasi",
   "Fase 2: Pilot Project",
-  "Fase 3: Implementasi & Pendampingan",
+  "Fase 3: Implementasi & Pembimbingan",
   "Fase 4: Evaluasi & Penutupan",
 ];
 

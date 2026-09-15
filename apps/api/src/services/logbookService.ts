@@ -1112,6 +1112,11 @@ export class LogbookService {
       );
     }
 
+    // Guard clause: Cegah validasi ganda jika logbook sudah berstatus DISETUJUI_DPL
+    if (logbook.statusApproval === StatusLogbookKkn.DISETUJUI_DPL && action === "APPROVE") {
+      throw new Error("Logbook ini sudah disetujui sebelumnya dan tidak bisa divalidasi ulang.");
+    }
+
     const newStatus: StatusLogbookKkn =
       action === "APPROVE" ? StatusLogbookKkn.DISETUJUI_DPL : StatusLogbookKkn.PERLU_REVISI_DPL;
 

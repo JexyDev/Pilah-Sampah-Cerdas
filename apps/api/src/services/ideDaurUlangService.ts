@@ -98,11 +98,11 @@ export class IdeDaurUlangService {
       data: { statusApproval: "APPROVED", approvedBy: dplUserId },
     });
 
-    // +30 poin untuk mahasiswa
+    // +2 poin untuk mahasiswa (selaras dengan usulan program kerja disetujui)
     await prisma.pointHistory.create({
       data: {
         userId: ide.userId,
-        points: 30,
+        points: 2,
         description: `Ide Daur Ulang KKN Disetujui DPL: ${ide.judul}`,
         kategori: "IDE_DAUR_ULANG",
       },

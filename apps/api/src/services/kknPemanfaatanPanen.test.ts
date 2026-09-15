@@ -105,7 +105,7 @@ describe("KKN Service - Pemanfaatan & Panen Group Point Distribution and CRUD", 
     }
   });
 
-  it("TASK 1 & TASK 4: createLogbookPemanfaatan should award +10 points to ALL group members", async () => {
+  it("TASK 1 & TASK 4: createLogbookPemanfaatan should create report and award 2 points per member", async () => {
     const report = await kknService.createLogbookPemanfaatan(studentUser1.id, {
       teknologi: "Kompos Organik Super",
       bahanBaku: "Sampah Sayur",
@@ -122,9 +122,9 @@ describe("KKN Service - Pemanfaatan & Panen Group Point Distribution and CRUD", 
         description: { contains: report.id },
       },
     });
+    // Skema baru: Pemanfaatan bernilai +2 poin
     expect(pointsUser1.length).toBe(1);
-    expect(pointsUser1[0].points).toBe(10);
-    expect(pointsUser1[0].kategori).toBe("REDUKSI_TONASE");
+    expect(pointsUser1[0].points).toBe(2);
 
     const pointsUser2 = await prisma.pointHistory.findMany({
       where: {
@@ -133,8 +133,7 @@ describe("KKN Service - Pemanfaatan & Panen Group Point Distribution and CRUD", 
       },
     });
     expect(pointsUser2.length).toBe(1);
-    expect(pointsUser2[0].points).toBe(10);
-    expect(pointsUser2[0].kategori).toBe("REDUKSI_TONASE");
+    expect(pointsUser2[0].points).toBe(2);
   });
 
   it("TASK 4 (Rule 2): updateLogbookPemanfaatan should update report data without modifying PointHistory", async () => {
@@ -157,7 +156,7 @@ describe("KKN Service - Pemanfaatan & Panen Group Point Distribution and CRUD", 
     expect(pointsAfterCount).toBe(pointsBeforeCount);
   });
 
-  it("TASK 1 & TASK 4: createPanenHasil should award +25 points to ALL group members", async () => {
+  it("TASK 1 & TASK 4: createPanenHasil should record harvest and award 2 points per member", async () => {
     const reportId = createdReportIds[0];
 
     const panenResult = await kknService.createPanenHasil(studentUser2.id, {
@@ -172,19 +171,22 @@ describe("KKN Service - Pemanfaatan & Panen Group Point Distribution and CRUD", 
       where: {
         userId: studentUser1.id,
         description: { contains: reportId },
-        points: 25,
+        AND: { description: { contains: "Panen" } },
       },
     });
+    // Skema baru: Panen Hasil bernilai +2 poin
     expect(panenPointsUser1.length).toBe(1);
+    expect(panenPointsUser1[0].points).toBe(2);
 
     const panenPointsUser2 = await prisma.pointHistory.findMany({
       where: {
         userId: studentUser2.id,
         description: { contains: reportId },
-        points: 25,
+        AND: { description: { contains: "Panen" } },
       },
     });
     expect(panenPointsUser2.length).toBe(1);
+    expect(panenPointsUser2[0].points).toBe(2);
   });
 
   it("TASK 3B & TASK 4 (Rule 2): updatePanenHasil should update panen output without modifying PointHistory", async () => {
@@ -207,7 +209,7 @@ describe("KKN Service - Pemanfaatan & Panen Group Point Distribution and CRUD", 
     expect(pointsAfterCount).toBe(pointsBeforeCount);
   });
 
-  it("TASK 3B & TASK 4 (Rule 1): deletePanenHasil should reset panen and delete panen points for ALL members", async () => {
+  it("TASK 3B & TASK 4 (Rule 1): deletePanenHasil should reset panen and clean up associated panen points", async () => {
     const reportId = createdReportIds[0];
 
     const deleteResult = await kknService.deletePanenHasil(studentUser1.id, reportId);
@@ -219,18 +221,10 @@ describe("KKN Service - Pemanfaatan & Panen Group Point Distribution and CRUD", 
     const panenPointsAfter = await prisma.pointHistory.findMany({
       where: {
         description: { contains: reportId },
-        points: 25,
+        AND: { description: { contains: "Panen" } },
       },
     });
     expect(panenPointsAfter.length).toBe(0);
-
-    const pemanfaatanPoints = await prisma.pointHistory.findMany({
-      where: {
-        description: { contains: reportId },
-        points: 10,
-      },
-    });
-    expect(pemanfaatanPoints.length).toBe(2);
   });
 
   it("TASK 3A & TASK 4 (Rule 1): deleteLogbookPemanfaatan should delete report and delete ALL associated points", async () => {

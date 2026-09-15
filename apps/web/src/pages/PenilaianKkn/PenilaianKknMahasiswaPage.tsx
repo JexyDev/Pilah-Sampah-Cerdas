@@ -187,8 +187,8 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
   const { user } = useAuthStore();
   const rawRole = String(user?.peran || (user as any)?.role || "").toUpperCase();
   const isPimpinan = rawRole === "PIMPINAN" || rawRole === "PEMIMPIN";
-  const isMplUser = !isPimpinan && (rawRole === "MPL" || rawRole === "MITRA_PENDAMPING_LAPANGAN");
-  const isDplUser = !isPimpinan && (rawRole === "DPL" || rawRole === "DOSEN_PEMBIMBING");
+  const isMplUser = !isPimpinan && (rawRole === "MPL" || rawRole === "MITRA_PEMBIMBING_LAPANGAN" || rawRole === "MITRA_PENDAMPING_LAPANGAN");
+  const isDplUser = !isPimpinan && (rawRole === "DPL" || rawRole === "DOSEN_PEMBIMBING" || rawRole === "DOSEN_PENDAMPING");
 
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
@@ -549,14 +549,14 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
             )}
           </div>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Komposisi terintegrasi: <strong className="text-emerald-700 dark:text-emerald-400">50% Dosen Pendamping (DPL)</strong> + <strong className="text-sky-700 dark:text-sky-400">50% Mitra Lapangan (MPL)</strong>
+            Komposisi terintegrasi: <strong className="text-emerald-700 dark:text-emerald-400">50% Dosen Pembimbing (DPL)</strong> + <strong className="text-sky-700 dark:text-sky-400">50% Mitra Lapangan (MPL)</strong>
           </p>
         </div>
 
         {isMplUser && (
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 text-sky-800 dark:text-sky-300 text-xs font-bold">
             <Building2 size={16} />
-            <span>Portal Penilai: Mitra Pendamping Lapangan (MPL Kelurahan)</span>
+            <span>Portal Penilai: Mitra Pembimbing Lapangan (MPL Kelurahan)</span>
           </div>
         )}
 
@@ -1008,7 +1008,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                     <div>
                       <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-1.5">
                         <Building2 size={14} className="text-sky-600" />
-                        <span>8 Aspek Penilaian Mitra Pendamping Lapangan (MPL)</span>
+                        <span>8 Aspek Penilaian Mitra Pembimbing Lapangan (MPL)</span>
                       </h4>
                       <p className="text-[11px] text-slate-500">Bobot akumulasi 100% (Kontribusi 50% terhadap nilai akhir mahasiswa)</p>
                     </div>
@@ -1082,7 +1082,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                   <div className="space-y-1.5 pt-2">
                     <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                       <FileText size={13} className="text-sky-600" />
-                      <span>Catatan Evaluasi / Rekomendasi Mitra Pendamping Lapangan (MPL)</span>
+                      <span>Catatan Evaluasi / Rekomendasi Mitra Pembimbing Lapangan (MPL)</span>
                     </label>
                     <textarea
                       rows={3}

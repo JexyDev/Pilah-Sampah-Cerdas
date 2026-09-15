@@ -187,7 +187,7 @@ Dokumen ini melengkapi `ROLE_MAPPING_BERSEKA.md` dengan pendalaman khusus pada *
 sequenceDiagram
     autonumber
     actor MHS as Mahasiswa KKN
-    actor DPL as Dosen Pendamping
+    actor DPL as Dosen Pembimbing
     actor TF as Panitia Taskforce
     participant API as Backend API
 

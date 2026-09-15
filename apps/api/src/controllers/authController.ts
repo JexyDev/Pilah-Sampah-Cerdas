@@ -391,11 +391,7 @@ export class AuthController {
         req.body.hapusFoto === true ||
         rawFoto === null ||
         rawFoto === "";
-      const finalFoto = isDeleteFoto
-        ? null
-        : rawFoto !== undefined
-          ? String(rawFoto)
-          : undefined;
+      const finalFoto = isDeleteFoto ? null : rawFoto !== undefined ? String(rawFoto) : undefined;
 
       // Accept wilayah fields from body
       const rawKelurahan = req.body.kelurahan;
@@ -979,6 +975,8 @@ export class AuthController {
         kota,
         ...userData
       } = parsed.data;
+      void kelurahan;
+      void rwName;
       void kecamatan;
       const finalKabupaten = userData.kabupaten || kota || undefined;
 
@@ -1026,8 +1024,15 @@ export class AuthController {
           .json({ success: false, code: "VALIDATION_ERROR", details: parsed.error.format() });
         return;
       }
-      const { noWa, assignedZone, rw: rwName, kelurahan, kecamatan, kota, ...userData } =
-        parsed.data;
+      const {
+        noWa,
+        assignedZone,
+        rw: rwName,
+        kelurahan,
+        kecamatan,
+        kota,
+        ...userData
+      } = parsed.data;
       void kecamatan;
       const finalKabupaten = userData.kabupaten || kota || undefined;
 

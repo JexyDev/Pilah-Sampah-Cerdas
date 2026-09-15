@@ -379,7 +379,7 @@ const KknDashboardContent: React.FC = () => {
             <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
               {isSuperOrAdmin
                 ? `Akses ${user?.peran || "SUPER_USER"} • Memantau progres aktivasi tempat sampah dan kepatuhan warga di wilayah binaan`
-                : "Pencatatan pendampingan warga, aktivasi tempat sampah, dan logbook kegiatan"}
+                : "Pencatatan pembimbingan warga, aktivasi tempat sampah, dan logbook kegiatan"}
             </p>
           </div>
 
@@ -401,7 +401,7 @@ const KknDashboardContent: React.FC = () => {
             )}
             <span className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-700 dark:text-slate-300 font-semibold flex items-center gap-1.5 border border-slate-200 dark:border-slate-700">
               <MapPin size={13} className="text-[#009966]" />
-              Wilayah: {studentKkn?.assignedArea || "Wilayah Dampingan"}
+              Wilayah: {studentKkn?.assignedArea || "Wilayah Binaan"}
             </span>
           </div>
 
@@ -420,7 +420,7 @@ const KknDashboardContent: React.FC = () => {
         <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-xs flex flex-col justify-between hover:shadow-md transition">
           <div className="flex justify-between items-center">
             <span className="text-[11px] text-slate-400 font-extrabold uppercase tracking-wider">
-              Progres Pendampingan
+              Progres Pembimbingan
             </span>
             <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">
               <Users className="w-5 h-5" />
@@ -618,16 +618,16 @@ const KknDashboardContent: React.FC = () => {
         </div>
       )}
 
-      {/* ---------------- 3. ANALITIK & GRAFIK PENDAMPINGAN ---------------- */}
+      {/* ---------------- 3. ANALITIK & GRAFIK PEMBIMBINGAN ---------------- */}
       <div className="bg-white dark:bg-slate-900 p-6 sm:p-7 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-xs space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-4">
           <div>
             <h3 className="font-extrabold text-lg sm:text-xl text-slate-900 dark:text-slate-100 flex items-center gap-2">
               <BarChart3 className="text-emerald-600 dark:text-emerald-400 w-5 h-5" />
-              Grafik Analitik Pendampingan KKN
+              Grafik Analitik Pembimbingan KKN
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-              Visualisasi tren pendaftaran warga dampingan dan skor kepatuhan pemilahan sampah
+              Visualisasi tren pendaftaran warga bimbingan dan skor kepatuhan pemilahan sampah
             </p>
           </div>
           <span className="text-[11px] font-bold text-slate-400 bg-slate-50 dark:bg-slate-800 px-3 py-1 rounded-xl border border-slate-200 dark:border-slate-700">

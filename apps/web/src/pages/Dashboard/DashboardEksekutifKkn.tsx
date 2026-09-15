@@ -2476,7 +2476,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
               </h3>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Pemantauan operasional kelompok KKN binaan, DPL pendamping, sebaran RW, tingkat presensi, dan perkembangan program kerja.
+              Pemantauan operasional kelompok KKN binaan, DPL pembimbing, sebaran RW, tingkat presensi, dan perkembangan program kerja.
             </p>
           </div>
           <Link
@@ -2810,7 +2810,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
                 </div>
 
                 <div className="space-y-1">
-                  <span className="text-slate-400 font-bold text-[10.5px] uppercase block">Dosen Pendamping</span>
+                  <span className="text-slate-400 font-bold text-[10.5px] uppercase block">Dosen Pembimbing</span>
                   <span className="font-bold text-slate-800 dark:text-slate-200 block truncate" title={selectedGroupForDetail.dpl?.name || "-"}>
                     {selectedGroupForDetail.dpl?.name || "-"}
                   </span>

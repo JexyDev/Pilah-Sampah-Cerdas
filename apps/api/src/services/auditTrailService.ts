@@ -103,7 +103,7 @@ export class AuditTrailService {
       // Siarkan ke seluruh listener dashboard web secara real-time via WebSocket
       try {
         websocketService.broadcastAuditLog(newLog);
-      } catch (_wsErr) {
+      } catch {
         // Abaikan jika websocket error
       }
 

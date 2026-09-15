@@ -272,14 +272,14 @@ export class BinService {
           userLat != null && userLat !== 0
             ? userLat
             : u?.rw?.latitude != null
-            ? Number(u.rw.latitude)
-            : -6.8903;
+              ? Number(u.rw.latitude)
+              : -6.8903;
         const lng =
           userLng != null && userLng !== 0
             ? userLng
             : u?.rw?.longitude != null
-            ? Number(u.rw.longitude)
-            : 107.611;
+              ? Number(u.rw.longitude)
+              : 107.611;
 
         const newHh = await prisma.household.create({
           data: {
@@ -814,14 +814,14 @@ export class BinService {
         data.latitude != null && data.latitude !== 0
           ? data.latitude
           : uRw?.latitude != null
-          ? Number(uRw.latitude)
-          : 0;
+            ? Number(uRw.latitude)
+            : 0;
       const lng =
         data.longitude != null && data.longitude !== 0
           ? data.longitude
           : uRw?.longitude != null
-          ? Number(uRw.longitude)
-          : 0;
+            ? Number(uRw.longitude)
+            : 0;
 
       household = await prisma.household.create({
         data: {
@@ -1672,7 +1672,7 @@ export class BinService {
             .create({
               data: {
                 userId: reviewedById,
-                points: 15,
+                points: 5,
                 description: `Reward validasi pengosongan tempat sampah (${request.bin?.qrCode || id})`,
                 kategori: "VALIDASI_PENGOSONGAN",
                 redeemable: false,
@@ -1904,7 +1904,7 @@ export class BinService {
           data: {
             userId: assignedPicUserId,
             points: 10,
-            description: `Registrasi pendampingan warga: ${bin.user?.name || "Warga"}`,
+            description: `Registrasi pembimbingan warga: ${bin.user?.name || "Warga"}`,
             kategori: "IDE_DAUR_ULANG",
           },
         });

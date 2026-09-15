@@ -204,7 +204,7 @@ export const Register: React.FC = () => {
                   <GraduationCap size={18} className="text-emerald-200" />
                 </div>
                 <div>
-                  <p className="font-bold text-white">Pendamping KKN</p>
+                  <p className="font-bold text-white">Pembimbing KKN</p>
                   <p className="text-[10px] text-emerald-200 font-medium">Bantu pemetaan GPS &amp; edukasi warga</p>
                 </div>
               </div>
