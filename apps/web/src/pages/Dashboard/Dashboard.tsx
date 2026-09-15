@@ -1891,6 +1891,10 @@ const Dashboard: React.FC = () => {
       user?.peran === "RW" ||
       user?.peran === "DPL" ||
       user?.peran === "DOSEN_PEMBIMBING" ||
+      user?.peran === "MPL" ||
+      (user?.peran as string) === "MITRA_PEMBIMBING_LAPANGAN" ||
+      (user?.peran as string) === "MITRA_PENDAMPING_LAPANGAN" ||
+      (user?.peran as string) === "MITRA" ||
       user?.peran === "PANITIA_TASKFORCE"
     ) {
       setLoading(false);
@@ -1902,9 +1906,6 @@ const Dashboard: React.FC = () => {
     return () => clearInterval(interval);
   }, [user, weeks, timeFilter, startDate, endDate, selectedWilayah, activeSubTab]);
 
-  if (user?.peran === "MPL" || (user?.peran as string) === "MITRA_PEMBIMBING_LAPANGAN" || (user?.peran as string) === "MITRA_PENDAMPING_LAPANGAN") {
-    return <Navigate to="/penilaian/mahasiswa" replace />;
-  }
   if (user?.peran === "WARGA") return <WargaDashboard />;
   if (user?.peran === "RW") return <RwDashboard />;
   if (user?.peran === "MAHASISWA_KKN") return <KknDashboard />;
@@ -1912,7 +1913,11 @@ const Dashboard: React.FC = () => {
   if (
     user?.peran === "DPL" ||
     user?.peran === "DOSEN_PEMBIMBING" ||
-    (user?.peran as string) === "DOSEN_PENDAMPING"
+    (user?.peran as string) === "DOSEN_PENDAMPING" ||
+    user?.peran === "MPL" ||
+    (user?.peran as string) === "MITRA_PEMBIMBING_LAPANGAN" ||
+    (user?.peran as string) === "MITRA_PENDAMPING_LAPANGAN" ||
+    (user?.peran as string) === "MITRA"
   ) {
     return <DplDashboardPage />;
   }

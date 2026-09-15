@@ -169,12 +169,7 @@ const Login: React.FC = () => {
       
       showToast.success(`Selamat datang kembali, ${displayName}!`);
 
-      const normRole = String(user?.peran || "").toUpperCase();
-      if (normRole === "MPL" || normRole === "MITRA_PEMBIMBING_LAPANGAN" || normRole === "MITRA_PENDAMPING_LAPANGAN") {
-        navigate("/penilaian/mahasiswa");
-      } else {
-        navigate("/dasbor");
-      }
+      navigate("/dasbor");
     } else {
       const storeErr = useAuthStore.getState().error;
       if (storeErr === "USER_NOT_FOUND") {
