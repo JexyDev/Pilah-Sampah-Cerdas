@@ -853,6 +853,17 @@ export const penilaianKknService = {
         }
       }
 
+      // Fallback: deteksi kelurahan dari nama pengguna MPL (contoh: "Mpl Kelurahan Cipaganti" -> "Cipaganti")
+      if (!kelurahanName && mplUser?.name) {
+        const allKelurahans = await prisma.kelurahan.findMany({ select: { id: true, name: true } });
+        const lowerName = mplUser.name.toLowerCase();
+        const matchedKel = allKelurahans.find((k) => lowerName.includes(k.name.toLowerCase()));
+        if (matchedKel) {
+          kelurahanId = matchedKel.id;
+          kelurahanName = matchedKel.name;
+        }
+      }
+
       const mplConditions: any[] = [{ mplId: evaluatorId }, { kelompok: { mplId: evaluatorId } }];
       if (kelurahanId) {
         mplConditions.push({ assignedRw: { kelurahanId } });

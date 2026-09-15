@@ -2316,6 +2316,51 @@ const ManajemenPengguna: React.FC = () => {
                       {/* Pimpinan / Task Force Fields */}
                       {["PEMIMPIN", "PANITIA_TASKFORCE"].includes(formData.roleName) && (
                         <>
+                          {modalType === "add" && (
+                            <div className="p-3 bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 rounded-xl space-y-2">
+                              <div className="flex items-center justify-between">
+                                <label className="block text-[11px] font-bold text-emerald-800 dark:text-emerald-300">
+                                  Ambil Data dari DPL Terdaftar (1 ID / Multi-Role)
+                                </label>
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300">
+                                  Opsional
+                                </span>
+                              </div>
+                              <select
+                                value={dplList.find((d) => d.phone === formData.phone || (d.nip && formData.nip && d.nip === formData.nip))?.id || ""}
+                                onChange={(e) => {
+                                  const selectedId = e.target.value;
+                                  if (!selectedId) return;
+                                  const targetDpl = dplList.find((d) => String(d.id) === String(selectedId));
+                                  if (targetDpl) {
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      name: targetDpl.name || prev.name,
+                                      phone: targetDpl.phone || prev.phone,
+                                      nip: targetDpl.nip || prev.nip,
+                                      institusi: targetDpl.institusi || prev.institusi || "Universitas Komputer Indonesia",
+                                      prodi: targetDpl.prodi || targetDpl.programStudi || prev.prodi,
+                                      programStudi: targetDpl.programStudi || targetDpl.prodi || prev.programStudi,
+                                      fotoProfil: targetDpl.fotoProfil || prev.fotoProfil,
+                                      jenjangPendidikan: targetDpl.jenjangPendidikan || prev.jenjangPendidikan,
+                                    }));
+                                  }
+                                }}
+                                className="w-full h-10 px-3.5 rounded-xl border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/20 transition-all outline-none"
+                              >
+                                <option value="">-- Pilih Dosen DPL Terdaftar untuk Ditugaskan --</option>
+                                {dplList.map((d: any) => (
+                                  <option key={d.id} value={d.id}>
+                                    {d.name} {d.nip ? `(NIP: ${d.nip})` : ""} {d.phone ? `- ${d.phone}` : ""}
+                                  </option>
+                                ))}
+                              </select>
+                              <p className="text-[10px] text-emerald-700 dark:text-emerald-400 font-medium">
+                                Memilih dosen DPL otomatis menyinkronkan data profil dan nomor WhatsApp untuk penugasan multi-role.
+                              </p>
+                            </div>
+                          )}
+
                           <div className="grid grid-cols-2 gap-3">
                             <div>
                               <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">NIP</label>
