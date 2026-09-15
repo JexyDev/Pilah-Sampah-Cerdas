@@ -395,7 +395,7 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
     const studentId = "mhs-point-1";
     const scheduleId = "sch-point-1";
 
-    it("should award +10 points when student checks in within valid zone and operational hours", async () => {
+    it("should award +4 points when student checks in within valid zone and operational hours", async () => {
       vi.mocked(prisma.schedule.findUnique).mockResolvedValue({
         id: scheduleId,
         title: "Kegiatan Posko KKN",
@@ -442,14 +442,14 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       expect(prisma.pointHistory.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           userId: studentId,
-          points: 10,
-          kategori: "PARTISIPASI_STREAK",
+          points: 4,
+          kategori: "KKN_PRESENSI_HADIR",
         }),
       });
       expect(result.status).toBe("HADIR_MEMENUHI");
     });
 
-    it("should award +10 points when student checks out (kepulangan)", async () => {
+    it("should award +3 points when student checks out (kepulangan)", async () => {
       const startOfDay = new Date();
       startOfDay.setHours(0, 0, 0, 0);
 
@@ -496,9 +496,9 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       expect(prisma.pointHistory.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           userId: studentId,
-          points: 10,
-          description: expect.stringContaining("(Check-Out)"),
-          kategori: "PARTISIPASI_STREAK",
+          points: 3,
+          description: expect.stringContaining("Poin durasi harian terpenuhi"),
+          kategori: "KKN_DURASI_MEMENUHI",
         }),
       });
     });
@@ -1999,7 +1999,11 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
           attendedAt: new Date("2026-09-03T01:00:00.000Z"),
           checkOutAt: new Date(),
           schedule: { id: scheduleId, title: "Kegiatan Pagi KKN" },
-          student: { id: studentId, name: "Mahasiswa On-Time", studentProfile: { nim: "10120099" } },
+          student: {
+            id: studentId,
+            name: "Mahasiswa On-Time",
+            studentProfile: { nim: "10120099" },
+          },
         } as any;
       });
 
@@ -2090,5 +2094,3 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
     });
   });
 });
-
-

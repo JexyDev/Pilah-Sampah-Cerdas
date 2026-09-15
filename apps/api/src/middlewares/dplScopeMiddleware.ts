@@ -32,6 +32,10 @@ export const dplScopeMiddleware = async (
       "DOSEN_PEMBIMBING",
       "DOSEN_PENDAMPING",
       "DOSEN_PENDAMPING_LAPANGAN",
+      "MPL",
+      "MITRA_PENDAMPING_LAPANGAN",
+      "MITRA_PEMBIMBING_LAPANGAN",
+      "MITRA",
       "MAHASISWA_KKN",
       "MAHASISWA",
     ];
@@ -40,7 +44,7 @@ export const dplScopeMiddleware = async (
     if (!isAllowed) {
       res.status(403).json({
         error: "FORBIDDEN",
-        message: "Akses Dashboard KKN hanya untuk Admin, DPL, Pemimpin, dan Panitia Taskforce",
+        message: "Akses Dashboard KKN hanya untuk Admin, DPL, MPL, Pemimpin, dan Panitia Taskforce",
       });
       return;
     }

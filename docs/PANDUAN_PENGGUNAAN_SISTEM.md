@@ -13,7 +13,7 @@ Sistem BERSEKA memiliki 6 peran (*roles*) resmi dengan batasan wewenang dan caku
 | 1 | **Dosen Pembimbing Lapangan** | `DPL` | Membimbing mahasiswa KKN pada kelompok yang diampu, memantau absensi/geofence harian, memvalidasi logbook, dan memberikan penilaian akademik (Proker, Disiplin, Sikap, Pelaksanaan, Laporan Akhir). |
 | 2 | **Mahasiswa KKN** | `MAHASISWA_KKN` | Melakukan presensi geofence GPS berbasis jadwal, mencatat logbook harian (multi-foto & PDF), mendata fasilitas pemilahan warga, dan mengajukan Program Kerja (Ketua Kelompok). |
 | 3 | **Warga Masyarakat** | `WARGA` | Mendaftarkan tempat sampah berstiker QR, mencatat riwayat pemilahan sampah, menukarkan poin daur ulang, dan mengakses edukasi lingkungan. |
-| 4 | **Mitra Pendamping Lapangan** | `MPL` | Mitra lapangan (Aparatur Kewilayahan / Dinas Lingkungan Hidup) yang mendampingi kelompok KKN di wilayah penugasan dengan hak monitoring dan penilaian setara DPL. |
+| 4 | **Mitra Pembimbing Lapangan** | `MPL` | Mitra lapangan (Aparatur Kewilayahan / Dinas Lingkungan Hidup) yang membimbing dan mendampingi kelompok KKN di wilayah penugasan dengan hak monitoring dan penilaian setara DPL. |
 | 5 | **Pemimpin / Pimpinan** | `PEMIMPIN` (`PIMPINAN`) | **Mode View-Only**. Mengakses dasbor eksekutif, rekapitulasi nilai mahasiswa lintas wilayah, monitoring absensi, dan analitik agregat tanpa izin mengubah/memanipulasi data nilai. |
 | 6 | **Satgas / Task Force** | `TASK_FORCE` | Tim teknis operasional lapangan untuk validasi data darurat, peninjauan anomali geofence, survei awal fasilitas, dan supervisi lapangan. |
 

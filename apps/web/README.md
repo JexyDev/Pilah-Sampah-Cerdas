@@ -15,7 +15,7 @@ Dibangun dengan arsitektur modern berbasis modul portal peran (*Multi-Role Porta
   - **Dosen Pembimbing Lapangan (DPL)**: Validasi logbook mahasiswa, pemantauan presensi GPS, dan evaluasi program kerja KKN.
   - **Rukun Warga (RW)**: Input fasilitas pengolahan, persetujuan jadwal, dan rekapitulasi setoran sampah warga.
   - **Mahasiswa KKN**: Pelaporan logbook kegiatan, presensi mandiri geofence, dan inventarisasi survei sampah.
-  - **Mitra Pendamping Lapangan (MPL)**: Penilaian kolaboratif mahasiswa dan monitoring hasil pemanfaatan sampah.
+  - **Mitra Pembimbing Lapangan (MPL)**: Penilaian kolaboratif mahasiswa dan monitoring hasil pemanfaatan sampah.
 - **Interactive Geofencing & GIS Map**: Peta polygon interaktif (Leaflet) untuk monitoring lokasi posko, sebaran tempat sampah pintar (IoT QR), dan lintasan pengangkutan.
 - **AI Classification Dashboard**: Integrasi real-time dengan model Computer Vision untuk audit foto setoran, skor akurasi deteksi, dan deteksi anomali.
 - **Export & Reporting Engine**: Ekspor laporan rekapitulasi transaksi, absensi, dan luaran sampah ke format XLSX terstandarisasi.

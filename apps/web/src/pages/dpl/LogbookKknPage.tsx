@@ -24,27 +24,20 @@ import {
   Eye,
   RefreshCw,
   Users,
-  ChevronRight,
-  ChevronLeft,
   Settings,
   Smartphone,
   X,
   CheckCheck,
   CheckSquare,
-  Square,
   Trash2,
   Target,
   Building2,
   MapPin,
   ExternalLink,
   FileText,
-  Sparkles,
-  ListChecks,
-  RotateCcw,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
-import api from "../../services/api";
 import {
   logbookApiService,
   type LogbookMahasiswaItem,
@@ -339,35 +332,6 @@ const renderProkerCategoryBadge = (kategori: string) => {
   );
 };
 
-/**
- * Render Badge Status Pelaksanaan Program Kerja
- */
-const renderProkerStatusBadge = (status: string) => {
-  const st = (status || "").toUpperCase();
-  if (st === "SELESAI" || st === "COMPLETED" || st === "TERLAKSANA") {
-    return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-        <CheckCircle className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-        Selesai
-      </span>
-    );
-  }
-  if (st === "BELUM_MULAI" || st === "USULAN" || st === "RENCANA") {
-    return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700 dark:bg-slate-750 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-        <Clock className="w-3 h-3 text-slate-500" />
-        Direncanakan
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-      <Clock className="w-3 h-3 text-blue-600 dark:text-blue-400" />
-      Sedang Berlangsung
-    </span>
-  );
-};
-
 export const LogbookKknPage: React.FC = () => {
   const { user } = useAuthStore();
   const userRole = String(user?.peran || (user as any)?.role || "").toUpperCase();
@@ -419,11 +383,6 @@ export const LogbookKknPage: React.FC = () => {
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [configInputDays, setConfigInputDays] = useState<number>(1);
   const [isSubmittingConfig, setIsSubmittingConfig] = useState(false);
-
-  // Status Pengerjaan Update State (DPL)
-  const [statusPelaksanaanTarget, setStatusPelaksanaanTarget] = useState<{ logbookId: string; programKerjaId: string; currentStatus: string } | null>(null);
-  const [newStatusPelaksanaan, setNewStatusPelaksanaan] = useState<string>("SEDANG_BERLANGSUNG");
-  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   // Load Data
   const fetchData = async () => {
@@ -653,6 +612,10 @@ export const LogbookKknPage: React.FC = () => {
       toast.error("Pilih salah satu logbook terlebih dahulu");
       return;
     }
+    if (selectedItemDetail.statusApproval === "DISETUJUI_DPL" && action === "APPROVE") {
+      toast.error("Logbook ini sudah disetujui sebelumnya dan tidak bisa divalidasi ulang.");
+      return;
+    }
     setIsSubmittingQuickVerif(true);
     try {
       await logbookApiService.verifikasiByDpl(
@@ -723,42 +686,6 @@ export const LogbookKknPage: React.FC = () => {
       toast.error(err.response?.data?.message || err.message || "Gagal mengubah toleransi");
     } finally {
       setIsSubmittingConfig(false);
-    }
-  };
-
-  // Handler Update Status Pengerjaan Program Kerja (DPL)
-  const handleOpenStatusModal = (item: LogbookMahasiswaItem) => {
-    const prokerInfo = parseProkerInfo(item);
-    const currentStatus = prokerInfo.statusPelaksanaan || "SEDANG_BERLANGSUNG";
-    const programKerjaId = item.programKerjaId || item.programKerja?.id || "";
-    if (!programKerjaId) {
-      toast.error("Logbook ini tidak terhubung ke Program Kerja manapun.");
-      return;
-    }
-    setStatusPelaksanaanTarget({ logbookId: item.id, programKerjaId, currentStatus });
-    setNewStatusPelaksanaan(currentStatus);
-  };
-
-  const handleSaveStatusPelaksanaan = async () => {
-    if (!statusPelaksanaanTarget) return;
-    setIsUpdatingStatus(true);
-    try {
-      await api.patch(`/dpl/program-kerja/${statusPelaksanaanTarget.programKerjaId}/decision`, {
-        statusPelaksanaan: newStatusPelaksanaan,
-      });
-      const label =
-        newStatusPelaksanaan === "SELESAI"
-          ? "Selesai"
-          : newStatusPelaksanaan === "BELUM_MULAI"
-          ? "Belum Mulai"
-          : "Sedang Berlangsung";
-      toast.success(`Status pengerjaan berhasil diubah menjadi: ${label}`);
-      setStatusPelaksanaanTarget(null);
-      await fetchData();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || err.message || "Gagal mengubah status pengerjaan");
-    } finally {
-      setIsUpdatingStatus(false);
     }
   };
 
@@ -1269,14 +1196,13 @@ export const LogbookKknPage: React.FC = () => {
                     <th className="p-3.5 whitespace-nowrap text-center">Anggota</th>
                     <th className="p-3.5 whitespace-nowrap text-center">Bukti</th>
                     <th className="p-3.5 whitespace-nowrap text-center">Status</th>
-                    <th className="p-3.5 whitespace-nowrap text-center">Status Pengerjaan</th>
                     <th className="p-3.5 whitespace-nowrap text-center">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-750">
                   {loading ? (
                     <tr>
-                      <td colSpan={14} className="p-12 text-center text-slate-500">
+                      <td colSpan={13} className="p-12 text-center text-slate-500">
                         <div className="flex flex-col items-center justify-center gap-2">
                           <RefreshCw className="w-5 h-5 animate-spin text-emerald-500" />
                           <span>Memuat rekap aktivitas kelompok mahasiswa...</span>
@@ -1285,7 +1211,7 @@ export const LogbookKknPage: React.FC = () => {
                     </tr>
                   ) : paginatedLogbooks.length === 0 ? (
                     <tr>
-                      <td colSpan={14} className="p-12 text-center text-slate-500">
+                      <td colSpan={13} className="p-12 text-center text-slate-500">
                         <div className="flex flex-col items-center justify-center gap-2">
                           <BookOpen className="w-8 h-8 text-slate-300 dark:text-slate-600" />
                           <p className="font-semibold text-slate-700 dark:text-slate-300">Tidak ada data aktivitas</p>
@@ -1365,6 +1291,17 @@ export const LogbookKknPage: React.FC = () => {
                             <p className="text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed" title={item.deskripsi}>
                               {item.deskripsi}
                             </p>
+                            {(item.programKerja || item.programKerjaDeskripsi) && (() => {
+                              const pInfo = parseProkerInfo(item);
+                              return (
+                                <div className="mt-1 flex items-center gap-1 text-[11px] text-emerald-700 dark:text-emerald-400 font-medium">
+                                  <Target className="w-3 h-3 shrink-0" />
+                                  <span className="truncate max-w-[240px]" title={pInfo.title}>
+                                    Terkait Proker: {pInfo.title}
+                                  </span>
+                                </div>
+                              );
+                            })()}
                           </td>
 
                           {/* 6. Lokasi / GPS */}
@@ -1445,29 +1382,7 @@ export const LogbookKknPage: React.FC = () => {
                             {renderStatusBadge(item.statusApproval)}
                           </td>
 
-                          {/* 11. Status Pengerjaan Program Kerja */}
-                          <td className="p-3.5 align-top whitespace-nowrap text-center">
-                            {item.programKerjaId || item.programKerja?.id ? (
-                              <div className="flex flex-col items-center gap-1">
-                                {renderProkerStatusBadge(parseProkerInfo(item).statusPelaksanaan)}
-                                {!isPimpinan && (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleOpenStatusModal(item)}
-                                    className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/50 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 transition cursor-pointer shadow-2xs"
-                                    title="Ubah status pengerjaan program kerja"
-                                  >
-                                    <ListChecks size={11} className="shrink-0" />
-                                    <span>Ubah</span>
-                                  </button>
-                                )}
-                              </div>
-                            ) : (
-                              <span className="text-slate-400 dark:text-slate-500 text-xs">-</span>
-                            )}
-                          </td>
-
-                          {/* 12. Aksi */}
+                          {/* 11. Aksi */}
                           <td className="p-3.5 align-top whitespace-nowrap text-center">
                             <div className="flex items-center justify-center gap-1.5">
                               <button
@@ -1617,7 +1532,6 @@ export const LogbookKknPage: React.FC = () => {
                   </div>
                   <div className="flex items-center gap-1.5">
                     {renderProkerCategoryBadge(prokerInfo.kategori)}
-                    {renderProkerStatusBadge(prokerInfo.statusPelaksanaan)}
                   </div>
                 </div>
 
@@ -1857,6 +1771,45 @@ export const LogbookKknPage: React.FC = () => {
                       Tutup
                     </button>
                   </div>
+                </div>
+              ) : selectedItemDetail.statusApproval === "DISETUJUI_DPL" ? (
+                <div className="pt-4 border-t border-slate-100 dark:border-slate-700 space-y-3">
+                  <div className="p-3.5 bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 rounded-xl flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0">
+                        <CheckCircle className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-emerald-900 dark:text-emerald-200">
+                          Telah Divalidasi & Disetujui DPL
+                        </div>
+                        <div className="text-[11px] text-emerald-700 dark:text-emerald-400">
+                          Logbook aktivitas ini telah disetujui resmi dan tidak memerlukan tindakan validasi lagi.
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsDetailModalOpen(false)}
+                      className="py-1.5 px-3.5 bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 rounded-xl text-xs font-bold transition cursor-pointer shadow-2xs"
+                    >
+                      Tutup
+                    </button>
+                  </div>
+
+                  {!isPimpinan && (
+                    <div className="flex justify-start pt-1">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenDeleteModal(selectedItemDetail)}
+                        className="py-2 px-3 rounded-xl border border-rose-200 dark:border-rose-800 bg-rose-50/60 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 font-semibold text-[11px] transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                        title="Hapus logbook aktivitas ini (Validasi 2 Langkah)"
+                      >
+                        <Trash2 size={13} className="w-3.5 h-3.5 shrink-0" />
+                        <span>Hapus Logbook</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="pt-4 border-t border-slate-100 dark:border-slate-700 space-y-3">
@@ -2285,86 +2238,6 @@ export const LogbookKknPage: React.FC = () => {
               >
                 {isSubmittingConfig && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
                 Simpan Konfigurasi
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ─────────────────────────────────────────────
-          8. MODAL: UPDATE STATUS PENGERJAAN PROGRAM KERJA (DPL)
-          ───────────────────────────────────────────── */}
-      {statusPelaksanaanTarget && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setStatusPelaksanaanTarget(null)}>
-          <div onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in duration-150">
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-3">
-              <h3 className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2 text-sm">
-                <ListChecks className="w-5 h-5 text-indigo-600" />
-                Ubah Status Pengerjaan
-              </h3>
-              <button
-                onClick={() => setStatusPelaksanaanTarget(null)}
-                className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-400 cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Ubah status pengerjaan program kerja yang terkait dengan logbook ini. Perubahan akan tercatat dan terlihat oleh mahasiswa.
-            </p>
-
-            <div>
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-2">
-                Status Pengerjaan
-              </label>
-              <div className="space-y-2">
-                {[
-                  { value: "BELUM_MULAI", label: "⬜ Belum Mulai / Direncanakan", desc: "Program kerja belum dimulai" },
-                  { value: "SEDANG_BERLANGSUNG", label: "🔵 Sedang Berlangsung", desc: "Program kerja sedang dikerjakan" },
-                  { value: "SELESAI", label: "✅ Selesai / Terlaksana", desc: "Program kerja sudah selesai dilaksanakan" },
-                ].map((opt) => (
-                  <label
-                    key={opt.value}
-                    className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition ${
-                      newStatusPelaksanaan === opt.value
-                        ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40"
-                        : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/40"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="statusPelaksanaan"
-                      value={opt.value}
-                      checked={newStatusPelaksanaan === opt.value}
-                      onChange={() => setNewStatusPelaksanaan(opt.value)}
-                      className="mt-0.5 accent-indigo-600"
-                    />
-                    <div>
-                      <div className="text-xs font-semibold text-slate-800 dark:text-slate-200">{opt.label}</div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400">{opt.desc}</div>
-                    </div>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => setStatusPelaksanaanTarget(null)}
-                className="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700 rounded-xl cursor-pointer"
-              >
-                Batal
-              </button>
-              <button
-                type="button"
-                disabled={isUpdatingStatus || newStatusPelaksanaan === statusPelaksanaanTarget.currentStatus}
-                onClick={handleSaveStatusPelaksanaan}
-                className="px-4 py-2 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 transition"
-              >
-                {isUpdatingStatus && <RotateCcw className="w-3.5 h-3.5 animate-spin" />}
-                Simpan Status
               </button>
             </div>
           </div>

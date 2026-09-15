@@ -158,7 +158,7 @@ const Login: React.FC = () => {
         RW: "Pengurus RW",
         RT: "Pengurus RT",
         DPL: "Dosen Pembimbing Lapangan (DPL)",
-        MPL: "Mitra Pendamping Lapangan (MPL)",
+        MPL: "Mitra Pembimbing Lapangan (MPL)",
         PEMIMPIN: "Pimpinan",
         PIMPINAN: "Pimpinan",
         PANITIA_TASKFORCE: "Task Force",
@@ -170,7 +170,7 @@ const Login: React.FC = () => {
       showToast.success(`Selamat datang kembali, ${displayName}!`);
 
       const normRole = String(user?.peran || "").toUpperCase();
-      if (normRole === "MPL" || normRole === "MITRA_PENDAMPING_LAPANGAN") {
+      if (normRole === "MPL" || normRole === "MITRA_PEMBIMBING_LAPANGAN" || normRole === "MITRA_PENDAMPING_LAPANGAN") {
         navigate("/penilaian/mahasiswa");
       } else {
         navigate("/dasbor");

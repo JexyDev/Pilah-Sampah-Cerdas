@@ -91,7 +91,7 @@ const PanduanPage: React.FC = () => {
           <ul className="space-y-2 text-xs text-gray-600 dark:text-slate-400">
             <li className="flex items-start gap-2">
               <CheckCircle2 size={16} className="text-blue-600 flex-shrink-0 mt-0.5" />
-              <span>Lakukan pendampingan registrasi warga di wilayah tugas KKN.</span>
+              <span>Lakukan pembimbingan registrasi warga di wilayah tugas KKN.</span>
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle2 size={16} className="text-blue-600 flex-shrink-0 mt-0.5" />

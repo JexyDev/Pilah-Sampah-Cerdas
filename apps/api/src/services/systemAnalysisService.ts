@@ -262,9 +262,17 @@ export const systemAnalysisService = {
     })).sort((a, b) => b.totalLogbook - a.totalLogbook);
 
     // ── PILAR 2: Presensi & Monitoring Kehadiran Geofencing ──
-    const [totalSchedules, attendances, leaveRequests] = await Promise.all([
-      prisma.schedule.count(),
+    const scheduleWhere = kelompokId ? { kelompokId } : {};
+    const attendanceWhere = kelompokId ? { schedule: { kelompokId } } : {};
+    const leaveWhere: any = { status: "APPROVED" };
+    if (kelompokId) {
+      leaveWhere.student = { studentProfile: { kelompokId } };
+    }
+
+    const [totalSchedules, attendances, leaveRequests, totalStudentsCount] = await Promise.all([
+      prisma.schedule.count({ where: scheduleWhere }),
       prisma.activityAttendance.findMany({
+        where: attendanceWhere,
         select: {
           id: true,
           status: true,
@@ -272,14 +280,13 @@ export const systemAnalysisService = {
         },
       }),
       prisma.studentLeaveRequest.findMany({
-        where: {
-          status: "APPROVED",
-        },
+        where: leaveWhere,
         select: {
           type: true,
           reason: true,
         },
       }),
+      prisma.studentKkn.count({ where: whereKelompok }),
     ]);
 
     const hadirCount = attendances.length;
@@ -291,7 +298,13 @@ export const systemAnalysisService = {
     });
 
     const inZoneCount = Math.max(0, hadirCount - outZoneCount);
-    const onTimeAttendanceRate = totalSchedules > 0 ? Math.min(100, Math.round((hadirCount / totalSchedules) * 100)) : 100;
+    const targetAttendances = totalStudentsCount * totalSchedules;
+    const onTimeAttendanceRate =
+      targetAttendances > 0
+        ? Math.min(100, Math.max(0, Math.round((hadirCount / targetAttendances) * 100)))
+        : hadirCount > 0
+          ? 100
+          : 0;
     const geofenceComplianceRate = hadirCount > 0 ? Math.round((inZoneCount / hadirCount) * 100) : 100;
 
     let izinCount = 0;
@@ -333,6 +346,7 @@ export const systemAnalysisService = {
       prisma.studentKkn.count({ where: whereKelompok }),
       prisma.penilaianKknMahasiswa.findMany({
         where: {
+          ...whereKelompok,
           status: "FINAL",
         },
         select: {
@@ -343,7 +357,8 @@ export const systemAnalysisService = {
     ]);
 
     const evaluatedStudents = evaluatedList.length;
-    const dplEvaluationRate = totalStudents > 0 ? Math.round((evaluatedStudents / totalStudents) * 100) : 0;
+    const dplEvaluationRate =
+      totalStudents > 0 ? Math.min(100, Math.round((evaluatedStudents / totalStudents) * 100)) : 0;
 
     const gradeMap: Record<string, number> = { A: 0, B: 0, C: 0, D: 0 };
     evaluatedList.forEach((e) => {

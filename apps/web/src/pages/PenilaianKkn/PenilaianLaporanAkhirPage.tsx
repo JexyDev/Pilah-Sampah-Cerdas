@@ -505,7 +505,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
 
         <div class="section-heading">II. Capaian &amp; Rekapitulasi Pelaksanaan</div>
         <p class="content-text">
-          Seluruh rangkaian kegiatan pendampingan masyarakat, sosialisasi pemilahan sampah dari sumber rumah tangga, pendataan warga binaan, serta pencatatan timbulan residu telah dilaksanakan dan dilaporkan secara berkala sesuai ketentuan kurikulum KKN Tematik 2026.
+          Seluruh rangkaian kegiatan pembimbingan masyarakat, sosialisasi pemilahan sampah dari sumber rumah tangga, pendataan warga binaan, serta pencatatan timbulan residu telah dilaksanakan dan dilaporkan secara berkala sesuai ketentuan kurikulum KKN Tematik 2026.
         </p>
 
         <div class="section-heading">III. Evaluasi &amp; Catatan Dosen Pembimbing</div>
@@ -1092,10 +1092,10 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Catatan / Evaluasi Pendamping */}
+              {/* Catatan / Evaluasi Pembimbing */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                  Catatan / Umpan Balik Dosen Pendamping (DPL)
+                  Catatan / Umpan Balik Dosen Pembimbing (DPL)
                 </label>
                 <textarea
                   rows={3}

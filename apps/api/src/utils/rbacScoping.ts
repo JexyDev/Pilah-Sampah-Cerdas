@@ -37,12 +37,27 @@ export async function getScopingFilters(user: {
     if (["ADMIN_KECAMATAN", "Camat", "CAMAT_ADMIN"].includes(r)) return "CAMAT";
     if (["ADMIN_KELURAH", "Lurah", "LURAH_ADMIN"].includes(r)) return "LURAH";
     if (["PIMPINAN", "Pimpinan", "PEMIMPIN", "Pemimpin"].includes(r)) return "PEMIMPIN";
+    if (
+      [
+        "MPL",
+        "MITRA_PENDAMPING_LAPANGAN",
+        "MITRA PENDAMPING LAPANGAN",
+        "MITRA_PEMBIMBING_LAPANGAN",
+        "MITRA PEMBIMBING LAPANGAN",
+        "MITRA",
+      ].includes(r)
+    )
+      return "MPL";
     return r;
   };
   const role = normalizeRole(user.role);
 
   // 1. DEVELOPER, SUPER_USER, ADMIN_DLH, PEMIMPIN/PIMPINAN, and PANITIA_TASKFORCE see all data
-  if (["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PIMPINAN", "PANITIA_TASKFORCE"].includes(role)) {
+  if (
+    ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PIMPINAN", "PANITIA_TASKFORCE"].includes(
+      role
+    )
+  ) {
     return {};
   }
 
@@ -261,6 +276,74 @@ export async function getScopingFilters(user: {
     };
   }
 
+  // 3b. MPL (Mitra Pembimbing Lapangan) is scoped by their Kelurahan and assigned KKN groups
+  if (role === "MPL") {
+    let kelurahanId = dbUser.rw?.kelurahanId;
+    let kelurahanName = dbUser.rw?.kelurahan?.name;
+
+    if (!kelurahanId && dbUser.address) {
+      const cleanAddress = dbUser.address.replace(/^Kel\.\s*/i, "").trim();
+      const match = await prisma.kelurahan.findFirst({
+        where: {
+          name: { contains: cleanAddress, mode: "insensitive" },
+        },
+      });
+      if (match) {
+        kelurahanId = match.id;
+        kelurahanName = match.name;
+      } else {
+        kelurahanName = cleanAddress;
+      }
+    }
+
+    const mplConditions: any[] = [{ mplId: dbUser.id }, { mpl: { id: dbUser.id } }];
+    if (kelurahanName) {
+      mplConditions.push({ kelurahan: { equals: kelurahanName, mode: "insensitive" } });
+      mplConditions.push({ kelurahan: { contains: kelurahanName, mode: "insensitive" } });
+    }
+
+    if (!kelurahanId && !kelurahanName) {
+      return {
+        userFilter: { OR: [{ studentProfile: { OR: mplConditions } }] },
+        binFilter: { id: "none" },
+        householdFilter: { id: "none" },
+        wasteLogFilter: { id: "none" },
+        pemanfaatanFilter: { id: "none" },
+        facilityFilter: { id: "none" },
+        kelompokKknFilter: { OR: mplConditions },
+        studentKknFilter: { kelompok: { OR: mplConditions } },
+      };
+    }
+
+    return {
+      userFilter: {
+        OR: [
+          ...(kelurahanId ? [{ rw: { kelurahanId } }] : []),
+          { studentProfile: { OR: mplConditions } },
+        ],
+      },
+      binFilter: kelurahanId ? { OR: [{ kelurahanId }, { rw: { kelurahanId } }] } : {},
+      householdFilter: kelurahanId ? { rw: { kelurahanId } } : {},
+      wasteLogFilter: kelurahanId
+        ? {
+            OR: [
+              { bin: { kelurahanId } },
+              { bin: { rw: { kelurahanId } } },
+              { warga: { rw: { kelurahanId } } },
+            ],
+          }
+        : {},
+      pemanfaatanFilter: kelurahanId
+        ? { OR: [{ rw: { kelurahanId } }, { rw: { kelurahan: { name: kelurahanName } } }] }
+        : {},
+      facilityFilter: kelurahanId
+        ? { OR: [{ rw: { kelurahanId } }, { kelompok: { OR: mplConditions } }] }
+        : {},
+      kelompokKknFilter: { OR: mplConditions },
+      studentKknFilter: { kelompok: { OR: mplConditions } },
+    };
+  }
+
   // 4. RW & RT scoped by their rwId
   if (role === "RW" || role === "RT") {
     const rwId = dbUser.rwId;
@@ -318,7 +401,9 @@ export async function getScopingFilters(user: {
         wasteLogFilter: {
           OR: [
             { bin: { rwId: student.assignedRwId } },
-            ...(kel ? [{ bin: { rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } } }] : []),
+            ...(kel
+              ? [{ bin: { rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } } }]
+              : []),
           ],
         },
         pemanfaatanFilter: {

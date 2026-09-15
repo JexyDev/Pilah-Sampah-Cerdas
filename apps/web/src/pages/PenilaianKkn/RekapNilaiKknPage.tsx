@@ -2,7 +2,7 @@
  * Project: BERSEKA (Bersih, Sehat, Kampung Asri)
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * 
+ *
  * Halaman Rekapitulasi & Nilai Akhir KKN Mahasiswa
  * Dilengkapi:
  * - Fluid Responsive Layout (Mobile, Tablet, Desktop)
@@ -29,7 +29,11 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
-import { dplService, type RekapNilaiStudent, type RekapNilaiResponse } from "../../services/dplService";
+import {
+  dplService,
+  type RekapNilaiStudent,
+  type RekapNilaiResponse,
+} from "../../services/dplService";
 import { useAuthStore } from "../../store/useAuthStore";
 import {
   formatPersonName,
@@ -42,7 +46,9 @@ import { sortKelompokList } from "../../utils/sortUtils";
 export const RekapNilaiKknPage: React.FC = () => {
   const { user } = useAuthStore();
   const userRole = String(user?.peran || (user as any)?.role || "").toUpperCase();
-  const isPimpinan = ["PEMIMPIN", "PIMPINAN", "CAMAT", "LURAH", "KEPALA_DESA", "REKTOR"].includes(userRole);
+  const isPimpinan = ["PEMIMPIN", "PIMPINAN", "CAMAT", "LURAH", "KEPALA_DESA", "REKTOR"].includes(
+    userRole
+  );
 
   const [loading, setLoading] = useState(false);
   const [students, setStudents] = useState<RekapNilaiStudent[]>([]);
@@ -64,22 +70,31 @@ export const RekapNilaiKknPage: React.FC = () => {
 
       if (res && res.students && res.students.length > 0) {
         const formatted = res.students.map((s) => {
-          const dplIndiv = s.individuDpl !== undefined && s.individuDpl !== null ? s.individuDpl : (s.skorIndividu ?? null);
-          const mplIndiv = s.individuMpl !== undefined && s.individuMpl !== null ? s.individuMpl : null;
+          const dplIndiv =
+            s.individuDpl !== undefined && s.individuDpl !== null
+              ? s.individuDpl
+              : (s.skorIndividu ?? null);
+          const mplIndiv =
+            s.individuMpl !== undefined && s.individuMpl !== null ? s.individuMpl : null;
           const indivGab =
             dplIndiv !== null && mplIndiv !== null
               ? Math.round(((50 * dplIndiv + 50 * mplIndiv) / 100) * 10) / 10
               : null;
 
-          const dplProk = s.prokerDpl !== undefined && s.prokerDpl !== null ? s.prokerDpl : (s.skorProkerKelompok ?? null);
+          const dplProk =
+            s.prokerDpl !== undefined && s.prokerDpl !== null
+              ? s.prokerDpl
+              : (s.skorProkerKelompok ?? null);
           const mplProk = s.prokerMpl !== undefined && s.prokerMpl !== null ? s.prokerMpl : null;
           const prokGab =
             dplProk !== null && mplProk !== null
               ? Math.round(((50 * dplProk + 50 * mplProk) / 100) * 10) / 10
               : null;
 
-          const dplKel = s.kelompokDpl !== undefined && s.kelompokDpl !== null ? s.kelompokDpl : null;
-          const mplKel = s.kelompokMpl !== undefined && s.kelompokMpl !== null ? s.kelompokMpl : null;
+          const dplKel =
+            s.kelompokDpl !== undefined && s.kelompokDpl !== null ? s.kelompokDpl : null;
+          const mplKel =
+            s.kelompokMpl !== undefined && s.kelompokMpl !== null ? s.kelompokMpl : null;
           const kelGab =
             dplKel !== null && mplKel !== null
               ? Math.round(((50 * dplKel + 50 * mplKel) / 100) * 10) / 10
@@ -91,20 +106,25 @@ export const RekapNilaiKknPage: React.FC = () => {
           let pred: string | null = null;
           let stat = s.status || "Menunggu Penilaian";
 
-          if (dplIndiv !== null && mplIndiv !== null && indivGab !== null && prokGab !== null && kelGab !== null) {
-            const rawScore =
-              0.25 * keh + 0.25 * indivGab + 0.25 * prokGab + 0.25 * kelGab;
+          if (
+            dplIndiv !== null &&
+            mplIndiv !== null &&
+            indivGab !== null &&
+            prokGab !== null &&
+            kelGab !== null
+          ) {
+            const rawScore = 0.25 * keh + 0.25 * indivGab + 0.25 * prokGab + 0.25 * kelGab;
             nAkhir = Math.round(rawScore * 10) / 10;
             pred =
               nAkhir >= 80
                 ? "A"
                 : nAkhir >= 70
-                ? "B"
-                : nAkhir >= 60
-                ? "C"
-                : nAkhir >= 50
-                ? "D"
-                : "E";
+                  ? "B"
+                  : nAkhir >= 60
+                    ? "C"
+                    : nAkhir >= 50
+                      ? "D"
+                      : "E";
             stat = "Lengkap";
           } else {
             nAkhir = null;
@@ -136,9 +156,13 @@ export const RekapNilaiKknPage: React.FC = () => {
           };
         });
         setStudents(formatted);
+      } else {
+        setStudents([]);
       }
-    } catch {
-      // Fallback to default demo data
+    } catch (err: any) {
+      console.error("Error fetching rekap nilai:", err);
+      toast.error("Gagal memuat rekap nilai mahasiswa dari server");
+      setStudents([]);
     } finally {
       setLoading(false);
     }
@@ -346,10 +370,7 @@ export const RekapNilaiKknPage: React.FC = () => {
 
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Rekap & Nilai Akhir");
-      XLSX.writeFile(
-        wb,
-        `Rekap_Nilai_Akhir_BERSEKA_${new Date().toISOString().slice(0, 10)}.xlsx`
-      );
+      XLSX.writeFile(wb, `Rekap_Nilai_Akhir_BERSEKA_${new Date().toISOString().slice(0, 10)}.xlsx`);
       toast.success("Berhasil mengekspor Rekap & Nilai Akhir ke Excel!");
     } catch {
       toast.error("Gagal mengekspor data ke Excel");
@@ -411,8 +432,12 @@ export const RekapNilaiKknPage: React.FC = () => {
             <Users size={20} />
           </div>
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 truncate">Total Mahasiswa</p>
-            <p className="text-lg sm:text-xl font-black text-slate-900 dark:text-slate-100">{kpiStats.total}</p>
+            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 truncate">
+              Total Mahasiswa
+            </p>
+            <p className="text-lg sm:text-xl font-black text-slate-900 dark:text-slate-100">
+              {kpiStats.total}
+            </p>
           </div>
         </div>
 
@@ -421,8 +446,12 @@ export const RekapNilaiKknPage: React.FC = () => {
             <CheckCircle2 size={20} />
           </div>
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 truncate">Nilai Lengkap</p>
-            <p className="text-lg sm:text-xl font-black text-[#009966] dark:text-emerald-400">{kpiStats.lengkap}</p>
+            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 truncate">
+              Nilai Lengkap
+            </p>
+            <p className="text-lg sm:text-xl font-black text-[#009966] dark:text-emerald-400">
+              {kpiStats.lengkap}
+            </p>
           </div>
         </div>
 
@@ -431,7 +460,9 @@ export const RekapNilaiKknPage: React.FC = () => {
             <Clock size={20} />
           </div>
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 truncate">Menunggu Penilaian</p>
+            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 truncate">
+              Menunggu Penilaian
+            </p>
             <p className="text-lg sm:text-xl font-black text-[#b45309] dark:text-amber-400">
               {kpiStats.menungguMpl + kpiStats.menungguDpl}
             </p>
@@ -443,8 +474,12 @@ export const RekapNilaiKknPage: React.FC = () => {
             <Award size={20} />
           </div>
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 truncate">Rerata Nilai</p>
-            <p className="text-lg sm:text-xl font-black text-indigo-600 dark:text-indigo-400">{kpiStats.avgScore}</p>
+            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 truncate">
+              Rerata Nilai
+            </p>
+            <p className="text-lg sm:text-xl font-black text-indigo-600 dark:text-indigo-400">
+              {kpiStats.avgScore}
+            </p>
           </div>
         </div>
       </div>
@@ -578,7 +613,8 @@ export const RekapNilaiKknPage: React.FC = () => {
           <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-900/60 px-3 py-1.5 rounded-xl text-slate-700 dark:text-slate-300 font-medium shadow-2xs">
             <span className="w-2 h-2 rounded-full bg-[#1d4ed8] shrink-0" />
             <span>
-              <strong className="text-[#1d4ed8] font-bold">Otomatis dari Sistem:</strong> Kehadiran 25%
+              <strong className="text-[#1d4ed8] font-bold">Otomatis dari Sistem:</strong> Kehadiran
+              25%
             </span>
           </div>
 
@@ -586,7 +622,8 @@ export const RekapNilaiKknPage: React.FC = () => {
           <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-900/60 px-3 py-1.5 rounded-xl text-slate-700 dark:text-slate-300 font-medium shadow-2xs">
             <span className="w-2 h-2 rounded-full bg-[#009966] shrink-0" />
             <span>
-              <strong className="text-[#009966] font-bold">Penilaian DPL & MPL:</strong> Nilai Individu 25% • Program Kerja 25% • Nilai Kelompok 25%
+              <strong className="text-[#009966] font-bold">Penilaian DPL & MPL:</strong> Nilai
+              Individu 25% • Program Kerja 25% • Nilai Kelompok 25%
             </span>
           </div>
         </div>
@@ -594,9 +631,7 @@ export const RekapNilaiKknPage: React.FC = () => {
         {/* Badge 3: Info Komposisi */}
         <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-xl text-slate-600 dark:text-slate-400 font-medium shadow-2xs">
           <Info size={13} className="text-slate-500 shrink-0" />
-          <span>
-            Komposisi Penilai: DPL 50% • MPL 50%
-          </span>
+          <span>Komposisi Penilai: DPL 50% • MPL 50%</span>
         </div>
       </div>
 
@@ -656,9 +691,7 @@ export const RekapNilaiKknPage: React.FC = () => {
                   </th>
 
                   {/* Colspan 1: Otomatis dari Sistem */}
-                  <th
-                    className="py-2 px-3 bg-[#f0f7ff] dark:bg-blue-950/50 text-[#1e40af] dark:text-blue-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[11.5px]"
-                  >
+                  <th className="py-2 px-3 bg-[#f0f7ff] dark:bg-blue-950/50 text-[#1e40af] dark:text-blue-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[11.5px]">
                     Otomatis dari Sistem
                   </th>
 
@@ -690,7 +723,9 @@ export const RekapNilaiKknPage: React.FC = () => {
                     rowSpan={2}
                     className="py-3 px-3 w-16 border-r border-slate-200 dark:border-slate-800 font-extrabold text-[#0f172a] dark:text-slate-100"
                   >
-                    Nilai<br />Akhir
+                    Nilai
+                    <br />
+                    Akhir
                   </th>
                   <th
                     rowSpan={2}
@@ -707,7 +742,9 @@ export const RekapNilaiKknPage: React.FC = () => {
                 <tr className="bg-slate-50/80 dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-800 text-[10.5px]">
                   {/* Otomatis */}
                   <th className="py-2 px-2.5 bg-[#f0f7ff]/70 dark:bg-blue-950/20 text-[#1e40af] dark:text-blue-300 border-r border-slate-200 dark:border-slate-800 font-bold">
-                    Kehadiran<br />(25%)
+                    Kehadiran
+                    <br />
+                    (25%)
                   </th>
 
                   {/* Individu */}
@@ -800,14 +837,10 @@ export const RekapNilaiKknPage: React.FC = () => {
 
                       {/* Program Kerja */}
                       <td className="py-3 px-2 border-r border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-300">
-                        {st.prokerDpl !== null && st.prokerDpl !== undefined
-                          ? st.prokerDpl
-                          : "—"}
+                        {st.prokerDpl !== null && st.prokerDpl !== undefined ? st.prokerDpl : "—"}
                       </td>
                       <td className="py-3 px-2 border-r border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-300">
-                        {st.prokerMpl !== null && st.prokerMpl !== undefined
-                          ? st.prokerMpl
-                          : "—"}
+                        {st.prokerMpl !== null && st.prokerMpl !== undefined ? st.prokerMpl : "—"}
                       </td>
                       <td className="py-3 px-2 border-r border-slate-100 dark:border-slate-800 font-bold text-slate-900 dark:text-slate-100">
                         {st.prokerGabungan !== null && st.prokerGabungan !== undefined
@@ -872,7 +905,8 @@ export const RekapNilaiKknPage: React.FC = () => {
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600 dark:text-slate-400 font-medium px-4 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
           <div className="text-center sm:text-left">
             Menampilkan {(currentPage - 1) * itemsPerPage + 1}–
-            {Math.min(currentPage * itemsPerPage, totalFilteredCount)} dari {totalFilteredCount} mahasiswa
+            {Math.min(currentPage * itemsPerPage, totalFilteredCount)} dari {totalFilteredCount}{" "}
+            mahasiswa
           </div>
 
           <div className="flex items-center gap-1.5 flex-wrap justify-center">
@@ -944,7 +978,8 @@ export const RekapNilaiKknPage: React.FC = () => {
               <span>Sumber Nilai Otomatis</span>
             </div>
             <p className="text-[12px] text-slate-600 dark:text-slate-400 leading-relaxed">
-              Kehadiran (bobot 25%) diperoleh langsung dari catatan presensi dan logbook aktivitas mahasiswa yang tervalidasi pada sistem.
+              Kehadiran (bobot 25%) diperoleh langsung dari catatan presensi dan logbook aktivitas
+              mahasiswa yang tervalidasi pada sistem.
             </p>
           </div>
 
@@ -957,7 +992,8 @@ export const RekapNilaiKknPage: React.FC = () => {
               <span>Gabungan Nilai DPL dan MPL</span>
             </div>
             <p className="text-[12px] text-slate-600 dark:text-slate-400 leading-relaxed">
-              Tiga aspek evaluasi (Individu, Program Kerja, Kelompok) dihitung dari pembagian seimbang: DPL 50% dan MPL 50%.
+              Tiga aspek evaluasi (Individu, Program Kerja, Kelompok) dihitung dari pembagian
+              seimbang: DPL 50% dan MPL 50%.
             </p>
           </div>
 
@@ -986,7 +1022,8 @@ export const RekapNilaiKknPage: React.FC = () => {
               <span>Ketentuan Penerbitan</span>
             </div>
             <p className="text-[12px] text-slate-600 dark:text-slate-400 leading-relaxed">
-              Nilai akhir dan predikat mutu resmi diterbitkan setelah evaluasi DPL dan MPL terisi lengkap. Nilai disajikan dengan pembulatan 1 desimal.
+              Nilai akhir dan predikat mutu resmi diterbitkan setelah evaluasi DPL dan MPL terisi
+              lengkap. Nilai disajikan dengan pembulatan 1 desimal.
             </p>
           </div>
         </div>
@@ -995,7 +1032,8 @@ export const RekapNilaiKknPage: React.FC = () => {
         <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center gap-2 text-[11.5px] text-slate-500 dark:text-slate-400 font-medium">
           <Info size={14} className="shrink-0 text-slate-400" />
           <span>
-            Total bobot komponen nilai akhir = 100% (4 aspek berimbang masing-masing 25%). Form penilaian DPL dan MPL dapat diakses sesuai peran.
+            Total bobot komponen nilai akhir = 100% (4 aspek berimbang masing-masing 25%). Form
+            penilaian DPL dan MPL dapat diakses sesuai peran.
           </span>
         </div>
       </div>

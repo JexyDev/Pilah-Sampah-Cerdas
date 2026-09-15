@@ -1,6 +1,6 @@
-﻿# 📋 Dokumentasi Alur Kerja (Flow) Program Kerja KKN — Mobile Developer
+# 📋 Dokumentasi Alur Kerja (Flow) Program Kerja KKN — Mobile Developer
 
-Dokumen ini adalah **Single Source of Truth (SSOT)** alur Program Kerja (Proker) KKN pada aplikasi Mobile BERSEKA, menghubungkan interaksi **Mahasiswa KKN**, **Dosen Pembimbing Lapangan (DPL)**, dan **Mitra Pendamping Lapangan (MPL)**.
+Dokumen ini adalah **Single Source of Truth (SSOT)** alur Program Kerja (Proker) KKN pada aplikasi Mobile BERSEKA, menghubungkan interaksi **Mahasiswa KKN**, **Dosen Pembimbing Lapangan (DPL)**, dan **Mitra Pembimbing Lapangan (MPL)**.
 
 ---
 

@@ -377,7 +377,7 @@ export const PoskoKknPage: React.FC = () => {
       totalMahasiswaSemua = totalMahasiswaPosko;
     }
 
-    // 4. Hitung unik DPL pendamping
+    // 4. Hitung unik DPL pembimbing
     const dplSet = new Set<string>();
     items.forEach((i) => {
       if (i.dplName && !i.dplName.includes("Belum")) dplSet.add(i.dplName.trim());
@@ -1721,11 +1721,11 @@ export const PoskoKknPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Card 4: DPL Pendamping */}
+          {/* Card 4: DPL Pembimbing */}
           <div className="p-4 sm:p-5 rounded-2xl border bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 shadow-xs flex flex-col justify-between">
             <div className="flex items-center justify-between w-full mb-3">
               <span className="text-[11px] font-extrabold uppercase tracking-wider text-purple-700 dark:text-purple-400">
-                DPL Pendamping Posko
+                DPL Pembimbing Posko
               </span>
               <div className="p-2.5 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400">
                 <Sparkles size={18} />
@@ -2213,7 +2213,7 @@ export const PoskoKknPage: React.FC = () => {
                     <th className="py-3.5 px-4 min-w-[240px]">Foto &amp; Nama Posko</th>
                     <th className="py-3.5 px-4 min-w-[180px]">Kelompok KKN</th>
                     <th className="py-3.5 px-4 min-w-[200px]">Ketua Posko (PIC)</th>
-                    <th className="py-3.5 px-4 min-w-[180px]">DPL Pendamping</th>
+                    <th className="py-3.5 px-4 min-w-[180px]">DPL Pembimbing</th>
                     <th className="py-3.5 px-4 min-w-[220px]">Wilayah &amp; Koordinat</th>
                     <th className="py-3.5 px-4 w-36 text-center">Aksi</th>
                   </tr>
@@ -2326,13 +2326,13 @@ export const PoskoKknPage: React.FC = () => {
                           </div>
                         </td>
 
-                        {/* 5. Kolom DPL Pendamping */}
+                        {/* 5. Kolom DPL Pembimbing */}
                         <td className="py-4 px-4">
                           <div className="font-bold text-slate-800 dark:text-slate-200 text-xs sm:text-sm">
                             {item.dplName}
                           </div>
                           <span className="text-[10px] text-slate-400 font-semibold block mt-0.5">
-                            Dosen Pendamping
+                            Dosen Pembimbing
                           </span>
                         </td>
 
@@ -2591,7 +2591,7 @@ export const PoskoKknPage: React.FC = () => {
                   )}
                 </div>
 
-                {/* DPL Pendamping */}
+                {/* DPL Pembimbing */}
                 <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800 space-y-1.5">
                   <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
                     Dosen Pembimbing Lapangan

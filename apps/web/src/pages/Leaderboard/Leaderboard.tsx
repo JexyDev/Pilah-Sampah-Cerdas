@@ -245,8 +245,8 @@ const Leaderboard: React.FC = () => {
           return {
             id: dp.id || `dpl-${i}`,
             rank: i + 1,
-            name: dp.name || "Dosen Pendamping",
-            subtitle: `${totalKel} Kelompok Dampingan`,
+            name: dp.name || "Dosen Pembimbing",
+            subtitle: `${totalKel} Kelompok Bimbingan`,
             extraInfo: `${totalMhs} Mahasiswa Binaan`,
             points: Number(dp.points || 0),
           };
@@ -557,7 +557,7 @@ const Leaderboard: React.FC = () => {
               {[
                 { id: "students" as System2Tab, label: "Mahasiswa", icon: Users },
                 { id: "groups" as System2Tab, label: "Kelompok KKN", icon: GraduationCap },
-                { id: "dpl" as System2Tab, label: "Dosen Pendamping (DPL)", icon: Award },
+                { id: "dpl" as System2Tab, label: "Dosen Pembimbing (DPL)", icon: Award },
               ].map((tab) => {
                 const TabIcon = tab.icon;
                 const active = s2Tab === tab.id;

@@ -477,7 +477,7 @@ export const dashboardService = {
           roleName.includes("MAHASISWA") ||
           Boolean(u.studentProfile);
 
-        // 2. Dosen DPL (Role DPL / DOSEN / PENDAMPING / MPL atau memiliki kelompok bimbingan KKN)
+        // 2. Dosen DPL (Role DPL / DOSEN / PEMBIMBING / MPL atau memiliki kelompok bimbingan KKN)
         const isDpl =
           !isKkn &&
           (roleName === "DPL" ||
@@ -486,6 +486,7 @@ export const dashboardService = {
             roleName === "DOSEN_PENDAMPING_LAPANGAN" ||
             roleName.includes("DPL") ||
             roleName.includes("DOSEN") ||
+            roleName.includes("PEMBIMBING") ||
             roleName.includes("PENDAMPING") ||
             roleName.includes("MPL") ||
             (u.dplKelompok && u.dplKelompok.length > 0));

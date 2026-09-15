@@ -1902,7 +1902,7 @@ const Dashboard: React.FC = () => {
     return () => clearInterval(interval);
   }, [user, weeks, timeFilter, startDate, endDate, selectedWilayah, activeSubTab]);
 
-  if (user?.peran === "MPL" || (user?.peran as string) === "MITRA_PENDAMPING_LAPANGAN") {
+  if (user?.peran === "MPL" || (user?.peran as string) === "MITRA_PEMBIMBING_LAPANGAN" || (user?.peran as string) === "MITRA_PENDAMPING_LAPANGAN") {
     return <Navigate to="/penilaian/mahasiswa" replace />;
   }
   if (user?.peran === "WARGA") return <WargaDashboard />;
@@ -1911,7 +1911,8 @@ const Dashboard: React.FC = () => {
   if (user?.peran === "PETUGAS_RESIDU") return <ResiduDashboard />;
   if (
     user?.peran === "DPL" ||
-    user?.peran === "DOSEN_PEMBIMBING"
+    user?.peran === "DOSEN_PEMBIMBING" ||
+    (user?.peran as string) === "DOSEN_PENDAMPING"
   ) {
     return <DplDashboardPage />;
   }
@@ -2773,7 +2774,7 @@ const Dashboard: React.FC = () => {
               </h3>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              Perbandingan tingkat pemilahan sampah awal sebelum pendampingan (Survei Baseline) dengan capaian kepatuhan pemilahan aktual real-time di 6 Kelurahan Kecamatan Coblong.
+              Perbandingan tingkat pemilahan sampah awal sebelum pembimbingan (Survei Baseline) dengan capaian kepatuhan pemilahan aktual real-time di 6 Kelurahan Kecamatan Coblong.
             </p>
             <div className="flex items-center gap-2 pt-1 text-[11px] text-slate-400 font-semibold">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
