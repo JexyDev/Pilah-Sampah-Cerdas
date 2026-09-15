@@ -29,6 +29,7 @@ const ROLE_LABEL_MAP: Record<string, string> = {
   PIMPINAN: "Pimpinan",
   PANITIA_TASKFORCE: "Task Force",
   DPL: "Dosen Pembimbing Lapangan",
+  MPL: "Mitra Pembimbing Lapangan",
   PETUGAS_RESIDU: "Petugas Pemilah",
   MAHASISWA_KKN: "Mahasiswa",
   WARGA: "Warga",
@@ -124,6 +125,7 @@ const normalizeRoleFromUrl = (param: string | null): string => {
   if (["pimpinan", "pemimpin", "rektor"].includes(p)) return "PEMIMPIN";
   if (["taskforce", "task-force", "panitia_taskforce"].includes(p)) return "PANITIA_TASKFORCE";
   if (["dpl", "dosen"].includes(p)) return "DPL";
+  if (["mpl", "mitra", "mitra-pendamping", "mitra_pendamping", "mpll"].includes(p)) return "MPL";
   if (["dlh", "admin_dlh", "admin-dlh", "dinas-lingkungan-hidup"].includes(p)) return "ADMIN_DLH";
   if (["camat"].includes(p)) return "CAMAT";
   if (["lurah"].includes(p)) return "LURAH";
@@ -143,13 +145,13 @@ const ManajemenPengguna: React.FC = () => {
     const peran = user?.peran || "";
     if (peran === "DEVELOPER") {
       return [
-        "DEVELOPER", "SUPER_USER", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL",
+        "DEVELOPER", "SUPER_USER", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL", "MPL",
         "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "MAHASISWA_KKN", "WARGA"
       ];
     }
     if (peran === "SUPER_USER") {
       return [
-        "SUPER_USER", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL",
+        "SUPER_USER", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL", "MPL",
         "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "MAHASISWA_KKN", "WARGA"
       ];
     }
@@ -158,13 +160,14 @@ const ManajemenPengguna: React.FC = () => {
         "PEMIMPIN",
         "PANITIA_TASKFORCE",
         "DPL",
+        "MPL",
         "MAHASISWA_KKN",
         "WARGA",
         "PETUGAS_RESIDU",
       ];
     }
     if (peran === "PANITIA_TASKFORCE") {
-      return ["PANITIA_TASKFORCE", "DPL", "MAHASISWA_KKN"];
+      return ["PANITIA_TASKFORCE", "DPL", "MPL", "MAHASISWA_KKN"];
     }
     if (peran === "RW") {
       return ["WARGA", "PETUGAS_RESIDU"];
@@ -570,8 +573,8 @@ const ManajemenPengguna: React.FC = () => {
       showToast.error("Super User tidak memiliki izin membuat akun Developer");
       return;
     }
-    if (user?.peran === "PANITIA_TASKFORCE" && !["MAHASISWA_KKN", "DPL"].includes(selectedRole)) {
-      showToast.error("Panitia Task Force hanya dapat mengelola akun Mahasiswa KKN dan DPL");
+    if (user?.peran === "PANITIA_TASKFORCE" && !["MAHASISWA_KKN", "DPL", "MPL"].includes(selectedRole)) {
+      showToast.error("Panitia Task Force hanya dapat mengelola akun Mahasiswa KKN, DPL, dan MPL");
       return;
     }
 
@@ -617,8 +620,8 @@ const ManajemenPengguna: React.FC = () => {
       showToast.error("Hanya Developer yang dapat mengedit akun Developer");
       return;
     }
-    if (user?.peran === "PANITIA_TASKFORCE" && !["MAHASISWA_KKN", "DPL"].includes(u.role || u.roleName)) {
-      showToast.error("Panitia Task Force hanya dapat mengedit akun Mahasiswa KKN dan DPL");
+    if (user?.peran === "PANITIA_TASKFORCE" && !["MAHASISWA_KKN", "DPL", "MPL"].includes(u.role || u.roleName)) {
+      showToast.error("Panitia Task Force hanya dapat mengedit akun Mahasiswa KKN, DPL, dan MPL");
       return;
     }
 
@@ -837,6 +840,14 @@ const ManajemenPengguna: React.FC = () => {
       }
       if (formData.roleName === "RW") {
         payload.petugasResiduId = formData.petugasResiduId || null;
+      }
+      if (formData.roleName === "MPL") {
+        if (modalKelurahan) {
+          const cleanKel = modalKelurahan.replace(/^Kel\.\s*/i, "").trim();
+          payload.address = `Kel. ${cleanKel}`;
+          payload.wilayah = `Kel. ${cleanKel}`;
+          payload.kelurahan = cleanKel;
+        }
       }
 
       if (modalType === "add") {
@@ -1390,9 +1401,18 @@ const ManajemenPengguna: React.FC = () => {
                     <th className="py-3 px-4">NAMA LENGKAP</th>
                     <th className="py-3 px-4">NIP</th>
                     <th className="py-3 px-4">NO. HP</th>
-                    <th className="py-3 px-4">PENDAMPING KELOMPOK</th>
+                    <th className="py-3 px-4">PEMBIMBING KELOMPOK</th>
                     <th className="py-3 px-4">MENGAJAR JENJANG</th>
                     <th className="py-3 px-4">PROGRAM STUDI</th>
+                    <th className="py-3 px-4 text-center">STATUS</th>
+                    {!isReadOnly && <th className="py-3 px-4 text-center">AKSI</th>}
+                  </>
+                ) : selectedRole === "MPL" ? (
+                  <>
+                    <th className="py-3 px-4">NAMA LENGKAP</th>
+                    <th className="py-3 px-4">NO. HP</th>
+                    <th className="py-3 px-4">KELURAHAN PENUGASAN</th>
+                    <th className="py-3 px-4">KECAMATAN</th>
                     <th className="py-3 px-4 text-center">STATUS</th>
                     {!isReadOnly && <th className="py-3 px-4 text-center">AKSI</th>}
                   </>
@@ -1456,7 +1476,7 @@ const ManajemenPengguna: React.FC = () => {
                     <th className="py-3 px-4">PROGRAM STUDI</th>
                     <th className="py-3 px-4">NO. HP</th>
                     <th className="py-3 px-4">KELOMPOK KKN</th>
-                    <th className="py-3 px-4">DOSEN PENDAMPING</th>
+                    <th className="py-3 px-4">DOSEN PEMBIMBING</th>
                     <th className="py-3 px-4">WILAYAH PENUGASAN</th>
                     <th className="py-3 px-4">BEBAN SKS</th>
                     <th className="py-3 px-4 text-center">STATUS</th>
@@ -1541,6 +1561,19 @@ const ManajemenPengguna: React.FC = () => {
                         </td>
                         <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-bold">{extractJenjang(u.programStudi || u.prodi, u.jenjangPendidikan)}</td>
                         <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-semibold">{cleanProdiName(u.programStudi || u.prodi)}</td>
+                      </>
+                    ) : selectedRole === "MPL" ? (
+                      <>
+                        <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <span className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2.5 py-1 rounded-lg text-[11px] border border-emerald-200/80 dark:border-emerald-800/80 font-extrabold whitespace-nowrap inline-flex items-center gap-1.5 shadow-2xs">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                            {detectKelurahanName(u) !== "-" ? detectKelurahanName(u) : cleanKelurahanName(u.address) !== "-" ? cleanKelurahanName(u.address) : (u.kelurahan ? `Kel. ${u.kelurahan}` : "Kel. Coblong")}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-semibold">
+                          {formatKecamatanName(u.kecamatan, u) !== "-" ? formatKecamatanName(u.kecamatan, u) : "Kecamatan Coblong"}
+                        </td>
                       </>
                     ) : selectedRole === "ADMIN_DLH" ? (
                       <>
@@ -1726,7 +1759,7 @@ const ManajemenPengguna: React.FC = () => {
                             const canEdit =
                               user?.peran === "DEVELOPER" ||
                               (user?.peran === "SUPER_USER" && !isDevTarget) ||
-                              (user?.peran === "PANITIA_TASKFORCE" && ["MAHASISWA_KKN", "DPL"].includes(u.role || u.roleName));
+                              (user?.peran === "PANITIA_TASKFORCE" && ["MAHASISWA_KKN", "DPL", "MPL"].includes(u.role || u.roleName));
 
                             if (!canEdit) return null;
 
@@ -1747,7 +1780,7 @@ const ManajemenPengguna: React.FC = () => {
                               !isSelf &&
                               (user?.peran === "DEVELOPER" ||
                                 (user?.peran === "SUPER_USER" && !isDevTarget) ||
-                                (user?.peran === "PANITIA_TASKFORCE" && ["MAHASISWA_KKN", "DPL"].includes(u.role || u.roleName)));
+                                (user?.peran === "PANITIA_TASKFORCE" && ["MAHASISWA_KKN", "DPL", "MPL"].includes(u.role || u.roleName)));
 
                             if (!canDelete && !isSelf) return null;
 
@@ -1833,12 +1866,12 @@ const ManajemenPengguna: React.FC = () => {
             const canEdit =
               user?.peran === "DEVELOPER" ||
               (user?.peran === "SUPER_USER" && !isDevTarget) ||
-              (user?.peran === "PANITIA_TASKFORCE" && ["MAHASISWA_KKN", "DPL"].includes(u.role || u.roleName));
+              (user?.peran === "PANITIA_TASKFORCE" && ["MAHASISWA_KKN", "DPL", "MPL"].includes(u.role || u.roleName));
             const canDelete =
               !isSelf &&
               (user?.peran === "DEVELOPER" ||
                 (user?.peran === "SUPER_USER" && !isDevTarget) ||
-                (user?.peran === "PANITIA_TASKFORCE" && ["MAHASISWA_KKN", "DPL"].includes(u.role || u.roleName)));
+                (user?.peran === "PANITIA_TASKFORCE" && ["MAHASISWA_KKN", "DPL", "MPL"].includes(u.role || u.roleName)));
 
             return (
               <div key={u.id} className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-4">
@@ -2095,7 +2128,7 @@ const ManajemenPengguna: React.FC = () => {
                 </div>
 
                 {/* ── Section: Data Khusus Peran ── */}
-                {(["DPL", "MAHASISWA_KKN", "PEMIMPIN", "PANITIA_TASKFORCE", "WARGA", "RW", "PETUGAS_RESIDU", "LURAH", "ADMIN_DLH", "CAMAT"].includes(formData.roleName)) && (
+                {(["DPL", "MPL", "MAHASISWA_KKN", "PEMIMPIN", "PANITIA_TASKFORCE", "WARGA", "RW", "PETUGAS_RESIDU", "LURAH", "ADMIN_DLH", "CAMAT"].includes(formData.roleName)) && (
                   <div>
                     <div className="flex items-center gap-2 mb-3">
                       <Info size={14} className="text-slate-400 dark:text-slate-500" />
@@ -2123,7 +2156,7 @@ const ManajemenPengguna: React.FC = () => {
                             </div>
                           </div>
                           <div>
-                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Pendamping Kelompok</label>
+                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Pembimbing Kelompok</label>
                             <select
                               value={formData.dplKelompokIds?.[0] || ""}
                               onChange={(e) => {
@@ -2142,6 +2175,42 @@ const ManajemenPengguna: React.FC = () => {
                             <p className="text-[10px] text-slate-400 dark:text-slate-400 mt-1">Dipilih dari 32 kelompok KKN terintegrasi secara real-time dari database.</p>
                           </div>
                         </>
+                      )}
+
+                      {/* MPL Fields */}
+                      {formData.roleName === "MPL" && (
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                            Kelurahan Penugasan <span className="text-rose-500">*</span>
+                          </label>
+                          <select
+                            value={modalKelurahan}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setModalKelurahan(val);
+                              setFormData((prev) => ({
+                                ...prev,
+                                address: val ? `Kel. ${val}` : prev.address,
+                                wilayah: val ? `Kel. ${val}` : prev.wilayah,
+                              }));
+                            }}
+                            className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                          >
+                            <option value="">-- Pilih Kelurahan --</option>
+                            {kelurahanList.map((kel: any) => {
+                              const kelName = kel.name || kel.nama || "";
+                              const cleanName = getCleanKelName(kelName);
+                              return (
+                                <option key={kel.id || cleanName} value={cleanName}>
+                                  Kel. {cleanName}
+                                </option>
+                              );
+                            })}
+                          </select>
+                          <p className="text-[10px] text-slate-400 dark:text-slate-400 mt-1">
+                            MPL bertugas membimbing dan memberikan evaluasi lapangan bagi mahasiswa KKN di wilayah Kelurahan terkait.
+                          </p>
+                        </div>
                       )}
 
                       {/* Mahasiswa Fields */}

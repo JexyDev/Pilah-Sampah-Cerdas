@@ -640,7 +640,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
             ? [{ id: "kelompok", label: `Kelompok Saya (${kelompokList.length})`, icon: GraduationCap }]
             : [
                 { id: "kelompok", label: `Kelompok KKN (${kelompokList.length})`, icon: GraduationCap },
-                { id: "dpl", label: `Dosen Pendamping (${dplList.length})`, icon: User },
+                { id: "dpl", label: `Dosen Pembimbing (${dplList.length})`, icon: User },
                 { id: "universitas", label: `Universitas Mitra (${uniList.length})`, icon: BookOpen }
               ]
           ).map((tab) => {
@@ -779,7 +779,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                         <th className="p-4 font-bold text-xs text-slate-600 dark:text-slate-400 uppercase tracking-wider">Nama Kelompok</th>
                         <th className="p-4 font-bold text-xs text-slate-600 dark:text-slate-400 uppercase tracking-wider">Wilayah / Kelurahan</th>
                         <th className="p-4 font-bold text-xs text-slate-600 dark:text-slate-400 uppercase tracking-wider">Ketua Kelompok</th>
-                        <th className="p-4 font-bold text-xs text-slate-600 dark:text-slate-400 uppercase tracking-wider">Dosen Pendamping (DPL)</th>
+                        <th className="p-4 font-bold text-xs text-slate-600 dark:text-slate-400 uppercase tracking-wider">Dosen Pembimbing (DPL)</th>
                         <th className="p-4 font-bold text-xs text-slate-600 dark:text-slate-400 uppercase tracking-wider text-center">Anggota</th>
                         {(!isReadOnly || isDpl) && (
                           <th className="p-4 font-bold text-xs text-slate-600 dark:text-slate-400 uppercase tracking-wider text-center">Aksi</th>
@@ -1152,11 +1152,11 @@ export const ManajemenEkosistemKkn: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Dosen Pendamping (DPL)</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Dosen Pembimbing (DPL)</label>
                 <select
                   value={kelompokForm.dplId}
                   onChange={(e) => setKelompokForm({ ...kelompokForm, dplId: e.target.value })}
-                  aria-label="Pilih Dosen Pendamping (DPL)"
+                  aria-label="Pilih Dosen Pembimbing (DPL)"
                   className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all bg-white dark:bg-slate-900 cursor-pointer"
                 >
                   <option value="">Pilih DPL (Opsional)</option>
@@ -1489,7 +1489,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
               {/* Meta DPL & Ketua & Google Drive */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-200/70 dark:border-slate-800">
-                  <span className="text-[10.5px] font-bold text-slate-400 block uppercase">Dosen Pendamping (DPL)</span>
+                  <span className="text-[10.5px] font-bold text-slate-400 block uppercase">Dosen Pembimbing (DPL)</span>
                   <span className="font-extrabold text-slate-900 dark:text-slate-100 text-sm mt-0.5 block">
                     {selectedDetailKelompok.dpl?.name || "Belum Ditentukan"}
                   </span>

@@ -210,7 +210,7 @@ export const systemAnalysisService = {
     const whereKelompok = kelompokId ? { kelompokId } : {};
 
     // ── PILAR 1: Logbook & Aktivitas Harian (LogbookKkn) ──
-    const [totalLogbook, approvedLogbook, logbooks] = await Promise.all([
+    const [totalLogbook, approvedLogbook, allLogbookGroupStats] = await Promise.all([
       prisma.logbookKkn.count({
         where: whereKelompok,
       }),
@@ -220,15 +220,15 @@ export const systemAnalysisService = {
           statusApproval: "DISETUJUI_DPL",
         },
       }),
-      prisma.logbookKkn.findMany({
-        where: whereKelompok,
-        select: { kelompokId: true },
+      prisma.logbookKkn.groupBy({
+        by: ["kelompokId"],
+        _count: { id: true },
       }),
     ]);
 
     const verificationRate = totalLogbook > 0 ? Math.round((approvedLogbook / totalLogbook) * 100) : 0;
 
-    // Ambil daftar seluruh kelompok KKN beserta posko
+    // Ambil daftar seluruh kelompok KKN beserta posko dan jumlah jadwal per kelompok
     const kelompokList = await prisma.kelompokKkn.findMany({
       select: {
         id: true,
@@ -247,24 +247,43 @@ export const systemAnalysisService = {
         programKerja: {
           select: { id: true, status: true, statusPelaksanaan: true },
         },
+        _count: {
+          select: {
+            schedules: true,
+          },
+        },
       },
     });
 
     const kelompokLogbookCountMap = new Map<string, number>();
-    logbooks.forEach((l) => {
-      kelompokLogbookCountMap.set(l.kelompokId, (kelompokLogbookCountMap.get(l.kelompokId) || 0) + 1);
+    allLogbookGroupStats.forEach((l) => {
+      kelompokLogbookCountMap.set(l.kelompokId, l._count.id);
     });
 
-    const kelompokLogbookCounts = kelompokList.map((k) => ({
-      kelompokId: k.id,
-      namaKelompok: k.name,
-      totalLogbook: kelompokLogbookCountMap.get(k.id) || 0,
-    })).sort((a, b) => b.totalLogbook - a.totalLogbook);
+    const filteredKelompokList = kelompokId
+      ? kelompokList.filter((k) => k.id === kelompokId)
+      : kelompokList;
+
+    const kelompokLogbookCounts = (filteredKelompokList.length > 0 ? filteredKelompokList : kelompokList)
+      .map((k) => ({
+        kelompokId: k.id,
+        namaKelompok: k.name,
+        totalLogbook: kelompokLogbookCountMap.get(k.id) || 0,
+      }))
+      .sort((a, b) => b.totalLogbook - a.totalLogbook);
 
     // ── PILAR 2: Presensi & Monitoring Kehadiran Geofencing ──
-    const [totalSchedules, attendances, leaveRequests] = await Promise.all([
-      prisma.schedule.count(),
+    const scheduleWhere = kelompokId ? { kelompokId } : {};
+    const attendanceWhere = kelompokId ? { schedule: { kelompokId } } : {};
+    const leaveWhere: any = { status: "APPROVED" };
+    if (kelompokId) {
+      leaveWhere.student = { studentProfile: { kelompokId } };
+    }
+
+    const [totalSchedules, attendances, leaveRequests, totalStudentsCount, generalSchedulesCount] = await Promise.all([
+      prisma.schedule.count({ where: scheduleWhere }),
       prisma.activityAttendance.findMany({
+        where: attendanceWhere,
         select: {
           id: true,
           status: true,
@@ -272,14 +291,14 @@ export const systemAnalysisService = {
         },
       }),
       prisma.studentLeaveRequest.findMany({
-        where: {
-          status: "APPROVED",
-        },
+        where: leaveWhere,
         select: {
           type: true,
           reason: true,
         },
       }),
+      prisma.studentKkn.count({ where: whereKelompok }),
+      prisma.schedule.count({ where: { kelompokId: null } }),
     ]);
 
     const hadirCount = attendances.length;
@@ -291,7 +310,27 @@ export const systemAnalysisService = {
     });
 
     const inZoneCount = Math.max(0, hadirCount - outZoneCount);
-    const onTimeAttendanceRate = totalSchedules > 0 ? Math.min(100, Math.round((hadirCount / totalSchedules) * 100)) : 100;
+
+    // Kalkulasi target kehadiran yang presisi:
+    // Setiap kelompok KKN memiliki kuota jadwal masing-masing. Mahasiswa hanya berkewajiban hadir pada jadwal kelompoknya.
+    let targetAttendances = 0;
+    if (kelompokId) {
+      const targetGroup = kelompokList.find((k) => k.id === kelompokId);
+      const grpStudents = targetGroup ? targetGroup.students.length : totalStudentsCount;
+      const grpSchedules = targetGroup ? (targetGroup._count?.schedules || 0) : totalSchedules;
+      targetAttendances = grpStudents * (grpSchedules + generalSchedulesCount);
+    } else {
+      targetAttendances =
+        kelompokList.reduce((acc, k) => acc + k.students.length * (k._count?.schedules || 0), 0) +
+        generalSchedulesCount * totalStudentsCount;
+    }
+
+    const onTimeAttendanceRate =
+      targetAttendances > 0
+        ? Math.min(100, Math.max(0, Math.round((hadirCount / targetAttendances) * 100)))
+        : hadirCount > 0
+          ? 100
+          : 0;
     const geofenceComplianceRate = hadirCount > 0 ? Math.round((inZoneCount / hadirCount) * 100) : 100;
 
     let izinCount = 0;
@@ -329,12 +368,17 @@ export const systemAnalysisService = {
     const prokerCompletionRate = totalProker > 0 ? Math.round((selesaiProker / totalProker) * 100) : 0;
 
     // ── PILAR 4: Evaluasi Performance & Penilaian DPL (PenilaianKknMahasiswa) ──
-    const [totalStudents, evaluatedList] = await Promise.all([
-      prisma.studentKkn.count({ where: whereKelompok }),
+    const penilaianWhere: any = { status: "FINAL" };
+    if (kelompokId) {
+      penilaianWhere.OR = [
+        { kelompokId },
+        { student: { studentProfile: { kelompokId } } },
+      ];
+    }
+
+    const [evaluatedList] = await Promise.all([
       prisma.penilaianKknMahasiswa.findMany({
-        where: {
-          status: "FINAL",
-        },
+        where: penilaianWhere,
         select: {
           kategoriNilai: true,
           nilaiAkhir: true,
@@ -342,8 +386,11 @@ export const systemAnalysisService = {
       }),
     ]);
 
+    const totalStudents = totalStudentsCount;
+
     const evaluatedStudents = evaluatedList.length;
-    const dplEvaluationRate = totalStudents > 0 ? Math.round((evaluatedStudents / totalStudents) * 100) : 0;
+    const dplEvaluationRate =
+      totalStudents > 0 ? Math.min(100, Math.round((evaluatedStudents / totalStudents) * 100)) : 0;
 
     const gradeMap: Record<string, number> = { A: 0, B: 0, C: 0, D: 0 };
     evaluatedList.forEach((e) => {
@@ -715,14 +762,14 @@ ${dplBelumInputNilai.length > 0 ? dplBelumInputNilai.join("\n") : "- Seluruh DPL
           .map((k, i) => `${i + 1}. ${k.kategori || "Lainnya"}: ${k._count.id} Program Kerja`)
           .join("\n");
 
-        const topProkerCategoryName = prokerKategoriGroup[0]?.kategori || "Edukasi & Sosialisasi";
-        const topProkerCategoryCount = prokerKategoriGroup[0]?._count.id || 24;
+        const topProkerCategoryName = prokerKategoriGroup[0]?.kategori || "Belum Ditentukan";
+        const topProkerCategoryCount = prokerKategoriGroup[0]?._count.id || 0;
 
         const prokerEntitySummary = `
 [DETAIL REKAPITULASI KATEGORI PROGRAM KERJA (JENIS PROKER)]
 * Kategori/Jenis Proker Terbanyak: ${topProkerCategoryName} (${topProkerCategoryCount} Proker)
 * Rincian Seluruh Kategori Proker Terdaftar (${kknData.pilar3.totalProker} Total Proker):
-${prokerKategoriSummaryStr}
+${prokerKategoriSummaryStr || "- Belum ada program kerja terdaftar."}
 `.trim();
 
         const topKelompokStr = kknData.pilar5.top5Kelompok
@@ -807,22 +854,26 @@ ${recentTurns.map((h) => `${h.role === "user" ? "Pengguna" : "Asisten"}: ${h.con
       }
 
       const sqlGenPrompt = `
-Kamu adalah SQL Analyst PostgreSQL untuk sistem terintegrasi Berseka.
-Berikut daftar tabel utama dalam database PostgreSQL Berseka:
-1. pengguna (id UUID, nama TEXT, email TEXT, role TEXT ['DPL','DOSEN_PEMBIMBING','MAHASISWA','PIMPINAN','ADMIN_KKN','SUPER_ADMIN'], nip TEXT, prodi TEXT, telepon TEXT)
-2. kelompok_kkn (id UUID, nama TEXT, kelurahan TEXT, id_dpl UUID -> pengguna.id, dpl_nama_mentah TEXT)
-3. logbook_dpl (id UUID, id_dpl UUID -> pengguna.id, id_kelompok UUID -> kelompok_kkn.id, tanggal DATE, waktu_mulai TEXT, waktu_selesai TEXT, kategori TEXT, tempat TEXT, deskripsi TEXT, status TEXT, durasi_menit INT, pekan_ke INT)
-4. logbook_kkn (id UUID, id_penulis UUID -> pengguna.id, id_kelompok UUID -> kelompok_kkn.id, tanggal_kegiatan DATE, deskripsi TEXT, status_persetujuan TEXT ['MENUNGGU_PERSETUJUAN_KETUA','MENUNGGU_VERIFIKASI_DPL','DISETUJUI_DPL','DITOLAK_KETUA','PERLU_REVISI_DPL'], catatan_dpl TEXT, pekan_ke INT)
-5. mahasiswa_kkn (id UUID, nim TEXT, nama TEXT, id_kelompok UUID -> kelompok_kkn.id, program_studi TEXT, no_telepon TEXT)
-6. program_kerja_kkn (id UUID, id_kelompok UUID -> kelompok_kkn.id, kategori TEXT, status_pelaksanaan TEXT, status_usulan TEXT, deskripsi TEXT)
-7. penilaian_kkn_mahasiswa (id UUID, id_mahasiswa UUID -> mahasiswa_kkn.id, id_kelompok UUID -> kelompok_kkn.id, nilai_akhir DECIMAL)
-8. jadwal (id UUID, id_kelompok UUID -> kelompok_kkn.id, tanggal DATE, waktu_mulai TEXT, waktu_selesai TEXT, kegiatan TEXT)
-9. presensi_mandiri (id UUID, id_mahasiswa UUID -> mahasiswa_kkn.id, tanggal DATE, waktu_masuk TEXT, status_kehadiran TEXT, di_luar_radius BOOLEAN)
-10. tempat_sampah (id UUID, kode TEXT, id_kelurahan UUID, status TEXT ['NORMAL','WASPADA','KRITIS'], persentase_kepenuhan INT, kapasitas_liter INT, jenis_sampah TEXT)
-11. fasilitas (id UUID, nama TEXT, jenis TEXT, id_kelurahan UUID, status_operasional TEXT)
-12. pemanfaatan_sampah (id UUID, berat_kg DECIMAL, id_fasilitas UUID, jenis_sampah TEXT, nilai_ekonomi DECIMAL, tanggal DATE)
-13. kelurahan (id UUID, nama TEXT)
-14. rw (id INT, nomor TEXT, id_kelurahan UUID)
+Kamu adalah SQL Analyst PostgreSQL untuk sistem terintegrasi Berseka (Bersih, Sehat, Kampung Asri).
+Berikut daftar tabel dan kolom riil dalam database PostgreSQL Berseka:
+1. pengguna (id UUID, nama TEXT, email TEXT, no_telepon TEXT, id_peran INT -> peran.id, nip TEXT, program_studi TEXT, institusi TEXT, jabatan TEXT, alamat TEXT, status TEXT)
+2. peran (id INT, nama TEXT ['SUPER_USER','DEVELOPER','ADMIN_DLH','PIMPINAN','PEMIMPIN','PANITIA_TASKFORCE','CAMAT','LURAH','RW','RT','DPL','DOSEN_PEMBIMBING','MAHASISWA','WARGA','PETUGAS_RESIDU'])
+   - Catatan: Tabel pengguna terhubung ke peran via: pengguna.id_peran = peran.id. Contoh filter DPL: JOIN peran ON pengguna.id_peran = peran.id WHERE peran.nama IN ('DPL','DOSEN_PEMBIMBING')
+3. kelompok_kkn (id UUID, nama TEXT, kelurahan TEXT, id_dpl UUID -> pengguna.id, dpl_nama_mentah TEXT, link_google_drive TEXT)
+4. logbook_dpl (id UUID, id_dpl UUID -> pengguna.id, id_kelompok UUID -> kelompok_kkn.id, tanggal DATE, waktu_mulai TEXT, waktu_selesai TEXT, kategori TEXT, tempat TEXT, deskripsi TEXT, status TEXT, durasi_menit INT, pekan_ke INT)
+5. logbook_kkn (id UUID, id_penulis UUID -> pengguna.id, id_kelompok UUID -> kelompok_kkn.id, tanggal_kegiatan DATE, deskripsi TEXT, status_persetujuan TEXT ['MENUNGGU_PERSETUJUAN_KETUA','MENUNGGU_VERIFIKASI_DPL','DISETUJUI_DPL','DITOLAK_KETUA','PERLU_REVISI_DPL'], catatan_dpl TEXT, pekan_ke INT)
+6. mahasiswa_kkn (id UUID, id_pengguna UUID -> pengguna.id, nim TEXT, jurusan TEXT, fakultas TEXT, no_wa TEXT, id_kelompok UUID -> kelompok_kkn.id, is_ketua BOOLEAN, konversi_sks INT)
+   - Catatan: Nama mahasiswa ada di tabel pengguna (mahasiswa_kkn.id_pengguna = pengguna.id).
+7. program_kerja_kkn (id UUID, id_kelompok UUID -> kelompok_kkn.id, id_mahasiswa UUID -> mahasiswa_kkn.id, kategori TEXT, status_pelaksanaan TEXT ['BELUM_MULAI','SEDANG_BERJALAN','SELESAI'], status_usulan TEXT ['BELUM_DISETUJUI','DISETUJUI','DITOLAK'], deskripsi TEXT)
+8. penilaian_kkn_mahasiswa (id UUID, id_mahasiswa UUID -> pengguna.id, id_kelompok UUID -> kelompok_kkn.id, id_dpl UUID -> pengguna.id, nilai_akhir DECIMAL, status TEXT ['DRAFT','FINAL'], kategori_nilai TEXT)
+9. jadwal (id UUID, id_kelompok UUID -> kelompok_kkn.id, title TEXT, date TIMESTAMP, time TEXT, category TEXT, location TEXT, is_aktif BOOLEAN, status_kegiatan TEXT ['AKTIF','TIDAK_ADA_KEGIATAN'])
+10. kehadiran_kegiatan (id UUID, id_mahasiswa UUID -> pengguna.id, id_jadwal UUID -> jadwal.id, waktu_absen TIMESTAMP, waktu_checkout TIMESTAMP, status TEXT ['DALAM_RADIUS','DI_LUAR_RADIUS','TERLAMBAT'], durasi_aktual_dalam_zona_menit INT)
+11. presensi_mandiri (id UUID, id_mahasiswa UUID -> pengguna.id, id_kelompok UUID -> kelompok_kkn.id, waktu_checkin TIMESTAMP, waktu_checkout TIMESTAMP, status TEXT ['AKTIF','SELESAI'], durasi_menit INT, deskripsi_kegiatan TEXT)
+12. tempat_sampah (id UUID, kode_qr TEXT, id_kelurahan UUID, id_rw INT, status TEXT ['PRINTED','UNREGISTERED','ACTIVE','INACTIVE','FULL','DAMAGED'], volume_sekarang_liter DECIMAL, maks_kapasitas_liter DECIMAL)
+13. fasilitas (id UUID, nama TEXT, jenis TEXT ['TPS3R','BANK_SAMPAH','PUSPA','RUMAH_KOMPOS','LAINNYA'], id_kelurahan UUID, id_rw INT, status_persetujuan TEXT)
+14. pemanfaatan_sampah (id UUID, id_rw INT, id_program_kerja UUID, volume_bahan_baku DECIMAL, unit_bahan_baku TEXT, hasil DECIMAL, unit_hasil TEXT, jenis_komoditas TEXT, tanggal_pencatatan TIMESTAMP)
+15. kelurahan (id UUID, nama TEXT)
+16. rw (id INT, nama TEXT, id_kelurahan UUID)
 
 ${historyContextText ? `${historyContextText}\n\n` : ""}Tugasmu:
 Buat SATU query SQL PostgreSQL (hanya SELECT) untuk mengambil data spesifik guna menjawab pertanyaan terkini pengguna berikut:
@@ -936,15 +987,19 @@ ${sqlContextText}
         pLower.includes("jenis") ||
         pLower.includes("kategori")
       ) {
-        fallbackReply += `Kategori/Jenis Program Kerja (Proker) terbanyak di database Berseka saat ini adalah **"${lastProker?.topCategory || "Edukasi & Sosialisasi"}"** dengan jumlah **${lastProker?.topCount || 24} program kerja**.\n\nBerikut rincian lengkap distribusi jenis proker per kategori:\n${lastProker?.breakdownStr || "- 1. Edukasi & Sosialisasi: 24 Program Kerja\n- 2. Pemilahan: 17 Program Kerja\n- 3. Lainnya: 17 Program Kerja\n- 4. Pemanfaatan: 14 Program Kerja\n- 5. Pengolahan: 7 Program Kerja\n- 6. Pengangkutan: 3 Program Kerja\n- 7. ANORGANIK: 1 Program Kerja\n- 8. FASILITAS: 1 Program Kerja"}\n\n* Total Program Kerja Terdaftar: ${lastProker?.totalProker || 84} Proker (${lastProker?.selesai || 0} Selesai, ${lastProker?.proses || 0} Sedang Berjalan, ${lastProker?.belum || 0} Belum Mulai).`;
+        if (lastProker && lastProker.totalProker > 0) {
+          fallbackReply += `Kategori/Jenis Program Kerja (Proker) terbanyak di database Berseka saat ini adalah **"${lastProker.topCategory}"** dengan jumlah **${lastProker.topCount} program kerja**.\n\nBerikut rincian distribusi jenis proker per kategori:\n${lastProker.breakdownStr}\n\n* Total Program Kerja Terdaftar: ${lastProker.totalProker} Proker (${lastProker.selesai} Selesai, ${lastProker.proses} Sedang Berjalan, ${lastProker.belum} Belum Mulai).`;
+        } else {
+          fallbackReply += `Belum ada program kerja yang tercatat di database sistem Berseka saat ini.`;
+        }
       } else if (
         pLower.includes("dpl") ||
         pLower.includes("logbook dpl") ||
         pLower.includes("bimbingan")
       ) {
-        fallbackReply += dplEntitySummary;
+        fallbackReply += dplEntitySummary || "Belum ada data DPL yang tercatat di database.";
       } else {
-        fallbackReply += contextSummary;
+        fallbackReply += contextSummary || "Belum ada ringkasan data sistem yang tercatat di database.";
       }
 
       return {

@@ -176,7 +176,8 @@ export const scheduleController = {
         const isMentoring =
           schedule.kelompok &&
           (schedule.kelompok.dplId === userId ||
-            (userDpl?.name && schedule.kelompok.dplNamaMentah?.toLowerCase() === userDpl.name.toLowerCase()));
+            (userDpl?.name &&
+              schedule.kelompok.dplNamaMentah?.toLowerCase() === userDpl.name.toLowerCase()));
         if (!isMentoring) {
           res.status(403).json({
             success: false,
@@ -256,7 +257,8 @@ export const scheduleController = {
         const isMentoring =
           schedule.kelompok &&
           (schedule.kelompok.dplId === userId ||
-            (userDpl?.name && schedule.kelompok.dplNamaMentah?.toLowerCase() === userDpl.name.toLowerCase()));
+            (userDpl?.name &&
+              schedule.kelompok.dplNamaMentah?.toLowerCase() === userDpl.name.toLowerCase()));
         if (!isMentoring) {
           res.status(403).json({
             success: false,
@@ -309,7 +311,9 @@ export const scheduleController = {
           where: { id },
           select: { date: true },
         });
-        const existingWibStr = existingSchedule?.date ? toWibDateString(existingSchedule.date) : null;
+        const existingWibStr = existingSchedule?.date
+          ? toWibDateString(existingSchedule.date)
+          : null;
 
         if (wibActivityStr < wibNowStr && wibActivityStr !== existingWibStr) {
           res.status(400).json({

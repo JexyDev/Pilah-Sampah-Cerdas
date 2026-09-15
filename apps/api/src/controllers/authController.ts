@@ -391,11 +391,7 @@ export class AuthController {
         req.body.hapusFoto === true ||
         rawFoto === null ||
         rawFoto === "";
-      const finalFoto = isDeleteFoto
-        ? null
-        : rawFoto !== undefined
-          ? String(rawFoto)
-          : undefined;
+      const finalFoto = isDeleteFoto ? null : rawFoto !== undefined ? String(rawFoto) : undefined;
 
       // Accept wilayah fields from body
       const rawKelurahan = req.body.kelurahan;
@@ -894,18 +890,27 @@ export class AuthController {
       void _noWa;
       void kecamatan;
 
-      // Resolve rwId from string if needed
-      let resolvedRwId = rwId;
-      if (!resolvedRwId) {
-        resolvedRwId = await authService.resolveRtRwId(rwName, kelurahan);
+      // Resolve rwId from string only if explicitly provided (prevent dummy fallback)
+      let resolvedRwId: number | undefined = rwId;
+      if (!resolvedRwId && (rwName || kelurahan)) {
+        try {
+          resolvedRwId = await authService.resolveRtRwId(rwName, kelurahan);
+        } catch {
+          resolvedRwId = undefined;
+        }
       }
 
-      const householdData = {
-        address: userData.address || "",
-        rwId: resolvedRwId,
-        latitude: latitude || 0,
-        longitude: longitude || 0,
-      };
+      // Create household data only if address or resolvedRwId is provided
+      const hasAddress = !!userData.address && userData.address.trim() !== "";
+      const householdData =
+        hasAddress || resolvedRwId
+          ? {
+              address: userData.address || "",
+              rwId: resolvedRwId ?? null,
+              latitude: latitude || 0,
+              longitude: longitude || 0,
+            }
+          : null;
 
       let token = "";
       if (req.cookies && req.cookies.accessToken) {
@@ -925,7 +930,7 @@ export class AuthController {
       const finalKabupaten = userData.kabupaten || kota || undefined;
 
       const result = await authService.registerWarga(
-        { ...userData, kabupaten: finalKabupaten, rwId: resolvedRwId },
+        { ...userData, kabupaten: finalKabupaten, rwId: resolvedRwId ?? null },
         householdData,
         qrCode || undefined,
         wargaSubtype,
@@ -979,6 +984,8 @@ export class AuthController {
         kota,
         ...userData
       } = parsed.data;
+      void kelurahan;
+      void rwName;
       void kecamatan;
       const finalKabupaten = userData.kabupaten || kota || undefined;
 
@@ -1026,8 +1033,15 @@ export class AuthController {
           .json({ success: false, code: "VALIDATION_ERROR", details: parsed.error.format() });
         return;
       }
-      const { noWa, assignedZone, rw: rwName, kelurahan, kecamatan, kota, ...userData } =
-        parsed.data;
+      const {
+        noWa,
+        assignedZone,
+        rw: rwName,
+        kelurahan,
+        kecamatan,
+        kota,
+        ...userData
+      } = parsed.data;
       void kecamatan;
       const finalKabupaten = userData.kabupaten || kota || undefined;
 

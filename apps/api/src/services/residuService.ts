@@ -310,7 +310,7 @@ export class ResiduService {
     });
 
     const pointRateConfig = await configService.getConfig("point_rate_per_kg");
-    const pointRatePerKg = pointRateConfig ? parseInt(pointRateConfig, 10) : 2;
+    const pointRatePerKg = pointRateConfig ? parseInt(pointRateConfig, 10) : 5;
 
     const rtRwStr = user.rw?.name || petugas.assignedZone || "01/02";
     const kelurahanStr = user.rw?.kelurahan?.name || "Bojongsoang";
@@ -474,8 +474,8 @@ export class ResiduService {
             wargaName: "Global",
             weightKg: Number(s.berat),
             actualWeightKg: Number(s.berat),
-            points: Number(s.berat) * 2 + (s.fotoResiduUrl ? 10 : 0),
-            pointsEarned: Number(s.berat) * 2 + (s.fotoResiduUrl ? 10 : 0),
+            points: 5,
+            pointsEarned: 5,
             fotoResiduUrl: s.fotoResiduUrl,
             imagePhotoUrl: s.fotoResiduUrl,
             image: s.fotoResiduUrl,
@@ -520,7 +520,7 @@ export class ResiduService {
           wargaName: r.user?.name || "Warga",
           weightKg: Number(r.bin?.currentVolumeLiter || 0),
           actualWeightKg: Number(r.bin?.currentVolumeLiter || 0),
-          points: 15,
+          points: 5,
           fotoResiduUrl: r.evidencePhotoUrl,
           imagePhotoUrl: r.evidencePhotoUrl,
           latitude: null,
@@ -608,7 +608,7 @@ export class ResiduService {
     });
 
     const pointRateConfig = await configService.getConfig("point_rate_per_kg");
-    const pointRatePerKg = pointRateConfig ? parseInt(pointRateConfig, 10) : 2;
+    const pointRatePerKg = pointRateConfig ? parseInt(pointRateConfig, 10) : 5;
 
     const history = await prisma.pointHistory.findMany({
       where: { userId: petugasUserId },
@@ -742,9 +742,8 @@ export class ResiduService {
     const lokasiGps =
       data.latitude && data.longitude ? `${data.latitude}, ${data.longitude}` : null;
 
-    const pointRateConfig = await configService.getConfig("point_rate_per_kg");
-    const pointRatePerKg = pointRateConfig ? parseInt(pointRateConfig, 10) : 2;
-    const pointsEarned = Math.round(weightKg * pointRatePerKg) + (data.imagePhotoUrl ? 10 : 0);
+    // Poin petugas pemilahan: flat 5 poin per input timbangan
+    const pointsEarned = 5;
 
     const setoran = await prisma.setoranManual.create({
       data: {
@@ -893,11 +892,11 @@ export class ResiduService {
         },
       });
 
-      // Reward poin untuk Petugas saat memvalidasi / menyetujui pengajuan pengosongan
+      // Reward poin untuk Petugas saat memvalidasi / menyetujui pengajuan pengosongan (flat 5 poin)
       await tx.pointHistory.create({
         data: {
           userId: petugasUserId,
-          points: 15,
+          points: 5,
           description: `Reward validasi pengosongan tempat sampah (${request.bin?.qrCode || id})`,
           kategori: "VALIDASI_PENGOSONGAN",
           redeemable: false,

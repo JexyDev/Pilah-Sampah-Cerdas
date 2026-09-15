@@ -86,7 +86,7 @@ const normalizeRole = (role: string): UserRole => {
   if (["ADMIN_KECAMATAN", "Camat", "CAMAT_ADMIN"].includes(role)) return "CAMAT";
   if (["ADMIN_KELURAH", "Lurah", "LURAH_ADMIN"].includes(role)) return "LURAH";
   if (["DOSEN_PEMBIMBING", "DOSEN_PENDAMPING", "DOSEN_PENDAMPING_LAPANGAN", "DPL"].includes(role)) return "DPL";
-  if (["MPL", "Mitra Pendamping", "MITRA_PENDAMPING_LAPANGAN", "MITRA_PEMBIMBING_LAPANGAN"].includes(role)) return "MPL";
+  if (["MPL", "Mitra Pembimbing", "Mitra Pembimbing Lapangan", "Mitra Pendamping", "MITRA_PENDAMPING_LAPANGAN", "MITRA_PEMBIMBING_LAPANGAN", "MITRA PEMBIMBING LAPANGAN"].includes(role)) return "MPL";
   if (["PEMIMPIN", "PIMPINAN", "Pemimpin", "Pimpinan"].includes(role)) return "PIMPINAN";
   if (["TASKFORCE", "Panitia", "TASK_FORCE", "Panitia/Taskforce", "PANITIA_TASKFORCE"].includes(role)) return "TASK_FORCE";
   return role as UserRole;

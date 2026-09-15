@@ -15,7 +15,7 @@ Sistem BERSEKA mendukung **10 Peran (Role)** dengan tingkat otorisasi dan akses 
 |---|---|---|---|---|
 | 1 | **Warga** | No HP (+62) + OTP/Password | Rumah Tangga Sendiri | Read/Write (Setoran, Bin, Ide Daur Ulang) |
 | 2 | **Mahasiswa KKN** | No HP (+62) + Password (Profile: NIM) | Zona KKN & Warga Dampingan | Read/Write (Binding Warga, Location Ping) |
-| 3 | **DPL (Dosen Pendamping)** | No HP (+62) + Password (Profile: NIP) | Mahasiswa Dampingan KKN | Read/Write (Web Monitoring KKN & Logbook) |
+| 3 | **DPL (Dosen Pembimbing)** | No HP (+62) + Password (Profile: NIP) | Mahasiswa Dampingan KKN | Read/Write (Web Monitoring KKN & Logbook) |
 | 4 | **Petugas Residu** | No HP (+62) + Password | TPS / TPA Hilir & Web Portal | Read/Write (Web Monitoring Residu & Input Timbangan Manual) |
 | 5 | **RW** | No HP (+62) + Password | Wilayah RW Sendiri | Read/Write (Approval Bin, Pemanfaatan, Approval Ide) |
 | 6 | **Lurah** | No HP (+62) + Password | Se-Kelurahan | **Read-Only** (Strict Guard 403 write attempt) |
@@ -247,7 +247,7 @@ Sistem BERSEKA mendukung **10 Peran (Role)** dengan tingkat otorisasi dan akses 
 | M-04 | Handover KKN | Menyerahkan data warga & batch QR ke mahasiswa periode baru | Record histori tersimpan di `kkn_handover_history` | [ ] |
 | M-05 | Monitoring Dampingan | Memantau grafik kepatuhan warga dampingan | Flagging edukasi ulang muncul pada warga bermasalah | [ ] |
 
-### 3.7 Role: DPL (DOSEN PENDAMPING LAPANGAN)
+### 3.7 Role: DPL (DOSEN PEMBIMBING LAPANGAN)
 | ID Test | Fitur / Modul | Skenario Pengujian | Ekspektasi Hasil | Status |
 |---|---|---|---|---|
 | D-01 | Monitoring Absensi | Melihat rekapitulasi kehadiran mahasiswa dampingannya | Tampilan durasi & status hadir valid/di luar zona | [ ] |

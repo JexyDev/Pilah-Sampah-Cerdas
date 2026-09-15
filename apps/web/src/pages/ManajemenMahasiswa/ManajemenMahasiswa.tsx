@@ -357,7 +357,7 @@ const ManajemenMahasiswa: React.FC = () => {
       "Wilayah RT/RW",
       "Kelompok KKN",
       "Peran",
-      "Dosen Pendamping (DPL)",
+      "Dosen Pembimbing (DPL)",
       "Status",
       "Tanggal Terdaftar",
     ];
@@ -857,7 +857,7 @@ const ManajemenMahasiswa: React.FC = () => {
                     </span>
                   </div>
                   <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-lg border border-slate-100 dark:border-slate-800">
-                    <span className="text-slate-400 font-bold block mb-0.5">Dosen Pendamping (DPL)</span>
+                    <span className="text-slate-400 font-bold block mb-0.5">Dosen Pembimbing (DPL)</span>
                     <span className="font-bold text-indigo-600">
                       {selectedStudentDetail.studentProfile?.kelompok?.dplName ||
                         selectedStudentDetail.studentProfile?.kelompok?.dpl?.name ||
@@ -1043,7 +1043,7 @@ const ManajemenMahasiswa: React.FC = () => {
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-slate-500 font-bold flex items-center gap-1">
-                        <Users size={13} className="text-indigo-600" /> Dosen Pendamping (DPL):
+                        <Users size={13} className="text-indigo-600" /> Dosen Pembimbing (DPL):
                       </span>
                       <span className="font-bold text-slate-800 dark:text-slate-200">
                         {selectedKelompok.dpl?.name || selectedKelompok.dplNamaMentah || "-"}

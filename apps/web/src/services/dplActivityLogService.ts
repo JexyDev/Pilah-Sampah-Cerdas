@@ -106,7 +106,7 @@ export const dplActivityLogService = {
       5: { tanggalRange: "9 - 15 September 2026", startDate: "2026-09-09T00:00:00.000Z", endDate: "2026-09-15T23:59:59.000Z", kegiatanUtama: "Uji Coba Aplikasi & Edukasi Warga Door-to-Door" },
       6: { tanggalRange: "16 - 22 September 2026", startDate: "2026-09-16T00:00:00.000Z", endDate: "2026-09-22T23:59:59.000Z", kegiatanUtama: "Perluasan Program ke Seluruh RW" },
       7: { tanggalRange: "23 - 29 September 2026", startDate: "2026-09-23T00:00:00.000Z", endDate: "2026-09-29T23:59:59.000Z", kegiatanUtama: "Aktivasi Leaderboard & Bank Sampah" },
-      8: { tanggalRange: "30 September - 6 Oktober 2026", startDate: "2026-09-30T00:00:00.000Z", endDate: "2026-10-06T23:59:59.000Z", kegiatanUtama: "Pendampingan Pengangkutan IoT & Kompos" },
+      8: { tanggalRange: "30 September - 6 Oktober 2026", startDate: "2026-09-30T00:00:00.000Z", endDate: "2026-10-06T23:59:59.000Z", kegiatanUtama: "Pembimbingan Pengangkutan IoT & Kompos" },
       9: { tanggalRange: "7 - 13 Oktober 2026", startDate: "2026-10-07T00:00:00.000Z", endDate: "2026-10-13T23:59:59.000Z", kegiatanUtama: "Operasional Bank Sampah & POC" },
       10: { tanggalRange: "14 - 20 Oktober 2026", startDate: "2026-10-14T00:00:00.000Z", endDate: "2026-10-20T23:59:59.000Z", kegiatanUtama: "Mitigasi & Penguatan Kelembagaan TPS 3R" },
       11: { tanggalRange: "21 - 27 Oktober 2026", startDate: "2026-10-21T00:00:00.000Z", endDate: "2026-10-27T23:59:59.000Z", kegiatanUtama: "Optimalisasi Rute & SOP Pengelolaan" },

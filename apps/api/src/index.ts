@@ -275,7 +275,8 @@ app.use("/api/v1/master-kegiatan", masterKegiatanRouter);
 app.use("/api/v1/master/luaran", masterLuaranRouter);
 app.use("/api/v1/master-luaran", masterLuaranRouter);
 app.use("/api/v1/penilaian-kkn", penilaianKknRouter);
-app.use("/api/v1/analisis-sistem", systemAnalysisRouter);
+app.use(["/api/v1/analisis-sistem", "/api/v1/system-analysis"], systemAnalysisRouter);
+app.use(["/api/v1/kelompok-kkn", "/api/v1/kelompok"], kelompokRouter);
 app.use("/api/v1/timeline-kkn", timelineKknRouter);
 app.use("/api/v1/logbook", logbookRouter);
 app.use("/api/v1/berita", beritaRouter);
@@ -298,6 +299,8 @@ app.use("/api/rt", rwRouter);
 app.use("/api/areas", areaRouter);
 app.use("/api/wilayah", areaRouter);
 app.use("/api/penilaian-kkn", penilaianKknRouter);
+app.use(["/api/analisis-sistem", "/api/system-analysis"], systemAnalysisRouter);
+app.use(["/api/kelompok-kkn", "/api/kelompok"], kelompokRouter);
 
 // Dedicated Direct Endpoints for Web Dashboard Monitoring & Mobile Background Worker
 // (Explicitly mapped without root wildcards to eliminate router collision while guaranteeing 100% compatibility)

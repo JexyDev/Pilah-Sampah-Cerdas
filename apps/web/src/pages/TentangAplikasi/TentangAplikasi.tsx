@@ -59,7 +59,7 @@ const Informasi: React.FC = () => {
       case "DOSEN_PEMBIMBING":
         return {
           title: "Dosen Pembimbing Lapangan (DPL)",
-          desc: "Panduan pendampingan akademik, verifikasi logbook presensi, validasi pengajuan izin mahasiswa, dan pengisian nilai akhir program KKN.",
+          desc: "Panduan pembimbingan akademik, verifikasi logbook presensi, validasi pengajuan izin mahasiswa, dan pengisian nilai akhir program KKN.",
           icon: GraduationCap,
           color: "bg-indigo-50 text-indigo-700 border-indigo-200",
         };
@@ -80,7 +80,7 @@ const Informasi: React.FC = () => {
       case "MAHASISWA_KKN":
         return {
           title: "Mahasiswa KKN UNIKOM",
-          desc: "Panduan presensi GPS geofencing harian, pendampingan pendaftaran warga & aktivasi tempat sampah, serta pengisian instrumen survei.",
+          desc: "Panduan presensi GPS geofencing harian, pembimbingan pendaftaran warga & aktivasi tempat sampah, serta pengisian instrumen survei.",
           icon: UserCheck,
           color: "bg-sky-50 text-sky-700 border-sky-200",
         };
@@ -509,7 +509,7 @@ const Informasi: React.FC = () => {
 
                   <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-1">
                     <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">Q: Ke mana saya dapat menghubungi bantuan teknis jika terjadi kendala?</h4>
-                    <p className="text-xs text-slate-600 dark:text-slate-400">A: Hubungi Tim Pendamping KKN UNIKOM di posko kelurahan masing-masing atau melalui kanal resmi Dinas Lingkungan Hidup.</p>
+                    <p className="text-xs text-slate-600 dark:text-slate-400">A: Hubungi Tim Pembimbing KKN UNIKOM di posko kelurahan masing-masing atau melalui kanal resmi Dinas Lingkungan Hidup.</p>
                   </div>
                 </div>
               </div>
@@ -620,8 +620,8 @@ const Informasi: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[
                   { role: "Warga", icon: Users, desc: "Akses Mobile: Foto sampah AI, scan QR Tempat Sampah, riwayat setoran, poin reward, dan ide daur ulang." },
-                  { role: "Mahasiswa KKN", icon: GraduationCap, desc: "Akses Mobile & Web: Presensi GPS, pendampingan aktivasi QR warga, verifikasi tempat sampah, dan pengisian survei." },
-                  { role: "Dosen Pembimbing Lapangan (DPL)", icon: UserCheck, desc: "Akses Web Portal: Monitoring mahasiswa dampingan, penilaian kinerja KKN, validasi permohonan izin/sakit." },
+                  { role: "Mahasiswa KKN", icon: GraduationCap, desc: "Akses Mobile & Web: Presensi GPS, pembimbingan aktivasi QR warga, verifikasi tempat sampah, dan pengisian survei." },
+                  { role: "Dosen Pembimbing Lapangan (DPL)", icon: UserCheck, desc: "Akses Web Portal: Monitoring mahasiswa bimbingan, penilaian kinerja KKN, validasi permohonan izin/sakit." },
                   { role: "Petugas Residu", icon: Truck, desc: "Akses Mobile & Web: Jadwal pengangkutan, rute TPS, klaim tugas penjemputan, dan input timbangan fisik." },
                   { role: "Rukun Warga (RW)", icon: Building2, desc: "Akses Web: Persetujuan tempat sampah warga, monitoring kepatuhan RW, fasilitas pengolahan, dan ide inovasi." },
                   { role: "Lurah & Camat", icon: Building, desc: "Akses Web Read-Only: Monitoring spasial agregasi wilayah, statistik median kepatuhan, dan eskalasi layanan." },
@@ -780,13 +780,13 @@ const Informasi: React.FC = () => {
               label: "Panitia Taskforce KKN",
               icon: Briefcase,
               color: "bg-teal-50 text-teal-700 border-teal-200",
-              desc: "Koordinasi satgas KKN lintas kelurahan, alokasi kelompok dampingan DPL, impor data survei baseline/endline, dan eskalasi izin darurat mahasiswa.",
+              desc: "Koordinasi satgas KKN lintas kelurahan, alokasi kelompok bimbingan DPL, impor data survei baseline/endline, dan eskalasi izin darurat mahasiswa.",
             },
             {
               label: "Mahasiswa KKN",
               icon: UserCheck,
               color: "bg-sky-50 text-sky-700 border-sky-200",
-              desc: "Presensi harian berbasis GPS geofencing, pendampingan aktivasi QR Code tempat sampah warga, pengisian instrumen survei lapangan.",
+              desc: "Presensi harian berbasis GPS geofencing, pembimbingan aktivasi QR Code tempat sampah warga, pengisian instrumen survei lapangan.",
             },
             {
               label: "Warga",

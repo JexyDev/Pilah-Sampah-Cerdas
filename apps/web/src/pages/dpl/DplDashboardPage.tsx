@@ -949,7 +949,7 @@ export const DplDashboardPage: React.FC = () => {
                   </div>
 
                   <div className="space-y-1">
-                    <span className="text-slate-400 font-bold text-[10.5px] uppercase block">Dosen Pendamping</span>
+                    <span className="text-slate-400 font-bold text-[10.5px] uppercase block">Dosen Pembimbing</span>
                     <span className="font-bold text-slate-800 dark:text-slate-200 block truncate" title={selectedGroupForDetail.dpl?.name || "-"}>
                       {selectedGroupForDetail.dpl?.name || "-"}
                     </span>

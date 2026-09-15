@@ -128,6 +128,58 @@ export const penilaianKknService = {
       }
     }
 
+    // Strict Scope: Jika evaluator MPL, pastikan mahasiswa berada di bawah kelompok/wilayah binaannya
+    if (
+      evaluatorRole &&
+      ["MPL", "MITRA_PENDAMPING_LAPANGAN", "MITRA_PEMBIMBING_LAPANGAN"].includes(
+        evaluatorRole.toUpperCase()
+      ) &&
+      evaluatorId
+    ) {
+      const mplUser = await prisma.user.findUnique({
+        where: { id: evaluatorId },
+        include: { rw: { include: { kelurahan: true } } },
+      });
+      let mplKelurahanId = mplUser?.rw?.kelurahanId;
+      let mplKelurahanName = mplUser?.rw?.kelurahan?.name;
+
+      if (!mplKelurahanName && mplUser?.address) {
+        const cleanAddress = mplUser.address.replace(/^Kel\.\s*/i, "").trim();
+        const match = await prisma.kelurahan.findFirst({
+          where: {
+            name: { contains: cleanAddress, mode: "insensitive" },
+          },
+        });
+        if (match) {
+          mplKelurahanId = match.id;
+          mplKelurahanName = match.name;
+        } else {
+          mplKelurahanName = cleanAddress;
+        }
+      }
+
+      const isDirectMpl = profile?.mplId === evaluatorId || kelompok?.mplId === evaluatorId;
+
+      const isKelurahanRwMatch = Boolean(
+        mplKelurahanId &&
+        (rw?.kelurahanId === mplKelurahanId || profile?.assignedRw?.kelurahanId === mplKelurahanId)
+      );
+
+      const isKelompokKelurahanMatch = Boolean(
+        mplKelurahanName &&
+        kelompok?.kelurahan &&
+        (kelompok.kelurahan.toLowerCase().trim() === mplKelurahanName.toLowerCase().trim() ||
+          kelompok.kelurahan.toLowerCase().includes(mplKelurahanName.toLowerCase()) ||
+          mplKelurahanName.toLowerCase().includes(kelompok.kelurahan.toLowerCase()))
+      );
+
+      if (!isDirectMpl && !isKelurahanRwMatch && !isKelompokKelurahanMatch) {
+        throw new Error(
+          "Akses ditolak: Mahasiswa ini bukan bagian dari kelompok / wilayah binaan MPL Anda"
+        );
+      }
+    }
+
     // 1. Hitung Kehadiran Real dari Database (Berdasarkan durasi menit aktual & status pemenuhan jam)
     const ruleConfigs = await configService.getRuleEngineConfigs().catch(() => null);
     const targetLogbook = ruleConfigs?.logbookTargetKegiatan || 24;
@@ -248,7 +300,7 @@ export const penilaianKknService = {
     // 4. Mitra Penilai (Ketua RW atau Mitra Lapangan)
     const namaMitra = rw?.name
       ? `Ketua ${rw.name} (${kelurahan?.name || "Coblong"})`
-      : "Mitra Pendamping Lapangan (MPL) RW";
+      : "Mitra Pembimbing Lapangan (MPL) RW";
 
     // 5. Existing Penilaian Record - Default to calculated rates if not yet explicitly saved
     const existing = studentUser.penilaianKkn;
@@ -434,6 +486,58 @@ export const penilaianKknService = {
       }
     }
 
+    // Strict Scope: MPL hanya dapat menilai mahasiswa di bawah wilayah/kelompok binaannya
+    if (isMpl && evaluatorId) {
+      const mplUser = await prisma.user.findUnique({
+        where: { id: evaluatorId },
+        include: { rw: { include: { kelurahan: true } } },
+      });
+      let mplKelurahanId = mplUser?.rw?.kelurahanId;
+      let mplKelurahanName = mplUser?.rw?.kelurahan?.name;
+
+      if (!mplKelurahanName && mplUser?.address) {
+        const cleanAddress = mplUser.address.replace(/^Kel\.\s*/i, "").trim();
+        const match = await prisma.kelurahan.findFirst({
+          where: {
+            name: { contains: cleanAddress, mode: "insensitive" },
+          },
+        });
+        if (match) {
+          mplKelurahanId = match.id;
+          mplKelurahanName = match.name;
+        } else {
+          mplKelurahanName = cleanAddress;
+        }
+      }
+
+      const isDirectMpl =
+        studentUser.studentProfile?.mplId === evaluatorId ||
+        studentUser.studentProfile?.kelompok?.mplId === evaluatorId;
+
+      const isKelurahanRwMatch = Boolean(
+        mplKelurahanId && studentUser.studentProfile?.assignedRw?.kelurahanId === mplKelurahanId
+      );
+
+      const isKelompokKelurahanMatch = Boolean(
+        mplKelurahanName &&
+        studentUser.studentProfile?.kelompok?.kelurahan &&
+        (studentUser.studentProfile.kelompok.kelurahan.toLowerCase().trim() ===
+          mplKelurahanName.toLowerCase().trim() ||
+          studentUser.studentProfile.kelompok.kelurahan
+            .toLowerCase()
+            .includes(mplKelurahanName.toLowerCase()) ||
+          mplKelurahanName
+            .toLowerCase()
+            .includes(studentUser.studentProfile.kelompok.kelurahan.toLowerCase()))
+      );
+
+      if (!isDirectMpl && !isKelurahanRwMatch && !isKelompokKelurahanMatch) {
+        throw new Error(
+          "Akses ditolak: Anda hanya berwenang menilai mahasiswa di wilayah / kelompok binaan MPL Anda"
+        );
+      }
+    }
+
     if (studentUser.penilaianKkn?.isFinalized && !["SUPER_USER", "DEVELOPER"].includes(normRole)) {
       throw new Error(
         "Penilaian telah difinalisasi dan dikunci. Hubungi Administrator untuk pembukaan kunci."
@@ -570,10 +674,10 @@ export const penilaianKknService = {
     const mitraId = isMitra ? evaluatorId : prev?.mitraId || null;
     const mplId = isMpl ? evaluatorId : prev?.mplId || null;
     const defaultMitraName = isMpl
-      ? "Mitra Pendamping Lapangan"
+      ? "Mitra Pembimbing Lapangan"
       : studentUser.studentProfile?.assignedRw?.name
         ? `Ketua ${studentUser.studentProfile.assignedRw.name}`
-        : "Mitra Pendamping Lapangan";
+        : "Mitra Pembimbing Lapangan";
     const namaMitraPenilai = payload.namaMitraPenilai || prev?.namaMitraPenilai || defaultMitraName;
     const catatanDpl = isMitra
       ? (prev?.catatanDpl ?? "")
@@ -677,10 +781,7 @@ export const penilaianKknService = {
 
     const normRole = String(evaluatorRole || "").toUpperCase();
 
-    if (
-      ["DPL", "DOSEN_PEMBIMBING", "DOSEN_PENDAMPING"].includes(normRole) &&
-      evaluatorId
-    ) {
+    if (["DPL", "DOSEN_PEMBIMBING", "DOSEN_PENDAMPING"].includes(normRole) && evaluatorId) {
       const evalUser = await prisma.user.findUnique({
         where: { id: evaluatorId },
         select: { id: true, name: true, phone: true, nip: true },
@@ -707,18 +808,36 @@ export const penilaianKknService = {
         where: { id: evaluatorId },
         include: { rw: { include: { kelurahan: true } } },
       });
-      const kelurahanId = mplUser?.rw?.kelurahanId;
-      const kelurahanName = mplUser?.rw?.kelurahan?.name;
+      let kelurahanId = mplUser?.rw?.kelurahanId;
+      let kelurahanName = mplUser?.rw?.kelurahan?.name;
 
-      const mplConditions: any[] = [
-        { mplId: evaluatorId },
-        { kelompok: { mplId: evaluatorId } },
-      ];
+      // In Berseka, MPL is assigned at Kelurahan level where rwId is null but address stores "Kel. <name>"
+      if (!kelurahanName && mplUser?.address) {
+        const cleanAddress = mplUser.address.replace(/^Kel\.\s*/i, "").trim();
+        const match = await prisma.kelurahan.findFirst({
+          where: {
+            name: { contains: cleanAddress, mode: "insensitive" },
+          },
+        });
+        if (match) {
+          kelurahanId = match.id;
+          kelurahanName = match.name;
+        } else {
+          kelurahanName = cleanAddress;
+        }
+      }
+
+      const mplConditions: any[] = [{ mplId: evaluatorId }, { kelompok: { mplId: evaluatorId } }];
       if (kelurahanId) {
         mplConditions.push({ assignedRw: { kelurahanId } });
       }
       if (kelurahanName) {
-        mplConditions.push({ kelompok: { kelurahan: { equals: kelurahanName, mode: "insensitive" } } });
+        mplConditions.push({
+          kelompok: { kelurahan: { equals: kelurahanName, mode: "insensitive" } },
+        });
+        mplConditions.push({
+          kelompok: { kelurahan: { contains: kelurahanName, mode: "insensitive" } },
+        });
       }
       whereCondition.studentProfile = {
         OR: mplConditions,
@@ -1356,7 +1475,7 @@ export const penilaianKknService = {
         const currentSkorDplLogbook = existing?.skorDplLogbook ?? 0;
         const currentSkorDplAnalisis = existing?.skorDplAnalisis ?? 0;
         const currentSkorDplOutput = existing?.skorDplOutput ?? 0;
-        
+
         // Pertahankan nilai esai individual jika DPL sudah menyesuaikannya secara spesifik
         const hasCustomIndividualScore =
           existing &&
@@ -1452,7 +1571,10 @@ export const penilaianKknService = {
         }
       }
     } catch (err: any) {
-      console.warn("[penilaianKknService.saveLaporanAkhirKelompokScore] Push notification error:", err?.message);
+      console.warn(
+        "[penilaianKknService.saveLaporanAkhirKelompokScore] Push notification error:",
+        err?.message
+      );
     }
 
     return {
@@ -1598,7 +1720,10 @@ export const penilaianKknService = {
           });
         }
       } catch (err: any) {
-        console.warn("[penilaianKknService.saveLaporanAkhirScore] Sync primary proker warning:", err?.message);
+        console.warn(
+          "[penilaianKknService.saveLaporanAkhirScore] Sync primary proker warning:",
+          err?.message
+        );
       }
     }
 

@@ -345,13 +345,13 @@ const DownloadPage: React.FC = () => {
                     Mahasiswa
                   </h3>
                   <p className="text-xs text-slate-600 font-medium leading-relaxed">
-                    Pendampingan pemilahan sampah warga, verifikasi data lapangan, dan pencatatan presensi kegiatan posko KKN.
+                    Pembimbingan pemilahan sampah warga, verifikasi data lapangan, dan pencatatan presensi kegiatan posko KKN.
                   </p>
                 </div>
                 <ul className="space-y-2.5 text-xs text-slate-700 font-semibold pt-3 border-t border-slate-100">
                   <li className="flex items-center gap-2.5">
                     <CheckCircle2 size={16} className="text-teal-600 shrink-0" />
-                    <span>Pendampingan pemetaan &amp; registrasi warga RW</span>
+                    <span>Pembimbingan pemetaan &amp; registrasi warga RW</span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <CheckCircle2 size={16} className="text-teal-600 shrink-0" />
@@ -530,7 +530,7 @@ const DownloadPage: React.FC = () => {
             <ul className="space-y-2.5 text-xs font-semibold">
               <li><Link to="/login" className="hover:text-white transition">Portal Rukun Warga</Link></li>
               <li><Link to="/login" className="hover:text-white transition">Portal Dosen Pembimbing Lapangan</Link></li>
-              <li><Link to="/login" className="hover:text-white transition">Pendampingan Kuliah Kerja Nyata</Link></li>
+              <li><Link to="/login" className="hover:text-white transition">Pembimbingan Kuliah Kerja Nyata</Link></li>
             </ul>
           </div>
 

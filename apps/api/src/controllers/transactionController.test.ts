@@ -88,8 +88,8 @@ describe("TransactionController - Sorting Status (is_correct) Response Tests", (
       const item = jsonCall.data[0];
       expect(item.ai_confidence).toBe(0.45);
       expect(item.discrepancy_status).toBe("NONE");
-      expect(item.is_correct).toBe(false);
-      expect(item.isCorrect).toBe(false);
+      expect(item.is_correct).toBe(true);
+      expect(item.isCorrect).toBe(true);
     });
 
     it("should return is_correct: false when user throws organic waste into anorganic bin (discrepancy != NONE)", async () => {

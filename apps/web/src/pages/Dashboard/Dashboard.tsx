@@ -52,12 +52,12 @@ export interface KelurahanBaselineData {
  * Lihat kebijakan anti-dummy di AGENTS.md.
  */
 export const KELURAHAN_BASELINE_DATA: KelurahanBaselineData[] = [
-  { id: "kel-cipaganti", kelurahan: "Cipaganti", baselineRate: 13.67, baselineKg: 0, endlineRate: 100, totalKg: 0.50, status: "Terverifikasi Real" },
-  { id: "kel-dago", kelurahan: "Dago", baselineRate: 10.00, baselineKg: 500, endlineRate: 0, totalKg: 0, status: "Belum Terverifikasi" },
-  { id: "kel-lebakgede", kelurahan: "Lebak Gede", baselineRate: 21.60, baselineKg: 250, endlineRate: 100, totalKg: 4.00, status: "Terverifikasi Real" },
-  { id: "kel-lebaksiliwangi", kelurahan: "Lebak Siliwangi", baselineRate: 15.00, baselineKg: 10, endlineRate: 100, totalKg: 6.79, status: "Terverifikasi Real" },
-  { id: "kel-sadangserang", kelurahan: "Sadang Serang", baselineRate: 24.80, baselineKg: 7298.5, endlineRate: 100, totalKg: 48.50, status: "Terverifikasi Real" },
-  { id: "kel-sekeloa", kelurahan: "Sekeloa", baselineRate: 17.80, baselineKg: 9723.4, endlineRate: 100, totalKg: 5.50, status: "Terverifikasi Real" },
+  { id: "kel-cipaganti", kelurahan: "Cipaganti", baselineRate: 0, baselineKg: 0, endlineRate: 0, totalKg: 0, status: "Belum Terverifikasi" },
+  { id: "kel-dago", kelurahan: "Dago", baselineRate: 0, baselineKg: 0, endlineRate: 0, totalKg: 0, status: "Belum Terverifikasi" },
+  { id: "kel-lebakgede", kelurahan: "Lebak Gede", baselineRate: 0, baselineKg: 0, endlineRate: 0, totalKg: 0, status: "Belum Terverifikasi" },
+  { id: "kel-lebaksiliwangi", kelurahan: "Lebak Siliwangi", baselineRate: 0, baselineKg: 0, endlineRate: 0, totalKg: 0, status: "Belum Terverifikasi" },
+  { id: "kel-sadangserang", kelurahan: "Sadang Serang", baselineRate: 0, baselineKg: 0, endlineRate: 0, totalKg: 0, status: "Belum Terverifikasi" },
+  { id: "kel-sekeloa", kelurahan: "Sekeloa", baselineRate: 0, baselineKg: 0, endlineRate: 0, totalKg: 0, status: "Belum Terverifikasi" },
 ];
 
 const DEFAULT_WILAYAH_OPTIONS: SelectOption[] = [
@@ -1902,7 +1902,7 @@ const Dashboard: React.FC = () => {
     return () => clearInterval(interval);
   }, [user, weeks, timeFilter, startDate, endDate, selectedWilayah, activeSubTab]);
 
-  if (user?.peran === "MPL" || (user?.peran as string) === "MITRA_PENDAMPING_LAPANGAN") {
+  if (user?.peran === "MPL" || (user?.peran as string) === "MITRA_PEMBIMBING_LAPANGAN" || (user?.peran as string) === "MITRA_PENDAMPING_LAPANGAN") {
     return <Navigate to="/penilaian/mahasiswa" replace />;
   }
   if (user?.peran === "WARGA") return <WargaDashboard />;
@@ -1911,7 +1911,8 @@ const Dashboard: React.FC = () => {
   if (user?.peran === "PETUGAS_RESIDU") return <ResiduDashboard />;
   if (
     user?.peran === "DPL" ||
-    user?.peran === "DOSEN_PEMBIMBING"
+    user?.peran === "DOSEN_PEMBIMBING" ||
+    (user?.peran as string) === "DOSEN_PENDAMPING"
   ) {
     return <DplDashboardPage />;
   }
@@ -2017,7 +2018,7 @@ const Dashboard: React.FC = () => {
   const kelurahanBaselineList: KelurahanBaselineData[] =
     stats?.baselineComparison && Array.isArray(stats.baselineComparison) && stats.baselineComparison.length > 0
       ? stats.baselineComparison
-      : KELURAHAN_BASELINE_DATA;
+      : (loading ? KELURAHAN_BASELINE_DATA : []);
 
   const avgBaseline =
     kelurahanBaselineList.length > 0
@@ -2773,7 +2774,7 @@ const Dashboard: React.FC = () => {
               </h3>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              Perbandingan tingkat pemilahan sampah awal sebelum pendampingan (Survei Baseline) dengan capaian kepatuhan pemilahan aktual real-time di 6 Kelurahan Kecamatan Coblong.
+              Perbandingan tingkat pemilahan sampah awal sebelum pembimbingan (Survei Baseline) dengan capaian kepatuhan pemilahan aktual real-time di 6 Kelurahan Kecamatan Coblong.
             </p>
             <div className="flex items-center gap-2 pt-1 text-[11px] text-slate-400 font-semibold">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />

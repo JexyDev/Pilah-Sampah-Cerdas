@@ -956,7 +956,7 @@ export const kknExecutiveService = {
         count: under60AttendanceCount,
         unit: "Kelompok",
         title: `${under60AttendanceCount} Kelompok Presensi di Bawah 60%`,
-        subtitle: "Perlu pendampingan khusus dan evaluasi lapangan",
+        subtitle: "Perlu pembimbingan khusus dan evaluasi lapangan",
         type: "warning",
         link: "/monitoring-kegiatan/laporan-presensi?filter=under60",
       },

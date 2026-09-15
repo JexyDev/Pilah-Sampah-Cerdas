@@ -612,7 +612,7 @@ export const AnalyticsOverviewBoard: React.FC = () => {
         {/* 5. Tabel Peringkat Mahasiswa KKN */}
         <TableSection
           title="Peringkat Mahasiswa KKN"
-          subtitle="Tabel skor akhir individual seluruh mahasiswa pendamping KKN"
+          subtitle="Tabel skor akhir individual seluruh mahasiswa bimbingan KKN"
           icon={GraduationCap}
           iconBgColor="bg-purple-50 dark:bg-purple-950/60 border-purple-200 dark:border-purple-700/40"
           iconTextColor="text-purple-600 dark:text-purple-400"

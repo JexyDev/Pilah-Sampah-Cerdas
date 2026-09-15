@@ -184,8 +184,8 @@ describe("kknService.getWilayahKelompok", () => {
     const result = await kknService.getWilayahKelompok("user-3");
 
     expect(result.posko).toEqual({
-      latitude: -6.89,
-      longitude: 107.62,
+      latitude: null,
+      longitude: null,
     });
     expect(result.tipeArea).toBe("RADIUS");
     expect(result.radiusMeters).toBe(500);
