@@ -655,6 +655,16 @@ export async function getKelompokWhere(dplUserId: string, role?: any) {
       }
     }
 
+    // Fallback: deteksi kelurahan dari nama pengguna MPL (contoh: "Mpl Kelurahan Cipaganti" -> "Cipaganti")
+    if (!kelurahanName && mplUser?.name) {
+      const allKelurahans = await prisma.kelurahan.findMany({ select: { name: true } });
+      const lowerName = mplUser.name.toLowerCase();
+      const matchedKel = allKelurahans.find((k) => lowerName.includes(k.name.toLowerCase()));
+      if (matchedKel) {
+        kelurahanName = matchedKel.name;
+      }
+    }
+
     const mplConditions: any[] = [{ mplId: dplUserId }, { mpl: { id: dplUserId } }];
     if (kelurahanName) {
       mplConditions.push({

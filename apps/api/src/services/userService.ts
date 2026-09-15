@@ -698,8 +698,74 @@ export class UserService {
     }
     const formattedPhone = formatPhoneNumber(phone);
 
-    const existingPhone = await prisma.user.findUnique({ where: { phone: formattedPhone } });
+    const existingPhone = await prisma.user.findUnique({
+      where: { phone: formattedPhone },
+      include: { role: true },
+    });
+
     if (existingPhone) {
+      const existingRoleName = existingPhone.role?.name || "";
+      const isDplOrTaskforceOrPimpinan = [
+        "DPL",
+        "DOSEN_PEMBIMBING",
+        "PANITIA_TASKFORCE",
+        "TASK_FORCE",
+        "PEMIMPIN",
+        "PIMPINAN",
+      ].includes(existingRoleName);
+      const isTargetTaskforceOrPimpinan = [
+        "PANITIA_TASKFORCE",
+        "TASK_FORCE",
+        "PEMIMPIN",
+        "PIMPINAN",
+      ].includes(roleName);
+
+      if (isDplOrTaskforceOrPimpinan && isTargetTaskforceOrPimpinan) {
+        // Multi-role assignment / role sync for existing DPL / TaskForce / Pimpinan
+        const role = await userRepository.findRoleByName(roleName);
+        if (!role) {
+          throw new Error("ROLE_NOT_FOUND");
+        }
+
+        let passwordHash = existingPhone.password;
+        if (password) {
+          const { isPasswordValid } = await import("../utils/passwordValidator.js");
+          const passCheck = isPasswordValid(password);
+          if (!passCheck.ok) {
+            throw new Error("INVALID_PASSWORD: " + passCheck.reason);
+          }
+          passwordHash = await hashPassword(password);
+        }
+
+        const updated = await prisma.user.update({
+          where: { id: existingPhone.id },
+          data: {
+            roleId: role.id,
+            password: passwordHash,
+            name: name || existingPhone.name,
+            nip: nip || existingPhone.nip,
+            institusi: institusi || existingPhone.institusi,
+            jabatan: data.jabatan || existingPhone.jabatan,
+            programStudi: programStudi || existingPhone.programStudi,
+            jenjangPendidikan: jenjangPendidikan || existingPhone.jenjangPendidikan,
+            status: status || existingPhone.status,
+            fotoProfil:
+              data.fotoProfil && data.fotoProfil.trim() !== ""
+                ? data.fotoProfil
+                : existingPhone.fotoProfil,
+          },
+          include: { role: { select: { name: true } } },
+        });
+
+        return {
+          id: updated.id,
+          name: updated.name,
+          phone: updated.phone,
+          role: updated.role?.name,
+          isLinkedFromDpl: true,
+        };
+      }
+
       throw new Error("PHONE_CONFLICT");
     }
 

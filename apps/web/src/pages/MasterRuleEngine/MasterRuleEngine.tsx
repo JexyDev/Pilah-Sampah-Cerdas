@@ -24,6 +24,9 @@ import {
   Trash2,
   Bot,
   BookOpen,
+  Award,
+  Sliders,
+  Building2,
 } from "lucide-react";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
@@ -50,6 +53,8 @@ export interface RuleEngineConfig {
   logbookTargetKegiatan: number;
   logbookBackdateToleranceDays: number;
   logbookBobotPersen: number;
+  penilaianBobotDplPersen: number;
+  penilaianBobotMplPersen: number;
 }
 
 const DEFAULT_CONFIG: RuleEngineConfig = {
@@ -76,6 +81,8 @@ const DEFAULT_CONFIG: RuleEngineConfig = {
   logbookTargetKegiatan: 24,
   logbookBackdateToleranceDays: 1,
   logbookBobotPersen: 20,
+  penilaianBobotDplPersen: 50,
+  penilaianBobotMplPersen: 50,
 };
 
 const MasterRuleEngine: React.FC = () => {
@@ -841,6 +848,158 @@ const MasterRuleEngine: React.FC = () => {
               </div>
               <span className="font-mono font-bold text-[11px] bg-white dark:bg-slate-900 px-2 py-1 rounded border border-teal-300 dark:border-teal-700 shrink-0">
                 Formula: (Disetujui / {config.logbookTargetKegiatan}) × 100
+              </span>
+            </div>
+          </div>
+
+          {/* ========================================== */}
+          {/* RULE 6: KOMPOSISI BOBOT NILAI AKHIR KKN (DPL & MPL) */}
+          {/* ========================================== */}
+          <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 sm:p-6 space-y-5 shadow-2xs">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center border border-indigo-200/60 shrink-0">
+                  <Award size={20} />
+                </div>
+                <div>
+                  <h2 className="text-sm font-black text-slate-900 dark:text-slate-100">
+                    Komposisi Bobot Nilai Akhir KKN (DPL &amp; MPL)
+                  </h2>
+                  <p className="text-[11px] font-semibold text-slate-500">
+                    Konfigurasi Dinamis Bobot Kontribusi Dosen Pembimbing (DPL) dan Mitra Lapangan (MPL)
+                  </p>
+                </div>
+              </div>
+              <span className="bg-indigo-100 text-indigo-800 border border-indigo-300 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase shrink-0">
+                Formula Nilai Akhir
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {/* Slider & Kontrol DPL */}
+              <div className="bg-slate-50 dark:bg-slate-800/60 p-4.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
+                      <GraduationCap size={15} />
+                    </div>
+                    <div>
+                      <span className="text-xs font-black text-slate-800 dark:text-slate-100 block">Bobot Dosen Pembimbing (DPL)</span>
+                      <span className="text-[10px] text-slate-500 font-medium">Aspek Akademik, Logbook &amp; Laporan Akhir</span>
+                    </div>
+                  </div>
+                  <span className="text-xs font-black text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-lg border border-emerald-300">
+                    {config.penilaianBobotDplPersen}%
+                  </span>
+                </div>
+
+                <input
+                  type="range"
+                  min="10"
+                  max="90"
+                  step="5"
+                  value={config.penilaianBobotDplPersen}
+                  onChange={(e) => {
+                    const dplVal = parseInt(e.target.value) || 50;
+                    const mplVal = 100 - dplVal;
+                    handleChange("penilaianBobotDplPersen", dplVal);
+                    handleChange("penilaianBobotMplPersen", mplVal);
+                  }}
+                  className="w-full accent-emerald-600 cursor-pointer"
+                />
+
+                <div className="flex justify-between text-[10.5px] font-bold text-slate-400">
+                  <span>10% (Min)</span>
+                  <span>50% (Standar)</span>
+                  <span>90% (Maks)</span>
+                </div>
+              </div>
+
+              {/* Slider & Kontrol MPL */}
+              <div className="bg-slate-50 dark:bg-slate-800/60 p-4.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-sky-100 text-sky-800 flex items-center justify-center shrink-0">
+                      <Building2 size={15} />
+                    </div>
+                    <div>
+                      <span className="text-xs font-black text-slate-800 dark:text-slate-100 block">Bobot Mitra Lapangan (MPL)</span>
+                      <span className="text-[10px] text-slate-500 font-medium">Aspek Lapangan, Kehadiran &amp; Warga Binaan</span>
+                    </div>
+                  </div>
+                  <span className="text-xs font-black text-sky-800 bg-sky-100 px-2.5 py-1 rounded-lg border border-sky-300">
+                    {config.penilaianBobotMplPersen}%
+                  </span>
+                </div>
+
+                <input
+                  type="range"
+                  min="10"
+                  max="90"
+                  step="5"
+                  value={config.penilaianBobotMplPersen}
+                  onChange={(e) => {
+                    const mplVal = parseInt(e.target.value) || 50;
+                    const dplVal = 100 - mplVal;
+                    handleChange("penilaianBobotMplPersen", mplVal);
+                    handleChange("penilaianBobotDplPersen", dplVal);
+                  }}
+                  className="w-full accent-sky-600 cursor-pointer"
+                />
+
+                <div className="flex justify-between text-[10.5px] font-bold text-slate-400">
+                  <span>10% (Min)</span>
+                  <span>50% (Standar)</span>
+                  <span>90% (Maks)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Live Simulation Box */}
+            <div className="p-4 rounded-2xl bg-[#f5f8ff] dark:bg-slate-800/80 border border-indigo-200/80 dark:border-indigo-900/50 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs font-black text-indigo-800 dark:text-indigo-300">
+                  <Sparkles size={16} />
+                  <span>Simulasi Perhitungan Nilai Akhir Komposit</span>
+                </div>
+                <span className="text-[11px] font-mono font-extrabold text-indigo-700 bg-indigo-100 dark:bg-indigo-950 px-2.5 py-0.5 rounded-full border border-indigo-300 dark:border-indigo-800">
+                  Total Komposisi: {config.penilaianBobotDplPersen + config.penilaianBobotMplPersen}% (100% Sah)
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs pt-1">
+                <div className="p-2.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <span className="text-[10px] font-bold text-slate-400 block uppercase">Kontribusi DPL (Misal Skor: 85.00)</span>
+                  <span className="text-sm font-black text-emerald-700 dark:text-emerald-400">
+                    85.00 × {config.penilaianBobotDplPersen}% = {(85 * (config.penilaianBobotDplPersen / 100)).toFixed(2)}
+                  </span>
+                </div>
+
+                <div className="p-2.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <span className="text-[10px] font-bold text-slate-400 block uppercase">Kontribusi MPL (Misal Skor: 90.00)</span>
+                  <span className="text-sm font-black text-sky-700 dark:text-sky-400">
+                    90.00 × {config.penilaianBobotMplPersen}% = {(90 * (config.penilaianBobotMplPersen / 100)).toFixed(2)}
+                  </span>
+                </div>
+
+                <div className="p-2.5 bg-indigo-600 text-white rounded-xl shadow-xs flex flex-col justify-center">
+                  <span className="text-[10px] font-bold text-indigo-200 uppercase">Simulasi Nilai Akhir Komposit</span>
+                  <span className="text-base font-black">
+                    {(85 * (config.penilaianBobotDplPersen / 100) + 90 * (config.penilaianBobotMplPersen / 100)).toFixed(2)} (Kategori A)
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-3 bg-indigo-50/80 dark:bg-indigo-950/40 rounded-xl border border-indigo-200 dark:border-indigo-800 flex items-center justify-between text-xs font-medium text-indigo-900 dark:text-indigo-200">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-indigo-700 shrink-0" />
+                <span>
+                  Perubahan bobot komposisi ini otomatis berlaku secara real-time pada seluruh halaman Penilaian Individu Mahasiswa KKN &amp; Rekapitulasi Nilai.
+                </span>
+              </div>
+              <span className="font-mono font-bold text-[11px] bg-white dark:bg-slate-900 px-2 py-1 rounded border border-indigo-300 dark:border-indigo-700 shrink-0">
+                Formula: ({config.penilaianBobotDplPersen}% DPL) + ({config.penilaianBobotMplPersen}% MPL)
               </span>
             </div>
           </div>
