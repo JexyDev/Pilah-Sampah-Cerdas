@@ -7,9 +7,10 @@ import '../../../core/utils/thousands_formatter.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../data/services/notification_engine.dart';
-import '../../riwayat/controllers/riwayat_controller.dart'
-    show pointHistoryProvider;
+import '../../../data/services/local_notification_cache_service.dart';
+import '../../auth/controllers/auth_controller.dart';
 import '../controllers/mahasiswa_notifikasi_controller.dart';
+import '../controllers/riwayat_kkn_controller.dart';
 import 'riwayat_program_kerja_view.dart'; // import provider untuk dropdown program kerja
 
 final fasilitasWargaListProvider =
@@ -140,16 +141,29 @@ class _LogbookPemanfaatanViewState
         // 1. Tampilkan Notifikasi Latar Belakang (Push Notification Local)
         NotificationEngine().showGenericNotification(
           id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
-          title: 'Kegiatan Berhasil Dicatat! 🎉',
+          title: 'Laporan Pemanfaatan Sampah Terkirim ♻️',
           body:
-              'Laporan kegiatan/aksi KKN Anda telah disubmit dan mendapatkan poin KKN.',
+              'Laporan kegiatan pemanfaatan sampah berhasil dicatat (Aktivitas Non-Poin) dan masuk ke riwayat.',
           color: AppColors.primaryGreen,
-          payload: 'ROUTE_POIN',
+          payload: 'ROUTE_HISTORY',
         );
 
-        // 2. Invalidate Data Poin dan Notifikasi agar langsung update
-        ref.invalidate(pointHistoryProvider);
+        final user = ref.read(authProvider).user;
+        if (user != null) {
+          LocalNotificationCacheService().addNotification(
+            userId: user.id,
+            role: user.role.name,
+            title: 'Laporan Pemanfaatan Sampah Terkirim ♻️',
+            desc:
+                'Laporan pemanfaatan sampah berhasil dicatat (Aktivitas Non-Poin) dan masuk ke riwayat.',
+            type: 'PEMANFAATAN_SAMPAH',
+            id: 'local_pemanfaatan_${DateTime.now().millisecondsSinceEpoch}',
+          );
+        }
+
+        // 2. Invalidate Data Riwayat dan Notifikasi agar langsung update
         ref.invalidate(mahasiswaNotificationsProvider);
+        ref.invalidate(riwayatKknControllerProvider);
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -372,7 +386,7 @@ class _LogbookPemanfaatanViewState
 
                     const SizedBox(height: 16),
                     const Text(
-                      'Pilih Fasilitas Warga (Opsional)',
+                      'Pilih Fasilitas Tata Kelola Sampah (Opsional)',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 13,
@@ -394,7 +408,7 @@ class _LogbookPemanfaatanViewState
                           data: (list) {
                             if (list.isEmpty) {
                               return const Text(
-                                'Tidak ada fasilitas warga di RW ini.',
+                                'Tidak ada fasilitas tata kelola sampah di RW ini.',
                                 style: TextStyle(
                                   color: AppColors.textSecondary,
                                   fontSize: 13,
@@ -404,7 +418,7 @@ class _LogbookPemanfaatanViewState
                             }
                             return _buildBottomSheetDropdown(
                               hint: 'Pilih Fasilitas...',
-                              title: 'Fasilitas Warga',
+                              title: 'Fasilitas Tata Kelola Sampah',
                               selectedValue: _selectedFasilitasId,
                               items: list
                                   .map(
@@ -617,7 +631,7 @@ class _LogbookPemanfaatanViewState
                             Icon(Icons.send_rounded, size: 20),
                             SizedBox(width: 10),
                             Text(
-                              'Simpan Laporan & Dapatkan Poin',
+                              'Simpan Laporan Pemanfaatan',
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.bold,

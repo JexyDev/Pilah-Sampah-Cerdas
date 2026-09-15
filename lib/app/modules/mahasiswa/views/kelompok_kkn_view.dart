@@ -9,6 +9,7 @@ import '../../auth/controllers/auth_controller.dart';
 import '../../../data/models/mahasiswa_kkn_models.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../controllers/posko_kkn_controller.dart';
+import '../controllers/mahasiswa_controller.dart';
 import '../../../routes/app_routes.dart';
 
 class KelompokKknView extends ConsumerWidget {
@@ -63,15 +64,28 @@ class KelompokKknView extends ConsumerWidget {
     bool hasFoundLeader = false;
     final membersToDisplay = <KelompokMemberData>[];
 
+    final mhsState = ref.watch(mahasiswaControllerProvider);
+    final personalPoints = mhsState.dashboard?.contributionPoints;
+
     for (final m in uniqueMembers.values) {
-      if (m.isLeader && !hasFoundLeader) {
-        membersToDisplay.add(m);
+      final isUser = user != null &&
+          ((m.userId.isNotEmpty && m.userId == user.id) ||
+              (m.nim.isNotEmpty && user.nim.isNotEmpty && m.nim == user.nim) ||
+              (m.name.toLowerCase().trim() == user.name.toLowerCase().trim()));
+
+      // Selalu sinkronkan poin pengguna login dengan personal points terkini
+      final resolvedMember = (isUser && personalPoints != null)
+          ? m.copyWith(individualPoints: personalPoints)
+          : m;
+
+      if (resolvedMember.isLeader && !hasFoundLeader) {
+        membersToDisplay.add(resolvedMember);
         hasFoundLeader = true;
-      } else if (m.isLeader && hasFoundLeader) {
+      } else if (resolvedMember.isLeader && hasFoundLeader) {
         // Strip leader status dari anggota kedua yang isLeader=true
-        membersToDisplay.add(m.copyWith(isLeader: false));
+        membersToDisplay.add(resolvedMember.copyWith(isLeader: false));
       } else {
-        membersToDisplay.add(m);
+        membersToDisplay.add(resolvedMember);
       }
     }
     // Urutkan: Ketua di atas, sisanya berdasarkan urutan asli
@@ -83,7 +97,13 @@ class KelompokKknView extends ConsumerWidget {
 
     final isCurrentUserLeader =
         user != null &&
-        membersToDisplay.any((m) => m.userId == user.id && m.isLeader);
+        membersToDisplay.any(
+          (m) =>
+              ((m.userId.isNotEmpty && m.userId == user.id) ||
+                  (m.name.toLowerCase().trim() ==
+                      user.name.toLowerCase().trim())) &&
+              m.isLeader,
+        );
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -114,12 +134,18 @@ class KelompokKknView extends ConsumerWidget {
               Icons.refresh_rounded,
               color: AppColors.textPrimary,
             ),
-            onPressed: () => notifier.fetchKelompok(),
+            onPressed: () async {
+              await notifier.fetchKelompok();
+              await ref.read(mahasiswaControllerProvider.notifier).fetchAll();
+            },
           ),
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () => notifier.fetchKelompok(),
+        onRefresh: () async {
+          await notifier.fetchKelompok();
+          await ref.read(mahasiswaControllerProvider.notifier).fetchAll();
+        },
         color: AppColors.primaryGreen,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -464,10 +490,13 @@ class KelompokKknView extends ConsumerWidget {
                   separatorBuilder: (_, __) => const SizedBox(height: 10),
                   itemBuilder: (context, index) {
                     final member = membersToDisplay[index];
-                    final isCurrentUser =
-                        user != null &&
-                        (member.name.toLowerCase().trim() ==
-                            user.name.toLowerCase().trim());
+                    final isCurrentUser = user != null &&
+                        ((member.userId.isNotEmpty && member.userId == user.id) ||
+                            (member.nim.isNotEmpty &&
+                                user.nim.isNotEmpty &&
+                                member.nim == user.nim) ||
+                            (member.name.toLowerCase().trim() ==
+                                user.name.toLowerCase().trim()));
                     return Card(
                       elevation: 1,
                       shape: RoundedRectangleBorder(

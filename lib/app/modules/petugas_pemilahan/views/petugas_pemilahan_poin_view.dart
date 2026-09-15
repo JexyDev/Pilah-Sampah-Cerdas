@@ -110,7 +110,7 @@ class PetugasPemilahanPoinView extends ConsumerWidget {
                       child: const FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Text(
-                          'Poin Otomatis Diperoleh dari Timbangan & Validasi RW',
+                          'Poin Otomatis Diperoleh dari Timbangan & Validasi Pengajuan',
                           style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
                           textAlign: TextAlign.center,
                         ),
@@ -145,8 +145,8 @@ class PetugasPemilahanPoinView extends ConsumerWidget {
                     const SizedBox(height: 12),
                     _buildPoinRuleRow(Icons.scale_rounded, 'Timbangan Sampah', '1 Kg = 2 Poin'),
                     _buildPoinRuleRow(Icons.camera_alt_rounded, 'Bonus Foto Bukti Valid', '+10 Poin / Input'),
-                    _buildPoinRuleRow(Icons.check_circle_outline_rounded, 'Validasi Pengosongan RW', '+15 Poin / Pengajuan Warga'),
-                    _buildPoinRuleRow(Icons.event_available_rounded, 'Penyelesaian Jadwal RW', 'Bonus Insentif Harian'),
+                    _buildPoinRuleRow(Icons.check_circle_outline_rounded, 'Validasi Pengajuan', '+15 Poin / Pengajuan Warga'),
+                    _buildPoinRuleRow(Icons.event_available_rounded, 'Penyelesaian Tugas Harian', 'Bonus Insentif Harian'),
                   ],
                 ),
               ),

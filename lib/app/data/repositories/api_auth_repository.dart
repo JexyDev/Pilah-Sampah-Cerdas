@@ -713,6 +713,46 @@ class ApiAuthRepository implements AuthRepository {
       );
     }
   }
+  @override
+  Future<String> registerKomunitas() async {
+    try {
+      final response = await apiClient.dio.post(
+        '/users/komunitas/register',
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final komunitasId = response.data?['data']?['komunitas_id']?.toString();
+        if (komunitasId != null) {
+          // Update local storage user data to have this new komunitasId
+          final currentUserStr = await secureStorage.read(
+            key: AppConfig.userDataKey,
+          );
+          if (currentUserStr != null) {
+            final currentUserMap =
+                jsonDecode(currentUserStr) as Map<String, dynamic>;
+            currentUserMap['komunitas_id'] = komunitasId;
+            await secureStorage.write(
+              key: AppConfig.userDataKey,
+              value: jsonEncode(currentUserMap),
+            );
+          }
+          return komunitasId;
+        }
+        throw const AuthException('INVALID_RESPONSE', 'komunitas_id tidak ditemukan');
+      }
+      throw AuthException(
+        'REGISTER_FAILED',
+        response.data?['message']?.toString() ?? 'Gagal mendaftar komunitas',
+      );
+    } on DioException catch (e) {
+      final message = e.response?.data?['message']?.toString();
+      throw AuthException(
+        'REGISTER_FAILED',
+        message ?? 'Gagal menghubungi server',
+      );
+    } catch (e) {
+      throw AuthException('UNKNOWN_ERROR', 'Terjadi kesalahan: $e');
+    }
+  }
 
   @override
   Future<bool> updateProfile({
@@ -1187,6 +1227,7 @@ class ApiAuthRepository implements AuthRepository {
       phone: userMap['phone']?.toString() ?? '',
       address: fullAddress,
       email: userMap['email']?.toString(),
+      komunitasId: userMap['komunitas_id']?.toString(),
       role: UserRoleExtension.fromApi(extractRawRole()),
       fotoProfil: userMap['fotoProfil']?.toString(),
       provinsi: provinsi,

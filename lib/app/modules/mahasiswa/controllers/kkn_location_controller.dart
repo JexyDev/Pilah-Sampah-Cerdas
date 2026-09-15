@@ -14,6 +14,8 @@ import '../../../data/models/user_entity.dart';
 import 'mahasiswa_controller.dart';
 import 'location_ping_controller.dart';
 import 'mahasiswa_notifikasi_controller.dart';
+import '../../riwayat/controllers/riwayat_controller.dart'
+    show pointHistoryProvider;
 import '../../../data/services/notification_engine.dart';
 import '../../../core/utils/network_exception_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -50,7 +52,8 @@ class KknLocationState {
 
   /// Format String Jam Kerja (misal: "7 Jam 30 Menit")
   String get formattedWorkDuration {
-    final mins = totalWorkMinutes;
+    // Note: inZoneDurationSeconds actually stores minutes (mapped from _backendDurationMinutes)
+    final mins = inZoneDurationSeconds;
     if (mins <= 0) return '0 Menit';
     final hours = mins ~/ 60;
     final remainingMins = mins % 60;
@@ -613,6 +616,12 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       // Karena state sudah berisi attendanceStatus=BERLANGSUNG, semua gate akan terbuka
       await startTracking(null, true);
       ref.read(locationPingControllerProvider.notifier).startTracking();
+
+      // Segarkan data dashboard (Poin +4 PTS) & Notifikasi seketika setelah presensi masuk (Check-In)
+      ref.read(mahasiswaControllerProvider.notifier).fetchDashboardData();
+      ref.invalidate(pointHistoryProvider);
+      ref.invalidate(mahasiswaNotificationsProvider);
+
       return null;
     } catch (e) {
       state = state.copyWith(isLoadingKegiatan: false);
@@ -729,6 +738,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       isSuccess = true;
       // Segarkan data dashboard (Poin) & Notifikasi
       ref.read(mahasiswaControllerProvider.notifier).fetchDashboardData();
+      ref.invalidate(pointHistoryProvider);
       ref.invalidate(mahasiswaNotificationsProvider);
     } catch (e) {
       debugPrint('[KKN] selesaiKegiatan error: $e');
@@ -1736,6 +1746,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
           );
         }
         ref.invalidate(mahasiswaNotificationsProvider);
+        ref.invalidate(pointHistoryProvider);
         // Segarkan dasbor Poin Mahasiswa secara reaktif
         ref.read(mahasiswaControllerProvider.notifier).fetchDashboardData();
 

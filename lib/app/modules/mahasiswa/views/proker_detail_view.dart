@@ -166,27 +166,12 @@ class ProkerDetailView extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               FloatingActionButton.extended(
-                heroTag: 'fab_catat_hasil',
-                backgroundColor: AppColors.primaryBlue,
-                foregroundColor: Colors.white,
-                icon: const Icon(Icons.eco_rounded),
-                label: const Text(
-                  'Catat Hasil',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                onPressed: () async {
-                  await Navigator.pushNamed(context, AppRoutes.catatPanen);
-                  ref.invalidate(prokerDetailProvider(prokerId));
-                },
-              ),
-              const SizedBox(height: 12),
-              FloatingActionButton.extended(
-                heroTag: 'fab_catat_pemanfaatan',
+                heroTag: 'fab_catat_awal pemanfaatan',
                 backgroundColor: AppColors.primaryGreen,
                 foregroundColor: Colors.white,
                 icon: const Icon(Icons.add_rounded),
                 label: const Text(
-                  'Catat Pemanfaatan',
+                  'Catat Awal Pemanfaatan',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 onPressed: () async {
@@ -195,6 +180,21 @@ class ProkerDetailView extends ConsumerWidget {
                     AppRoutes.logbookPemanfaatan,
                     arguments: {'prokerId': prokerId},
                   );
+                  ref.invalidate(prokerDetailProvider(prokerId));
+                },
+              ),
+              const SizedBox(height: 12),
+              FloatingActionButton.extended(
+                heroTag: 'fab_catat_hasil pemanfaatan',
+                backgroundColor: AppColors.primaryBlue,
+                foregroundColor: Colors.white,
+                icon: const Icon(Icons.eco_rounded),
+                label: const Text(
+                  'Catat Hasil Pemanfaatan',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                onPressed: () async {
+                  await Navigator.pushNamed(context, AppRoutes.catatPanen);
                   ref.invalidate(prokerDetailProvider(prokerId));
                 },
               ),
