@@ -81,6 +81,8 @@ export class ConfigService {
       "logbook_target_kegiatan",
       "logbook_backdate_tolerance_days",
       "logbook_bobot_persen",
+      "penilaian_bobot_dpl_persen",
+      "penilaian_bobot_mpl_persen",
     ];
 
     const records = await prisma.systemConfig.findMany({
@@ -153,6 +155,10 @@ export class ConfigService {
       logbookTargetKegiatan: parseInt(map["logbook_target_kegiatan"] || "24", 10),
       logbookBackdateToleranceDays: parseInt(map["logbook_backdate_tolerance_days"] || "1", 10),
       logbookBobotPersen: parseInt(map["logbook_bobot_persen"] || "20", 10),
+
+      // Rule 8: Komposisi Bobot Nilai Akhir KKN (DPL & MPL)
+      penilaianBobotDplPersen: parseInt(map["penilaian_bobot_dpl_persen"] || "50", 10),
+      penilaianBobotMplPersen: parseInt(map["penilaian_bobot_mpl_persen"] || "50", 10),
     };
   }
 
@@ -275,6 +281,14 @@ export class ConfigService {
         value: String(data.logbookBackdateToleranceDays ?? 1),
       },
       { key: "logbook_bobot_persen", value: String(data.logbookBobotPersen ?? 20) },
+      {
+        key: "penilaian_bobot_dpl_persen",
+        value: String(data.penilaianBobotDplPersen ?? 50),
+      },
+      {
+        key: "penilaian_bobot_mpl_persen",
+        value: String(data.penilaianBobotMplPersen ?? 50),
+      },
     ];
 
     for (const item of pairs) {
