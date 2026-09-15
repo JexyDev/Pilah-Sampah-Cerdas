@@ -1,5 +1,9 @@
 import { prisma } from "../lib/prisma.js";
-import { calculateGroupPoints, calculateDplPoints, calculatePersonalPointsForUsers } from "./dplService.js";
+import {
+  calculateGroupPoints,
+  calculateDplPoints,
+  calculatePersonalPointsForUsers,
+} from "./dplService.js";
 /**
  * Project: BERSEKA
  * Developed by: PT Makerindo
@@ -258,9 +262,6 @@ export const gamificationService = {
       .map((m: any) => {
         // Points directly earned by Mahasiswa
         const ownPoints = m.pointHistory.reduce((acc: number, cur: any) => acc + cur.points, 0);
-
-        // Points earned by their dampingan (warga in their rtRwArea)
-        let dampinganPoints = 0;
         const area = m.studentProfile?.assignedRw;
         // Simplified: Since we don't eager-load users in the area to save queries, we only use ownPoints.
         // For a full implementation, we could sum points of all users in area.
@@ -399,7 +400,7 @@ export const gamificationService = {
 
     studentLeaderboard.sort((a, b) => b.finalScore - a.finalScore);
 
-    // 2. Kelompok KKN Leaderboard (Formula Resmi: Poin Kelompok = (Proker * 0.6) + (Rata-rata Anggota * 0.4))
+    // 2. Kelompok KKN Leaderboard (Formula Resmi: Poin Kelompok = Poin Proker Utuh)
     const groups = await prisma.kelompokKkn.findMany({
       include: {
         dpl: {
