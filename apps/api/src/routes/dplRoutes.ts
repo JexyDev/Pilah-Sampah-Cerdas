@@ -17,6 +17,9 @@ router.use(
     "DPL",
     "DOSEN_PEMBIMBING",
     "DOSEN_PENDAMPING",
+    "MPL",
+    "MITRA_PENDAMPING_LAPANGAN",
+    "MITRA_PEMBIMBING_LAPANGAN",
     "PEMIMPIN",
     "PANITIA_TASKFORCE",
     "MAHASISWA_KKN",
@@ -178,15 +181,41 @@ router.post("/students/:studentId/assess", dplScopeMiddleware, dplController.ass
  *         description: Keputusan berhasil disimpan
  */
 /**
- * Guard khusus: Role Pimpinan (PIMPINAN / PEMIMPIN) hanya memiliki hak akses Read-Only
+ * Guard khusus: Role Pimpinan & Role MPL hanya memiliki hak akses Read-Only
  * dan DILARANG KERAS mengeksekusi mutasi approval/penolakan izin mahasiswa.
+ * Wewenang persetujuan izin/sakit tetap menjadi hak DPL.
  */
-export const disallowPimpinanLeaveMutation = (req: any, res: any, next: any) => {
+export const disallowReadOnlyLeaveMutation = (req: any, res: any, next: any) => {
   const role = String(req.user?.role || "").toUpperCase();
   if (["PIMPINAN", "PEMIMPIN"].some((r) => role.includes(r))) {
     res.status(403).json({
       error: "FORBIDDEN",
       message: "Role Pimpinan hanya memiliki hak akses Read-Only dan tidak berwenang mengambil keputusan izin/sakit.",
+    });
+    return;
+  }
+  if (["MPL", "MITRA_PENDAMPING_LAPANGAN", "MITRA_PEMBIMBING_LAPANGAN", "MITRA"].some((r) => role === r || role.includes(r))) {
+    res.status(403).json({
+      error: "FORBIDDEN",
+      message: "Role MPL (Mitra Lapangan) hanya memiliki hak akses Read-Only dan tidak berwenang mengambil keputusan izin/sakit. Wewenang berada pada DPL.",
+    });
+    return;
+  }
+  next();
+};
+
+export const disallowPimpinanLeaveMutation = disallowReadOnlyLeaveMutation;
+
+/**
+ * Guard khusus: Keputusan usulan Program Kerja (ACC / Tolak / Minta Revisi) serta Penilaian Akademik Proker
+ * adalah wewenang DPL dan Panitia Taskforce. Role MPL & Pimpinan bersifat Read-Only.
+ */
+export const disallowReadOnlyProkerDecision = (req: any, res: any, next: any) => {
+  const role = String(req.user?.role || "").toUpperCase();
+  if (["MPL", "MITRA_PENDAMPING_LAPANGAN", "MITRA_PEMBIMBING_LAPANGAN", "MITRA", "PIMPINAN", "PEMIMPIN"].some((r) => role === r || role.includes(r))) {
+    res.status(403).json({
+      error: "FORBIDDEN",
+      message: "Persetujuan dan keputusan program kerja adalah wewenang DPL. Role Anda hanya memiliki hak akses pemantauan (Read-Only).",
     });
     return;
   }
@@ -196,7 +225,7 @@ export const disallowPimpinanLeaveMutation = (req: any, res: any, next: any) => 
 router.post(
   "/approvals/:requestId/decide",
   dplScopeMiddleware,
-  disallowPimpinanLeaveMutation,
+  disallowReadOnlyLeaveMutation,
   dplController.decideLeaveRequest
 );
 router.post(
@@ -206,7 +235,7 @@ router.post(
     "/approvals/:requestId/override-hadir",
   ],
   dplScopeMiddleware,
-  disallowPimpinanLeaveMutation,
+  disallowReadOnlyLeaveMutation,
   dplController.decideCancelLeaveRequest
 );
 router.put(
@@ -216,7 +245,7 @@ router.put(
     "/approvals/:requestId/override-hadir",
   ],
   dplScopeMiddleware,
-  disallowPimpinanLeaveMutation,
+  disallowReadOnlyLeaveMutation,
   dplController.decideCancelLeaveRequest
 );
 
@@ -228,8 +257,18 @@ router.get("/program-kerja", dplScopeMiddleware, dplController.getProgramKerja);
 router.post("/program-kerja", dplScopeMiddleware, dplController.createProgramKerja);
 router.put("/program-kerja/:id", dplScopeMiddleware, dplController.updateProgramKerja);
 router.delete("/program-kerja/:id", dplScopeMiddleware, dplController.deleteProgramKerja);
-router.patch("/program-kerja/:id/decision", dplScopeMiddleware, dplController.decideProgramKerja);
-router.patch("/program-kerja/:id/penilaian", dplScopeMiddleware, dplController.assessProgramKerja);
+router.patch(
+  "/program-kerja/:id/decision",
+  dplScopeMiddleware,
+  disallowReadOnlyProkerDecision,
+  dplController.decideProgramKerja
+);
+router.patch(
+  "/program-kerja/:id/penilaian",
+  dplScopeMiddleware,
+  disallowReadOnlyProkerDecision,
+  dplController.assessProgramKerja
+);
 router.get("/program-kerja/:id/bukti", dplScopeMiddleware, dplController.getProgramKerjaBukti);
 
 // ─────────────────────────────────────────────

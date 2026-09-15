@@ -65,6 +65,7 @@ const getInitials = (name: string): string => {
 export const LogAktivitasDpl: React.FC = () => {
   const { user } = useAuthStore();
   const userRole = String(user?.peran || (user as any)?.role || "").toUpperCase();
+  const isMpl = ["MPL", "MITRA_PEMBIMBING_LAPANGAN", "MITRA_PENDAMPING_LAPANGAN", "MITRA"].includes(userRole);
   const isPimpinan = ["PEMIMPIN", "PIMPINAN", "CAMAT", "LURAH", "KEPALA_DESA", "REKTOR"].includes(userRole);
 
   // State Data
@@ -441,17 +442,17 @@ export const LogAktivitasDpl: React.FC = () => {
 
       if (editingLogId) {
         await dplActivityLogService.updateActivityLog(editingLogId, formData);
-        toast.success("Kegiatan DPL berhasil diperbarui!");
+        toast.success(isMpl ? "Log pendampingan berhasil diperbarui!" : "Kegiatan DPL berhasil diperbarui!");
       } else {
         await dplActivityLogService.createActivityLog(formData);
-        toast.success("Kegiatan DPL berhasil disimpan!");
+        toast.success(isMpl ? "Log pendampingan berhasil disimpan!" : "Kegiatan DPL berhasil disimpan!");
       }
 
       setIsFormModalOpen(false);
       fetchActivityLogs();
     } catch (err: any) {
       console.error("Gagal menyimpan kegiatan:", err);
-      toast.error(err.response?.data?.message || err.message || "Gagal menyimpan kegiatan DPL");
+      toast.error(err.response?.data?.message || err.message || (isMpl ? "Gagal menyimpan log pendampingan" : "Gagal menyimpan kegiatan DPL"));
     } finally {
       setSubmitting(false);
     }
@@ -467,7 +468,7 @@ export const LogAktivitasDpl: React.FC = () => {
     setIsDeletingLog(true);
     try {
       await dplActivityLogService.deleteActivityLog(deleteTargetLog.id);
-      toast.success("Kegiatan DPL berhasil dihapus");
+      toast.success(isMpl ? "Log pendampingan berhasil dihapus" : "Kegiatan DPL berhasil dihapus");
       if (selectedDetailLog?.id === deleteTargetLog.id) {
         setSelectedDetailLog(null);
       }
@@ -480,7 +481,7 @@ export const LogAktivitasDpl: React.FC = () => {
     }
   };
 
-  const displayName = user?.name || (user as any)?.nama || user?.email?.split("@")[0] || "Dosen Pembimbing Lapangan";
+  const displayName = user?.name || (user as any)?.nama || user?.email?.split("@")[0] || (isMpl ? "Mitra Pendamping Lapangan" : "Dosen Pembimbing Lapangan");
 
   return (
     <div className="min-h-screen bg-slate-50/60 p-4 md:p-6 lg:p-8 space-y-6">
@@ -490,15 +491,17 @@ export const LogAktivitasDpl: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
-            Log Aktivitas DPL
+            {isMpl ? "Log Pendampingan Lapangan" : "Log Aktivitas DPL"}
           </h1>
           <p className="text-sm text-slate-500 mt-0.5">
-            Catat, dokumentasikan, dan pantau kegiatan pembimbingan mingguan DPL secara terstruktur
+            {isMpl
+              ? "Catat, dokumentasikan, dan pantau kegiatan pendampingan lapangan secara terstruktur"
+              : "Catat, dokumentasikan, dan pantau kegiatan pembimbingan mingguan DPL secara terstruktur"}
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Action Button: Catat Kegiatan DPL or View-Only Badge */}
+          {/* Action Button: Catat Kegiatan DPL/MPL or View-Only Badge */}
           {isPimpinan ? (
             <span className="px-3 py-1.5 rounded-full text-xs font-bold bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300">
               Mode Pimpinan: View-Only
@@ -510,7 +513,7 @@ export const LogAktivitasDpl: React.FC = () => {
               className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs sm:text-sm font-semibold shadow-sm transition-all cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>Catat Kegiatan DPL</span>
+              <span>{isMpl ? "Catat Pendampingan Lapangan" : "Catat Kegiatan DPL"}</span>
             </button>
           )}
 
@@ -567,14 +570,18 @@ export const LogAktivitasDpl: React.FC = () => {
       </div>
 
       {/* ─────────────────────────────────────────────
-          3. FULL-WIDTH TABLE: RIWAYAT KEGIATAN DPL
+          3. FULL-WIDTH TABLE: RIWAYAT KEGIATAN
           ───────────────────────────────────────────── */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 pb-3">
           <div>
-            <h2 className="text-lg font-bold text-slate-800 tracking-tight">Riwayat Kegiatan DPL</h2>
+            <h2 className="text-lg font-bold text-slate-800 tracking-tight">
+              {isMpl ? "Riwayat Pendampingan Lapangan" : "Riwayat Kegiatan DPL"}
+            </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Daftar seluruh aktivitas supervisi dan monitoring DPL di posko kelompok dampingan
+              {isMpl
+                ? "Daftar seluruh aktivitas supervisi dan pendampingan di posko/wilayah binaan"
+                : "Daftar seluruh aktivitas supervisi dan monitoring DPL di posko kelompok dampingan"}
             </p>
           </div>
           <div className="text-xs font-semibold text-slate-600 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
@@ -682,7 +689,7 @@ export const LogAktivitasDpl: React.FC = () => {
                   <td colSpan={9} className="py-12 text-center text-slate-400">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <div className="w-6 h-6 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
-                      <span>Memuat riwayat aktivitas DPL...</span>
+                      <span>{isMpl ? "Memuat riwayat pendampingan lapangan..." : "Memuat riwayat aktivitas DPL..."}</span>
                     </div>
                   </td>
                 </tr>
@@ -691,9 +698,13 @@ export const LogAktivitasDpl: React.FC = () => {
                   <td colSpan={9} className="py-12 text-center text-slate-400">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <AlertCircle className="w-7 h-7 text-slate-300" />
-                      <span className="font-semibold text-slate-600 text-sm">Belum ada kegiatan DPL</span>
+                      <span className="font-semibold text-slate-600 text-sm">
+                        {isMpl ? "Belum ada log pendampingan lapangan" : "Belum ada kegiatan DPL"}
+                      </span>
                       <span className="text-xs text-slate-400 max-w-sm">
-                        Klik tombol "+ Catat Kegiatan DPL" di atas untuk menambahkan entri supervisi baru.
+                        {isMpl
+                          ? "Klik tombol \"+ Catat Pendampingan Lapangan\" di atas untuk menambahkan entri pendampingan baru."
+                          : "Klik tombol \"+ Catat Kegiatan DPL\" di atas untuk menambahkan entri supervisi baru."}
                       </span>
                     </div>
                   </td>
@@ -842,10 +853,18 @@ export const LogAktivitasDpl: React.FC = () => {
               <div>
                 <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
                   <ClipboardCheck className="w-5 h-5 text-emerald-600" />
-                  {editingLogId ? "Edit Kegiatan Supervisi DPL" : "Catat Kegiatan Supervisi DPL"}
+                  {editingLogId
+                    ? isMpl
+                      ? "Edit Log Pendampingan Lapangan"
+                      : "Edit Kegiatan Supervisi DPL"
+                    : isMpl
+                    ? "Catat Log Pendampingan Lapangan"
+                    : "Catat Kegiatan Supervisi DPL"}
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Lengkapi data dokumentasi kegiatan pembimbingan sebelum disimpan ke database.
+                  {isMpl
+                    ? "Lengkapi data dokumentasi kegiatan pendampingan lapangan sebelum disimpan ke database."
+                    : "Lengkapi data dokumentasi kegiatan pembimbingan sebelum disimpan ke database."}
                 </p>
               </div>
               <button
@@ -1138,10 +1157,16 @@ export const LogAktivitasDpl: React.FC = () => {
 
               {/* Hasil dan Tindak Lanjut / Arahan Evaluasi */}
               <div className="space-y-1">
-                <label className="block font-semibold text-slate-700">Hasil, Kendala, & Arahan Evaluasi DPL</label>
+                <label className="block font-semibold text-slate-700">
+                  {isMpl ? "Hasil, Kendala, & Catatan Pendampingan Lapangan" : "Hasil, Kendala, & Arahan Evaluasi DPL"}
+                </label>
                 <textarea
                   rows={2}
-                  placeholder="Tuliskan arahan perbaikan atau tindak lanjut yang harus dilakukan mahasiswa dampingan..."
+                  placeholder={
+                    isMpl
+                      ? "Tuliskan catatan hasil pendampingan atau evaluasi lapangan untuk mahasiswa..."
+                      : "Tuliskan arahan perbaikan atau tindak lanjut yang harus dilakukan mahasiswa dampingan..."
+                  }
                   value={formHasilTindakLanjut}
                   onChange={(e) => setFormHasilTindakLanjut(e.target.value)}
                   className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600 leading-relaxed"
@@ -1284,7 +1309,7 @@ export const LogAktivitasDpl: React.FC = () => {
             <div className="flex items-start justify-between">
               <div>
                 <h2 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">
-                  Detail Log Aktivitas DPL
+                  {isMpl ? "Detail Log Pendampingan Lapangan" : "Detail Log Aktivitas DPL"}
                 </h2>
                 <p className="text-xs sm:text-sm font-medium text-slate-500 mt-0.5">
                   {selectedDetailLog.kelompokNama} · Kelurahan {selectedDetailLog.kelurahan}
@@ -1403,7 +1428,7 @@ export const LogAktivitasDpl: React.FC = () => {
                   <div>
                     <span className="text-slate-400 font-medium block text-[11px]">Pelaksana</span>
                     <span className="font-bold text-slate-800 text-xs leading-tight block">
-                      {selectedDetailLog.dplNama} · DPL
+                      {selectedDetailLog.dplNama} · {isMpl ? "Mitra Lapangan (MPL)" : "DPL"}
                     </span>
                   </div>
                 </div>
@@ -1573,12 +1598,12 @@ export const LogAktivitasDpl: React.FC = () => {
             <div className="w-full flex items-center justify-between p-2 text-white border-b border-slate-800 mb-2">
               <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
                 <Camera className="w-4 h-4 text-emerald-400" />
-                Pratinjau Foto Dokumentasi Kegiatan DPL
+                {isMpl ? "Pratinjau Foto Dokumentasi Pendampingan Lapangan" : "Pratinjau Foto Dokumentasi Kegiatan DPL"}
               </span>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => downloadImageFile(previewGalleryImage, "foto-kegiatan-dpl.jpg")}
+                  onClick={() => downloadImageFile(previewGalleryImage, isMpl ? "foto-pendampingan-lapangan.jpg" : "foto-kegiatan-dpl.jpg")}
                   className="px-3 py-1.5 rounded-lg bg-[#035941] hover:bg-[#02402e] text-white transition text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer"
                   title="Unduh foto kegiatan"
                 >
@@ -1613,16 +1638,16 @@ export const LogAktivitasDpl: React.FC = () => {
         </div>
       )}
 
-      {/* Modern BERSEKA Confirmation Modal for Deleting DPL Logbook Activity */}
+      {/* Modern BERSEKA Confirmation Modal for Deleting Logbook Activity */}
       <ConfirmModal
         isOpen={Boolean(deleteTargetLog)}
         onClose={() => setDeleteTargetLog(null)}
         onConfirm={handleConfirmDeleteLog}
         isLoading={isDeletingLog}
-        title="Hapus Log Aktivitas DPL"
-        message={`Apakah Anda yakin ingin menghapus data log aktivitas DPL${
-          deleteTargetLog?.nama ? ` "${deleteTargetLog.nama}"` : ""
-        }? Data yang dihapus tidak dapat dipulihkan.`}
+        title={isMpl ? "Hapus Log Pendampingan Lapangan" : "Hapus Log Aktivitas DPL"}
+        message={`Apakah Anda yakin ingin menghapus data log ${
+          isMpl ? "pendampingan lapangan" : "aktivitas DPL"
+        }${deleteTargetLog?.nama ? ` "${deleteTargetLog.nama}"` : ""}? Data yang dihapus tidak dapat dipulihkan.`}
         confirmText="Ya, Hapus Kegiatan"
         cancelText="Batal"
         type="danger"

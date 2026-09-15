@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
@@ -88,6 +88,58 @@ describe("Penilaian KKN - Pembatasan Hak Akses Role Pimpinan (View-Only)", () =>
           90,
           "Catatan evaluasi",
           "PIMPINAN"
+        )
+      ).rejects.toThrow("FORBIDDEN_ROLE");
+    });
+
+    it("should reject assessing program kerja with FORBIDDEN_ROLE for MPL", async () => {
+      await expect(
+        dplService.assessProgramKerja(
+          "user-mpl-1",
+          "proker-1",
+          90,
+          "Catatan evaluasi",
+          "MPL"
+        )
+      ).rejects.toThrow("FORBIDDEN_ROLE");
+    });
+  });
+
+  describe("MPL (Mitra Lapangan) specific role boundaries", () => {
+    it("should reject saving laporan akhir kelompok for MPL", async () => {
+      await expect(
+        penilaianKknService.saveLaporanAkhirKelompokScore(
+          "kelompok-1",
+          "user-mpl-1",
+          "MPL",
+          {
+            statusTelaah: "DISETUJUI",
+            rubrikScores: { sistematika: 85, analisis: 85, output: 85, refleksi: 85 },
+          }
+        )
+      ).rejects.toThrow("FORBIDDEN_ROLE");
+    });
+
+    it("should reject saving individual laporan akhir score for MPL", async () => {
+      await expect(
+        penilaianKknService.saveLaporanAkhirScore(
+          "student-1",
+          "user-mpl-1",
+          "MPL",
+          88,
+          "Catatan"
+        )
+      ).rejects.toThrow("FORBIDDEN_ROLE");
+    });
+
+    it("should reject deciding proker proposal for MPL", async () => {
+      await expect(
+        dplService.decideProgramKerja(
+          "user-mpl-1",
+          "proker-1",
+          "DISETUJUI",
+          "Catatan",
+          "MPL"
         )
       ).rejects.toThrow("FORBIDDEN_ROLE");
     });
