@@ -103,6 +103,7 @@ vi.mock("../lib/prisma.js", () => {
       presensiMandiri: {
         findFirst: vi.fn().mockResolvedValue(null),
         findMany: vi.fn().mockResolvedValue([]),
+        updateMany: vi.fn().mockResolvedValue({ count: 0 }),
       },
       logbookKkn: {
         findFirst: vi.fn().mockResolvedValue(null),
@@ -2091,6 +2092,197 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
 
       expect(res.success).toBe(true);
       expect(res.data.status).toBe("HADIR_MEMENUHI");
+    });
+  });
+
+  describe("Graceful Out-of-Zone Attendance Checkout (Kebijakan Mahasiswa Bablas)", () => {
+    const studentId = "mhs-bablas-1";
+    const scheduleId = "sch-bablas-1";
+
+    beforeEach(() => {
+      vi.mocked(configService.getRuleEngineConfigs).mockResolvedValue({
+        attendanceMinDurationHours: 4,
+        attendanceMinDurationMinutes: 0,
+        attendanceMinDurationSeconds: 0,
+        attendanceGeofenceBufferMeters: 100,
+        attendanceGeofenceInvalidationHours: 2,
+      } as any);
+
+      vi.mocked(prisma.studentKkn.findUnique).mockResolvedValue({
+        id: "skkn-1",
+        userId: studentId,
+        kelompokId: "kel-bablas",
+        nim: "31624002",
+        kelompok: {
+          id: "kel-bablas",
+          name: "Kelompok 1 Cipaganti",
+          kelurahan: "Cipaganti",
+          dplId: "dpl-cipaganti",
+        },
+      } as any);
+
+      vi.mocked(prisma.poskoKkn.findUnique).mockResolvedValue({
+        id: "posko-cipaganti-1",
+        kelompokId: "kel-bablas",
+        nama: "Posko Cipaganti",
+        latitude: -6.886884 as any,
+        longitude: 107.615286 as any,
+        radius: 250,
+      } as any);
+
+      vi.mocked(prisma.poskoKknMulti.findMany).mockResolvedValue([]);
+      vi.mocked(prisma.facility.findMany).mockResolvedValue([]);
+      vi.mocked(prisma.pointHistory.findFirst).mockResolvedValue(null);
+    });
+
+    it("should allow student who left the posko to checkout gracefully without OUT_OF_GEOFENCE error", async () => {
+      // System time is 17:00 WIB (after schedule ends at 16:00 WIB)
+      vi.setSystemTime(new Date("2026-09-03T10:00:00.000Z"));
+
+      vi.mocked(prisma.schedule.findUnique).mockResolvedValue({
+        id: scheduleId,
+        title: "Kegiatan Harian KKN",
+        time: "08:00 - 16:00 WIB",
+        date: new Date("2026-09-03"),
+        latitude: -6.886884 as any,
+        longitude: 107.615286 as any,
+        radius: 250,
+      } as any);
+
+      vi.mocked(prisma.activityAttendance.findFirst).mockResolvedValue({
+        id: "att-bablas-1",
+        studentId,
+        scheduleId,
+        status: "BERLANGSUNG",
+        attendedAt: new Date("2026-09-03T01:00:00.000Z"), // 08:00 WIB (9 jam lalu)
+        actualInZoneMinutes: 300,
+        checkOutAt: null,
+        jedaLogs: [],
+      } as any);
+
+      vi.mocked(prisma.studentLocation.findMany).mockResolvedValue([]);
+
+      let updatePayload: any = null;
+      (prisma.activityAttendance.update as any).mockImplementation(async ({ data }: any) => {
+        updatePayload = data;
+        return {
+          id: "att-bablas-1",
+          studentId,
+          scheduleId,
+          status: data.status,
+          attendedAt: new Date("2026-09-03T01:00:00.000Z"),
+          checkOutAt: data.checkOutAt,
+          actualInZoneMinutes: data.actualInZoneMinutes,
+          jedaLogs: data.jedaLogs,
+          latitude: data.latitude,
+          longitude: data.longitude,
+          schedule: { id: scheduleId, title: "Kegiatan Harian KKN" },
+          student: {
+            id: studentId,
+            name: "Elga Aulia",
+            studentProfile: { nim: "31624002" },
+          },
+        } as any;
+      });
+
+      // Coordinates at home (approx 15 km away)
+      const res = await service.checkOutAttendance({
+        studentId,
+        scheduleId,
+        latitude: -6.980000,
+        longitude: 107.720000,
+      });
+
+      expect(res.success).toBe(true);
+      expect(res.data.isOutOfZoneCheckout).toBe(true);
+      expect(res.data.outOfZoneDistance).toBeGreaterThan(5000);
+      expect(res.message).toContain("di luar zona posko");
+      expect(res.data.status).toBe("HADIR_MEMENUHI");
+
+      // Verify jedaLogs has OUT_OF_ZONE_CHECKOUT entry
+      expect(updatePayload).toBeDefined();
+      expect(updatePayload.jedaLogs).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            type: "OUT_OF_ZONE_CHECKOUT",
+            isOutOfZone: true,
+          }),
+        ])
+      );
+
+      // Verify auto-sync presensiMandiri called
+      expect(prisma.presensiMandiri.updateMany).toHaveBeenCalledWith({
+        where: {
+          studentId,
+          status: "AKTIF",
+          checkOutAt: null,
+        },
+        data: expect.objectContaining({
+          status: "SELESAI",
+        }),
+      });
+    });
+
+    it("should cap duration to schedule duration if no GPS logs exist when checking out out-of-zone", async () => {
+      // System time 21:00 WIB (13 hours after checkin at 08:00 WIB)
+      vi.setSystemTime(new Date("2026-09-03T14:00:00.000Z"));
+
+      vi.mocked(prisma.schedule.findUnique).mockResolvedValue({
+        id: scheduleId,
+        title: "Kegiatan Terjadwal KKN",
+        time: "08:00 - 13:00 WIB", // 5 jam (300 menit)
+        date: new Date("2026-09-03"),
+        latitude: -6.886884 as any,
+        longitude: 107.615286 as any,
+        radius: 250,
+      } as any);
+
+      vi.mocked(prisma.activityAttendance.findFirst).mockResolvedValue({
+        id: "att-bablas-cap",
+        studentId,
+        scheduleId,
+        status: "BERLANGSUNG",
+        attendedAt: new Date("2026-09-03T01:00:00.000Z"), // 08:00 WIB (13 jam lalu)
+        actualInZoneMinutes: 0,
+        checkOutAt: null,
+        jedaLogs: [],
+      } as any);
+
+      vi.mocked(prisma.studentLocation.findMany).mockResolvedValue([]);
+
+      let savedDuration = 0;
+      (prisma.activityAttendance.update as any).mockImplementation(async ({ data }: any) => {
+        savedDuration = data.actualInZoneMinutes;
+        return {
+          id: "att-bablas-cap",
+          studentId,
+          scheduleId,
+          status: data.status,
+          attendedAt: new Date("2026-09-03T01:00:00.000Z"),
+          checkOutAt: data.checkOutAt,
+          actualInZoneMinutes: data.actualInZoneMinutes,
+          jedaLogs: data.jedaLogs,
+          schedule: { id: scheduleId, title: "Kegiatan Terjadwal KKN" },
+          student: {
+            id: studentId,
+            name: "Elga Aulia",
+            studentProfile: { nim: "31624002" },
+          },
+        } as any;
+      });
+
+      const res = await service.checkOutAttendance({
+        studentId,
+        scheduleId,
+        latitude: -6.980000,
+        longitude: 107.720000,
+      });
+
+      expect(res.success).toBe(true);
+      expect(res.data.isOutOfZoneCheckout).toBe(true);
+      // Duration must be capped to 300 minutes (schedule 08:00 - 13:00) instead of 780 minutes (13 hours)
+      expect(savedDuration).toBe(300);
+      expect(res.data.actualInZoneMinutes).toBe(300);
     });
   });
 });

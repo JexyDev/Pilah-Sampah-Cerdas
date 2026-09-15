@@ -1920,7 +1920,11 @@ export class KknAttendanceService {
       throw new Error("ATTENDANCE_NOT_FOUND: Belum ada data check-in hari ini untuk di-checkout.");
     }
 
-    // Validasi Geofence: Mahasiswa WAJIB berada di dalam zona untuk checkout
+    let isOutOfZoneCheckout = false;
+    let outOfZoneDistance = 0;
+    let outOfZonePosko = "";
+
+    // Validasi Geofence: Mahasiswa diverifikasi terhadap zona posko / kegiatan
     if (latitude !== undefined && longitude !== undefined) {
       const coSchedule = await prisma.schedule.findUnique({
         where: { id: attendance.scheduleId },
@@ -2005,10 +2009,13 @@ export class KknAttendanceService {
       }
 
       if (!coIsInside) {
-        const distanceInt = Math.round(coNearestDist);
-        const allowedRadius = coNearestRadius + coBuffer;
-        throw new Error(
-          `OUT_OF_GEOFENCE: Anda harus berada di dalam zona ${coNearestName} untuk melakukan presensi pulang (Jarak: ${distanceInt}m, Radius: ${allowedRadius}m).`
+        // [Graceful Out-of-Zone Checkout]: Mahasiswa yang lupa checkout di posko ("bablas")
+        // diizinkan melakukan presensi pulang dari luar zona, dengan penyesuaian durasi dan audit trail.
+        isOutOfZoneCheckout = true;
+        outOfZoneDistance = Math.round(coNearestDist);
+        outOfZonePosko = coNearestName;
+        console.warn(
+          `[checkOutAttendance] Mahasiswa ${studentId} check-out di luar zona ${coNearestName} (Jarak: ${outOfZoneDistance}m, Radius: ${coNearestRadius + coBuffer}m). Diizinkan oleh kebijakan Graceful Out-of-Zone Checkout.`
         );
       }
     }
@@ -2103,6 +2110,26 @@ export class KknAttendanceService {
       actualInZoneMins = Math.min(900, liveMins);
     }
 
+    // [Graceful Out-of-Zone Checkout]: Jika mahasiswa checkout di luar zona posko ("bablas"),
+    // lindungi durasi dari pembengkakan waktu santai/perjalanan di rumah
+    if (isOutOfZoneCheckout) {
+      if (logsCalculatedMins > 0) {
+        // Jika ada rekam jejak GPS di zona, prioritaskan durasi riil saat masih berada di zona
+        actualInZoneMins = Math.max(logsCalculatedMins, storedMins);
+      } else if (schedule?.time) {
+        // Jika tidak ada GPS pings rapat, batasi durasi maksimal ke rentang jam jadwal
+        const schedTimeRange = parseScheduleTimeRange(schedule.time);
+        if (!schedTimeRange.isOvernight && schedTimeRange.endMinutesTotal > schedTimeRange.startMinutesTotal) {
+          const maxScheduleDuration = schedTimeRange.endMinutesTotal - schedTimeRange.startMinutesTotal;
+          actualInZoneMins = Math.min(actualInZoneMins, maxScheduleDuration, 480);
+        } else {
+          actualInZoneMins = Math.min(actualInZoneMins, 480);
+        }
+      } else {
+        actualInZoneMins = Math.min(actualInZoneMins, 480);
+      }
+    }
+
     // Kebijakan Batas Maksimal 20:00 WIB:
     // Jika diselesaikan otomatis oleh sistem (isAutoCheckout), mahasiswa yang telah hadir
     // dipastikan berstatus HADIR_MEMENUHI (Hadir) dengan durasi minimal memenuhi target kerja.
@@ -2194,12 +2221,30 @@ export class KknAttendanceService {
 
     const durationMinutes = actualInZoneMins;
 
+    const finalJedaLogs = Array.isArray(attendance.jedaLogs)
+      ? [...(attendance.jedaLogs as any[])]
+      : attendance.jedaLogs && typeof attendance.jedaLogs === "object"
+        ? [attendance.jedaLogs]
+        : [];
+
+    if (isOutOfZoneCheckout) {
+      finalJedaLogs.push({
+        type: "OUT_OF_ZONE_CHECKOUT",
+        isOutOfZone: true,
+        distanceMeters: outOfZoneDistance,
+        nearestPosko: outOfZonePosko,
+        checkedOutAt: checkOutTime.toISOString(),
+        note: "Mahasiswa mengakhiri sesi di luar zona posko (Graceful Out-of-Zone Checkout)",
+      });
+    }
+
     const updated = await prisma.activityAttendance.update({
       where: { id: attendance.id },
       data: {
         checkOutAt: checkOutTime,
         status: checkoutFinalStatus,
         actualInZoneMinutes: actualInZoneMins,
+        jedaLogs: finalJedaLogs,
         ...(latitude !== undefined && !isNaN(Number(latitude))
           ? { latitude: Number(latitude) }
           : {}),
@@ -2226,6 +2271,27 @@ export class KknAttendanceService {
         },
       },
     });
+
+    // Tutup juga presensi mandiri yang masih aktif hari ini jika ada
+    try {
+      const db = prisma as any;
+      if (db.presensiMandiri && typeof db.presensiMandiri.updateMany === "function") {
+        await db.presensiMandiri.updateMany({
+          where: {
+            studentId,
+            status: "AKTIF",
+            checkOutAt: null,
+          },
+          data: {
+            status: "SELESAI",
+            checkOutAt: checkOutTime,
+            durasiMenit: actualInZoneMins,
+          },
+        });
+      }
+    } catch (mandiriSyncErr) {
+      console.warn("[checkOutAttendance] Auto-sync presensiMandiri warning:", mandiriSyncErr);
+    }
 
     // Award +3 points to student on Check-Out ONLY IF duration targets met (HADIR_MEMENUHI)
     if (isMemenuhi) {
@@ -2362,9 +2428,13 @@ export class KknAttendanceService {
       }
     }
 
+    const checkoutMessage = isOutOfZoneCheckout
+      ? `Check-out presensi berhasil dicatat di luar zona posko (${statusDisplay}). Durasi disesuaikan secara otomatis. GPS dinonaktifkan.`
+      : `Check-out presensi berhasil dicatat (${statusDisplay}). GPS dinonaktifkan.`;
+
     return {
       success: true,
-      message: `Check-out presensi berhasil dicatat (${statusDisplay}). GPS dinonaktifkan.`,
+      message: checkoutMessage,
       data: {
         attendanceId: updated.id,
         scheduleId: updated.scheduleId,
@@ -2381,6 +2451,8 @@ export class KknAttendanceService {
         actualInZoneSeconds: actualInZoneMins * 60,
         gpsActive: false,
         statusGps: "INACTIVE",
+        isOutOfZoneCheckout,
+        outOfZoneDistance: isOutOfZoneCheckout ? outOfZoneDistance : 0,
       },
     };
   }
