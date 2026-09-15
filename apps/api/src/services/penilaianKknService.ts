@@ -1,6 +1,11 @@
 import { prisma } from "../lib/prisma.js";
 import { configService } from "./configService.js";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
+import {
+  isTestUser,
+  isTestKelompok,
+  isTestStudent,
+} from "../utils/filterTestingUtils.js";
 /**
  * Project: BERSEKA
  * Developed by: PT Makerindo
@@ -869,7 +874,7 @@ export const penilaianKknService = {
       }
     }
 
-    const students = await prisma.user.findMany({
+    const studentsRaw = await prisma.user.findMany({
       where: whereCondition,
       include: {
         studentProfile: {
@@ -890,6 +895,10 @@ export const penilaianKknService = {
       },
       orderBy: { name: "asc" },
     });
+
+    const students = studentsRaw.filter(
+      (s) => !isTestUser(s) && !isTestStudent(s.studentProfile) && !isTestKelompok(s.studentProfile?.kelompok)
+    );
 
     return students.map((s) => {
       const p = s.penilaianKkn;
@@ -1121,7 +1130,10 @@ export const penilaianKknService = {
       };
     }
 
-    const kelompokList = kelompokRecords.map((k: any, index: number) => {
+    // 100% Data Aktual: Filter kelompok testing/dummy
+    const cleanKelompokRecords = kelompokRecords.filter((k: any) => !isTestKelompok(k));
+
+    const kelompokList = cleanKelompokRecords.map((k: any, index: number) => {
       const prokers: any[] = k.programKerja || [];
       // Prioritaskan kategori LAPORAN_AKHIR yang memiliki link/lampiran
       const primaryProker =
@@ -1220,7 +1232,9 @@ export const penilaianKknService = {
         else predikat = "D (Kurang)";
       }
 
-      const studentsMapped = (k.students || []).map((st: any) => ({
+      const cleanStudents = (k.students || []).filter((st: any) => !isTestStudent(st));
+
+      const studentsMapped = cleanStudents.map((st: any) => ({
         studentId: st.userId || st.id,
         nim: st.nim || "-",
         nama: st.user?.name || st.name || "-",

@@ -58,6 +58,7 @@ import showToast from "../../utils/showToast";
 import { dplService, type GroupSummary, type StudentDetail } from "../../services/dplService";
 import LeaderboardWidget from "../../components/LeaderboardWidget";
 import { fetchMasterWilayah, type MasterKelurahanItem } from "../../utils/areaFilterUtils";
+import { isTestKelompok, isTestStudent, isTestUser } from "../../utils/filterTestingUtils";
 
 interface KknExecutiveData {
   lastUpdated: string;
@@ -510,23 +511,8 @@ export const DashboardEksekutifKkn: React.FC = () => {
           dplService.getGroupSummary(),
           dplService.getStudents().catch(() => []),
         ]);
-        const cleanGroups = (groupsData || []).filter((g: any) => {
-          const name = (g.name || "").toLowerCase();
-          return !name.includes("test") && !name.includes("dummy");
-        });
-        const cleanStudents = (studentsData || []).filter((s: any) => {
-          const name = (s.user?.name || s.name || "").toLowerCase();
-          const email = (s.user?.email || s.email || "").toLowerCase();
-          const nim = (s.nim || "").toLowerCase();
-          return !(
-            name.includes("test") ||
-            name.includes("dummy") ||
-            email.includes("test") ||
-            email.includes("dummy") ||
-            nim.includes("test") ||
-            nim.includes("dummy")
-          );
-        });
+        const cleanGroups = (groupsData || []).filter((g: any) => !isTestKelompok(g));
+        const cleanStudents = (studentsData || []).filter((s: any) => !isTestStudent(s));
         setGroups(cleanGroups);
         setStudents(cleanStudents);
       } catch (err) {
@@ -587,7 +573,12 @@ export const DashboardEksekutifKkn: React.FC = () => {
         setLoadingLeaderboard(true);
         const res = await api.get("/gamification/leaderboard-kkn");
         if (res.data?.success && res.data?.data) {
-          setLeaderboardData(res.data.data);
+          const raw = res.data.data;
+          setLeaderboardData({
+            students: (raw.students || []).filter((s: any) => !isTestStudent(s)),
+            groups: (raw.groups || []).filter((g: any) => !isTestKelompok(g)),
+            dpl: (raw.dpl || []).filter((d: any) => !isTestUser(d)),
+          });
         }
       } catch (err) {
         console.warn("Gagal memuat data leaderboard KKN:", err);

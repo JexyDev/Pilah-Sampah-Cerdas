@@ -1371,6 +1371,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "WARGA",
                 "PIMPINAN",
                 "PANITIA_TASKFORCE",
+                "MPL",
                 "MAHASISWA_KKN",
               ] as UserRole[],
             },
@@ -1838,27 +1839,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     },
   ];
 
-  const effectiveSections = isMpl
-    ? [
-        {
-          header: "PENILAIAN",
-          items: [
-            {
-              to: "/penilaian/mahasiswa",
-              icon: Award,
-              label: "Form Penilaian Mahasiswa",
-              allowed: ["MPL"] as UserRole[],
-            },
-            {
-              to: "/penilaian/rekapitulasi-nilai-akhir",
-              icon: ClipboardList,
-              label: "Rekap Nilai Akhir",
-              allowed: ["MPL"] as UserRole[],
-            },
-          ],
-        },
-      ]
-    : menuSections;
+  const effectiveSections = menuSections;
 
   return (
     <>

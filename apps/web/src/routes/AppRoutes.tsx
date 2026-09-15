@@ -169,6 +169,13 @@ const ProtectedRoute: React.FC<{
             (allowedRoles.includes("PIMPINAN") || (allowedRoles as any).includes("PEMIMPIN"))) ||
           ((user.peran === "DOSEN_PEMBIMBING" || user.peran === "DPL") &&
             (allowedRoles.includes("DPL") || (allowedRoles as any).includes("DOSEN_PEMBIMBING"))) ||
+          ((user.peran === "MPL" ||
+            user.peran === "MITRA_PEMBIMBING_LAPANGAN" ||
+            user.peran === "MITRA_PENDAMPING_LAPANGAN" ||
+            (user.peran as string) === "MITRA") &&
+            (allowedRoles.includes("MPL") ||
+              (allowedRoles as any).includes("MITRA_PEMBIMBING_LAPANGAN") ||
+              (allowedRoles as any).includes("MITRA_PENDAMPING_LAPANGAN"))) ||
           ((user.peran === "PANITIA_TASKFORCE" || user.peran === "TASK_FORCE") &&
             (allowedRoles.includes("TASK_FORCE") || (allowedRoles as any).includes("PANITIA_TASKFORCE"))));
 
@@ -191,6 +198,15 @@ const ProtectedRoute: React.FC<{
     !(
       (user.peran === "DOSEN_PEMBIMBING" || user.peran === "DPL") &&
       (allowedRoles.includes("DPL") || (allowedRoles as any).includes("DOSEN_PEMBIMBING"))
+    ) &&
+    !(
+      (user.peran === "MPL" ||
+        user.peran === "MITRA_PEMBIMBING_LAPANGAN" ||
+        user.peran === "MITRA_PENDAMPING_LAPANGAN" ||
+        (user.peran as string) === "MITRA") &&
+      (allowedRoles.includes("MPL") ||
+        (allowedRoles as any).includes("MITRA_PEMBIMBING_LAPANGAN") ||
+        (allowedRoles as any).includes("MITRA_PENDAMPING_LAPANGAN"))
     ) &&
     !(
       (user.peran === "PANITIA_TASKFORCE" || user.peran === "TASK_FORCE") &&
@@ -961,7 +977,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/pengelolaan-sampah"
           element={
-            <ProtectedRoute resource="pemanfaatan" allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PIMPINAN", "PANITIA_TASKFORCE", "DEVELOPER", "MAHASISWA_KKN", "WARGA", "PETUGAS_RESIDU"]}>
+            <ProtectedRoute resource="pemanfaatan" allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PIMPINAN", "PANITIA_TASKFORCE", "DEVELOPER", "MAHASISWA_KKN", "WARGA", "PETUGAS_RESIDU", "MPL"]}>
               <PemanfaatanSampah />
             </ProtectedRoute>
           }
@@ -969,7 +985,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/monitoring-pengelolaan/fasilitas"
           element={
-            <ProtectedRoute resource="pemanfaatan" allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PIMPINAN", "PANITIA_TASKFORCE", "DEVELOPER", "MAHASISWA_KKN", "WARGA", "PETUGAS_RESIDU"]}>
+            <ProtectedRoute resource="pemanfaatan" allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PIMPINAN", "PANITIA_TASKFORCE", "DEVELOPER", "MAHASISWA_KKN", "WARGA", "PETUGAS_RESIDU", "MPL"]}>
               <PemanfaatanSampah />
             </ProtectedRoute>
           }
@@ -997,7 +1013,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/monitoring-pemanfaatan"
           element={
-            <ProtectedRoute resource="hasil_pemanfaatan" allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PIMPINAN", "PANITIA_TASKFORCE", "DEVELOPER", "MAHASISWA_KKN", "WARGA", "PETUGAS_RESIDU"]}>
+            <ProtectedRoute resource="hasil_pemanfaatan" allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PIMPINAN", "PANITIA_TASKFORCE", "DEVELOPER", "MAHASISWA_KKN", "WARGA", "PETUGAS_RESIDU", "MPL"]}>
               <HasilPemanfaatan />
             </ProtectedRoute>
           }
@@ -1005,7 +1021,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/hasil-pemanfaatan"
           element={
-            <ProtectedRoute resource="hasil_pemanfaatan" allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PIMPINAN", "PANITIA_TASKFORCE", "DEVELOPER", "MAHASISWA_KKN", "WARGA", "PETUGAS_RESIDU"]}>
+            <ProtectedRoute resource="hasil_pemanfaatan" allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PIMPINAN", "PANITIA_TASKFORCE", "DEVELOPER", "MAHASISWA_KKN", "WARGA", "PETUGAS_RESIDU", "MPL"]}>
               <HasilPemanfaatan />
             </ProtectedRoute>
           }

@@ -805,7 +805,14 @@ router.put(
 router.get("/laporan-akhir/me", authMiddleware, kknController.getLaporanAkhirMe);
 
 router.get(
-  ["/program-kerja", "/proker"],
+  [
+    "/program-kerja",
+    "/proker",
+    "/kelompok/:kelompokId/program-kerja",
+    "/kelompok/:kelompokId/proker",
+    "/kelompok/:id/program-kerja",
+    "/kelompok/:id/proker",
+  ],
   authMiddleware,
   roleMiddleware([
     "MAHASISWA_KKN",
