@@ -82,6 +82,9 @@ export const ProgramKerjaKkn: React.FC = () => {
   const isPimpinan = ["PEMIMPIN", "PIMPINAN", "CAMAT", "LURAH", "KEPALA_DESA", "REKTOR"].includes(
     userRole
   );
+  const isMpl = ["MPL", "MITRA_PEMBIMBING_LAPANGAN", "MITRA_PENDAMPING_LAPANGAN", "MITRA"].includes(
+    userRole
+  );
   const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(userRole);
   const isDeveloper = userRole === "DEVELOPER" || userRole === "SUPER_USER";
   const isManagement = ["SUPER_USER", "PANITIA_TASKFORCE", "DEVELOPER", "ADMIN_DLH"].includes(
@@ -91,7 +94,7 @@ export const ProgramKerjaKkn: React.FC = () => {
   const isKetua = Boolean(
     (user as any)?.isKetua || (user as any)?.studentProfile?.isKetua || (user as any)?.isLeader
   );
-  const canModifyProker = isManagement || isDpl || (isStudent && isKetua);
+  const canModifyProker = !isMpl && !isPimpinan && (isManagement || isDpl || (isStudent && isKetua));
 
   const [searchParams] = useSearchParams();
 

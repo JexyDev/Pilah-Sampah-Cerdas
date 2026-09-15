@@ -337,6 +337,8 @@ export const LogbookKknPage: React.FC = () => {
   const userRole = String(user?.peran || (user as any)?.role || "").toUpperCase();
   const isDeveloper = ["DEVELOPER", "SUPER_USER", "ADMIN_DLH"].includes(userRole);
   const isPimpinan = ["PEMIMPIN", "PIMPINAN", "CAMAT", "LURAH", "KEPALA_DESA", "REKTOR"].includes(userRole);
+  const isMpl = ["MPL", "MITRA_PEMBIMBING_LAPANGAN", "MITRA_PENDAMPING_LAPANGAN", "MITRA"].includes(userRole);
+  const isReadOnlyRole = isPimpinan || isMpl;
 
   const [loading, setLoading] = useState(true);
 
@@ -1075,7 +1077,7 @@ export const LogbookKknPage: React.FC = () => {
                 </button>
 
                 {/* Button Validasi Semua / Validasi Terpilih (DPL & Admin) */}
-                {!isPimpinan && (
+                {!isReadOnlyRole && (
                   <button
                     type="button"
                     onClick={() => {
@@ -1147,7 +1149,7 @@ export const LogbookKknPage: React.FC = () => {
                       Batalkan Pilihan
                     </button>
 
-                    {!isPimpinan && selectedPendingLogbooks.length > 0 && (
+                    {!isReadOnlyRole && selectedPendingLogbooks.length > 0 && (
                       <button
                         type="button"
                         onClick={() => {
@@ -1398,7 +1400,7 @@ export const LogbookKknPage: React.FC = () => {
                                 <Eye size={14} className="w-3.5 h-3.5 shrink-0" />
                                 <span>{item.statusApproval === "MENUNGGU_VERIFIKASI_DPL" ? "Tinjau" : "Lihat"}</span>
                               </button>
-                              {!isPimpinan && (
+                              {!isReadOnlyRole && (
                                 <button
                                   type="button"
                                   onClick={() => handleOpenDeleteModal(item)}
@@ -1758,15 +1760,27 @@ export const LogbookKknPage: React.FC = () => {
                 </div>
               )}
 
-              {/* Section Catatan dan Validasi DPL / Mode Pimpinan View-Only */}
-              {isPimpinan ? (
+              {/* Section Catatan dan Validasi DPL / Mode View-Only (Pimpinan & MPL) */}
+              {isReadOnlyRole ? (
                 <div className="pt-4 border-t border-slate-100 dark:border-slate-700 space-y-3">
-                  <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-xl flex items-center justify-between text-xs text-amber-800 dark:text-amber-300">
-                    <span className="font-semibold">Mode Pemimpin: View-Only (Hanya Memantau Data Supervisi & Logbook)</span>
+                  <div className={`p-3 border rounded-xl flex items-center justify-between text-xs ${
+                    isMpl
+                      ? "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800/50 text-blue-800 dark:text-blue-300"
+                      : "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800/50 text-amber-800 dark:text-amber-300"
+                  }`}>
+                    <span className="font-semibold">
+                      {isMpl
+                        ? "Mode Mitra Lapangan (MPL): View-Only Pemantauan Aktivitas Mahasiswa"
+                        : "Mode Pemimpin: View-Only (Hanya Memantau Data Supervisi & Logbook)"}
+                    </span>
                     <button
                       type="button"
                       onClick={() => setIsDetailModalOpen(false)}
-                      className="py-1.5 px-3 bg-amber-100 dark:bg-amber-900/60 hover:bg-amber-200 text-amber-900 dark:text-amber-100 rounded-lg text-xs font-bold transition cursor-pointer"
+                      className={`py-1.5 px-3 rounded-lg text-xs font-bold transition cursor-pointer ${
+                        isMpl
+                          ? "bg-blue-100 dark:bg-blue-900/60 hover:bg-blue-200 text-blue-900 dark:text-blue-100"
+                          : "bg-amber-100 dark:bg-amber-900/60 hover:bg-amber-200 text-amber-900 dark:text-amber-100"
+                      }`}
                     >
                       Tutup
                     </button>
@@ -1797,7 +1811,7 @@ export const LogbookKknPage: React.FC = () => {
                     </button>
                   </div>
 
-                  {!isPimpinan && (
+                  {!isReadOnlyRole && (
                     <div className="flex justify-start pt-1">
                       <button
                         type="button"

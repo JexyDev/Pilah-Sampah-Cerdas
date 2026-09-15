@@ -203,6 +203,9 @@ router.get(
     "RW",
     "DPL",
     "DOSEN_PEMBIMBING",
+    "MPL",
+    "MITRA_PENDAMPING_LAPANGAN",
+    "MITRA_PEMBIMBING_LAPANGAN",
     "PANITIA_TASKFORCE",
     "PEMIMPIN",
   ]),
@@ -220,6 +223,9 @@ router.get(
     "RW",
     "DPL",
     "DOSEN_PEMBIMBING",
+    "MPL",
+    "MITRA_PENDAMPING_LAPANGAN",
+    "MITRA_PEMBIMBING_LAPANGAN",
     "PANITIA_TASKFORCE",
     "PEMIMPIN",
     "MAHASISWA_KKN",
@@ -237,6 +243,9 @@ router.get(
     "DEVELOPER",
     "DPL",
     "DOSEN_PEMBIMBING",
+    "MPL",
+    "MITRA_PENDAMPING_LAPANGAN",
+    "MITRA_PEMBIMBING_LAPANGAN",
     "SUPER_USER",
     "ADMIN_DLH",
     "CAMAT",
@@ -357,7 +366,15 @@ router.post(
 router.get(
   "/warga-dampingan",
   authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DPL", "DOSEN_PEMBIMBING"]),
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "MPL",
+    "MITRA_PENDAMPING_LAPANGAN",
+    "MITRA_PEMBIMBING_LAPANGAN",
+  ]),
   async (req, res) => {
     try {
       const result = await kknAttendanceServiceInstance.getWargaDampingan(
