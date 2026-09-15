@@ -24,7 +24,7 @@ router.use(authMiddleware);
  * ─────────────────────────────────────────────
  */
 
-// Mengambil daftar logbook (Tabular) - Mahasiswa, DPL, Super User
+// Mengambil daftar logbook (Tabular) - Mahasiswa, DPL, MPL, Super User
 router.get(
   "/mahasiswa",
   roleMiddleware([
@@ -33,6 +33,9 @@ router.get(
     "ADMIN_DLH",
     "DPL",
     "DOSEN_PEMBIMBING",
+    "MPL",
+    "MITRA_PENDAMPING_LAPANGAN",
+    "MITRA_PEMBIMBING_LAPANGAN",
     "PEMIMPIN",
     "PANITIA_TASKFORCE",
     "MAHASISWA_KKN",
@@ -49,6 +52,9 @@ router.get(
     "ADMIN_DLH",
     "DPL",
     "DOSEN_PEMBIMBING",
+    "MPL",
+    "MITRA_PENDAMPING_LAPANGAN",
+    "MITRA_PEMBIMBING_LAPANGAN",
     "PEMIMPIN",
     "PANITIA_TASKFORCE",
     "MAHASISWA_KKN",
@@ -174,6 +180,9 @@ router.get(
     "ADMIN_DLH",
     "DPL",
     "DOSEN_PEMBIMBING",
+    "MPL",
+    "MITRA_PENDAMPING_LAPANGAN",
+    "MITRA_PEMBIMBING_LAPANGAN",
     "PEMIMPIN",
     "PANITIA_TASKFORCE",
     "MAHASISWA_KKN",
@@ -204,6 +213,9 @@ router.get(
     "ADMIN_DLH",
     "DPL",
     "DOSEN_PEMBIMBING",
+    "MPL",
+    "MITRA_PENDAMPING_LAPANGAN",
+    "MITRA_PEMBIMBING_LAPANGAN",
     "PEMIMPIN",
     "PANITIA_TASKFORCE",
     "MAHASISWA_KKN",
@@ -219,6 +231,9 @@ router.get(
     "ADMIN_DLH",
     "DPL",
     "DOSEN_PEMBIMBING",
+    "MPL",
+    "MITRA_PENDAMPING_LAPANGAN",
+    "MITRA_PEMBIMBING_LAPANGAN",
     "PEMIMPIN",
     "PANITIA_TASKFORCE",
     "MAHASISWA_KKN",

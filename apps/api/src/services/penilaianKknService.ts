@@ -1371,9 +1371,13 @@ export const penilaianKknService = {
     }
   ) => {
     const normRole = String(evaluatorRole || "").toUpperCase();
-    if (normRole === "PEMIMPIN" || normRole === "PIMPINAN") {
+    if (
+      ["MPL", "MITRA_PENDAMPING_LAPANGAN", "MITRA_PEMBIMBING_LAPANGAN", "MITRA", "PEMIMPIN", "PIMPINAN"].some(
+        (r) => normRole === r || normRole.includes(r)
+      )
+    ) {
       throw new Error(
-        "FORBIDDEN_ROLE: Role Pimpinan hanya memiliki akses View-Only dan tidak dapat menginput/mengubah penilaian."
+        "FORBIDDEN_ROLE: Penilaian telaah laporan akhir adalah wewenang DPL. Role Anda hanya memiliki akses pemantauan (Read-Only)."
       );
     }
 
@@ -1599,9 +1603,13 @@ export const penilaianKknService = {
     catatan?: string
   ) => {
     const normRole = String(evaluatorRole || "").toUpperCase();
-    if (normRole === "PEMIMPIN" || normRole === "PIMPINAN") {
+    if (
+      ["MPL", "MITRA_PENDAMPING_LAPANGAN", "MITRA_PEMBIMBING_LAPANGAN", "MITRA", "PEMIMPIN", "PIMPINAN"].some(
+        (r) => normRole === r || normRole.includes(r)
+      )
+    ) {
       throw new Error(
-        "FORBIDDEN_ROLE: Role Pimpinan hanya memiliki akses View-Only dan tidak dapat menginput/mengubah penilaian."
+        "FORBIDDEN_ROLE: Penilaian telaah laporan akhir adalah wewenang DPL. Role Anda hanya memiliki akses pemantauan (Read-Only)."
       );
     }
 
