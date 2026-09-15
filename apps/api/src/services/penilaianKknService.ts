@@ -61,6 +61,10 @@ export const calculateCompositeScore = (
 };
 
 export const penilaianKknService = {
+  calculateCompositeScore,
+  calculateAspectScore,
+  calculateGradeCategory,
+
   /**
    * Mengambil data lengkap mahasiswa dan penilaian aktif (beserta kalkulasi otomatis data lapangan)
    */
