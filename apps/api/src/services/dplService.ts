@@ -729,7 +729,9 @@ export async function calculatePersonalPoints(userId: string): Promise<{
   };
 }
 
-export async function calculatePersonalPointsForUsers(userIds: string[]): Promise<Map<string, number>> {
+export async function calculatePersonalPointsForUsers(
+  userIds: string[]
+): Promise<Map<string, number>> {
   const result = new Map<string, number>();
   if (!userIds || userIds.length === 0) return result;
 
@@ -885,8 +887,11 @@ export async function calculateGroupPoints(
       }
 
       for (const p of personalPoints) {
-        const createdAtDate = p.createdAt instanceof Date ? p.createdAt : new Date(p.createdAt || Date.now());
-        const dayKey = (!isNaN(createdAtDate.getTime()) ? createdAtDate : new Date()).toISOString().slice(0, 10);
+        const createdAtDate =
+          p.createdAt instanceof Date ? p.createdAt : new Date(p.createdAt || Date.now());
+        const dayKey = (!isNaN(createdAtDate.getTime()) ? createdAtDate : new Date())
+          .toISOString()
+          .slice(0, 10);
         groupActiveDaysSet.add(dayKey);
         const userMap = userDayPointsMap.get(p.userId);
         if (userMap) {
@@ -1352,13 +1357,6 @@ export const dplService = {
 
         const totalWasteWeight = Math.round(Number(wasteSum._sum.berat || 0) * 100) / 100;
 
-        const totalAttendances = await prisma.activityAttendance.count({
-          where:
-            studentUserIds.length > 0
-              ? { studentId: { in: studentUserIds } }
-              : { id: "impossible-id" },
-        });
-
         const activeTodayCount =
           studentUserIds.length > 0
             ? (
@@ -1401,14 +1399,6 @@ export const dplService = {
           studentRates.length > 0
             ? Math.round(studentRates.reduce((a, b) => a + b, 0) / studentRates.length)
             : 0;
-
-        const pointSum = await prisma.pointHistory.aggregate({
-          where:
-            studentUserIds.length > 0
-              ? { userId: { in: studentUserIds } }
-              : { id: "impossible-id" },
-          _sum: { points: true },
-        });
 
         const prokerList = await prisma.programKerjaKkn.findMany({
           where: { kelompokId: grp.id },
@@ -1468,7 +1458,9 @@ export const dplService = {
             statusPelaksanaan: pl,
             skorPenilaian: p.skorPenilaian !== null ? Number(p.skorPenilaian) : null,
             createdAt: p.createdAt
-              ? (p.createdAt instanceof Date ? p.createdAt.toISOString() : String(p.createdAt))
+              ? p.createdAt instanceof Date
+                ? p.createdAt.toISOString()
+                : String(p.createdAt)
               : new Date().toISOString(),
           };
         });
