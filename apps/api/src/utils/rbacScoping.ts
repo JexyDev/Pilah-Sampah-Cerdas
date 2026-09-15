@@ -276,23 +276,37 @@ export async function getScopingFilters(user: {
     };
   }
 
-  // 3b. MPL (Mitra Pembimbing Lapangan) is scoped by their Kelurahan and assigned KKN groups
+  // 3b. MPL (Mitra Pembimbing Lapangan) is strictly scoped by their Kelurahan and assigned KKN groups
   if (role === "MPL") {
     let kelurahanId = dbUser.rw?.kelurahanId;
     let kelurahanName = dbUser.rw?.kelurahan?.name;
 
-    if (!kelurahanId && dbUser.address) {
-      const cleanAddress = dbUser.address.replace(/^Kel\.\s*/i, "").trim();
-      const match = await prisma.kelurahan.findFirst({
-        where: {
-          name: { contains: cleanAddress, mode: "insensitive" },
-        },
+    if (!kelurahanId && (dbUser.address || dbUser.name)) {
+      const allKelurahans = await prisma.kelurahan.findMany({
+        select: { id: true, name: true },
       });
-      if (match) {
-        kelurahanId = match.id;
-        kelurahanName = match.name;
-      } else {
-        kelurahanName = cleanAddress;
+      if (dbUser.address) {
+        const cleanAddress = dbUser.address.replace(/^Kel\.\s*/i, "").trim();
+        const match = allKelurahans.find(
+          (k) =>
+            cleanAddress.toLowerCase().includes(k.name.toLowerCase()) ||
+            k.name.toLowerCase().includes(cleanAddress.toLowerCase())
+        );
+        if (match) {
+          kelurahanId = match.id;
+          kelurahanName = match.name;
+        } else {
+          kelurahanName = cleanAddress;
+        }
+      }
+      if (!kelurahanId && !kelurahanName && dbUser.name) {
+        const match = allKelurahans.find((k) =>
+          dbUser.name.toLowerCase().includes(k.name.toLowerCase())
+        );
+        if (match) {
+          kelurahanId = match.id;
+          kelurahanName = match.name;
+        }
       }
     }
 
@@ -302,45 +316,87 @@ export async function getScopingFilters(user: {
       mplConditions.push({ kelurahan: { contains: kelurahanName, mode: "insensitive" } });
     }
 
+    const studentMplConditions: any[] = [
+      { mplId: dbUser.id },
+      { mpl: { id: dbUser.id } },
+      { kelompok: { OR: mplConditions } },
+    ];
+    if (kelurahanName) {
+      studentMplConditions.push({
+        assignedRw: {
+          kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } },
+        },
+      });
+    }
+
     if (!kelurahanId && !kelurahanName) {
       return {
-        userFilter: { OR: [{ studentProfile: { OR: mplConditions } }] },
+        userFilter: { OR: [{ studentProfile: { OR: studentMplConditions } }] },
         binFilter: { id: "none" },
         householdFilter: { id: "none" },
         wasteLogFilter: { id: "none" },
         pemanfaatanFilter: { id: "none" },
         facilityFilter: { id: "none" },
         kelompokKknFilter: { OR: mplConditions },
-        studentKknFilter: { kelompok: { OR: mplConditions } },
+        studentKknFilter: { OR: studentMplConditions },
       };
     }
 
+    const userOr: any[] = [{ studentProfile: { OR: studentMplConditions } }];
+    if (kelurahanId) userOr.push({ rw: { kelurahanId } });
+    if (kelurahanName) {
+      userOr.push({ rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } });
+    }
+
+    const binOr: any[] = [];
+    if (kelurahanId) {
+      binOr.push({ kelurahanId });
+      binOr.push({ rw: { kelurahanId } });
+    }
+    if (kelurahanName) {
+      binOr.push({ kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } });
+      binOr.push({ rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } });
+    }
+
+    const householdOr: any[] = [];
+    if (kelurahanId) householdOr.push({ rw: { kelurahanId } });
+    if (kelurahanName) {
+      householdOr.push({ rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } });
+    }
+
+    const wasteLogOr: any[] = [];
+    if (kelurahanId) {
+      wasteLogOr.push({ bin: { kelurahanId } });
+      wasteLogOr.push({ bin: { rw: { kelurahanId } } });
+      wasteLogOr.push({ warga: { rw: { kelurahanId } } });
+    }
+    if (kelurahanName) {
+      wasteLogOr.push({ bin: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } });
+      wasteLogOr.push({ bin: { rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } } });
+      wasteLogOr.push({ warga: { rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } } });
+    }
+
+    const pemanfaatanOr: any[] = [];
+    if (kelurahanId) pemanfaatanOr.push({ rw: { kelurahanId } });
+    if (kelurahanName) {
+      pemanfaatanOr.push({ rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } });
+    }
+
+    const facilityOr: any[] = [{ kelompok: { OR: mplConditions } }];
+    if (kelurahanId) facilityOr.push({ rw: { kelurahanId } });
+    if (kelurahanName) {
+      facilityOr.push({ rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } });
+    }
+
     return {
-      userFilter: {
-        OR: [
-          ...(kelurahanId ? [{ rw: { kelurahanId } }] : []),
-          { studentProfile: { OR: mplConditions } },
-        ],
-      },
-      binFilter: kelurahanId ? { OR: [{ kelurahanId }, { rw: { kelurahanId } }] } : {},
-      householdFilter: kelurahanId ? { rw: { kelurahanId } } : {},
-      wasteLogFilter: kelurahanId
-        ? {
-            OR: [
-              { bin: { kelurahanId } },
-              { bin: { rw: { kelurahanId } } },
-              { warga: { rw: { kelurahanId } } },
-            ],
-          }
-        : {},
-      pemanfaatanFilter: kelurahanId
-        ? { OR: [{ rw: { kelurahanId } }, { rw: { kelurahan: { name: kelurahanName } } }] }
-        : {},
-      facilityFilter: kelurahanId
-        ? { OR: [{ rw: { kelurahanId } }, { kelompok: { OR: mplConditions } }] }
-        : {},
+      userFilter: { OR: userOr },
+      binFilter: binOr.length > 0 ? { OR: binOr } : { id: "none" },
+      householdFilter: householdOr.length > 0 ? { OR: householdOr } : { id: "none" },
+      wasteLogFilter: wasteLogOr.length > 0 ? { OR: wasteLogOr } : { id: "none" },
+      pemanfaatanFilter: pemanfaatanOr.length > 0 ? { OR: pemanfaatanOr } : { id: "none" },
+      facilityFilter: { OR: facilityOr },
       kelompokKknFilter: { OR: mplConditions },
-      studentKknFilter: { kelompok: { OR: mplConditions } },
+      studentKknFilter: { OR: studentMplConditions },
     };
   }
 

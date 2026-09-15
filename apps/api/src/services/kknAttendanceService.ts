@@ -4917,6 +4917,7 @@ export class KknAttendanceService {
     kelurahan?: string;
     rw?: string;
     dplUserId?: string;
+    mplUserId?: string;
     startDate?: string;
     endDate?: string;
     status?: string;
@@ -4948,11 +4949,85 @@ export class KknAttendanceService {
       dplStudentUserIds = dplGroups.flatMap((g) => g.students.map((s) => s.userId));
     }
 
+    // Filter MPL scope (Strict scoping to assigned Kelurahan & Groups)
+    let mplStudentUserIds: string[] | undefined;
+    if (params.mplUserId) {
+      const mplUser = await prisma.user.findUnique({
+        where: { id: params.mplUserId },
+        include: { rw: { include: { kelurahan: true } } },
+      });
+
+      let mplKelurahan = mplUser?.rw?.kelurahan?.name || null;
+      if (!mplKelurahan && (mplUser?.address || mplUser?.name)) {
+        const allKelurahans = await prisma.kelurahan.findMany({
+          select: { id: true, name: true },
+        });
+        if (mplUser?.address) {
+          const clean = mplUser.address.replace(/^Kel\.\s*/i, "").trim();
+          const match = allKelurahans.find(
+            (k) =>
+              clean.toLowerCase().includes(k.name.toLowerCase()) ||
+              k.name.toLowerCase().includes(clean.toLowerCase())
+          );
+          if (match) mplKelurahan = match.name;
+        }
+        if (!mplKelurahan && mplUser?.name) {
+          const match = allKelurahans.find((k) =>
+            mplUser.name.toLowerCase().includes(k.name.toLowerCase())
+          );
+          if (match) mplKelurahan = match.name;
+        }
+      }
+
+      const mplOr: any[] = [
+        { mplId: params.mplUserId },
+        { mpl: { id: params.mplUserId } },
+      ];
+      if (mplKelurahan) {
+        mplOr.push({
+          kelurahan: { equals: mplKelurahan.trim(), mode: "insensitive" },
+        });
+        mplOr.push({
+          kelurahan: { contains: mplKelurahan.trim(), mode: "insensitive" },
+        });
+      }
+
+      const mplGroups = await prisma.kelompokKkn.findMany({
+        where: { OR: mplOr },
+        include: { students: { select: { userId: true } } },
+      });
+      mplStudentUserIds = mplGroups.flatMap((g) => g.students.map((s) => s.userId));
+
+      if (mplKelurahan) {
+        const rwStudents = await prisma.studentKkn.findMany({
+          where: {
+            assignedRw: {
+              kelurahan: {
+                name: { equals: mplKelurahan.trim(), mode: "insensitive" },
+              },
+            },
+          },
+          select: { userId: true },
+        });
+        const rwStudentIds = rwStudents.map((s) => s.userId);
+        mplStudentUserIds = Array.from(new Set([...mplStudentUserIds, ...rwStudentIds]));
+      }
+    }
+
     const where: any = {};
 
-    // 1. Filter Student IDs (by DPL or by Kelompok)
+    // 1. Filter Student IDs (by DPL, MPL, or by Kelompok)
     if (dplStudentUserIds) {
       where.studentId = { in: dplStudentUserIds };
+    }
+    if (mplStudentUserIds) {
+      if (where.studentId?.in) {
+        where.studentId = {
+          in: where.studentId.in.filter((id: string) => mplStudentUserIds!.includes(id)),
+        };
+      } else {
+        where.studentId = { in: mplStudentUserIds };
+      }
     }
 
     if (params.kelompokId && params.kelompokId !== "ALL") {
