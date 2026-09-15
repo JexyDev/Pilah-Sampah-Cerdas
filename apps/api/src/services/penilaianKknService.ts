@@ -35,20 +35,27 @@ export const calculateAspectScore = (score: number, weight: number): number => {
   return Number(((safeScore * weight) / 100).toFixed(2));
 };
 
-// Helper to calculate composite final score (Mitra 50% + DPL 50%)
-export const calculateCompositeScore = (subtotalMitra: number, subtotalDpl: number): number => {
+// Helper to calculate composite final score with dynamic weights (Default: Mitra 50% + DPL 50%)
+export const calculateCompositeScore = (
+  subtotalMitra: number,
+  subtotalDpl: number,
+  bobotMitraPersen: number = 50,
+  bobotDplPersen: number = 50
+): number => {
   const sMitra = Number(subtotalMitra) || 0;
   const sDpl = Number(subtotalDpl) || 0;
+  const wMitra = (Number(bobotMitraPersen) || 50) / 100;
+  const wDpl = (Number(bobotDplPersen) || 50) / 100;
 
   if (sMitra > 0 && sDpl > 0) {
-    return Number((sMitra * 0.5 + sDpl * 0.5).toFixed(2));
+    return Number((sMitra * wMitra + sDpl * wDpl).toFixed(2));
   }
-  // Nilai progresif/sementara berdasarkan kontribusi masing-masing 50%
+  // Nilai progresif/sementara berdasarkan kontribusi masing-masing
   if (sDpl > 0) {
-    return Number((sDpl * 0.5).toFixed(2));
+    return Number((sDpl * wDpl).toFixed(2));
   }
   if (sMitra > 0) {
-    return Number((sMitra * 0.5).toFixed(2));
+    return Number((sMitra * wMitra).toFixed(2));
   }
   return 0;
 };
@@ -189,6 +196,8 @@ export const penilaianKknService = {
     const ruleConfigs = await configService.getRuleEngineConfigs().catch(() => null);
     const targetLogbook = ruleConfigs?.logbookTargetKegiatan || 24;
     const bobotLogbook = ruleConfigs?.logbookBobotPersen || 20;
+    const bobotDplPersen = ruleConfigs?.penilaianBobotDplPersen ?? 50;
+    const bobotMplPersen = ruleConfigs?.penilaianBobotMplPersen ?? 50;
     const targetDailyMinutes = (ruleConfigs?.attendanceMinDurationHours || 4) * 60;
 
     const pastSchedulesCount = await prisma.schedule
