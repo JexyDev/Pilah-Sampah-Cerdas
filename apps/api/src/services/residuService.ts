@@ -75,15 +75,24 @@ export class ResiduService {
         },
       });
 
-      // 2. Deduct Citizen Points (Insert negative PointHistory)
-      await tx.pointHistory.create({
-        data: {
-          userId: citizen.id,
-          points: -pointsToDeduct,
-          description: `Penalti pelanggaran residu tercampur (${data.severity}): ${data.type}`,
-          kategori: "REDUKSI_TONASE",
-        },
+      // 2. Deduct Citizen Points (Insert negative PointHistory) if points available
+      const pointSumObj = await tx.pointHistory.aggregate({
+        where: { userId: citizen.id },
+        _sum: { points: true },
       });
+      const currentPoints = Math.max(0, pointSumObj._sum.points || 0);
+      const actualDeduct = Math.min(pointsToDeduct, currentPoints);
+
+      if (actualDeduct > 0) {
+        await tx.pointHistory.create({
+          data: {
+            userId: citizen.id,
+            points: -actualDeduct,
+            description: `Penalti pelanggaran residu tercampur (${data.severity}): ${data.type}`,
+            kategori: "REDUKSI_TONASE",
+          },
+        });
+      }
 
       // 3. Create In-App Notification for Citizen
       await tx.notification.create({
