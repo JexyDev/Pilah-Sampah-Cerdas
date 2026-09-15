@@ -281,32 +281,31 @@ export async function getScopingFilters(user: {
     let kelurahanId = dbUser.rw?.kelurahanId;
     let kelurahanName = dbUser.rw?.kelurahan?.name;
 
-    if (!kelurahanId && (dbUser.address || dbUser.name)) {
-      const allKelurahans = await prisma.kelurahan.findMany({
-        select: { id: true, name: true },
+    if (!kelurahanId && dbUser.address) {
+      const cleanAddress = dbUser.address.replace(/^Kel\.\s*/i, "").trim();
+      const match = await prisma.kelurahan.findFirst({
+        where: {
+          name: { contains: cleanAddress, mode: "insensitive" },
+        },
       });
-      if (dbUser.address) {
-        const cleanAddress = dbUser.address.replace(/^Kel\.\s*/i, "").trim();
-        const match = allKelurahans.find(
-          (k) =>
-            cleanAddress.toLowerCase().includes(k.name.toLowerCase()) ||
-            k.name.toLowerCase().includes(cleanAddress.toLowerCase())
-        );
-        if (match) {
-          kelurahanId = match.id;
-          kelurahanName = match.name;
-        } else {
-          kelurahanName = cleanAddress;
-        }
+      if (match) {
+        kelurahanId = match.id;
+        kelurahanName = match.name;
+      } else {
+        kelurahanName = cleanAddress;
       }
-      if (!kelurahanId && !kelurahanName && dbUser.name) {
-        const match = allKelurahans.find((k) =>
-          dbUser.name.toLowerCase().includes(k.name.toLowerCase())
-        );
-        if (match) {
-          kelurahanId = match.id;
-          kelurahanName = match.name;
-        }
+    }
+
+    if (!kelurahanId && !kelurahanName && dbUser.name) {
+      const cleanName = dbUser.name.replace(/^Mpl\s+(Kelurahan\s+)?/i, "").trim();
+      const match = await prisma.kelurahan.findFirst({
+        where: {
+          name: { contains: cleanName, mode: "insensitive" },
+        },
+      });
+      if (match) {
+        kelurahanId = match.id;
+        kelurahanName = match.name;
       }
     }
 
@@ -348,53 +347,83 @@ export async function getScopingFilters(user: {
       userOr.push({ rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } });
     }
 
-    const binOr: any[] = [];
+    let binFilter: any = { id: "none" };
     if (kelurahanId) {
-      binOr.push({ kelurahanId });
-      binOr.push({ rw: { kelurahanId } });
-    }
-    if (kelurahanName) {
-      binOr.push({ kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } });
-      binOr.push({ rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } });
-    }
-
-    const householdOr: any[] = [];
-    if (kelurahanId) householdOr.push({ rw: { kelurahanId } });
-    if (kelurahanName) {
-      householdOr.push({ rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } });
+      binFilter = { OR: [{ kelurahanId }, { rw: { kelurahanId } }] };
+    } else if (kelurahanName) {
+      binFilter = {
+        OR: [
+          { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } },
+          { rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } },
+        ],
+      };
     }
 
-    const wasteLogOr: any[] = [];
+    let householdFilter: any = { id: "none" };
     if (kelurahanId) {
-      wasteLogOr.push({ bin: { kelurahanId } });
-      wasteLogOr.push({ bin: { rw: { kelurahanId } } });
-      wasteLogOr.push({ warga: { rw: { kelurahanId } } });
-    }
-    if (kelurahanName) {
-      wasteLogOr.push({ bin: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } });
-      wasteLogOr.push({ bin: { rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } } });
-      wasteLogOr.push({ warga: { rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } } });
+      householdFilter = { rw: { kelurahanId } };
+    } else if (kelurahanName) {
+      householdFilter = {
+        rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } },
+      };
     }
 
-    const pemanfaatanOr: any[] = [];
-    if (kelurahanId) pemanfaatanOr.push({ rw: { kelurahanId } });
-    if (kelurahanName) {
-      pemanfaatanOr.push({ rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } });
+    let wasteLogFilter: any = { id: "none" };
+    if (kelurahanId) {
+      wasteLogFilter = {
+        OR: [
+          { bin: { kelurahanId } },
+          { bin: { rw: { kelurahanId } } },
+          { warga: { rw: { kelurahanId } } },
+        ],
+      };
+    } else if (kelurahanName) {
+      wasteLogFilter = {
+        OR: [
+          { bin: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } },
+          { bin: { rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } } },
+          {
+            warga: { rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } },
+          },
+        ],
+      };
     }
 
-    const facilityOr: any[] = [{ kelompok: { OR: mplConditions } }];
-    if (kelurahanId) facilityOr.push({ rw: { kelurahanId } });
-    if (kelurahanName) {
-      facilityOr.push({ rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } });
+    let pemanfaatanFilter: any = { id: "none" };
+    if (kelurahanId) {
+      pemanfaatanFilter = {
+        OR: [
+          { rw: { kelurahanId } },
+          { rw: { kelurahan: { name: kelurahanName } } },
+        ],
+      };
+    } else if (kelurahanName) {
+      pemanfaatanFilter = {
+        rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } },
+      };
+    }
+
+    let facilityFilter: any = { OR: [{ kelompok: { OR: mplConditions } }] };
+    if (kelurahanId) {
+      facilityFilter = {
+        OR: [{ rw: { kelurahanId } }, { kelompok: { OR: mplConditions } }],
+      };
+    } else if (kelurahanName) {
+      facilityFilter = {
+        OR: [
+          { rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } },
+          { kelompok: { OR: mplConditions } },
+        ],
+      };
     }
 
     return {
       userFilter: { OR: userOr },
-      binFilter: binOr.length > 0 ? { OR: binOr } : { id: "none" },
-      householdFilter: householdOr.length > 0 ? { OR: householdOr } : { id: "none" },
-      wasteLogFilter: wasteLogOr.length > 0 ? { OR: wasteLogOr } : { id: "none" },
-      pemanfaatanFilter: pemanfaatanOr.length > 0 ? { OR: pemanfaatanOr } : { id: "none" },
-      facilityFilter: { OR: facilityOr },
+      binFilter,
+      householdFilter,
+      wasteLogFilter,
+      pemanfaatanFilter,
+      facilityFilter,
       kelompokKknFilter: { OR: mplConditions },
       studentKknFilter: { OR: studentMplConditions },
     };

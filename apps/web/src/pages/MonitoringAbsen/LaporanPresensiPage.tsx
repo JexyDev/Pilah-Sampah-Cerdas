@@ -149,6 +149,7 @@ export const LaporanPresensiPage: React.FC = () => {
   const rawRole = user?.role;
   const roleName = String(typeof rawRole === "object" ? (rawRole as any)?.name : (rawRole || user?.peran || "")).toUpperCase();
   const isDpl = roleName === "DPL" || roleName === "DOSEN_PEMBIMBING";
+  const isMpl = roleName === "MPL" || roleName.includes("MITRA");
   const isDeveloper = roleName === "DEVELOPER" || roleName === "SUPER_USER";
 
   // Tab View Mode: Rekap Mahasiswa (Total Akumulasi) vs Log Presensi Detail
@@ -174,7 +175,7 @@ export const LaporanPresensiPage: React.FC = () => {
 
   // Filter states
   const [selectedKelompok, setSelectedKelompok] = useState<string>(() => {
-    if (typeof window !== "undefined" && !isDpl) {
+    if (typeof window !== "undefined" && !isDpl && !isMpl) {
       try {
         const saved = localStorage.getItem("berseka_dev_selected_kelompok");
         if (saved) return saved;
@@ -458,6 +459,13 @@ export const LaporanPresensiPage: React.FC = () => {
 
   // Daftar kelurahan unik dari master database & groups untuk filter dropdown
   const kelurahanOptions = useMemo(() => {
+    if (isMpl) {
+      const set = new Set<string>();
+      groups.forEach((g: any) => {
+        if (g.kelurahan) set.add(g.kelurahan);
+      });
+      return Array.from(set).sort((a, b) => a.localeCompare(b));
+    }
     const set = new Set<string>();
     masterKelurahanList.forEach((m) => {
       if (m.name) set.add(m.name);
@@ -466,7 +474,7 @@ export const LaporanPresensiPage: React.FC = () => {
       if (g.kelurahan) set.add(g.kelurahan);
     });
     return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [masterKelurahanList, groups]);
+  }, [isMpl, masterKelurahanList, groups]);
 
   // Daftar RW tersedia berdasarkan kelurahan yang dipilih
   const availableRwOptions = useMemo(() => {
@@ -522,7 +530,7 @@ export const LaporanPresensiPage: React.FC = () => {
         setSelectedKelurahan(grp.kelurahan);
       }
     }
-    if (!isDpl && typeof window !== "undefined") {
+    if (!isDpl && !isMpl && typeof window !== "undefined") {
       try {
         localStorage.setItem("berseka_dev_selected_kelompok", id === "ALL" ? "" : id);
       } catch {}
@@ -577,13 +585,40 @@ export const LaporanPresensiPage: React.FC = () => {
           (user.email && g.dpl?.email === user.email)
         );
         setGroups(dplGroups.length > 0 ? dplGroups : sortedList);
+      } else if (isMpl && user) {
+        // Strict scope to MPL's assigned Kelurahan and kelompok
+        let userKel = (user as any).rw?.kelurahan?.name || (user as any).kelurahan || "";
+        if (!userKel && user.address) {
+          userKel = user.address.replace(/^Kel\.\s*/i, "").trim();
+        }
+        if (!userKel && user.name) {
+          const matchKel = Array.from(
+            new Set(sortedList.map((g: any) => g.kelurahan).filter(Boolean))
+          ).find((kName: any) =>
+            user.name.toLowerCase().includes(String(kName).toLowerCase())
+          );
+          if (matchKel) userKel = String(matchKel);
+        }
+
+        const mplGroups = sortedList.filter((g: any) =>
+          g.mplId === user.id ||
+          g.mpl?.id === user.id ||
+          g.mpl?.userId === user.id ||
+          (userKel && g.kelurahan && g.kelurahan.toLowerCase().includes(userKel.toLowerCase()))
+        );
+        const finalList = mplGroups.length > 0 ? mplGroups : sortedList;
+        setGroups(finalList);
+
+        if (userKel) {
+          setSelectedKelurahan(userKel);
+        }
       } else {
         setGroups(sortedList);
       }
     } catch (_err) {
       // silent fallback
     }
-  }, [isDpl, user]);
+  }, [isDpl, isMpl, user]);
 
   // Fetch report data
   const fetchLaporan = useCallback(async (silent = false) => {
