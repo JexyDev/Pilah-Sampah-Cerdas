@@ -45,6 +45,7 @@ import {
   formatProdiName,
 } from "../../utils/textFormatter";
 import { sortStudentsRoster, sortKelompokList } from "../../utils/sortUtils";
+import { isTestStudent, isTestKelompok } from "../../utils/filterTestingUtils";
 
 export const PenilaianLaporanAkhirPage: React.FC = () => {
   const { user } = useAuthStore();
@@ -88,10 +89,11 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
     setLoading(true);
     try {
       const data = await penilaianKknApiService.getLaporanAkhirList();
+      let rawList: LaporanAkhirItem[] = [];
       if (data && Array.isArray(data.students)) {
-        setStudents(data.students);
+        rawList = data.students;
       } else if (Array.isArray(data)) {
-        setStudents(data);
+        rawList = data;
       } else if (data && typeof data === "object" && Array.isArray((data as any).kelompokList)) {
         // Flatten from kelompokList if students not directly provided
         const flat: LaporanAkhirItem[] = [];
@@ -123,8 +125,14 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
             });
           }
         });
-        setStudents(flat);
+        rawList = flat;
       }
+      const cleanStudents = rawList.filter(
+        (s) =>
+          !isTestStudent(s) &&
+          !isTestKelompok({ name: s.kelompok, dplNamaMentah: s.dplNama })
+      );
+      setStudents(cleanStudents);
     } catch (err: any) {
       console.error("Gagal memuat daftar laporan akhir:", err);
       toast.error("Gagal memuat data laporan akhir mahasiswa");
@@ -141,7 +149,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
   const uniqueKelompokList = useMemo(() => {
     const setK = new Set<string>();
     students.forEach((s) => {
-      if (s.kelompok && s.kelompok !== "-") setK.add(s.kelompok);
+      if (s.kelompok && s.kelompok !== "-" && !isTestKelompok({ name: s.kelompok })) setK.add(s.kelompok);
     });
     return sortKelompokList(Array.from(setK), (k) => k);
   }, [students]);

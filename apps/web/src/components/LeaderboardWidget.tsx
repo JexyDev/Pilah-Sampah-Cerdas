@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import api from "../services/api";
 import { useAuthStore } from "../store/useAuthStore";
+import { isTestUser, isTestKelompok, isTestStudent } from "../utils/filterTestingUtils";
 
 interface LeaderboardItem {
   rank: number;
@@ -218,7 +219,8 @@ export const LeaderboardWidget: React.FC<LeaderboardWidgetProps> = ({ mode = "al
       if (res.data?.success && res.data.data) {
         const d = res.data.data;
         if (d.citizens) {
-          const apiWarga = d.citizens.map((c: any, i: number) => ({
+          const validCitizens = d.citizens.filter((c: any) => !isTestUser(c));
+          const apiWarga = validCitizens.map((c: any, i: number) => ({
             rank: i + 1,
             name: c.name,
             subtitle: c.wilayah && c.wilayah !== "N/A" ? c.wilayah : "Wilayah Binaan",
@@ -227,7 +229,8 @@ export const LeaderboardWidget: React.FC<LeaderboardWidgetProps> = ({ mode = "al
           setWargaList(apiWarga);
         }
         if (d.pengangkut) {
-          const apiPetugas = d.pengangkut.map((p: any, i: number) => ({
+          const validPengangkut = d.pengangkut.filter((p: any) => !isTestUser(p));
+          const apiPetugas = validPengangkut.map((p: any, i: number) => ({
             rank: i + 1,
             name: p.name,
             subtitle: p.wilayah || "Wilayah Operasional",
@@ -272,7 +275,8 @@ export const LeaderboardWidget: React.FC<LeaderboardWidgetProps> = ({ mode = "al
       if (resKkn.data?.success && resKkn.data.data) {
         const d = resKkn.data.data;
         if (d.students) {
-          const apiMhs = d.students.map((s: any, i: number) => {
+          const validStudents = d.students.filter((s: any) => !isTestStudent(s));
+          const apiMhs = validStudents.map((s: any, i: number) => {
             const rawK = s.kelompok;
             const cleanK =
               rawK && rawK !== "Tanpa Kelompok" && rawK !== "N/A"
@@ -290,7 +294,8 @@ export const LeaderboardWidget: React.FC<LeaderboardWidgetProps> = ({ mode = "al
           setMahasiswaList(apiMhs);
         }
         if (d.groups) {
-          const apiGrp = d.groups.map((g: any, i: number) => {
+          const validGroups = d.groups.filter((g: any) => !isTestKelompok(g));
+          const apiGrp = validGroups.map((g: any, i: number) => {
             const rawG = g.name || `Kelompok ${i + 1}`;
             const cleanG = rawG.trim().toLowerCase().startsWith("kelompok")
               ? rawG.trim()
@@ -305,7 +310,8 @@ export const LeaderboardWidget: React.FC<LeaderboardWidgetProps> = ({ mode = "al
           setKelompokList(apiGrp);
         }
         if (d.dpl) {
-          const apiDpl = d.dpl.map((dp: any, i: number) => ({
+          const validDpl = d.dpl.filter((dp: any) => !isTestUser(dp));
+          const apiDpl = validDpl.map((dp: any, i: number) => ({
             rank: i + 1,
             name: dp.name,
             subtitle: `DPL (${dp.totalGroups || 0} Kelompok)`,

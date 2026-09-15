@@ -18,6 +18,7 @@ import api from "../../services/api";
 import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
 import { sortKelompokList } from "../../utils/sortUtils";
+import { isTestKelompok, isTestStudent } from "../../utils/filterTestingUtils";
 
 export const PenilaianMahasiswaPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -41,17 +42,19 @@ export const PenilaianMahasiswaPage: React.FC = () => {
       const kelRes = await api.get("/kelompok?limit=0");
       const list = kelRes.data?.groups || kelRes.data?.data || (Array.isArray(kelRes.data) ? kelRes.data : []);
       if (Array.isArray(list)) {
-        setKelompokList(sortKelompokList(list, (k: any) => k.name || ""));
+        const cleanKelompok = list.filter((k: any) => !isTestKelompok(k));
+        setKelompokList(sortKelompokList(cleanKelompok, (k: any) => k.name || ""));
       }
 
       const data = await dplService.getStudents(
         selectedKelompokId !== "ALL" ? selectedKelompokId : undefined
       );
-      setStudents(data);
+      const cleanStudents = (data || []).filter((st: any) => !isTestStudent(st));
+      setStudents(cleanStudents);
 
       const initialScores: Record<string, number> = {};
       const initialNotes: Record<string, string> = {};
-      data.forEach((st) => {
+      cleanStudents.forEach((st) => {
         initialScores[st.id] = st.assessmentScore || 0;
         initialNotes[st.id] = (st as any).assessmentNote || "";
       });

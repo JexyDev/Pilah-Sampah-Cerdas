@@ -9,6 +9,7 @@ import { prisma } from "../lib/prisma.js";
 import { Router } from "express";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { notificationSyncController } from "../controllers/notificationSyncController.js";
+import { parseProkerDeskripsi } from "../services/dplService.js";
 
 const router = Router();
 
@@ -149,9 +150,61 @@ const mapNotification = (n: any) => {
 
 /**
  * @swagger
+ * /api/v1/notifications/unread-count:
+ *   get:
+ *     summary: Mendapatkan jumlah notifikasi yang belum dibaca (Unread Count)
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil mengambil jumlah notifikasi belum dibaca
+ */
+router.get(["/unread-count", "/count/unread"], authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      res.status(200).json({ success: true, count: 0, unreadCount: 0 });
+      return;
+    }
+
+    const syncState = await prisma.userNotificationSync.findUnique({ where: { userId } }).catch(() => null);
+    const markAllTimestamp = syncState ? Number(syncState.markAllTimestamp) : 0;
+    const deleteAllTimestamp = syncState ? Number(syncState.deleteAllTimestamp) : 0;
+    let readIds: string[] = [];
+    try {
+      readIds = syncState?.readIds ? JSON.parse(syncState.readIds) : [];
+      if (!Array.isArray(readIds)) readIds = [];
+    } catch {
+      readIds = [];
+    }
+
+    const unreadCount = await prisma.notification.count({
+      where: {
+        userId,
+        isRead: false,
+        ...(markAllTimestamp > 0 ? { createdAt: { gt: new Date(markAllTimestamp) } } : {}),
+        ...(deleteAllTimestamp > 0 ? { createdAt: { gt: new Date(deleteAllTimestamp) } } : {}),
+        ...(readIds.length > 0 ? { id: { notIn: readIds } } : {}),
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      status: "success",
+      count: unreadCount,
+      unreadCount,
+    });
+  } catch (error) {
+    res.status(200).json({ success: true, count: 0, unreadCount: 0 });
+  }
+});
+
+/**
+ * @swagger
  * /api/v1/notifications:
  *   get:
- *     summary: Mendapatkan seluruh notifikasi generik user (Warga / RW / RT / Admin)
+ *     summary: Mendapatkan seluruh notifikasi generik user (Warga / RW / RT / Admin / Mahasiswa)
  *     tags: [Notifications]
  *     security:
  *       - bearerAuth: []
@@ -262,19 +315,151 @@ router.get("/", authMiddleware, async (req, res) => {
       return;
     }
 
+    const isMahasiswaRole = role === "MAHASISWA_KKN" || role.includes("MAHASISWA");
+
+    if (isMahasiswaRole && userId) {
+      // 1. Ambil student profile
+      const student = await prisma.studentKkn.findFirst({
+        where: { OR: [{ userId }, { id: userId }] },
+        include: {
+          kelompok: {
+            include: { dpl: true },
+          },
+        },
+      });
+
+      // 2. Ambil notifikasi DB langsung untuk ID user Mahasiswa
+      const dbNotifs = await prisma.notification.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+        take: 30,
+      });
+
+      const userNotifs = dbNotifs.map(mapNotification);
+
+      // 3. Ambil riwayat pengajuan izin (Leave Request) milik mahasiswa ini
+      let leaveNotifs: any[] = [];
+      const studentLeaveRequests = await prisma.studentLeaveRequest.findMany({
+        where: { studentId: { in: [userId, student?.id].filter(Boolean) as string[] } },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+      });
+
+      for (const lr of studentLeaveRequests) {
+        const diffMs = Date.now() - new Date(lr.createdAt).getTime();
+        const diffMins = Math.floor(diffMs / (1000 * 60));
+        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        let time = "Baru saja";
+        if (diffDays > 0) time = `${diffDays} hari lalu`;
+        else if (diffHours > 0) time = `${diffHours} jam lalu`;
+        else if (diffMins > 0) time = `${diffMins} menit lalu`;
+
+        const isApproved = lr.status === "APPROVED";
+        const isRejected = lr.status === "REJECTED";
+        const isPending = lr.status === "PENDING";
+
+        const title = isPending
+          ? `Pengajuan Izin ${lr.type} Terkirim`
+          : isApproved
+            ? `Pengajuan Izin ${lr.type} Disetujui DPL`
+            : `Pengajuan Izin ${lr.type} Ditolak DPL`;
+
+        const desc = isPending
+          ? `Pengajuan izin ${lr.type} Anda ("${lr.reason}") sedang menunggu verifikasi DPL.`
+          : isApproved
+            ? `Pengajuan izin ${lr.type} Anda telah disetujui DPL. Presensi kehadiran telah disesuaikan.`
+            : `Pengajuan izin ${lr.type} Anda ditolak DPL: ${lr.rejectionReason || "Silakan hubungi DPL."}`;
+
+        leaveNotifs.push({
+          id: `leave-mhs-${lr.id}-${lr.status.toLowerCase()}`,
+          type: isPending ? "PENGAJUAN_IZIN" : isApproved ? "IZIN_DISETUJUI" : "IZIN_DITOLAK",
+          title,
+          desc,
+          isRead: isPending ? false : lr.reviewedAt ? true : false,
+          time,
+          createdAt: lr.reviewedAt || lr.createdAt,
+          icon: isApproved ? "check_circle" : isRejected ? "cancel" : "schedule",
+          iconBg: isApproved ? "bg-emerald-100" : isRejected ? "bg-red-100" : "bg-amber-100",
+          iconColor: isApproved ? "text-emerald-600" : isRejected ? "text-red-600" : "text-amber-600",
+        });
+      }
+
+      // 4. Ambil notifikasi keputusan proker kelompok
+      let prokerNotifs: any[] = [];
+      if (student?.kelompokId) {
+        const groupProkers = await prisma.programKerjaKkn.findMany({
+          where: {
+            kelompokId: student.kelompokId,
+            statusUsulan: { in: ["DISETUJUI", "DITOLAK"] },
+          },
+          orderBy: { updatedAt: "desc" },
+          take: 10,
+        });
+
+        for (const pk of groupProkers) {
+          const parsed = parseProkerDeskripsi(pk.deskripsi);
+          const isApp = pk.statusUsulan === "DISETUJUI";
+          prokerNotifs.push({
+            id: `proker-${pk.id}-${pk.statusUsulan.toLowerCase()}`,
+            type: isApp ? "PROKER_DISETUJUI" : "PROKER_DITOLAK",
+            title: isApp ? `Program Kerja Disetujui: ${parsed.judul}` : `Program Kerja Ditolak: ${parsed.judul}`,
+            desc: isApp
+              ? `Program kerja "${parsed.judul}" telah disetujui DPL dan siap dijalankan.`
+              : `Program kerja "${parsed.judul}" ditolak/perlu revisi DPL: ${pk.catatanDpl || "Cek catatan DPL."}`,
+            isRead: false,
+            time: "Baru saja",
+            createdAt: pk.updatedAt,
+            icon: isApp ? "assignment_turned_in" : "assignment_late",
+            iconBg: isApp ? "bg-indigo-100" : "bg-red-100",
+            iconColor: isApp ? "text-indigo-600" : "text-red-600",
+          });
+        }
+      }
+
+      // 5. Gabungkan dan deduplikasi notifikasi
+      const combined = [...leaveNotifs, ...prokerNotifs, ...userNotifs];
+      const seenIds = new Set<string>();
+      const deduped: any[] = [];
+      for (const item of combined) {
+        if (!seenIds.has(item.id)) {
+          seenIds.add(item.id);
+          deduped.push(item);
+        }
+      }
+
+      const allMahasiswaNotifs = deduped
+        .filter((n) => {
+          if (!deleteAllTimestamp || !n.createdAt) return true;
+          const itemTs = new Date(n.createdAt).getTime();
+          return isNaN(itemTs) || itemTs > deleteAllTimestamp;
+        })
+        .map((n) => ({
+          ...n,
+          isRead: isItemRead(n),
+        }))
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+      res.status(200).json({
+        success: true,
+        status: "success",
+        data: allMahasiswaNotifs,
+        unreadCount: allMahasiswaNotifs.filter((n) => !n.isRead).length,
+      });
+      return;
+    }
+
     const isAdminOrPetugas = [
       "DEVELOPER",
       "SUPER_USER",
       "PEMIMPIN",
       "PANITIA_TASKFORCE",
-      "DPL",
       "ADMIN_DLH",
       "CAMAT",
       "LURAH",
       "RW",
       "RT",
       "PETUGAS_RESIDU",
-      "MAHASISWA_KKN",
     ].includes(role);
 
     // Fetch user details for area scoping

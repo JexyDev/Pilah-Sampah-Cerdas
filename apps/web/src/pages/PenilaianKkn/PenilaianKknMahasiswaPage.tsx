@@ -40,6 +40,7 @@ import {
   formatProdiName,
 } from "../../utils/textFormatter";
 import { sortKelompokList, sortStudentsRoster } from "../../utils/sortUtils";
+import { isTestStudent, isTestKelompok } from "../../utils/filterTestingUtils";
 
 // 6 Aspek Akademik DPL (Total Bobot 100% -> Kontribusi 50% Nilai Akhir)
 const ASPEK_DPL_CONFIG = [
@@ -248,7 +249,10 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
     setLoading(true);
     try {
       const data = await penilaianKknApiService.getRekapPenilaian();
-      const list: StudentRekapItem[] = Array.isArray(data) ? data : [];
+      const rawList: StudentRekapItem[] = Array.isArray(data) ? data : [];
+      const list = rawList.filter(
+        (s) => !isTestStudent(s) && !isTestKelompok({ name: s.kelompok })
+      );
       setStudents(list);
     } catch (err: any) {
       console.error("Error fetching students:", err);

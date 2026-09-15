@@ -1,6 +1,7 @@
 import { prisma } from "../lib/prisma.js";
 import { ensureDplKelompokRelation } from "./dplService.js";
 import { getScopingFilters } from "../utils/rbacScoping.js";
+import { isTestKelompok, isTestStudent } from "../utils/filterTestingUtils.js";
 
 export const kelompokService = {
   getAllKelompok: async (
@@ -65,12 +66,18 @@ export const kelompokService = {
       prisma.kelompokKkn.count({ where: whereClause }),
     ]);
 
+    // Saring kelompok dan mahasiswa uji coba / testing
+    const filteredGroups = groups.filter((g) => !isTestKelompok(g));
+    filteredGroups.forEach((g) => {
+      g.students = g.students.filter((s) => !isTestStudent(s));
+    });
+
     // Natural sort: Kelompok 1, Kelompok 2, ..., Kelompok 10, Kelompok 11
-    groups.sort((a, b) =>
+    filteredGroups.sort((a, b) =>
       (a.name || "").localeCompare(b.name || "", "id", { numeric: true, sensitivity: "base" })
     );
 
-    return { groups, total, page, limit: isAll ? total : limit };
+    return { groups: filteredGroups, total: filteredGroups.length, page, limit: isAll ? filteredGroups.length : limit };
   },
 
   getKelompokById: async (id: string) => {

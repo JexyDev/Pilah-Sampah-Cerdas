@@ -42,6 +42,7 @@ import {
   formatProdiName,
 } from "../../utils/textFormatter";
 import { sortKelompokList } from "../../utils/sortUtils";
+import { isTestStudent, isTestKelompok } from "../../utils/filterTestingUtils";
 
 export const RekapNilaiKknPage: React.FC = () => {
   const { user } = useAuthStore();
@@ -155,7 +156,10 @@ export const RekapNilaiKknPage: React.FC = () => {
             status: stat,
           };
         });
-        setStudents(formatted);
+        const cleanFormatted = formatted.filter(
+          (s) => !isTestStudent(s) && !isTestKelompok({ name: s.kelompok })
+        );
+        setStudents(cleanFormatted);
       } else {
         setStudents([]);
       }

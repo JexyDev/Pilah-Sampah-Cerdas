@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { kelompokService } from "../services/kelompokService.js";
+import { kknService } from "../services/kknService.js";
 
 export const kelompokController = {
   getAll: async (req: Request, res: Response): Promise<void> => {
@@ -258,6 +259,39 @@ export const kelompokController = {
         error.message || "Gagal memindahkan mahasiswa",
       ];
       res.status(status).json({ success: false, message: msg });
+    }
+  },
+
+  /**
+   * GET /api/v1/kelompok/:id/program-kerja
+   * GET /api/v1/kelompok/:id/proker
+   * Dedicated sub-resource untuk mengambil daftar program kerja kelompok.
+   */
+  getProgramKerjaByKelompokId: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const userId = (req as any).user?.userId || (req as any).user?.id || "";
+      const { kategori, statusUsulan, statusPelaksanaan, search } = req.query;
+
+      const data = await kknService.getProgramKerja(userId, id, {
+        kategori: kategori as string,
+        statusUsulan: statusUsulan as string,
+        statusPelaksanaan: statusPelaksanaan as string,
+        search: search as string,
+      });
+
+      res.status(200).json({
+        success: true,
+        kelompokId: id,
+        total: Array.isArray(data) ? data.length : 0,
+        data,
+      });
+    } catch (error: any) {
+      console.error("[KelompokController] getProgramKerjaByKelompokId error:", error);
+      res.status(400).json({
+        success: false,
+        message: error.message || "Gagal memuat program kerja kelompok",
+      });
     }
   },
 };

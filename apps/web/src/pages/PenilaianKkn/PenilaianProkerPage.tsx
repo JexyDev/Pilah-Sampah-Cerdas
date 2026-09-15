@@ -39,6 +39,7 @@ import {
 import { EmptyTableState } from "../../components/common/EmptyTableState";
 import { getMediaPhotoUrl, formatGoogleDriveUrl } from "../../utils/photoUtils";
 import { useAuthStore } from "../../store/useAuthStore";
+import { isTestProker, isTestKelompok } from "../../utils/filterTestingUtils";
 
 // 7 Standar Aspek Rubrik Penilaian Program Kerja KKN
 const ASPEK_RUBRIK_PROKER: Array<{ no: number; aspek: string; bobot: number }> = [
@@ -146,10 +147,14 @@ export const PenilaianProkerPage: React.FC = () => {
         statusUsulan: "DISETUJUI",
         statusPelaksanaan: statusPelaksanaanFilter !== "ALL" ? statusPelaksanaanFilter : undefined,
         statusPenilaian: statusPenilaianFilter !== "ALL" ? statusPenilaianFilter : undefined,
-        search: searchQuery.trim() ? searchQuery : undefined,
       });
+      const cleanProker = (data || []).filter(
+        (p: any) =>
+          !isTestProker(p) &&
+          !isTestKelompok({ name: p.kelompokName, dplNamaMentah: p.dplNama })
+      );
 
-      setProkerList(data);
+      setProkerList(cleanProker);
     } catch {
       toast.error("Gagal memuat daftar program kerja");
     } finally {

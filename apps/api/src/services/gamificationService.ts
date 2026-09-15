@@ -4,6 +4,14 @@ import {
   calculateDplPoints,
   calculatePersonalPointsForUsers,
 } from "./dplService.js";
+import {
+  isTestUser,
+  isTestKelompok,
+  isTestStudent,
+  filterNonTestUsers,
+  filterNonTestKelompok,
+  filterNonTestStudents,
+} from "../utils/filterTestingUtils.js";
 /**
  * Project: BERSEKA
  * Developed by: PT Makerindo
@@ -138,6 +146,7 @@ export const gamificationService = {
     });
 
     const citizenLeaderboard = individualUsers
+      .filter((u: any) => !isTestUser(u))
       .map((u: any) => {
         const totalPoints = u.pointHistory.reduce((acc: number, cur: any) => acc + cur.points, 0);
         return {
@@ -178,6 +187,7 @@ export const gamificationService = {
         let totalPoints = 0;
         k.rws.forEach((area: any) => {
           area.users.forEach((u: any) => {
+            if (isTestUser(u)) return;
             totalKg += (u.setoranOtomatis || []).reduce(
               (acc: number, cur: any) => acc + Number(cur.berat || 0),
               0
@@ -218,6 +228,7 @@ export const gamificationService = {
         let totalKg = 0;
         let totalPoin = 0;
         area.users.forEach((u: any) => {
+          if (isTestUser(u)) return;
           totalKg += (u.setoranOtomatis || []).reduce(
             (acc: number, cur: any) => acc + Number(cur.berat || 0),
             0
@@ -244,13 +255,18 @@ export const gamificationService = {
       select: {
         id: true,
         name: true,
+        email: true,
         studentProfile: {
           select: {
+            nim: true,
             assignedRw: {
               select: {
                 name: true,
                 kelurahan: { select: { name: true } },
               },
+            },
+            kelompok: {
+              select: { name: true },
             },
           },
         },
@@ -259,17 +275,16 @@ export const gamificationService = {
     });
 
     const mahasiswaLeaderboard = mahasiswaUsers
+      .filter((m: any) => !isTestUser(m) && !isTestStudent(m.studentProfile))
       .map((m: any) => {
         // Points directly earned by Mahasiswa
         const ownPoints = m.pointHistory.reduce((acc: number, cur: any) => acc + cur.points, 0);
         const area = m.studentProfile?.assignedRw;
-        // Simplified: Since we don't eager-load users in the area to save queries, we only use ownPoints.
-        // For a full implementation, we could sum points of all users in area.
 
         return {
           id: m.id,
           name: m.name,
-          universityName: "Kampus N/A", // Not stored in StudentKkn currently
+          universityName: "Kampus N/A",
           wilayahDampingan: area ? `${area.name} (Kel. ${area.kelurahan?.name})` : "N/A",
           totalPoints: ownPoints,
         };
@@ -289,6 +304,7 @@ export const gamificationService = {
       select: {
         id: true,
         name: true,
+        email: true,
         rw: { select: { name: true } },
         setoranManual: { select: { berat: true } },
         claimedTasks: {
@@ -302,6 +318,7 @@ export const gamificationService = {
     });
 
     const pengangkutLeaderboard = petugasUsers
+      .filter((p: any) => !isTestUser(p))
       .map((p: any) => {
         const completedTasks = p.claimedTasks.filter((t: any) => t.status === "COMPLETED");
         const totalCompleted = completedTasks.length;
@@ -353,7 +370,7 @@ export const gamificationService = {
   },
 
   getLeaderboardKkn: async () => {
-    const students = await prisma.studentKkn.findMany({
+    const studentsRaw = await prisma.studentKkn.findMany({
       include: {
         user: {
           include: {
@@ -361,9 +378,18 @@ export const gamificationService = {
             attendances: true,
           },
         },
-        kelompok: true,
+        kelompok: {
+          include: {
+            dpl: true,
+          },
+        },
       },
     });
+
+    // 100% Data Aktual: Filter mahasiswa & user testing
+    const students = studentsRaw.filter(
+      (s: any) => !isTestStudent(s) && !isTestUser(s.user) && !isTestKelompok(s.kelompok)
+    );
 
     const studentUserIds = students.map((s: any) => s.userId).filter(Boolean);
     const personalPointsMap = await calculatePersonalPointsForUsers(studentUserIds);
@@ -401,25 +427,41 @@ export const gamificationService = {
     studentLeaderboard.sort((a, b) => b.finalScore - a.finalScore);
 
     // 2. Kelompok KKN Leaderboard (Formula Resmi: Poin Kelompok = Poin Proker Utuh)
-    const groups = await prisma.kelompokKkn.findMany({
+    const groupsRaw = await prisma.kelompokKkn.findMany({
       include: {
         dpl: {
           select: {
             id: true,
             name: true,
+            email: true,
+            nip: true,
           },
         },
         students: {
           select: {
+            id: true,
+            nim: true,
             userId: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
           },
         },
       },
     });
 
+    // 100% Data Aktual: Filter kelompok testing/dummy
+    const groups = groupsRaw.filter((g: any) => !isTestKelompok(g));
+
     const kelompokLeaderboard = await Promise.all(
       groups.map(async (g: any) => {
-        const studentUserIds = g.students.map((s: any) => s.userId);
+        // Filter student list to non-test students
+        const realStudents = (g.students || []).filter((s: any) => !isTestStudent(s));
+        const studentUserIds = realStudents.map((s: any) => s.userId).filter(Boolean);
         const groupPointsData = await calculateGroupPoints(g.id, undefined, studentUserIds);
         const dplName = g.dpl?.name || g.dplNamaMentah || null;
 
@@ -442,18 +484,30 @@ export const gamificationService = {
     kelompokLeaderboard.sort((a, b) => b.avgScore - a.avgScore);
 
     // 3. DPL (Dosen Pembimbing Lapangan) Leaderboard (Formula Resmi: Poin DPL = (Logbook * 0.5) + (Poin Kelompok * 0.5))
-    const dplUsers = await prisma.user.findMany({
+    const dplUsersRaw = await prisma.user.findMany({
       where: { role: { name: "DPL" } },
       select: {
         id: true,
         name: true,
+        email: true,
+        nip: true,
         dplKelompok: {
           select: {
             id: true,
             name: true,
+            kelurahan: true,
             students: {
               select: {
+                id: true,
+                nim: true,
                 userId: true,
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                  },
+                },
               },
             },
           },
@@ -461,20 +515,27 @@ export const gamificationService = {
       },
     });
 
+    // 100% Data Aktual: Filter akun DPL testing/dummy
+    const dplUsers = dplUsersRaw.filter((d: any) => !isTestUser(d));
+
     const dplLeaderboard = await Promise.all(
       dplUsers.map(async (d: any) => {
         let totalGroupPointsSum = 0;
         let totalStudentCount = 0;
 
-        for (const kel of d.dplKelompok) {
-          totalStudentCount += kel.students.length;
-          const studentUserIds = kel.students.map((s: any) => s.userId);
+        // Filter kelompok milik DPL dari kelompok testing
+        const cleanKelompokList = (d.dplKelompok || []).filter((k: any) => !isTestKelompok(k));
+
+        for (const kel of cleanKelompokList) {
+          const realStudents = (kel.students || []).filter((s: any) => !isTestStudent(s));
+          totalStudentCount += realStudents.length;
+          const studentUserIds = realStudents.map((s: any) => s.userId).filter(Boolean);
           const grpRes = await calculateGroupPoints(kel.id, undefined, studentUserIds);
           totalGroupPointsSum += grpRes.totalGroupPoints;
         }
 
         const avgGroupPoints =
-          d.dplKelompok.length > 0 ? totalGroupPointsSum / d.dplKelompok.length : 0;
+          cleanKelompokList.length > 0 ? totalGroupPointsSum / cleanKelompokList.length : 0;
 
         const dplPointsData = await calculateDplPoints(d.id, undefined, avgGroupPoints);
 
@@ -486,7 +547,7 @@ export const gamificationService = {
           poinKelompok: dplPointsData.poinKelompok,
           hasLogbook: dplPointsData.hasLogbookDpl,
           logbookCount: dplPointsData.logbookCount || 0,
-          totalGroups: d.dplKelompok.length,
+          totalGroups: cleanKelompokList.length,
           totalStudents: totalStudentCount,
         };
       })

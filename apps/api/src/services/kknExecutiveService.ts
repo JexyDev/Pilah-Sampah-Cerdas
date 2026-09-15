@@ -1,5 +1,6 @@
 import { prisma } from "../lib/prisma.js";
 import * as XLSX from "xlsx";
+import { isTestKelompok, isTestStudent, isTestUser } from "../utils/filterTestingUtils.js";
 
 export interface KknExecutiveFilters {
   kelurahan?: string;
@@ -51,10 +52,7 @@ export const kknExecutiveService = {
     });
 
     // 100% Data Aktual: Filter kelompok testing/dummy
-    kelompokList = kelompokList.filter((k) => {
-      const name = (k.name || "").toLowerCase();
-      return !name.includes("test") && !name.includes("dummy");
-    });
+    kelompokList = kelompokList.filter((k) => !isTestKelompok(k));
 
     // Filter RW di memori jika ada filter RW
     if (isFilteredRw) {
@@ -93,11 +91,7 @@ export const kknExecutiveService = {
       where: { id: { in: rawUniqueDplIds } },
       select: { id: true, name: true, phone: true, email: true, nip: true, programStudi: true },
     });
-    const realDplUsers = dplUsersRaw.filter((d) => {
-      const name = (d.name || "").toLowerCase();
-      const email = (d.email || "").toLowerCase();
-      return !name.includes("test") && !name.includes("dummy") && !email.includes("test") && !email.includes("dummy");
-    });
+    const realDplUsers = dplUsersRaw.filter((d) => !isTestUser(d));
     const realDplMap = new Map(realDplUsers.map((d) => [d.id, d]));
     const uniqueDplIds = rawUniqueDplIds.filter((id) => realDplMap.has(id));
     const totalDpl = uniqueDplIds.length;
@@ -134,19 +128,7 @@ export const kknExecutiveService = {
     });
 
     // 100% Data Aktual: Filter akun mahasiswa testing / dummy
-    const students = studentsRaw.filter((s) => {
-      const uName = (s.user?.name || "").toLowerCase();
-      const uEmail = (s.user?.email || "").toLowerCase();
-      const nim = (s.nim || "").toLowerCase();
-      return !(
-        uName.includes("test") ||
-        uName.includes("dummy") ||
-        uEmail.includes("test") ||
-        uEmail.includes("dummy") ||
-        nim.includes("test") ||
-        nim.includes("dummy")
-      );
-    });
+    const students = studentsRaw.filter((s) => !isTestStudent(s));
 
     const totalMahasiswa = students.length;
     const realStudentIds = students.map((s) => s.id);

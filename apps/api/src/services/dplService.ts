@@ -2,6 +2,7 @@ import { prisma } from "../lib/prisma.js";
 import { configService } from "./configService.js";
 import { normalizeProkerKategori } from "./kknService.js";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
+import { isTestKelompok, isTestStudent, isTestUser } from "../utils/filterTestingUtils.js";
 
 export function parseProkerDeskripsi(rawDeskripsi?: string | null): {
   judul: string;
@@ -679,50 +680,54 @@ export async function getKelompokWhere(dplUserId: string, role?: any) {
 
 /**
  * Formula Poin Personal Resmi KKN:
- * Poin Personal = (Poin Kehadiran * 0.4) + (Poin Pemenuhan Waktu * 0.3) + (Poin Log Aktivitas * 0.3)
- * - Poin Kehadiran: Hadir = 4 poin, Tidak Hadir = 0 poin (kategori: KKN_PRESENSI_HADIR)
- * - Poin Pemenuhan Waktu: Memenuhi Waktu = 3 poin, Tidak Memenuhi = 0 poin (kategori: KKN_DURASI_MEMENUHI)
- * - Poin Log Aktivitas: Ada Log Aktivitas = 3 poin, Tidak Ada = 0 poin (kategori: KKN_LOGBOOK_HARIAN)
+ * Poin Personal = Akumulasi Seluruh Saldo PointHistory (Kehadiran + Waktu + Logbook + Proker + Penalti/Denda)
+ * - Poin Kehadiran: Hadir = 4 poin (kategori: KKN_PRESENSI_HADIR)
+ * - Poin Pemenuhan Waktu: Memenuhi Waktu = 3 poin (kategori: KKN_DURASI_MEMENUHI)
+ * - Poin Log Aktivitas: Logbook = 3 poin (kategori: KKN_LOGBOOK_HARIAN)
+ * - Poin Penalti: Pemotongan poin (misal: PENALTY_OUT_OF_ZONE = -5 poin)
  */
 export async function calculatePersonalPoints(userId: string): Promise<{
   personalPoints: number;
   poinKehadiran: number;
   poinPemenuhanWaktu: number;
   poinLogAktivitas: number;
+  poinPenalti: number;
   rawKehadiran: number;
   rawPemenuhanWaktu: number;
   rawLogAktivitas: number;
 }> {
-  const points = await prisma.pointHistory.findMany({
-    where: {
-      userId,
-      kategori: {
-        in: ["KKN_PRESENSI_HADIR", "KKN_DURASI_MEMENUHI", "KKN_LOGBOOK_HARIAN"],
-      },
-    },
+  const allPoints = await prisma.pointHistory.findMany({
+    where: { userId },
     select: { points: true, kategori: true },
   });
 
   let rawKehadiran = 0;
   let rawPemenuhanWaktu = 0;
   let rawLogAktivitas = 0;
+  let poinPenalti = 0;
+  let totalBalance = 0;
 
-  for (const p of points) {
-    if (p.kategori === "KKN_PRESENSI_HADIR") rawKehadiran += Number(p.points || 0);
-    else if (p.kategori === "KKN_DURASI_MEMENUHI") rawPemenuhanWaktu += Number(p.points || 0);
-    else if (p.kategori === "KKN_LOGBOOK_HARIAN") rawLogAktivitas += Number(p.points || 0);
+  for (const p of allPoints) {
+    const val = Number(p.points || 0);
+    totalBalance += val;
+
+    if (p.kategori === "KKN_PRESENSI_HADIR") rawKehadiran += val;
+    else if (p.kategori === "KKN_DURASI_MEMENUHI") rawPemenuhanWaktu += val;
+    else if (p.kategori === "KKN_LOGBOOK_HARIAN") rawLogAktivitas += val;
+    else if (val < 0) poinPenalti += Math.abs(val);
   }
 
   const poinKehadiran = rawKehadiran;
   const poinPemenuhanWaktu = rawPemenuhanWaktu;
   const poinLogAktivitas = rawLogAktivitas;
-  const personalPoints = rawKehadiran + rawPemenuhanWaktu + rawLogAktivitas;
+  const personalPoints = Math.max(0, totalBalance);
 
   return {
     personalPoints,
     poinKehadiran,
     poinPemenuhanWaktu,
     poinLogAktivitas,
+    poinPenalti,
     rawKehadiran,
     rawPemenuhanWaktu,
     rawLogAktivitas,
@@ -738,29 +743,21 @@ export async function calculatePersonalPointsForUsers(
   const points = await prisma.pointHistory.findMany({
     where: {
       userId: { in: userIds },
-      kategori: {
-        in: ["KKN_PRESENSI_HADIR", "KKN_DURASI_MEMENUHI", "KKN_LOGBOOK_HARIAN"],
-      },
     },
-    select: { userId: true, points: true, kategori: true },
+    select: { userId: true, points: true },
   });
 
-  const totals = new Map<string, { hadir: number; waktu: number; log: number }>();
   for (const uid of userIds) {
-    totals.set(uid, { hadir: 0, waktu: 0, log: 0 });
+    result.set(uid, 0);
   }
 
   for (const p of points) {
-    const cur = totals.get(p.userId);
-    if (!cur) continue;
-    if (p.kategori === "KKN_PRESENSI_HADIR") cur.hadir += Number(p.points || 0);
-    else if (p.kategori === "KKN_DURASI_MEMENUHI") cur.waktu += Number(p.points || 0);
-    else if (p.kategori === "KKN_LOGBOOK_HARIAN") cur.log += Number(p.points || 0);
+    const cur = result.get(p.userId) || 0;
+    result.set(p.userId, cur + Number(p.points || 0));
   }
 
-  for (const [uid, cur] of totals.entries()) {
-    const pts = cur.hadir + cur.waktu + cur.log;
-    result.set(uid, pts);
+  for (const [uid, total] of result.entries()) {
+    result.set(uid, Math.max(0, total));
   }
 
   return result;
@@ -1239,6 +1236,9 @@ export const dplService = {
       orderBy: { name: "asc" },
     });
 
+    // Saring kelompok uji coba / testing
+    groups = groups.filter((g) => !isTestKelompok(g));
+
     if (groups.length === 0) {
       return [];
     }
@@ -1253,6 +1253,8 @@ export const dplService = {
 
     const groupSummaries = await Promise.all(
       groups.map(async (grp) => {
+        // Saring mahasiswa uji coba / testing di dalam kelompok
+        grp.students = grp.students.filter((s) => !isTestStudent(s));
         const studentUserIds = grp.students.map((s) => s.userId);
         const studentCount = grp.students.length;
         const ketuaStudent = grp.students.find((s) => s.isKetua);
@@ -1698,10 +1700,13 @@ export const dplService = {
     const whereGroup: any = await getKelompokWhere(dplUserId, role);
     if (groupId) whereGroup.id = groupId;
 
-    const myGroups = await prisma.kelompokKkn.findMany({
+    let myGroups = await prisma.kelompokKkn.findMany({
       where: whereGroup,
-      select: { id: true },
+      select: { id: true, name: true },
     });
+
+    // Saring kelompok uji coba
+    myGroups = myGroups.filter((g) => !isTestKelompok(g));
 
     if (myGroups.length === 0) {
       return [];
@@ -1719,7 +1724,7 @@ export const dplService = {
       ];
     }
 
-    const students = await prisma.studentKkn.findMany({
+    let students = await prisma.studentKkn.findMany({
       where: studentWhere,
       include: {
         user: {
@@ -1736,6 +1741,9 @@ export const dplService = {
       },
       orderBy: { createdAt: "asc" },
     });
+
+    // Saring mahasiswa uji coba / testing
+    students = students.filter((s) => !isTestStudent(s));
 
     if (students.length === 0) {
       return [];
@@ -1920,10 +1928,13 @@ export const dplService = {
     const whereGroup: any = await getKelompokWhere(dplUserId, role);
     if (groupId) whereGroup.id = groupId;
 
-    const myGroups = await prisma.kelompokKkn.findMany({
+    let myGroups = await prisma.kelompokKkn.findMany({
       where: whereGroup,
-      select: { id: true },
+      select: { id: true, name: true },
     });
+
+    // Saring kelompok uji coba
+    myGroups = myGroups.filter((g) => !isTestKelompok(g));
 
     if (myGroups.length === 0) {
       return [];
@@ -1941,14 +1952,21 @@ export const dplService = {
       ];
     }
 
-    const students = await prisma.studentKkn.findMany({
+    let students = await prisma.studentKkn.findMany({
       where: studentWhere,
       include: {
         user: { select: { id: true, name: true, fotoProfil: true } },
-        kelompok: { select: { name: true } },
+        kelompok: { select: { id: true, name: true } },
       },
       orderBy: { createdAt: "asc" },
     });
+
+    // Saring mahasiswa uji coba / testing
+    students = students.filter((s) => !isTestStudent(s));
+
+    if (students.length === 0) {
+      return [];
+    }
 
     const configTargets = await dplService.getConfigTargets();
     const targetHours = configTargets.targetTotalJam || 200;
@@ -2101,24 +2119,28 @@ export const dplService = {
    * 4. Peta Sebaran (Hanya Wilayah & Kelompok DPL)
    */
   getMapCoverage: async (dplUserId: string, role?: string) => {
-    const groups = await prisma.kelompokKkn.findMany({
+    let groups = await prisma.kelompokKkn.findMany({
       where: await getKelompokWhere(dplUserId, role),
       select: {
         id: true,
         name: true,
         kelurahan: true,
         cakupanRw: true,
-        students: { select: { userId: true } },
+        students: { select: { id: true, userId: true, user: { select: { id: true, name: true } } } },
       },
     });
+
+    groups = groups.filter((g) => !isTestKelompok(g));
 
     if (groups.length === 0) {
       return { groups: [], rwAreas: [], bins: [] };
     }
 
-    const allStudentUserIds = groups.flatMap((g) => g.students.map((s) => s.userId));
+    const allStudentUserIds = groups.flatMap((g) =>
+      g.students.filter((s) => !isTestStudent(s) && !isTestUser(s.user)).map((s) => s.userId)
+    );
 
-    const bins = await prisma.bin.findMany({
+    let bins = await prisma.bin.findMany({
       where:
         allStudentUserIds.length > 0
           ? { registeredByStudentId: { in: allStudentUserIds } }
@@ -2130,9 +2152,11 @@ export const dplService = {
         status: true,
         latitude: true,
         longitude: true,
-        user: { select: { name: true, address: true } },
+        user: { select: { id: true, name: true, address: true } },
       },
     });
+
+    bins = bins.filter((b) => !isTestUser(b.user));
 
     const groupKelurahans = groups.map((g) => g.kelurahan).filter(Boolean) as string[];
 
@@ -2243,13 +2267,16 @@ export const dplService = {
       });
     }
 
-    const groups = await prisma.kelompokKkn.findMany({
+    let groups = await prisma.kelompokKkn.findMany({
       where: await getKelompokWhere(dplUserId, role),
       select: {
         id: true,
-        students: { select: { userId: true, user: { select: { name: true } } } },
+        name: true,
+        students: { select: { id: true, userId: true, user: { select: { id: true, name: true } } } },
       },
     });
+
+    groups = groups.filter((g) => !isTestKelompok(g));
 
     if (groups.length === 0) {
       return { pendingApprovalsCount: 0, pendingRequests: [] };
@@ -2257,7 +2284,9 @@ export const dplService = {
 
     const studentMap = new Map<string, string>();
     groups.forEach((g) =>
-      g.students.forEach((s) => studentMap.set(s.userId, s.user?.name || "Mahasiswa"))
+      g.students
+        .filter((s) => !isTestStudent(s) && !isTestUser(s.user))
+        .forEach((s) => studentMap.set(s.userId, s.user?.name || "Mahasiswa"))
     );
 
     const studentUserIds = Array.from(studentMap.keys());
@@ -2265,13 +2294,15 @@ export const dplService = {
       return { pendingApprovalsCount: 0, pendingRequests: [] };
     }
 
-    const pendingRequests = await prisma.studentLeaveRequest.findMany({
+    let pendingRequests = await prisma.studentLeaveRequest.findMany({
       where: { studentId: { in: studentUserIds }, status: { in: ["PENDING", "CANCEL_REQUESTED"] } },
       include: {
         student: { select: { id: true, name: true, phone: true } },
       },
       orderBy: { createdAt: "desc" },
     });
+
+    pendingRequests = pendingRequests.filter((r) => !isTestUser(r.student));
 
     return {
       pendingApprovalsCount: pendingRequests.length,
@@ -2307,12 +2338,16 @@ export const dplService = {
       "PIMPINAN",
     ].some((r) => normalizedRole.includes(r));
 
-    const groups = await prisma.kelompokKkn.findMany({
+    let groups = await prisma.kelompokKkn.findMany({
       where: await getKelompokWhere(dplUserId, role),
-      select: { students: { select: { userId: true } } },
+      select: { id: true, name: true, students: { select: { id: true, userId: true, user: { select: { id: true, name: true } } } } },
     });
 
-    const studentUserIds = groups.flatMap((g) => g.students.map((s) => s.userId));
+    groups = groups.filter((g) => !isTestKelompok(g));
+
+    const studentUserIds = groups.flatMap((g) =>
+      g.students.filter((s) => !isTestStudent(s) && !isTestUser(s.user)).map((s) => s.userId)
+    );
 
     const history = await prisma.studentLeaveRequest.findMany({
       where: isAdmin
@@ -2339,7 +2374,9 @@ export const dplService = {
       take: 50,
     });
 
-    return history.map((h) => ({
+    const filteredHistory = history.filter((h) => !isTestUser(h.student));
+
+    return filteredHistory.map((h) => ({
       id: h.id,
       studentName: h.student?.name || "Mahasiswa",
       type: h.type,
@@ -2529,6 +2566,38 @@ export const dplService = {
       }
     }
 
+    // Kirim notifikasi ke mahasiswa (DB notification & Push Notification)
+    try {
+      const studentProfile = await prisma.studentKkn.findFirst({
+        where: {
+          OR: [{ userId: req.studentId }, { id: req.studentId }],
+        },
+      });
+      const targetStudentId = studentProfile?.userId || req.studentId;
+
+      const notifTitle =
+        status === "APPROVED" ? "Pengajuan Izin Disetujui ✅" : "Pengajuan Izin Ditolak ❌";
+      const notifMessage =
+        status === "APPROVED"
+          ? `Pengajuan izin ${req.type || "kegiatan"} Anda telah disetujui DPL.`
+          : `Pengajuan izin ${req.type || "kegiatan"} Anda ditolak DPL: ${rejectionReason || "Silakan cek catatan DPL."}`;
+
+      await notificationIntegrationService.sendToUser({
+        userId: targetStudentId,
+        title: notifTitle,
+        message: notifMessage,
+        triggerType: status === "APPROVED" ? "LEAVE_APPROVED" : "LEAVE_REJECTED",
+        dataPayload: {
+          type: "IZIN",
+          status,
+          leaveId: requestId,
+          click_action: "FLUTTER_NOTIFICATION_CLICK",
+        },
+      });
+    } catch (notifErr) {
+      console.warn("[decideLeaveRequest] Gagal mengirim notifikasi izin ke mahasiswa:", notifErr);
+    }
+
     return updated;
   },
 
@@ -2700,41 +2769,11 @@ export const dplService = {
       },
     });
 
-    if (groups.length === 0) {
-      groups = await prisma.kelompokKkn.findMany({
-        where: groupId && groupId !== "ALL" ? { id: groupId } : undefined,
-        select: {
-          id: true,
-          name: true,
-          kelurahan: true,
-          cakupanRw: true,
-          dpl: {
-            select: {
-              id: true,
-              name: true,
-              phone: true,
-            },
-          },
-          students: {
-            select: {
-              id: true,
-              nim: true,
-              jurusan: true,
-              isKetua: true,
-              noWa: true,
-              user: {
-                select: {
-                  id: true,
-                  name: true,
-                  phone: true,
-                },
-              },
-            },
-            orderBy: [{ isKetua: "desc" }, { nim: "asc" }],
-          },
-        },
-      });
-    }
+    // Saring kelompok uji coba
+    groups = groups.filter((g) => !isTestKelompok(g));
+    groups.forEach((g) => {
+      g.students = g.students.filter((s) => !isTestStudent(s));
+    });
 
     if (groups.length === 0) {
       return [];
@@ -3842,7 +3881,7 @@ export const dplService = {
     const whereGroup: any = await getKelompokWhere(dplUserId, role);
     if (groupId) whereGroup.id = groupId;
 
-    const groups = await prisma.kelompokKkn.findMany({
+    let groups = await prisma.kelompokKkn.findMany({
       where: whereGroup,
       include: {
         students: {
@@ -3858,6 +3897,9 @@ export const dplService = {
         penilaianMahasiswa: true,
       },
     });
+
+    // Saring kelompok uji coba
+    groups = groups.filter((g) => !isTestKelompok(g));
 
     if (groups.length === 0) {
       return {
@@ -3875,6 +3917,7 @@ export const dplService = {
     const ruleConfigs = await configService.getRuleEngineConfigs();
 
     for (const grp of groups) {
+      grp.students = grp.students.filter((s) => !isTestStudent(s));
       const totalSchedules = await getEligiblePastSchedulesCount(grp.id);
       const prokerCount = grp.programKerja.length;
       const prokerAvgScore =

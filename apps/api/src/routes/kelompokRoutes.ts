@@ -13,6 +13,14 @@ router.get("/dpls", kelompokController.getDpls);
 router.get("/", kelompokController.getAll);
 router.get("/:id", kelompokController.getById);
 
+// ── PROGRAM KERJA KELOMPOK (DEDICATED RESTful SUB-RESOURCE UNTUK MOBILE & WEB) ──
+// GET /api/v1/kelompok/:id/program-kerja
+// GET /api/v1/kelompok/:id/proker
+router.get(
+  ["/:id/program-kerja", "/:id/proker"],
+  kelompokController.getProgramKerjaByKelompokId
+);
+
 // ── WRITE: SUPER_USER, DEVELOPER, PEMIMPIN, PANITIA_TASKFORCE ──────────────────────────
 const KKN_WRITE_ROLES = ["SUPER_USER", "DEVELOPER", "PEMIMPIN", "PANITIA_TASKFORCE"];
 

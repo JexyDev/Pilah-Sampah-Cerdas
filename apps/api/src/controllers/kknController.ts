@@ -803,7 +803,10 @@ export class KknController {
   async getProgramKerja(req: Request, res: Response) {
     try {
       const userId = req.user?.userId || (req.user as any)?.id || "";
-      const targetGroupId = (req.query.groupId || req.query.kelompokId) as string | undefined;
+      const targetGroupId = (req.params.kelompokId ||
+        req.params.id ||
+        req.query.groupId ||
+        req.query.kelompokId) as string | undefined;
       const { kategori, statusUsulan, statusPelaksanaan, search } = req.query;
       const data = await kknService.getProgramKerja(userId, targetGroupId, {
         kategori: kategori as string,
