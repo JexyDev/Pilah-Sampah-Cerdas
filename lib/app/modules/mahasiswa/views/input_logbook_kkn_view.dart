@@ -6,6 +6,9 @@ import 'package:file_picker/file_picker.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../data/services/notification_engine.dart';
+import '../../../data/services/local_notification_cache_service.dart';
+import '../../auth/controllers/auth_controller.dart';
+import '../controllers/riwayat_kkn_controller.dart';
 import '../controllers/mahasiswa_notifikasi_controller.dart';
 import 'riwayat_program_kerja_view.dart'; // import provider untuk dropdown program kerja
 
@@ -344,6 +347,20 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
           payload: 'ROUTE_POIN',
         );
 
+        final user = ref.read(authProvider).user;
+        if (user != null) {
+          LocalNotificationCacheService().addNotification(
+            userId: user.id,
+            role: user.role.name,
+            title: 'Logbook Berhasil Dikirim! ✅',
+            desc:
+                'Laporan aktivitas "${_deskripsiCtrl.text.trim()}" telah masuk ke riwayat dan menunggu validasi DPL.',
+            type: 'KEGIATAN_DIAJUKAN',
+            id: 'local_lb_${DateTime.now().millisecondsSinceEpoch}',
+          );
+        }
+
+        ref.invalidate(riwayatKknControllerProvider);
         ref.invalidate(mahasiswaNotificationsProvider);
 
         ScaffoldMessenger.of(context).showSnackBar(

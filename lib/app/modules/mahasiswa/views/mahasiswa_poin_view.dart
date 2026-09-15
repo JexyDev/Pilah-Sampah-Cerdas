@@ -190,7 +190,7 @@ class MahasiswaPoinView extends ConsumerWidget {
           SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Poin KKN harian: Check-In (+4 PTS), Durasi Terpenuhi (+3 PTS), dan Logbook Harian (+3 PTS) = 10 PTS/hari. Poin tambahan didapat dari Aktivasi Warga (+10 PTS), Verifikasi DPL (+15 PTS), serta Pemanfaatan & Panen (+25 PTS).',
+              'Poin KKN harian: Check-In (+4 PTS), Durasi Terpenuhi (+3 PTS), dan Logbook Harian (+3 PTS) = 10 PTS/hari. Poin tambahan didapat dari Laporan Pemanfaatan Sampah (+25 PTS), Aktivasi Bin Warga (+10 PTS), dan Input Fasilitas Tata Kelola (+5 PTS).',
               style: TextStyle(
                 fontSize: 11,
                 color: AppColors.primaryGreen,

@@ -107,7 +107,13 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
   final role = user.role.name;
   List<NotificationEntity> list = [];
   try {
-    list = await repo.getNotifications();
+    final raw = await repo.getNotifications();
+    // ponytail: backend treats MAHASISWA_KKN as admin/petugas and returns
+    // area-scoped BinResetRequests (req-*) and critical bins (crit-bin-*)
+    // shared across all users in the same RW. Filter them out to prevent
+    // cross-account notification leak. Upgrade: fix backend to scope per-user.
+    list = raw.where((n) =>
+        !n.id.startsWith('req-') && !n.id.startsWith('crit-bin-')).toList();
   } catch (_) {
     list = [];
   }
@@ -281,6 +287,23 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
       result.add(fn);
     }
   } catch (_) {}
+
+  // Gabungkan notifikasi dari LocalNotificationCacheService (submit form feedback)
+  final localNotifs = LocalNotificationCacheService().getNotifications(
+    userId,
+    role,
+  );
+  for (final ln in localNotifs) {
+    if (result.any(
+      (n) =>
+          n.id == ln.id ||
+          (n.title == ln.title && n.desc == ln.desc && n.type == ln.type),
+    )) {
+      continue;
+    }
+    if (!_isMahasiswaNotification(ln)) continue;
+    result.add(ln);
+  }
 
   final deleteAllTimestamp =
       prefs.getInt('delete_all_notifs_${userId}_$role') ?? 0;

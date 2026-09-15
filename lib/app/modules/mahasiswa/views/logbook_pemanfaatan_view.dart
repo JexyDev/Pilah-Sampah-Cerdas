@@ -7,6 +7,8 @@ import '../../../core/utils/thousands_formatter.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../data/services/notification_engine.dart';
+import '../../../data/services/local_notification_cache_service.dart';
+import '../../auth/controllers/auth_controller.dart';
 import '../../riwayat/controllers/riwayat_controller.dart'
     show pointHistoryProvider;
 import '../controllers/mahasiswa_notifikasi_controller.dart';
@@ -146,6 +148,19 @@ class _LogbookPemanfaatanViewState
           color: AppColors.primaryGreen,
           payload: 'ROUTE_POIN',
         );
+
+        final user = ref.read(authProvider).user;
+        if (user != null) {
+          LocalNotificationCacheService().addNotification(
+            userId: user.id,
+            role: user.role.name,
+            title: 'Laporan Pemanfaatan Sampah Terkirim 🌿',
+            desc:
+                'Laporan pemanfaatan sampah berhasil dicatat (+25 PTS) dan masuk ke riwayat.',
+            type: 'PEMANFAATAN_SAMPAH',
+            id: 'local_pemanfaatan_${DateTime.now().millisecondsSinceEpoch}',
+          );
+        }
 
         // 2. Invalidate Data Poin dan Notifikasi agar langsung update
         ref.invalidate(pointHistoryProvider);

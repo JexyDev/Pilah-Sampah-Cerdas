@@ -7,6 +7,9 @@ import '../../../core/values/app_colors.dart';
 import '../../../data/models/pengajuan_izin_mahasiswa_entity.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../data/services/notification_engine.dart';
+import '../../../data/services/local_notification_cache_service.dart';
+import '../../auth/controllers/auth_controller.dart';
+import '../controllers/mahasiswa_notifikasi_controller.dart';
 
 class PengajuanIzinFormView extends ConsumerStatefulWidget {
   const PengajuanIzinFormView({super.key, this.scheduleId, this.scheduleTitle});
@@ -159,6 +162,20 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
         body:
             'Pengajuan ${_selectedKategori.displayName} sedang menunggu verifikasi DPL.',
       );
+
+      final user = ref.read(authProvider).user;
+      if (user != null) {
+        LocalNotificationCacheService().addNotification(
+          userId: user.id,
+          role: user.role.name,
+          title: 'Pengajuan ${_selectedKategori.displayName} Terkirim ⏳',
+          desc:
+              'Pengajuan ${_selectedKategori.displayName} sedang menunggu verifikasi DPL.',
+          type: 'IZIN_DIAJUKAN',
+          id: 'local_izin_${DateTime.now().millisecondsSinceEpoch}',
+        );
+        ref.invalidate(mahasiswaNotificationsProvider);
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() => _isSubmitting = false);

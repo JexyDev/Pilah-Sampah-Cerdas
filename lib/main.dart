@@ -222,7 +222,10 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
             ref.invalidate(riwayatKknControllerProvider);
             ref.invalidate(logbookListProvider);
             ref.invalidate(mahasiswaNotificationsProvider);
-            debugPrint('-> Mahasiswa kegiatan providers invalidated.');
+            ref.invalidate(totalPointsProvider);
+            ref.invalidate(pointHistoryProvider);
+            ref.invalidate(dailyPointsProvider);
+            debugPrint('-> Mahasiswa kegiatan & poin providers invalidated.');
           } else if (event == 'REFRESH_PROKER_MAHASISWA') {
             ref.invalidate(prokerDataListProvider);
             ref.invalidate(mahasiswaNotificationsProvider);
@@ -331,6 +334,9 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
           ref.invalidate(riwayatKknControllerProvider);
           ref.invalidate(logbookListProvider);
           ref.invalidate(mahasiswaNotificationsProvider);
+          ref.invalidate(totalPointsProvider);
+          ref.invalidate(pointHistoryProvider);
+          ref.invalidate(dailyPointsProvider);
         } else if (event == 'REFRESH_PROKER_MAHASISWA') {
           ref.invalidate(prokerDataListProvider);
           ref.invalidate(mahasiswaNotificationsProvider);

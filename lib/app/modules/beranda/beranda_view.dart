@@ -366,8 +366,9 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                                         final isMissingOne =
                                             (hasOrganic && !hasNonOrganic) ||
                                             (!hasOrganic && hasNonOrganic);
-                                        if (!isMissingOne)
+                                        if (!isMissingOne) {
                                           return const SizedBox.shrink();
+                                        }
 
                                         final missingName = hasOrganic
                                             ? 'Anorganik (Kuning)'
