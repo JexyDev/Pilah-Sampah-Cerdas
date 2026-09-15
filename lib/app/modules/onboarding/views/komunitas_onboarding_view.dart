@@ -325,7 +325,7 @@ class _KomunitasOnboardingViewState
                       backgroundColor: AppColors.primaryGreen,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12),
                       ),
                       elevation: 0,
                     ),
@@ -388,7 +388,7 @@ class _KomunitasOnboardingViewState
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
                         color: AppColors.primaryGreen.withValues(alpha: 0.06),
-                        borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color:
                               AppColors.primaryGreen.withValues(alpha: 0.2),
@@ -425,7 +425,11 @@ class _KomunitasOnboardingViewState
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
                       initialValue: _provinsiController.text.isEmpty ? null : _provinsiController.text,
+                      
                       isExpanded: true,
+                      borderRadius: BorderRadius.circular(12),
+                      dropdownColor: Colors.white,
+                      menuMaxHeight: 200,
                       decoration: _dropdownDecoration(),
                       hint: const Text('Pilih Provinsi', style: TextStyle(fontSize: 14)),
                       items: _provinsiList
@@ -449,7 +453,11 @@ class _KomunitasOnboardingViewState
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
                       initialValue: _kotaController.text.isEmpty ? null : _kotaController.text,
+                      
                       isExpanded: true,
+                      borderRadius: BorderRadius.circular(12),
+                      dropdownColor: Colors.white,
+                      menuMaxHeight: 200,
                       decoration: _dropdownDecoration(),
                       hint: const Text('Pilih Kota / Kabupaten', style: TextStyle(fontSize: 14)),
                       items: _availableKotaList
@@ -472,7 +480,11 @@ class _KomunitasOnboardingViewState
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
                       initialValue: _kecamatanController.text.isEmpty ? null : _kecamatanController.text,
+                      
                       isExpanded: true,
+                      borderRadius: BorderRadius.circular(12),
+                      dropdownColor: Colors.white,
+                      menuMaxHeight: 200,
                       decoration: _dropdownDecoration(),
                       hint: const Text('Pilih Kecamatan', style: TextStyle(fontSize: 14)),
                       items: _availableKecamatanList
@@ -494,7 +506,11 @@ class _KomunitasOnboardingViewState
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
                       initialValue: _selectedKelurahan,
+                      
                       isExpanded: true,
+                      borderRadius: BorderRadius.circular(12),
+                      dropdownColor: Colors.white,
+                      menuMaxHeight: 200,
                       decoration: _dropdownDecoration(),
                       hint: const Text('Pilih Kelurahan',
                           style: TextStyle(fontSize: 14)),
@@ -518,7 +534,11 @@ class _KomunitasOnboardingViewState
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
                       initialValue: _selectedRw,
+                      
                       isExpanded: true,
+                      borderRadius: BorderRadius.circular(12),
+                      dropdownColor: Colors.white,
+                      menuMaxHeight: 200,
                       decoration: _dropdownDecoration(),
                       hint: const Text('Pilih RW',
                           style: TextStyle(fontSize: 14)),
@@ -555,12 +575,12 @@ class _KomunitasOnboardingViewState
                         border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12)),
                         enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12),
                           borderSide:
                               const BorderSide(color: Color(0xFFE2E8F0)),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(
                               color: AppColors.primaryGreen, width: 1.5),
                         ),
@@ -588,12 +608,12 @@ class _KomunitasOnboardingViewState
                         border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12)),
                         enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12),
                           borderSide:
                               const BorderSide(color: Color(0xFFE2E8F0)),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(
                               color: AppColors.primaryGreen, width: 1.5),
                         ),
@@ -673,11 +693,11 @@ class _KomunitasOnboardingViewState
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12),
         borderSide:
             const BorderSide(color: AppColors.primaryGreen, width: 1.5),
       ),
