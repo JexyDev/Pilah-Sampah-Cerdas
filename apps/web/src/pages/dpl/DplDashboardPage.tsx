@@ -179,7 +179,9 @@ export const DplDashboardPage: React.FC = () => {
 
   const { user } = useAuthStore();
   const userRole = String(user?.peran || (user as any)?.role || "").toUpperCase();
-  const isPimpinan = ["PEMIMPIN", "PIMPINAN"].includes(userRole);
+  const isPimpinan = ["PEMIMPIN", "PIMPINAN", "CAMAT", "LURAH", "KEPALA_DESA", "REKTOR"].includes(userRole);
+  const isMpl = ["MPL", "MITRA_PEMBIMBING_LAPANGAN", "MITRA_PENDAMPING_LAPANGAN", "MITRA"].includes(userRole);
+  const isReadOnlyRole = isPimpinan || isMpl;
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -812,8 +814,8 @@ export const DplDashboardPage: React.FC = () => {
           </div>
         )}
 
-        {/* MODAL 4: TINJAU PERMOHONAN IZIN/SAKIT (Hanya untuk DPL / Non-Pimpinan) */}
-        {!isPimpinan && reviewingRequest && (
+        {/* MODAL 4: TINJAU PERMOHONAN IZIN/SAKIT (Hanya untuk DPL / Non-Pimpinan / Non-MPL) */}
+        {!isReadOnlyRole && reviewingRequest && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
               <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-800 text-white">
@@ -1186,18 +1188,18 @@ export const DplDashboardPage: React.FC = () => {
               <span className="text-slate-500 dark:text-slate-400 font-normal">{user?.wilayah || "Wilayah Dampingan"}</span>
             </div>
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
-              {isPimpinan ? "Rekapitulasi Izin & Sakit Mahasiswa KKN (Read-Only)" : "Verifikasi Ajuan Izin / Sakit"}
+              {isPimpinan ? "Rekapitulasi Izin & Sakit Mahasiswa KKN (Read-Only Pimpinan)" : isMpl ? "Rekapitulasi Izin & Sakit Mahasiswa KKN (Read-Only MPL)" : "Verifikasi Ajuan Izin / Sakit"}
             </h1>
             <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm max-w-2xl">
-              {isPimpinan
+              {isReadOnlyRole
                 ? "Rekapitulasi dan pemantauan riwayat izin / sakit mahasiswa KKN yang telah divalidasi oleh Dosen Pembimbing Lapangan (DPL)."
                 : "Validasi bukti surat keterangan sakit/izin, putusan persetujuan, dan riwayat presensi mahasiswa KKN dampingan."}
             </p>
           </div>
         </div>
 
-        {/* Permohonan Menunggu Verifikasi (Hanya untuk DPL/Taskforce, disembunyikan sepenuhnya dari role Pimpinan) */}
-        {!isPimpinan && (
+        {/* Permohonan Menunggu Verifikasi (Hanya untuk DPL/Taskforce, disembunyikan sepenuhnya dari role Pimpinan dan MPL) */}
+        {!isReadOnlyRole && (
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
@@ -1522,16 +1524,18 @@ export const DplDashboardPage: React.FC = () => {
             </span>
           </div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
-            {isPimpinan ? "Dasbor Monitoring KKN Pimpinan" : "Dasbor KKN DPL"}
+            {isPimpinan ? "Dasbor Monitoring KKN Pimpinan" : isMpl ? "Dasbor Monitoring KKN MPL" : "Dasbor KKN DPL"}
           </h1>
           <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm max-w-2xl">
             {isPimpinan
               ? "Ringkasan eksekutif pemantauan seluruh kelompok KKN binaan, DPL pengampu, capaian presensi lapangan, dan status pelaksanaan program kerja."
+              : isMpl
+              ? "Ringkasan pemantauan posko, aktivitas harian mahasiswa, progres program kerja, dan kehadiran di wilayah binaan."
               : "Ringkasan eksekutif ekosistem KKN binaan, capaian presensi lapangan, dan status penilaian akademik."}
           </p>
         </div>
 
-        {!isPimpinan && alerts && alerts.pendingApprovalsCount > 0 && (
+        {!isReadOnlyRole && alerts && alerts.pendingApprovalsCount > 0 && (
           <div className="flex flex-wrap items-center gap-2">
             <Link
               to="/monitoring-kegiatan/pengajuan-izin"
