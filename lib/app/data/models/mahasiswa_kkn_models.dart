@@ -203,6 +203,7 @@ class WargaDampingan extends Equatable {
     this.backendTotalActivities,
     this.backendCorrectCount,
     this.backendIncorrectCount,
+    this.lifecycleState = '',
   });
 
   final String wargaId;
@@ -227,6 +228,7 @@ class WargaDampingan extends Equatable {
   final int? backendTotalActivities;
   final int? backendCorrectCount;
   final int? backendIncorrectCount;
+  final String lifecycleState;
 
   /// Total aktivitas pemilahan
   int get totalActivities => backendTotalActivities ?? recentLogs.length;
@@ -281,6 +283,7 @@ class WargaDampingan extends Equatable {
     int? backendTotalActivities,
     int? backendCorrectCount,
     int? backendIncorrectCount,
+    String? lifecycleState,
   }) {
     return WargaDampingan(
       wargaId: wargaId ?? this.wargaId,
@@ -307,15 +310,18 @@ class WargaDampingan extends Equatable {
       backendCorrectCount: backendCorrectCount ?? this.backendCorrectCount,
       backendIncorrectCount:
           backendIncorrectCount ?? this.backendIncorrectCount,
+      lifecycleState: lifecycleState ?? this.lifecycleState,
     );
   }
 
   factory WargaDampingan.fromJson(Map<String, dynamic> json) {
-    final logs =
+    final rawLogs =
         (json['recentLogs'] as List<dynamic>?)
             ?.map((e) => WasteLogEntry.fromJson(e as Map<String, dynamic>))
             .toList() ??
         [];
+    rawLogs.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final logs = rawLogs;
 
     String extractedBinId = json['binId']?.toString() ?? '';
     if (extractedBinId.isEmpty &&
@@ -612,6 +618,10 @@ class WargaDampingan extends Equatable {
           json['role']?.toString().toUpperCase() ??
           json['user']?['role']?.toString().toUpperCase() ??
           'WARGA',
+      lifecycleState:
+          json['lifecycleState']?.toString() ??
+          json['user']?['lifecycleState']?.toString() ??
+          '',
       totalPoints:
           (json['totalPoints'] as num?)?.toInt() ??
           (json['totalPoin'] as num?)?.toInt() ??

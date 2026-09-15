@@ -207,6 +207,11 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
+                shadows: [
+                  Shadow(color: Colors.white, blurRadius: 4),
+                  Shadow(color: Colors.white, blurRadius: 8),
+                  Shadow(color: Colors.white, blurRadius: 12),
+                ],
               ),
             ),
           ),
@@ -221,6 +226,10 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
                 fontSize: 12,
                 fontWeight: FontWeight.w800,
                 color: AppColors.textPrimary,
+                shadows: [
+                  Shadow(color: Colors.white, blurRadius: 4),
+                  Shadow(color: Colors.white, blurRadius: 8),
+                ],
               ),
             ),
           ),

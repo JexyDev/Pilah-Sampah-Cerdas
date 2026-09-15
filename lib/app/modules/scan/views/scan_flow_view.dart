@@ -118,9 +118,9 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
       if (requestPermissionIfNeeded) {
         // Panggil refreshLocation untuk mengambil GPS dan reverse geocoding, 
         // sehingga Cek Lokasi di beranda juga ikut ter-update (sinkron)
-        await ref.read(userLocationProvider.notifier).refreshLocation(context: context);
+        await ref.read(userLocationProvider.notifier).refreshCoordinatesOnly(context: context);
       } else {
-        await ref.read(userLocationProvider.notifier).refreshLocation();
+        await ref.read(userLocationProvider.notifier).refreshCoordinatesOnly();
       }
 
       final pos = ref.read(userLocationProvider).position;
@@ -148,13 +148,8 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
 
   /// Memastikan koordinat GPS realtime valid dan bukan 0.0 sebelum transaksi dikirim ke backend.
   Future<bool> _ensureRealtimeGps() async {
-    if (_userLat != null &&
-        _userLng != null &&
-        _userLat != 0.0 &&
-        _userLng != 0.0 &&
-        !_gpsLoading) {
-      return true;
-    }
+    // Selalu paksa sinkronisasi dengan lokasi GPS terkini saat mendeteksi QR.
+    // Hal ini untuk mencegah validasi "di luar 50 meter" jika menggunakan koordinat lama.
     final pos = await _fetchGps(requestPermissionIfNeeded: true);
     return pos != null && _userLat != null && _userLat != 0.0;
   }

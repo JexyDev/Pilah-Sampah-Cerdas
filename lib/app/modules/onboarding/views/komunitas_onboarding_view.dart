@@ -280,11 +280,68 @@ class _KomunitasOnboardingViewState
         }
 
         // Refresh profil untuk mendapatkan householdId terbaru dan data lain
+        // Refresh profil untuk mendapatkan householdId terbaru dan data lain
         await ref.read(authProvider.notifier).fetchProfile();
 
         if (mounted) {
-          Navigator.of(context).pushReplacementNamed(AppRoutes.ukurKapasitas);
+          await showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (ctx) => AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: const Column(
+                children: [
+                  Icon(Icons.check_circle_rounded, color: AppColors.primaryGreen, size: 56),
+                  SizedBox(height: 16),
+                  Text(
+                    'Berhasil Bergabung!',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+              content: const Text(
+                'Selamat! Data Anda telah tersimpan dan Anda resmi tergabung di Komunitas Berseka.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                  height: 1.4,
+                ),
+              ),
+              actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+              actions: [
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryGreen,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('Menuju Beranda', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                  ),
+                ),
+              ],
+            ),
+          );
+
+          if (mounted) {
+            Navigator.of(context).pushReplacementNamed(AppRoutes.main);
+          }
         }
+
       } else if (mounted) {
         _showError('Gagal memperbarui data. Silakan coba lagi.');
       }

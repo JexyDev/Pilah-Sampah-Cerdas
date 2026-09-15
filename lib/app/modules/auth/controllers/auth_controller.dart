@@ -163,10 +163,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
       await _restoreNotificationSyncState(user);
 
       state = state.copyWith(user: user, isLoading: false);
+      
+      // Ambil data profil lengkap (termasuk household) dari server SEBELUM return
+      // untuk menjamin status komunitas sinkron 100% saat masuk Beranda
+      await fetchProfile();
+
       // Daftarkan FCM token setelah login berhasil
       _registerFcmToken();
       NotificationEngine().scheduleRoleBasedNotifications(user.role.apiValue);
       return true;
+
     } on AuthException catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -195,9 +201,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
       await _restoreNotificationSyncState(user);
 
       state = state.copyWith(user: user, isLoading: false);
-      // Daftarkan FCM token setelah register berhasil
+      
+      // Ambil data profil lengkap (termasuk household) dari server SEBELUM return
+      // untuk menjamin status komunitas sinkron 100% saat masuk Beranda
+      await fetchProfile();
+
+      // Daftarkan FCM token setelah login berhasil
       _registerFcmToken();
+      NotificationEngine().scheduleRoleBasedNotifications(user.role.apiValue);
       return true;
+
     } on AuthException catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -252,8 +265,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
       await _restoreNotificationSyncState(user);
 
       state = state.copyWith(user: user, isLoading: false);
+      
+      // Ambil data profil lengkap (termasuk household) dari server SEBELUM return
+      // untuk menjamin status komunitas sinkron 100% saat masuk Beranda
+      await fetchProfile();
+
+      // Daftarkan FCM token setelah login berhasil
       _registerFcmToken();
+      NotificationEngine().scheduleRoleBasedNotifications(user.role.apiValue);
       return true;
+
     } on AuthException catch (e) {
       state = state.copyWith(
         isLoading: false,

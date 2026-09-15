@@ -1118,16 +1118,12 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                         : 'Wilayah Warga');
 
               final registeredAddress = (user?.address ?? '').trim();
-              final displayAddress = isUnjoined
-                  ? locState.address
-                  : (registeredAddress.isNotEmpty
-                        ? registeredAddress
-                        : locState.address);
+              final displayAddress = locState.address ?? registeredAddress;
 
               return UserLocationCard(
                 wilayahTitle: wilayahTitle,
                 isFetchingAddress:
-                    isUnjoined ? locState.isFetchingAddress : false,
+                    locState.isFetchingAddress,
                 address: displayAddress,
                 position: locState.position,
                 isHomeAddress:

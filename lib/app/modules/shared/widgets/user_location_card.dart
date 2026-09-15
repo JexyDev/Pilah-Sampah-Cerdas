@@ -75,11 +75,11 @@ class UserLocationCard extends StatelessWidget {
                 child: Text(
                   wilayahTitle.isNotEmpty ? wilayahTitle : 'Wilayah Belum Diatur',
                   style: const TextStyle(
-                    fontSize: 13,
+                    fontSize: 11,
                     fontWeight: FontWeight.w700,
                     color: AppColors.primaryGreen,
                   ),
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),

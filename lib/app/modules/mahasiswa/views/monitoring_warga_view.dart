@@ -100,6 +100,8 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
 
     return allWarga.where((w) {
       if (w.role.isNotEmpty && w.role != 'WARGA') return false;
+      // Blokir warga yang baru registrasi awal dan belum mengisi form Gabung Komunitas
+      if (w.lifecycleState.toUpperCase() == 'REGISTERED') return false;
 
       final wRwClean = w.rw
           .replaceAll(RegExp(r'[^\d]'), '')

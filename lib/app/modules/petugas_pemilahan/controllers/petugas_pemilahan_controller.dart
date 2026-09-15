@@ -288,7 +288,7 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
     String dateRange,
     String type,
   ) {
-    return rawList.where((item) {
+    final filtered = rawList.where((item) {
       // 1. Filter Date Range
       final rawDate =
           item['timestamp']?.toString() ??
@@ -335,6 +335,17 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
       }
       return true;
     }).toList();
+
+    filtered.sort((a, b) {
+      final rawA = a['timestamp']?.toString() ?? a['submittedAt']?.toString() ?? a['createdAt']?.toString();
+      final rawB = b['timestamp']?.toString() ?? b['submittedAt']?.toString() ?? b['createdAt']?.toString();
+      DateTime dtA = DateTime.fromMillisecondsSinceEpoch(0);
+      DateTime dtB = DateTime.fromMillisecondsSinceEpoch(0);
+      try { if (rawA != null) dtA = DateTime.parse(rawA).toLocal(); } catch (_) {}
+      try { if (rawB != null) dtB = DateTime.parse(rawB).toLocal(); } catch (_) {}
+      return dtB.compareTo(dtA);
+    });
+    return filtered;
   }
 
   Future<void> setHistoryFilters({String? dateRange, String? type}) async {

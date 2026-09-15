@@ -40,6 +40,49 @@ class UserLocationNotifier extends StateNotifier<UserLocationState> {
   UserLocationNotifier([this._ref]) : super(const UserLocationState());
 
   /// Ambil lokasi GPS terkini dan konversi ke nama alamat (reverse geocoding)
+
+  /// Ambil lokasi GPS terkini tanpa reverse geocoding alamat
+  Future<void> refreshCoordinatesOnly({BuildContext? context, String? role}) async {
+    state = state.copyWith(isFetchingAddress: true, clearError: true);
+    try {
+      if (context != null && context.mounted) {
+        final currentRole = role ?? _ref?.read(authProvider).user?.role.name;
+        final permission = await LocationService.instance.checkAndRequestPermission(
+          context,
+          role: currentRole,
+        );
+        if (permission == LocationPermission.denied ||
+            permission == LocationPermission.deniedForever) {
+          state = state.copyWith(
+            isFetchingAddress: false,
+            error: 'Izin lokasi tidak diberikan',
+          );
+          return;
+        }
+      }
+
+      final pos = await LocationService.instance.getCurrentLocation();
+      if (pos == null) {
+        state = state.copyWith(
+          isFetchingAddress: false,
+          error: 'Lokasi tidak terdeteksi. Aktifkan GPS Anda.',
+        );
+        return;
+      }
+
+      state = state.copyWith(
+        position: pos,
+        isFetchingAddress: false,
+        clearError: true,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isFetchingAddress: false,
+        error: 'Gagal memperbarui koordinat',
+      );
+    }
+  }
+
   Future<void> refreshLocation({BuildContext? context, String? role}) async {
     // ponytail: geocoding reverse lookup; fallback ke lat/long desimal jika provider gagal
     state = state.copyWith(isFetchingAddress: true, clearError: true);

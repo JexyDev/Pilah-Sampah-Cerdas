@@ -469,28 +469,28 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                       fontWeight: FontWeight.w800,
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryGreen.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.25)),
-                    ),
-                    child: Text(
-                      user?.role == UserRole.mahasiswaKkn
-                          ? 'MAHASISWA KKN • ${user?.kelompokName.isNotEmpty == true ? user!.kelompokName : (user?.rw.isNotEmpty == true ? "RW ${user!.rw}" : "Aktif")}'
-                          : (user?.formattedRw.isNotEmpty == true && user?.formattedRw != '-'
-                              ? 'WARGA • RW ${user!.formattedRw}'
-                              : 'WARGA BERSEKA'),
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primaryGreen,
-                        letterSpacing: 0.5,
+                  if (user?.role == UserRole.mahasiswaKkn || !isUnjoined) ...[
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.25)),
+                      ),
+                      child: Text(
+                        user?.role == UserRole.mahasiswaKkn
+                            ? 'MAHASISWA KKN • ${user?.kelompokName.isNotEmpty == true ? user!.kelompokName : (user?.rw.isNotEmpty == true ? "RW ${user!.rw}" : "Aktif")}'
+                            : 'WARGA BERSEKA',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primaryGreen,
+                          letterSpacing: 0.5,
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),
