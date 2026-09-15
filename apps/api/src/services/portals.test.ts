@@ -138,6 +138,15 @@ describe("Portals A & B Service Integration Tests", () => {
   describe("Portal B — Petugas Residu Service", () => {
     it("should record violation, deduct points, and send warning notification", async () => {
       const citizenId = citizenUser.id;
+      // Grant initial points to test deduction with zero-floor clamp
+      await prisma.pointHistory.create({
+        data: {
+          userId: citizenId,
+          points: 200,
+          description: "Initial balance for penalty test",
+          kategori: "REDUKSI_TONASE",
+        },
+      });
 
       // Get initial points
       const initialPointsAggregate = await prisma.pointHistory.aggregate({

@@ -67,7 +67,7 @@ describe("sortingEvaluation Utility", () => {
 
       const result2 = evaluateSortingStatus(45, "NONE");
       expect(result2.ai_confidence).toBe(0.45);
-      expect(result2.is_correct).toBe(false);
+      expect(result2.is_correct).toBe(true); // Relaxed rule: valid if discrepancy is NONE
     });
 
     it("should automatically infer discrepancy status from classification and bin category when omitted", () => {

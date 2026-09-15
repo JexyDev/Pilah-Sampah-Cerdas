@@ -87,12 +87,21 @@ export const AnalisisKknPage: React.FC = () => {
 
   const fetchKelompokOptions = async () => {
     try {
-      const res = await api.get("/kelompok-kkn");
-      if (res.data?.data) {
-        setKelompokList(res.data.data);
+      const res = await api.get("/kelompok?limit=0");
+      const list = res.data?.data || res.data?.groups;
+      if (Array.isArray(list)) {
+        setKelompokList(list);
       }
     } catch {
-      // Endpoint fallback
+      try {
+        const fallbackRes = await api.get("/kelompok-kkn");
+        const list = fallbackRes.data?.data || fallbackRes.data?.groups;
+        if (Array.isArray(list)) {
+          setKelompokList(list);
+        }
+      } catch {
+        // Silent fallback
+      }
     }
   };
 

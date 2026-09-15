@@ -18,6 +18,11 @@ const ALLOWED_LEADERSHIP_ROLES = [
   "PIMPINAN",
   "PEMIMPIN",
   "PANITIA_TASKFORCE",
+  "CAMAT",
+  "LURAH",
+  "RW",
+  "DPL",
+  "DOSEN_PEMBIMBING",
 ];
 
 router.get("/kkn", authMiddleware, roleMiddleware(ALLOWED_LEADERSHIP_ROLES), systemAnalysisController.getKknAnalysis);

@@ -885,7 +885,8 @@ export async function calculateGroupPoints(
       }
 
       for (const p of personalPoints) {
-        const dayKey = p.createdAt.toISOString().slice(0, 10);
+        const createdAtDate = p.createdAt instanceof Date ? p.createdAt : new Date(p.createdAt || Date.now());
+        const dayKey = (!isNaN(createdAtDate.getTime()) ? createdAtDate : new Date()).toISOString().slice(0, 10);
         groupActiveDaysSet.add(dayKey);
         const userMap = userDayPointsMap.get(p.userId);
         if (userMap) {
@@ -1466,7 +1467,9 @@ export const dplService = {
             statusUsulan: u,
             statusPelaksanaan: pl,
             skorPenilaian: p.skorPenilaian !== null ? Number(p.skorPenilaian) : null,
-            createdAt: p.createdAt.toISOString(),
+            createdAt: p.createdAt
+              ? (p.createdAt instanceof Date ? p.createdAt.toISOString() : String(p.createdAt))
+              : new Date().toISOString(),
           };
         });
 
