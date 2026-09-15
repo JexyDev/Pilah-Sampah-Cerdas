@@ -4592,18 +4592,28 @@ export class KknAttendanceService {
       orderBy: { attendedAt: "desc" },
     });
 
-    // Catat ke buku besar point_history
-    const pointRecord = await prisma.pointHistory.create({
-      data: {
-        userId: studentUserId,
-        points: -Math.abs(penaltyPoints),
-        kategori: "PENALTY_OUT_OF_ZONE",
-        description: `Penalti keluar zona kegiatan '${schedule?.title || "KKN"}' (Kelompok: ${
-          student?.kelompok?.name || schedule?.kelompok?.name || "Binaan"
-        }) melebihi batas waktu toleransi (${outOfZoneMinutes || 5} menit).`,
-        redeemable: false,
-      },
+    // Pastikan poin mahasiswa tidak pernah minus akibat penalti zona
+    const pointSumObj = await prisma.pointHistory.aggregate({
+      where: { userId: studentUserId },
+      _sum: { points: true },
     });
+    const currentPoints = Math.max(0, pointSumObj._sum.points || 0);
+    const deduction = Math.min(Math.abs(penaltyPoints), currentPoints);
+
+    if (deduction > 0) {
+      // Catat ke buku besar point_history
+      await prisma.pointHistory.create({
+        data: {
+          userId: studentUserId,
+          points: -deduction,
+          kategori: "PENALTY_OUT_OF_ZONE",
+          description: `Penalti keluar zona kegiatan '${schedule?.title || "KKN"}' (Kelompok: ${
+            student?.kelompok?.name || schedule?.kelompok?.name || "Binaan"
+          }) melebihi batas waktu toleransi (${outOfZoneMinutes || 5} menit).`,
+          redeemable: false,
+        },
+      });
+    }
 
     // Record into system history / audit trail
     auditTrailService
@@ -4613,7 +4623,7 @@ export class KknAttendanceService {
         scheduleTitle: schedule?.title || "Kegiatan KKN",
         kelompokName: student?.kelompok?.name || schedule?.kelompok?.name || "-",
         outOfZoneMinutes,
-        pointsDeducted: penaltyPoints,
+        pointsDeducted: deduction,
         studentName: student?.user?.name,
         nim: student?.nim,
       })
@@ -4621,8 +4631,8 @@ export class KknAttendanceService {
 
     return {
       success: true,
-      message: "Pelanggaran zona tercatat. Poin dipotong.",
-      pointsDeducted: penaltyPoints,
+      message: deduction > 0 ? "Pelanggaran zona tercatat. Poin dipotong." : "Pelanggaran zona tercatat (poin 0).",
+      pointsDeducted: deduction,
     };
   }
 
