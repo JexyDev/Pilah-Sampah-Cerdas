@@ -274,6 +274,8 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
 
   // Modal Open Handler
   const handleOpenModal = (student: StudentRekapItem) => {
+    if (student.bobotDplPersen !== undefined) setBobotDpl(student.bobotDplPersen);
+    if (student.bobotMplPersen !== undefined) setBobotMpl(student.bobotMplPersen);
     setActiveStudent(student);
     setFormScores({
       skorDplPerencanaan: student.skorDplPerencanaan || "",
@@ -449,9 +451,11 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
     const mpl8 = Number(((m8 * 10) / 100).toFixed(2));
     const subtotalMitra = Number((mpl1 + mpl2 + mpl3 + mpl4 + mpl5 + mpl6 + mpl7 + mpl8).toFixed(2));
 
-    // Kontribusi Masing-masing 50%
-    const kontribusiDpl = Number((subtotalDpl * 0.5).toFixed(2));
-    const kontribusiMitra = Number((subtotalMitra * 0.5).toFixed(2));
+    // Kontribusi Dinamis DPL & MPL
+    const wDpl = (Number(bobotDpl) || 50) / 100;
+    const wMpl = (Number(bobotMpl) || 50) / 100;
+    const kontribusiDpl = Number((subtotalDpl * wDpl).toFixed(2));
+    const kontribusiMitra = Number((subtotalMitra * wMpl).toFixed(2));
 
     let composite = 0;
     if (subtotalDpl > 0 && subtotalMitra > 0) {
@@ -472,7 +476,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
       composite,
       predikat: composite > 0 ? getPredikat(composite) : "Belum Dinilai",
     };
-  }, [formScores]);
+  }, [formScores, bobotDpl, bobotMpl]);
 
   // Handle Input Change for Scores
   const handleScoreChange = (key: keyof typeof formScores, val: string) => {
