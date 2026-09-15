@@ -10,6 +10,9 @@ import '../../../data/services/local_notification_cache_service.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../controllers/riwayat_kkn_controller.dart';
 import '../controllers/mahasiswa_notifikasi_controller.dart';
+import '../controllers/mahasiswa_controller.dart';
+import '../../riwayat/controllers/riwayat_controller.dart'
+    show pointHistoryProvider, totalPointsProvider;
 import 'riwayat_program_kerja_view.dart'; // import provider untuk dropdown program kerja
 
 final fasilitasWargaListProvider =
@@ -362,10 +365,13 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
 
         ref.invalidate(riwayatKknControllerProvider);
         ref.invalidate(mahasiswaNotificationsProvider);
+        ref.read(mahasiswaControllerProvider.notifier).fetchDashboardData();
+        ref.invalidate(pointHistoryProvider);
+        ref.invalidate(totalPointsProvider);
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Berhasil mencatat logbook harian!'),
+            content: Text('Berhasil mencatat logbook harian! (+3 Poin)'),
             backgroundColor: AppColors.success,
           ),
         );

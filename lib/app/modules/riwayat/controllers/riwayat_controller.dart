@@ -47,16 +47,14 @@ class WasteLogsNotifier extends AsyncNotifier<List<WasteLogEntity>> {
 }
 
 /// Provider riwayat poin milik user yang sedang login.
-/// Provider riwayat poin milik user yang sedang login.
 /// Menggunakan GET /api/v1/points/me → data.history (Murni dari backend)
 final pointHistoryProvider = FutureProvider<List<PointHistoryEntity>>((
   ref,
 ) async {
   final repo = ref.watch(wasteLogRepositoryProvider);
-  final userId = ref.watch(
-    authProvider.select((state) => state.user?.id ?? ''),
-  );
-  return repo.getPointHistoryByUser(userId);
+  final user = ref.watch(authProvider.select((state) => state.user));
+  final userId = user?.id ?? '';
+  return await repo.getPointHistoryByUser(userId);
 });
 
 /// Provider total frekuensi setor sampah
@@ -76,6 +74,8 @@ final totalSetoranProvider = FutureProvider<int>((ref) async {
 /// Provider total poin yang diperoleh hari ini (Dihitung murni dari riwayat backend createdAt = today).
 final dailyPointsProvider = FutureProvider<int>((ref) async {
   final history = await ref.watch(pointHistoryProvider.future);
+  final user = ref.watch(authProvider.select((state) => state.user));
+  final isMahasiswa = user?.role.name.toUpperCase() == 'MAHASISWA';
   final today = DateTime.now();
   final todayStart = DateTime(today.year, today.month, today.day);
   final todayEnd = DateTime(today.year, today.month, today.day, 23, 59, 59, 999);
@@ -83,7 +83,31 @@ final dailyPointsProvider = FutureProvider<int>((ref) async {
   return history
       .where((h) {
         final localDate = h.createdAt.toLocal();
-        return !localDate.isBefore(todayStart) && !localDate.isAfter(todayEnd);
+        if (localDate.isBefore(todayStart) || localDate.isAfter(todayEnd)) {
+          return false;
+        }
+        if (isMahasiswa) {
+          if (h.points <= 0) return false;
+          final desc = h.description.toLowerCase();
+          final kat = (h.kategori ?? '').toUpperCase();
+          if (desc.contains('aktivasi') ||
+              desc.contains('activation') ||
+              desc.contains('fasilitas') ||
+              desc.contains('gis') ||
+              desc.contains('penalti') ||
+              desc.contains('punishment') ||
+              desc.contains('out_of_zone') ||
+              kat.contains('PENALTY') ||
+              desc.contains('pemanfaatan') ||
+              desc.contains('panen') ||
+              kat.contains('PEMANFAATAN') ||
+              kat.contains('PANEN') ||
+              desc.contains('pendampingan') ||
+              desc.contains('registrasi')) {
+            return false;
+          }
+        }
+        return true;
       })
       .fold<int>(0, (sum, h) => sum + h.points);
 });

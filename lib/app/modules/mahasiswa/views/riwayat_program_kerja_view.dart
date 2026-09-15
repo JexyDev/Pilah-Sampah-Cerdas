@@ -147,6 +147,56 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
     );
   }
 
+  Widget _buildPointsBadge(
+    String? statusPelaksanaan,
+    String? statusUsulan,
+    String? legacyStatus,
+  ) {
+    final sPel = (statusPelaksanaan ?? '').toUpperCase();
+    final sUsl = (statusUsulan ?? '').toUpperCase();
+    final leg = (legacyStatus ?? '').toUpperCase();
+
+    int points = 0;
+    if (sPel == 'SELESAI' || leg == 'SELESAI') {
+      points = 6;
+    } else if (sPel == 'SEDANG_BERJALAN' ||
+        sPel == 'BERJALAN' ||
+        leg == 'SEDANG_BERJALAN') {
+      points = 4;
+    } else if (sUsl == 'DISETUJUI' ||
+        sUsl == 'DITERIMA' ||
+        leg == 'DISETUJUI' ||
+        leg == 'APPROVED') {
+      points = 2;
+    }
+
+    if (points == 0) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppColors.primaryBlue.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.primaryBlue.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.stars_rounded, size: 12, color: AppColors.primaryBlue),
+          const SizedBox(width: 4),
+          Text(
+            '+$points PTS Kelompok',
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: AppColors.primaryBlue,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildKategoriBadge(String? kategori) {
     final raw = (kategori ?? 'Pemilahan').toLowerCase();
     Color color;
@@ -383,6 +433,11 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
                               statusPelaksanaan,
                               legacyStatus,
                               waktuPelaksanaanStr,
+                            ),
+                            _buildPointsBadge(
+                              statusPelaksanaan,
+                              statusUsulan,
+                              legacyStatus,
                             ),
                             if (statusUsulan == 'PERLU_REVISI_DPL')
                               Container(

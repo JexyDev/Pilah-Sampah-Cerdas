@@ -4,6 +4,8 @@ import '../../../core/values/app_colors.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../routes/app_routes.dart';
 import 'riwayat_pemanfaatan_view.dart' show riwayatPemanfaatanProvider;
+import '../../riwayat/controllers/riwayat_controller.dart' show pointHistoryProvider;
+import '../controllers/mahasiswa_controller.dart' show mahasiswaControllerProvider;
 
 final prokerDataListProvider =
     FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
@@ -196,6 +198,8 @@ class _DataProkerViewState extends ConsumerState<DataProkerView> {
           ),
         );
         ref.invalidate(prokerDataListProvider);
+        ref.invalidate(pointHistoryProvider);
+        ref.read(mahasiswaControllerProvider.notifier).fetchDashboardData();
       } else {
         messenger.showSnackBar(
           const SnackBar(

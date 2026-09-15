@@ -9,9 +9,8 @@ import '../../../data/providers/repository_providers.dart';
 import '../../../data/services/notification_engine.dart';
 import '../../../data/services/local_notification_cache_service.dart';
 import '../../auth/controllers/auth_controller.dart';
-import '../../riwayat/controllers/riwayat_controller.dart'
-    show pointHistoryProvider;
 import '../controllers/mahasiswa_notifikasi_controller.dart';
+import '../controllers/riwayat_kkn_controller.dart';
 import 'riwayat_program_kerja_view.dart'; // import provider untuk dropdown program kerja
 
 final fasilitasWargaListProvider =
@@ -142,11 +141,11 @@ class _LogbookPemanfaatanViewState
         // 1. Tampilkan Notifikasi Latar Belakang (Push Notification Local)
         NotificationEngine().showGenericNotification(
           id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
-          title: 'Kegiatan Berhasil Dicatat! 🎉',
+          title: 'Laporan Pemanfaatan Sampah Terkirim ♻️',
           body:
-              'Laporan kegiatan/aksi KKN Anda telah disubmit dan mendapatkan poin KKN.',
+              'Laporan kegiatan pemanfaatan sampah berhasil dicatat (Aktivitas Non-Poin) dan masuk ke riwayat.',
           color: AppColors.primaryGreen,
-          payload: 'ROUTE_POIN',
+          payload: 'ROUTE_HISTORY',
         );
 
         final user = ref.read(authProvider).user;
@@ -154,17 +153,17 @@ class _LogbookPemanfaatanViewState
           LocalNotificationCacheService().addNotification(
             userId: user.id,
             role: user.role.name,
-            title: 'Laporan Pemanfaatan Sampah Terkirim 🌿',
+            title: 'Laporan Pemanfaatan Sampah Terkirim ♻️',
             desc:
-                'Laporan pemanfaatan sampah berhasil dicatat (+25 PTS) dan masuk ke riwayat.',
+                'Laporan pemanfaatan sampah berhasil dicatat (Aktivitas Non-Poin) dan masuk ke riwayat.',
             type: 'PEMANFAATAN_SAMPAH',
             id: 'local_pemanfaatan_${DateTime.now().millisecondsSinceEpoch}',
           );
         }
 
-        // 2. Invalidate Data Poin dan Notifikasi agar langsung update
-        ref.invalidate(pointHistoryProvider);
+        // 2. Invalidate Data Riwayat dan Notifikasi agar langsung update
         ref.invalidate(mahasiswaNotificationsProvider);
+        ref.invalidate(riwayatKknControllerProvider);
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -632,7 +631,7 @@ class _LogbookPemanfaatanViewState
                             Icon(Icons.send_rounded, size: 20),
                             SizedBox(width: 10),
                             Text(
-                              'Simpan Laporan & Dapatkan Poin',
+                              'Simpan Laporan Pemanfaatan',
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.bold,

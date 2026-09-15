@@ -275,25 +275,31 @@ class _MahasiswaNotifikasiViewState
                           }
                           if (context.mounted) {
                             final typeU = item.type.toUpperCase();
+                            final titleL = item.title.toLowerCase();
+                            final descL = item.desc.toLowerCase();
                             // Route by domain type so mahasiswa lands on relevant page
-                            if (typeU.contains('POIN') || typeU == 'PUNISHMENT') {
+                            if (typeU.contains('POIN') || typeU == 'PUNISHMENT' || titleL.contains('poin') || titleL.contains('pts') || descL.contains('pts') || descL.contains('poin')) {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (_) => const MahasiswaPoinView(),
                                 ),
                               );
-                            } else if (typeU.contains('KEGIATAN') ||
-                                typeU.contains('LOGBOOK')) {
-                              Navigator.pushNamed(
-                                context,
-                                AppRoutes.dataLogbookHarian,
-                              );
                             } else if (typeU.contains('PROKER') ||
-                                typeU.contains('PROGRAM')) {
+                                typeU.contains('PROGRAM') ||
+                                titleL.contains('proker') || 
+                                titleL.contains('program kerja')) {
                               Navigator.pushNamed(
                                 context,
                                 AppRoutes.dataProker,
+                              );
+                            } else if (typeU.contains('KEGIATAN') ||
+                                typeU.contains('LOGBOOK') ||
+                                titleL.contains('logbook') ||
+                                titleL.contains('kegiatan')) {
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.dataLogbookHarian,
                               );
                             } else if (typeU.contains('IZIN')) {
                               Navigator.pushNamed(

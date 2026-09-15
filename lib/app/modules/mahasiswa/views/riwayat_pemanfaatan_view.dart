@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../data/providers/repository_providers.dart';
-import '../../riwayat/controllers/riwayat_controller.dart'
-    show pointHistoryProvider;
 import 'package:intl/intl.dart';
 
 final riwayatPemanfaatanProvider = FutureProvider.autoDispose<List<dynamic>>((
@@ -79,8 +77,13 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
     final id = item['id']?.toString() ?? '';
     final namaProgram =
         item['namaProgram']?.toString() ?? 'Program Pemanfaatan';
-    final jenisProgram = item['jenisProgram']?.toString() ?? '';
-    final bahanMasuk = item['jumlahBahanMasukKg'] ?? 0;
+    final jenisProgram = item['jenisProgram']?.toString() ??
+        item['teknologi']?.toString() ??
+        '';
+    final bahanMasuk = item['jumlahBahanMasukKg'] ??
+        item['volumeBahanBaku'] ??
+        item['beratInputKg'] ??
+        0;
     final hasil = item['jumlahHasilKg'] ?? 0;
     final unit = item['unitHasil']?.toString() ?? 'Kg';
     final status = item['status']?.toString() ?? 'PROSES';
@@ -151,10 +154,11 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
               'Teknologi: $jenisProgram',
               style: const TextStyle(fontSize: 13, color: Colors.black87),
             ),
-            Text(
-              'Input Sampah: $bahanMasuk Kg',
-              style: const TextStyle(fontSize: 13, color: Colors.black87),
-            ),
+            if (bahanMasuk != null)
+              Text(
+                'Input Sampah: $bahanMasuk Kg',
+                style: const TextStyle(fontSize: 13, color: Colors.black87),
+              ),
             if (isPanen)
               Text(
                 'Total Hasil: $hasil $unit',
@@ -252,7 +256,6 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
                   );
                 }
                 ref.invalidate(riwayatPemanfaatanProvider);
-                ref.invalidate(pointHistoryProvider);
               } catch (e) {
                 if (context.mounted) {
                   ScaffoldMessenger.of(

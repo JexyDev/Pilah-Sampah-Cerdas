@@ -369,7 +369,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
         for (final key in keys) {
           if (key.startsWith('read_notifs_') ||
               key.startsWith('fcm_notifs_') ||
-              key.startsWith('mark_all_notifs_')) {
+              key.startsWith('mark_all_notifs_') ||
+              key.startsWith('delete_all_notifs_') ||
+              key.startsWith('notif_store_v2_') ||
+              key.startsWith('kkn_')) {
             await prefs.remove(key);
           }
         }

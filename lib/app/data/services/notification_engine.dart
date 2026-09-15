@@ -92,13 +92,13 @@ class NotificationEngine {
       final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
 
       if (roleName == 'WARGA' || roleName == 'ADMIN') {
-        // 1. Pengingat Memilah Sampah Pagi (Jadwal 07:00-08:00 WIB, Notif 06:40 WIB)
+        // 1. Pengingat Memilah Sampah Pagi (Jadwal 06:00-08:00 WIB, Notif 05:40 WIB)
         tz.TZDateTime scheduledPagi = tz.TZDateTime(
           tz.local,
           now.year,
           now.month,
           now.day,
-          6,
+          5,
           40,
         );
         if (scheduledPagi.isBefore(now)) {
@@ -119,14 +119,14 @@ class NotificationEngine {
           id: 1,
           title: 'Jadwal Buang Sampah Pagi! 🌅',
           body:
-              'Pengingat: Jadwal buang sampah pagi (07:00-08:00) 20 menit lagi. Jangan lupa scan & buang sampah agar terhindar dari penalti poin!',
+              'Pengingat: Jadwal buang sampah pagi (06:00-08:00 WIB) 20 menit lagi. Jangan lupa pilah & buang sampah Anda!',
           scheduledDate: scheduledPagi,
           notificationDetails: const NotificationDetails(android: androidPagi),
           androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
           matchDateTimeComponents: DateTimeComponents.time,
         );
 
-        // 2. Pengingat Sore (Jadwal 16:00-17:00 WIB, Notif 15:40 WIB)
+        // 2. Pengingat Sore (Jadwal 16:00-18:00 WIB, Notif 15:40 WIB)
         tz.TZDateTime scheduledSore = tz.TZDateTime(
           tz.local,
           now.year,
@@ -153,7 +153,7 @@ class NotificationEngine {
           id: 2,
           title: 'Jadwal Buang Sampah Sore! 🌇',
           body:
-              'Pengingat: Jadwal buang sampah sore (16:00-17:00) 20 menit lagi. Jangan lupa scan & buang sampah agar terhindar dari penalti poin!',
+              'Pengingat: Jadwal buang sampah sore (16:00-18:00 WIB) 20 menit lagi. Jangan lupa pilah & buang sampah Anda!',
           scheduledDate: scheduledSore,
           notificationDetails: const NotificationDetails(android: androidSore),
           androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
@@ -285,7 +285,7 @@ class NotificationEngine {
 
       await _flutterLocalNotificationsPlugin.show(
         id: 5, // ID untuk notif penalti/punishment
-        title: 'Penalti: Poin Berkurang! âš ï¸',
+        title: 'Penalti: Poin Berkurang! ⚠️',
         body:
             'Anda tidak melakukan setor sampah hari ini. Poin Anda berkurang -$points poin.',
         notificationDetails: platformDetails,
@@ -316,7 +316,7 @@ class NotificationEngine {
 
       await _flutterLocalNotificationsPlugin.show(
         id: 6,
-        title: 'Pengajuan Pengosongan Terkirim â³',
+        title: 'Pengajuan Pengosongan Terkirim ⏳',
         body:
             'Pengajuan pengosongan tempat sampah Anda sedang diproses oleh petugas.',
         notificationDetails: platformDetails,
@@ -384,7 +384,7 @@ class NotificationEngine {
 
       await _flutterLocalNotificationsPlugin.show(
         id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
-        title: 'Log Timbangan Berhasil Disimpan! âš–ï¸',
+        title: 'Log Timbangan Berhasil Disimpan! ⚖️',
         body:
             'Log timbangan $type seberat ${weightKg.toStringAsFixed(1)} kg berhasil diunggah ke server.',
         notificationDetails: platformDetails,
@@ -393,6 +393,33 @@ class NotificationEngine {
       debugPrint(
         '[NotificationEngine] Failed to show timbangan notification: $e',
       );
+    }
+  }
+
+  Future<void> showProkerNotification({
+    required String title,
+    required String body,
+  }) async {
+    try {
+      const AndroidNotificationDetails androidDetails =
+          AndroidNotificationDetails(
+            'proker_channel',
+            'Program Kerja KKN',
+            channelDescription: 'Notifikasi status & skor program kerja KKN',
+            importance: Importance.max,
+            priority: Priority.high,
+            icon: '@mipmap/ic_launcher',
+            color: Color(0xFF0284C7),
+          );
+      await _flutterLocalNotificationsPlugin.show(
+        id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
+        title: title,
+        body: body,
+        payload: 'ROUTE_HISTORY',
+        notificationDetails: const NotificationDetails(android: androidDetails),
+      );
+    } catch (e) {
+      debugPrint('[NotificationEngine] Failed to show proker notification: $e');
     }
   }
 
