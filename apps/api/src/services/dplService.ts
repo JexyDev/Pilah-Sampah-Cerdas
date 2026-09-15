@@ -2136,7 +2136,9 @@ export const dplService = {
         name: true,
         kelurahan: true,
         cakupanRw: true,
-        students: { select: { id: true, userId: true, user: { select: { id: true, name: true } } } },
+        students: {
+          select: { id: true, userId: true, user: { select: { id: true, name: true } } },
+        },
       },
     });
 
@@ -2282,7 +2284,9 @@ export const dplService = {
       select: {
         id: true,
         name: true,
-        students: { select: { id: true, userId: true, user: { select: { id: true, name: true } } } },
+        students: {
+          select: { id: true, userId: true, user: { select: { id: true, name: true } } },
+        },
       },
     });
 
@@ -2350,7 +2354,13 @@ export const dplService = {
 
     let groups = await prisma.kelompokKkn.findMany({
       where: await getKelompokWhere(dplUserId, role),
-      select: { id: true, name: true, students: { select: { id: true, userId: true, user: { select: { id: true, name: true } } } } },
+      select: {
+        id: true,
+        name: true,
+        students: {
+          select: { id: true, userId: true, user: { select: { id: true, name: true } } },
+        },
+      },
     });
 
     groups = groups.filter((g) => !isTestKelompok(g));

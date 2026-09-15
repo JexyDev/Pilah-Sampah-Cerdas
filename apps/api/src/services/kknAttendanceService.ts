@@ -2446,7 +2446,7 @@ export class KknAttendanceService {
       ];
       if (mplKelurahan) {
         mplOr.push({
-          nama: { contains: mplKelurahan.trim(), mode: "insensitive" },
+          name: { contains: mplKelurahan.trim(), mode: "insensitive" },
         });
         mplOr.push({
           kelurahan: { contains: mplKelurahan.trim(), mode: "insensitive" },
@@ -2570,7 +2570,7 @@ export class KknAttendanceService {
       ];
       if (mplKelurahan) {
         mplOr.push({
-          nama: { contains: mplKelurahan.trim(), mode: "insensitive" },
+          name: { contains: mplKelurahan.trim(), mode: "insensitive" },
         });
         mplOr.push({
           kelurahan: { contains: mplKelurahan.trim(), mode: "insensitive" },
@@ -3206,7 +3206,7 @@ export class KknAttendanceService {
       ];
       if (mplKelurahan) {
         mplOr.push({
-          nama: { contains: mplKelurahan.trim(), mode: "insensitive" },
+          name: { contains: mplKelurahan.trim(), mode: "insensitive" },
         });
         mplOr.push({
           kelurahan: { contains: mplKelurahan.trim(), mode: "insensitive" },
