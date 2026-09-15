@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_assets.dart';
@@ -23,6 +24,8 @@ class ForgotPasswordView extends ConsumerStatefulWidget {
 }
 
 class _ForgotPasswordViewState extends ConsumerState<ForgotPasswordView> {
+  String _version = '';
+
   final _formKey1 = GlobalKey<FormState>();
   final _formKey3 = GlobalKey<FormState>();
 
@@ -51,7 +54,17 @@ class _ForgotPasswordViewState extends ConsumerState<ForgotPasswordView> {
   @override
   void initState() {
     super.initState();
+    _initPackageInfo();
     _phoneController.addListener(_onPhoneChanged);
+  }
+
+  Future<void> _initPackageInfo() async {
+    final info = await PackageInfo.fromPlatform();
+    if (mounted) {
+      setState(() {
+        _version = 'Versi ${info.version}';
+      });
+    }
   }
 
   void _onPhoneChanged() {
@@ -421,9 +434,9 @@ class _ForgotPasswordViewState extends ConsumerState<ForgotPasswordView> {
                         ),
                         const SizedBox(height: 24),
 
-                        const Column(
+                        Column(
                           children: [
-                            Text(
+                            const Text(
                               '© 2026 Universitas Komputer Indonesia',
                               style: TextStyle(
                                 fontSize: 11,
@@ -431,10 +444,10 @@ class _ForgotPasswordViewState extends ConsumerState<ForgotPasswordView> {
                                 color: AppColors.textSecondary,
                               ),
                             ),
-                            SizedBox(height: 4),
+                            const SizedBox(height: 4),
                             Text(
-                              'Versi 1.0.0',
-                              style: TextStyle(
+                              _version,
+                              style: const TextStyle(
                                 fontSize: 10,
                                 color: AppColors.textHint,
                               ),

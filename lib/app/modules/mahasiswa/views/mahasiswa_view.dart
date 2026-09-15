@@ -16,8 +16,13 @@ import '../controllers/kkn_location_controller.dart';
 import '../controllers/mahasiswa_notifikasi_controller.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../shared/controllers/connectivity_controller.dart';
+import '../controllers/riwayat_kkn_controller.dart';
+import 'riwayat_kkn_view.dart' show KknHistoryType;
 import '../../riwayat/controllers/riwayat_controller.dart'
     show pointHistoryProvider;
+import 'data_logbook_harian_view.dart' show logbookListProvider;
+import 'riwayat_pemanfaatan_view.dart' show riwayatPemanfaatanProvider;
+import 'data_proker_view.dart' show prokerDataListProvider;
 
 class MahasiswaView extends ConsumerStatefulWidget {
   const MahasiswaView({super.key});
@@ -28,6 +33,8 @@ class MahasiswaView extends ConsumerStatefulWidget {
 
 class _MahasiswaViewState extends ConsumerState<MahasiswaView>
     with WidgetsBindingObserver {
+  bool _isTimelineVisible = true;
+  bool _isStatsVisible = true;
   @override
   void initState() {
     super.initState();
@@ -42,50 +49,6 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
         // Cek status kegiatan KKN terbaru dari server. Jika ada yang aktif, otomatis resume.
         ref.read(kknLocationProvider.notifier).fetchKegiatanAktif();
       }
-
-      // [GRACE PERIOD] Pantau isGpsGlitching dari backend.
-      // Saat backend mendeteksi GPS glitch (koordinat melenceng sesaat), backend
-      // menyisipkan PENDING_PAUSE di jedaLogs tanpa mengubah status BERLANGSUNG.
-      // Mobile menampilkan toast peringatan ringan agar mahasiswa tahu GPS-nya lemah.
-      // Toast otomatis hilang saat GPS kembali normal (isGpsGlitching kembali false).
-      ref.listen<LocationPingState>(locationPingControllerProvider, (
-        previous,
-        next,
-      ) {
-        if (!mounted) return;
-        final wasGlitching = previous?.isGpsGlitching ?? false;
-        final isGlitching = next.isGpsGlitching;
-
-        if (!wasGlitching && isGlitching) {
-          // GPS baru saja terdeteksi glitch oleh backend
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Row(
-                children: [
-                  Icon(Icons.gps_not_fixed, color: Colors.white, size: 18),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Sinyal GPS tidak stabil. Pastikan Anda berada di area posko.',
-                      style: TextStyle(fontSize: 13),
-                    ),
-                  ),
-                ],
-              ),
-              backgroundColor: Color(0xFFE65100),
-              duration: Duration(seconds: 5),
-              behavior: SnackBarBehavior.floating,
-              margin: EdgeInsets.all(12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(Radius.circular(10)),
-              ),
-            ),
-          );
-        } else if (wasGlitching && !isGlitching) {
-          // GPS kembali normal — tutup snackbar peringatan jika masih tampil
-          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        }
-      });
     });
   }
 
@@ -113,6 +76,50 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
 
   @override
   Widget build(BuildContext context) {
+    // [GRACE PERIOD] Pantau isGpsGlitching dari backend.
+    // Saat backend mendeteksi GPS glitch (koordinat melenceng sesaat), backend
+    // menyisipkan PENDING_PAUSE di jedaLogs tanpa mengubah status BERLANGSUNG.
+    // Mobile menampilkan toast peringatan ringan agar mahasiswa tahu GPS-nya lemah.
+    // Toast otomatis hilang saat GPS kembali normal (isGpsGlitching kembali false).
+    ref.listen<LocationPingState>(locationPingControllerProvider, (
+      previous,
+      next,
+    ) {
+      if (!mounted) return;
+      final wasGlitching = previous?.isGpsGlitching ?? false;
+      final isGlitching = next.isGpsGlitching;
+
+      if (!wasGlitching && isGlitching) {
+        // GPS baru saja terdeteksi glitch oleh backend
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.gps_not_fixed, color: Colors.white, size: 18),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Sinyal GPS tidak stabil. Pastikan Anda berada di area posko.',
+                    style: TextStyle(fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Color(0xFFE65100),
+            duration: Duration(seconds: 5),
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.all(12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(10)),
+            ),
+          ),
+        );
+      } else if (wasGlitching && !isGlitching) {
+        // GPS kembali normal — tutup snackbar peringatan jika masih tampil
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      }
+    });
+
     final state = ref.watch(mahasiswaControllerProvider);
     final locationState = ref.watch(locationPingControllerProvider);
     final kknLocationState = ref.watch(kknLocationProvider);
@@ -124,7 +131,13 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
           : state.errorMessage != null
           ? _buildError(state.errorMessage!)
           : RefreshIndicator(
-              onRefresh: ref.read(mahasiswaControllerProvider.notifier).refresh,
+              onRefresh: () async {
+                ref.invalidate(riwayatPemanfaatanProvider);
+                ref.invalidate(prokerDataListProvider);
+                ref.invalidate(logbookListProvider);
+                ref.invalidate(pointHistoryProvider);
+                await ref.read(mahasiswaControllerProvider.notifier).refresh();
+              },
               color: AppColors.primaryGreen,
               child: CustomScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -145,7 +158,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                         const SizedBox(height: 8),
                         _buildActiveTimelineCard(),
                         const SizedBox(height: 8),
-                        _buildSummaryCards(state),
+                        _buildKknStatsRow(context, ref),
                         const SizedBox(height: 8),
                         _buildQuickActions(kknLocationState),
                         const SizedBox(height: 8),
@@ -691,13 +704,13 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
                 child: Text(
-                  'Tercapai: $totalFormatted',
+                  'Tercapai: $totalFormatted / $targetTotalHours Jam',
                   style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
@@ -718,7 +731,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
@@ -730,7 +743,78 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
               ),
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.blue.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: Colors.blue.withValues(alpha: 0.1)),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.timer_outlined,
+                      size: 16,
+                      color: AppColors.primaryBlue,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Sesi Hari Ini: ${kknLocationState.inZoneDurationSeconds} mnt / ${kknLocationState.targetDurationMinutes} mnt',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primaryBlue,
+                        ),
+                      ),
+                    ),
+                    if (kknLocationState.isTracking)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryGreen.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          'Aktif',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primaryGreen,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: kknLocationState.targetDurationMinutes > 0
+                        ? (kknLocationState.inZoneDurationSeconds /
+                                  kknLocationState.targetDurationMinutes)
+                              .clamp(0.0, 1.0)
+                        : 0.0,
+                    minHeight: 4,
+                    backgroundColor: AppColors.primaryBlue.withValues(
+                      alpha: 0.15,
+                    ),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      AppColors.primaryBlue,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
           _buildLocationStatus(locationState, kknLocationState),
         ],
       ),
@@ -767,89 +851,6 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
           label,
           textAlign: TextAlign.center,
           style: const TextStyle(fontSize: 9, color: AppColors.textHint),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSummaryCards(MahasiswaState state) {
-    final d = state.dashboard;
-
-    final user = ref.watch(authProvider).user;
-    final userRwSet = (user?.rw ?? '')
-        .split(',')
-        .map(
-          (s) => s
-              .replaceAll(RegExp(r'[^\d]'), '')
-              .replaceFirst(RegExp(r'^0+'), ''),
-        )
-        .where((s) => s.isNotEmpty)
-        .toSet();
-
-    // Total Warga Dampingan Mahasiswa ini (dari endpoint kknWarga)
-    final myWargaList = state.wargaList.where((w) {
-      if (w.role.isNotEmpty && w.role.toUpperCase() != 'WARGA') return false;
-
-      final cleanWargaRw = w.rw
-          .trim()
-          .replaceAll(RegExp(r'[^\d]'), '')
-          .replaceFirst(RegExp(r'^0+'), '');
-      final isMyRw = userRwSet.isNotEmpty && userRwSet.contains(cleanWargaRw);
-
-      // Jika backend mengirim mahasiswaId, cocokkan. Jika tidak, minimal harus satu RW dengan mahasiswa
-      final isMyId = w.mahasiswaId.isNotEmpty && w.mahasiswaId == user?.id;
-      final isMyName =
-          w.pendampingName.trim().toLowerCase() ==
-          (user?.name ?? '').trim().toLowerCase();
-
-      return isMyId || isMyName || isMyRw;
-    }).toList();
-
-    final totalWarga = myWargaList.length;
-
-    // Aktivasi Tempat Sampah dihitung murni dari pointHistory agar 100% akurat sesuai riwayat poin pengguna
-    final asyncHistory = ref.watch(pointHistoryProvider);
-    int wargaAktif = 0;
-
-    if (asyncHistory.hasValue && asyncHistory.value != null) {
-      for (final ph in asyncHistory.value!) {
-        final lowerTitle = ph.description.toLowerCase();
-        if (lowerTitle.contains('aktivasi')) {
-          wargaAktif++;
-        }
-      }
-    }
-
-    return Row(
-      children: [
-        Expanded(
-          child: _SummaryCard(
-            icon: Icons.people_alt_rounded,
-            iconAsset: 'assets/icons/employees.png',
-            label: 'Total Warga',
-            value: '$totalWarga',
-            color: AppColors.primaryGreen,
-          ),
-        ),
-        const SizedBox(width: AppDimensions.sm),
-        Expanded(
-          child: _SummaryCard(
-            icon: Icons.verified_user_rounded,
-            iconAsset: 'assets/icons/trash-check.png',
-            label: 'Tempat Sampah Aktif',
-            value: '$wargaAktif',
-            color: AppColors.primaryBlueDark,
-          ),
-        ),
-        const SizedBox(width: AppDimensions.sm),
-        Expanded(
-          child: _SummaryCard(
-            icon: Icons.stars_rounded,
-            iconAsset: 'assets/icons/trophy-star.png',
-            label: 'Poin Personal',
-            value: '${d?.contributionPoints ?? 0}',
-            color: AppColors.success,
-          ),
         ),
       ],
     );
@@ -978,109 +979,119 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
           ),
         ),
         const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: _MenuTileCard(
-                icon: Icons.groups_rounded,
-                iconAsset: 'assets/icons/employees.png',
-                title: 'Kelompok KKN',
-                subtitle: 'Lihat tim & DPL',
-                gradientColors: const [
-                  AppColors.primaryBlueLight,
-                  AppColors.primaryBlue,
-                ],
-                onTap: () =>
-                    Navigator.pushNamed(context, AppRoutes.kelompokKkn),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _MenuTileCard(
-                icon: Icons.location_on_rounded,
-                iconAsset: 'assets/icons/verified-user.png',
-                title: 'Presensi',
-                subtitle:
-                    'Presensi ${kknState.targetDurationMinutes % 60 == 0 ? '${kknState.targetDurationMinutes ~/ 60} jam' : '${kknState.targetDurationMinutes} menit'} Area Wilayah KKN',
-                gradientColors: const [
-                  AppColors.primaryBlueLight,
-                  AppColors.primaryBlue,
-                ],
-                onTap: () =>
-                    Navigator.pushNamed(context, AppRoutes.kknAttendance),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: _MenuTileCard(
-                icon: Icons.assignment_rounded,
-                iconAsset: 'assets/icons/activity.png',
-                title: 'Program & Aksi KKN',
-                subtitle: 'Proker, Logbook, Hasil',
-                gradientColors: const [
-                  AppColors.primaryBlueLight,
-                  AppColors.primaryBlue,
-                ],
-                onTap: () => Navigator.pushNamed(context, AppRoutes.dataProker),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _MenuTileCard(
-                icon: Icons.rule_rounded,
-                iconAsset: 'assets/icons/submission.png',
-                title: 'Pengajuan Izin',
-                subtitle: 'Izin/Sakit DPL',
-                gradientColors: const [
-                  AppColors.primaryBlueLight,
-                  AppColors.primaryBlue,
-                ],
-                onTap: () =>
-                    Navigator.pushNamed(context, AppRoutes.pengajuanIzin),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: _MenuTileCard(
-                icon: Icons.analytics_rounded,
-                iconAsset: 'assets/icons/view.png',
-                title: 'Monitoring Warga',
-                subtitle: 'Pantau poin & aktivitas',
-                gradientColors: const [
-                  AppColors.primaryBlueLight,
-                  AppColors.primaryBlue,
-                ],
-                onTap: () => Navigator.pushNamed(
-                  context,
-                  AppRoutes.monitoringWarga,
-                  arguments: 'monitoring',
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: _MenuTileCard(
+                  icon: Icons.groups_rounded,
+                  iconAsset: 'assets/icons/employees.png',
+                  title: 'Kelompok KKN',
+                  subtitle: 'Lihat tim & DPL',
+                  gradientColors: const [
+                    AppColors.primaryBlueLight,
+                    AppColors.primaryBlue,
+                  ],
+                  onTap: () =>
+                      Navigator.pushNamed(context, AppRoutes.kelompokKkn),
                 ),
               ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _MenuTileCard(
-                icon: Icons.add_business_rounded,
-                iconAsset: 'assets/icons/recycle-bin.png',
-                title: 'Fasilitas Warga',
-                subtitle: 'Daftar fasilitas baru',
-                gradientColors: const [
-                  AppColors.primaryBlueLight,
-                  AppColors.primaryBlue,
-                ],
-                onTap: () =>
-                    Navigator.pushNamed(context, AppRoutes.registerFasilitas),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _MenuTileCard(
+                  icon: Icons.location_on_rounded,
+                  iconAsset: 'assets/icons/verified-user.png',
+                  title: 'Presensi',
+                  subtitle:
+                      'Presensi ${kknState.targetDurationMinutes % 60 == 0 ? '${kknState.targetDurationMinutes ~/ 60} jam' : '${kknState.targetDurationMinutes} menit'} Area Wilayah KKN',
+                  gradientColors: const [
+                    AppColors.primaryBlueLight,
+                    AppColors.primaryBlue,
+                  ],
+                  onTap: () =>
+                      Navigator.pushNamed(context, AppRoutes.kknAttendance),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: _MenuTileCard(
+                  icon: Icons.assignment_rounded,
+                  iconAsset: 'assets/icons/activity.png',
+                  title: 'Program & Aksi KKN',
+                  subtitle: 'Proker, Logbook, Hasil',
+                  gradientColors: const [
+                    AppColors.primaryBlueLight,
+                    AppColors.primaryBlue,
+                  ],
+                  onTap: () =>
+                      Navigator.pushNamed(context, AppRoutes.dataProker),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _MenuTileCard(
+                  icon: Icons.rule_rounded,
+                  iconAsset: 'assets/icons/submission.png',
+                  title: 'Pengajuan Izin',
+                  subtitle: 'Izin/Sakit DPL',
+                  gradientColors: const [
+                    AppColors.primaryBlueLight,
+                    AppColors.primaryBlue,
+                  ],
+                  onTap: () =>
+                      Navigator.pushNamed(context, AppRoutes.pengajuanIzin),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: _MenuTileCard(
+                  icon: Icons.analytics_rounded,
+                  iconAsset: 'assets/icons/view.png',
+                  title: 'Monitoring Warga',
+                  subtitle: 'Pantau poin & aktivitas',
+                  gradientColors: const [
+                    AppColors.primaryBlueLight,
+                    AppColors.primaryBlue,
+                  ],
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    AppRoutes.monitoringWarga,
+                    arguments: 'monitoring',
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _MenuTileCard(
+                  icon: Icons.add_business_rounded,
+                  iconAsset: 'assets/icons/recycle-bin.png',
+                  title: 'Fasilitas Tata Kelola Sampah',
+                  subtitle: 'Daftar fasilitas baru',
+                  gradientColors: const [
+                    AppColors.primaryBlueLight,
+                    AppColors.primaryBlue,
+                  ],
+                  onTap: () =>
+                      Navigator.pushNamed(context, AppRoutes.registerFasilitas),
+                ),
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 10),
         // Logbook & Laporan Akhir Row
@@ -1139,95 +1150,108 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
 
   Widget _buildWargaSection(MahasiswaState state) {
     final user = ref.watch(authProvider).user;
-
-    // Tampilkan warga yang diaktivasi oleh mahasiswa ini berdasarkan mahasiswaId
-    final userId = user?.id ?? '';
-    final list = state.wargaList.where((w) {
-      if (!w.isActivated) return false;
-      if (userId.isEmpty) return false;
-      return w.mahasiswaId == userId;
-    }).toList();
-
-    // Remove duplicates based on wargaId
-    final uniqueMap = <String, WargaDampingan>{};
-    for (final w in list) {
-      uniqueMap[w.wargaId] = w;
-    }
-    final uniqueList = uniqueMap.values.toList();
+    final displayedWarga = state.wargaList.take(3).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Expanded(
-              child: Text(
-                'Warga Dampingan Terbaru',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            if (uniqueList.length > 5) ...[
-              const SizedBox(width: 8),
-              GestureDetector(
-                onTap: () =>
-                    Navigator.pushNamed(context, AppRoutes.daftarWarga),
-                child: const Text(
-                  'Lihat Semua',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primaryGreen,
-                  ),
-                ),
-              ),
-            ],
-          ],
+        const Text(
+          'Warga Dampingan Terbaru',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
-        const SizedBox(height: AppDimensions.sm),
-        if (uniqueList.isEmpty)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(AppDimensions.xl),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-            ),
-            child: const Column(
-              children: [
-                Icon(Icons.people_rounded, size: 48, color: AppColors.textHint),
-                SizedBox(height: 8),
-                Text(
-                  'Belum ada warga dampingan.\nDaftarkan warga pertama Anda!',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 13,
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.only(
+            left: 16,
+            right: 16,
+            bottom: 16,
+            top: 8,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (state.wargaList.length > 3)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: GestureDetector(
+                      onTap: () => Navigator.pushNamed(
+                        context,
+                        AppRoutes.monitoringWarga,
+                      ),
+                      child: const Text(
+                        'Lihat Selengkapnya',
+                        style: TextStyle(
+                          color: AppColors.primaryGreen,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-              ],
-            ),
-          )
-        else
-          ...uniqueList
-              .take(5)
-              .map(
-                (w) => _WargaCard(
-                  warga: w,
-                  currentUserName: user?.name ?? '',
-                  onTap: () => Navigator.pushNamed(
-                    context,
-                    AppRoutes.detailWarga,
-                    arguments: w,
+
+              if (displayedWarga.isEmpty)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade200),
                   ),
+                  child: const Column(
+                    children: [
+                      Icon(
+                        Icons.people_outline,
+                        size: 48,
+                        color: AppColors.textHint,
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Belum ada warga dampingan',
+                        style: TextStyle(color: AppColors.textSecondary),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                ListView.separated(
+                  padding: EdgeInsets.zero,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: displayedWarga.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  itemBuilder: (context, index) {
+                    final w = displayedWarga[index];
+                    return _WargaCard(
+                      warga: w,
+                      currentUserName: user?.name ?? '',
+                      onTap: () {
+                        Navigator.pushNamed(
+                          context,
+                          AppRoutes.detailWarga,
+                          arguments: w,
+                        );
+                      },
+                    );
+                  },
                 ),
-              ),
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -1235,7 +1259,6 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
   // ═══════════════════════════════════════════════════════════════════════════
   // Error State
   // ═══════════════════════════════════════════════════════════════════════════
-
   Widget _buildError(String message) {
     return Center(
       child: Padding(
@@ -1292,6 +1315,366 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
   // ═══════════════════════════════════════════════════════════════════════════
   // Linimasa KKN Aktif
   // ═══════════════════════════════════════════════════════════════════════════
+  Widget _buildKknStatsRow(BuildContext context, WidgetRef ref) {
+    final mhsState = ref.watch(mahasiswaControllerProvider);
+    final riwayatKkn = ref.watch(riwayatKknControllerProvider);
+
+    // 1. Hitung Presensi Terpenuhi & Tidak Memenuhi
+    final Set<String> hariTerpenuhiSet = {};
+    final Set<String> hariTidakMemenuhiSet = {};
+
+    for (final log in riwayatKkn.logs) {
+      if (log.type == KknHistoryType.gps) {
+        final d = log.timestamp.toLocal();
+        final dayKey =
+            '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+        final status = (log.statusKehadiran ?? '').toUpperCase();
+
+        if (log.isMemenuhiDurasi == true || status == 'HADIR_MEMENUHI') {
+          hariTerpenuhiSet.add(dayKey);
+        } else if (log.isMemenuhiDurasi == false ||
+            status == 'HADIR_TIDAK_MEMENUHI' ||
+            status == 'SELESAI_TELAT') {
+          hariTidakMemenuhiSet.add(dayKey);
+        }
+      }
+    }
+
+    hariTidakMemenuhiSet.removeAll(hariTerpenuhiSet);
+
+    int hariTerpenuhi = hariTerpenuhiSet.length;
+    int hariTidakMemenuhi = hariTidakMemenuhiSet.length;
+
+    // Fallback dari timesheetSummary jika logs riwayat masih kosong / loading
+    if (hariTerpenuhi == 0 && mhsState.timesheetSummary != null) {
+      final students = mhsState.timesheetSummary!['students'] as List?;
+      if (students != null && students.isNotEmpty) {
+        final student = students.first as Map<String, dynamic>;
+        final fromTimesheet =
+            (student['totalDaysAttended'] as num?)?.toInt() ?? 0;
+        if (fromTimesheet > 0) {
+          hariTerpenuhi = fromTimesheet;
+        }
+      }
+    }
+
+    // 2. Hitung Total Warga Dampingan
+    final user = ref.watch(authProvider).user;
+    final userRwSet = (user?.rw ?? '')
+        .split(',')
+        .map(
+          (s) => s
+              .replaceAll(RegExp(r'[^\d]'), '')
+              .replaceFirst(RegExp(r'^0+'), ''),
+        )
+        .where((s) => s.isNotEmpty)
+        .toSet();
+
+    final myWargaList = mhsState.wargaList.where((w) {
+      if (w.role.isNotEmpty && w.role.toUpperCase() != 'WARGA') return false;
+
+      final cleanWargaRw = w.rw
+          .trim()
+          .replaceAll(RegExp(r'[^\d]'), '')
+          .replaceFirst(RegExp(r'^0+'), '');
+      final isMyRw = userRwSet.isNotEmpty && userRwSet.contains(cleanWargaRw);
+
+      final isMyId = w.mahasiswaId.isNotEmpty && w.mahasiswaId == user?.id;
+      final isMyName =
+          w.pendampingName.trim().isNotEmpty &&
+          w.pendampingName.trim().toLowerCase() ==
+              (user?.name ?? '').trim().toLowerCase();
+      final isUnassignedInMyRw =
+          w.mahasiswaId.isEmpty && w.pendampingName.trim().isEmpty && isMyRw;
+
+      return isMyId || isMyName || isUnassignedInMyRw;
+    }).toList();
+
+    final totalWarga = myWargaList.length;
+
+    // 3. Hitung Tempat Sampah Aktif dari Riwayat Poin
+    final asyncHistory = ref.watch(pointHistoryProvider);
+    int wargaAktif = 0;
+
+    if (asyncHistory.hasValue && asyncHistory.value != null) {
+      for (final ph in asyncHistory.value!) {
+        final lowerDesc = ph.description.toLowerCase();
+        if (lowerDesc.contains('aktivasi')) {
+          wargaAktif++;
+        }
+      }
+    }
+
+    // 4. Hitung Data Pemanfaatan & Hasil Sampah
+    final pemanfaatanAsync = ref.watch(riwayatPemanfaatanProvider);
+    final laporanCount = pemanfaatanAsync.value?.length ?? 0;
+
+    final prokerAsync = ref.watch(prokerDataListProvider);
+    final prokerCount = prokerAsync.value?.length ?? 0;
+
+    // 5. Hitung Pengajuan Izin & Sakit (Terpisah)
+    final pengajuanAsync = ref.watch(pengajuanSummaryProvider);
+    final izinCount = pengajuanAsync.value?.izinCount ?? 0;
+    final sakitCount = pengajuanAsync.value?.sakitCount ?? 0;
+
+    // 6. Hitung Logbook Harian Mahasiswa
+    final logbookAsync = ref.watch(logbookListProvider);
+    final logbookCount = logbookAsync.value?.length ?? 0;
+
+    // 7. Total Poin Personal
+    final personalPoints = mhsState.dashboard?.contributionPoints ?? 0;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            onTap: () => setState(() => _isStatsVisible = !_isStatsVisible),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.bar_chart_rounded,
+                  color: AppColors.primaryGreen,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    'Statistik Aktivitas',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+                Icon(
+                  _isStatsVisible
+                      ? Icons.keyboard_arrow_up_rounded
+                      : Icons.keyboard_arrow_down_rounded,
+                  color: AppColors.textSecondary,
+                ),
+              ],
+            ),
+          ),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            child: !_isStatsVisible
+                ? const SizedBox.shrink()
+                : Column(
+                    children: [
+                      const SizedBox(height: 16),
+                      // ── Poin Personal Highlight Banner ─────────────────────────
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [AppColors.primaryGreen, Color(0xFF1B8044)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primaryGreen.withValues(
+                                alpha: 0.25,
+                              ),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.2),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.stars_rounded,
+                                color: Colors.white,
+                                size: 22,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Poin Personal KKN',
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  Text(
+                                    '$personalPoints PTS',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            InkWell(
+                              onTap: () =>
+                                  Navigator.pushNamed(context, AppRoutes.poin),
+                              borderRadius: BorderRadius.circular(8),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      'Riwayat',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.primaryGreen,
+                                      ),
+                                    ),
+                                    SizedBox(width: 2),
+                                    Icon(
+                                      Icons.chevron_right_rounded,
+                                      size: 14,
+                                      color: AppColors.primaryGreen,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+
+                      // ── Baris 1: Presensi Terpenuhi & Tidak Memenuhi ──────────
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _KknStatCard(
+                              topText: 'Presensi',
+                              middleText: '$hariTerpenuhi',
+                              bottomText: 'Terpenuhi',
+                              color: AppColors.primaryGreen,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _KknStatCard(
+                              topText: 'Presensi',
+                              middleText: '$hariTidakMemenuhi',
+                              bottomText: 'Tidak Memenuhi',
+                              color: AppColors.warningOrange,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+
+                      // ── Baris 2: Warga Dampingan & Tempat Sampah Aktif ─────────
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _KknStatCard(
+                              topText: 'Total',
+                              middleText: '$totalWarga',
+                              bottomText: 'Warga Dampingan',
+                              color: AppColors.primaryGreen,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _KknStatCard(
+                              topText: 'Tempat Sampah Warga',
+                              middleText: '$wargaAktif/$totalWarga',
+                              bottomText: 'Aktif Terpasang',
+                              color: AppColors.primaryBlueDark,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+
+                      // ── Baris 3: Pengajuan Izin & Pengajuan Sakit ───────────────
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _KknStatCard(
+                              topText: 'Pengajuan',
+                              middleText: '$izinCount Kali',
+                              bottomText: 'Izin Kegiatan',
+                              color: AppColors.warningYellow,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _KknStatCard(
+                              topText: 'Pengajuan',
+                              middleText: '$sakitCount Kali',
+                              bottomText: 'Izin Sakit',
+                              color: const Color(0xFFE11D48),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+
+                      // ── Baris 4: Pemanfaatan Sampah & Logbook Harian ────────────
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _KknStatCard(
+                              topText: 'Pemanfaatan Sampah',
+                              middleText: '$laporanCount Laporan',
+                              bottomText: prokerCount > 0
+                                  ? 'Dari $prokerCount Proker Aktif'
+                                  : 'Belum Ada Proker',
+                              color: const Color(0xFF0D9488),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _KknStatCard(
+                              topText: 'Logbook Harian',
+                              middleText: '$logbookCount Catatan',
+                              bottomText: 'Aktivitas KKN',
+                              color: const Color(0xFF6366F1),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildActiveTimelineCard() {
     final activeTimelineAsync = ref.watch(activeTimelineProvider);
 
@@ -1311,208 +1694,263 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
 
         final data = response.data!;
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Linimasa Saat Ini',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.border),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.02),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header: Minggu & Fase
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          '${data.tahapMinggu} • ${data.fase}',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.primaryGreen,
-                          ),
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              InkWell(
+                onTap: () =>
+                    setState(() => _isTimelineVisible = !_isTimelineVisible),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.timeline_rounded,
+                      color: AppColors.primaryGreen,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Linimasa Saat Ini',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
                         ),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 7,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryGreen.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                        child: const Text(
-                          'Berlangsung',
-                          style: TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.primaryGreen,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    data.tanggal,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: AppColors.textHint,
                     ),
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Progress Bar Fase
-                  if (response.activeFaseSummary != null) ...[
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Expanded(
-                          child: Text(
-                            'Progress Fase',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: AppColors.textSecondary,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '${response.activeFaseSummary!.progressPercentage}%',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primaryGreen,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: LinearProgressIndicator(
-                        value:
-                            response.activeFaseSummary!.progressPercentage /
-                            100,
-                        backgroundColor: AppColors.border,
-                        color: AppColors.primaryGreen,
-                        minHeight: 5,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                  ],
-
-                  // Kegiatan Utama
-                  const Text(
-                    'Kegiatan Utama',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
+                    Icon(
+                      _isTimelineVisible
+                          ? Icons.keyboard_arrow_up_rounded
+                          : Icons.keyboard_arrow_down_rounded,
                       color: AppColors.textSecondary,
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    data.kegiatanUtama,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-
-                  // Rekomendasi Aksi
-                  if (data.rekomendasiAksi.isNotEmpty) ...[
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryGreen.withValues(alpha: 0.04),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: AppColors.primaryGreen.withValues(alpha: 0.2),
-                        ),
-                      ),
-                      child: Column(
+                  ],
+                ),
+              ),
+              AnimatedSize(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                child: !_isTimelineVisible
+                    ? const SizedBox.shrink()
+                    : Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Row(
-                            children: [
-                              Icon(
-                                Icons.lightbulb_outline,
-                                size: 15,
-                                color: AppColors.primaryGreen,
-                              ),
-                              SizedBox(width: 5),
-                              Text(
-                                'Rekomendasi Aksi',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.primaryGreen,
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: AppColors.border),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.02),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          ...data.rekomendasiAksi.map(
-                            (aksi) => Padding(
-                              padding: const EdgeInsets.only(bottom: 2),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    '•',
-                                    style: TextStyle(
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Header: Minggu & Fase
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        '${data.tahapMinggu} • ${data.fase}',
+                                        style: const TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppColors.primaryGreen,
+                                        ),
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 7,
+                                        vertical: 3,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.primaryGreen
+                                            .withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(5),
+                                      ),
+                                      child: const Text(
+                                        'Berlangsung',
+                                        style: TextStyle(
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.primaryGreen,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  data.tanggal,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: AppColors.textHint,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+
+                                // Progress Bar Fase
+                                if (response.activeFaseSummary != null) ...[
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      const Expanded(
+                                        child: Text(
+                                          'Progress Fase',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: AppColors.textSecondary,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        '${response.activeFaseSummary!.progressPercentage}%',
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.primaryGreen,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(4),
+                                    child: LinearProgressIndicator(
+                                      value:
+                                          response
+                                              .activeFaseSummary!
+                                              .progressPercentage /
+                                          100,
+                                      backgroundColor: AppColors.border,
                                       color: AppColors.primaryGreen,
-                                      fontWeight: FontWeight.bold,
+                                      minHeight: 5,
                                     ),
                                   ),
-                                  const SizedBox(width: 5),
-                                  Expanded(
-                                    child: Text(
-                                      aksi,
-                                      style: const TextStyle(
-                                        fontSize: 11,
-                                        color: AppColors.textPrimary,
+                                  const SizedBox(height: 10),
+                                ],
+
+                                // Kegiatan Utama
+                                const Text(
+                                  'Kegiatan Utama',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  data.kegiatanUtama,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+
+                                // Rekomendasi Aksi
+                                if (data.rekomendasiAksi.isNotEmpty) ...[
+                                  Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primaryGreen.withValues(
+                                        alpha: 0.04,
                                       ),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: AppColors.primaryGreen
+                                            .withValues(alpha: 0.2),
+                                      ),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        const Row(
+                                          children: [
+                                            Icon(
+                                              Icons.lightbulb_outline,
+                                              size: 15,
+                                              color: AppColors.primaryGreen,
+                                            ),
+                                            SizedBox(width: 5),
+                                            Text(
+                                              'Rekomendasi Aksi',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w700,
+                                                color: AppColors.primaryGreen,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 6),
+                                        ...data.rekomendasiAksi.map(
+                                          (aksi) => Padding(
+                                            padding: const EdgeInsets.only(
+                                              bottom: 2,
+                                            ),
+                                            child: Row(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                const Text(
+                                                  '•',
+                                                  style: TextStyle(
+                                                    color:
+                                                        AppColors.primaryGreen,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 5),
+                                                Expanded(
+                                                  child: Text(
+                                                    aksi,
+                                                    style: const TextStyle(
+                                                      fontSize: 11,
+                                                      color:
+                                                          AppColors.textPrimary,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ],
-                              ),
+                              ],
                             ),
                           ),
                         ],
                       ),
-                    ),
-                  ],
-                ],
               ),
-            ),
-          ],
+            ],
+          ),
         );
       },
       loading: () => const Padding(
@@ -1535,94 +1973,6 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
 // ═══════════════════════════════════════════════════════════════════════════════
 // Subwidgets
 // ═══════════════════════════════════════════════════════════════════════════════
-
-class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({
-    required this.icon,
-    this.iconAsset,
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-
-  final IconData icon;
-  final String? iconAsset;
-  final String label;
-  final String value;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-            child: Column(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-                  ),
-                  child: iconAsset != null
-                      ? Image.asset(
-                          iconAsset!,
-                          width: 18,
-                          height: 18,
-                          color: color,
-                        )
-                      : Icon(icon, color: color, size: 18),
-                ),
-                const SizedBox(height: 5),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    value,
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w800,
-                      color: color,
-                    ),
-                    maxLines: 1,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    label,
-                    style: const TextStyle(
-                      fontSize: 10,
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class _MenuTileCard extends StatelessWidget {
   const _MenuTileCard({
@@ -1668,6 +2018,7 @@ class _MenuTileCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1708,26 +2059,32 @@ class _MenuTileCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textSecondary,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                        height: 1.2,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.visible,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textSecondary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -1751,174 +2108,198 @@ class _WargaCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final lastLog = warga.recentLogs.isNotEmpty ? warga.recentLogs.first : null;
+    final isActivated = warga.isActivated == true || warga.status == 'aktif';
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Material(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Row(
-              children: [
-                // Avatar
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: warga.needsReeducation
-                        ? AppColors.warningYellow.withValues(alpha: 0.15)
-                        : AppColors.primaryGreen.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Text(
-                      warga.wargaName.isNotEmpty
-                          ? warga.wargaName[0].toUpperCase()
-                          : '?',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: warga.needsReeducation
-                            ? AppColors.warningOrange
-                            : AppColors.primaryGreen,
-                      ),
+    String activator = '';
+    if (warga.pendampingName.isNotEmpty) {
+      activator = warga.pendampingName;
+    } else if (currentUserName.isNotEmpty) {
+      activator = currentUserName;
+    } else {
+      activator = 'Mahasiswa';
+    }
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 78),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            CircleAvatar(
+              radius: 20,
+              backgroundColor: AppColors.primaryGreen.withValues(alpha: 0.1),
+              child: Text(
+                (warga.wargaName.isNotEmpty ? warga.wargaName : 'W')[0]
+                    .toUpperCase(),
+                style: const TextStyle(
+                  color: AppColors.primaryGreen,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    warga.wargaName.isNotEmpty
+                        ? warga.wargaName
+                        : 'Nama tidak tersedia',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                const SizedBox(width: 10),
-
-                // Info
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              warga.wargaName,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 13,
-                              ),
-                              overflow: TextOverflow.ellipsis,
+                  if (isActivated) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.verified_rounded,
+                          size: 14,
+                          color: AppColors.primaryBlueDark,
+                        ),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            'Diaktivasi: $activator',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primaryBlueDark,
                             ),
-                          ),
-                          if (warga.needsReeducation)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.warningOrange.withValues(
-                                  alpha: 0.12,
-                                ),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: const Text(
-                                '⚠ Edukasi',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.warningOrange,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                      if (warga.isActivated) ...[
-                        const SizedBox(height: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEBF5FF),
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: const Color(0xFF90CDF4)),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.verified_rounded,
-                                size: 11,
-                                color: AppColors.primaryBlueDark,
-                              ),
-                              const SizedBox(width: 4),
-                              Flexible(
-                                child: Text(
-                                  warga.pendampingName.isNotEmpty
-                                      ? 'Diaktivasi: ${warga.pendampingName}'
-                                      : (currentUserName.isNotEmpty
-                                            ? 'Diaktivasi: $currentUserName'
-                                            : 'Diaktivasi Mahasiswa'),
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.primaryBlueDark,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
-                      const SizedBox(height: 2),
-                      Text(
-                        warga.address,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: AppColors.textSecondary,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (lastLog != null) ...[
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Icon(
-                              lastLog.isCorrect
-                                  ? Icons.check_circle_rounded
-                                  : Icons.cancel_rounded,
-                              size: 14,
-                              color: lastLog.isCorrect
-                                  ? AppColors.success
-                                  : AppColors.dangerRed,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${lastLog.category} ${lastLog.weightKg.toStringAsFixed(1)}kg',
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: AppColors.textSecondary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
+                    ),
+                  ],
+                  const SizedBox(height: 4),
+                  Text(
+                    warga.address.isNotEmpty
+                        ? warga.address
+                        : 'Alamat tidak tersedia',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.textHint,
+              size: 20,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
-                const Icon(
-                  Icons.chevron_right_rounded,
-                  color: AppColors.textHint,
-                  size: 18,
-                ),
-              ],
+class _KknStatCard extends StatelessWidget {
+  const _KknStatCard({
+    required this.topText,
+    required this.middleText,
+    required this.bottomText,
+    required this.color,
+  });
+
+  final String topText;
+  final String middleText;
+  final String bottomText;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              topText,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              style: const TextStyle(
+                fontSize: 10,
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
-        ),
+          const SizedBox(height: 4),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              middleText,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              bottomText,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              style: const TextStyle(
+                fontSize: 10,
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

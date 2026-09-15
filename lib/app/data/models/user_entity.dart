@@ -13,6 +13,7 @@ class UserEntity extends Equatable {
     this.kelurahan = '',
     this.rw = '',
     this.householdId,
+    this.komunitasId,
     this.fcmToken,
     this.fotoProfil,
     this.email,
@@ -43,6 +44,7 @@ class UserEntity extends Equatable {
   final String kelurahan;
   final String rw;
   final String? householdId; // diisi setelah GET /households/me
+  final String? komunitasId; // ID unik komunitas (cth: KOM-12345)
   final String? fcmToken;
   final String? fotoProfil;
   final String? email;
@@ -70,6 +72,7 @@ class UserEntity extends Equatable {
     String? kelurahan,
     String? rw,
     String? householdId,
+    String? komunitasId,
     String? fcmToken,
     String? fotoProfil,
     String? email,
@@ -97,6 +100,7 @@ class UserEntity extends Equatable {
       kelurahan: kelurahan ?? this.kelurahan,
       rw: rw ?? this.rw,
       householdId: householdId ?? this.householdId,
+      komunitasId: komunitasId ?? this.komunitasId,
       fcmToken: fcmToken ?? this.fcmToken,
       fotoProfil: fotoProfil ?? this.fotoProfil,
       email: email ?? this.email,
@@ -142,6 +146,7 @@ class UserEntity extends Equatable {
     kecamatan,
     kelurahan,
     rw,
+    komunitasId,
     pendampingName,
     kelompokName,
     dplName,

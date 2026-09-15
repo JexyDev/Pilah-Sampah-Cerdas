@@ -100,6 +100,8 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
 
     return allWarga.where((w) {
       if (w.role.isNotEmpty && w.role != 'WARGA') return false;
+      // Blokir warga yang baru registrasi awal dan belum mengisi form Gabung Komunitas
+      if (w.lifecycleState.toUpperCase() == 'REGISTERED') return false;
 
       final wRwClean = w.rw
           .replaceAll(RegExp(r'[^\d]'), '')
@@ -489,7 +491,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                         ),
                         child: Text(
                           userRw.isNotEmpty
-                              ? (userRw.startsWith('RW')
+                              ? (userRw.trim().toUpperCase().startsWith('RW')
                                     ? userRw
                                     : 'RW $userRw')
                               : '-',
@@ -679,11 +681,11 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                           Builder(
                             builder: (_) {
                               final rtStr = warga.rw.isNotEmpty
-                                  ? (warga.rw.startsWith('RW')
+                                  ? (warga.rw.trim().toUpperCase().startsWith('RW')
                                         ? warga.rw
                                         : 'RW ${warga.rw}')
                                   : (userRw.isNotEmpty
-                                        ? (userRw.startsWith('RW')
+                                        ? (userRw.trim().toUpperCase().startsWith('RW')
                                               ? userRw
                                               : 'RW $userRw')
                                         : '-');

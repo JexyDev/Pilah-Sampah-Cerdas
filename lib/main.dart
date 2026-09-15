@@ -222,7 +222,10 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
             ref.invalidate(riwayatKknControllerProvider);
             ref.invalidate(logbookListProvider);
             ref.invalidate(mahasiswaNotificationsProvider);
-            debugPrint('-> Mahasiswa kegiatan providers invalidated.');
+            ref.invalidate(totalPointsProvider);
+            ref.invalidate(pointHistoryProvider);
+            ref.invalidate(dailyPointsProvider);
+            debugPrint('-> Mahasiswa kegiatan & poin providers invalidated.');
           } else if (event == 'REFRESH_PROKER_MAHASISWA') {
             ref.invalidate(prokerDataListProvider);
             ref.invalidate(mahasiswaNotificationsProvider);
@@ -230,6 +233,9 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
           } else if (event == 'REFRESH_IZIN_MAHASISWA' ||
               event == 'REFRESH_POIN_MAHASISWA' ||
               event == 'REFRESH_PRESENSI_MAHASISWA') {
+            ref.invalidate(totalPointsProvider);
+            ref.invalidate(pointHistoryProvider);
+            ref.invalidate(dailyPointsProvider);
             ref.invalidate(mahasiswaNotificationsProvider);
             debugPrint('-> Mahasiswa providers refresh event received: $event');
           } else if (event == 'MULTI_POSKO_UPDATED') {
@@ -328,6 +334,9 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
           ref.invalidate(riwayatKknControllerProvider);
           ref.invalidate(logbookListProvider);
           ref.invalidate(mahasiswaNotificationsProvider);
+          ref.invalidate(totalPointsProvider);
+          ref.invalidate(pointHistoryProvider);
+          ref.invalidate(dailyPointsProvider);
         } else if (event == 'REFRESH_PROKER_MAHASISWA') {
           ref.invalidate(prokerDataListProvider);
           ref.invalidate(mahasiswaNotificationsProvider);

@@ -44,6 +44,7 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
           if (_activationFilterIndex == 2 && w.isActivated) return false;
 
           // Filter QC: Tampilkan HANYA warga si mahasiswa tersebut.
+          if (w.lifecycleState.toUpperCase() == 'REGISTERED') return false;
           final isMyCitizen = w.mahasiswaId == userId;
 
           return isMyCitizen;

@@ -46,7 +46,7 @@ class _RiwayatPetugasPemilahanViewState
         item['rtRwName']?.toString() ??
         item['assignedZone']?.toString();
     if (addr != null && addr.isNotEmpty && addr != '-') return addr;
-    return '-';
+    return '';
   }
 
   String _resolveWargaName(Map<String, dynamic> item) {
@@ -145,7 +145,6 @@ class _RiwayatPetugasPemilahanViewState
                     item['binCode'].toString().isNotEmpty &&
                     item['binCode'] != 'N/A')
                   _infoRow('Tempat Sampah', item['binCode'].toString()),
-                _infoRow('Lokasi Wilayah', alamat),
                 _infoRow('Status', 'SELESAI DIVERIFIKASI'),
                 if (item['points'] != null && (item['points'] as num) > 0)
                   _infoRow('Poin Diperoleh', '+${item['points']} Pts'),

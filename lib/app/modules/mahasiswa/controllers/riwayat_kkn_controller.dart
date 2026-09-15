@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../views/riwayat_kkn_view.dart'; // Import models from view
 
@@ -46,33 +47,38 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
 
       final List<KknHistoryLog> parsedLogs = [];
 
-      // 1. Ambil data Izin
+      // 1. Ambil data Izin & Sakit (Aktivitas Non-Poin)
       try {
         final izinList = await kknRepo.getPengajuanIzin();
         for (final izin in izinList) {
-          final kategori = izin['kategori']?.toString() ?? 'Izin';
-          final status = izin['status']?.toString().toUpperCase();
+          final rawKategori = izin['kategori']?.toString() ?? 'Izin';
+          final status = (izin['status']?.toString() ?? '').toUpperCase();
           final timestampStr =
               izin['createdAt']?.toString() ?? DateTime.now().toIso8601String();
           final timestamp = (DateTime.tryParse(timestampStr) ?? DateTime.now())
               .toLocal();
 
-          String title = 'Pengajuan Izin';
-          String subtitle = 'Mengajukan $kategori';
+          final isSakit = rawKategori.toUpperCase().contains('SAKIT');
+          final jenis = isSakit ? 'Sakit' : 'Izin';
+          final labelKategori = isSakit ? 'SAKIT' : 'IZIN';
+
+          String title;
+          String subtitle;
           bool? isGpsActive;
 
-          if (status == 'APPROVED') {
-            title = 'Pengajuan Izin Disetujui';
-            subtitle = 'DPL telah menyetujui pengajuan $kategori Anda';
-            isGpsActive = true; // Use this to color it blue/green
-          } else if (status == 'REJECTED') {
-            title = 'Pengajuan Izin Ditolak';
-            subtitle = 'DPL menolak pengajuan $kategori Anda';
-            isGpsActive = false; // Use this to color it red
+          if (status == 'APPROVED' || status == 'DISETUJUI') {
+            title = 'Pengajuan $jenis Disetujui';
+            subtitle = 'DPL telah menyetujui pengajuan $labelKategori Anda';
+            isGpsActive = true; // Indikator ACC (hijau)
+          } else if (status == 'REJECTED' || status == 'DITOLAK') {
+            title = 'Pengajuan $jenis Ditolak';
+            subtitle = 'DPL menolak pengajuan $labelKategori Anda';
+            isGpsActive = false; // Indikator ditolak (merah)
           } else {
-            title = 'Pengajuan Izin (Menunggu)';
-            subtitle = 'Pengajuan $kategori Anda sedang menunggu review DPL';
-            isGpsActive = null;
+            title = 'Pengajuan $jenis (Menunggu)';
+            subtitle =
+                'Pengajuan $labelKategori Anda sedang menunggu review DPL';
+            isGpsActive = null; // Indikator pending (oranye)
           }
 
           parsedLogs.add(
@@ -81,7 +87,7 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
               subtitle: subtitle,
               timestamp: timestamp,
               type: KknHistoryType.izin,
-              points: null,
+              points: null, // Murni Non-Poin
               isGpsActive: isGpsActive,
             ),
           );
@@ -166,7 +172,7 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
                           DateTime.now())
                       .toLocal(),
               type: type,
-              points: data['points'] as int?,
+              points: null, // Murni Non-Poin di Riwayat Aktivitas
               isGpsActive: data['isGpsActive'] as bool?,
               statusKehadiran:
                   data['statusKehadiran']?.toString() ??
@@ -234,7 +240,7 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
                 subtitle: 'Kegiatan Selesai',
                 timestamp: timestamp,
                 type: KknHistoryType.gps,
-                points: null,
+                points: null, // Murni Non-Poin
                 isGpsActive: true,
                 statusKehadiran: data['attendanceStatus']?.toString(),
                 durationFormatted: null,
@@ -252,32 +258,117 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
         debugPrint('[RiwayatKknNotifier] getKegiatanAktif error: $e');
       }
 
-      // 5. Ambil data Pengajuan Program Kerja
+      // 5. Ambil data Logbook Harian (Agar logbook muncul di tab Riwayat Non-Poin terlepas dari limit poin)
       try {
-        final programList = await kknRepo.getProgramKerja();
-        for (final program in programList) {
-          final title = 'Program: ${program['judul']?.toString() ?? 'Kerja'}';
-          final status = program['status']?.toString().toUpperCase();
-          final isGpsActive = status == 'APPROVED'
-              ? true
-              : (status == 'REJECTED' ? false : null);
-          final subtitle = status == 'APPROVED'
-              ? 'Disetujui DPL'
-              : (status == 'REJECTED' ? 'Ditolak DPL' : 'Menunggu Review');
+        final logbookList = await kknRepo.getLogbookList();
+        for (final lb in logbookList) {
+          const title = 'Logbook Harian';
+          final desc =
+              lb['deskripsi']?.toString() ?? 'Laporan aktivitas harian';
+          final dateStr =
+              lb['tanggalKegiatan']?.toString() ??
+              lb['createdAt']?.toString() ??
+              '';
+          final timestamp =
+              DateTime.tryParse(dateStr)?.toLocal() ?? DateTime.now();
+
           parsedLogs.add(
             KknHistoryLog(
               title: title,
-              subtitle: subtitle,
-              timestamp:
-                  (DateTime.tryParse(program['createdAt']?.toString() ?? '') ??
-                          DateTime.now())
-                      .toLocal(),
-              type: KknHistoryType.izin,
-              points: null,
-              isGpsActive: isGpsActive,
-              statusKehadiran: status,
+              subtitle: desc,
+              timestamp: timestamp,
+              type: KknHistoryType.aktivasi,
+              points: null, // Murni Non-Poin di tab Riwayat
+              statusKehadiran: lb['statusApproval']?.toString() ?? 'PENDING',
+              rawData: lb,
             ),
           );
+        }
+      } catch (e) {
+        debugPrint('[RiwayatKknNotifier] getLogbookList error: $e');
+      }
+
+      // Note: Program Kerja yang berpoin dipusatkan di Page Poin (MahasiswaPoinView), bukan di Page Riwayat.
+
+      // 6. Ambil data Laporan Pemanfaatan Sampah & Catat Hasil Panen (Aktivitas Non-Poin)
+      try {
+        final pemanfaatanList = await kknRepo.getPemanfaatanLogs();
+        for (final item in pemanfaatanList) {
+          final teknologi =
+              item['teknologi']?.toString() ?? 'Pemanfaatan Sampah';
+          final bahanBaku = item['bahanBaku']?.toString().trim() ?? '';
+          final rawBerat =
+              item['volumeBahanBaku'] ??
+              item['jumlahBahanMasukKg'] ??
+              item['beratInputKg'] ??
+              item['beratBahan'];
+          final num? beratNum = (rawBerat is num)
+              ? rawBerat
+              : (rawBerat != null ? num.tryParse(rawBerat.toString()) : null);
+          final String beratFormatted = (beratNum != null && beratNum > 0)
+              ? (beratNum % 1 == 0
+                    ? '${beratNum.toInt()}'
+                    : beratNum.toStringAsFixed(1))
+              : '';
+
+          final hasil = item['hasil'];
+          final nilaiEkonomi = item['nilaiEkonomi'] ?? item['luasLahanM2'];
+          final dateStr =
+              item['createdAt']?.toString() ??
+              item['tanggal']?.toString() ??
+              '';
+          final timestamp = (DateTime.tryParse(dateStr) ?? DateTime.now())
+              .toLocal();
+          final id = item['id']?.toString() ?? '';
+
+          final hasHarvest =
+              (hasil is num && hasil > 0) || (item['hasHarvested'] == true);
+          if (hasHarvest) {
+            final hasilNum = (hasil is num)
+                ? hasil
+                : num.tryParse(hasil.toString()) ?? 0;
+            final hasilStr = hasilNum % 1 == 0
+                ? '${hasilNum.toInt()}'
+                : hasilNum.toStringAsFixed(1);
+            final subText = (nilaiEkonomi != null && (nilaiEkonomi as num) > 0)
+                ? 'Hasil panen: $hasilStr kg • Nilai: Rp ${NumberFormat('#,###').format(nilaiEkonomi)}'
+                : 'Hasil panen: $hasilStr kg';
+            parsedLogs.add(
+              KknHistoryLog(
+                title: 'Panen Hasil: $teknologi',
+                subtitle: subText,
+                timestamp: timestamp,
+                type: KknHistoryType.laporan,
+                points: null, // Murni Non-Poin
+                isGpsActive: true,
+                scheduleId: 'panen_$id',
+                rawData: item,
+              ),
+            );
+          } else {
+            String subText;
+            if (bahanBaku.isNotEmpty && beratFormatted.isNotEmpty) {
+              subText = 'Bahan: $bahanBaku ($beratFormatted kg)';
+            } else if (bahanBaku.isNotEmpty) {
+              subText = 'Bahan: $bahanBaku';
+            } else if (beratFormatted.isNotEmpty) {
+              subText = 'Bahan baku: $beratFormatted kg';
+            } else {
+              subText = 'Pencatatan inovasi olahan sampah';
+            }
+            parsedLogs.add(
+              KknHistoryLog(
+                title: 'Laporan Pemanfaatan: $teknologi',
+                subtitle: subText,
+                timestamp: timestamp,
+                type: KknHistoryType.laporan,
+                points: null, // Murni Non-Poin
+                isGpsActive: true,
+                scheduleId: 'pemanfaatan_$id',
+                rawData: item,
+              ),
+            );
+          }
         }
       } catch (_) {}
 

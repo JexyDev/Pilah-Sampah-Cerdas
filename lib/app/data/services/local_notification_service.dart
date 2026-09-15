@@ -51,32 +51,23 @@ class LocalNotificationService {
     debugPrint('[LocalNotif] Initialized successfully');
   }
 
-  /// Jadwalkan pengingat jam 07:00 dan 16:00
+  /// Jadwalkan pengingat sore (16:00)
   Future<void> scheduleDailyReminders() async {
     if (!_isInitialized) return;
 
     // Batalkan jadwal yang mungkin ada sebelumnya
     await _notificationsPlugin.cancelAll();
 
-    // 1. Pengingat Pagi (07:00)
-    await _scheduleDailyAtTime(
-      id: 1,
-      title: 'Jadwal Buang Sampah Pagi! 🌅',
-      body: 'Jangan lupa buang sampah hari ini untuk dapatkan full poin.',
-      hour: 7,
-      minute: 0,
-    );
-
-    // 2. Pengingat Sore (16:00)
+    // Pengingat Sore (16:00) untuk Petugas Pemilahan
     await _scheduleDailyAtTime(
       id: 2,
-      title: 'Jadwal Buang Sampah Sore! 🌇',
-      body: 'Sudah buang sampah? Yuk buang sekarang sebelum jadwal terlewat.',
+      title: 'Cek Tempat Sampah Warga! 🚮',
+      body: 'Waktunya mengecek dan verifikasi status tempat sampah warga di aplikasi.',
       hour: 16,
       minute: 0,
     );
 
-    debugPrint('[LocalNotif] Reminders scheduled for 07:00 and 16:00');
+    debugPrint('[LocalNotif] Reminders scheduled for 16:00');
   }
 
   Future<void> _scheduleDailyAtTime({

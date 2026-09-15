@@ -163,10 +163,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
       await _restoreNotificationSyncState(user);
 
       state = state.copyWith(user: user, isLoading: false);
+      
+      // Ambil data profil lengkap (termasuk household) dari server SEBELUM return
+      // untuk menjamin status komunitas sinkron 100% saat masuk Beranda
+      await fetchProfile();
+
       // Daftarkan FCM token setelah login berhasil
       _registerFcmToken();
       NotificationEngine().scheduleRoleBasedNotifications(user.role.apiValue);
       return true;
+
     } on AuthException catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -195,9 +201,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
       await _restoreNotificationSyncState(user);
 
       state = state.copyWith(user: user, isLoading: false);
-      // Daftarkan FCM token setelah register berhasil
+      
+      // Ambil data profil lengkap (termasuk household) dari server SEBELUM return
+      // untuk menjamin status komunitas sinkron 100% saat masuk Beranda
+      await fetchProfile();
+
+      // Daftarkan FCM token setelah login berhasil
       _registerFcmToken();
+      NotificationEngine().scheduleRoleBasedNotifications(user.role.apiValue);
       return true;
+
     } on AuthException catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -252,8 +265,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
       await _restoreNotificationSyncState(user);
 
       state = state.copyWith(user: user, isLoading: false);
+      
+      // Ambil data profil lengkap (termasuk household) dari server SEBELUM return
+      // untuk menjamin status komunitas sinkron 100% saat masuk Beranda
+      await fetchProfile();
+
+      // Daftarkan FCM token setelah login berhasil
       _registerFcmToken();
+      NotificationEngine().scheduleRoleBasedNotifications(user.role.apiValue);
       return true;
+
     } on AuthException catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -348,7 +369,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
         for (final key in keys) {
           if (key.startsWith('read_notifs_') ||
               key.startsWith('fcm_notifs_') ||
-              key.startsWith('mark_all_notifs_')) {
+              key.startsWith('mark_all_notifs_') ||
+              key.startsWith('delete_all_notifs_') ||
+              key.startsWith('notif_store_v2_') ||
+              key.startsWith('kkn_')) {
             await prefs.remove(key);
           }
         }
@@ -398,6 +422,21 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(user: user);
     } catch (_) {
       // Abaikan jika gagal, tetap gunakan data cache
+    }
+  }
+
+  /// Mendaftarkan komunitas (generate komunitas_id unik).
+  Future<bool> registerKomunitas() async {
+    try {
+      final komunitasId = await _authRepository.registerKomunitas();
+      if (state.user != null) {
+        state = state.copyWith(
+          user: state.user!.copyWith(komunitasId: komunitasId),
+        );
+      }
+      return true;
+    } catch (e) {
+      return false;
     }
   }
 

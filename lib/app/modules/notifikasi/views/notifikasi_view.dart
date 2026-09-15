@@ -49,9 +49,11 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
-        backgroundColor: AppColors.primaryGreen,
-        foregroundColor: Colors.white,
-        elevation: 0,
+        backgroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: AppColors.primaryGreen),
+        shadowColor: Colors.black12,
+        foregroundColor: AppColors.primaryGreen,
+        elevation: 1,
         leadingWidth: 40,
         titleSpacing: 0,
         title: const FittedBox(
@@ -59,7 +61,7 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
           alignment: Alignment.centerLeft,
           child: Text(
             'Notifikasi Warga',
-            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: AppColors.primaryGreen),
           ),
         ),
         actions: [
@@ -67,7 +69,7 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
             visualDensity: VisualDensity.compact,
             padding: const EdgeInsets.all(6),
             constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-            icon: const Icon(Icons.delete_sweep_rounded, color: Colors.white),
+            icon: const Icon(Icons.delete_sweep_rounded, color: AppColors.primaryGreen),
             tooltip: 'Hapus Semua Notifikasi',
             onPressed: markState.isLoading
                 ? null
@@ -101,7 +103,7 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
             visualDensity: VisualDensity.compact,
             padding: const EdgeInsets.all(6),
             constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-            icon: const Icon(Icons.done_all_rounded, color: Colors.white),
+            icon: const Icon(Icons.done_all_rounded, color: AppColors.primaryGreen),
             tooltip: 'Tandai Semua Dibaca',
             onPressed: markState.isLoading
                 ? null
@@ -114,7 +116,7 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
             visualDensity: VisualDensity.compact,
             padding: const EdgeInsets.all(6),
             constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-            icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+            icon: const Icon(Icons.refresh_rounded, color: AppColors.primaryGreen),
             onPressed: () => ref.invalidate(wargaNotificationsProvider),
           ),
           const SizedBox(width: 4),
@@ -137,6 +139,10 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
                       showCheckmark: false,
                       visualDensity: VisualDensity.compact,
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       label: Text(
                         filter,
                         style: TextStyle(
@@ -147,7 +153,14 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
                       ),
                       selected: isSel,
                       selectedColor: AppColors.primaryGreen,
-                      backgroundColor: AppColors.backgroundCanvas,
+                      backgroundColor: Colors.white,
+                      side: BorderSide(
+                        color: isSel ? AppColors.primaryGreen : AppColors.border,
+                        width: 1,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6),
+                      ),
                       onSelected: (val) {
                         if (val) setState(() => _selectedFilter = filter);
                       },

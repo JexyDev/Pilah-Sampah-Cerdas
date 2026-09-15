@@ -5,6 +5,7 @@ import '../../auth/controllers/auth_controller.dart';
 
 import '../../../data/services/firebase_notification_service.dart';
 import '../../../data/services/local_notification_cache_service.dart';
+import '../../../data/services/notification_engine.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/utils/input_sanitizer.dart';
 
@@ -107,7 +108,13 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
   final role = user.role.name;
   List<NotificationEntity> list = [];
   try {
-    list = await repo.getNotifications();
+    final raw = await repo.getNotifications();
+    // ponytail: backend treats MAHASISWA_KKN as admin/petugas and returns
+    // area-scoped BinResetRequests (req-*) and critical bins (crit-bin-*)
+    // shared across all users in the same RW. Filter them out to prevent
+    // cross-account notification leak. Upgrade: fix backend to scope per-user.
+    list = raw.where((n) =>
+        !n.id.startsWith('req-') && !n.id.startsWith('crit-bin-')).toList();
   } catch (_) {
     list = [];
   }
@@ -122,7 +129,23 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
     final pointHistory = await pointRepo.getPointHistoryByUser(userId);
 
     for (final ph in pointHistory) {
-      if (ph.points != 0) {
+      if (ph.points > 0) {
+        final descLower = ph.description.toLowerCase();
+        final katLower = (ph.kategori ?? '').toLowerCase();
+        // Skip aktivitas penalti/pelanggaran dan non-poin (pemanfaatan dan panen)
+        if (katLower.contains('penalty') ||
+            descLower.contains('penalti') ||
+            descLower.contains('punishment') ||
+            descLower.contains('pelanggaran')) {
+          continue;
+        }
+        if (descLower.contains('pemanfaatan') ||
+            katLower.contains('pemanfaatan') ||
+            descLower.contains('panen') ||
+            katLower.contains('panen')) {
+          continue;
+        }
+
         final notifId = 'point_${ph.id}';
         final isRead =
             readSet.contains(notifId) ||
@@ -134,27 +157,85 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
               ph.createdAt,
             );
 
-        final isPunishment = ph.points < 0;
-
         final cleanDesc = InputSanitizer.cleanSystemMessage(ph.description);
         list.add(
           NotificationEntity(
             id: notifId,
-            type: isPunishment ? 'PUNISHMENT' : 'POIN_KKN',
-            title: isPunishment ? 'Penalti Poin KKN' : 'Poin KKN Bertambah!',
+            type: 'POIN_KKN',
+            title: 'Poin KKN Bertambah!',
             desc: cleanDesc.isNotEmpty
                 ? cleanDesc
-                : (isPunishment
-                      ? 'Poin KKN Anda dikurangi ${ph.points}.'
-                      : 'Anda mendapatkan +${ph.points} poin.'),
+                : 'Anda mendapatkan +${ph.points} poin.',
             isRead: isRead,
             time: ph.createdAt
                 .toLocal()
                 .toIso8601String()
                 .substring(0, 16)
                 .replaceAll('T', ' '),
-            icon: isPunishment ? 'warning' : 'star',
+            icon: 'star',
             createdAt: ph.createdAt,
+          ),
+        );
+      }
+    }
+  } catch (_) {}
+
+  // Tambahkan notifikasi laporan pemanfaatan & catat panen (Non-Poin)
+  try {
+    final kknRepo = ref.read(kknRepositoryProvider);
+    final pemanfaatanList = await kknRepo.getPemanfaatanLogs();
+    for (final item in pemanfaatanList) {
+      final teknologi =
+          item['teknologi']?.toString() ?? 'Pemanfaatan Sampah';
+      final hasHarvest = (item['hasil'] is num && item['hasil'] > 0);
+      final dateStr = item['createdAt']?.toString() ??
+          item['tanggal']?.toString() ??
+          DateTime.now().toIso8601String();
+      final dt = DateTime.tryParse(dateStr) ?? DateTime.now();
+      final id = item['id']?.toString() ?? '';
+
+      if (hasHarvest) {
+        final notifId = 'panen_$id';
+        final isRead = readSet.contains(notifId) ||
+            dt.millisecondsSinceEpoch <= markAllTimestamp ||
+            LocalNotificationCacheService().isRead(userId, role, notifId, dt);
+        list.add(
+          NotificationEntity(
+            id: notifId,
+            type: 'PANEN_HASIL',
+            title: 'Catat Hasil Panen Terkirim 🌿',
+            desc:
+                'Aksi panen $teknologi (${item['hasil']} kg) tercatat di riwayat KKN.',
+            isRead: isRead,
+            time: dt
+                .toLocal()
+                .toIso8601String()
+                .substring(0, 16)
+                .replaceAll('T', ' '),
+            icon: 'eco',
+            createdAt: dt,
+          ),
+        );
+      } else {
+        final notifId = 'pemanfaatan_$id';
+        final isRead = readSet.contains(notifId) ||
+            dt.millisecondsSinceEpoch <= markAllTimestamp ||
+            LocalNotificationCacheService().isRead(userId, role, notifId, dt);
+        list.add(
+          NotificationEntity(
+            id: notifId,
+            type: 'PEMANFAATAN_SAMPAH',
+            title: 'Laporan Pemanfaatan Terkirim ♻️',
+            desc:
+                'Laporan aksi pemanfaatan $teknologi berhasil tercatat di riwayat KKN.',
+            isRead: isRead,
+            time: dt
+                .toLocal()
+                .toIso8601String()
+                .substring(0, 16)
+                .replaceAll('T', ' '),
+            icon: 'recycling',
+            createdAt: dt,
           ),
         );
       }
@@ -216,6 +297,80 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
     }
   } catch (_) {}
 
+  // Tambahkan notifikasi pembaruan Program Kerja (Proker) & Skor Kelompok
+  try {
+    final kknRepo = ref.read(kknRepositoryProvider);
+    final prokerList = await kknRepo.getProgramKerja();
+    for (final proker in prokerList) {
+      final status = (proker['status'] ??
+              proker['statusPelaksanaan'] ??
+              proker['statusUsulan'] ??
+              '')
+          .toString()
+          .toUpperCase();
+      final judul = proker['judul']?.toString() ?? 'Program Kerja';
+      final prokerId = proker['id']?.toString() ?? '';
+      if (status.isNotEmpty) {
+        String notifTitle = 'Program Kerja: $judul';
+        String notifDesc = '';
+        String notifType = 'PROKER';
+
+        if (status == 'SELESAI') {
+          notifTitle = '[Poin Kelompok] Proker Selesai! 🎉';
+          notifDesc =
+              'Program kerja "$judul" telah selesai (+2 PTS Poin Kelompok | Total: +6 PTS).';
+          notifType = 'PROKER_SELESAI';
+        } else if (status == 'SEDANG_BERJALAN' ||
+            status == 'BERJALAN' ||
+            status == 'BERLANGSUNG') {
+          notifTitle = '[Poin Kelompok] Proker Sedang Berjalan 🏃‍♂️';
+          notifDesc =
+              'Program kerja "$judul" sedang dilaksanakan (+2 PTS Poin Kelompok | Total: +4 PTS).';
+          notifType = 'PROKER_BERJALAN';
+        } else if (status == 'DISETUJUI' || status == 'APPROVED') {
+          notifTitle = '[Poin Kelompok] Proker Disetujui DPL ✅';
+          notifDesc =
+              'Program kerja "$judul" telah disetujui DPL (+2 PTS Poin Kelompok).';
+          notifType = 'PROKER_DISETUJUI';
+        } else if (status == 'DITOLAK' || status == 'REJECTED') {
+          notifTitle = 'Proker Ditolak DPL ❌';
+          notifDesc = 'Program kerja "$judul" ditolak oleh DPL.';
+          notifType = 'PROKER_DITOLAK';
+        } else {
+          continue;
+        }
+
+        final dt = DateTime.tryParse(
+              proker['updatedAt']?.toString() ??
+                  proker['createdAt']?.toString() ??
+                  '',
+            ) ??
+            DateTime.now();
+        final notifId = 'proker_${prokerId}_$status';
+        final isRead = readSet.contains(notifId) ||
+            dt.millisecondsSinceEpoch <= markAllTimestamp ||
+            LocalNotificationCacheService().isRead(userId, role, notifId, dt);
+
+        list.add(
+          NotificationEntity(
+            id: notifId,
+            type: notifType,
+            title: notifTitle,
+            desc: notifDesc,
+            isRead: isRead,
+            time: dt
+                .toLocal()
+                .toIso8601String()
+                .substring(0, 16)
+                .replaceAll('T', ' '),
+            icon: 'assignment_turned_in',
+            createdAt: dt,
+          ),
+        );
+      }
+    }
+  } catch (_) {}
+
   final List<NotificationEntity> result = [];
 
   for (final notif in list) {
@@ -259,6 +414,17 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
     final notifKey = 'mhs_${userId}_${finalNotif.id}';
     if (!notif.isRead && !_mhsShownNotifIds.contains(notifKey)) {
       _mhsShownNotifIds.add(notifKey);
+      if (finalNotif.type.startsWith('PROKER_') ||
+          finalNotif.type == 'IZIN' ||
+          finalNotif.type == 'PEMANFAATAN_SAMPAH' ||
+          finalNotif.type == 'PANEN_HASIL') {
+        NotificationEngine().showGenericNotification(
+          id: finalNotif.id.hashCode.remainder(100000),
+          title: finalNotif.title,
+          body: finalNotif.desc,
+          payload: 'ROUTE_HISTORY',
+        );
+      }
     }
   }
 
@@ -281,6 +447,23 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
       result.add(fn);
     }
   } catch (_) {}
+
+  // Gabungkan notifikasi dari LocalNotificationCacheService (submit form feedback)
+  final localNotifs = LocalNotificationCacheService().getNotifications(
+    userId,
+    role,
+  );
+  for (final ln in localNotifs) {
+    if (result.any(
+      (n) =>
+          n.id == ln.id ||
+          (n.title == ln.title && n.desc == ln.desc && n.type == ln.type),
+    )) {
+      continue;
+    }
+    if (!_isMahasiswaNotification(ln)) continue;
+    result.add(ln);
+  }
 
   final deleteAllTimestamp =
       prefs.getInt('delete_all_notifs_${userId}_$role') ?? 0;

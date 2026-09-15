@@ -3,44 +3,46 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../../core/values/app_colors.dart';
-import '../../../data/providers/repository_providers.dart';
 import '../../../data/models/point_history_entity.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../riwayat/controllers/riwayat_controller.dart'
     show pointHistoryProvider;
 import '../controllers/mahasiswa_controller.dart';
 import '../controllers/riwayat_kkn_controller.dart';
+import '../controllers/kelompok_kkn_controller.dart';
+import 'data_proker_view.dart' show prokerDataListProvider;
 import '../../../core/utils/input_sanitizer.dart';
 
-final pengajuanIzinCountProvider = FutureProvider.autoDispose<int>((ref) async {
-  try {
-    final repo = ref.read(kknRepositoryProvider);
-    final list = await repo.getPengajuanIzin();
-    final approvedList = list.where((item) {
-      if (item is Map<String, dynamic>) {
-        final status = (item['status'] ?? '').toString().toUpperCase();
-        return status == 'APPROVED' || status == 'DISETUJUI';
-      }
-      return true;
-    }).toList();
-    return approvedList.length;
-  } catch (e) {
-    return 0;
-  }
-});
-
-/// Halaman Poin KKN Mahasiswa — Mengikuti gaya visual Page Poin Warga:
-/// Header Putih Bersih, Total Poin KKN + Status Ranking, Stats 3 Kolom,
-/// Banner Panduan Poin, dan List Riwayat Perolehan Poin KKN.
+/// Halaman Poin KKN Mahasiswa — Menampilkan:
+/// 1. Poin Personal Mahasiswa (Presensi, Durasi, Logbook Harian)
+/// 2. Skor Kelompok Proker KKN (Langsung dari backend totalGroupPoints atau 0.6 x Proker)
+/// 3. Riwayat Perolehan Poin KKN (Bebas dari aktivitas non-poin pemanfaatan/panen)
 class MahasiswaPoinView extends ConsumerWidget {
   const MahasiswaPoinView({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final mhsState = ref.watch(mahasiswaControllerProvider);
     final user = ref.watch(authProvider).user;
 
-    final personalPoints = mhsState.dashboard?.contributionPoints ?? 0;
+    final historyAsync = ref.watch(pointHistoryProvider);
+    
+    int totalProkerPoints = 0;
+    int calculatedPersonalPoints = 0;
+    
+    // 1. Dapatkan poin Proker murni & hitung poin personal (Checkin, Checkout, Logbook, Penalty)
+    historyAsync.whenData((history) {
+      for (final log in history) {
+        final kat = (log.kategori ?? '').toUpperCase();
+        if (kat == 'KKN_PROKER') {
+          totalProkerPoints += log.points;
+        } else if (kat != 'REDUKSI_TONASE' && log.points > 0) {
+          calculatedPersonalPoints += log.points;
+        }
+      }
+    });
+
+    final personalPoints = calculatedPersonalPoints;
+    final int groupScoreProker = totalProkerPoints;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -49,31 +51,34 @@ class MahasiswaPoinView extends ConsumerWidget {
           await ref.read(mahasiswaControllerProvider.notifier).fetchAll();
           if (user != null) {
             ref.invalidate(pointHistoryProvider);
+            ref.invalidate(prokerDataListProvider);
+            ref.invalidate(kelompokKknProvider);
             await ref.read(riwayatKknControllerProvider.notifier).refresh();
-            ref.invalidate(pengajuanIzinCountProvider);
           }
         },
         color: AppColors.primaryGreen,
         child: CustomScrollView(
           slivers: [
-            // ── 1. Header Putih Bersih ──────────────────────────────
+            // ── 1. Header Putih Bersih dengan Poin Personal & Skor Kelompok ──
             SliverToBoxAdapter(
-              child: _buildHeader(context, user?.name ?? '-', personalPoints),
+              child: _buildHeader(
+                context,
+                user?.name ?? '-',
+                personalPoints,
+                groupScoreProker,
+                totalProkerPoints,
+              ),
             ),
 
             SliverPadding(
               padding: const EdgeInsets.all(16),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  // ── 2. Stats 3 Kolom ──────────────────────────────
-                  _buildStatsRow(mhsState, ref),
-                  const SizedBox(height: 16),
-
-                  // ── 3. Info Banner Poin KKN ─────────────────────────
+                  // ── 2. Info Banner Poin KKN ─────────────────────────
                   _buildInfoBanner(),
                   const SizedBox(height: 20),
 
-                  // ── 4. Judul & List Riwayat Poin ────────────────────
+                  // ── 3. Judul & List Riwayat Poin ────────────────────
                   const Text(
                     'Riwayat Perolehan Poin KKN',
                     style: TextStyle(
@@ -84,7 +89,9 @@ class MahasiswaPoinView extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
                   if (user != null)
-                    _buildPoinHistoryList(ref.watch(pointHistoryProvider))
+                    _buildPoinHistoryList(
+                      ref.watch(pointHistoryProvider),
+                    )
                   else
                     const SizedBox.shrink(),
                   const SizedBox(height: 40),
@@ -97,23 +104,29 @@ class MahasiswaPoinView extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context, String name, int personalPoints) {
+  Widget _buildHeader(
+    BuildContext context,
+    String name,
+    int personalPoints,
+    int groupScoreProker,
+    int totalProkerPoints,
+  ) {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [
             Colors.white,
             Color(0xFFF8FAFC),
-          ], // F8FAFC is typical backgroundCanvas
+          ],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
       ),
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 16,
-        left: 20,
-        right: 20,
-        bottom: 24,
+        left: 16,
+        right: 16,
+        bottom: 20,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -143,241 +156,156 @@ class MahasiswaPoinView extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          Center(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const Text(
-                  'POIN PERSONAL',
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 12,
-                    letterSpacing: 1.0,
-                    fontWeight: FontWeight.w700,
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              // Kartu Poin Personal
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 14,
+                    horizontal: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: AppColors.primaryGreen.withValues(alpha: 0.25),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.03),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'POIN PERSONAL',
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 10,
+                          letterSpacing: 0.8,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(
+                            NumberFormat('#,###').format(personalPoints),
+                            style: const TextStyle(
+                              color: AppColors.primaryGreen,
+                              fontSize: 26,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          const SizedBox(width: 3),
+                          const Text(
+                            'PTS',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        'Milik Pribadi',
+                        style: TextStyle(
+                          color: AppColors.textHint,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(
-                      NumberFormat('#,###').format(personalPoints),
-                      style: const TextStyle(
-                        color: AppColors.primaryGreen,
-                        fontSize: 40,
-                        fontWeight: FontWeight.w900,
-                      ),
+              ),
+              const SizedBox(width: 10),
+              // Kartu Skor Kelompok Proker
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 14,
+                    horizontal: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: AppColors.primaryBlue.withValues(alpha: 0.25),
                     ),
-                    const SizedBox(width: 4),
-                    const Text(
-                      'PTS',
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.03),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'SKOR PROKER KELOMPOK',
+                        style: TextStyle(
+                          color: AppColors.primaryBlue,
+                          fontSize: 10,
+                          letterSpacing: 0.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(
+                            groupScoreProker.toString(),
+                            style: const TextStyle(
+                              color: AppColors.primaryBlue,
+                              fontSize: 26,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          const SizedBox(width: 3),
+                          const Text(
+                            'PTS',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '$totalProkerPoints PTS Total Proker',
+                        style: const TextStyle(
+                          color: AppColors.textHint,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStatsRow(MahasiswaState mhsState, WidgetRef ref) {
-    final points = mhsState.dashboard?.contributionPoints ?? 0;
-
-    final asyncHistory = ref.watch(pointHistoryProvider);
-    int laporanCount = 0;
-    int wargaCount = 0;
-
-    if (asyncHistory.hasValue && asyncHistory.value != null) {
-      for (final ph in asyncHistory.value!) {
-        final lowerDesc = ph.description.toLowerCase();
-        if (lowerDesc.contains('pemanfaatan')) {
-          laporanCount++;
-        } else if (lowerDesc.contains('aktivasi')) {
-          wargaCount++;
-        }
-      }
-    }
-
-    final izinCount = ref.watch(pengajuanIzinCountProvider).value ?? 0;
-
-    // Total Input = Laporan Pemanfaatan Sampah + Warga Binaan yang Diaktivasi
-    final totalInputCount = laporanCount + wargaCount;
-
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: _StatCard(
-                topText: 'Hari',
-                middleText: '${(points / 10).floor()}',
-                bottomText: 'Presensi',
-                color: AppColors.primaryGreen,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _StatCard(
-                topText: 'Warga',
-                middleText: '$wargaCount',
-                bottomText: 'Tempat Sampah',
-                color: AppColors.primaryBlueDark,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _StatCard(
-                topText: 'Laporan',
-                middleText: '$laporanCount',
-                bottomText: 'Pemanfaatan',
-                color: AppColors.warningOrange,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-
-        // ── Requirement B: Statistik Tambahan (Pengajuan Izin & Total Input Data) ──
-        Row(
-          children: [
-            Expanded(
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 12,
-                  horizontal: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.border),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.03),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppColors.warningYellow.withValues(alpha: 0.15),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.note_alt_rounded,
-                        color: AppColors.warningYellow,
-                        size: 18,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'IZIN / SAKIT',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '$izinCount Kali',
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 12,
-                  horizontal: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.border),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.03),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryGreen.withValues(alpha: 0.15),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.post_add_rounded,
-                        color: AppColors.primaryGreen,
-                        size: 18,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'TOTAL INPUT',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '$totalInputCount Kali',
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
 
   Widget _buildInfoBanner() {
     return Container(
@@ -389,22 +317,37 @@ class MahasiswaPoinView extends ConsumerWidget {
           color: AppColors.primaryGreen.withValues(alpha: 0.2),
         ),
       ),
-      child: const Row(
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.info_outline_rounded,
-            color: AppColors.primaryGreen,
-            size: 20,
-          ),
-          SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              'Poin KKN harian diperoleh dari Check-In (+4 PTS), Kepulangan/Durasi Terpenuhi (+3 PTS), dan Logbook Harian (+3 PTS) dengan total 10 PTS per hari.',
-              style: TextStyle(
-                fontSize: 11,
+          Row(
+            children: [
+              Icon(
+                Icons.info_outline_rounded,
                 color: AppColors.primaryGreen,
-                height: 1.3,
+                size: 18,
               ),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Panduan Sistem Poin & Skor KKN:',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primaryGreen,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 6),
+          Text(
+            '• Poin Personal Harian: Check-In (+4 PTS), Durasi Terpenuhi (+3 PTS), dan Logbook Harian (+3 PTS) [Maks. 10 PTS/hari].\n'
+            '• Skor Kelompok Proker: Setiap tahapan proker dinilai (Disetujui +2, Berjalan +2, Selesai +2 PTS, total 6 PTS/proker). Seluruh anggota kelompok memperoleh skor yang sama.',
+            style: TextStyle(
+              fontSize: 11,
+              color: AppColors.textPrimary,
+              height: 1.4,
             ),
           ),
         ],
@@ -456,8 +399,14 @@ class MahasiswaPoinView extends ConsumerWidget {
         ),
       ),
       data: (history) {
-        // Filter logs that actually have points awarded for the Poin View
-        final pointLogs = history.where((log) => log.points > 0).toList();
+        final List<PointHistoryEntity> pointLogs = history.where((log) {
+          if (log.points == 0) return false;
+          final kat = (log.kategori ?? '').toUpperCase();
+          if (kat == 'REDUKSI_TONASE') return false; // Pemanfaatan/Panen dipindah ke Riwayat non-poin
+          return true;
+        }).toList();
+        
+        pointLogs.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
         if (pointLogs.isEmpty) {
           return Container(
@@ -510,73 +459,6 @@ class MahasiswaPoinView extends ConsumerWidget {
   }
 }
 
-class _StatCard extends StatelessWidget {
-  const _StatCard({
-    required this.topText,
-    required this.middleText,
-    required this.bottomText,
-    required this.color,
-  });
-
-  final String topText;
-  final String middleText;
-  final String bottomText;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            topText,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 10,
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.bold, // 1: Bold
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            middleText,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600, // 2: Semi-bold
-              color: color,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            bottomText,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 10,
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w400, // 3: Regular
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _PoinHistoryItem extends StatelessWidget {
   const _PoinHistoryItem({required this.item});
@@ -589,25 +471,43 @@ class _PoinHistoryItem extends StatelessWidget {
       'dd MMM yyyy, HH:mm',
     ).format(item.createdAt.toLocal());
 
-    // Map description to standardized title
-    String title = InputSanitizer.cleanSystemMessage(item.description);
-    IconData icon = Icons.check_circle_outline_rounded;
+    final int points = item.points;
+    final bool isPenalty = points < 0;
+    final String pointsText = isPenalty ? '$points PTS' : '+$points PTS';
+    final Color badgeColor =
+        isPenalty ? AppColors.dangerRed : AppColors.primaryGreen;
 
-    if (title.toLowerCase().contains('aktivasi')) {
-      title = 'Aktivasi Tempat Sampah Warga';
-      icon = Icons.qr_code_scanner_rounded;
-    } else if (title.toLowerCase().contains('pemanfaatan')) {
-      if (!title.toLowerCase().startsWith('laporan')) {
-        title = 'Laporan Pemanfaatan Sampah: $title';
-      }
-      icon = Icons.recycling_rounded;
-    } else if (title.toLowerCase().contains('geofence') ||
-        title.toLowerCase().contains('presensi')) {
-      title = 'Ping Lokasi Posko / Presensi';
-      icon = Icons.location_on_rounded;
-    } else if (title.toLowerCase().contains('registrasi')) {
-      title = 'Bonus Registrasi Akun Mahasiswa KKN';
-      icon = Icons.card_giftcard_rounded;
+    String title = InputSanitizer.cleanSystemMessage(item.description);
+    IconData icon = isPenalty
+        ? Icons.warning_amber_rounded
+        : Icons.check_circle_outline_rounded;
+    Color iconColor = isPenalty ? AppColors.dangerRed : AppColors.primaryGreen;
+
+    final descLower = item.description.toLowerCase();
+    final kat = (item.kategori ?? '').toUpperCase();
+
+    if (kat == 'KKN_PROKER' || descLower.contains('program kerja')) {
+      title = title.isNotEmpty ? title : 'Program Kerja Disetujui';
+      icon = Icons.task_alt_rounded;
+      iconColor = AppColors.primaryBlue;
+    } else if (kat == 'LOGBOOK_TERVERIFIKASI' ||
+        descLower.contains('verifikasi') ||
+        descLower.contains('terverifikasi')) {
+      title = title.isNotEmpty ? title : 'Logbook Terverifikasi DPL';
+      icon = Icons.verified_rounded;
+      iconColor = AppColors.primaryBlueDark;
+    } else if (kat == 'KKN_PRESENSI_HADIR' || descLower.contains('check-in') || descLower.contains('kehadiran')) {
+      title = title.isNotEmpty ? title : 'Presensi Kehadiran (Check-In)';
+      icon = Icons.login_rounded;
+      iconColor = AppColors.primaryGreen;
+    } else if (kat == 'KKN_DURASI_MEMENUHI' || descLower.contains('durasi')) {
+      title = title.isNotEmpty ? title : 'Poin Durasi Kegiatan Terpenuhi';
+      icon = Icons.timer_outlined;
+      iconColor = AppColors.primaryGreen;
+    } else if (kat == 'KKN_LOGBOOK_HARIAN' || (descLower.contains('logbook') && !descLower.contains('pemanfaatan'))) {
+      title = title.isNotEmpty ? title : 'Pengisian Logbook Harian';
+      icon = Icons.menu_book_rounded;
+      iconColor = AppColors.primaryGreen;
     }
 
     return Container(
@@ -629,10 +529,10 @@ class _PoinHistoryItem extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.primaryGreen.withValues(alpha: 0.1),
+              color: iconColor.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: AppColors.primaryGreen, size: 20),
+            child: Icon(icon, color: iconColor, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -661,11 +561,11 @@ class _PoinHistoryItem extends StatelessWidget {
             ),
           ),
           Text(
-            '+${item.points} PTS',
-            style: const TextStyle(
+            pointsText,
+            style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.bold,
-              color: AppColors.primaryGreen,
+              color: badgeColor,
             ),
           ),
         ],

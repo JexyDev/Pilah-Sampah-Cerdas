@@ -272,12 +272,76 @@ class _KomunitasOnboardingViewState
           );
 
       if (ok && mounted) {
-        // Refresh profil untuk mendapatkan householdId terbaru
+        // Daftar ke komunitas untuk generate komunitas_id
+        final isRegistered = await ref.read(authProvider.notifier).registerKomunitas();
+        if (!isRegistered && mounted) {
+           _showError('Berhasil update profil tapi gagal auto-generate ID komunitas.');
+           // Tetap lanjut karena profile sudah sukses
+        }
+
+        // Refresh profil untuk mendapatkan householdId terbaru dan data lain
+        // Refresh profil untuk mendapatkan householdId terbaru dan data lain
         await ref.read(authProvider.notifier).fetchProfile();
 
         if (mounted) {
-          Navigator.of(context).pushReplacementNamed(AppRoutes.ukurKapasitas);
+          await showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (ctx) => AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: const Column(
+                children: [
+                  Icon(Icons.check_circle_rounded, color: AppColors.primaryGreen, size: 56),
+                  SizedBox(height: 16),
+                  Text(
+                    'Berhasil Bergabung!',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+              content: const Text(
+                'Selamat! Data Anda telah tersimpan dan Anda resmi tergabung di Komunitas Berseka.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                  height: 1.4,
+                ),
+              ),
+              actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+              actions: [
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryGreen,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('Menuju Beranda', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                  ),
+                ),
+              ],
+            ),
+          );
+
+          if (mounted) {
+            Navigator.of(context).pushReplacementNamed(AppRoutes.main);
+          }
         }
+
       } else if (mounted) {
         _showError('Gagal memperbarui data. Silakan coba lagi.');
       }
@@ -324,7 +388,7 @@ class _KomunitasOnboardingViewState
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
                         color: AppColors.primaryGreen.withValues(alpha: 0.06),
-                        borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color:
                               AppColors.primaryGreen.withValues(alpha: 0.2),
@@ -361,7 +425,11 @@ class _KomunitasOnboardingViewState
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
                       initialValue: _provinsiController.text.isEmpty ? null : _provinsiController.text,
+                      
                       isExpanded: true,
+                      borderRadius: BorderRadius.circular(12),
+                      dropdownColor: Colors.white,
+                      menuMaxHeight: 200,
                       decoration: _dropdownDecoration(),
                       hint: const Text('Pilih Provinsi', style: TextStyle(fontSize: 14)),
                       items: _provinsiList
@@ -385,7 +453,11 @@ class _KomunitasOnboardingViewState
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
                       initialValue: _kotaController.text.isEmpty ? null : _kotaController.text,
+                      
                       isExpanded: true,
+                      borderRadius: BorderRadius.circular(12),
+                      dropdownColor: Colors.white,
+                      menuMaxHeight: 200,
                       decoration: _dropdownDecoration(),
                       hint: const Text('Pilih Kota / Kabupaten', style: TextStyle(fontSize: 14)),
                       items: _availableKotaList
@@ -408,7 +480,11 @@ class _KomunitasOnboardingViewState
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
                       initialValue: _kecamatanController.text.isEmpty ? null : _kecamatanController.text,
+                      
                       isExpanded: true,
+                      borderRadius: BorderRadius.circular(12),
+                      dropdownColor: Colors.white,
+                      menuMaxHeight: 200,
                       decoration: _dropdownDecoration(),
                       hint: const Text('Pilih Kecamatan', style: TextStyle(fontSize: 14)),
                       items: _availableKecamatanList
@@ -430,7 +506,11 @@ class _KomunitasOnboardingViewState
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
                       initialValue: _selectedKelurahan,
+                      
                       isExpanded: true,
+                      borderRadius: BorderRadius.circular(12),
+                      dropdownColor: Colors.white,
+                      menuMaxHeight: 200,
                       decoration: _dropdownDecoration(),
                       hint: const Text('Pilih Kelurahan',
                           style: TextStyle(fontSize: 14)),
@@ -454,7 +534,11 @@ class _KomunitasOnboardingViewState
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
                       initialValue: _selectedRw,
+                      
                       isExpanded: true,
+                      borderRadius: BorderRadius.circular(12),
+                      dropdownColor: Colors.white,
+                      menuMaxHeight: 200,
                       decoration: _dropdownDecoration(),
                       hint: const Text('Pilih RW',
                           style: TextStyle(fontSize: 14)),
@@ -491,12 +575,12 @@ class _KomunitasOnboardingViewState
                         border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12)),
                         enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12),
                           borderSide:
                               const BorderSide(color: Color(0xFFE2E8F0)),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(
                               color: AppColors.primaryGreen, width: 1.5),
                         ),
@@ -524,12 +608,12 @@ class _KomunitasOnboardingViewState
                         border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12)),
                         enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12),
                           borderSide:
                               const BorderSide(color: Color(0xFFE2E8F0)),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(
                               color: AppColors.primaryGreen, width: 1.5),
                         ),
@@ -609,11 +693,11 @@ class _KomunitasOnboardingViewState
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12),
         borderSide:
             const BorderSide(color: AppColors.primaryGreen, width: 1.5),
       ),

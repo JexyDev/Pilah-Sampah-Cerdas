@@ -5,6 +5,11 @@ import 'package:image_picker/image_picker.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/utils/thousands_formatter.dart';
 import '../../../data/providers/repository_providers.dart';
+import '../../auth/controllers/auth_controller.dart';
+import '../../../data/services/local_notification_cache_service.dart';
+import '../../../data/services/notification_engine.dart';
+import '../controllers/mahasiswa_notifikasi_controller.dart';
+import '../controllers/riwayat_kkn_controller.dart';
 
 final unharvestedLogbooksProvider = FutureProvider.autoDispose<List<dynamic>>((
   ref,
@@ -106,10 +111,32 @@ class _CatatPanenViewState extends ConsumerState<CatatPanenView> {
       }, imagePath: _selectedImage?.path);
 
       if (mounted) {
+        final user = ref.read(authProvider).user;
+        NotificationEngine().showGenericNotification(
+          id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
+          title: 'Catat Hasil Panen Terkirim 🌿',
+          body:
+              'Pencatatan hasil panen dan reduksi sampah berhasil dicatat (Aktivitas Non-Poin).',
+          payload: 'ROUTE_HISTORY',
+        );
+        if (user != null) {
+          LocalNotificationCacheService().addNotification(
+            userId: user.id,
+            role: user.role.name,
+            title: 'Catat Hasil Panen Terkirim 🌿',
+            desc:
+                'Pencatatan hasil panen dan reduksi sampah berhasil dicatat (Aktivitas Non-Poin).',
+            type: 'PANEN_HASIL',
+            id: 'local_panen_${DateTime.now().millisecondsSinceEpoch}',
+          );
+        }
+        ref.invalidate(unharvestedLogbooksProvider);
+        ref.invalidate(mahasiswaNotificationsProvider);
+        ref.invalidate(riwayatKknControllerProvider);
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Berhasil mencatat hasil!')),
         );
-        ref.invalidate(unharvestedLogbooksProvider);
         Navigator.pop(context);
       }
     } catch (e) {

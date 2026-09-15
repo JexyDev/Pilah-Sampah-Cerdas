@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../core/values/app_colors.dart';
 
@@ -14,6 +14,7 @@ class UserLocationCard extends StatelessWidget {
     this.address,
     this.position,
     this.onRefresh,
+    this.isHomeAddress = false,
   });
 
   /// Judul Wilayah (misal: "Kel. Sukasari • RW 03")
@@ -22,7 +23,7 @@ class UserLocationCard extends StatelessWidget {
   /// Status loading saat fetch alamat
   final bool isFetchingAddress;
 
-  /// Alamat hasil konversi reverse geocoding
+  /// Alamat hasil konversi reverse geocoding atau alamat rumah tangga terdaftar
   final String? address;
 
   /// Posisi koordinat GPS saat ini
@@ -30,6 +31,9 @@ class UserLocationCard extends StatelessWidget {
 
   /// Callback ketika tombol "Perbarui" ditekan
   final VoidCallback? onRefresh;
+
+  /// Penanda apakah alamat ini merupakan alamat rumah tangga terdaftar di komunitas
+  final bool isHomeAddress;
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +46,7 @@ class UserLocationCard extends StatelessWidget {
       displayText =
           '${position!.latitude.toStringAsFixed(4)}, ${position!.longitude.toStringAsFixed(4)}';
     } else {
-      displayText = 'Menunggu GPS...';
+      displayText = isHomeAddress ? 'Alamat rumah belum diatur' : 'Menunggu GPS...';
     }
 
     return Container(
@@ -63,7 +67,7 @@ class UserLocationCard extends StatelessWidget {
             children: [
               const Icon(
                 Icons.location_on,
-                size: 13,
+                size: 16,
                 color: AppColors.primaryGreen,
               ),
               const SizedBox(width: 4),
@@ -75,7 +79,7 @@ class UserLocationCard extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                     color: AppColors.primaryGreen,
                   ),
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -90,14 +94,14 @@ class UserLocationCard extends StatelessWidget {
                       children: [
                         Icon(
                           Icons.refresh_rounded,
-                          size: 13,
+                          size: 14,
                           color: AppColors.primaryBlue,
                         ),
                         SizedBox(width: 3),
                         Text(
                           'Perbarui',
                           style: TextStyle(
-                            fontSize: 10,
+                            fontSize: 12,
                             fontWeight: FontWeight.w600,
                             color: AppColors.primaryBlue,
                           ),
@@ -108,25 +112,25 @@ class UserLocationCard extends StatelessWidget {
                 ),
             ],
           ),
-          const SizedBox(height: 4),
-          // Tier 2: Alamat Lengkap GPS (Multiline 2 Baris agar tidak terpotong)
+          const SizedBox(height: 6),
+          // Tier 2: Alamat Lengkap (Multiline 2 Baris agar tidak terpotong)
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Padding(
-                padding: EdgeInsets.only(top: 1),
+              Padding(
+                padding: const EdgeInsets.only(top: 1),
                 child: Icon(
-                  Icons.my_location_rounded,
-                  size: 11,
+                  isHomeAddress ? Icons.home_rounded : Icons.my_location_rounded,
+                  size: 14,
                   color: AppColors.textSecondary,
                 ),
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   displayText,
                   style: const TextStyle(
-                    fontSize: 10.5,
+                    fontSize: 12,
                     color: AppColors.textSecondary,
                     height: 1.25,
                   ),
