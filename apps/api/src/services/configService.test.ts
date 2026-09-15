@@ -49,3 +49,28 @@ describe("configService - isDateKknHoliday Weekend & Timezone Robustness", () =>
     expect(result.isHoliday).toBe(false);
   });
 });
+
+describe("configService - getRuleEngineConfigs & dynamic assessment weights", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("should return default 50% for DPL and MPL when configs not set in database", async () => {
+    vi.mocked(prisma.systemConfig.findMany).mockResolvedValue([] as any);
+
+    const configs = await configService.getRuleEngineConfigs();
+    expect(configs.penilaianBobotDplPersen).toBe(50);
+    expect(configs.penilaianBobotMplPersen).toBe(50);
+  });
+
+  it("should return configured values when set in database", async () => {
+    vi.mocked(prisma.systemConfig.findMany).mockResolvedValue([
+      { id: "1", key: "penilaian_bobot_dpl_persen", value: "60", category: "rule_engine", description: "" },
+      { id: "2", key: "penilaian_bobot_mpl_persen", value: "40", category: "rule_engine", description: "" },
+    ] as any);
+
+    const configs = await configService.getRuleEngineConfigs();
+    expect(configs.penilaianBobotDplPersen).toBe(60);
+    expect(configs.penilaianBobotMplPersen).toBe(40);
+  });
+});

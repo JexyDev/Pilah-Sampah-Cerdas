@@ -144,4 +144,24 @@ describe("Penilaian KKN - Pembatasan Hak Akses Role Pimpinan (View-Only)", () =>
       ).rejects.toThrow("FORBIDDEN_ROLE");
     });
   });
+
+  describe("Dynamic Assessment Weight (Komposisi Bobot DPL & MPL)", () => {
+    it("should calculate correct composite score with default 50% DPL + 50% MPL", () => {
+      const score = penilaianKknService.calculateCompositeScore(80, 90, 50, 50);
+      // (80 * 50/100) + (90 * 50/100) = 40 + 45 = 85
+      expect(score).toBe(85);
+    });
+
+    it("should calculate correct composite score with custom dynamic weights (e.g. 60% DPL + 40% MPL)", () => {
+      const score = penilaianKknService.calculateCompositeScore(80, 90, 40, 60);
+      // (80 * 40/100) + (90 * 60/100) = 32 + 54 = 86
+      expect(score).toBe(86);
+    });
+
+    it("should calculate correct composite score with 70% DPL + 30% MPL", () => {
+      const score = penilaianKknService.calculateCompositeScore(75, 95, 30, 70);
+      // (75 * 0.3) + (95 * 0.7) = 22.5 + 66.5 = 89
+      expect(score).toBe(89);
+    });
+  });
 });
