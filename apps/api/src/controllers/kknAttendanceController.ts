@@ -483,9 +483,18 @@ export const kknAttendanceController = {
         "DOSEN_PENDAMPING",
         "DOSEN_PENDAMPING_LAPANGAN",
       ].includes(roleName);
+      const isMpl = [
+        "MPL",
+        "MITRA_PENDAMPING_LAPANGAN",
+        "MITRA PENDAMPING LAPANGAN",
+        "MITRA_PEMBIMBING_LAPANGAN",
+        "MITRA PEMBIMBING LAPANGAN",
+        "MITRA",
+      ].includes(roleName);
 
       const currentUserId = (req as any).user?.userId || (req as any).user?.id;
       const dplUserId = isDpl ? currentUserId : undefined;
+      const mplUserId = isMpl ? currentUserId : undefined;
       const kelompokId = req.query.kelompokId as string | undefined;
       const kelurahan = req.query.kelurahan as string | undefined;
       const rw = req.query.rw as string | undefined;
@@ -501,6 +510,7 @@ export const kknAttendanceController = {
         kelurahan,
         rw,
         dplUserId,
+        mplUserId,
         startDate,
         endDate,
         status,
