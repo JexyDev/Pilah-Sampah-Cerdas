@@ -83,13 +83,31 @@ const checkRouteActive = (
       "/dpl/catat-kegiatan",
     ];
     if (dplLogAliases.includes(tPath) && dplLogAliases.includes(cPath)) return true;
-    if (tQuery?.includes("tab=dpl") && dplLogAliases.includes(cPath) && logbookAliases.includes(tPath)) return true;
-    const userMasterAliases = ["/pengguna", "/master-pengguna", "/master-data-pengguna", "/manajemen-pengguna"];
+    if (
+      tQuery?.includes("tab=dpl") &&
+      dplLogAliases.includes(cPath) &&
+      logbookAliases.includes(tPath)
+    )
+      return true;
+    const userMasterAliases = [
+      "/pengguna",
+      "/master-pengguna",
+      "/master-data-pengguna",
+      "/manajemen-pengguna",
+    ];
     if (userMasterAliases.includes(tPath) && userMasterAliases.includes(cPath)) return true;
-    const fasilitasAliases = ["/monitoring-pengelolaan/fasilitas", "/pengelolaan-sampah", "/pemanfaatan-sampah", "/fasilitas-dan-posko"];
+    const fasilitasAliases = [
+      "/monitoring-pengelolaan/fasilitas",
+      "/pengelolaan-sampah",
+      "/pemanfaatan-sampah",
+      "/fasilitas-dan-posko",
+    ];
     if (fasilitasAliases.includes(tPath) && fasilitasAliases.includes(cPath)) return true;
 
-    const tempatSampahAliases = ["/monitoring-pengelolaan/tempat-sampah", "/master-data/manajemen-tempat-sampah"];
+    const tempatSampahAliases = [
+      "/monitoring-pengelolaan/tempat-sampah",
+      "/master-data/manajemen-tempat-sampah",
+    ];
     if (tempatSampahAliases.includes(tPath) && tempatSampahAliases.includes(cPath)) return true;
 
     const jenisTempatSampahAliases = [
@@ -99,15 +117,32 @@ const checkRouteActive = (
       "/jenis-tempat-sampah",
       "/preset-tempat-sampah",
     ];
-    if (jenisTempatSampahAliases.includes(tPath) && jenisTempatSampahAliases.includes(cPath)) return true;
+    if (jenisTempatSampahAliases.includes(tPath) && jenisTempatSampahAliases.includes(cPath))
+      return true;
 
-    const penyetoranAliases = ["/monitoring-pemilahan/penyetoran-sampah", "/penyetoran-sampah", "/setor-sampah", "/setor"];
+    const penyetoranAliases = [
+      "/monitoring-pemilahan/penyetoran-sampah",
+      "/penyetoran-sampah",
+      "/setor-sampah",
+      "/setor",
+    ];
     if (penyetoranAliases.includes(tPath) && penyetoranAliases.includes(cPath)) return true;
 
-    const pengangkutanAliases = ["/monitoring-pemilahan/pengangkutan-sampah", "/pengangkutan-residu", "/residu", "/manajemen-pengangkutan"];
+    const pengangkutanAliases = [
+      "/monitoring-pemilahan/pengangkutan-sampah",
+      "/pengangkutan-residu",
+      "/residu",
+      "/manajemen-pengangkutan",
+    ];
     if (pengangkutanAliases.includes(tPath) && pengangkutanAliases.includes(cPath)) return true;
 
-    const peringkatAliases = ["/monitoring-pemilahan/peringkat-warga", "/monitoring-pemilahan/papan-peringkat", "/peringkat", "/leaderboard", "/poin-warga"];
+    const peringkatAliases = [
+      "/monitoring-pemilahan/peringkat-warga",
+      "/monitoring-pemilahan/papan-peringkat",
+      "/peringkat",
+      "/leaderboard",
+      "/poin-warga",
+    ];
     if (peringkatAliases.includes(tPath) && peringkatAliases.includes(cPath)) return true;
 
     const rekapSetoranAliases = [
@@ -123,25 +158,51 @@ const checkRouteActive = (
     const pemanfaatanAliases = ["/monitoring-pemanfaatan", "/hasil-pemanfaatan"];
     if (pemanfaatanAliases.includes(tPath) && pemanfaatanAliases.includes(cPath)) return true;
 
-    const historiSistemAliases = ["/master-data/histori-sistem", "/log-aktivitas", "/superUser/audit", "/audit-trail", "/audit-log"];
+    const historiSistemAliases = [
+      "/master-data/histori-sistem",
+      "/log-aktivitas",
+      "/superUser/audit",
+      "/audit-trail",
+      "/audit-log",
+    ];
     if (historiSistemAliases.includes(tPath) && historiSistemAliases.includes(cPath)) return true;
 
-    const onlineUsersAliases = ["/master-data/pengguna-online", "/pengguna-online", "/master-data/pengguna-daring", "/pengguna-daring"];
+    const onlineUsersAliases = [
+      "/master-data/pengguna-online",
+      "/pengguna-online",
+      "/master-data/pengguna-daring",
+      "/pengguna-daring",
+    ];
     if (onlineUsersAliases.includes(tPath) && onlineUsersAliases.includes(cPath)) return true;
 
     const provAliases = ["/wilayah/provinsi", "/master-data/provinsi", "/master-provinsi"];
     if (provAliases.includes(tPath) && provAliases.includes(cPath)) return true;
 
-    const kabAliases = ["/wilayah/kota-kabupaten", "/master-data/kota-kabupaten", "/master-kota-kabupaten", "/master-kabupaten"];
+    const kabAliases = [
+      "/wilayah/kota-kabupaten",
+      "/master-data/kota-kabupaten",
+      "/master-kota-kabupaten",
+      "/master-kabupaten",
+    ];
     if (kabAliases.includes(tPath) && kabAliases.includes(cPath)) return true;
 
-    const kecAliases = ["/wilayah/kecamatan", "/master-data/kecamatan", "/master-kecamatan", "/master-data/kecematan"];
+    const kecAliases = [
+      "/wilayah/kecamatan",
+      "/master-data/kecamatan",
+      "/master-kecamatan",
+      "/master-data/kecematan",
+    ];
     if (kecAliases.includes(tPath) && kecAliases.includes(cPath)) return true;
 
     const kelAliases = ["/wilayah/kelurahan", "/master-data/kelurahan", "/master-kelurahan"];
     if (kelAliases.includes(tPath) && kelAliases.includes(cPath)) return true;
 
-    const rwAliases = ["/wilayah/rw", "/master-data/rukun-warga", "/master-rw", "/wilayah/rukun-warga"];
+    const rwAliases = [
+      "/wilayah/rw",
+      "/master-data/rukun-warga",
+      "/master-rw",
+      "/wilayah/rukun-warga",
+    ];
     if (rwAliases.includes(tPath) && rwAliases.includes(cPath)) return true;
 
     const poskoAliases = ["/pelaksanaan/posko", "/posko-kkn", "/posko", "/fasilitas-posko"];
@@ -150,7 +211,11 @@ const checkRouteActive = (
     const linimasaAliases = ["/pelaksanaan/linimasa-kegiatan", "/jadwal-kegiatan"];
     if (linimasaAliases.includes(tPath) && linimasaAliases.includes(cPath)) return true;
 
-    const kelompokAliases = ["/pelaksanaan/kelompok", "/manajemen-ekosistem-kkn", "/ekosistem-dampingan"];
+    const kelompokAliases = [
+      "/pelaksanaan/kelompok",
+      "/manajemen-ekosistem-kkn",
+      "/ekosistem-dampingan",
+    ];
     if (kelompokAliases.includes(tPath) && kelompokAliases.includes(cPath)) return true;
 
     const prokerAliases = ["/pelaksanaan/program-kerja", "/program-kerja-kkn", "/program-kerja"];
@@ -160,9 +225,14 @@ const checkRouteActive = (
     if (presensiAliases.includes(tPath) && presensiAliases.includes(cPath)) return true;
 
     const laporanPresensiAliases = ["/monitoring-kegiatan/laporan-presensi", "/laporan-presensi"];
-    if (laporanPresensiAliases.includes(tPath) && laporanPresensiAliases.includes(cPath)) return true;
+    if (laporanPresensiAliases.includes(tPath) && laporanPresensiAliases.includes(cPath))
+      return true;
 
-    const izinAliases = ["/monitoring-kegiatan/pengajuan-izin", "/ajuan-absensi", "/validasi-absensi"];
+    const izinAliases = [
+      "/monitoring-kegiatan/pengajuan-izin",
+      "/ajuan-absensi",
+      "/validasi-absensi",
+    ];
     if (izinAliases.includes(tPath) && izinAliases.includes(cPath)) return true;
 
     const nilaiMhsAliases = ["/penilaian/mahasiswa", "/penilaian-kkn/individu"];
@@ -177,16 +247,34 @@ const checkRouteActive = (
     const nilaiRekapAliases = ["/penilaian/rekapitulasi-nilai-akhir", "/penilaian-kkn/rekap"];
     if (nilaiRekapAliases.includes(tPath) && nilaiRekapAliases.includes(cPath)) return true;
 
-    const baselineAliases = ["/hasil-survei/baseline", "/survei/baseline", "/superUser/data-survei-baseline", "/data-survei-baseline"];
+    const baselineAliases = [
+      "/hasil-survei/baseline",
+      "/survei/baseline",
+      "/superUser/data-survei-baseline",
+      "/data-survei-baseline",
+    ];
     if (baselineAliases.includes(tPath) && baselineAliases.includes(cPath)) return true;
 
-    const endlineAliases = ["/hasil-survei/endline", "/survei/endline", "/superUser/data-survei-endline", "/data-survei-endline"];
+    const endlineAliases = [
+      "/hasil-survei/endline",
+      "/survei/endline",
+      "/superUser/data-survei-endline",
+      "/data-survei-endline",
+    ];
     if (endlineAliases.includes(tPath) && endlineAliases.includes(cPath)) return true;
 
-    const evaluasiAliases = ["/hasil-survei/evaluasi-dan-dampak", "/evaluasi-dampak-kkn", "/evaluasi-dampak"];
+    const evaluasiAliases = [
+      "/hasil-survei/evaluasi-dan-dampak",
+      "/evaluasi-dampak-kkn",
+      "/evaluasi-dampak",
+    ];
     if (evaluasiAliases.includes(tPath) && evaluasiAliases.includes(cPath)) return true;
 
-    const importSurveiAliases = ["/hasil-survei/data-survei", "/superUser/import-survei-kkn", "/import-survei-kkn"];
+    const importSurveiAliases = [
+      "/hasil-survei/data-survei",
+      "/superUser/import-survei-kkn",
+      "/import-survei-kkn",
+    ];
     if (importSurveiAliases.includes(tPath) && importSurveiAliases.includes(cPath)) return true;
 
     const kurasiAliases = [
@@ -227,9 +315,20 @@ const checkRouteActive = (
       const targetTab = (targetParams.get("tab") || "").toLowerCase();
       let currentTab = (currentParams.get("tab") || "").toLowerCase();
       if (!currentTab) {
-        if (["/log-aktivitas-dpl", "/dpl/log-aktivitas", "/catat-kegiatan-dpl", "/dpl/catat-kegiatan"].includes(pathname)) {
+        if (
+          [
+            "/log-aktivitas-dpl",
+            "/dpl/log-aktivitas",
+            "/catat-kegiatan-dpl",
+            "/dpl/catat-kegiatan",
+          ].includes(pathname)
+        ) {
           currentTab = "dpl";
-        } else if (["/log-aktivitas/mahasiswa", "/logbook-kkn", "/dpl/logbook", "/logbook"].includes(pathname)) {
+        } else if (
+          ["/log-aktivitas/mahasiswa", "/logbook-kkn", "/dpl/logbook", "/logbook"].includes(
+            pathname
+          )
+        ) {
           currentTab = "mahasiswa";
         } else if (pathname === "/dasbor") {
           currentTab = "kkn";
@@ -282,12 +381,23 @@ const checkRouteActive = (
         return index === 0;
       }
       if (targetRole === currentRole) return true;
-      if (targetRole === "su" && ["su", "admin", "superuser", "super_user"].includes(currentRole)) return true;
+      if (targetRole === "su" && ["su", "admin", "superuser", "super_user"].includes(currentRole))
+        return true;
       if (targetRole === "petugas-pemilah" || targetRole === "petugas-residu") {
-        return ["petugas-pemilah", "petugas-residu", "petugas_residu", "petugas"].includes(currentRole);
+        return ["petugas-pemilah", "petugas-residu", "petugas_residu", "petugas"].includes(
+          currentRole
+        );
       }
-      if (targetRole === "mahasiswa" && ["mahasiswa", "mahasiswa-kkn", "mahasiswa_kkn"].includes(currentRole)) return true;
-      if (targetRole === "taskforce" && ["taskforce", "task-force", "panitia_taskforce"].includes(currentRole)) return true;
+      if (
+        targetRole === "mahasiswa" &&
+        ["mahasiswa", "mahasiswa-kkn", "mahasiswa_kkn"].includes(currentRole)
+      )
+        return true;
+      if (
+        targetRole === "taskforce" &&
+        ["taskforce", "task-force", "panitia_taskforce"].includes(currentRole)
+      )
+        return true;
       return false;
     }
 
@@ -330,10 +440,15 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, badge, onClick
         <span className="absolute left-0 top-2 bottom-2 w-1.5 bg-[#58A621] dark:bg-emerald-500 rounded-r-full shadow-xs" />
       )}
 
-      <Icon className={`shrink-0 transition-all duration-300 ease-out ${isCurrentActive ? "text-[#035941] dark:text-emerald-400 scale-110" : "text-slate-400 dark:text-slate-400 group-hover:text-[#035941] dark:group-hover:text-emerald-400 group-hover:scale-110"}`} size={17} />
+      <Icon
+        className={`shrink-0 transition-all duration-300 ease-out ${isCurrentActive ? "text-[#035941] dark:text-emerald-400 scale-110" : "text-slate-400 dark:text-slate-400 group-hover:text-[#035941] dark:group-hover:text-emerald-400 group-hover:scale-110"}`}
+        size={17}
+      />
       <span className="flex-1 truncate tracking-tight">{label}</span>
       {badge !== undefined && (
-        <span className="bg-[#58A621] dark:bg-emerald-600 text-white text-[9.5px] font-bold px-1.5 py-0.2 rounded-full shadow-2xs group-hover:scale-105 transition-transform">{badge}</span>
+        <span className="bg-[#58A621] dark:bg-emerald-600 text-white text-[9.5px] font-bold px-1.5 py-0.2 rounded-full shadow-2xs group-hover:scale-105 transition-transform">
+          {badge}
+        </span>
       )}
     </Link>
   );
@@ -388,7 +503,6 @@ const NavItemCollapsed: React.FC<NavItemProps> = ({ to, icon: Icon, label }) => 
     </Link>
   );
 };
-
 
 const NavGroupCollapsed: React.FC<{
   icon: LucideIcon;
@@ -499,7 +613,10 @@ const NavGroupCollapsed: React.FC<{
             {items.map((sub, idx) => {
               if (sub.children && Array.isArray(sub.children) && sub.children.length > 0) {
                 return (
-                  <div key={sub.label} className="my-1 border-t border-slate-100 dark:border-slate-800/80 pt-1">
+                  <div
+                    key={sub.label}
+                    className="my-1 border-t border-slate-100 dark:border-slate-800/80 pt-1"
+                  >
                     <div className="px-3 py-1 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                       {sub.label}
                     </div>
@@ -604,8 +721,15 @@ const NavGroup: React.FC<{
           <span className="absolute left-0 top-2 bottom-2 w-1.5 bg-[#58A621] dark:bg-emerald-500 rounded-r-full" />
         )}
 
-        <Icon className={`shrink-0 transition-all duration-200 ${isAnySubActive ? "text-[#035941] dark:text-emerald-400 scale-110" : "text-slate-400 dark:text-slate-500 group-hover:text-[#035941] dark:group-hover:text-emerald-400 group-hover:scale-110"}`} size={17} />
-        <span className={`flex-1 truncate tracking-tight ${isAnySubActive ? "font-semibold text-[#035941] dark:text-emerald-400" : "font-medium text-slate-600 dark:text-slate-300 group-hover:text-[#035941] dark:group-hover:text-emerald-400"}`}>{label}</span>
+        <Icon
+          className={`shrink-0 transition-all duration-200 ${isAnySubActive ? "text-[#035941] dark:text-emerald-400 scale-110" : "text-slate-400 dark:text-slate-500 group-hover:text-[#035941] dark:group-hover:text-emerald-400 group-hover:scale-110"}`}
+          size={17}
+        />
+        <span
+          className={`flex-1 truncate tracking-tight ${isAnySubActive ? "font-semibold text-[#035941] dark:text-emerald-400" : "font-medium text-slate-600 dark:text-slate-300 group-hover:text-[#035941] dark:group-hover:text-emerald-400"}`}
+        >
+          {label}
+        </span>
         <ChevronDown
           size={14}
           className={`transition-transform duration-300 ${isOpen ? "rotate-180 text-[#035941] dark:text-emerald-400" : "text-slate-400"}`}
@@ -708,18 +832,26 @@ const SectionHeader: React.FC<{ label: string }> = ({ label }) => (
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false }) => {
   const { user, can } = useAuthStore();
   const rawRole = ((user?.peran || (user as any)?.role || "WARGA") as string).toUpperCase();
-  const userRole = (["PEMIMPIN", "PIMPINAN", "Pemimpin", "Pimpinan"].includes(rawRole) ? "PIMPINAN" : rawRole) as UserRole;
-  const isDpl = userRole === "DPL" || userRole === "DOSEN_PEMBIMBING";
-  const isMpl = userRole === "MPL" || rawRole === "MITRA_PENDAMPING_LAPANGAN";
+  let normalizedRoleStr = rawRole;
+  if (["PEMIMPIN", "PIMPINAN", "PEMIMPIN", "PIMPINAN"].includes(rawRole))
+    normalizedRoleStr = "PIMPINAN";
+  if (["MPL", "MITRA_PEMBIMBING_LAPANGAN", "MITRA_PENDAMPING_LAPANGAN", "MITRA"].includes(rawRole))
+    normalizedRoleStr = "MPL";
+  if (["DPL", "DOSEN_PEMBIMBING", "DOSEN_PENDAMPING"].includes(rawRole)) normalizedRoleStr = "DPL";
+  const userRole = normalizedRoleStr as UserRole;
+  const isDpl =
+    userRole === "DPL" || rawRole === "DOSEN_PEMBIMBING" || rawRole === "DOSEN_PENDAMPING";
+  const isMpl =
+    userRole === "MPL" ||
+    rawRole === "MITRA_PEMBIMBING_LAPANGAN" ||
+    rawRole === "MITRA_PENDAMPING_LAPANGAN";
   const isPimpinan = userRole === "PIMPINAN";
-
 
   const handleMobileItemClick = () => {
     if (typeof window !== "undefined" && window.innerWidth < 1024) {
       onClose();
     }
   };
-
 
   const ALL_ROLES: UserRole[] = [
     "DEVELOPER",
@@ -753,13 +885,24 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     if (userRole === "PIMPINAN" || (userRole as string) === "PEMIMPIN") {
       return allowed.includes("PIMPINAN") || (allowed as any).includes("PEMIMPIN");
     }
+    if (userRole === "MPL" || isMpl) {
+      return (
+        allowed.includes("MPL") ||
+        (allowed as any).includes("MITRA_PEMBIMBING_LAPANGAN") ||
+        (allowed as any).includes("MITRA_PENDAMPING_LAPANGAN")
+      );
+    }
+    if (userRole === "DPL" || isDpl) {
+      return (
+        allowed.includes("DPL") ||
+        (allowed as any).includes("DOSEN_PEMBIMBING") ||
+        (allowed as any).includes("DOSEN_PENDAMPING")
+      );
+    }
     return allowed.includes(userRole);
   };
 
-  const getFilteredGroupChildren = (
-    groupLabel: string,
-    items: any[]
-  ) => {
+  const getFilteredGroupChildren = (groupLabel: string, items: any[]) => {
     if (groupLabel === "Wilayah" || groupLabel === "Data Wilayah") {
       if (isPimpinan) return [];
       if (
@@ -1042,7 +1185,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               allowed: ALL_ROLES,
             },
             {
-              to: "/log-aktivitas/dosen-pendamping-lapangan",
+              to: "/log-aktivitas/dosen-pembimbing-lapangan",
               label: "Dosen Pembimbing Lapangan",
               allowed: [
                 "DEVELOPER",
@@ -1196,10 +1339,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             {
               to: "/master-data/jenis-tempat-sampah",
               label: "Jenis & Preset Ukuran",
-              allowed: [
-                "DEVELOPER",
-                "SUPER_USER",
-              ] as UserRole[],
+              allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[],
             },
             {
               to: "/monitoring-pengelolaan/fasilitas",
@@ -1468,82 +1608,158 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     },
     {
       header: "MASTER DATA",
-      items: isPimpinan ? [] : [
-        {
-          type: "group",
-          label: "Pengguna",
-          icon: Users,
-          resource: "manajemen_pengguna",
-          allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PIMPINAN", "RW"] as UserRole[],
-          children: [
-            { to: "/pengguna?role=developer", label: "Developer", allowed: ["DEVELOPER"] as UserRole[] },
-            { to: "/pengguna?role=su", label: "Super User", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
-            { to: "/pengguna?role=dlh", label: "Admin DLH", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PIMPINAN"] as UserRole[] },
-            { to: "/pengguna?role=pimpinan", label: "Pimpinan", allowed: ["DEVELOPER", "SUPER_USER", "PIMPINAN"] as UserRole[] },
-            { to: "/pengguna?role=taskforce", label: "Task Force", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PIMPINAN"] as UserRole[] },
-            { to: "/pengguna?role=dpl", label: "Dosen Pembimbing Lapangan", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PIMPINAN"] as UserRole[] },
-            { to: "/pengguna?role=mahasiswa", label: "Mahasiswa", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PIMPINAN"] as UserRole[] },
-            { to: "/pengguna?role=warga", label: "Warga", allowed: ["DEVELOPER", "SUPER_USER", "RW", "PIMPINAN"] as UserRole[] },
-            { to: "/pengguna?role=petugas-pemilah", label: "Petugas Pemilah", allowed: ["DEVELOPER", "SUPER_USER", "RW", "PIMPINAN"] as UserRole[] },
+      items: isPimpinan
+        ? []
+        : [
+            {
+              type: "group",
+              label: "Pengguna",
+              icon: Users,
+              resource: "manajemen_pengguna",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "PANITIA_TASKFORCE",
+                "PIMPINAN",
+                "RW",
+              ] as UserRole[],
+              children: [
+                {
+                  to: "/pengguna?role=developer",
+                  label: "Developer",
+                  allowed: ["DEVELOPER"] as UserRole[],
+                },
+                {
+                  to: "/pengguna?role=su",
+                  label: "Super User",
+                  allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[],
+                },
+                {
+                  to: "/pengguna?role=dlh",
+                  label: "Admin DLH",
+                  allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PIMPINAN"] as UserRole[],
+                },
+                {
+                  to: "/pengguna?role=pimpinan",
+                  label: "Pimpinan",
+                  allowed: ["DEVELOPER", "SUPER_USER", "PIMPINAN"] as UserRole[],
+                },
+                {
+                  to: "/pengguna?role=taskforce",
+                  label: "Task Force",
+                  allowed: [
+                    "DEVELOPER",
+                    "SUPER_USER",
+                    "PANITIA_TASKFORCE",
+                    "PIMPINAN",
+                  ] as UserRole[],
+                },
+                {
+                  to: "/pengguna?role=dpl",
+                  label: "Dosen Pembimbing Lapangan",
+                  allowed: [
+                    "DEVELOPER",
+                    "SUPER_USER",
+                    "PANITIA_TASKFORCE",
+                    "PIMPINAN",
+                  ] as UserRole[],
+                },
+                {
+                  to: "/pengguna?role=mpl",
+                  label: "Mitra Pembimbing Lapangan",
+                  allowed: [
+                    "DEVELOPER",
+                    "SUPER_USER",
+                    "PANITIA_TASKFORCE",
+                    "PIMPINAN",
+                  ] as UserRole[],
+                },
+                {
+                  to: "/pengguna?role=mahasiswa",
+                  label: "Mahasiswa",
+                  allowed: [
+                    "DEVELOPER",
+                    "SUPER_USER",
+                    "PANITIA_TASKFORCE",
+                    "PIMPINAN",
+                  ] as UserRole[],
+                },
+                {
+                  to: "/pengguna?role=warga",
+                  label: "Warga",
+                  allowed: ["DEVELOPER", "SUPER_USER", "RW", "PIMPINAN"] as UserRole[],
+                },
+                {
+                  to: "/pengguna?role=petugas-pemilah",
+                  label: "Petugas Pemilah",
+                  allowed: ["DEVELOPER", "SUPER_USER", "RW", "PIMPINAN"] as UserRole[],
+                },
+              ],
+            },
+            {
+              type: "group",
+              label: "Wilayah",
+              icon: MapPin,
+              resource: "master_data_wilayah",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "PIMPINAN",
+                "PEMIMPIN",
+              ] as UserRole[],
+              children: [
+                { to: "/wilayah/provinsi", label: "Provinsi" },
+                { to: "/wilayah/kota-kabupaten", label: "Kota / Kabupaten" },
+                { to: "/wilayah/kecamatan", label: "Kecamatan" },
+                { to: "/wilayah/kelurahan", label: "Kelurahan" },
+                { to: "/wilayah/rw", label: "Rukun Warga" },
+              ],
+            },
+            {
+              to: "/master-data/jenis-tempat-sampah",
+              icon: Trash2,
+              label: "Jenis Tempat Sampah",
+              allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[],
+            },
+            {
+              type: "group",
+              label: "Dataset",
+              icon: Database,
+              allowed: ["DEVELOPER"] as UserRole[],
+              children: [{ to: "/dataset/hasil-klasifikasi", label: "Hasil Klasifikasi" }],
+            },
+            {
+              to: "/peraturan",
+              icon: Bot,
+              label: "Peraturan",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "PIMPINAN",
+                "PEMIMPIN",
+              ] as UserRole[],
+            },
+            {
+              to: "/kelola-poin",
+              icon: Coins,
+              label: "Kelola Poin Pengguna",
+              allowed: ["DEVELOPER"] as UserRole[],
+            },
+            {
+              to: "/developer/kelola-logbook",
+              icon: BookOpen,
+              label: "CRUD Logbook Mahasiswa",
+              allowed: ["DEVELOPER"] as UserRole[],
+            },
+            {
+              to: "/developer/inspeksi-zona",
+              icon: Radio,
+              label: "Inspeksi Zona KKN",
+              allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE"] as UserRole[],
+            },
           ],
-        },
-        {
-          type: "group",
-          label: "Wilayah",
-          icon: MapPin,
-          resource: "master_data_wilayah",
-          allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PIMPINAN", "PEMIMPIN"] as UserRole[],
-          children: [
-            { to: "/wilayah/provinsi", label: "Provinsi" },
-            { to: "/wilayah/kota-kabupaten", label: "Kota / Kabupaten" },
-            { to: "/wilayah/kecamatan", label: "Kecamatan" },
-            { to: "/wilayah/kelurahan", label: "Kelurahan" },
-            { to: "/wilayah/rw", label: "Rukun Warga" },
-          ],
-        },
-        {
-          to: "/master-data/jenis-tempat-sampah",
-          icon: Trash2,
-          label: "Jenis Tempat Sampah",
-          allowed: [
-            "DEVELOPER",
-            "SUPER_USER",
-          ] as UserRole[],
-        },
-        {
-          type: "group",
-          label: "Dataset",
-          icon: Database,
-          allowed: ["DEVELOPER"] as UserRole[],
-          children: [
-            { to: "/dataset/hasil-klasifikasi", label: "Hasil Klasifikasi" },
-          ],
-        },
-        {
-          to: "/peraturan",
-          icon: Bot,
-          label: "Peraturan",
-          allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PIMPINAN", "PEMIMPIN"] as UserRole[],
-        },
-        {
-          to: "/kelola-poin",
-          icon: Coins,
-          label: "Kelola Poin Pengguna",
-          allowed: ["DEVELOPER"] as UserRole[],
-        },
-        {
-          to: "/developer/kelola-logbook",
-          icon: BookOpen,
-          label: "CRUD Logbook Mahasiswa",
-          allowed: ["DEVELOPER"] as UserRole[],
-        },
-        {
-          to: "/developer/inspeksi-zona",
-          icon: Radio,
-          label: "Inspeksi Zona KKN",
-          allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE"] as UserRole[],
-        },
-      ],
     },
     {
       header: "SISTEM & HAK AKSES",
@@ -1589,17 +1805,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           to: "/panduan",
           icon: BookOpen,
           label: "Panduan",
-          allowed: ALL_ROLES.filter(role => role !== "DPL" && role !== "DOSEN_PEMBIMBING" && role !== "PIMPINAN" && role !== "PEMIMPIN"),
+          allowed: ALL_ROLES.filter(
+            (role) =>
+              role !== "DPL" &&
+              role !== "DOSEN_PEMBIMBING" &&
+              role !== "PIMPINAN" &&
+              role !== "PEMIMPIN"
+          ),
         },
         {
           to: "/informasi",
           icon: Info,
           label: "Tentang Aplikasi",
-          allowed: ALL_ROLES.filter(role => role !== "DPL" && role !== "DOSEN_PEMBIMBING"),
+          allowed: ALL_ROLES.filter((role) => role !== "DPL" && role !== "DOSEN_PEMBIMBING"),
         },
       ],
     },
-
   ];
 
   const effectiveSections = isMpl
@@ -1673,7 +1894,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 if (visibleItems.length === 0) return null;
                 return (
                   <React.Fragment key={sec.header}>
-                    {idx > 0 && <div className="w-6 h-px bg-slate-200/80 dark:bg-slate-800 my-1.5 mx-auto shrink-0" />}
+                    {idx > 0 && (
+                      <div className="w-6 h-px bg-slate-200/80 dark:bg-slate-800 my-1.5 mx-auto shrink-0" />
+                    )}
                     {visibleItems.map((item: any) =>
                       item.type === "group" ? (
                         <NavGroupCollapsed
@@ -1742,11 +1965,20 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                     <SectionHeader label={sec.header} />
                     {visibleItems.map((item: any) => {
                       if (item.type === "group") {
-                        const childrenToRender = getFilteredGroupChildren(item.label, item.children);
+                        const childrenToRender = getFilteredGroupChildren(
+                          item.label,
+                          item.children
+                        );
                         if (childrenToRender.length === 0) return null;
                         if (
                           childrenToRender.length === 1 &&
-                          !["Pengguna", "Data Pengguna", "Wilayah", "Data Wilayah", "Dataset"].includes(item.label)
+                          ![
+                            "Pengguna",
+                            "Data Pengguna",
+                            "Wilayah",
+                            "Data Wilayah",
+                            "Dataset",
+                          ].includes(item.label)
                         ) {
                           return (
                             <NavItem
@@ -1790,4 +2022,3 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
 };
 
 export default Sidebar;
-

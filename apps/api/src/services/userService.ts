@@ -209,6 +209,8 @@ export class UserService {
       } else if (roleName === "EKSEKUTIF") {
         // Tab umbrella eksekutif → tampilkan semua admin
         whereClause.role = { name: { in: ["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH"] } };
+      } else if (roleName === "MPL" || roleName === "MITRA_PEMBIMBING_LAPANGAN" || roleName === "MITRA_PENDAMPING_LAPANGAN") {
+        whereClause.role = { name: { in: ["MPL", "MITRA_PENDAMPING_LAPANGAN", "MITRA_PEMBIMBING_LAPANGAN"] } };
       } else {
         // Tab spesifik (CAMAT, LURAH, ADMIN_DLH, SUPER_USER, dll) → query persis
         whereClause.role = { name: roleName };
@@ -712,7 +714,7 @@ export class UserService {
       throw new Error("FORBIDDEN_DEVELOPER_MUTATION");
     }
 
-    if (currentUser?.role === "PANITIA_TASKFORCE" && !["MAHASISWA_KKN", "DPL"].includes(roleName)) {
+    if (currentUser?.role === "PANITIA_TASKFORCE" && !["MAHASISWA_KKN", "DPL", "MPL", "MITRA_PEMBIMBING_LAPANGAN", "MITRA_PENDAMPING_LAPANGAN"].includes(roleName)) {
       throw new Error("FORBIDDEN_ROLE_CREATION");
     }
 

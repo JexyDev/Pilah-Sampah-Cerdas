@@ -133,7 +133,7 @@ export const kknAttendanceController = {
               // Silent catch - fallback already attempted
             });
         }
-      } catch (_) {
+      } catch {
         // Fallback save attempt failed, will respond with error
       }
 
@@ -268,7 +268,7 @@ export const kknAttendanceController = {
         message: "Absensi kegiatan KKN berhasil dicatat.",
         data: {
           attendanceId: result.id || `att-kkn-${Date.now().toString().slice(-4)}`,
-          earnedPoints: 50,
+          earnedPoints: 4,
           ...result,
         },
       });
@@ -483,7 +483,6 @@ export const kknAttendanceController = {
         "DOSEN_PENDAMPING",
         "DOSEN_PENDAMPING_LAPANGAN",
       ].includes(roleName);
-      const isStudent = roleName === "MAHASISWA_KKN";
 
       const currentUserId = (req as any).user?.userId || (req as any).user?.id;
       const dplUserId = isDpl ? currentUserId : undefined;
@@ -636,10 +635,7 @@ export const kknAttendanceController = {
     }
   },
 
-
-
   selesaiKegiatan: async (req: Request, res: Response): Promise<void> => {
-
     try {
       const studentUserId = (req as any).user?.userId || (req as any).user?.id;
       const { id } = req.params;
@@ -785,10 +781,11 @@ export const kknAttendanceController = {
       res.status(200).json(result);
     } catch (error: any) {
       console.error("[KknAttendanceController] jedaKegiatan error:", error);
-      const statusCode =
-        error.message?.includes("tidak ditemukan") ? 404 :
-        error.message?.includes("diselesaikan") || error.message?.includes("tidak bisa dijeda") ? 422 :
-        500;
+      const statusCode = error.message?.includes("tidak ditemukan")
+        ? 404
+        : error.message?.includes("diselesaikan") || error.message?.includes("tidak bisa dijeda")
+          ? 422
+          : 500;
       res.status(statusCode).json({
         success: false,
         error: statusCode === 500 ? "INTERNAL_SERVER_ERROR" : "VALIDATION_ERROR",
@@ -851,10 +848,11 @@ export const kknAttendanceController = {
       res.status(200).json(result);
     } catch (error: any) {
       console.error("[KknAttendanceController] lanjutKegiatan error:", error);
-      const statusCode =
-        error.message?.includes("tidak ditemukan") ? 404 :
-        error.message?.includes("TERJEDA") ? 422 :
-        500;
+      const statusCode = error.message?.includes("tidak ditemukan")
+        ? 404
+        : error.message?.includes("TERJEDA")
+          ? 422
+          : 500;
       res.status(statusCode).json({
         success: false,
         error: statusCode === 500 ? "INTERNAL_SERVER_ERROR" : "VALIDATION_ERROR",

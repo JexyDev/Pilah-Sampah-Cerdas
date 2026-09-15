@@ -178,8 +178,12 @@ export const scheduleService = {
     // Otomatis write-back ke PoskoKkn, Facility, dan cascade ke jadwal aktif kelompok lainnya
     if (updated.kelompokId) {
       const kId = updated.kelompokId;
-      const hasLat = data.latitude !== undefined && !isNaN(Number(data.latitude)) && Number(data.latitude) !== 0;
-      const hasLng = data.longitude !== undefined && !isNaN(Number(data.longitude)) && Number(data.longitude) !== 0;
+      const hasLat =
+        data.latitude !== undefined && !isNaN(Number(data.latitude)) && Number(data.latitude) !== 0;
+      const hasLng =
+        data.longitude !== undefined &&
+        !isNaN(Number(data.longitude)) &&
+        Number(data.longitude) !== 0;
 
       if (hasLat || hasLng || parsedRadius !== undefined || data.location) {
         try {

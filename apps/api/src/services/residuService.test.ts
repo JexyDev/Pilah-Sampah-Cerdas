@@ -32,7 +32,7 @@ vi.mock("../lib/prisma.js", () => {
 
 vi.mock("./configService.js", () => ({
   configService: {
-    getConfig: vi.fn().mockResolvedValue("2"),
+    getConfig: vi.fn().mockResolvedValue("5"),
   },
 }));
 
@@ -53,7 +53,7 @@ describe("ResiduService - acceptPengajuanResetBin", () => {
     vi.clearAllMocks();
   });
 
-  it("should reward +15 points to Petugas UserId when accepting a valid PENDING reset bin request", async () => {
+  it("should reward +5 points to Petugas UserId when accepting a valid PENDING reset bin request", async () => {
     const mockRequest = {
       id: "req-123",
       binId: "bin-abc",
@@ -83,7 +83,7 @@ describe("ResiduService - acceptPengajuanResetBin", () => {
     expect(prisma.pointHistory.create).toHaveBeenCalledWith({
       data: {
         userId: "petugas-user-1",
-        points: 15,
+        points: 5,
         description: "Reward validasi pengosongan tempat sampah (QR-BIN-123)",
         kategori: "VALIDASI_PENGOSONGAN",
         redeemable: false,

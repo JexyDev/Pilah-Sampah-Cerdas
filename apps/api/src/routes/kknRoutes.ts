@@ -13,11 +13,9 @@ import { logbookController } from "../controllers/logbookController.js";
 import { authMiddleware, optionalAuthMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
 import {
-  uploadSingleImage,
   safeUploadSingleImage,
   uploadPemanfaatanImage,
   safeUploadPemanfaatanImage,
-  upload,
 } from "../middlewares/uploadMiddleware.js";
 
 const router = Router();
@@ -384,7 +382,7 @@ router.post("/qr/claim", authMiddleware, roleMiddleware(["MAHASISWA_KKN"]), kknC
  * @swagger
  * /api/v1/kkn/kelompok/me:
  *   get:
- *     summary: Info kelompok KKN, anggota tim, & DPL pendamping
+ *     summary: Info kelompok KKN, anggota tim, & DPL pembimbing
  *     tags: [Mahasiswa KKN]
  *     security:
  *       - bearerAuth: []
@@ -804,11 +802,7 @@ router.put(
   kknController.updateProgramKerja
 );
 
-router.get(
-  "/laporan-akhir/me",
-  authMiddleware,
-  kknController.getLaporanAkhirMe
-);
+router.get("/laporan-akhir/me", authMiddleware, kknController.getLaporanAkhirMe);
 
 router.get(
   ["/program-kerja", "/proker"],

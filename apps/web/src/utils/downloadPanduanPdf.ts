@@ -363,7 +363,7 @@ export const downloadPanduanPdf = () => {
                 <td><strong>DPL (Dosen Pembimbing Lapangan)</strong></td>
                 <td>NIP + Email DPL</td>
                 <td>
-                  • Memantau progres pendampingan kelompok mahasiswa KKN di lapangan.<br>
+                  • Memantau progres pembimbingan kelompok mahasiswa KKN di lapangan.<br>
                   • Memeriksa absensi &amp; logbook kegiatan harian mahasiswa.
                 </td>
               </tr>

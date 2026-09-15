@@ -19,6 +19,13 @@ vi.mock("../lib/prisma.js", () => {
         findUnique: vi.fn(),
         update: vi.fn(),
       },
+      rw: {
+        findUnique: vi.fn(),
+        findFirst: vi.fn(),
+      },
+      kelurahan: {
+        findFirst: vi.fn(),
+      },
       pointHistory: {
         findFirst: vi.fn(),
         create: vi.fn(),
@@ -138,10 +145,10 @@ describe("AuthService - registerWarga security", () => {
       user: {
         id: "warga-1",
         name: undefined,
-
         phone: undefined,
         role: "WARGA",
-        rwId: undefined,
+        rwId: null,
+        lifecycleState: "REGISTERED",
         fotoProfil: undefined,
       },
       accessToken: expect.any(String),
@@ -344,6 +351,24 @@ describe("AuthService - registerWarga security", () => {
       expect(result.user.id).toBe("mhs-2");
       // Must NOT overwrite password in database!
       expect(prisma.user.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("AuthService - resolveRtRwId and neutral registration", () => {
+    it("should throw RT_RW_AREA_NOT_FOUND when area cannot be resolved instead of falling back to RW 01", async () => {
+      vi.mocked(prisma.rw.findFirst).mockResolvedValue(null);
+      vi.mocked(prisma.kelurahan.findFirst).mockResolvedValue(null);
+
+      await expect(authService.resolveRtRwId("Unknown RW", "Unknown Kelurahan")).rejects.toThrow(
+        "RT_RW_AREA_NOT_FOUND"
+      );
+    });
+
+    it("should resolve numeric rw string directly if found in DB", async () => {
+      vi.mocked(prisma.rw.findUnique).mockResolvedValueOnce({ id: 5 } as any);
+
+      const resolved = await authService.resolveRtRwId("5");
+      expect(resolved).toBe(5);
     });
   });
 });

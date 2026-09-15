@@ -16,7 +16,7 @@ import {
   calculateLiveInZoneMinutes,
   kknAttendanceService,
 } from "./kknAttendanceService.js";
-import { parseProkerDeskripsi, calculateGroupPoints } from "./dplService.js";
+import { parseProkerDeskripsi, calculateGroupPoints, calculatePersonalPoints } from "./dplService.js";
 import { calculateNilaiEkonomi } from "./pemanfaatanService.js";
 import { logbookService } from "./logbookService.js";
 import { evaluateSortingStatus } from "../utils/sortingEvaluation.js";
@@ -194,19 +194,20 @@ export class KknService {
     const progressPct =
       maxLimit > 0 ? parseFloat(((totalRegistered / maxLimit) * 100).toFixed(2)) : 0;
 
-    // Points
-    const pointsSum = isSuperOrAdmin
-      ? await prisma.pointHistory.aggregate({ _sum: { points: true } })
-      : await prisma.pointHistory.aggregate({
-          where: { userId },
-          _sum: { points: true },
-        });
-    const contributionPoints = Math.max(0, pointsSum._sum.points || 0);
+    // Points (Formula Resmi Poin Personal: (Kehadiran * 0.4) + (Pemenuhan Waktu * 0.3) + (Log Aktivitas * 0.3))
+    let contributionPoints = 0;
+    let personalScoreBreakdown: any = null;
+    if (isSuperOrAdmin) {
+      const pointsSum = await prisma.pointHistory.aggregate({ _sum: { points: true } });
+      contributionPoints = Math.max(0, pointsSum._sum.points || 0);
+    } else {
+      const personalData = await calculatePersonalPoints(userId);
+      contributionPoints = Math.max(0, personalData.personalPoints);
+      personalScoreBreakdown = personalData;
+    }
 
     const poskoLat = student?.assignedRw?.latitude ? Number(student.assignedRw.latitude) : null;
-    const poskoLng = student?.assignedRw?.longitude
-      ? Number(student.assignedRw.longitude)
-      : null;
+    const poskoLng = student?.assignedRw?.longitude ? Number(student.assignedRw.longitude) : null;
 
     const areaName = student?.assignedRw?.name
       ? student.assignedRw.name
@@ -240,6 +241,7 @@ export class KknService {
         points: contributionPoints,
         totalPoints: contributionPoints,
         pointKkn: contributionPoints,
+        personalScoreBreakdown,
         maxLimit,
       },
       // Backward compatibility aliases
@@ -987,7 +989,10 @@ export class KknService {
       }
     }
 
-    const where: any = { role: { name: "WARGA" } };
+    const where: any = {
+      role: { name: "WARGA" },
+      lifecycleState: { not: "REGISTERED" },
+    };
 
     if (targetRwId || targetRwIds.length > 0 || targetKelurahan || studentGroupUserIds.length > 0) {
       const orConditions: any[] = [];
@@ -1346,14 +1351,14 @@ export class KknService {
           latitude != null && latitude !== 0
             ? latitude
             : targetRwRecord?.latitude != null
-            ? Number(targetRwRecord.latitude)
-            : 0;
+              ? Number(targetRwRecord.latitude)
+              : 0;
         const effectiveLng =
           longitude != null && longitude !== 0
             ? longitude
             : targetRwRecord?.longitude != null
-            ? Number(targetRwRecord.longitude)
-            : 0;
+              ? Number(targetRwRecord.longitude)
+              : 0;
 
         await tx.household.create({
           data: {
@@ -1451,7 +1456,9 @@ export class KknService {
               try {
                 const parsed = JSON.parse(student.kelompok.cakupanRw);
                 kelompokCakupanRwList = Array.isArray(parsed)
-                  ? parsed.map((r: any) => String(r).replace(/[^\d]/g, "").replace(/^0+/, "").trim())
+                  ? parsed.map((r: any) =>
+                      String(r).replace(/[^\d]/g, "").replace(/^0+/, "").trim()
+                    )
                   : [];
               } catch {
                 kelompokCakupanRwList = student.kelompok.cakupanRw
@@ -1475,7 +1482,8 @@ export class KknService {
           const targetWargaRwRecord = targetWarga.rwId
             ? await tx.rw.findUnique({ where: { id: targetWarga.rwId } })
             : null;
-          const wargaRwNumber = targetWargaRwRecord?.name?.replace(/[^\d]/g, "").replace(/^0+/, "") || "";
+          const wargaRwNumber =
+            targetWargaRwRecord?.name?.replace(/[^\d]/g, "").replace(/^0+/, "") || "";
 
           if (studentAssignedRwId) {
             // Skenario 1: Mahasiswa memiliki RW penugasan spesifik -> HANYA boleh aktivasi di RW-nya!
@@ -1574,14 +1582,14 @@ export class KknService {
           latitude != null && latitude !== 0
             ? latitude
             : targetWargaRwRecord?.latitude != null
-            ? Number(targetWargaRwRecord.latitude)
-            : 0;
+              ? Number(targetWargaRwRecord.latitude)
+              : 0;
         const effectiveLng =
           longitude != null && longitude !== 0
             ? longitude
             : targetWargaRwRecord?.longitude != null
-            ? Number(targetWargaRwRecord.longitude)
-            : 0;
+              ? Number(targetWargaRwRecord.longitude)
+              : 0;
 
         await tx.household.create({
           data: {
@@ -2055,7 +2063,7 @@ export class KknService {
         data: {
           userId: kknUserId,
           points: 10,
-          description: `Pendampingan Registrasi Warga (${warga.name})`,
+          description: `Pembimbingan Registrasi Warga (${warga.name})`,
         },
       });
 
@@ -2873,8 +2881,12 @@ export class KknService {
       }
     }
 
-    const startWibStr = new Date(targetStartDate.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
-    const endWibStr = new Date(targetEndDate.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const startWibStr = new Date(targetStartDate.getTime() + 7 * 60 * 60 * 1000)
+      .toISOString()
+      .slice(0, 10);
+    const endWibStr = new Date(targetEndDate.getTime() + 7 * 60 * 60 * 1000)
+      .toISOString()
+      .slice(0, 10);
     const startDate = new Date(`${startWibStr}T00:00:00+07:00`);
     const endDate = new Date(`${endWibStr}T23:59:59.999+07:00`);
 
@@ -3166,17 +3178,20 @@ export class KknService {
       ? `${jenisPemanfaatan} dengan RAB ${jumlah} ${satuan}`
       : `${jenisPemanfaatan} (${jumlah} ${satuan})`;
 
-    // Award +25 points to student for waste utilization report
-    const earnedPoints = 25;
-    await prisma.pointHistory.create({
-      data: {
-        userId,
-        points: earnedPoints,
-        description: `${laporanLabel}: ${laporanDesc}`,
-        kategori: "SETORAN_BEBAS_PENUH",
-        redeemable: false,
-      },
-    });
+    // Poin Gamifikasi: Aksi Pemanfaatan Sampah bernilai +2 poin
+    const earnedPoints = 2;
+    await prisma.pointHistory
+      .create({
+        data: {
+          userId,
+          points: earnedPoints,
+          description: `Laporan Pemanfaatan Sampah: ${cleanProgramTitle} [ReportID:${report.id}]`,
+          kategori: "REDUKSI_TONASE",
+        },
+      })
+      .catch((e) =>
+        console.warn("[kknService.createPemanfaatanSampah] pointHistory warning:", e)
+      );
 
     // Tembusan 2 Arah: Send Notifications to RW and DPL
     const studentName = student?.user?.name || "Mahasiswa KKN";
@@ -3242,8 +3257,8 @@ export class KknService {
 
     const isTerbina = statusBimbingan.toUpperCase() === "TERBINA";
     const title = isTerbina
-      ? "Status Pendampingan KKN: Terbina"
-      : "Status Pendampingan KKN: Perlu Evaluasi";
+      ? "Status Pembimbingan KKN: Terbina"
+      : "Status Pembimbingan KKN: Perlu Evaluasi";
     const message = isTerbina
       ? "Selamat! Rumah tangga Anda telah dinilai Terbina dalam pemilahan sampah oleh Mahasiswa KKN."
       : "Rumah tangga Anda saat ini memerlukan peningkatan konsistensi dalam pemilahan sampah.";
@@ -4845,6 +4860,21 @@ export class KknService {
         const studentUserIds = (kelompok?.students || []).map((s) => s.userId).filter(Boolean);
         if (studentUserIds.length > 0) {
           const parsedJudul = parseProkerDeskripsi(proker.deskripsi).judul;
+
+          // Poin Gamifikasi: Pengajuan Proker Disetujui bernilai +2 poin per anggota
+          const existingPoints = await prisma.pointHistory.findFirst({
+            where: { description: { contains: `[ProkerID:${id}]` } },
+          });
+          if (!existingPoints) {
+            const prokerPointRecords = studentUserIds.map((uid) => ({
+              userId: uid,
+              points: 2,
+              description: `Program Kerja Disetujui: ${parsedJudul} [ProkerID:${id}]`,
+              kategori: "KKN_PROKER",
+            }));
+            await prisma.pointHistory.createMany({ data: prokerPointRecords }).catch(() => {});
+          }
+
           await notificationIntegrationService.sendToUsers({
             userIds: studentUserIds,
             title: "Program Kerja Disetujui! 🎯",
@@ -4864,6 +4894,15 @@ export class KknService {
       } catch (err: any) {
         console.warn("[kknService.updateProgramKerja] Push notification error:", err?.message);
       }
+    } else if (
+      statusUsulan === "DITOLAK" ||
+      (statusUsulan && statusUsulan !== "DISETUJUI" && proker.statusUsulan === "DISETUJUI")
+    ) {
+      await prisma.pointHistory
+        .deleteMany({
+          where: { description: { contains: `[ProkerID:${id}]` } },
+        })
+        .catch(() => {});
     }
 
     return await this.getProgramKerjaById(userId, id);
@@ -4897,6 +4936,13 @@ export class KknService {
     if (!isSuper && !isStudentInKelompok) {
       throw new Error("Akses ditolak: Anda tidak memiliki izin untuk menghapus program kerja ini.");
     }
+
+    // Bersihkan poin terkait proker ini jika ada
+    await prisma.pointHistory
+      .deleteMany({
+        where: { description: { contains: `[ProkerID:${id}]` } },
+      })
+      .catch(() => {});
 
     await prisma.programKerjaKkn.delete({
       where: { id },
@@ -5014,7 +5060,7 @@ export class KknService {
         .catch(() => {});
     }
 
-    // Poin untuk seluruh anggota kelompok (+10 Poin)
+    // Poin Gamifikasi: Logbook Pemanfaatan (Sedang Dikerjakan) bernilai +2 poin per anggota
     let memberUserIds: string[] = [userId];
     if (student.kelompokId) {
       const groupStudents = await prisma.studentKkn.findMany({
@@ -5029,8 +5075,8 @@ export class KknService {
 
     const pointRecords = memberUserIds.map((uid) => ({
       userId: uid,
-      points: 10,
-      description: `Logbook Pemanfaatan: ${cleanTeknologi} [ReportID:${report.id}]`,
+      points: 2,
+      description: `Logbook Pemanfaatan (Sedang Dikerjakan): ${cleanTeknologi} [ReportID:${report.id}]`,
       kategori: "REDUKSI_TONASE",
     }));
 
@@ -5397,7 +5443,7 @@ export class KknService {
         .catch((e) => console.error("Update proker SELESAI gagal:", e));
     }
 
-    // Poin untuk seluruh anggota kelompok (+25 Poin)
+    // Poin Gamifikasi: Panen Hasil KKN (Proker Selesai) bernilai +2 poin per anggota
     let memberUserIds: string[] = [userId];
     if (student.kelompokId) {
       const groupStudents = await prisma.studentKkn.findMany({
@@ -5412,8 +5458,8 @@ export class KknService {
 
     const pointRecords = memberUserIds.map((uid) => ({
       userId: uid,
-      points: 25,
-      description: `Panen Hasil KKN [ReportID:${targetId}]`,
+      points: 2,
+      description: `Panen Hasil KKN (Proker Selesai): ${existing.program || "Pemanfaatan"} [ReportID:${targetId}]`,
       kategori: "REDUKSI_TONASE",
     }));
 
@@ -5558,12 +5604,7 @@ export class KknService {
     await prisma.pointHistory
       .deleteMany({
         where: {
-          AND: [
-            { description: { contains: id } },
-            {
-              OR: [{ description: { contains: "Panen" } }, { points: 25 }],
-            },
-          ],
+          description: { contains: id },
         },
       })
       .catch((e) => console.warn("[deletePanenHasil] delete pointHistory warning:", e));
@@ -5621,7 +5662,7 @@ export class KknService {
 
       // 5. Beri Poin Gamifikasi
       const points = 5;
-      const pointDesc = `Mengklaim pendampingan warga mandiri: ${warga.name}`;
+      const pointDesc = `Mengklaim pembimbingan warga mandiri: ${warga.name}`;
       await tx.pointHistory.create({
         data: {
           userId: kknUserId,

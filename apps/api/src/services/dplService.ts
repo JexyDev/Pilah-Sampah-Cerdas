@@ -627,6 +627,47 @@ export async function getKelompokWhere(dplUserId: string, role?: any) {
     };
   }
 
+  // Handle MPL (Mitra Pembimbing Lapangan)
+  if (
+    ["MPL", "MITRA_PENDAMPING_LAPANGAN", "MITRA_PEMBIMBING_LAPANGAN", "MITRA"].some((r) =>
+      normalizedRole.includes(r)
+    )
+  ) {
+    const mplUser = await prisma.user.findUnique({
+      where: { id: dplUserId },
+      include: { rw: { include: { kelurahan: true } } },
+    });
+    let kelurahanName = mplUser?.rw?.kelurahan?.name;
+
+    // In Berseka, MPL is assigned at Kelurahan level where rwId is null but address stores "Kel. <name>"
+    if (!kelurahanName && mplUser?.address) {
+      const cleanAddress = mplUser.address.replace(/^Kel\.\s*/i, "").trim();
+      const match = await prisma.kelurahan.findFirst({
+        where: {
+          name: { contains: cleanAddress, mode: "insensitive" },
+        },
+      });
+      if (match) {
+        kelurahanName = match.name;
+      } else {
+        kelurahanName = cleanAddress;
+      }
+    }
+
+    const mplConditions: any[] = [{ mplId: dplUserId }, { mpl: { id: dplUserId } }];
+    if (kelurahanName) {
+      mplConditions.push({
+        kelurahan: { equals: kelurahanName, mode: "insensitive" },
+      });
+      mplConditions.push({
+        kelurahan: { contains: kelurahanName, mode: "insensitive" },
+      });
+    }
+    return {
+      OR: mplConditions,
+    };
+  }
+
   // Pastikan relasi database strict by dplId tersinkronisasi
   await ensureDplKelompokRelation(dplUserId);
 
@@ -634,6 +675,93 @@ export async function getKelompokWhere(dplUserId: string, role?: any) {
   return {
     OR: [{ dplId: dplUserId }, { dpl: { id: dplUserId } }],
   };
+}
+
+/**
+ * Formula Poin Personal Resmi KKN:
+ * Poin Personal = (Poin Kehadiran * 0.4) + (Poin Pemenuhan Waktu * 0.3) + (Poin Log Aktivitas * 0.3)
+ * - Poin Kehadiran: Hadir = 4 poin, Tidak Hadir = 0 poin (kategori: KKN_PRESENSI_HADIR)
+ * - Poin Pemenuhan Waktu: Memenuhi Waktu = 3 poin, Tidak Memenuhi = 0 poin (kategori: KKN_DURASI_MEMENUHI)
+ * - Poin Log Aktivitas: Ada Log Aktivitas = 3 poin, Tidak Ada = 0 poin (kategori: KKN_LOGBOOK_HARIAN)
+ */
+export async function calculatePersonalPoints(userId: string): Promise<{
+  personalPoints: number;
+  poinKehadiran: number;
+  poinPemenuhanWaktu: number;
+  poinLogAktivitas: number;
+  rawKehadiran: number;
+  rawPemenuhanWaktu: number;
+  rawLogAktivitas: number;
+}> {
+  const points = await prisma.pointHistory.findMany({
+    where: {
+      userId,
+      kategori: {
+        in: ["KKN_PRESENSI_HADIR", "KKN_DURASI_MEMENUHI", "KKN_LOGBOOK_HARIAN"],
+      },
+    },
+    select: { points: true, kategori: true },
+  });
+
+  let rawKehadiran = 0;
+  let rawPemenuhanWaktu = 0;
+  let rawLogAktivitas = 0;
+
+  for (const p of points) {
+    if (p.kategori === "KKN_PRESENSI_HADIR") rawKehadiran += Number(p.points || 0);
+    else if (p.kategori === "KKN_DURASI_MEMENUHI") rawPemenuhanWaktu += Number(p.points || 0);
+    else if (p.kategori === "KKN_LOGBOOK_HARIAN") rawLogAktivitas += Number(p.points || 0);
+  }
+
+  const poinKehadiran = rawKehadiran;
+  const poinPemenuhanWaktu = rawPemenuhanWaktu;
+  const poinLogAktivitas = rawLogAktivitas;
+  const personalPoints = rawKehadiran + rawPemenuhanWaktu + rawLogAktivitas;
+
+  return {
+    personalPoints,
+    poinKehadiran,
+    poinPemenuhanWaktu,
+    poinLogAktivitas,
+    rawKehadiran,
+    rawPemenuhanWaktu,
+    rawLogAktivitas,
+  };
+}
+
+export async function calculatePersonalPointsForUsers(userIds: string[]): Promise<Map<string, number>> {
+  const result = new Map<string, number>();
+  if (!userIds || userIds.length === 0) return result;
+
+  const points = await prisma.pointHistory.findMany({
+    where: {
+      userId: { in: userIds },
+      kategori: {
+        in: ["KKN_PRESENSI_HADIR", "KKN_DURASI_MEMENUHI", "KKN_LOGBOOK_HARIAN"],
+      },
+    },
+    select: { userId: true, points: true, kategori: true },
+  });
+
+  const totals = new Map<string, { hadir: number; waktu: number; log: number }>();
+  for (const uid of userIds) {
+    totals.set(uid, { hadir: 0, waktu: 0, log: 0 });
+  }
+
+  for (const p of points) {
+    const cur = totals.get(p.userId);
+    if (!cur) continue;
+    if (p.kategori === "KKN_PRESENSI_HADIR") cur.hadir += Number(p.points || 0);
+    else if (p.kategori === "KKN_DURASI_MEMENUHI") cur.waktu += Number(p.points || 0);
+    else if (p.kategori === "KKN_LOGBOOK_HARIAN") cur.log += Number(p.points || 0);
+  }
+
+  for (const [uid, cur] of totals.entries()) {
+    const pts = cur.hadir + cur.waktu + cur.log;
+    result.set(uid, pts);
+  }
+
+  return result;
 }
 
 /**
@@ -655,6 +783,7 @@ export async function calculateGroupPoints(
   totalGroupPoints: number;
   poinProker: number;
   rataRataPoinAnggota: number;
+  totalCumulativeMemberPoints?: number;
   prokerApprovedCount: number;
   prokerSedangBerjalanCount: number;
   prokerSelesaiCount: number;
@@ -713,9 +842,7 @@ export async function calculateGroupPoints(
     // prokerSedangBerjalanCount menambah +2 untuk yang sedang berjalan
     // prokerSelesaiCount menambah +4 untuk yang selesai (berjalan +2 & selesai +2)
     const poinProker =
-      prokerApprovedCount * 2 +
-      prokerSedangBerjalanCount * 2 +
-      prokerSelesaiCount * 4;
+      prokerApprovedCount * 2 + prokerSedangBerjalanCount * 2 + prokerSelesaiCount * 4;
 
     // 2. Ambil studentUserIds kelompok jika belum dioper
     let studentUserIds = studentUserIdsInput;
@@ -728,22 +855,76 @@ export async function calculateGroupPoints(
     }
 
     let rataRataPoinAnggota = 0;
+    let totalCumulativeMemberPoints = 0;
     if (studentUserIds.length > 0) {
-      const pointSum = await prisma.pointHistory.aggregate({
-        where: { userId: { in: studentUserIds } },
-        _sum: { points: true },
+      // Ambil seluruh riwayat poin 3 komponen personal harian resmi (Kehadiran: 4, Waktu: 3, Logbook: 3)
+      let personalPoints = await prisma.pointHistory.findMany({
+        where: {
+          userId: { in: studentUserIds },
+          kategori: {
+            in: ["KKN_PRESENSI_HADIR", "KKN_DURASI_MEMENUHI", "KKN_LOGBOOK_HARIAN"],
+          },
+        },
+        select: { userId: true, points: true, createdAt: true },
       });
-      const totalPointsAll = Number(pointSum._sum.points || 0);
-      rataRataPoinAnggota = Math.round((totalPointsAll / studentUserIds.length) * 10) / 10;
+
+      // Fallback toleran jika basis data pengujian/riil belum terlabeli kategori presensi
+      if (personalPoints.length === 0) {
+        personalPoints = await prisma.pointHistory.findMany({
+          where: { userId: { in: studentUserIds } },
+          select: { userId: true, points: true, createdAt: true },
+        });
+      }
+
+      // Hitung akumulasi per user per hari kalender
+      const groupActiveDaysSet = new Set<string>();
+      const userDayPointsMap = new Map<string, Map<string, number>>();
+
+      for (const uid of studentUserIds) {
+        userDayPointsMap.set(uid, new Map<string, number>());
+      }
+
+      for (const p of personalPoints) {
+        const createdAtDate = p.createdAt instanceof Date ? p.createdAt : new Date(p.createdAt || Date.now());
+        const dayKey = (!isNaN(createdAtDate.getTime()) ? createdAtDate : new Date()).toISOString().slice(0, 10);
+        groupActiveDaysSet.add(dayKey);
+        const userMap = userDayPointsMap.get(p.userId);
+        if (userMap) {
+          const curPts = userMap.get(dayKey) || 0;
+          userMap.set(dayKey, curPts + Number(p.points || 0));
+        }
+        totalCumulativeMemberPoints += Number(p.points || 0);
+      }
+
+      const totalActiveDays = Math.max(1, groupActiveDaysSet.size);
+
+      // Hitung rata-rata capaian harian per anggota (maks 10 poin/hari)
+      let sumDailyAvgAllMembers = 0;
+      for (const uid of studentUserIds) {
+        const userMap = userDayPointsMap.get(uid);
+        let userTotalCapped = 0;
+        if (userMap) {
+          for (const pts of userMap.values()) {
+            userTotalCapped += Math.min(10, pts);
+          }
+        }
+        const userDailyAvg = userTotalCapped / totalActiveDays;
+        sumDailyAvgAllMembers += Math.min(10, userDailyAvg);
+      }
+
+      rataRataPoinAnggota =
+        groupActiveDaysSet.size > 0
+          ? Math.round((sumDailyAvgAllMembers / studentUserIds.length) * 10) / 10
+          : 0;
     }
 
-    const totalGroupPoints =
-      Math.round((poinProker * 0.6 + rataRataPoinAnggota * 0.4) * 10) / 10;
+    const totalGroupPoints = Math.round((poinProker * 0.6 + rataRataPoinAnggota * 0.4) * 10) / 10;
 
     return {
       totalGroupPoints,
       poinProker,
       rataRataPoinAnggota,
+      totalCumulativeMemberPoints,
       prokerApprovedCount,
       prokerSedangBerjalanCount,
       prokerSelesaiCount,
@@ -754,6 +935,7 @@ export async function calculateGroupPoints(
       totalGroupPoints: 0,
       poinProker: 0,
       rataRataPoinAnggota: 0,
+      totalCumulativeMemberPoints: 0,
       prokerApprovedCount: 0,
       prokerSedangBerjalanCount: 0,
       prokerSelesaiCount: 0,
@@ -1285,7 +1467,9 @@ export const dplService = {
             statusUsulan: u,
             statusPelaksanaan: pl,
             skorPenilaian: p.skorPenilaian !== null ? Number(p.skorPenilaian) : null,
-            createdAt: p.createdAt.toISOString(),
+            createdAt: p.createdAt
+              ? (p.createdAt instanceof Date ? p.createdAt.toISOString() : String(p.createdAt))
+              : new Date().toISOString(),
           };
         });
 
@@ -1293,7 +1477,12 @@ export const dplService = {
         const groupPointsData = await calculateGroupPoints(grp.id, prokerList, studentUserIds);
         const dplPointsData = grp.dplId
           ? await calculateDplPoints(grp.dplId, grp.id, groupPointsData.totalGroupPoints)
-          : { poinDpl: 0, poinLogbookDpl: 0, poinKelompok: groupPointsData.totalGroupPoints, hasLogbookDpl: false };
+          : {
+              poinDpl: 0,
+              poinLogbookDpl: 0,
+              poinKelompok: groupPointsData.totalGroupPoints,
+              hasLogbookDpl: false,
+            };
 
         return {
           id: grp.id,
@@ -1340,15 +1529,15 @@ export const dplService = {
                 phone: grp.dpl.phone,
               }
             : grp.dplNamaMentah
-            ? {
-                id: "",
-                name: grp.dplNamaMentah,
-                nip: null,
-                institusi: null,
-                programStudi: null,
-                phone: null,
-              }
-            : null,
+              ? {
+                  id: "",
+                  name: grp.dplNamaMentah,
+                  nip: null,
+                  institusi: null,
+                  programStudi: null,
+                  phone: null,
+                }
+              : null,
           studentCount,
           activeTodayCount,
           actualHours,
@@ -1579,8 +1768,7 @@ export const dplService = {
         remainingMinutes,
         targetHours,
         progressPercentage,
-        statusKehadiranLabel:
-          alphaCount > 0 ? "Perlu Perhatian (Ada Alpa)" : "Tertib Presensi",
+        statusKehadiranLabel: alphaCount > 0 ? "Perlu Perhatian (Ada Alpa)" : "Tertib Presensi",
         attendances: attendances.map((a) => ({
           id: a.id,
           scheduleTitle: a.schedule?.title || "Kegiatan KKN",
@@ -2474,9 +2662,21 @@ export const dplService = {
             { status: { in: ["DITERIMA", "SEDANG_BERJALAN", "SELESAI"] } },
           ],
         });
-      } else if (u === "DITOLAK" || u === "TIDAK_DISETUJUI" || u === "KADALUARSA" || u === "KADALUARSA_OTOMATIS") {
+      } else if (
+        u === "DITOLAK" ||
+        u === "TIDAK_DISETUJUI" ||
+        u === "KADALUARSA" ||
+        u === "KADALUARSA_OTOMATIS"
+      ) {
         andConditions.push({
-          OR: [{ statusUsulan: { in: ["DITOLAK", "TIDAK_DISETUJUI", "KADALUARSA_OTOMATIS", "KADALUARSA"] } }, { status: "DITOLAK" }],
+          OR: [
+            {
+              statusUsulan: {
+                in: ["DITOLAK", "TIDAK_DISETUJUI", "KADALUARSA_OTOMATIS", "KADALUARSA"],
+              },
+            },
+            { status: "DITOLAK" },
+          ],
         });
       } else if (u === "BELUM_DISETUJUI" || u === "MENUNGGU" || u === "PENDING") {
         andConditions.push({
@@ -3073,9 +3273,7 @@ export const dplService = {
           dpl: { select: { name: true } },
         },
       });
-      const studentUserIds = (kelompok?.students || [])
-        .map((s) => s.userId)
-        .filter(Boolean);
+      const studentUserIds = (kelompok?.students || []).map((s) => s.userId).filter(Boolean);
 
       if (studentUserIds.length > 0) {
         const parsedJudul = parseProkerDeskripsi(prokerExisting.deskripsi).judul;
@@ -3083,6 +3281,24 @@ export const dplService = {
         const isRejected = statusUsulan === "DITOLAK";
 
         if (isApproved) {
+          // Poin Gamifikasi: Pengajuan Proker Disetujui bernilai +2 poin per anggota
+          try {
+            const existingPoints = await prisma.pointHistory.findFirst({
+              where: { description: { contains: `[ProkerID:${id}]` } },
+            });
+            if (!existingPoints) {
+              const prokerPointRecords = studentUserIds.map((uid) => ({
+                userId: uid,
+                points: 2,
+                description: `Program Kerja Disetujui: ${parsedJudul} [ProkerID:${id}]`,
+                kategori: "KKN_PROKER",
+              }));
+              await prisma.pointHistory.createMany({ data: prokerPointRecords }).catch(() => {});
+            }
+          } catch (pErr) {
+            console.warn("[dplService.decideProgramKerja] award proker points warning:", pErr);
+          }
+
           const title = "Program Kerja Disetujui! 🎯";
           const message = `Program kerja "${parsedJudul}" untuk kelompok ${kelompok?.name || ""} telah resmi disetujui oleh DPL (${kelompok?.dpl?.name || "DPL"}).`;
           await notificationIntegrationService.sendToUsers({
@@ -3103,6 +3319,13 @@ export const dplService = {
             },
           });
         } else if (isRejected) {
+          // Revoke points if rejected
+          await prisma.pointHistory
+            .deleteMany({
+              where: { description: { contains: `[ProkerID:${id}]` } },
+            })
+            .catch(() => {});
+
           const title = "Program Kerja Belum Disetujui ⚠️";
           const message = `Program kerja "${parsedJudul}" belum disetujui DPL: ${catatanDpl || "Silakan cek catatan evaluasi DPL."}`;
           await notificationIntegrationService.sendToUsers({
@@ -3124,7 +3347,10 @@ export const dplService = {
         }
       }
     } catch (notifErr: any) {
-      console.warn("[dplService.decideProgramKerja] Gagal mengirim push notifikasi proker:", notifErr?.message);
+      console.warn(
+        "[dplService.decideProgramKerja] Gagal mengirim push notifikasi proker:",
+        notifErr?.message
+      );
     }
 
     return {
@@ -3179,8 +3405,8 @@ export const dplService = {
         (prokerExisting.status === "SELESAI"
           ? "SELESAI"
           : prokerExisting.status === "SEDANG_BERJALAN"
-          ? "SEDANG_BERJALAN"
-          : "BELUM_MULAI")
+            ? "SEDANG_BERJALAN"
+            : "BELUM_MULAI")
     ).toUpperCase();
     if (statusPelaksanaanStr === "BELUM_MULAI" || statusPelaksanaanStr === "BELUM") {
       throw new Error("PROKER_NOT_STARTED");
@@ -3272,7 +3498,10 @@ export const dplService = {
         });
       }
     } catch (notifErr: any) {
-      console.warn("[dplService.assessProgramKerja] Gagal mengirim push notifikasi proker:", notifErr?.message);
+      console.warn(
+        "[dplService.assessProgramKerja] Gagal mengirim push notifikasi proker:",
+        notifErr?.message
+      );
     }
 
     return {

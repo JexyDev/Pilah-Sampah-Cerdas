@@ -394,15 +394,15 @@ export const DEFAULT_TIMELINE_COBLONG = [
     bidangKegiatan: "Pemilahan Sampah",
     rekomendasiAksi: [
       "Distribusikan stiker dan pasang QR Code pada tempat sampah warga di RT pilot project.",
-      "Lakukan pendampingan registrasi akun warga dan aktivasi tempat sampah via scan QR hingga status ACTIVE_BOUND.",
-      "Bantu warga lansia atau yang belum memiliki smartphone dengan mencatatkannya di akun keluarga / kartu pendamping.",
+      "Lakukan pembimbingan registrasi akun warga dan aktivasi tempat sampah via scan QR hingga status ACTIVE_BOUND.",
+      "Bantu warga lansia atau yang belum memiliki smartphone dengan mencatatkannya di akun keluarga / kartu pembimbing.",
     ],
     pertanyaanKritis: [
       "Berapa persentase KK di RT pilot yang berhasil mengaktifkan tempat sampahnya di sistem BERSEKA?",
       "Apa hambatan terbesar warga saat proses aktivasi QR tempat sampah dan bagaimana solusinya?",
     ],
     tipsSukses: [
-      "Lakukan aktivasi saat waktu senggang warga (sore hari atau akhir pekan) agar didampingi dengan tenang.",
+      "Lakukan aktivasi saat waktu senggang warga (sore hari atau akhir pekan) agar dibimbing dengan tenang.",
     ],
     checklist: [
       "Pemasangan QR tempat sampah di RT pilot",
@@ -419,7 +419,7 @@ export const DEFAULT_TIMELINE_COBLONG = [
     tanggal: "9 - 15 September 2026",
     startDate: new Date("2026-09-09T00:00:00.000Z"),
     endDate: new Date("2026-09-15T23:59:59.000Z"),
-    fase: "Fase 3 - Implementasi & Pendampingan",
+    fase: "Fase 3 - Implementasi & Pembimbingan",
     kegiatanUtama:
       "Uji coba aplikasi warga (scan QR, setor sampah, verifikasi poin) & edukasi pemilahan door-to-door di RT pilot; Uji coba timbangan IoT & GPS; Uji coba dashboard monitoring kelurahan; Evaluasi hasil pilot & penyempurnaan sistem",
     outputTarget: "Warga RT pilot mulai menggunakan aplikasi; sistem IoT & dashboard berjalan",
@@ -427,7 +427,7 @@ export const DEFAULT_TIMELINE_COBLONG = [
     statusPelaksanaan: "BELUM_DIMULAI",
     bidangKegiatan: "Edukasi Warga & Sosialisasi",
     rekomendasiAksi: [
-      "Dampingi warga RT pilot dalam membuang sampah: foto sampah AI -> scan QR -> verifikasi poin.",
+      "Bimbing warga RT pilot dalam membuang sampah: foto sampah AI -> scan QR -> verifikasi poin.",
       "Uji coba integrasi timbangan IoT di pos pengumpulan dan validasi berat sampah (Kg) yang masuk ke dashboard.",
       "Evaluasi hasil uji coba 1 minggu di RT pilot: data kepatuhan pemilahan, kesalahan pilah (mismatch), dan kepuasan warga.",
     ],
@@ -453,9 +453,9 @@ export const DEFAULT_TIMELINE_COBLONG = [
     tanggal: "16 - 29 September 2026",
     startDate: new Date("2026-09-16T00:00:00.000Z"),
     endDate: new Date("2026-09-29T23:59:59.000Z"),
-    fase: "Fase 3 - Implementasi & Pendampingan",
+    fase: "Fase 3 - Implementasi & Pembimbingan",
     kegiatanUtama:
-      "Perluasan program ke seluruh RW; Aktivasi gamifikasi & leaderboard partisipasi warga; Pendampingan pembentukan/penguatan bank sampah per RW",
+      "Perluasan program ke seluruh RW; Aktivasi gamifikasi & leaderboard partisipasi warga; Pembimbingan pembentukan/penguatan bank sampah per RW",
     outputTarget: "Seluruh RW terlibat; leaderboard aktif",
     picKeterangan: "Monitoring DPL",
     statusPelaksanaan: "BELUM_DIMULAI",
@@ -487,15 +487,15 @@ export const DEFAULT_TIMELINE_COBLONG = [
     tanggal: "30 September - 6 Oktober 2026",
     startDate: new Date("2026-09-30T00:00:00.000Z"),
     endDate: new Date("2026-10-06T23:59:59.000Z"),
-    fase: "Fase 3 - Implementasi & Pendampingan",
+    fase: "Fase 3 - Implementasi & Pembimbingan",
     kegiatanUtama:
-      "Pendampingan Pengangkutan sampah berbasis data (rute & jadwal via IoT/GPS); Pendampingan pengolahan organik: kompos, biopori, budidaya maggot BSF",
+      "Pembimbingan Pengangkutan sampah berbasis data (rute & jadwal via IoT/GPS); Pembimbingan pengolahan organik: kompos, biopori, budidaya maggot BSF",
     outputTarget: "Rute pengangkutan optimal; unit pengomposan berjalan",
     picKeterangan: "Kunjungan DPL",
     statusPelaksanaan: "BELUM_DIMULAI",
     bidangKegiatan: "Pengangkutan & Logistik",
     rekomendasiAksi: [
-      "Dampingi petugas pengangkut residu dalam optimalisasi rute dan jadwal pengangkutan berbasis polygon.",
+      "Bimbing petugas pengangkut residu dalam optimalisasi rute dan jadwal pengangkutan berbasis polygon.",
       "Inisiasi instalasi pengolahan sampah organik: pembuatan lubang biopori komunal, komposter takakura, atau biokonversi maggot BSF.",
       "Latih kader PKK / karang taruna setempat agar mampu merawat unit biopori dan panen pupuk kompos.",
     ],
@@ -521,7 +521,7 @@ export const DEFAULT_TIMELINE_COBLONG = [
     tanggal: "7 - 13 Oktober 2026",
     startDate: new Date("2026-10-07T00:00:00.000Z"),
     endDate: new Date("2026-10-13T23:59:59.000Z"),
-    fase: "Fase 3 - Implementasi & Pendampingan",
+    fase: "Fase 3 - Implementasi & Pembimbingan",
     kegiatanUtama:
       "Operasional bank sampah: pencatatan transaksi & saldo nasabah; Produksi POC & pemanfaatan botol bekas (buruan SAE); Pembuatan konten edukasi digital dan pencarian link kerja sama untuk distribusi produksi maggot dan POC dan evaluasi tengah Periode (Kesadaran dan partisipasi warga)",
     outputTarget:
@@ -530,7 +530,7 @@ export const DEFAULT_TIMELINE_COBLONG = [
     statusPelaksanaan: "BELUM_DIMULAI",
     bidangKegiatan: "Pengolahan & Bank Sampah",
     rekomendasiAksi: [
-      "Dampingi kegiatan penimbangan bank sampah: pencatatan berat anorganik, buku tabungan sampah, dan input data transaksi.",
+      "Bimbing kegiatan penimbangan bank sampah: pencatatan berat anorganik, buku tabungan sampah, dan input data transaksi.",
       "Produksi Pupuk Organik Cair (POC) dan integrasikan dengan program urban farming (Buruan SAE) warga.",
       "Lakukan evaluasi tengah periode bersama DPL dan Lurah mengenai tren kepatuhan dan kesadaran masyarakat.",
     ],
@@ -556,7 +556,7 @@ export const DEFAULT_TIMELINE_COBLONG = [
     tanggal: "14 - 27 Oktober 2026",
     startDate: new Date("2026-10-14T00:00:00.000Z"),
     endDate: new Date("2026-10-27T23:59:59.000Z"),
-    fase: "Fase 3 - Implementasi & Pendampingan",
+    fase: "Fase 3 - Implementasi & Pembimbingan",
     kegiatanUtama:
       "Mitigasi persoalan berdasarkan data evaluasi: Edukasi masyarakat, Penguatan kelembagaan bank sampah/TPS 3R & SOP pengelolaan; Optimalisasi rute pengangkutan berdasarkan data terkumpul",
     outputTarget: "Peningkatan warga memilah; SOP kelembagaan bank sampah tersusun",
@@ -931,7 +931,7 @@ export const resolveTimelineGuidance = (item: {
       "Publikasikan leaderboard warga teraktif secara berkala untuk memicu motivasi."
     );
     checklist.push(
-      "Pendampingan bank sampah",
+      "Pembimbingan bank sampah",
       "Pengolahan organik (kompos/POC/biopori)",
       "Evaluasi berkala kepatuhan warga"
     );
@@ -1423,7 +1423,7 @@ export const timelineKknService = {
             "Berapa persen partisipasi warga percontohan minggu ini?",
             "Apakah ada kendala teknis dalam penggunaan aplikasi oleh warga?",
           ],
-          tipsSukses: ["Lakukan pendampingan langsung door-to-door ke rumah warga percontohan."],
+          tipsSukses: ["Lakukan pembimbingan langsung door-to-door ke rumah warga percontohan."],
           checklist: ["10 warga percontohan terdaftar", "Wadah sampah terpilah didistribusikan"],
           indikatorKeberhasilan: [
             "100% warga percontohan aktif memilah sampah",

@@ -1008,11 +1008,6 @@ export class SuperUserService {
     return {
       trends: Object.keys(weeklyData).map((k) => {
         const d = weeklyData[k];
-        // Inject dummy data to show crossing lines for CEO demo if missing
-        if (d.organic > 0 && d.nonOrganic === 0) {
-          d.nonOrganic = d.organic * (0.5 + Math.random());
-          d.residu = d.organic * (0.2 + Math.random() * 0.5);
-        }
         return {
           period: k,
           ...d,
