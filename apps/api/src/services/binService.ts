@@ -837,7 +837,36 @@ export class BinService {
     const codes = data.qrCodes || (data.qrCode ? [data.qrCode] : []);
     if (codes.length === 0) throw new Error("QR_CODES_REQUIRED");
 
+    // 🔴 BATAS MAKSIMAL KUOTA KEPEMILIKAN TEMPAT SAMPAH WARGA
+    const MAX_BINS_PER_WARGA = 2;
+    const MAX_ORGANIC_BINS = 1;
+    const MAX_NON_ORGANIC_BINS = 1;
+
     const result = await prisma.$transaction(async (tx) => {
+      // 1. Ambil data tempat sampah aktif milik warga saat ini
+      const currentBins = await tx.bin.findMany({
+        where: {
+          OR: [{ userId: user.id }, { binOwnerships: { some: { userId: user.id } } }],
+          status: "ACTIVE_BOUND",
+        },
+        include: { category: true },
+      });
+
+      // 🔴 PROTEKSI KUOTA TOTAL: Maksimal 2 tempat sampah per warga
+      if (currentBins.length >= MAX_BINS_PER_WARGA) {
+        throw new Error("MAXIMUM_BIN_LIMIT_REACHED");
+      }
+      if (currentBins.length + codes.length > MAX_BINS_PER_WARGA) {
+        throw new Error("MAXIMUM_BIN_LIMIT_REACHED");
+      }
+
+      let existingOrganicCount = currentBins.filter((b) =>
+        checkIsOrganicCategory(b.category?.name)
+      ).length;
+      let existingNonOrganicCount = currentBins.filter(
+        (b) => b.category?.name && !checkIsOrganicCategory(b.category?.name)
+      ).length;
+
       const updatedBins = [];
       const requestedCategoryIds = new Set<string>();
 
@@ -867,39 +896,33 @@ export class BinService {
         // Jika bin.rwId === null → QR massal → siapa pun boleh aktivasi ✅
 
         if (bin.categoryId) {
-          // 1. Get user's current bins to check onboarding status
-          const currentBins = await tx.bin.findMany({
-            where: {
-              OR: [{ userId: user.id }, { binOwnerships: { some: { userId: user.id } } }],
-              status: "ACTIVE_BOUND",
-            },
-            include: { category: true },
-          });
-
-          const hasOrganik = currentBins.some((b) => checkIsOrganicCategory(b.category?.name));
-          const hasNonOrganik = currentBins.some(
-            (b) => b.category?.name && !checkIsOrganicCategory(b.category?.name)
-          );
-          const onboardingComplete = hasOrganik && hasNonOrganik;
-
           // Check duplicate category in the request payload itself
           if (requestedCategoryIds.has(bin.categoryId)) {
             throw new Error("BIN_CATEGORY_DUPLICATE_IN_REQUEST");
           }
           requestedCategoryIds.add(bin.categoryId);
 
-          // 2. Enforce onboarding rules
-          if (!onboardingComplete) {
-            const catName = bin.category?.name || "";
-            const isCatOrg = checkIsOrganicCategory(catName);
-            if (isCatOrg && hasOrganik) {
-              throw new Error("ONBOARDING_INCOMPLETE_WRONG_CATEGORY:ORGANIC");
+          const catName = bin.category?.name || "";
+          const isCatOrg = checkIsOrganicCategory(catName);
+
+          // 🔴 PROTEKSI KUOTA KATEGORI: Maksimal 1 Organik & 1 Anorganik
+          if (isCatOrg) {
+            if (existingOrganicCount >= MAX_ORGANIC_BINS) {
+              if (existingNonOrganicCount === 0) {
+                throw new Error("ONBOARDING_INCOMPLETE_WRONG_CATEGORY:ORGANIC");
+              }
+              throw new Error("BIN_CATEGORY_DUPLICATE:ORGANIK");
             }
-            if (!isCatOrg && hasNonOrganik) {
-              throw new Error("ONBOARDING_INCOMPLETE_WRONG_CATEGORY:NON_ORGANIC");
+            existingOrganicCount++;
+          } else {
+            if (existingNonOrganicCount >= MAX_NON_ORGANIC_BINS) {
+              if (existingOrganicCount === 0) {
+                throw new Error("ONBOARDING_INCOMPLETE_WRONG_CATEGORY:NON_ORGANIC");
+              }
+              throw new Error("BIN_CATEGORY_DUPLICATE:ANORGANIK");
             }
+            existingNonOrganicCount++;
           }
-          // If onboardingComplete is true, we allow any bin category without limits
         }
 
         const updatedBin = await tx.bin.update({
@@ -953,10 +976,12 @@ export class BinService {
         updatedBins.push(updatedBin);
       }
 
-      await tx.user.update({
-        where: { id: user.id },
-        data: { lifecycleState: "FULLY_ACTIVE" },
-      });
+      if (existingOrganicCount >= 1 && existingNonOrganicCount >= 1) {
+        await tx.user.update({
+          where: { id: user.id },
+          data: { lifecycleState: "FULLY_ACTIVE" },
+        });
+      }
 
       return updatedBins;
     });

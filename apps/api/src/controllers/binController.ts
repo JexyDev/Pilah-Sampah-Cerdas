@@ -569,6 +569,19 @@ export class BinController {
         return;
       }
 
+      if (
+        error.message === "MAXIMUM_BIN_LIMIT_REACHED" ||
+        error.message.startsWith("MAXIMUM_BIN_LIMIT_REACHED")
+      ) {
+        res.status(400).json({
+          success: false,
+          error: "MAXIMUM_BIN_LIMIT_REACHED",
+          message:
+            "Anda telah mencapai batas maksimal kepemilikan tempat sampah (maksimal 1 Organik dan 1 Anorganik per rumah tangga).",
+        });
+        return;
+      }
+
       res.status(400).json({ success: false, message: error.message });
     }
   }
