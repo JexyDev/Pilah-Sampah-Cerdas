@@ -252,6 +252,9 @@ export class AuthService {
     });
     const totalPoints = userPointsSum._sum.points || 0;
 
+    const lifecycleState = (user as any).lifecycleState || "REGISTERED";
+    const isRegisteredWarga = userRoleName === "WARGA" && lifecycleState === "REGISTERED";
+
     return {
       accessToken,
       refreshToken,
@@ -260,15 +263,16 @@ export class AuthService {
         name: user.name,
         role: userRoleName,
         phone: user.phone,
-        address: user.address,
+        address: isRegisteredWarga ? null : user.address,
         fotoProfil: user.fotoProfil,
-        kelurahan: kelurahanName,
-        rw: rwName,
+        kelurahan: isRegisteredWarga ? null : kelurahanName,
+        rw: isRegisteredWarga ? null : rwName,
         wilayah: dplAssignment || undefined,
         dplKelompok: dplGroupsList.length > 0 ? dplGroupsList : (anyUser as any).dplKelompok || [],
-        provinsi: user.provinsi || "Jawa Barat",
-        kabupaten: user.kabupaten || "Kota Bandung",
-        kecamatan: "Coblong",
+        provinsi: isRegisteredWarga ? null : (user.provinsi || "Jawa Barat"),
+        kabupaten: isRegisteredWarga ? null : (user.kabupaten || "Kota Bandung"),
+        kecamatan: isRegisteredWarga ? null : ((user as any).kecamatan || "Coblong"),
+        lifecycleState,
         points: totalPoints,
         totalPoints,
         nim: anyUser.studentProfile?.nim || null,
@@ -899,16 +903,7 @@ export class AuthService {
       if (areaInKel) return areaInKel.id;
     }
 
-    // Fallback: pick the first registered official RtRwArea in system
-    const defaultArea = await prisma.rw.findFirst({
-      orderBy: { id: "asc" },
-    });
-
-    if (!defaultArea) {
-      throw new Error("RT_RW_AREA_NOT_FOUND");
-    }
-
-    return defaultArea.id;
+    throw new Error("RT_RW_AREA_NOT_FOUND");
   }
 
   /**
@@ -977,7 +972,8 @@ export class AuthService {
         name: user.name,
         phone: user.phone,
         role: "WARGA",
-        rwId: user.rwId,
+        rwId: user.rwId ?? null,
+        lifecycleState: (user as any).lifecycleState || "REGISTERED",
         fotoProfil: user.fotoProfil,
       },
       accessToken,

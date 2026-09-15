@@ -989,7 +989,10 @@ export class KknService {
       }
     }
 
-    const where: any = { role: { name: "WARGA" } };
+    const where: any = {
+      role: { name: "WARGA" },
+      lifecycleState: { not: "REGISTERED" },
+    };
 
     if (targetRwId || targetRwIds.length > 0 || targetKelurahan || studentGroupUserIds.length > 0) {
       const orConditions: any[] = [];
