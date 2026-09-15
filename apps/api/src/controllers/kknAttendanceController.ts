@@ -379,10 +379,19 @@ export const kknAttendanceController = {
         typeof rawRole === "object" ? rawRole?.name : rawRole || ""
       ).toUpperCase();
       const isDpl = roleName === "DPL" || roleName === "DOSEN_PEMBIMBING";
+      const isMpl = [
+        "MPL",
+        "MITRA_PENDAMPING_LAPANGAN",
+        "MITRA PENDAMPING LAPANGAN",
+        "MITRA_PEMBIMBING_LAPANGAN",
+        "MITRA PEMBIMBING LAPANGAN",
+        "MITRA",
+      ].includes(roleName);
       const dplUserId = isDpl ? (req as any).user?.userId || (req as any).user?.id : undefined;
+      const mplUserId = isMpl ? (req as any).user?.userId || (req as any).user?.id : undefined;
       const kelompokId = (req.query.kelompokId as string) || undefined;
 
-      const result = await kknAttendanceService.getActiveStudentsLocations(dplUserId, kelompokId);
+      const result = await kknAttendanceService.getActiveStudentsLocations(dplUserId, kelompokId, mplUserId);
       res.status(200).json({
         success: true,
         data: result,
@@ -413,12 +422,24 @@ export const kknAttendanceController = {
       const roleName = String(
         typeof rawRole === "object" ? rawRole?.name : rawRole || ""
       ).toUpperCase();
+      const isMpl = [
+        "MPL",
+        "MITRA_PENDAMPING_LAPANGAN",
+        "MITRA PENDAMPING LAPANGAN",
+        "MITRA_PEMBIMBING_LAPANGAN",
+        "MITRA PEMBIMBING LAPANGAN",
+        "MITRA",
+      ].includes(roleName);
       let dplUserId: string | undefined = undefined;
+      let mplUserId: string | undefined = undefined;
       if (roleName === "DPL" || roleName === "DOSEN_PEMBIMBING") {
         dplUserId = (req as any).user?.userId || (req as any).user?.id;
       }
+      if (isMpl) {
+        mplUserId = (req as any).user?.userId || (req as any).user?.id;
+      }
 
-      const result = await kknAttendanceService.getAttendanceList(id, dplUserId);
+      const result = await kknAttendanceService.getAttendanceList(id, dplUserId, mplUserId);
       res.status(200).json({
         success: true,
         data: result,
@@ -440,12 +461,21 @@ export const kknAttendanceController = {
         typeof rawRole === "object" ? rawRole?.name : rawRole || ""
       ).toUpperCase();
       const isDpl = roleName === "DPL" || roleName === "DOSEN_PEMBIMBING";
+      const isMpl = [
+        "MPL",
+        "MITRA_PENDAMPING_LAPANGAN",
+        "MITRA PENDAMPING LAPANGAN",
+        "MITRA_PEMBIMBING_LAPANGAN",
+        "MITRA PEMBIMBING LAPANGAN",
+        "MITRA",
+      ].includes(roleName);
       const isStudent = roleName === "MAHASISWA_KKN";
 
       const currentUserId = (req as any).user?.userId || (req as any).user?.id;
       const kelompokId = req.query.kelompokId as string | undefined;
       const studentId = isStudent ? currentUserId : (req.query.studentId as string | undefined);
       const dplUserId = isDpl ? currentUserId : undefined;
+      const mplUserId = isMpl ? currentUserId : undefined;
       const startDate = req.query.startDate as string | undefined;
       const endDate = req.query.endDate as string | undefined;
 
@@ -453,6 +483,7 @@ export const kknAttendanceController = {
         kelompokId,
         studentId,
         dplUserId,
+        mplUserId,
         startDate,
         endDate,
       });

@@ -2389,7 +2389,7 @@ export class KknAttendanceService {
    * Get all active student locations recorded in the last TTL minutes (default 5 minutes).
    * If dplUserId is provided, filters to students in DPL's assigned kelompok.
    */
-  async getActiveStudentsLocations(dplUserId?: string, kelompokId?: string) {
+  async getActiveStudentsLocations(dplUserId?: string, kelompokId?: string, mplUserId?: string) {
     let ttlMinutes = 5;
     try {
       const ttlConfig = await configService.getConfig("attendance_active_location_ttl_minutes");
@@ -2403,7 +2403,7 @@ export class KknAttendanceService {
     // Only fetch fresh locations from the last TTL minutes (default: 5 minutes)
     const cutoff = new Date(Date.now() - ttlMinutes * 60 * 1000);
 
-    // If DPL or specific kelompokId provided, find student user IDs
+    // If DPL, MPL, or specific kelompokId provided, find student user IDs
     let targetStudentIds: string[] | null = null;
     if (kelompokId && kelompokId !== "ALL") {
       const students = await prisma.studentKkn.findMany({
@@ -2422,6 +2422,51 @@ export class KknAttendanceService {
       const kelompokIds = kelompokBinaan.map((k) => k.id);
       const students = await prisma.studentKkn.findMany({
         where: { kelompokId: { in: kelompokIds } },
+        select: { userId: true },
+      });
+      targetStudentIds = students.map((s) => s.userId);
+      if (targetStudentIds.length === 0) {
+        return [];
+      }
+    } else if (mplUserId) {
+      const dbUser = await prisma.user.findUnique({
+        where: { id: mplUserId },
+        include: { rw: { include: { kelurahan: true } } },
+      });
+      let mplKelurahan = dbUser?.rw?.kelurahan?.name;
+      if (!mplKelurahan && dbUser?.address) {
+        mplKelurahan = dbUser.address.replace(/^Kel\.\s*/i, "").trim();
+      }
+      if (!mplKelurahan && dbUser?.name) {
+        mplKelurahan = dbUser.name.replace(/^Mpl\s+(Kelurahan\s+)?/i, "").trim();
+      }
+      const mplOr: any[] = [
+        { mplId: mplUserId },
+        { mpl: { id: mplUserId } },
+      ];
+      if (mplKelurahan) {
+        mplOr.push({
+          nama: { contains: mplKelurahan.trim(), mode: "insensitive" },
+        });
+        mplOr.push({
+          kelurahan: { contains: mplKelurahan.trim(), mode: "insensitive" },
+        });
+      }
+      const mplGroups = await prisma.kelompokKkn.findMany({
+        where: { OR: mplOr },
+        select: { id: true },
+      });
+      const groupIds = mplGroups.map((g) => g.id);
+      const studentConditions: any[] = [{ kelompokId: { in: groupIds } }];
+      if (mplKelurahan) {
+        studentConditions.push({
+          assignedRw: {
+            kelurahan: { name: { equals: mplKelurahan.trim(), mode: "insensitive" } },
+          },
+        });
+      }
+      const students = await prisma.studentKkn.findMany({
+        where: { OR: studentConditions },
         select: { userId: true },
       });
       targetStudentIds = students.map((s) => s.userId);
@@ -2481,7 +2526,7 @@ export class KknAttendanceService {
    * Get list of attendances for a schedule
    * Get list of attendances for a schedule (Scoped to DPL kelompok if dplUserId provided)
    */
-  async getAttendanceList(scheduleId: string, dplUserId?: string) {
+  async getAttendanceList(scheduleId: string, dplUserId?: string, mplUserId?: string) {
     // 1. Fetch schedule to filter students strictly by assigned Kelompok KKN and get date range
     const schedule = await prisma.schedule.findUnique({
       where: { id: scheduleId },
@@ -2496,7 +2541,7 @@ export class KknAttendanceService {
       },
     });
 
-    let dplStudentUserIds: string[] | undefined;
+    let scopedStudentUserIds: string[] | undefined;
     if (dplUserId) {
       const dplGroups = await prisma.kelompokKkn.findMany({
         where: { OR: [{ dplId: dplUserId }, { dpl: { id: dplUserId } }] },
@@ -2506,14 +2551,61 @@ export class KknAttendanceService {
           },
         },
       });
-      dplStudentUserIds = dplGroups.flatMap((g) => g.students.map((s) => s.userId));
+      scopedStudentUserIds = dplGroups.flatMap((g) => g.students.map((s) => s.userId));
+    } else if (mplUserId) {
+      const dbUser = await prisma.user.findUnique({
+        where: { id: mplUserId },
+        include: { rw: { include: { kelurahan: true } } },
+      });
+      let mplKelurahan = dbUser?.rw?.kelurahan?.name;
+      if (!mplKelurahan && dbUser?.address) {
+        mplKelurahan = dbUser.address.replace(/^Kel\.\s*/i, "").trim();
+      }
+      if (!mplKelurahan && dbUser?.name) {
+        mplKelurahan = dbUser.name.replace(/^Mpl\s+(Kelurahan\s+)?/i, "").trim();
+      }
+      const mplOr: any[] = [
+        { mplId: mplUserId },
+        { mpl: { id: mplUserId } },
+      ];
+      if (mplKelurahan) {
+        mplOr.push({
+          nama: { contains: mplKelurahan.trim(), mode: "insensitive" },
+        });
+        mplOr.push({
+          kelurahan: { contains: mplKelurahan.trim(), mode: "insensitive" },
+        });
+      }
+      const mplGroups = await prisma.kelompokKkn.findMany({
+        where: { OR: mplOr },
+        include: {
+          students: {
+            select: { userId: true },
+          },
+        },
+      });
+      scopedStudentUserIds = mplGroups.flatMap((g) => g.students.map((s) => s.userId));
+      if (mplKelurahan) {
+        const rwStudents = await prisma.studentKkn.findMany({
+          where: {
+            assignedRw: {
+              kelurahan: {
+                name: { equals: mplKelurahan.trim(), mode: "insensitive" },
+              },
+            },
+          },
+          select: { userId: true },
+        });
+        const rwStudentIds = rwStudents.map((s) => s.userId);
+        scopedStudentUserIds = Array.from(new Set([...scopedStudentUserIds, ...rwStudentIds]));
+      }
     }
 
     let studentWhereCondition: any = { studentProfile: { isNot: null } };
 
-    if (dplStudentUserIds && dplStudentUserIds.length > 0) {
+    if (scopedStudentUserIds && scopedStudentUserIds.length > 0) {
       studentWhereCondition = {
-        id: { in: dplStudentUserIds },
+        id: { in: scopedStudentUserIds },
       };
     } else if (schedule?.kelompok?.students && schedule.kelompok.students.length > 0) {
       const groupUserIds = schedule.kelompok.students.map((s) => s.userId);
@@ -3067,11 +3159,12 @@ export class KknAttendanceService {
   async getTimesheetSummary(params: {
     kelompokId?: string;
     dplUserId?: string;
+    mplUserId?: string;
     studentId?: string;
     startDate?: string;
     endDate?: string;
   }) {
-    const { kelompokId, dplUserId, studentId, startDate, endDate } = params;
+    const { kelompokId, dplUserId, mplUserId, studentId, startDate, endDate } = params;
 
     let attendanceDateFilter: any = undefined;
     if (startDate || endDate) {
@@ -3095,6 +3188,44 @@ export class KknAttendanceService {
         select: { id: true },
       });
       whereStudent.kelompokId = { in: kelompokBinaan.map((k) => k.id) };
+    } else if (mplUserId) {
+      const dbUser = await prisma.user.findUnique({
+        where: { id: mplUserId },
+        include: { rw: { include: { kelurahan: true } } },
+      });
+      let mplKelurahan = dbUser?.rw?.kelurahan?.name;
+      if (!mplKelurahan && dbUser?.address) {
+        mplKelurahan = dbUser.address.replace(/^Kel\.\s*/i, "").trim();
+      }
+      if (!mplKelurahan && dbUser?.name) {
+        mplKelurahan = dbUser.name.replace(/^Mpl\s+(Kelurahan\s+)?/i, "").trim();
+      }
+      const mplOr: any[] = [
+        { mplId: mplUserId },
+        { mpl: { id: mplUserId } },
+      ];
+      if (mplKelurahan) {
+        mplOr.push({
+          nama: { contains: mplKelurahan.trim(), mode: "insensitive" },
+        });
+        mplOr.push({
+          kelurahan: { contains: mplKelurahan.trim(), mode: "insensitive" },
+        });
+      }
+      const mplGroups = await prisma.kelompokKkn.findMany({
+        where: { OR: mplOr },
+        select: { id: true },
+      });
+      const groupIds = mplGroups.map((g) => g.id);
+      const studentConditions: any[] = [{ kelompokId: { in: groupIds } }];
+      if (mplKelurahan) {
+        studentConditions.push({
+          assignedRw: {
+            kelurahan: { name: { equals: mplKelurahan.trim(), mode: "insensitive" } },
+          },
+        });
+      }
+      whereStudent.OR = studentConditions;
     }
 
     const students = await prisma.studentKkn.findMany({
