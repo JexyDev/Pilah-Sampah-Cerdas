@@ -165,6 +165,7 @@ model User {
   email                 String?                  @map("email")
   mustChangePassword    Boolean                  @default(false) @map("harus_ganti_password")
   wargaSubtype          String?                  @map("subtipe_warga")
+  komunitasId           String?                  @unique @map("id_komunitas")
   nip                   String?                  @map("nip")
   institusi             String?                  @map("institusi")
   jabatan               String?                  @map("jabatan")
@@ -671,6 +672,11 @@ model PetugasResidu {
 // FASILITAS & PRODUKSI
 // ─────────────────────────────────────────────
 
+enum FacilityOwnership {
+  MILIK_RW
+  PRIBADI
+}
+
 model Facility {
   id                 String                  @id @default(uuid())
   jenis              FacilityType
@@ -687,6 +693,7 @@ model Facility {
   kelompokId         String?                 @map("id_kelompok")
   alamat             String?                 @map("alamat")
   statusApproval     String                  @default("PENDING") @map("status_persetujuan")
+  kepemilikan        FacilityOwnership       @default(PRIBADI) @map("kepemilikan")
   productionLogs     FacilityProductionLog[]
   rw                 Rw?                     @relation(fields: [rwId], references: [id])
   kelompok           KelompokKkn?            @relation(fields: [kelompokId], references: [id], onDelete: SetNull)

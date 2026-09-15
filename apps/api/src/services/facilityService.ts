@@ -26,7 +26,8 @@ export const facilityService = {
     kelompokId?: string,
     alamat?: string,
     rwId?: number,
-    statusApproval?: "APPROVED" | "PENDING" | "REJECTED"
+    statusApproval?: "APPROVED" | "PENDING" | "REJECTED",
+    kepemilikan?: "MILIK_RW" | "PRIBADI"
   ) => {
     // Validate facility type
     const validTypes = [
@@ -81,6 +82,7 @@ export const facilityService = {
         registeredByUserId: registeredByUserId ?? undefined,
         kelompokId: kelompokId ?? undefined,
         statusApproval: statusApproval || "APPROVED",
+        kepemilikan: kepemilikan || "PRIBADI",
       },
     });
   },

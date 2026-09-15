@@ -275,4 +275,28 @@ export const userController = {
       }
     }
   },
+
+  registerKomunitas: async (req: Request, res: Response): Promise<void> => {
+    try {
+      if (!req.user || !req.user.userId) {
+        res.status(401).json({ success: false, message: "Unauthorized" });
+        return;
+      }
+      const komunitasId = await userService.registerKomunitas(req.user.userId);
+      res.status(200).json({
+        success: true,
+        message: "Berhasil mendaftar komunitas",
+        data: {
+          komunitas_id: komunitasId,
+        },
+      });
+    } catch (error: any) {
+      console.error("[UserController] registerKomunitas error:", error);
+      res.status(500).json({
+        success: false,
+        error: "INTERNAL_SERVER_ERROR",
+        message: error.message || "Gagal mendaftar komunitas",
+      });
+    }
+  },
 };
