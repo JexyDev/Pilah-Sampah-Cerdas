@@ -16,9 +16,13 @@ import {
   calculateLiveInZoneMinutes,
   kknAttendanceService,
 } from "./kknAttendanceService.js";
-import { parseProkerDeskripsi, calculateGroupPoints, calculatePersonalPoints } from "./dplService.js";
+import {
+  parseProkerDeskripsi,
+  calculateGroupPoints,
+  calculatePersonalPoints,
+  syncProkerGamificationPoints,
+} from "./dplService.js";
 import { calculateNilaiEkonomi } from "./pemanfaatanService.js";
-import { logbookService } from "./logbookService.js";
 import { evaluateSortingStatus } from "../utils/sortingEvaluation.js";
 
 export function normalizeProkerKategori(kategori?: string | null): string {
@@ -3189,9 +3193,7 @@ export class KknService {
           kategori: "REDUKSI_TONASE",
         },
       })
-      .catch((e) =>
-        console.warn("[kknService.createPemanfaatanSampah] pointHistory warning:", e)
-      );
+      .catch((e) => console.warn("[kknService.createPemanfaatanSampah] pointHistory warning:", e));
 
     // Tembusan 2 Arah: Send Notifications to RW and DPL
     const studentName = student?.user?.name || "Mahasiswa KKN";
@@ -4833,15 +4835,71 @@ export class KknService {
       updateData.attachmentUrls = attachmentUrls;
       updateData.hasAttachment = true;
     }
-    if (statusUsulan !== undefined) {
-      updateData.statusUsulan = statusUsulan;
+    let targetUsulan =
+      statusUsulan !== undefined
+        ? statusUsulan
+        : (payload as any).status_usulan !== undefined
+          ? (payload as any).status_usulan
+          : (payload as any).usulan;
+    let targetPelaksanaan =
+      statusPelaksanaan !== undefined
+        ? statusPelaksanaan
+        : (payload as any).status_pelaksanaan !== undefined
+          ? (payload as any).status_pelaksanaan
+          : (payload as any).pelaksanaan;
+
+    if (status !== undefined && targetUsulan === undefined && targetPelaksanaan === undefined) {
+      const s = String(status).toUpperCase();
+      if (s === "SELESAI") {
+        targetUsulan = "DISETUJUI";
+        targetPelaksanaan = "SELESAI";
+      } else if (s === "SEDANG_BERJALAN" || s === "SEDANG_DILAKSANAKAN" || s === "BERJALAN") {
+        targetUsulan = "DISETUJUI";
+        targetPelaksanaan = "SEDANG_BERJALAN";
+      } else if (s === "DITERIMA" || s === "DISETUJUI") {
+        targetUsulan = "DISETUJUI";
+        targetPelaksanaan = "BELUM_MULAI";
+      } else if (s === "DITOLAK" || s === "TIDAK_DISETUJUI") {
+        targetUsulan = "DITOLAK";
+        targetPelaksanaan = "BELUM_MULAI";
+      } else {
+        targetUsulan = "BELUM_DISETUJUI";
+        targetPelaksanaan = "BELUM_MULAI";
+      }
     }
-    if (statusPelaksanaan !== undefined) {
-      updateData.statusPelaksanaan = statusPelaksanaan;
+
+    if (targetUsulan !== undefined) {
+      let normU = String(targetUsulan).toUpperCase();
+      if (normU === "DITERIMA") normU = "DISETUJUI";
+      if (normU === "TIDAK_DISETUJUI") normU = "DITOLAK";
+      updateData.statusUsulan = normU;
     }
-    if (status !== undefined) {
+
+    if (targetPelaksanaan !== undefined) {
+      let normP = String(targetPelaksanaan).toUpperCase();
+      if (normP === "BERJALAN" || normP === "SEDANG" || normP === "SEDANG_BERJALAN")
+        normP = "SEDANG_BERJALAN";
+      if (normP === "SUDAH" || normP === "SELESAI") normP = "SELESAI";
+      updateData.statusPelaksanaan = normP;
+    }
+
+    const effectiveUsulan = updateData.statusUsulan || proker.statusUsulan || "BELUM_DISETUJUI";
+    const effectivePelaksanaan =
+      updateData.statusPelaksanaan || proker.statusPelaksanaan || "BELUM_MULAI";
+
+    // Sinkronkan kolom legacy status
+    if (effectivePelaksanaan === "SELESAI") {
+      updateData.status = "SELESAI";
+    } else if (effectivePelaksanaan === "SEDANG_BERJALAN") {
+      updateData.status = "SEDANG_BERJALAN";
+    } else if (effectiveUsulan === "DISETUJUI") {
+      updateData.status = "DITERIMA";
+    } else if (effectiveUsulan === "DITOLAK") {
+      updateData.status = "DITOLAK";
+    } else if (status !== undefined) {
       updateData.status = status;
     }
+
     if (catatanDpl !== undefined) {
       updateData.catatanDpl = catatanDpl;
     }
@@ -4851,6 +4909,17 @@ export class KknService {
       data: updateData,
     });
 
+    const parsedJudul = parseProkerDeskripsi(updateData.deskripsi || proker.deskripsi).judul;
+
+    // Sinkronisasi Poin Gamifikasi 3 Tahapan Proker (+2 Disetujui, +2 Berjalan, +2 Selesai)
+    await syncProkerGamificationPoints(
+      id,
+      proker.kelompokId,
+      effectiveUsulan,
+      effectivePelaksanaan,
+      parsedJudul
+    );
+
     if (statusUsulan === "DISETUJUI" && proker.statusUsulan !== "DISETUJUI") {
       try {
         const kelompok = await prisma.kelompokKkn.findUnique({
@@ -4859,22 +4928,6 @@ export class KknService {
         });
         const studentUserIds = (kelompok?.students || []).map((s) => s.userId).filter(Boolean);
         if (studentUserIds.length > 0) {
-          const parsedJudul = parseProkerDeskripsi(proker.deskripsi).judul;
-
-          // Poin Gamifikasi: Pengajuan Proker Disetujui bernilai +2 poin per anggota
-          const existingPoints = await prisma.pointHistory.findFirst({
-            where: { description: { contains: `[ProkerID:${id}]` } },
-          });
-          if (!existingPoints) {
-            const prokerPointRecords = studentUserIds.map((uid) => ({
-              userId: uid,
-              points: 2,
-              description: `Program Kerja Disetujui: ${parsedJudul} [ProkerID:${id}]`,
-              kategori: "KKN_PROKER",
-            }));
-            await prisma.pointHistory.createMany({ data: prokerPointRecords }).catch(() => {});
-          }
-
           await notificationIntegrationService.sendToUsers({
             userIds: studentUserIds,
             title: "Program Kerja Disetujui! 🎯",
@@ -4894,15 +4947,6 @@ export class KknService {
       } catch (err: any) {
         console.warn("[kknService.updateProgramKerja] Push notification error:", err?.message);
       }
-    } else if (
-      statusUsulan === "DITOLAK" ||
-      (statusUsulan && statusUsulan !== "DISETUJUI" && proker.statusUsulan === "DISETUJUI")
-    ) {
-      await prisma.pointHistory
-        .deleteMany({
-          where: { description: { contains: `[ProkerID:${id}]` } },
-        })
-        .catch(() => {});
     }
 
     return await this.getProgramKerjaById(userId, id);
@@ -4937,10 +4981,10 @@ export class KknService {
       throw new Error("Akses ditolak: Anda tidak memiliki izin untuk menghapus program kerja ini.");
     }
 
-    // Bersihkan poin terkait proker ini jika ada
+    // Bersihkan seluruh poin terkait proker ini
     await prisma.pointHistory
       .deleteMany({
-        where: { description: { contains: `[ProkerID:${id}]` } },
+        where: { description: { contains: `[ProkerID:${id}` } },
       })
       .catch(() => {});
 
@@ -5027,35 +5071,18 @@ export class KknService {
           data: { statusPelaksanaan: "SEDANG_BERJALAN" },
         })
         .catch(() => {});
-    }
 
-    // Poin Gamifikasi: Logbook Pemanfaatan (Sedang Dikerjakan) bernilai +2 poin per anggota
-    let memberUserIds: string[] = [userId];
-    if (student.kelompokId) {
-      const groupStudents = await prisma.studentKkn.findMany({
-        where: { kelompokId: student.kelompokId },
-        select: { userId: true },
-      });
-      const ids = groupStudents.map((s) => s.userId).filter(Boolean);
-      if (ids.length > 0) {
-        memberUserIds = Array.from(new Set(ids));
+      if (student.kelompokId) {
+        await syncProkerGamificationPoints(
+          programKerjaId,
+          student.kelompokId,
+          "DISETUJUI",
+          "SEDANG_BERJALAN"
+        );
       }
     }
 
-    const pointRecords = memberUserIds.map((uid) => ({
-      userId: uid,
-      points: 2,
-      description: `Logbook Pemanfaatan (Sedang Dikerjakan): ${cleanTeknologi} [ReportID:${report.id}]`,
-      kategori: "REDUKSI_TONASE",
-    }));
-
-    await prisma.pointHistory
-      .createMany({
-        data: pointRecords,
-      })
-      .catch((e) =>
-        console.warn("[kknService.createLogbookPemanfaatan] pointHistory.createMany warning:", e)
-      );
+    // Catatan: Pelaporan pemanfaatan sampah murni sebagai riwayat kegiatan (Non-Poin)
 
     // Notifikasi ke RW
     try {
@@ -5123,7 +5150,6 @@ export class KknService {
 
     const {
       programKerjaId,
-      fasilitasId,
       jenisPemanfaatan,
       teknologi,
       kategoriSampah,
@@ -5135,7 +5161,6 @@ export class KknService {
       beratInputKg,
       volumePanen,
       beratOutputKg,
-      catatan,
       fotoDokumentasiUrl,
       foto,
       fotoBukti,
@@ -5301,45 +5326,45 @@ export class KknService {
       },
     });
 
-    if (student.kelompokId && existing.program) {
-      await prisma.programKerjaKkn
-        .updateMany({
+    if (student.kelompokId && (existing.programKerjaId || existing.program)) {
+      const prokerId = existing.programKerjaId;
+      if (prokerId) {
+        await prisma.programKerjaKkn
+          .update({
+            where: { id: prokerId },
+            data: { statusPelaksanaan: "SELESAI" },
+          })
+          .catch((e) => console.error("Update proker SELESAI gagal:", e));
+
+        await syncProkerGamificationPoints(prokerId, student.kelompokId, "DISETUJUI", "SELESAI");
+      } else if (existing.program) {
+        const prokers = await prisma.programKerjaKkn.findMany({
           where: {
             kelompokId: student.kelompokId,
             deskripsi: existing.program,
           },
-          data: {
-            statusPelaksanaan: "SELESAI",
-          },
-        })
-        .catch((e) => console.error("Update proker SELESAI gagal:", e));
-    }
+          select: { id: true },
+        });
 
-    // Poin Gamifikasi: Panen Hasil KKN (Proker Selesai) bernilai +2 poin per anggota
-    let memberUserIds: string[] = [userId];
-    if (student.kelompokId) {
-      const groupStudents = await prisma.studentKkn.findMany({
-        where: { kelompokId: student.kelompokId },
-        select: { userId: true },
-      });
-      const ids = groupStudents.map((s) => s.userId).filter(Boolean);
-      if (ids.length > 0) {
-        memberUserIds = Array.from(new Set(ids));
+        await prisma.programKerjaKkn
+          .updateMany({
+            where: {
+              kelompokId: student.kelompokId,
+              deskripsi: existing.program,
+            },
+            data: {
+              statusPelaksanaan: "SELESAI",
+            },
+          })
+          .catch((e) => console.error("Update proker SELESAI gagal:", e));
+
+        for (const p of prokers) {
+          await syncProkerGamificationPoints(p.id, student.kelompokId, "DISETUJUI", "SELESAI");
+        }
       }
     }
 
-    const pointRecords = memberUserIds.map((uid) => ({
-      userId: uid,
-      points: 2,
-      description: `Panen Hasil KKN (Proker Selesai): ${existing.program || "Pemanfaatan"} [ReportID:${targetId}]`,
-      kategori: "REDUKSI_TONASE",
-    }));
-
-    await prisma.pointHistory
-      .createMany({
-        data: pointRecords,
-      })
-      .catch((e) => console.warn("[createPanenHasil] pointHistory.createMany warning:", e));
+    // Catatan: Pelaporan catat panen murni sebagai riwayat kegiatan (Non-Poin)
 
     // Notifikasi ke RW
     try {

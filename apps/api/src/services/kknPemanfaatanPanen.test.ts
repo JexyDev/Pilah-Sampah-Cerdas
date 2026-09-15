@@ -6,8 +6,6 @@ describe("KKN Service - Pemanfaatan & Panen Group Point Distribution and CRUD", 
   let testKelompok: any;
   let studentUser1: any;
   let studentUser2: any;
-  let studentKkn1: any;
-  let studentKkn2: any;
   let rw: any;
   const createdReportIds: string[] = [];
 
@@ -54,7 +52,7 @@ describe("KKN Service - Pemanfaatan & Panen Group Point Distribution and CRUD", 
       },
     });
 
-    studentKkn1 = await prisma.studentKkn.create({
+    await prisma.studentKkn.create({
       data: {
         userId: studentUser1.id,
         nim: "NIM-" + Date.now() + "-1",
@@ -68,7 +66,7 @@ describe("KKN Service - Pemanfaatan & Panen Group Point Distribution and CRUD", 
       },
     });
 
-    studentKkn2 = await prisma.studentKkn.create({
+    await prisma.studentKkn.create({
       data: {
         userId: studentUser2.id,
         nim: "NIM-" + Date.now() + "-2",
@@ -105,7 +103,7 @@ describe("KKN Service - Pemanfaatan & Panen Group Point Distribution and CRUD", 
     }
   });
 
-  it("TASK 1 & TASK 4: createLogbookPemanfaatan should create report and award 2 points per member", async () => {
+  it("TASK 1 & TASK 4: createLogbookPemanfaatan should create report as Non-Poin activity", async () => {
     const report = await kknService.createLogbookPemanfaatan(studentUser1.id, {
       teknologi: "Kompos Organik Super",
       bahanBaku: "Sampah Sayur",
@@ -122,9 +120,8 @@ describe("KKN Service - Pemanfaatan & Panen Group Point Distribution and CRUD", 
         description: { contains: report.id },
       },
     });
-    // Skema baru: Pemanfaatan bernilai +2 poin
-    expect(pointsUser1.length).toBe(1);
-    expect(pointsUser1[0].points).toBe(2);
+    // Aturan Resmi: Laporan pemanfaatan murni riwayat kegiatan (Non-Poin)
+    expect(pointsUser1.length).toBe(0);
 
     const pointsUser2 = await prisma.pointHistory.findMany({
       where: {
@@ -132,8 +129,7 @@ describe("KKN Service - Pemanfaatan & Panen Group Point Distribution and CRUD", 
         description: { contains: report.id },
       },
     });
-    expect(pointsUser2.length).toBe(1);
-    expect(pointsUser2[0].points).toBe(2);
+    expect(pointsUser2.length).toBe(0);
 
     // Verifikasi pemisahan entitas: createLogbookPemanfaatan TIDAK membuat logbook di logbookKkn
     const autoLogbooks = await prisma.logbookKkn.findMany({
@@ -162,7 +158,7 @@ describe("KKN Service - Pemanfaatan & Panen Group Point Distribution and CRUD", 
     expect(pointsAfterCount).toBe(pointsBeforeCount);
   });
 
-  it("TASK 1 & TASK 4: createPanenHasil should record harvest and award 2 points per member", async () => {
+  it("TASK 1 & TASK 4: createPanenHasil should record harvest as Non-Poin activity", async () => {
     const reportId = createdReportIds[0];
 
     const panenResult = await kknService.createPanenHasil(studentUser2.id, {
@@ -180,9 +176,8 @@ describe("KKN Service - Pemanfaatan & Panen Group Point Distribution and CRUD", 
         AND: { description: { contains: "Panen" } },
       },
     });
-    // Skema baru: Panen Hasil bernilai +2 poin
-    expect(panenPointsUser1.length).toBe(1);
-    expect(panenPointsUser1[0].points).toBe(2);
+    // Aturan Resmi: Catat hasil panen murni riwayat kegiatan (Non-Poin)
+    expect(panenPointsUser1.length).toBe(0);
 
     const panenPointsUser2 = await prisma.pointHistory.findMany({
       where: {
@@ -191,8 +186,7 @@ describe("KKN Service - Pemanfaatan & Panen Group Point Distribution and CRUD", 
         AND: { description: { contains: "Panen" } },
       },
     });
-    expect(panenPointsUser2.length).toBe(1);
-    expect(panenPointsUser2[0].points).toBe(2);
+    expect(panenPointsUser2.length).toBe(0);
   });
 
   it("TASK 3B & TASK 4 (Rule 2): updatePanenHasil should update panen output without modifying PointHistory", async () => {
@@ -215,7 +209,7 @@ describe("KKN Service - Pemanfaatan & Panen Group Point Distribution and CRUD", 
     expect(pointsAfterCount).toBe(pointsBeforeCount);
   });
 
-  it("TASK 3B & TASK 4 (Rule 1): deletePanenHasil should reset panen and clean up associated panen points", async () => {
+  it("TASK 3B & TASK 4 (Rule 1): deletePanenHasil should reset panen", async () => {
     const reportId = createdReportIds[0];
 
     const deleteResult = await kknService.deletePanenHasil(studentUser1.id, reportId);
@@ -223,17 +217,9 @@ describe("KKN Service - Pemanfaatan & Panen Group Point Distribution and CRUD", 
 
     const checkPemanfaatan = await prisma.pemanfaatan.findUnique({ where: { id: reportId } });
     expect(Number(checkPemanfaatan?.hasil)).toBe(0);
-
-    const panenPointsAfter = await prisma.pointHistory.findMany({
-      where: {
-        description: { contains: reportId },
-        AND: { description: { contains: "Panen" } },
-      },
-    });
-    expect(panenPointsAfter.length).toBe(0);
   });
 
-  it("TASK 3A & TASK 4 (Rule 1): deleteLogbookPemanfaatan should delete report and delete ALL associated points", async () => {
+  it("TASK 3A & TASK 4 (Rule 1): deleteLogbookPemanfaatan should delete report successfully", async () => {
     const reportId = createdReportIds[0];
 
     const deleteResult = await kknService.deleteLogbookPemanfaatan(studentUser1.id, reportId);
@@ -241,13 +227,6 @@ describe("KKN Service - Pemanfaatan & Panen Group Point Distribution and CRUD", 
 
     const checkPemanfaatan = await prisma.pemanfaatan.findUnique({ where: { id: reportId } });
     expect(checkPemanfaatan).toBeNull();
-
-    const allPointsAfter = await prisma.pointHistory.findMany({
-      where: {
-        description: { contains: reportId },
-      },
-    });
-    expect(allPointsAfter.length).toBe(0);
   });
 
   it("MOBILE HABIL: should support mobile payload { program, teknologi, volumeBahanBaku } and { hasil }", async () => {
@@ -315,19 +294,29 @@ describe("KKN Service - Pemanfaatan & Panen Group Point Distribution and CRUD", 
 
     try {
       // 1. Mahasiswa 1 strictly sees log1 (not log2)
-      const user1Logbooks = await logbookService.getMahasiswaLogbooks(studentUser1.id, "MAHASISWA_KKN", {});
+      const user1Logbooks = await logbookService.getMahasiswaLogbooks(
+        studentUser1.id,
+        "MAHASISWA_KKN",
+        {}
+      );
       const user1Ids = user1Logbooks.map((l: any) => l.id);
       expect(user1Ids).toContain(log1.id);
       expect(user1Ids).not.toContain(log2.id);
 
       // 2. Mahasiswa 2 strictly sees log2 (not log1)
-      const user2Logbooks = await logbookService.getMahasiswaLogbooks(studentUser2.id, "MAHASISWA_KKN", {});
+      const user2Logbooks = await logbookService.getMahasiswaLogbooks(
+        studentUser2.id,
+        "MAHASISWA_KKN",
+        {}
+      );
       const user2Ids = user2Logbooks.map((l: any) => l.id);
       expect(user2Ids).toContain(log2.id);
       expect(user2Ids).not.toContain(log1.id);
 
       // 3. Super User / Admin sees all logbooks in the group
-      const allLogbooks = await logbookService.getMahasiswaLogbooks(studentUser1.id, "SUPER_USER", { groupId: testKelompok.id });
+      const allLogbooks = await logbookService.getMahasiswaLogbooks(studentUser1.id, "SUPER_USER", {
+        groupId: testKelompok.id,
+      });
       const allIds = allLogbooks.map((l: any) => l.id);
       expect(allIds).toContain(log1.id);
       expect(allIds).toContain(log2.id);
