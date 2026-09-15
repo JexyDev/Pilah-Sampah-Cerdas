@@ -3335,11 +3335,18 @@ export const dplService = {
   ) => {
     const normRole = String(role || "").toUpperCase();
     if (
-      ["MPL", "MITRA_PENDAMPING_LAPANGAN", "MITRA_PEMBIMBING_LAPANGAN", "MITRA", "PIMPINAN", "PEMIMPIN"].some(
-        (r) => normRole === r || normRole.includes(r)
-      )
+      [
+        "MPL",
+        "MITRA_PENDAMPING_LAPANGAN",
+        "MITRA_PEMBIMBING_LAPANGAN",
+        "MITRA",
+        "PIMPINAN",
+        "PEMIMPIN",
+      ].some((r) => normRole === r || normRole.includes(r))
     ) {
-      throw new Error("FORBIDDEN_ROLE: Persetujuan dan keputusan program kerja adalah wewenang DPL.");
+      throw new Error(
+        "FORBIDDEN_ROLE: Persetujuan dan keputusan program kerja adalah wewenang DPL."
+      );
     }
 
     const prokerExisting = await prisma.programKerjaKkn.findUnique({ where: { id } });
@@ -3508,9 +3515,14 @@ export const dplService = {
   ) => {
     const normRole = String(role || "").toUpperCase();
     if (
-      ["MPL", "MITRA_PENDAMPING_LAPANGAN", "MITRA_PEMBIMBING_LAPANGAN", "MITRA", "PEMIMPIN", "PIMPINAN"].some(
-        (r) => normRole === r || normRole.includes(r)
-      )
+      [
+        "MPL",
+        "MITRA_PENDAMPING_LAPANGAN",
+        "MITRA_PEMBIMBING_LAPANGAN",
+        "MITRA",
+        "PEMIMPIN",
+        "PIMPINAN",
+      ].some((r) => normRole === r || normRole.includes(r))
     ) {
       throw new Error(
         "FORBIDDEN_ROLE: Penilaian akademik program kerja adalah wewenang DPL. Role Anda hanya memiliki hak akses pemantauan (Read-Only)."
