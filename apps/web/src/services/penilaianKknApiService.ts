@@ -42,6 +42,8 @@ export interface StudentRekapItem {
   kontribusiMitra?: number;
   subtotalDpl: number;
   kontribusiDpl?: number;
+  bobotDplPersen?: number;
+  bobotMplPersen?: number;
   nilaiAkhir: number;
   kategori: string;
   status: string;
@@ -100,6 +102,10 @@ export interface AssessmentData {
   skorDplOutput: number;
   skorDplLaporanAkhir: number;
   subtotalDpl: number;
+  kontribusiDpl?: number;
+  kontribusiMitra?: number;
+  bobotDplPersen?: number;
+  bobotMplPersen?: number;
   nilaiAkhir: number;
   kategoriNilai: string;
   catatanDpl: string;
