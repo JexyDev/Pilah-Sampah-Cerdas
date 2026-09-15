@@ -563,7 +563,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
             )}
           </div>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Komposisi terintegrasi: <strong className="text-emerald-700 dark:text-emerald-400">50% Dosen Pembimbing (DPL)</strong> + <strong className="text-sky-700 dark:text-sky-400">50% Mitra Lapangan (MPL)</strong>
+            Komposisi terintegrasi: <strong className="text-emerald-700 dark:text-emerald-400">{bobotDpl}% Dosen Pembimbing (DPL)</strong> + <strong className="text-sky-700 dark:text-sky-400">{bobotMpl}% Mitra Lapangan (MPL)</strong>
           </p>
         </div>
 
@@ -720,8 +720,10 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
 
                   const hasDpl = s.subtotalDpl > 0;
                   const hasMitra = s.subtotalMitra > 0;
-                  const dplKontribusi = Number((s.subtotalDpl * 0.5).toFixed(2));
-                  const mitraKontribusi = Number((s.subtotalMitra * 0.5).toFixed(2));
+                  const dplWeight = s.bobotDplPersen ?? bobotDpl;
+                  const mplWeight = s.bobotMplPersen ?? bobotMpl;
+                  const dplKontribusi = Number((s.subtotalDpl * (dplWeight / 100)).toFixed(2));
+                  const mitraKontribusi = Number((s.subtotalMitra * (mplWeight / 100)).toFixed(2));
 
                   let statusBadge = (
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
@@ -980,7 +982,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
               {/* Real-Time Composite Contribution Preview Banner */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/40 rounded-2xl p-3.5">
                 <div className="flex flex-col items-center justify-center p-2 rounded-xl bg-white/80 dark:bg-slate-900/60 border border-emerald-200/60">
-                  <span className="text-[10px] font-bold uppercase text-slate-500 tracking-wider">Subtotal DPL (50%)</span>
+                  <span className="text-[10px] font-bold uppercase text-slate-500 tracking-wider">Subtotal DPL ({bobotDpl}%)</span>
                   <div className="flex items-baseline gap-1 mt-0.5">
                     <span className="text-xl font-black text-slate-900 dark:text-slate-100 font-mono">
                       {computedScores.subtotalDpl.toFixed(2)}
@@ -990,7 +992,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                 </div>
 
                 <div className="flex flex-col items-center justify-center p-2 rounded-xl bg-white/80 dark:bg-slate-900/60 border border-sky-200/60">
-                  <span className="text-[10px] font-bold uppercase text-slate-500 tracking-wider">Subtotal MPL (50%)</span>
+                  <span className="text-[10px] font-bold uppercase text-slate-500 tracking-wider">Subtotal MPL ({bobotMpl}%)</span>
                   <div className="flex items-baseline gap-1 mt-0.5">
                     <span className="text-xl font-black text-slate-900 dark:text-slate-100 font-mono">
                       {computedScores.subtotalMitra.toFixed(2)}
