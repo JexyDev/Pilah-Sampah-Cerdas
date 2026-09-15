@@ -402,6 +402,9 @@ export const dashboardService = {
 
     const residuLogs = await prisma.setoranManual.findMany({
       where: residuWhere,
+      select: {
+        berat: true,
+      },
     });
 
     let organikKg = 0;
@@ -1020,6 +1023,9 @@ export const dashboardService = {
 
       const residuLogs = await prisma.setoranManual.findMany({
         where: residuWhere,
+        select: {
+          berat: true,
+        },
       });
 
       let organicWeight = 0;
