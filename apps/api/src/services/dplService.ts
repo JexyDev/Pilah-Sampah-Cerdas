@@ -922,10 +922,10 @@ export async function syncProkerGamificationPoints(
  *    Dengan rata-rata poin anggota = 4:
  *    Poin Kelompok = (24 * 0.6) + (4 * 0.4) = 14.4 + 1.6 = 16 poin.
  *
- * 2. Poin DPL: Data Logbook DPL + Poin Kelompok (Bobot 60% Logbook + 40% Kelompok)
+ * 2. Poin DPL: Data Logbook DPL + Poin Kelompok (Bobot 50% Logbook + 50% Kelompok)
  *    - Jika logbook DPL tersedia: 6 poin
  *    - Jika tidak tersedia: 0 poin
- *    Rumus: Poin DPL = (Poin Logbook * 0.6) + (Poin Kelompok * 0.4)
+ *    Rumus: Poin DPL = (Poin Logbook * 0.5) + (Poin Kelompok * 0.5)
  */
 export async function calculateGroupPoints(
   kelompokId: string,
@@ -1118,11 +1118,11 @@ export async function calculateDplPoints(
     });
 
     const hasLogbookDpl = logbookCount > 0;
-    // Formula Resmi Poin DPL: (Poin Logbook DPL * 0.6) + (Poin Kelompok * 0.4)
+    // Formula Resmi Poin DPL: (Poin Logbook DPL * 0.5) + (Poin Kelompok * 0.5)
     // - Jika logbook DPL tersedia: 6 poin
     // - Jika tidak tersedia: 0 poin
     const poinLogbookDpl = hasLogbookDpl ? 6 : 0;
-    const poinDpl = Math.round((poinLogbookDpl * 0.6 + poinKelompok * 0.4) * 10) / 10;
+    const poinDpl = Math.round((poinLogbookDpl * 0.5 + poinKelompok * 0.5) * 10) / 10;
 
     return {
       poinDpl,

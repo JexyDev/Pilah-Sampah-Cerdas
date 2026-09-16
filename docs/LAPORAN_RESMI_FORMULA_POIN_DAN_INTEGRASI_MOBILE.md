@@ -76,10 +76,10 @@ $$\mathbf{\text{Poin Kelompok}} = (\text{Poin Proker} \times 0{,}6) + (\text{Rat
 
 ---
 
-### 2.3 Formula Poin DPL (Bobot 60% : 40%)
-Poin DPL (Dosen Pembimbing Lapangan) dihitung berdasarkan pemenuhan kewajiban logbook bimbingan lapangan DPL (60%) dan kinerja kelompok dampingannya (40%):
+### 2.3 Formula Poin DPL (Bobot 50% : 50%)
+Poin DPL (Dosen Pembimbing Lapangan) dihitung berdasarkan pemenuhan kewajiban logbook bimbingan lapangan DPL (50%) dan kinerja kelompok dampingannya (50%):
 
-$$\mathbf{\text{Poin DPL}} = (\text{Poin Logbook DPL} \times 0{,}6) + (\text{Poin Kelompok} \times 0{,}4)$$
+$$\mathbf{\text{Poin DPL}} = (\text{Poin Logbook DPL} \times 0{,}5) + (\text{Poin Kelompok} \times 0{,}5)$$
 
 #### Komponen:
 1. **Poin Logbook DPL (Biner Ketersediaan):**
@@ -89,10 +89,10 @@ $$\mathbf{\text{Poin DPL}} = (\text{Poin Logbook DPL} \times 0{,}6) + (\text{Poi
    - Nilai Poin Kelompok terbobot dari kelompok dampingan DPL tersebut.
 
 #### Contoh Perhitungan Resmi:
-- **Skenario A (DPL sudah mengisi logbook, Poin Kelompok = 16):**
-  $$\text{Poin DPL} = (6 \times 0{,}6) + (16 \times 0{,}4) = 3{,}6 + 6{,}4 = \mathbf{10\text{ Poin}}$$
-- **Skenario B (DPL belum mengisi logbook, Poin Kelompok = 16):**
-  $$\text{Poin DPL} = (0 \times 0{,}6) + (16 \times 0{,}4) = 0 + 6{,}4 = \mathbf{6{,}4\text{ Poin}}$$
+- **Skenario A (DPL sudah mengisi logbook, Poin Kelompok = 11,8):**
+  $$\text{Poin DPL} = (6 \times 0{,}5) + (11{,}8 \times 0{,}5) = 3{,}0 + 5{,}9 = \mathbf{8{,}9\text{ Poin}}$$
+- **Skenario B (DPL belum mengisi logbook, Poin Kelompok = 11,8):**
+  $$\text{Poin DPL} = (0 \times 0{,}5) + (11{,}8 \times 0{,}5) = 0 + 5{,}9 = \mathbf{5{,}9\text{ Poin}}$$
 
 ---
 
