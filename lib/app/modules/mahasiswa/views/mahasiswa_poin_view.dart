@@ -483,31 +483,24 @@ class _PoinHistoryItem extends StatelessWidget {
         : Icons.check_circle_outline_rounded;
     Color iconColor = isPenalty ? AppColors.dangerRed : AppColors.primaryGreen;
 
-    final descLower = item.description.toLowerCase();
-    final kat = (item.kategori ?? '').toUpperCase();
-
-    if (kat == 'KKN_PROKER' || descLower.contains('program kerja')) {
-      title = title.isNotEmpty ? title : 'Program Kerja Disetujui';
-      icon = Icons.task_alt_rounded;
+    if (title.toLowerCase().contains('program kerja') || item.kategori == 'KKN_PROKER') {
+      icon = Icons.emoji_events_rounded;
       iconColor = AppColors.primaryBlue;
-    } else if (kat == 'LOGBOOK_TERVERIFIKASI' ||
-        descLower.contains('verifikasi') ||
-        descLower.contains('terverifikasi')) {
-      title = title.isNotEmpty ? title : 'Logbook Terverifikasi DPL';
-      icon = Icons.verified_rounded;
-      iconColor = AppColors.primaryBlueDark;
-    } else if (kat == 'KKN_PRESENSI_HADIR' || descLower.contains('check-in') || descLower.contains('kehadiran')) {
-      title = title.isNotEmpty ? title : 'Presensi Kehadiran (Check-In)';
-      icon = Icons.login_rounded;
-      iconColor = AppColors.primaryGreen;
-    } else if (kat == 'KKN_DURASI_MEMENUHI' || descLower.contains('durasi')) {
-      title = title.isNotEmpty ? title : 'Poin Durasi Kegiatan Terpenuhi';
-      icon = Icons.timer_outlined;
-      iconColor = AppColors.primaryGreen;
-    } else if (kat == 'KKN_LOGBOOK_HARIAN' || (descLower.contains('logbook') && !descLower.contains('pemanfaatan'))) {
-      title = title.isNotEmpty ? title : 'Pengisian Logbook Harian';
-      icon = Icons.menu_book_rounded;
-      iconColor = AppColors.primaryGreen;
+    } else if (title.toLowerCase().contains('aktivasi')) {
+      title = 'Aktivasi Tempat Sampah Warga';
+      icon = Icons.qr_code_scanner_rounded;
+    } else if (title.toLowerCase().contains('pemanfaatan')) {
+      if (!title.toLowerCase().startsWith('laporan')) {
+        title = 'Laporan Pemanfaatan Sampah: $title';
+      }
+      icon = Icons.recycling_rounded;
+    } else if (title.toLowerCase().contains('geofence') ||
+        title.toLowerCase().contains('presensi')) {
+      title = 'Ping Lokasi Posko / Presensi';
+      icon = Icons.location_on_rounded;
+    } else if (title.toLowerCase().contains('registrasi')) {
+      title = 'Bonus Registrasi Akun Mahasiswa KKN';
+      icon = Icons.card_giftcard_rounded;
     }
 
     return Container(

@@ -22,7 +22,7 @@ class InputSanitizer {
     // 1. Hapus format bracket [ReportID:xxxx] atau [Report ID:xxxx] atau [report_id:xxxx] atau [ID:xxxx]
     cleaned = cleaned.replaceAll(
       RegExp(
-        r'\s*\[\s*(Report\s*ID|report_?id|ReportID|ID|id)\s*:[^\]]+\]',
+        r'\s*\[\s*(Report\s*ID|report_?id|ReportID|ProkerID|proker_?id|ID|id)\s*:[^\]]+\]',
         caseSensitive: false,
       ),
       '',

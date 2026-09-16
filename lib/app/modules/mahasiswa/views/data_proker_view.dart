@@ -255,8 +255,10 @@ class _DataProkerViewState extends ConsumerState<DataProkerView> {
         ),
         content: Text(
           isMulai
-              ? 'Tandai program kerja "$judul" sebagai sedang dikerjakan?'
-              : 'Tandai program kerja "$judul" sebagai sudah selesai dilaksanakan?',
+              ? 'Tandai program kerja "$judul" sebagai sedang dikerjakan?\n\n'
+                '🚀 Seluruh anggota kelompok akan mendapatkan +2 Poin.'
+              : 'Tandai program kerja "$judul" sebagai sudah selesai dilaksanakan?\n\n'
+                '🎉 Seluruh anggota kelompok akan mendapatkan +2 Poin tambahan (Total +6 Poin).',
           style: const TextStyle(fontSize: 14, height: 1.4),
         ),
         actions: [

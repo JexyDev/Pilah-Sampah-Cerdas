@@ -950,11 +950,8 @@ class KelompokKknData extends Equatable {
   /// Link Google Drive folder kelompok, null jika belum diset Admin.
   final String? linkGoogleDrive;
 
-  /// Penjumlahan Poin Kelompok (Fallback Client-Side Sum)
-  int get calculatedTotalPoints {
-    if (totalGroupPoints > 0) return totalGroupPoints;
-    return members.fold(0, (sum, m) => sum + m.individualPoints);
-  }
+  /// Total Penjumlahan Poin Individu Seluruh Anggota
+  int get cumulativeMemberPoints => members.fold(0, (sum, m) => sum + m.individualPoints);
 
   factory KelompokKknData.fromJson(Map<String, dynamic> json) {
     final membersList =

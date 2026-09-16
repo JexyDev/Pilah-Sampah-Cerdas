@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../core/values/app_colors.dart';
 import '../../data/models/point_history_entity.dart';
 import '../../data/models/bin_entity.dart';
+import '../../core/utils/input_sanitizer.dart';
 import '../riwayat/controllers/riwayat_controller.dart';
 import '../shared/widgets/skeleton_loading.dart';
 import '../shared/widgets/empty_state.dart';
@@ -561,34 +562,43 @@ class _PoinHistoryItem extends StatelessWidget {
 
     final bool isOrganic = item.wasteType == WasteType.organic;
 
+    // Deteksi kategori Proker
+    final bool isProker = item.kategori == 'KKN_PROKER' ||
+        descLower.contains('program kerja') ||
+        descLower.contains('proker');
+
     final Color color = isPunishment
         ? AppColors.dangerRed
-        : (isAktivasi || isPresensi || isLogbook
-              ? Colors.blue
-              : (isPanenOrPemanfaatan
-                    ? AppColors.warningOrange
-                    : (isOrganic
-                          ? AppColors.organicColor
-                          : AppColors.nonOrganicColor)));
+        : (isProker
+            ? AppColors.primaryBlue
+            : (isAktivasi || isPresensi || isLogbook
+                  ? Colors.blue
+                  : (isPanenOrPemanfaatan
+                        ? AppColors.warningOrange
+                        : (isOrganic
+                              ? AppColors.organicColor
+                              : AppColors.nonOrganicColor))));
 
     final bool isWaste = descLower.contains('setor') || descLower.contains('sampah');
 
     final IconData iconData = isPunishment
         ? Icons.warning_rounded
-        : (isLogbook
-            ? Icons.verified_rounded
-            : (isPanenOrPemanfaatan
-                ? Icons.eco_rounded
-                : (isAktivasi
-                    ? Icons.qr_code_scanner_rounded
-                    : (isPresensi
-                        ? Icons.location_on_rounded
-                        : (isRedeem ? Icons.card_giftcard_rounded : (isWaste ? Icons.delete_rounded : Icons.star_rounded))))));
+        : (isProker
+            ? Icons.assignment_turned_in_rounded
+            : (isLogbook
+                ? Icons.verified_rounded
+                : (isPanenOrPemanfaatan
+                    ? Icons.eco_rounded
+                    : (isAktivasi
+                        ? Icons.qr_code_scanner_rounded
+                        : (isPresensi
+                            ? Icons.location_on_rounded
+                            : (isRedeem ? Icons.card_giftcard_rounded : (isWaste ? Icons.delete_rounded : Icons.star_rounded)))))));
 
     // Gunakan deskripsi langsung dari backend agar teks poin KKN (Logbook, Proker) tampil akurat!
     // Jika kosong, baru fallback.
     String title = item.description.isNotEmpty 
-        ? item.description 
+        ? InputSanitizer.cleanSystemMessage(item.description)
         : (isOrganic ? 'Setor Sampah Organik' : 'Poin Aktivitas');
 
     return Container(
