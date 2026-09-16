@@ -468,25 +468,70 @@ export async function getScopingFilters(user: {
           OR: [
             { rwId: student.assignedRwId },
             { households: { some: { rwId: student.assignedRwId } } },
+            ...(student.kelompokId
+              ? [{ bins: { some: { kelompokId: student.kelompokId } } }]
+              : []),
+            { bins: { some: { registeredByStudentId: user.userId } } },
+            ...(student.kelompok?.kelurahan
+              ? [{ rw: { kelurahan: { name: { equals: student.kelompok.kelurahan, mode: "insensitive" } } } }]
+              : []),
           ],
         },
         binFilter: {
           OR: [
             { rwId: student.assignedRwId },
-            ...(student.kelompokId ? [{ kelompokId: student.kelompokId, rwId: student.assignedRwId }] : []),
+            ...(student.kelompokId ? [{ kelompokId: student.kelompokId }] : []),
+            { registeredByStudentId: user.userId },
+            ...(student.kelompok?.kelurahan
+              ? [
+                  { kelurahan: { name: { equals: student.kelompok.kelurahan, mode: "insensitive" } } },
+                  { rw: { kelurahan: { name: { equals: student.kelompok.kelurahan, mode: "insensitive" } } } },
+                ]
+              : []),
           ],
         },
-        householdFilter: { rwId: student.assignedRwId },
-        wasteLogFilter: { bin: { rwId: student.assignedRwId } },
-        pemanfaatanFilter: { rwId: student.assignedRwId },
+        householdFilter: {
+          OR: [
+            { rwId: student.assignedRwId },
+            ...(student.kelompok?.kelurahan
+              ? [{ rw: { kelurahan: { name: { equals: student.kelompok.kelurahan, mode: "insensitive" } } } }]
+              : []),
+          ],
+        },
+        wasteLogFilter: {
+          OR: [
+            { bin: { rwId: student.assignedRwId } },
+            ...(student.kelompokId ? [{ bin: { kelompokId: student.kelompokId } }] : []),
+            { bin: { registeredByStudentId: user.userId } },
+            ...(student.kelompok?.kelurahan
+              ? [
+                  { bin: { kelurahan: { name: { equals: student.kelompok.kelurahan, mode: "insensitive" } } } },
+                  { bin: { rw: { kelurahan: { name: { equals: student.kelompok.kelurahan, mode: "insensitive" } } } } },
+                  { warga: { rw: { kelurahan: { name: { equals: student.kelompok.kelurahan, mode: "insensitive" } } } } },
+                ]
+              : []),
+          ],
+        },
+        pemanfaatanFilter: {
+          OR: [
+            { rwId: student.assignedRwId },
+            ...(student.kelompok?.kelurahan
+              ? [{ rw: { kelurahan: { name: { equals: student.kelompok.kelurahan, mode: "insensitive" } } } }]
+              : []),
+          ],
+        },
         facilityFilter: {
           OR: [
             { rwId: student.assignedRwId },
             { registeredByUserId: user.userId },
+            ...(student.kelompokId ? [{ kelompokId: student.kelompokId }] : []),
+            ...(student.kelompok?.kelurahan
+              ? [{ rw: { kelurahan: { name: { equals: student.kelompok.kelurahan, mode: "insensitive" } } } }]
+              : []),
           ],
         },
         kelompokKknFilter: { id: student.kelompokId },
-        studentKknFilter: { assignedRwId: student.assignedRwId },
+        studentKknFilter: { kelompokId: student.kelompokId },
       };
     }
     if (student?.kelompok?.kelurahan) {

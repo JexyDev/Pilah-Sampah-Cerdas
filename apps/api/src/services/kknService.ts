@@ -374,6 +374,16 @@ export class KknService {
         { qrBatch: { assignedPicUserId: kknUserId } },
       ];
 
+      // Sertakan juga seluruh tempat sampah milik kelompok KKN dan yang didaftarkan rekan sekelompok
+      if (studentProfile?.kelompokId) {
+        orConditions.push({ kelompokId: studentProfile.kelompokId });
+      }
+      const groupStudentUserIds =
+        studentProfile?.kelompok?.students?.map((s: any) => s.userId).filter(Boolean) || [];
+      if (groupStudentUserIds.length > 0) {
+        orConditions.push({ registeredByStudentId: { in: groupStudentUserIds } });
+      }
+
       if (effectiveRwId) {
         orConditions.push({ rwId: effectiveRwId });
         orConditions.push({ user: { rwId: effectiveRwId } });
@@ -590,13 +600,9 @@ export class KknService {
 
     let result = list.filter((item): item is NonNullable<typeof item> => item !== null);
 
-    if (effectiveRwId) {
+    if (filters.rwId) {
       result = result.filter(
-        (item) => item.rwId === effectiveRwId || item.registeredByStudentId === kknUserId
-      );
-    } else if (targetRwIds.length > 0) {
-      result = result.filter(
-        (item) => (item.rwId && targetRwIds.includes(item.rwId)) || item.registeredByStudentId === kknUserId
+        (item) => item.rwId === filters.rwId || item.registeredByStudentId === kknUserId
       );
     }
     if (filters.search) {
@@ -1083,51 +1089,70 @@ export class KknService {
       role: { name: "WARGA" },
     };
 
-    if (targetRwId || targetRwIds.length > 0) {
-      const rwFilter = targetRwId ? targetRwId : { in: targetRwIds };
-      const rwConditions: any[] = [
-        { rwId: rwFilter },
-        { households: { some: { rwId: rwFilter } } },
-        { binOwnerships: { some: { bin: { rwId: rwFilter } } } },
-        { bins: { some: { rwId: rwFilter } } },
-      ];
-      if (studentGroupUserIds.length > 0) {
-        rwConditions.push({
+    const orConditions: any[] = [];
+
+    if (filters?.rwId) {
+      // Hanya strict jika parameter rwId eksplisit dikirim dari query frontend
+      orConditions.push(
+        { rwId: filters.rwId },
+        { households: { some: { rwId: filters.rwId } } },
+        { binOwnerships: { some: { bin: { rwId: filters.rwId } } } },
+        { bins: { some: { rwId: filters.rwId } } }
+      );
+    } else {
+      if (targetRwId || targetRwIds.length > 0) {
+        const rwFilter = targetRwId ? targetRwId : { in: targetRwIds };
+        orConditions.push(
+          { rwId: rwFilter },
+          { households: { some: { rwId: rwFilter } } },
+          { binOwnerships: { some: { bin: { rwId: rwFilter } } } },
+          { bins: { some: { rwId: rwFilter } } }
+        );
+      }
+      if (targetKelurahan) {
+        orConditions.push(
+          {
+            households: {
+              some: {
+                rw: { kelurahan: { name: { contains: targetKelurahan, mode: "insensitive" } } },
+              },
+            },
+          },
+          {
+            rw: { kelurahan: { name: { contains: targetKelurahan, mode: "insensitive" } } },
+          },
+          {
+            binOwnerships: {
+              some: {
+                bin: {
+                  kelurahan: { name: { contains: targetKelurahan, mode: "insensitive" } },
+                },
+              },
+            },
+          }
+        );
+      }
+    }
+
+    if (studentGroupUserIds.length > 0) {
+      orConditions.push(
+        {
           binOwnerships: {
             some: {
               bin: { registeredByStudentId: { in: studentGroupUserIds } },
             },
           },
-        });
-        rwConditions.push({
+        },
+        {
           bins: {
             some: { registeredByStudentId: { in: studentGroupUserIds } },
           },
-        });
-      }
-      where.OR = rwConditions;
-    } else if (targetKelurahan) {
-      where.OR = [
-        {
-          households: {
-            some: {
-              rw: { kelurahan: { name: { contains: targetKelurahan, mode: "insensitive" } } },
-            },
-          },
-        },
-        {
-          rw: { kelurahan: { name: { contains: targetKelurahan, mode: "insensitive" } } },
-        },
-        {
-          binOwnerships: {
-            some: {
-              bin: {
-                kelurahan: { name: { contains: targetKelurahan, mode: "insensitive" } },
-              },
-            },
-          },
-        },
-      ];
+        }
+      );
+    }
+
+    if (orConditions.length > 0) {
+      where.OR = orConditions;
     }
 
     if (filters?.status === "UNACTIVATED") {
@@ -1592,27 +1617,9 @@ export class KknService {
           const wargaRwNumber =
             targetWargaRwRecord?.name?.replace(/[^\d]/g, "").replace(/^0+/, "") || "";
 
-          if (studentAssignedRwId) {
-            // Skenario 1: Mahasiswa memiliki RW penugasan spesifik -> HANYA boleh aktivasi di RW-nya!
-            if (effectiveWargaRwId && studentAssignedRwId !== effectiveWargaRwId) {
-              const studentRwName =
-                student.assignedRw?.name?.replace(/[^\d]/g, "").replace(/^0+/, "") ||
-                studentAssignedRwId;
-              const wargaRwName = wargaRwNumber || effectiveWargaRwId;
-              throw new Error(
-                `Aktivasi ditolak: Anda hanya berhak mengaktivasi warga di wilayah penugasan Anda (RW 0${studentRwName}). Warga ini berdomisili di RW 0${wargaRwName}.`
-              );
-            }
-          } else if (kelompokCakupanRwList.length > 0 && wargaRwNumber) {
-            // Skenario 2: Mahasiswa Multi-RW kelompok -> Wajib berada dalam salah satu cakupan RW kelompok
-            if (!kelompokCakupanRwList.includes(wargaRwNumber)) {
-              throw new Error(
-                `Aktivasi ditolak: Warga berada di RW 0${wargaRwNumber}, di luar wilayah cakupan kelompok KKN Anda (RW ${kelompokCakupanRwList
-                  .map((r) => "0" + r)
-                  .join(", ")}).`
-              );
-            }
-          }
+          // B. Validasi Wilayah Penugasan Mahasiswa vs Domisili Warga:
+          // [FLEXIBLE/LOSS]: Mahasiswa diperbolehkan mendampingi warga di seluruh wilayah kelompok / kelurahan.
+          // Tidak ada error penolakan RW agar mahasiswa tidak terhambat saat aktivasi di lapangan.
         }
       }
 
@@ -1622,6 +1629,10 @@ export class KknService {
       const targetWargaRwRecord = targetWarga.rwId
         ? await tx.rw.findUnique({ where: { id: targetWarga.rwId } })
         : null;
+
+      // SINKRONISASI RW OTOMATIS: Tentukan RW final warga/tempat sampah
+      const resolvedTargetRwId =
+        targetWarga.rwId || studentAssignedRwId || bins.find((b) => b.rwId)?.rwId || null;
 
       for (const bin of bins) {
         // Guard: reject if bin already owned by a different warga
@@ -1635,21 +1646,8 @@ export class KknService {
           );
         }
 
-        // Guard: Validasi Kesesuaian Stiker jika sudah terkunci ke RW tertentu (Bukan Shared Pool)
-        if (bin.rwId !== null && bin.rwId !== undefined) {
-          // 1. Jika mahasiswa punya penugasan tunggal, stiker harus sama dengan penugasan mahasiswa
-          if (studentAssignedRwId && bin.rwId !== studentAssignedRwId) {
-            throw new Error(
-              `BIN_RW_MISMATCH: Stiker tempat sampah ${bin.qrCode} dialokasikan khusus untuk RW lain, bukan untuk wilayah penugasan Anda.`
-            );
-          }
-          // 2. Stiker harus sama dengan RW domisili warga
-          if (targetWarga.rwId && bin.rwId !== targetWarga.rwId) {
-            throw new Error(
-              `BIN_RW_MISMATCH: Stiker tempat sampah ${bin.qrCode} dialokasikan khusus untuk RW yang berbeda dari domisili warga ini.`
-            );
-          }
-        }
+        // [FLEXIBLE/LOSS]: Penolakan BIN_RW_MISMATCH ditiadakan.
+        // Stiker tempat sampah secara otomatis disinkronkan mengikuti RW warga/penugasan.
 
         // UPDATE STATUS TEMPAT SAMPAH + ASSIGN RW WARGA SECARA DINAMIS
         await tx.bin.update({
@@ -1658,7 +1656,7 @@ export class KknService {
             userId: wargaId,
             status: "ACTIVE_BOUND",
             registeredByStudentId: kknUserId,
-            rwId: targetWarga.rwId ?? studentAssignedRwId ?? bin.rwId,
+            rwId: resolvedTargetRwId ?? bin.rwId,
             kelurahanId: targetWargaRwRecord?.kelurahanId ?? bin.kelurahanId,
             ...(latitude && longitude ? { latitude, longitude } : {}),
           },
@@ -1673,8 +1671,6 @@ export class KknService {
           });
         }
       }
-
-      let resolvedTargetRwId = targetWarga.rwId || studentAssignedRwId || bins[0]?.rwId || null;
 
       const existingHh = await tx.household.findFirst({ where: { userId: wargaId } });
       if (!existingHh) {

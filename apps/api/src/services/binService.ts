@@ -323,15 +323,18 @@ export class BinService {
       }
     }
 
-    // ✅ TAMBAHAN: Jika QR khusus RW dan tidak punya owner terdaftar,
-    // pastikan scanner adalah warga dari RW yang sama
+    // [FLEXIBLE/LOSS]: Hilangkan pembatasan BIN_RW_MISMATCH agar QR dapat dipindai warga tanpa error
     if (bin.rwId !== null && (!bin.binOwnerships || bin.binOwnerships.length === 0)) {
       const scanUser = await prisma.user.findUnique({
         where: { id: userId },
         select: { rwId: true },
       });
-      if (scanUser?.rwId && scanUser.rwId !== bin.rwId) {
-        throw new Error("BIN_RW_MISMATCH");
+      if (scanUser && !scanUser.rwId) {
+        // Auto-assign RW warga jika warga belum memiliki RW
+        await prisma.user.update({
+          where: { id: userId },
+          data: { rwId: bin.rwId },
+        });
       }
     }
 
@@ -853,18 +856,23 @@ export class BinService {
           throw new Error(`BIN_ALREADY_USED: ${qrCode}`);
         }
 
-        // ✅ TAMBAHAN: Validasi RW jika QR bukan massal
+        // [FLEXIBLE/LOSS]: Hilangkan pembatasan BIN_RW_MISMATCH dan USER_RW_NOT_SET
+        // Sinkronkan RW secara otomatis antara tempat sampah dan warga
         if (bin.rwId !== null && bin.rwId !== undefined) {
-          // QR ini khusus untuk satu RW — hanya Warga di RW tersebut yang boleh aktivasi
-          const userRwId = user.rwId;
-          if (!userRwId) {
-            throw new Error("USER_RW_NOT_SET");
+          if (!user.rwId) {
+            await tx.user.update({
+              where: { id: user.id },
+              data: { rwId: bin.rwId },
+            });
+            user.rwId = bin.rwId;
           }
-          if (bin.rwId !== userRwId) {
-            throw new Error("BIN_RW_MISMATCH");
-          }
+        } else if (user.rwId) {
+          await tx.bin.update({
+            where: { id: bin.id },
+            data: { rwId: user.rwId },
+          });
+          bin.rwId = user.rwId;
         }
-        // Jika bin.rwId === null → QR massal → siapa pun boleh aktivasi ✅
 
         if (bin.categoryId) {
           // 1. Get user's current bins to check onboarding status

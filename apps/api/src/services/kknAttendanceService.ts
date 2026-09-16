@@ -904,19 +904,29 @@ export class KknAttendanceService {
         include: {
           user: { select: { id: true, name: true, phone: true } },
           assignedRw: { select: { id: true, name: true } },
+          kelompok: {
+            include: { students: { select: { userId: true } } },
+          },
         },
       });
 
-      if (studentProfile?.assignedRwId) {
-        whereCondition = {
-          OR: [
-            { registeredByStudentId: userId },
-            { rwId: studentProfile.assignedRwId },
-            { user: { rwId: studentProfile.assignedRwId } },
-            { user: { households: { some: { rwId: studentProfile.assignedRwId } } } },
-          ],
-        };
-      }
+      const groupStudentIds =
+        studentProfile?.kelompok?.students?.map((s: any) => s.userId).filter(Boolean) || [userId];
+
+      whereCondition = {
+        OR: [
+          { registeredByStudentId: { in: groupStudentIds } },
+          { registeredByStudentId: userId },
+          ...(studentProfile?.kelompokId ? [{ kelompokId: studentProfile.kelompokId }] : []),
+          ...(studentProfile?.assignedRwId
+            ? [
+                { rwId: studentProfile.assignedRwId },
+                { user: { rwId: studentProfile.assignedRwId } },
+                { user: { households: { some: { rwId: studentProfile.assignedRwId } } } },
+              ]
+            : []),
+        ],
+      };
     }
 
     // Ambil warga yang di-register oleh mahasiswa kelompok binaan DPL / mahasiswa ybs
