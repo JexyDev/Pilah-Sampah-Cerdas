@@ -1,4 +1,4 @@
-import { X, Star, Banknote, Recycle, AlertCircle, Eye, LineChart, BarChart, Leaf, TrendingUp, TrendingDown, Wallet, Zap, MapPin, AlertTriangle, Truck, Pencil, Trash2, Calendar, ChevronRight, GraduationCap, Search, CheckCircle2, Sparkles, RotateCcw, Award, BookOpen, RefreshCcw, RefreshCw, Settings, Save, Loader2, Building2, History, Home, Bell, Megaphone, Archive, Send, Users, ShoppingBag, Info } from "lucide-react";
+import { X, Star, Banknote, Recycle, AlertCircle, Eye, LineChart, BarChart, Leaf, TrendingUp, TrendingDown, Wallet, Zap, MapPin, AlertTriangle, Truck, Pencil, Trash2, Calendar, ChevronRight, GraduationCap, Search, CheckCircle2, Sparkles, RotateCcw, Award, RefreshCcw, RefreshCw, Settings, Save, Loader2, Building2, History, Home, Bell, Megaphone, Archive, Send, Users, ShoppingBag } from "lucide-react";
 
 /**
  * Project: BERSEKA
@@ -12,7 +12,7 @@ import { X, Star, Banknote, Recycle, AlertCircle, Eye, LineChart, BarChart, Leaf
  */
 
 import React, { useEffect, useState, useMemo } from "react";
-import { Link, useNavigate, Navigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { RwDashboard } from "../RwPortal/RwDashboard";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
@@ -2069,11 +2069,6 @@ const Dashboard: React.FC = () => {
     }
     return fallback;
   };
-
-  const rawOrg = parseKgValue(stats?.komposisiSampah?.organikKg ?? stats?.komposisiSampah?.organik?.berat, 0);
-  const rawAnorg = parseKgValue(stats?.komposisiSampah?.anorganikKg ?? stats?.komposisiSampah?.anorganik?.berat, 0);
-  const rawResidu = parseKgValue(stats?.komposisiSampah?.residuKg ?? stats?.komposisiSampah?.residu?.berat, 0);
-  const totalTerpilah = rawOrg + rawAnorg;
 
   void trendInorganicAreaPath;
   void KpiCard;

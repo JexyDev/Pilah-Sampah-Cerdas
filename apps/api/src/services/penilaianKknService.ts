@@ -1564,7 +1564,12 @@ export const penilaianKknService = {
           ).toFixed(2)
         );
 
-        const nilaiAkhir = calculateCompositeScore(subtotalMitra, subtotalDpl, bobotMplPersen, bobotDplPersen);
+        const nilaiAkhir = calculateCompositeScore(
+          subtotalMitra,
+          subtotalDpl,
+          bobotMplPersen,
+          bobotDplPersen
+        );
         const kategoriNilai = calculateGradeCategory(nilaiAkhir);
 
         await prisma.penilaianKknMahasiswa.upsert({
@@ -1666,9 +1671,14 @@ export const penilaianKknService = {
   ) => {
     const normRole = String(evaluatorRole || "").toUpperCase();
     if (
-      ["MPL", "MITRA_PENDAMPING_LAPANGAN", "MITRA_PEMBIMBING_LAPANGAN", "MITRA", "PEMIMPIN", "PIMPINAN"].some(
-        (r) => normRole === r || normRole.includes(r)
-      )
+      [
+        "MPL",
+        "MITRA_PENDAMPING_LAPANGAN",
+        "MITRA_PEMBIMBING_LAPANGAN",
+        "MITRA",
+        "PEMIMPIN",
+        "PIMPINAN",
+      ].some((r) => normRole === r || normRole.includes(r))
     ) {
       throw new Error(
         "FORBIDDEN_ROLE: Penilaian telaah laporan akhir adalah wewenang DPL. Role Anda hanya memiliki akses pemantauan (Read-Only)."
@@ -1736,7 +1746,12 @@ export const penilaianKknService = {
     const ruleConfigs = await configService.getRuleEngineConfigs().catch(() => null);
     const bobotDplPersen = ruleConfigs?.penilaianBobotDplPersen ?? 50;
     const bobotMplPersen = ruleConfigs?.penilaianBobotMplPersen ?? 50;
-    const nilaiAkhir = calculateCompositeScore(subtotalMitra, subtotalDpl, bobotMplPersen, bobotDplPersen);
+    const nilaiAkhir = calculateCompositeScore(
+      subtotalMitra,
+      subtotalDpl,
+      bobotMplPersen,
+      bobotDplPersen
+    );
     const kategoriNilai = calculateGradeCategory(nilaiAkhir);
 
     const saved = await prisma.penilaianKknMahasiswa.upsert({

@@ -188,8 +188,14 @@ export const LaporanPresensiPage: React.FC = () => {
   const [selectedRw, setSelectedRw] = useState<string>("ALL");
   const [masterKelurahanList, setMasterKelurahanList] = useState<MasterKelurahanItem[]>([]);
   const [masterRwList, setMasterRwList] = useState<MasterRwItem[]>([]);
-  const [startDate, setStartDate] = useState<string>("");
-  const [endDate, setEndDate] = useState<string>("");
+  const [startDate, setStartDate] = useState<string>(() => {
+    const nowWib = new Date(Date.now() + 7 * 60 * 60 * 1000);
+    return nowWib.toISOString().slice(0, 10);
+  });
+  const [endDate, setEndDate] = useState<string>(() => {
+    const nowWib = new Date(Date.now() + 7 * 60 * 60 * 1000);
+    return nowWib.toISOString().slice(0, 10);
+  });
   const [datePreset, setDatePreset] = useState<"ALL" | "TODAY" | "7DAYS" | "30DAYS">("TODAY");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>("");
@@ -561,15 +567,6 @@ export const LaporanPresensiPage: React.FC = () => {
     }
   };
 
-  // Set default initial date range to TODAY on mount
-  useEffect(() => {
-    const nowWib = new Date(Date.now() + 7 * 60 * 60 * 1000);
-    const todayStr = nowWib.toISOString().slice(0, 10);
-    setStartDate(todayStr);
-    setEndDate(todayStr);
-    setDatePreset("TODAY");
-  }, []);
-
   // Fetch groups for filter
   const fetchGroups = useCallback(async () => {
     try {
@@ -667,7 +664,9 @@ export const LaporanPresensiPage: React.FC = () => {
     } catch (error: any) {
       console.error("Gagal mengambil laporan presensi:", error);
       if (!silent) {
-        toast.error(error.response?.data?.message || "Gagal memuat data laporan presensi.");
+        toast.error(error.response?.data?.message || "Gagal memuat data laporan presensi.", {
+          id: "laporan-presensi-error",
+        });
       }
     } finally {
       if (!silent) setLoading(false);

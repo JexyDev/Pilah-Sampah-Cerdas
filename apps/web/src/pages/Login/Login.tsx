@@ -16,7 +16,6 @@ import {
   LogIn,
   Download,
   ShieldAlert,
-  Smartphone,
 } from "lucide-react";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useThemeStore } from "../../store/useThemeStore";
