@@ -80,30 +80,55 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
     String userRw,
     int? userRwId,
   ) {
+    // Helper: bersihkan string kelurahan untuk perbandingan
+    String cleanKel(String val) => val
+        .toLowerCase()
+        .replaceAll('kel.', '')
+        .replaceAll('kelurahan', '')
+        .replaceAll('desa', '')
+        .trim();
+
+    final targetKelClean = cleanKel(userKel);
+    final targetRwSet = userRw
+        .split(',')
+        .map(
+          (s) => s
+              .replaceAll(RegExp(r'[^\d]'), '')
+              .replaceFirst(RegExp(r'^0+'), ''),
+        )
+        .where((s) => s.isNotEmpty)
+        .toSet();
+
     return allWarga.where((w) {
       if (w.role.isNotEmpty && w.role != 'WARGA') return false;
       // Blokir warga yang baru registrasi awal dan belum mengisi form Gabung Komunitas
       if (w.lifecycleState.toUpperCase() == 'REGISTERED') return false;
 
-      // 1. Filter strict by ID RW numerik
-      if (userRwId != null && w.rwId != null) {
-        if (w.rwId != userRwId) return false;
-      } else {
-        // 2. Fallback untuk Multi-RW / string RW
-        final wRwClean = w.rw
-            .replaceAll(RegExp(r'[^\d]'), '')
-            .replaceFirst(RegExp(r'^0+'), '');
-            
-        final targetRwSet = userRw
-            .split(',')
-            .map((s) => s.replaceAll(RegExp(r'[^\d]'), '').replaceFirst(RegExp(r'^0+'), ''))
-            .where((s) => s.isNotEmpty)
-            .toSet();
+      final wRwClean = w.rw
+          .replaceAll(RegExp(r'[^\d]'), '')
+          .replaceFirst(RegExp(r'^0+'), '');
+      final wKelClean = cleanKel(w.kelurahan);
+      final wAddr = w.address.toLowerCase();
 
-        if (targetRwSet.isNotEmpty && !targetRwSet.contains(wRwClean)) {
-           return false;
-        }
+      // 1. Cek kecocokan RW (Dukung Multi-RW)
+      bool rwMatches = false;
+      if (userRwId != null && w.rwId != null && w.rwId == userRwId) {
+        rwMatches = true;
+      } else {
+        // Murni pencocokan string, tanpa dummy bypass (jika kosong = false)
+        rwMatches = targetRwSet.contains(wRwClean) ||
+            targetRwSet.any(
+              (r) => wAddr.contains('rw $r') || wAddr.contains('rw 0$r'),
+            );
       }
+
+      // 2. Cek kecocokan Kelurahan tanpa dummy bypass
+      final kelMatches = targetKelClean.isNotEmpty &&
+          (wKelClean.contains(targetKelClean) ||
+              targetKelClean.contains(wKelClean) ||
+              wAddr.contains(targetKelClean));
+
+      if (!rwMatches || !kelMatches) return false;
 
       if (_searchController.text.isNotEmpty) {
         final query = _searchController.text.toLowerCase();
