@@ -280,8 +280,9 @@ export class KknService {
     const isDpl = roleName === "DPL" || roleName === "DOSEN_PEMBIMBING";
     const isMhs = roleName === "MAHASISWA_KKN";
 
-    let whereBin: any = { status: "ACTIVE_BOUND" };
+    let studentProfile: any = null;
     let effectiveRwId: number | undefined = filters.rwId;
+    let whereBin: any = { status: "ACTIVE_BOUND" };
     let targetRwIds: number[] = [];
 
     if (isDpl) {
@@ -311,10 +312,11 @@ export class KknService {
         };
       }
     } else if (isMhs) {
-      // Mahasiswa KKN: Ambil dari mahasiswa sekelompok / mahasiswa ini dengan STRICT RW SCOPING
-      const studentProfile = await prisma.studentKkn.findFirst({
+      // Mahasiswa KKN: Ambil profil mahasiswa untuk mengetahui RW penugasan & nama
+      studentProfile = await prisma.studentKkn.findFirst({
         where: { userId: kknUserId },
         include: {
+          user: { select: { id: true, name: true } },
           assignedRw: true,
           kelompok: {
             include: {
@@ -367,47 +369,24 @@ export class KknService {
         } catch {}
       }
 
-      const groupStudentUserIds = studentProfile?.kelompok?.students.map((s) => s.userId) || [
-        kknUserId,
+      const orConditions: any[] = [
+        { registeredByStudentId: kknUserId },
+        { qrBatch: { assignedPicUserId: kknUserId } },
       ];
 
-      const baseStudentCondition = {
-        OR: [
-          { registeredByStudentId: { in: groupStudentUserIds } },
-          { registeredByStudentId: kknUserId },
-          { qrBatch: { assignedPicUserId: kknUserId } },
-        ],
-      };
-
       if (effectiveRwId) {
-        whereBin = {
-          AND: [
-            baseStudentCondition,
-            {
-              OR: [
-                { rwId: effectiveRwId },
-                { user: { rwId: effectiveRwId } },
-                { user: { households: { some: { rwId: effectiveRwId } } } },
-              ],
-            },
-          ],
-        };
+        orConditions.push({ rwId: effectiveRwId });
+        orConditions.push({ user: { rwId: effectiveRwId } });
+        orConditions.push({ user: { households: { some: { rwId: effectiveRwId } } } });
       } else if (targetRwIds.length > 0) {
-        whereBin = {
-          AND: [
-            baseStudentCondition,
-            {
-              OR: [
-                { rwId: { in: targetRwIds } },
-                { user: { rwId: { in: targetRwIds } } },
-                { user: { households: { some: { rwId: { in: targetRwIds } } } } },
-              ],
-            },
-          ],
-        };
-      } else {
-        whereBin = baseStudentCondition;
+        orConditions.push({ rwId: { in: targetRwIds } });
+        orConditions.push({ user: { rwId: { in: targetRwIds } } });
+        orConditions.push({ user: { households: { some: { rwId: { in: targetRwIds } } } } });
       }
+
+      whereBin = {
+        OR: orConditions,
+      };
     }
 
     const bins = await prisma.bin.findMany({
@@ -535,6 +514,21 @@ export class KknService {
         binAnorganik?.registeredByStudent?.name ||
         "";
 
+      const resolvedRwId = u.rwId || primaryBin.rwId || household?.rwId || effectiveRwId || null;
+      const isMyAssignedCitizen =
+        effectiveRwId != null &&
+        (u.rwId === effectiveRwId ||
+          household?.rwId === effectiveRwId ||
+          primaryBin.rwId === effectiveRwId);
+
+      const resolvedMahasiswaId =
+        registeredStudentId || (isMyAssignedCitizen && kknUserId ? kknUserId : "");
+      const resolvedPendampingName =
+        registeredStudentName ||
+        (isMyAssignedCitizen && (studentProfile as any)?.user?.name
+          ? (studentProfile as any).user.name
+          : "");
+
       return {
         id: u.id,
         wargaId: u.id,
@@ -580,34 +574,30 @@ export class KknService {
           capacity: `${b.currentVolumeLiter || 0}L / ${b.maxCapacityLiter || 25}L`,
         })),
         binOwnerships: u.binOwnerships || [],
-        pendampingName: registeredStudentName,
-        mahasiswaId: registeredStudentId,
-        registeredByStudent: registeredStudentName,
-        registeredByStudentName: registeredStudentName,
-        registeredByStudentId: registeredStudentId,
+        pendampingName: resolvedPendampingName,
+        pendamping: resolvedPendampingName
+          ? { id: resolvedMahasiswaId, name: resolvedPendampingName }
+          : null,
+        mahasiswaId: resolvedMahasiswaId,
+        registeredByStudent: resolvedPendampingName,
+        registeredByStudentName: resolvedPendampingName,
+        registeredByStudentId: resolvedMahasiswaId,
         recentLogs,
-        rwId:
-          u.rwId ||
-          primaryBin?.rwId ||
-          binOrganik?.rwId ||
-          binAnorganik?.rwId ||
-          household?.rwId ||
-          null,
-        rw:
-          u.rw?.name ||
-          household?.rw?.name ||
-          (u.rwId || primaryBin?.rwId || binOrganik?.rwId || binAnorganik?.rwId || household?.rwId
-            ? `RW 0${u.rwId || primaryBin?.rwId || binOrganik?.rwId || binAnorganik?.rwId || household?.rwId}`
-            : "Belum diset"),
+        rwId: resolvedRwId,
+        rw: u.rw?.name || household?.rw?.name || (resolvedRwId ? `RW ${resolvedRwId}` : "Belum diset"),
       };
     });
 
     let result = list.filter((item): item is NonNullable<typeof item> => item !== null);
 
     if (effectiveRwId) {
-      result = result.filter((item) => item.rwId === effectiveRwId);
+      result = result.filter(
+        (item) => item.rwId === effectiveRwId || item.registeredByStudentId === kknUserId
+      );
     } else if (targetRwIds.length > 0) {
-      result = result.filter((item) => item.rwId && targetRwIds.includes(item.rwId));
+      result = result.filter(
+        (item) => (item.rwId && targetRwIds.includes(item.rwId)) || item.registeredByStudentId === kknUserId
+      );
     }
     if (filters.search) {
       const s = filters.search.toLowerCase();
@@ -1024,9 +1014,10 @@ export class KknService {
     let studentKelompokKelurahan: string | undefined = undefined;
     let studentGroupUserIds: string[] = [];
     let targetRwIds: number[] = [];
+    let student: any = null;
 
     if (!isSuperOrAdmin) {
-      const student = await prisma.studentKkn?.findUnique?.({
+      student = await prisma.studentKkn?.findUnique?.({
         where: { userId: kknUserId },
         include: {
           assignedRw: {
@@ -1090,58 +1081,53 @@ export class KknService {
 
     const where: any = {
       role: { name: "WARGA" },
-      lifecycleState: { not: "REGISTERED" },
     };
 
-    const andConditions: any[] = [];
-
-    if (targetRwId) {
-      // STRICT RW SCOPING: Warga must belong to targetRwId
-      andConditions.push({
-        OR: [
-          { rwId: targetRwId },
-          { households: { some: { rwId: targetRwId } } },
-          { binOwnerships: { some: { bin: { rwId: targetRwId } } } },
-        ],
-      });
-    } else if (targetRwIds.length > 0) {
-      // Cakupan RWs of the kelompok
-      andConditions.push({
-        OR: [
-          { rwId: { in: targetRwIds } },
-          { households: { some: { rwId: { in: targetRwIds } } } },
-          { binOwnerships: { some: { bin: { rwId: { in: targetRwIds } } } } },
-        ],
-      });
+    if (targetRwId || targetRwIds.length > 0) {
+      const rwFilter = targetRwId ? targetRwId : { in: targetRwIds };
+      const rwConditions: any[] = [
+        { rwId: rwFilter },
+        { households: { some: { rwId: rwFilter } } },
+        { binOwnerships: { some: { bin: { rwId: rwFilter } } } },
+        { bins: { some: { rwId: rwFilter } } },
+      ];
+      if (studentGroupUserIds.length > 0) {
+        rwConditions.push({
+          binOwnerships: {
+            some: {
+              bin: { registeredByStudentId: { in: studentGroupUserIds } },
+            },
+          },
+        });
+        rwConditions.push({
+          bins: {
+            some: { registeredByStudentId: { in: studentGroupUserIds } },
+          },
+        });
+      }
+      where.OR = rwConditions;
     } else if (targetKelurahan) {
-      // Only filter by broad Kelurahan if NO specific RW is targeted
-      andConditions.push({
-        OR: [
-          {
-            households: {
-              some: {
-                rw: { kelurahan: { name: { contains: targetKelurahan, mode: "insensitive" } } },
+      where.OR = [
+        {
+          households: {
+            some: {
+              rw: { kelurahan: { name: { contains: targetKelurahan, mode: "insensitive" } } },
+            },
+          },
+        },
+        {
+          rw: { kelurahan: { name: { contains: targetKelurahan, mode: "insensitive" } } },
+        },
+        {
+          binOwnerships: {
+            some: {
+              bin: {
+                kelurahan: { name: { contains: targetKelurahan, mode: "insensitive" } },
               },
             },
           },
-          {
-            rw: { kelurahan: { name: { contains: targetKelurahan, mode: "insensitive" } } },
-          },
-          {
-            binOwnerships: {
-              some: {
-                bin: {
-                  kelurahan: { name: { contains: targetKelurahan, mode: "insensitive" } },
-                },
-              },
-            },
-          },
-        ],
-      });
-    }
-
-    if (andConditions.length > 0) {
-      where.AND = andConditions;
+        },
+      ];
     }
 
     if (filters?.status === "UNACTIVATED") {
@@ -1300,6 +1286,18 @@ export class KknService {
             ? Number(w.rw.longitude)
             : null;
 
+      const resolvedRwId = w.rwId || household?.rwId || primaryBin?.rwId || targetRwId || null;
+      const isMyAssignedCitizen =
+        studentAssignedRwId != null &&
+        (w.rwId === studentAssignedRwId ||
+          household?.rwId === studentAssignedRwId ||
+          primaryBin?.rwId === studentAssignedRwId);
+
+      const resolvedMahasiswaId =
+        registeredStudentId || (isMyAssignedCitizen && kknUserId ? kknUserId : "");
+      const resolvedPendampingName =
+        registeredStudentName || (isMyAssignedCitizen && student?.user?.name ? student.user.name : "");
+
       return {
         id: w.id,
         wargaId: w.id,
@@ -1312,13 +1310,7 @@ export class KknService {
           (rtRwName ? `RT ${rtRwName}, Kel. ${kelName}` : "Alamat belum diisi"),
         kelurahan: kelName,
         rw: rtRwName,
-        rwId:
-          w.rwId ||
-          household?.rwId ||
-          primaryBin?.rwId ||
-          binOrganik?.rwId ||
-          binAnorganik?.rwId ||
-          null,
+        rwId: resolvedRwId,
         role: "WARGA",
         latitude: lat,
         longitude: lng,
@@ -1338,11 +1330,16 @@ export class KknService {
         errorPercentage:
           totalActivities > 0 ? Math.round((incorrectCount / totalActivities) * 1000) / 10 : 0,
         isActivated,
+        status: isActivated ? "ACTIVATED" : "UNACTIVATED",
         needsReeducation: totalActivities > 0 && correctCount / totalActivities < 0.8,
-        mahasiswaId: registeredStudentId || "",
-        pendampingName: registeredStudentName,
-        registeredByStudent: registeredStudentName,
-        registeredByStudentName: registeredStudentName,
+        mahasiswaId: resolvedMahasiswaId,
+        registeredByStudentId: resolvedMahasiswaId,
+        pendampingName: resolvedPendampingName,
+        registeredByStudent: resolvedPendampingName,
+        registeredByStudentName: resolvedPendampingName,
+        pendamping: resolvedPendampingName
+          ? { id: resolvedMahasiswaId, name: resolvedPendampingName }
+          : null,
         binOrganikId: binOrganik?.qrCode || null,
         binAnorganikId: binAnorganik?.qrCode || null,
         binId: primaryBin?.qrCode || binOrganik?.qrCode || binAnorganik?.qrCode || "",
@@ -1661,7 +1658,7 @@ export class KknService {
             userId: wargaId,
             status: "ACTIVE_BOUND",
             registeredByStudentId: kknUserId,
-            rwId: targetWarga.rwId ?? bin.rwId,
+            rwId: targetWarga.rwId ?? studentAssignedRwId ?? bin.rwId,
             kelurahanId: targetWargaRwRecord?.kelurahanId ?? bin.kelurahanId,
             ...(latitude && longitude ? { latitude, longitude } : {}),
           },
@@ -1677,17 +1674,10 @@ export class KknService {
         }
       }
 
+      let resolvedTargetRwId = targetWarga.rwId || studentAssignedRwId || bins[0]?.rwId || null;
+
       const existingHh = await tx.household.findFirst({ where: { userId: wargaId } });
       if (!existingHh) {
-        let assignedRwId = targetWarga.rwId;
-        if (!assignedRwId && kknUserId) {
-          const student = await tx.studentKkn.findUnique({
-            where: { userId: kknUserId },
-            select: { assignedRwId: true, user: { select: { rwId: true } } },
-          });
-          assignedRwId = student?.assignedRwId || student?.user?.rwId;
-        }
-
         const effectiveLat =
           latitude != null && latitude !== 0
             ? latitude
@@ -1705,16 +1695,26 @@ export class KknService {
           data: {
             userId: wargaId,
             address: targetWarga.address || "-",
-            rwId: assignedRwId ?? undefined,
+            rwId: resolvedTargetRwId ?? undefined,
             latitude: effectiveLat,
             longitude: effectiveLng,
           },
         });
-      } else if (latitude != null && longitude != null && latitude !== 0 && longitude !== 0) {
-        await tx.household.updateMany({
-          where: { userId: wargaId },
-          data: { latitude, longitude },
-        });
+      } else {
+        const updateData: any = {};
+        if (latitude != null && longitude != null && latitude !== 0 && longitude !== 0) {
+          updateData.latitude = latitude;
+          updateData.longitude = longitude;
+        }
+        if (!existingHh.rwId && resolvedTargetRwId) {
+          updateData.rwId = resolvedTargetRwId;
+        }
+        if (Object.keys(updateData).length > 0) {
+          await tx.household.update({
+            where: { id: existingHh.id },
+            data: updateData,
+          });
+        }
       }
 
       if (kknUserId) {
@@ -1732,7 +1732,10 @@ export class KknService {
 
       await tx.user.update({
         where: { id: wargaId },
-        data: { lifecycleState: "FULLY_ACTIVE" },
+        data: {
+          lifecycleState: "FULLY_ACTIVE",
+          ...(!targetWarga.rwId && resolvedTargetRwId ? { rwId: resolvedTargetRwId } : {}),
+        },
       });
     });
   }

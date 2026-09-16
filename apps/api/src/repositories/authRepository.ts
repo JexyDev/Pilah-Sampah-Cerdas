@@ -277,15 +277,36 @@ export class AuthRepository {
 
   /**
    * Cari data mahasiswa pendamping KKN untuk warga.
-   * Prioritas 1: Dari Tempat Sampah (Bin) yang terdaftar/terkait ke warga
-   * Prioritas 2: Dari Mahasiswa KKN aktif yang ditugaskan di RW warga
+   * Prioritas 1: Dari Tempat Sampah (Bin) yang terdaftar/diaktivasi oleh mahasiswa
+   * Prioritas 2: Dari Mahasiswa KKN aktif yang ditugaskan di RW domisili warga
+   * Prioritas 3: Dari Mahasiswa KKN yang kelompoknya mencakup RW domisili warga
    */
   async findCitizenMentor(userId: string, rwId?: number | null) {
+    const mentorSelect = {
+      id: true,
+      name: true,
+      phone: true,
+      studentProfile: {
+        select: {
+          nim: true,
+          jurusan: true,
+          fakultas: true,
+          kelompok: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+    };
+
+    // Prioritas 1A: Dari BinOwnership yang memiliki registeredByStudent
     const ownership = await prisma.binOwnership.findFirst({
       where: {
         userId,
         bin: {
-          status: { in: ["ACTIVE_BOUND", "PENDING_APPROVAL"] },
+          registeredByStudentId: { not: null },
         },
       },
       orderBy: { createdAt: "desc" },
@@ -294,24 +315,7 @@ export class AuthRepository {
           select: {
             id: true,
             registeredByStudent: {
-              select: {
-                id: true,
-                name: true,
-                phone: true,
-                studentProfile: {
-                  select: {
-                    nim: true,
-                    jurusan: true,
-                    fakultas: true,
-                    kelompok: {
-                      select: {
-                        id: true,
-                        name: true,
-                      },
-                    },
-                  },
-                },
-              },
+              select: mentorSelect,
             },
           },
         },
@@ -322,34 +326,16 @@ export class AuthRepository {
       return ownership.bin.registeredByStudent;
     }
 
-    // Cek juga dari Bin langsung jika userId terikat di tabel Bin
+    // Prioritas 1B: Dari Bin langsung jika userId terikat di tabel Bin
     const directBin = await prisma.bin.findFirst({
       where: {
         userId,
-        status: { in: ["ACTIVE_BOUND", "PENDING_APPROVAL"] },
         registeredByStudentId: { not: null },
       },
       orderBy: { createdAt: "desc" },
       select: {
         registeredByStudent: {
-          select: {
-            id: true,
-            name: true,
-            phone: true,
-            studentProfile: {
-              select: {
-                nim: true,
-                jurusan: true,
-                fakultas: true,
-                kelompok: {
-                  select: {
-                    id: true,
-                    name: true,
-                  },
-                },
-              },
-            },
-          },
+          select: mentorSelect,
         },
       },
     });
@@ -358,34 +344,65 @@ export class AuthRepository {
       return directBin.registeredByStudent;
     }
 
-    if (rwId) {
+    // Resolve RW ID jika belum ada (dari user, household, atau bin)
+    let effectiveRwId = rwId;
+    if (!effectiveRwId) {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          rwId: true,
+          households: { select: { rwId: true }, take: 1 },
+          bins: { select: { rwId: true }, take: 1 },
+        },
+      });
+      effectiveRwId = user?.rwId || user?.households?.[0]?.rwId || user?.bins?.[0]?.rwId || null;
+    }
+
+    // Prioritas 2: Cari Mahasiswa aktif yang ditugaskan di RW penugasan tersebut
+    if (effectiveRwId) {
       const activeStudent = await prisma.user.findFirst({
         where: {
           role: { name: "MAHASISWA_KKN" },
           studentProfile: {
-            assignedRwId: rwId,
+            assignedRwId: effectiveRwId,
           },
         },
-        select: {
-          id: true,
-          name: true,
-          phone: true,
-          studentProfile: {
-            select: {
-              nim: true,
-              jurusan: true,
-              fakultas: true,
-              kelompok: {
-                select: {
-                  id: true,
-                  name: true,
-                },
+        select: mentorSelect,
+      });
+      if (activeStudent) {
+        return activeStudent;
+      }
+
+      // Prioritas 3: Fallback ke Mahasiswa dari Kelompok KKN yang mencakup RW ini
+      const rwRec = await prisma.rw.findUnique({
+        where: { id: effectiveRwId },
+        select: { name: true },
+      });
+      const rwDigit = rwRec?.name?.replace(/[^\d]/g, "").replace(/^0+/, "");
+      if (rwDigit) {
+        const groups = await prisma.kelompokKkn.findMany({
+          select: { id: true, cakupanRw: true },
+        });
+        const matchedGroup = groups.find((g) => {
+          if (!g.cakupanRw) return false;
+          const str = typeof g.cakupanRw === "string" ? g.cakupanRw : JSON.stringify(g.cakupanRw);
+          return str.includes(rwDigit);
+        });
+        if (matchedGroup) {
+          const groupStudent = await prisma.user.findFirst({
+            where: {
+              role: { name: "MAHASISWA_KKN" },
+              studentProfile: {
+                kelompokId: matchedGroup.id,
               },
             },
-          },
-        },
-      });
-      return activeStudent;
+            select: mentorSelect,
+          });
+          if (groupStudent) {
+            return groupStudent;
+          }
+        }
+      }
     }
 
     return null;
@@ -472,7 +489,8 @@ export class AuthRepository {
     userData: any,
     householdData: any,
     qrCode?: string | null,
-    wargaSubtype?: string | null
+    wargaSubtype?: string | null,
+    registeredByStudentId?: string | null
   ) {
     return prisma.$transaction(async (tx) => {
       let bin: any = null;
@@ -545,6 +563,7 @@ export class AuthRepository {
         await tx.household.create({
           data: {
             ...householdData,
+            rwId: householdData.rwId ?? user.rwId ?? null,
             userId: user.id,
           },
         });
@@ -569,6 +588,7 @@ export class AuthRepository {
               rwId: user.rwId ?? householdData?.rwId ?? null,
               latitude: householdData?.latitude ?? 0,
               longitude: householdData?.longitude ?? 0,
+              ...(registeredByStudentId ? { registeredByStudentId } : {}),
             },
           });
 
