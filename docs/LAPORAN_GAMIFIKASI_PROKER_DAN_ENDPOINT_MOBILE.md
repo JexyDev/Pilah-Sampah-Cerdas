@@ -298,14 +298,36 @@ Digunakan oleh aplikasi mobile saat mahasiswa atau DPL menggeser status pelaksan
 
 ---
 
-## 4. Penyesuaian Penting Lainnya
+## 4. Formula Resmi Poin Kelompok & Poin DPL KKN
 
-1. **Skor Kelompok (Group Score / `poinKelompok`)**:
-   - Di dasbor DPL (`GET /api/v1/dpl/dashboard` & `GET /api/v1/dpl/kelompok/:id`), nilai `poinKelompok` kini murni **bilangan bulat (integer)** yang merupakan akumulasi total poin proker kelompok (`poinProker`).
-   - Rumus pembobotan desimal (`* 0.6 + * 0.4`) telah dihapus secara permanen.
-2. **Pelanggaran Geofence Presensi (Out of Zone)**:
+1. **Skor Kelompok (Group Score / `totalGroupPoints` / `poinKelompok`)**:
+   - Dihitung menggunakan **Formula Pembobotan Resmi 60% : 40%**:
+     $$\mathbf{\text{Poin Kelompok}} = (\text{Poin Proker} \times 0{,}6) + (\text{Rata-rata Poin Anggota} \times 0{,}4)$$
+   - **Komponen Program Kerja**:
+     - Status Usulan `DISETUJUI`: **+2 Poin**
+     - Status Pelaksanaan `SEDANG_BERJALAN`: **+2 Poin lagi** *(Akumulasi 4 Poin)*
+     - Status Pelaksanaan `SELESAI`: **+2 Poin lagi** *(Akumulasi 6 Poin)*
+   - **Contoh Kasus**:
+     - Kelompok memiliki: 2 proker disetujui ($2 \times 2 = 4$), 2 sedang berlangsung ($2 \times 4 = 8$), 2 selesai ($2 \times 6 = 12$).
+     - Total Poin Proker = $4 + 8 + 12 = 24\text{ Poin}$.
+     - Rata-rata capaian poin anggota = $4\text{ Poin}$.
+     - **Poin Kelompok Akhir** = $(24 \times 0{,}6) + (4 \times 0{,}4) = 14{,}4 + 1{,}6 = \mathbf{16\text{ Poin}}$.
+
+2. **Skor DPL (Dosen Pembimbing Lapangan / `poinDpl`)**:
+   - Dihitung menggunakan **Data Logbook DPL + Poin Kelompok (Bobot 60% : 40%)**:
+     - Jika logbook DPL **tersedia** (minimal 1 logbook): **6 Poin**
+     - Jika **tidak tersedia**: **0 Poin**
+     $$\mathbf{\text{Poin DPL}} = (\text{Poin Logbook} \times 0{,}6) + (\text{Poin Kelompok} \times 0{,}4)$$
+   - **Contoh Kasus**:
+     - Logbook DPL tersedia (6 Poin) dan Poin Kelompok 16:
+       $$\text{Poin DPL} = (6 \times 0{,}6) + (16 \times 0{,}4) = 3{,}6 + 6{,}4 = \mathbf{10\text{ Poin}}$$
+     - Logbook DPL belum diisi (0 Poin) dan Poin Kelompok 16:
+       $$\text{Poin DPL} = (0 \times 0{,}6) + (16 \times 0{,}4) = 0 + 6{,}4 = \mathbf{6{,}4\text{ Poin}}$$
+
+3. **Pelanggaran Geofence Presensi (Out of Zone)**:
    - Presensi di luar radius posko tetap tercatat sebagai audit log, tetapi **TIDAK mengurangi saldo poin** mahasiswa (`points: 0`, `kategori: "PENALTY_OUT_OF_ZONE"`).
-3. **Pemanfaatan Sampah & Catat Panen**:
+
+4. **Pemanfaatan Sampah & Catat Panen**:
    - Form pencatatan pemanfaatan dan panen berfungsi murni sebagai riwayat kegiatan/logbook kelompok (**Non-Poin**).
 
 ---

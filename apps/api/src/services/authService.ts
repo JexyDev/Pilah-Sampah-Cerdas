@@ -591,7 +591,7 @@ export class AuthService {
 
     if (user.role.name === "WARGA") {
       streakInfo = await this.getCitizenMotivation(userId);
-      const mentorUser = await authRepository.findCitizenMentor(userId, user.rwId);
+      const mentorUser: any = await authRepository.findCitizenMentor(userId, user.rwId);
       if (mentorUser) {
         pendamping = {
           id: mentorUser.id,
@@ -728,26 +728,25 @@ export class AuthService {
       rwName || (user.rwId ? `RW 0${user.rwId}` : roleName === "WARGA" ? "RW 03" : "");
 
     const lifecycleState = (user as any).lifecycleState || "REGISTERED";
-    const isRegisteredWarga = roleName === "WARGA" && lifecycleState === "REGISTERED";
 
     return {
       id: user.id,
       name: user.name,
       role: user.role.name,
       phone: user.phone,
-      address: isRegisteredWarga ? null : user.address,
+      address: user.address,
       fotoProfil: user.fotoProfil,
-      familySize: isRegisteredWarga ? null : (user.jumlahAnggotaKeluarga || null),
-      jumlahAnggotaKeluarga: isRegisteredWarga ? null : (user.jumlahAnggotaKeluarga || null),
+      familySize: user.jumlahAnggotaKeluarga || null,
+      jumlahAnggotaKeluarga: user.jumlahAnggotaKeluarga || null,
       qrCode: `USER:${user.id}`,
-      provinsi: isRegisteredWarga ? null : (user.provinsi || "Jawa Barat"),
-      kabupaten: isRegisteredWarga ? null : (user.kabupaten || "Kota Bandung"),
-      kecamatan: isRegisteredWarga ? null : kecamatanName,
-      kelurahan: isRegisteredWarga ? null : resolvedKelurahan,
-      rw: isRegisteredWarga ? null : resolvedRw,
-      rwId: isRegisteredWarga ? null : (user.rwId || user.studentProfile?.assignedRwId || null),
-      rwName: isRegisteredWarga ? null : resolvedRw,
-      kelurahanName: isRegisteredWarga ? null : resolvedKelurahan,
+      provinsi: user.provinsi || "Jawa Barat",
+      kabupaten: user.kabupaten || "Kota Bandung",
+      kecamatan: kecamatanName,
+      kelurahan: resolvedKelurahan,
+      rw: resolvedRw,
+      rwId: user.rwId || user.studentProfile?.assignedRwId || null,
+      rwName: resolvedRw,
+      kelurahanName: resolvedKelurahan,
       points: totalPoints,
       totalPoints,
       pointKkn: totalPoints,
@@ -795,7 +794,7 @@ export class AuthService {
       kpiScore: user.petugasProfile?.kpiScore ? Number(user.petugasProfile.kpiScore) : 100,
       streakInfo,
       pendamping,
-      pendampingName: isRegisteredWarga ? null : (pendamping?.name || null),
+      pendampingName: pendamping?.name || null,
     };
   }
 
@@ -931,6 +930,25 @@ export class AuthService {
       }
     }
 
+    // If scanner is Mahasiswa KKN, auto-resolve RW if missing and set student mentor
+    let registeredByStudentId: string | null = null;
+    if (scannerUser && scannerUser.role === "MAHASISWA_KKN") {
+      registeredByStudentId = scannerUser.userId;
+      if (!userData.rwId && prisma.studentKkn) {
+        const student = await prisma.studentKkn.findUnique({
+          where: { userId: scannerUser.userId },
+          select: { assignedRwId: true, user: { select: { rwId: true } } },
+        });
+        const autoRwId = student?.assignedRwId || student?.user?.rwId;
+        if (autoRwId) {
+          userData.rwId = autoRwId;
+          if (householdData) {
+            householdData.rwId = autoRwId;
+          }
+        }
+      }
+    }
+
     // Check duplicate phone
     const existingUserByPhone = await authRepository.findUserByPhone(userData.phone);
     if (existingUserByPhone) throw new Error("PHONE_ALREADY_IN_USE");
@@ -948,7 +966,8 @@ export class AuthService {
       },
       householdData,
       qrCode,
-      wargaSubtype
+      wargaSubtype,
+      registeredByStudentId
     );
 
     if (userData.rwId) {

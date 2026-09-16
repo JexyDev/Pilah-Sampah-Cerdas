@@ -280,7 +280,10 @@ export class KknService {
     const isDpl = roleName === "DPL" || roleName === "DOSEN_PEMBIMBING";
     const isMhs = roleName === "MAHASISWA_KKN";
 
+    let studentProfile: any = null;
+    let effectiveRwId: number | undefined = filters.rwId;
     let whereBin: any = { status: "ACTIVE_BOUND" };
+    let targetRwIds: number[] = [];
 
     if (isDpl) {
       // DPL: Ambil kelompok bimbingan DPL ini
@@ -309,23 +312,90 @@ export class KknService {
         };
       }
     } else if (isMhs) {
-      // Mahasiswa KKN: Ambil dari mahasiswa sekelompok / mahasiswa ini
-      const studentProfile = await prisma.studentKkn.findFirst({
+      // Mahasiswa KKN: Ambil profil mahasiswa untuk mengetahui RW penugasan & nama
+      studentProfile = await prisma.studentKkn.findFirst({
         where: { userId: kknUserId },
-        include: { kelompok: { include: { students: { select: { userId: true } } } } },
+        include: {
+          user: { select: { id: true, name: true } },
+          assignedRw: true,
+          kelompok: {
+            include: {
+              students: { select: { userId: true, assignedRwId: true } },
+            },
+          },
+        },
       });
 
-      const groupStudentUserIds = studentProfile?.kelompok?.students.map((s) => s.userId) || [
-        kknUserId,
+      // 1. Resolve student's assigned RW if not explicitly passed
+      if (!effectiveRwId) {
+        effectiveRwId = studentProfile?.assignedRwId || user?.rwId || undefined;
+      }
+
+      // 2. Fallback: If no single assignedRwId, resolve group's cakupanRw
+      if (!effectiveRwId && studentProfile?.kelompok?.cakupanRw) {
+        try {
+          const rawCakupan = studentProfile.kelompok.cakupanRw;
+          const parsedCakupan =
+            typeof rawCakupan === "string" ? JSON.parse(rawCakupan) : rawCakupan;
+          if (Array.isArray(parsedCakupan) && parsedCakupan.length > 0) {
+            const rwNumbers = parsedCakupan
+              .map((r: any) => String(r).replace(/[^\d]/g, "").trim())
+              .filter(Boolean);
+            if (rwNumbers.length > 0) {
+              const matchedRws = await prisma.rw.findMany({
+                where: {
+                  ...(studentProfile.kelompok.kelurahan
+                    ? {
+                        kelurahan: {
+                          name: {
+                            contains: studentProfile.kelompok.kelurahan,
+                            mode: "insensitive",
+                          },
+                        },
+                      }
+                    : {}),
+                  OR: rwNumbers.flatMap((num) => [
+                    { name: { equals: num, mode: "insensitive" } },
+                    { name: { equals: `RW ${num}`, mode: "insensitive" } },
+                    { name: { equals: `RW ${num.padStart(2, "0")}`, mode: "insensitive" } },
+                    { name: { equals: num.padStart(2, "0"), mode: "insensitive" } },
+                  ]),
+                },
+                select: { id: true },
+              });
+              targetRwIds = matchedRws.map((r) => r.id);
+            }
+          }
+        } catch {}
+      }
+
+      const orConditions: any[] = [
+        { registeredByStudentId: kknUserId },
+        { qrBatch: { assignedPicUserId: kknUserId } },
       ];
 
+      // Sertakan juga seluruh tempat sampah milik kelompok KKN dan yang didaftarkan rekan sekelompok
+      if (studentProfile?.kelompokId) {
+        orConditions.push({ kelompokId: studentProfile.kelompokId });
+      }
+      const groupStudentUserIds =
+        studentProfile?.kelompok?.students?.map((s: any) => s.userId).filter(Boolean) || [];
+      if (groupStudentUserIds.length > 0) {
+        orConditions.push({ registeredByStudentId: { in: groupStudentUserIds } });
+      }
+
+      if (effectiveRwId) {
+        orConditions.push({ rwId: effectiveRwId });
+        orConditions.push({ user: { rwId: effectiveRwId } });
+        orConditions.push({ user: { households: { some: { rwId: effectiveRwId } } } });
+      } else if (targetRwIds.length > 0) {
+        orConditions.push({ rwId: { in: targetRwIds } });
+        orConditions.push({ user: { rwId: { in: targetRwIds } } });
+        orConditions.push({ user: { households: { some: { rwId: { in: targetRwIds } } } } });
+      }
+
       whereBin = {
-        status: "ACTIVE_BOUND",
-        OR: [
-          { registeredByStudentId: { in: groupStudentUserIds } },
-          { registeredByStudentId: kknUserId },
-          { qrBatch: { assignedPicUserId: kknUserId } },
-        ],
+        OR: orConditions,
       };
     }
 
@@ -454,6 +524,21 @@ export class KknService {
         binAnorganik?.registeredByStudent?.name ||
         "";
 
+      const resolvedRwId = u.rwId || primaryBin.rwId || household?.rwId || effectiveRwId || null;
+      const isMyAssignedCitizen =
+        effectiveRwId != null &&
+        (u.rwId === effectiveRwId ||
+          household?.rwId === effectiveRwId ||
+          primaryBin.rwId === effectiveRwId);
+
+      const resolvedMahasiswaId =
+        registeredStudentId || (isMyAssignedCitizen && kknUserId ? kknUserId : "");
+      const resolvedPendampingName =
+        registeredStudentName ||
+        (isMyAssignedCitizen && (studentProfile as any)?.user?.name
+          ? (studentProfile as any).user.name
+          : "");
+
       return {
         id: u.id,
         wargaId: u.id,
@@ -499,20 +584,26 @@ export class KknService {
           capacity: `${b.currentVolumeLiter || 0}L / ${b.maxCapacityLiter || 25}L`,
         })),
         binOwnerships: u.binOwnerships || [],
-        pendampingName: registeredStudentName,
-        mahasiswaId: registeredStudentId,
-        registeredByStudent: registeredStudentName,
-        registeredByStudentName: registeredStudentName,
-        registeredByStudentId: registeredStudentId,
+        pendampingName: resolvedPendampingName,
+        pendamping: resolvedPendampingName
+          ? { id: resolvedMahasiswaId, name: resolvedPendampingName }
+          : null,
+        mahasiswaId: resolvedMahasiswaId,
+        registeredByStudent: resolvedPendampingName,
+        registeredByStudentName: resolvedPendampingName,
+        registeredByStudentId: resolvedMahasiswaId,
         recentLogs,
-        rwId: u.rwId,
+        rwId: resolvedRwId,
+        rw: u.rw?.name || household?.rw?.name || (resolvedRwId ? `RW ${resolvedRwId}` : "Belum diset"),
       };
     });
 
     let result = list.filter((item): item is NonNullable<typeof item> => item !== null);
 
     if (filters.rwId) {
-      result = result.filter((item) => item.rwId === filters.rwId);
+      result = result.filter(
+        (item) => item.rwId === filters.rwId || item.registeredByStudentId === kknUserId
+      );
     }
     if (filters.search) {
       const s = filters.search.toLowerCase();
@@ -929,9 +1020,10 @@ export class KknService {
     let studentKelompokKelurahan: string | undefined = undefined;
     let studentGroupUserIds: string[] = [];
     let targetRwIds: number[] = [];
+    let student: any = null;
 
     if (!isSuperOrAdmin) {
-      const student = await prisma.studentKkn?.findUnique?.({
+      student = await prisma.studentKkn?.findUnique?.({
         where: { userId: kknUserId },
         include: {
           assignedRw: {
@@ -995,55 +1087,72 @@ export class KknService {
 
     const where: any = {
       role: { name: "WARGA" },
-      lifecycleState: { not: "REGISTERED" },
     };
 
-    if (targetRwId || targetRwIds.length > 0 || targetKelurahan || studentGroupUserIds.length > 0) {
-      const orConditions: any[] = [];
-      if (targetRwId) {
-        orConditions.push({ rwId: targetRwId });
-        orConditions.push({ households: { some: { rwId: targetRwId } } });
-        orConditions.push({ binOwnerships: { some: { bin: { rwId: targetRwId } } } });
-      } else if (targetRwIds.length > 0) {
-        orConditions.push({ rwId: { in: targetRwIds } });
-        orConditions.push({ households: { some: { rwId: { in: targetRwIds } } } });
-        orConditions.push({ binOwnerships: { some: { bin: { rwId: { in: targetRwIds } } } } });
+    const orConditions: any[] = [];
+
+    if (filters?.rwId) {
+      // Hanya strict jika parameter rwId eksplisit dikirim dari query frontend
+      orConditions.push(
+        { rwId: filters.rwId },
+        { households: { some: { rwId: filters.rwId } } },
+        { binOwnerships: { some: { bin: { rwId: filters.rwId } } } },
+        { bins: { some: { rwId: filters.rwId } } }
+      );
+    } else {
+      if (targetRwId || targetRwIds.length > 0) {
+        const rwFilter = targetRwId ? targetRwId : { in: targetRwIds };
+        orConditions.push(
+          { rwId: rwFilter },
+          { households: { some: { rwId: rwFilter } } },
+          { binOwnerships: { some: { bin: { rwId: rwFilter } } } },
+          { bins: { some: { rwId: rwFilter } } }
+        );
       }
       if (targetKelurahan) {
-        orConditions.push({
-          households: {
-            some: {
-              rw: { kelurahan: { name: { contains: targetKelurahan, mode: "insensitive" } } },
-            },
-          },
-        });
-        orConditions.push({
-          rw: { kelurahan: { name: { contains: targetKelurahan, mode: "insensitive" } } },
-        });
-        orConditions.push({
-          binOwnerships: {
-            some: {
-              bin: {
-                kelurahan: { name: { contains: targetKelurahan, mode: "insensitive" } },
+        orConditions.push(
+          {
+            households: {
+              some: {
+                rw: { kelurahan: { name: { contains: targetKelurahan, mode: "insensitive" } } },
               },
             },
           },
-        });
-      }
-      if (studentGroupUserIds.length > 0) {
-        orConditions.push({
-          binOwnerships: {
-            some: {
-              bin: {
-                registeredByStudentId: { in: studentGroupUserIds },
+          {
+            rw: { kelurahan: { name: { contains: targetKelurahan, mode: "insensitive" } } },
+          },
+          {
+            binOwnerships: {
+              some: {
+                bin: {
+                  kelurahan: { name: { contains: targetKelurahan, mode: "insensitive" } },
+                },
               },
             },
+          }
+        );
+      }
+    }
+
+    if (studentGroupUserIds.length > 0) {
+      orConditions.push(
+        {
+          binOwnerships: {
+            some: {
+              bin: { registeredByStudentId: { in: studentGroupUserIds } },
+            },
           },
-        });
-      }
-      if (orConditions.length > 0) {
-        where.OR = orConditions;
-      }
+        },
+        {
+          bins: {
+            some: { registeredByStudentId: { in: studentGroupUserIds } },
+          },
+        }
+      );
+    }
+
+    if (orConditions.length > 0) {
+      where.OR = orConditions;
     }
 
     if (filters?.status === "UNACTIVATED") {
@@ -1054,21 +1163,22 @@ export class KknService {
 
     if (filters?.search && filters.search.trim()) {
       const s = filters.search.trim();
-      const searchCondition = [
-        { name: { contains: s, mode: "insensitive" as const } },
-        { phone: { contains: s, mode: "insensitive" as const } },
-        { address: { contains: s, mode: "insensitive" as const } },
-        {
-          binOwnerships: {
-            some: { bin: { qrCode: { contains: s, mode: "insensitive" as const } } },
+      const searchCondition = {
+        OR: [
+          { name: { contains: s, mode: "insensitive" as const } },
+          { phone: { contains: s, mode: "insensitive" as const } },
+          { address: { contains: s, mode: "insensitive" as const } },
+          {
+            binOwnerships: {
+              some: { bin: { qrCode: { contains: s, mode: "insensitive" as const } } },
+            },
           },
-        },
-      ];
-      if (where.OR) {
-        where.AND = [{ OR: where.OR }, { OR: searchCondition }];
-        delete where.OR;
+        ],
+      };
+      if (where.AND) {
+        where.AND.push(searchCondition);
       } else {
-        where.OR = searchCondition;
+        where.AND = [searchCondition];
       }
     }
 
@@ -1201,6 +1311,18 @@ export class KknService {
             ? Number(w.rw.longitude)
             : null;
 
+      const resolvedRwId = w.rwId || household?.rwId || primaryBin?.rwId || targetRwId || null;
+      const isMyAssignedCitizen =
+        studentAssignedRwId != null &&
+        (w.rwId === studentAssignedRwId ||
+          household?.rwId === studentAssignedRwId ||
+          primaryBin?.rwId === studentAssignedRwId);
+
+      const resolvedMahasiswaId =
+        registeredStudentId || (isMyAssignedCitizen && kknUserId ? kknUserId : "");
+      const resolvedPendampingName =
+        registeredStudentName || (isMyAssignedCitizen && student?.user?.name ? student.user.name : "");
+
       return {
         id: w.id,
         wargaId: w.id,
@@ -1213,6 +1335,7 @@ export class KknService {
           (rtRwName ? `RT ${rtRwName}, Kel. ${kelName}` : "Alamat belum diisi"),
         kelurahan: kelName,
         rw: rtRwName,
+        rwId: resolvedRwId,
         role: "WARGA",
         latitude: lat,
         longitude: lng,
@@ -1232,11 +1355,16 @@ export class KknService {
         errorPercentage:
           totalActivities > 0 ? Math.round((incorrectCount / totalActivities) * 1000) / 10 : 0,
         isActivated,
+        status: isActivated ? "ACTIVATED" : "UNACTIVATED",
         needsReeducation: totalActivities > 0 && correctCount / totalActivities < 0.8,
-        mahasiswaId: registeredStudentId || "",
-        pendampingName: registeredStudentName,
-        registeredByStudent: registeredStudentName,
-        registeredByStudentName: registeredStudentName,
+        mahasiswaId: resolvedMahasiswaId,
+        registeredByStudentId: resolvedMahasiswaId,
+        pendampingName: resolvedPendampingName,
+        registeredByStudent: resolvedPendampingName,
+        registeredByStudentName: resolvedPendampingName,
+        pendamping: resolvedPendampingName
+          ? { id: resolvedMahasiswaId, name: resolvedPendampingName }
+          : null,
         binOrganikId: binOrganik?.qrCode || null,
         binAnorganikId: binAnorganik?.qrCode || null,
         binId: primaryBin?.qrCode || binOrganik?.qrCode || binAnorganik?.qrCode || "",
@@ -1489,27 +1617,9 @@ export class KknService {
           const wargaRwNumber =
             targetWargaRwRecord?.name?.replace(/[^\d]/g, "").replace(/^0+/, "") || "";
 
-          if (studentAssignedRwId) {
-            // Skenario 1: Mahasiswa memiliki RW penugasan spesifik -> HANYA boleh aktivasi di RW-nya!
-            if (effectiveWargaRwId && studentAssignedRwId !== effectiveWargaRwId) {
-              const studentRwName =
-                student.assignedRw?.name?.replace(/[^\d]/g, "").replace(/^0+/, "") ||
-                studentAssignedRwId;
-              const wargaRwName = wargaRwNumber || effectiveWargaRwId;
-              throw new Error(
-                `Aktivasi ditolak: Anda hanya berhak mengaktivasi warga di wilayah penugasan Anda (RW 0${studentRwName}). Warga ini berdomisili di RW 0${wargaRwName}.`
-              );
-            }
-          } else if (kelompokCakupanRwList.length > 0 && wargaRwNumber) {
-            // Skenario 2: Mahasiswa Multi-RW kelompok -> Wajib berada dalam salah satu cakupan RW kelompok
-            if (!kelompokCakupanRwList.includes(wargaRwNumber)) {
-              throw new Error(
-                `Aktivasi ditolak: Warga berada di RW 0${wargaRwNumber}, di luar wilayah cakupan kelompok KKN Anda (RW ${kelompokCakupanRwList
-                  .map((r) => "0" + r)
-                  .join(", ")}).`
-              );
-            }
-          }
+          // B. Validasi Wilayah Penugasan Mahasiswa vs Domisili Warga:
+          // [FLEXIBLE/LOSS]: Mahasiswa diperbolehkan mendampingi warga di seluruh wilayah kelompok / kelurahan.
+          // Tidak ada error penolakan RW agar mahasiswa tidak terhambat saat aktivasi di lapangan.
         }
       }
 
@@ -1519,6 +1629,10 @@ export class KknService {
       const targetWargaRwRecord = targetWarga.rwId
         ? await tx.rw.findUnique({ where: { id: targetWarga.rwId } })
         : null;
+
+      // SINKRONISASI RW OTOMATIS: Tentukan RW final warga/tempat sampah
+      const resolvedTargetRwId =
+        targetWarga.rwId || studentAssignedRwId || bins.find((b) => b.rwId)?.rwId || null;
 
       for (const bin of bins) {
         // Guard: reject if bin already owned by a different warga
@@ -1532,21 +1646,8 @@ export class KknService {
           );
         }
 
-        // Guard: Validasi Kesesuaian Stiker jika sudah terkunci ke RW tertentu (Bukan Shared Pool)
-        if (bin.rwId !== null && bin.rwId !== undefined) {
-          // 1. Jika mahasiswa punya penugasan tunggal, stiker harus sama dengan penugasan mahasiswa
-          if (studentAssignedRwId && bin.rwId !== studentAssignedRwId) {
-            throw new Error(
-              `BIN_RW_MISMATCH: Stiker tempat sampah ${bin.qrCode} dialokasikan khusus untuk RW lain, bukan untuk wilayah penugasan Anda.`
-            );
-          }
-          // 2. Stiker harus sama dengan RW domisili warga
-          if (targetWarga.rwId && bin.rwId !== targetWarga.rwId) {
-            throw new Error(
-              `BIN_RW_MISMATCH: Stiker tempat sampah ${bin.qrCode} dialokasikan khusus untuk RW yang berbeda dari domisili warga ini.`
-            );
-          }
-        }
+        // [FLEXIBLE/LOSS]: Penolakan BIN_RW_MISMATCH ditiadakan.
+        // Stiker tempat sampah secara otomatis disinkronkan mengikuti RW warga/penugasan.
 
         // UPDATE STATUS TEMPAT SAMPAH + ASSIGN RW WARGA SECARA DINAMIS
         await tx.bin.update({
@@ -1555,7 +1656,7 @@ export class KknService {
             userId: wargaId,
             status: "ACTIVE_BOUND",
             registeredByStudentId: kknUserId,
-            rwId: targetWarga.rwId ?? bin.rwId,
+            rwId: resolvedTargetRwId ?? bin.rwId,
             kelurahanId: targetWargaRwRecord?.kelurahanId ?? bin.kelurahanId,
             ...(latitude && longitude ? { latitude, longitude } : {}),
           },
@@ -1573,15 +1674,6 @@ export class KknService {
 
       const existingHh = await tx.household.findFirst({ where: { userId: wargaId } });
       if (!existingHh) {
-        let assignedRwId = targetWarga.rwId;
-        if (!assignedRwId && kknUserId) {
-          const student = await tx.studentKkn.findUnique({
-            where: { userId: kknUserId },
-            select: { assignedRwId: true, user: { select: { rwId: true } } },
-          });
-          assignedRwId = student?.assignedRwId || student?.user?.rwId;
-        }
-
         const effectiveLat =
           latitude != null && latitude !== 0
             ? latitude
@@ -1599,16 +1691,26 @@ export class KknService {
           data: {
             userId: wargaId,
             address: targetWarga.address || "-",
-            rwId: assignedRwId ?? undefined,
+            rwId: resolvedTargetRwId ?? undefined,
             latitude: effectiveLat,
             longitude: effectiveLng,
           },
         });
-      } else if (latitude != null && longitude != null && latitude !== 0 && longitude !== 0) {
-        await tx.household.updateMany({
-          where: { userId: wargaId },
-          data: { latitude, longitude },
-        });
+      } else {
+        const updateData: any = {};
+        if (latitude != null && longitude != null && latitude !== 0 && longitude !== 0) {
+          updateData.latitude = latitude;
+          updateData.longitude = longitude;
+        }
+        if (!existingHh.rwId && resolvedTargetRwId) {
+          updateData.rwId = resolvedTargetRwId;
+        }
+        if (Object.keys(updateData).length > 0) {
+          await tx.household.update({
+            where: { id: existingHh.id },
+            data: updateData,
+          });
+        }
       }
 
       if (kknUserId) {
@@ -1626,7 +1728,10 @@ export class KknService {
 
       await tx.user.update({
         where: { id: wargaId },
-        data: { lifecycleState: "FULLY_ACTIVE" },
+        data: {
+          lifecycleState: "FULLY_ACTIVE",
+          ...(!targetWarga.rwId && resolvedTargetRwId ? { rwId: resolvedTargetRwId } : {}),
+        },
       });
     });
   }
@@ -4940,6 +5045,67 @@ export class KknService {
               prokerId: id,
               kelompokId: proker.kelompokId,
               status: "DISETUJUI",
+              click_action: "FLUTTER_NOTIFICATION_CLICK",
+            },
+          });
+        }
+      } catch (err: any) {
+        console.warn("[kknService.updateProgramKerja] Push notification error:", err?.message);
+      }
+    }
+
+    const oldPelaksanaan = String(proker.statusPelaksanaan || "").toUpperCase();
+    const newPelaksanaan = effectivePelaksanaan;
+
+    if (newPelaksanaan === "SEDANG_BERJALAN" && oldPelaksanaan !== "SEDANG_BERJALAN") {
+      try {
+        const kelompok = await prisma.kelompokKkn.findUnique({
+          where: { id: proker.kelompokId },
+          include: { students: { select: { userId: true } } },
+        });
+        const studentUserIds = (kelompok?.students || []).map((s) => s.userId).filter(Boolean);
+        if (studentUserIds.length > 0) {
+          await notificationIntegrationService.sendToUsers({
+            userIds: studentUserIds,
+            title: "Program Kerja Dimulai! 🚀 (+2 Poin)",
+            message: `Program kerja "${parsedJudul}" telah resmi dimulai. Seluruh anggota kelompok mendapatkan +2 poin.`,
+            triggerType: "PROKER_STARTED",
+            dataPayload: {
+              event: "REFRESH_PROKER_MAHASISWA",
+              type: "PROKER_BERJALAN",
+              entityId: id,
+              prokerId: id,
+              kelompokId: proker.kelompokId,
+              status: "SEDANG_BERJALAN",
+              statusPelaksanaan: "SEDANG_BERJALAN",
+              click_action: "FLUTTER_NOTIFICATION_CLICK",
+            },
+          });
+        }
+      } catch (err: any) {
+        console.warn("[kknService.updateProgramKerja] Push notification error:", err?.message);
+      }
+    } else if (newPelaksanaan === "SELESAI" && oldPelaksanaan !== "SELESAI") {
+      try {
+        const kelompok = await prisma.kelompokKkn.findUnique({
+          where: { id: proker.kelompokId },
+          include: { students: { select: { userId: true } } },
+        });
+        const studentUserIds = (kelompok?.students || []).map((s) => s.userId).filter(Boolean);
+        if (studentUserIds.length > 0) {
+          await notificationIntegrationService.sendToUsers({
+            userIds: studentUserIds,
+            title: "Program Kerja Selesai! 🎉 (+2 Poin)",
+            message: `Program kerja "${parsedJudul}" telah selesai dilaksanakan! Seluruh anggota kelompok mendapatkan +2 poin tambahan.`,
+            triggerType: "PROKER_COMPLETED",
+            dataPayload: {
+              event: "REFRESH_PROKER_MAHASISWA",
+              type: "PROKER_SELESAI",
+              entityId: id,
+              prokerId: id,
+              kelompokId: proker.kelompokId,
+              status: "SELESAI",
+              statusPelaksanaan: "SELESAI",
               click_action: "FLUTTER_NOTIFICATION_CLICK",
             },
           });

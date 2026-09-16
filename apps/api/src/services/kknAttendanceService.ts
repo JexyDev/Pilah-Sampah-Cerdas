@@ -884,6 +884,7 @@ export class KknAttendanceService {
 
   async getWargaDampingan(userId: string, role?: string) {
     let whereCondition: any = { registeredByStudentId: userId };
+    let studentProfile: any = null;
 
     if (role === "DPL" || role === "DOSEN_PEMBIMBING") {
       const groups = await prisma.kelompokKkn.findMany({
@@ -896,6 +897,36 @@ export class KknAttendanceService {
       });
       const studentIds = groups.flatMap((g) => g.students.map((s) => s.userId));
       whereCondition = { registeredByStudentId: { in: studentIds } };
+    } else {
+      // Mahasiswa KKN: Ambil profil mahasiswa untuk mengetahui RW penugasan & nama
+      studentProfile = await prisma.studentKkn.findFirst({
+        where: { userId },
+        include: {
+          user: { select: { id: true, name: true, phone: true } },
+          assignedRw: { select: { id: true, name: true } },
+          kelompok: {
+            include: { students: { select: { userId: true } } },
+          },
+        },
+      });
+
+      const groupStudentIds =
+        studentProfile?.kelompok?.students?.map((s: any) => s.userId).filter(Boolean) || [userId];
+
+      whereCondition = {
+        OR: [
+          { registeredByStudentId: { in: groupStudentIds } },
+          { registeredByStudentId: userId },
+          ...(studentProfile?.kelompokId ? [{ kelompokId: studentProfile.kelompokId }] : []),
+          ...(studentProfile?.assignedRwId
+            ? [
+                { rwId: studentProfile.assignedRwId },
+                { user: { rwId: studentProfile.assignedRwId } },
+                { user: { households: { some: { rwId: studentProfile.assignedRwId } } } },
+              ]
+            : []),
+        ],
+      };
     }
 
     // Ambil warga yang di-register oleh mahasiswa kelompok binaan DPL / mahasiswa ybs
@@ -903,8 +934,13 @@ export class KknAttendanceService {
       where: whereCondition,
       include: {
         category: true,
+        registeredByStudent: { select: { id: true, name: true, phone: true } },
+        rw: { include: { kelurahan: true } },
         user: {
-          include: { households: true },
+          include: {
+            households: { include: { rw: { include: { kelurahan: true } } } },
+            rw: { include: { kelurahan: true } },
+          },
         },
         setoranOtomatis: {
           orderBy: { createdAt: "desc" },
@@ -922,15 +958,15 @@ export class KknAttendanceService {
 
     for (const b of bins) {
       if (!b.user) continue;
-      const userId = b.user.id;
-      if (!usersMap.has(userId)) {
-        usersMap.set(userId, {
+      const uId = b.user.id;
+      if (!usersMap.has(uId)) {
+        usersMap.set(uId, {
           user: b.user,
           bins: [],
           recentLogs: [],
         });
       }
-      const u = usersMap.get(userId);
+      const u = usersMap.get(uId);
       u.bins.push(b);
       if (b.setoranOtomatis) {
         u.recentLogs.push(...b.setoranOtomatis);
@@ -944,8 +980,40 @@ export class KknAttendanceService {
 
       const binOrganik = u.bins.find((b: any) => isOrganikBin(b));
       const binAnorganik = u.bins.find((b: any) => isAnorganikBin(b));
-      const primaryBin = u.bins[0];
+      const primaryBin = binOrganik || binAnorganik || u.bins[0];
       const household = u.user.households?.[0];
+
+      const resolvedRwId: number | null =
+        u.user.rwId ||
+        household?.rwId ||
+        primaryBin?.rwId ||
+        studentProfile?.assignedRwId ||
+        null;
+
+      const rwName =
+        u.user.rw?.name ||
+        household?.rw?.name ||
+        primaryBin?.rw?.name ||
+        (resolvedRwId ? `0${resolvedRwId}` : "");
+
+      const kelName =
+        u.user.rw?.kelurahan?.name ||
+        household?.rw?.kelurahan?.name ||
+        primaryBin?.rw?.kelurahan?.name ||
+        "";
+
+      const registeredStudentId =
+        primaryBin?.registeredByStudentId ||
+        binOrganik?.registeredByStudentId ||
+        binAnorganik?.registeredByStudentId ||
+        userId;
+
+      const registeredStudentName =
+        primaryBin?.registeredByStudent?.name ||
+        binOrganik?.registeredByStudent?.name ||
+        binAnorganik?.registeredByStudent?.name ||
+        studentProfile?.user?.name ||
+        "";
 
       return {
         wargaId: u.user.id,
@@ -954,10 +1022,19 @@ export class KknAttendanceService {
         binOrganikId: binOrganik?.qrCode || binOrganik?.id || null,
         binAnorganikId: binAnorganik?.qrCode || binAnorganik?.id || null,
         wargaName: u.user.name || "Unknown",
-        address: household?.address || "-",
-        kelurahan: household?.kelurahan || "",
-        rw: household?.rw || "",
+        address: household?.address || u.user.address || "-",
+        kelurahan: kelName,
+        rw: rwName,
+        rwId: resolvedRwId,
         rt: household?.rt || "",
+        mahasiswaId: registeredStudentId,
+        registeredByStudentId: registeredStudentId,
+        pendampingName: registeredStudentName,
+        pendamping: registeredStudentName
+          ? { id: registeredStudentId, name: registeredStudentName }
+          : null,
+        isActivated: true,
+        status: "ACTIVATED",
         totalPoints: u.user.totalPoints || 0,
         totalKg:
           Math.round(

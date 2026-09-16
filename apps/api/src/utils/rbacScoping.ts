@@ -456,57 +456,82 @@ export async function getScopingFilters(user: {
     };
   }
 
-  // 5. MAHASISWA_KKN is scoped by their assigned RW area or kelompok kelurahan
+  // 5. MAHASISWA_KKN is scoped strictly by their assigned RW area, or kelompok kelurahan if no RW assigned
   if (role === "MAHASISWA_KKN") {
     const student = await prisma.studentKkn.findUnique({
       where: { userId: user.userId },
       include: { kelompok: true },
     });
     if (student && student.assignedRwId) {
-      const kel = student.kelompok?.kelurahan;
       return {
         userFilter: {
           OR: [
             { rwId: student.assignedRwId },
-            ...(kel ? [{ rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } }] : []),
+            { households: { some: { rwId: student.assignedRwId } } },
+            ...(student.kelompokId
+              ? [{ bins: { some: { kelompokId: student.kelompokId } } }]
+              : []),
+            { bins: { some: { registeredByStudentId: user.userId } } },
+            ...(student.kelompok?.kelurahan
+              ? [{ rw: { kelurahan: { name: { equals: student.kelompok.kelurahan, mode: "insensitive" } } } }]
+              : []),
           ],
         },
         binFilter: {
           OR: [
             { rwId: student.assignedRwId },
             ...(student.kelompokId ? [{ kelompokId: student.kelompokId }] : []),
+            { registeredByStudentId: user.userId },
+            ...(student.kelompok?.kelurahan
+              ? [
+                  { kelurahan: { name: { equals: student.kelompok.kelurahan, mode: "insensitive" } } },
+                  { rw: { kelurahan: { name: { equals: student.kelompok.kelurahan, mode: "insensitive" } } } },
+                ]
+              : []),
           ],
         },
         householdFilter: {
           OR: [
             { rwId: student.assignedRwId },
-            ...(kel ? [{ rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } }] : []),
+            ...(student.kelompok?.kelurahan
+              ? [{ rw: { kelurahan: { name: { equals: student.kelompok.kelurahan, mode: "insensitive" } } } }]
+              : []),
           ],
         },
         wasteLogFilter: {
           OR: [
             { bin: { rwId: student.assignedRwId } },
-            ...(kel
-              ? [{ bin: { rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } } }]
+            ...(student.kelompokId ? [{ bin: { kelompokId: student.kelompokId } }] : []),
+            { bin: { registeredByStudentId: user.userId } },
+            ...(student.kelompok?.kelurahan
+              ? [
+                  { bin: { kelurahan: { name: { equals: student.kelompok.kelurahan, mode: "insensitive" } } } },
+                  { bin: { rw: { kelurahan: { name: { equals: student.kelompok.kelurahan, mode: "insensitive" } } } } },
+                  { warga: { rw: { kelurahan: { name: { equals: student.kelompok.kelurahan, mode: "insensitive" } } } } },
+                ]
               : []),
           ],
         },
         pemanfaatanFilter: {
           OR: [
             { rwId: student.assignedRwId },
-            ...(kel ? [{ rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } }] : []),
+            ...(student.kelompok?.kelurahan
+              ? [{ rw: { kelurahan: { name: { equals: student.kelompok.kelurahan, mode: "insensitive" } } } }]
+              : []),
           ],
         },
         facilityFilter: {
           OR: [
             { rwId: student.assignedRwId },
-            ...(kel ? [{ rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } }] : []),
-            ...(student.kelompokId ? [{ kelompokId: student.kelompokId }] : []),
             { registeredByUserId: user.userId },
+            ...(student.kelompokId ? [{ kelompokId: student.kelompokId }] : []),
+            ...(student.kelompok?.kelurahan
+              ? [{ rw: { kelurahan: { name: { equals: student.kelompok.kelurahan, mode: "insensitive" } } } }]
+              : []),
           ],
         },
         kelompokKknFilter: { id: student.kelompokId },
-        studentKknFilter: { assignedRwId: student.assignedRwId },
+        studentKknFilter: { kelompokId: student.kelompokId },
       };
     }
     if (student?.kelompok?.kelurahan) {
