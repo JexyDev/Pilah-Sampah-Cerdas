@@ -281,6 +281,8 @@ export class KknService {
     const isMhs = roleName === "MAHASISWA_KKN";
 
     let whereBin: any = { status: "ACTIVE_BOUND" };
+    let effectiveRwId: number | undefined = filters.rwId;
+    let targetRwIds: number[] = [];
 
     if (isDpl) {
       // DPL: Ambil kelompok bimbingan DPL ini
@@ -309,24 +311,103 @@ export class KknService {
         };
       }
     } else if (isMhs) {
-      // Mahasiswa KKN: Ambil dari mahasiswa sekelompok / mahasiswa ini
+      // Mahasiswa KKN: Ambil dari mahasiswa sekelompok / mahasiswa ini dengan STRICT RW SCOPING
       const studentProfile = await prisma.studentKkn.findFirst({
         where: { userId: kknUserId },
-        include: { kelompok: { include: { students: { select: { userId: true } } } } },
+        include: {
+          assignedRw: true,
+          kelompok: {
+            include: {
+              students: { select: { userId: true, assignedRwId: true } },
+            },
+          },
+        },
       });
+
+      // 1. Resolve student's assigned RW if not explicitly passed
+      if (!effectiveRwId) {
+        effectiveRwId = studentProfile?.assignedRwId || user?.rwId || undefined;
+      }
+
+      // 2. Fallback: If no single assignedRwId, resolve group's cakupanRw
+      if (!effectiveRwId && studentProfile?.kelompok?.cakupanRw) {
+        try {
+          const rawCakupan = studentProfile.kelompok.cakupanRw;
+          const parsedCakupan =
+            typeof rawCakupan === "string" ? JSON.parse(rawCakupan) : rawCakupan;
+          if (Array.isArray(parsedCakupan) && parsedCakupan.length > 0) {
+            const rwNumbers = parsedCakupan
+              .map((r: any) => String(r).replace(/[^\d]/g, "").trim())
+              .filter(Boolean);
+            if (rwNumbers.length > 0) {
+              const matchedRws = await prisma.rw.findMany({
+                where: {
+                  ...(studentProfile.kelompok.kelurahan
+                    ? {
+                        kelurahan: {
+                          name: {
+                            contains: studentProfile.kelompok.kelurahan,
+                            mode: "insensitive",
+                          },
+                        },
+                      }
+                    : {}),
+                  OR: rwNumbers.flatMap((num) => [
+                    { name: { equals: num, mode: "insensitive" } },
+                    { name: { equals: `RW ${num}`, mode: "insensitive" } },
+                    { name: { equals: `RW ${num.padStart(2, "0")}`, mode: "insensitive" } },
+                    { name: { equals: num.padStart(2, "0"), mode: "insensitive" } },
+                  ]),
+                },
+                select: { id: true },
+              });
+              targetRwIds = matchedRws.map((r) => r.id);
+            }
+          }
+        } catch {}
+      }
 
       const groupStudentUserIds = studentProfile?.kelompok?.students.map((s) => s.userId) || [
         kknUserId,
       ];
 
-      whereBin = {
-        status: "ACTIVE_BOUND",
+      const baseStudentCondition = {
         OR: [
           { registeredByStudentId: { in: groupStudentUserIds } },
           { registeredByStudentId: kknUserId },
           { qrBatch: { assignedPicUserId: kknUserId } },
         ],
       };
+
+      if (effectiveRwId) {
+        whereBin = {
+          AND: [
+            baseStudentCondition,
+            {
+              OR: [
+                { rwId: effectiveRwId },
+                { user: { rwId: effectiveRwId } },
+                { user: { households: { some: { rwId: effectiveRwId } } } },
+              ],
+            },
+          ],
+        };
+      } else if (targetRwIds.length > 0) {
+        whereBin = {
+          AND: [
+            baseStudentCondition,
+            {
+              OR: [
+                { rwId: { in: targetRwIds } },
+                { user: { rwId: { in: targetRwIds } } },
+                { user: { households: { some: { rwId: { in: targetRwIds } } } } },
+              ],
+            },
+          ],
+        };
+      } else {
+        whereBin = baseStudentCondition;
+      }
     }
 
     const bins = await prisma.bin.findMany({
@@ -505,14 +586,28 @@ export class KknService {
         registeredByStudentName: registeredStudentName,
         registeredByStudentId: registeredStudentId,
         recentLogs,
-        rwId: u.rwId,
+        rwId:
+          u.rwId ||
+          primaryBin?.rwId ||
+          binOrganik?.rwId ||
+          binAnorganik?.rwId ||
+          household?.rwId ||
+          null,
+        rw:
+          u.rw?.name ||
+          household?.rw?.name ||
+          (u.rwId || primaryBin?.rwId || binOrganik?.rwId || binAnorganik?.rwId || household?.rwId
+            ? `RW 0${u.rwId || primaryBin?.rwId || binOrganik?.rwId || binAnorganik?.rwId || household?.rwId}`
+            : "Belum diset"),
       };
     });
 
     let result = list.filter((item): item is NonNullable<typeof item> => item !== null);
 
-    if (filters.rwId) {
-      result = result.filter((item) => item.rwId === filters.rwId);
+    if (effectiveRwId) {
+      result = result.filter((item) => item.rwId === effectiveRwId);
+    } else if (targetRwIds.length > 0) {
+      result = result.filter((item) => item.rwId && targetRwIds.includes(item.rwId));
     }
     if (filters.search) {
       const s = filters.search.toLowerCase();
@@ -998,52 +1093,55 @@ export class KknService {
       lifecycleState: { not: "REGISTERED" },
     };
 
-    if (targetRwId || targetRwIds.length > 0 || targetKelurahan || studentGroupUserIds.length > 0) {
-      const orConditions: any[] = [];
-      if (targetRwId) {
-        orConditions.push({ rwId: targetRwId });
-        orConditions.push({ households: { some: { rwId: targetRwId } } });
-        orConditions.push({ binOwnerships: { some: { bin: { rwId: targetRwId } } } });
-      } else if (targetRwIds.length > 0) {
-        orConditions.push({ rwId: { in: targetRwIds } });
-        orConditions.push({ households: { some: { rwId: { in: targetRwIds } } } });
-        orConditions.push({ binOwnerships: { some: { bin: { rwId: { in: targetRwIds } } } } });
-      }
-      if (targetKelurahan) {
-        orConditions.push({
-          households: {
-            some: {
-              rw: { kelurahan: { name: { contains: targetKelurahan, mode: "insensitive" } } },
-            },
-          },
-        });
-        orConditions.push({
-          rw: { kelurahan: { name: { contains: targetKelurahan, mode: "insensitive" } } },
-        });
-        orConditions.push({
-          binOwnerships: {
-            some: {
-              bin: {
-                kelurahan: { name: { contains: targetKelurahan, mode: "insensitive" } },
+    const andConditions: any[] = [];
+
+    if (targetRwId) {
+      // STRICT RW SCOPING: Warga must belong to targetRwId
+      andConditions.push({
+        OR: [
+          { rwId: targetRwId },
+          { households: { some: { rwId: targetRwId } } },
+          { binOwnerships: { some: { bin: { rwId: targetRwId } } } },
+        ],
+      });
+    } else if (targetRwIds.length > 0) {
+      // Cakupan RWs of the kelompok
+      andConditions.push({
+        OR: [
+          { rwId: { in: targetRwIds } },
+          { households: { some: { rwId: { in: targetRwIds } } } },
+          { binOwnerships: { some: { bin: { rwId: { in: targetRwIds } } } } },
+        ],
+      });
+    } else if (targetKelurahan) {
+      // Only filter by broad Kelurahan if NO specific RW is targeted
+      andConditions.push({
+        OR: [
+          {
+            households: {
+              some: {
+                rw: { kelurahan: { name: { contains: targetKelurahan, mode: "insensitive" } } },
               },
             },
           },
-        });
-      }
-      if (studentGroupUserIds.length > 0) {
-        orConditions.push({
-          binOwnerships: {
-            some: {
-              bin: {
-                registeredByStudentId: { in: studentGroupUserIds },
+          {
+            rw: { kelurahan: { name: { contains: targetKelurahan, mode: "insensitive" } } },
+          },
+          {
+            binOwnerships: {
+              some: {
+                bin: {
+                  kelurahan: { name: { contains: targetKelurahan, mode: "insensitive" } },
+                },
               },
             },
           },
-        });
-      }
-      if (orConditions.length > 0) {
-        where.OR = orConditions;
-      }
+        ],
+      });
+    }
+
+    if (andConditions.length > 0) {
+      where.AND = andConditions;
     }
 
     if (filters?.status === "UNACTIVATED") {
@@ -1054,21 +1152,22 @@ export class KknService {
 
     if (filters?.search && filters.search.trim()) {
       const s = filters.search.trim();
-      const searchCondition = [
-        { name: { contains: s, mode: "insensitive" as const } },
-        { phone: { contains: s, mode: "insensitive" as const } },
-        { address: { contains: s, mode: "insensitive" as const } },
-        {
-          binOwnerships: {
-            some: { bin: { qrCode: { contains: s, mode: "insensitive" as const } } },
+      const searchCondition = {
+        OR: [
+          { name: { contains: s, mode: "insensitive" as const } },
+          { phone: { contains: s, mode: "insensitive" as const } },
+          { address: { contains: s, mode: "insensitive" as const } },
+          {
+            binOwnerships: {
+              some: { bin: { qrCode: { contains: s, mode: "insensitive" as const } } },
+            },
           },
-        },
-      ];
-      if (where.OR) {
-        where.AND = [{ OR: where.OR }, { OR: searchCondition }];
-        delete where.OR;
+        ],
+      };
+      if (where.AND) {
+        where.AND.push(searchCondition);
       } else {
-        where.OR = searchCondition;
+        where.AND = [searchCondition];
       }
     }
 
@@ -1213,6 +1312,13 @@ export class KknService {
           (rtRwName ? `RT ${rtRwName}, Kel. ${kelName}` : "Alamat belum diisi"),
         kelurahan: kelName,
         rw: rtRwName,
+        rwId:
+          w.rwId ||
+          household?.rwId ||
+          primaryBin?.rwId ||
+          binOrganik?.rwId ||
+          binAnorganik?.rwId ||
+          null,
         role: "WARGA",
         latitude: lat,
         longitude: lng,

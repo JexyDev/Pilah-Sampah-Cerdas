@@ -456,52 +456,32 @@ export async function getScopingFilters(user: {
     };
   }
 
-  // 5. MAHASISWA_KKN is scoped by their assigned RW area or kelompok kelurahan
+  // 5. MAHASISWA_KKN is scoped strictly by their assigned RW area, or kelompok kelurahan if no RW assigned
   if (role === "MAHASISWA_KKN") {
     const student = await prisma.studentKkn.findUnique({
       where: { userId: user.userId },
       include: { kelompok: true },
     });
     if (student && student.assignedRwId) {
-      const kel = student.kelompok?.kelurahan;
       return {
         userFilter: {
           OR: [
             { rwId: student.assignedRwId },
-            ...(kel ? [{ rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } }] : []),
+            { households: { some: { rwId: student.assignedRwId } } },
           ],
         },
         binFilter: {
           OR: [
             { rwId: student.assignedRwId },
-            ...(student.kelompokId ? [{ kelompokId: student.kelompokId }] : []),
+            ...(student.kelompokId ? [{ kelompokId: student.kelompokId, rwId: student.assignedRwId }] : []),
           ],
         },
-        householdFilter: {
-          OR: [
-            { rwId: student.assignedRwId },
-            ...(kel ? [{ rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } }] : []),
-          ],
-        },
-        wasteLogFilter: {
-          OR: [
-            { bin: { rwId: student.assignedRwId } },
-            ...(kel
-              ? [{ bin: { rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } } }]
-              : []),
-          ],
-        },
-        pemanfaatanFilter: {
-          OR: [
-            { rwId: student.assignedRwId },
-            ...(kel ? [{ rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } }] : []),
-          ],
-        },
+        householdFilter: { rwId: student.assignedRwId },
+        wasteLogFilter: { bin: { rwId: student.assignedRwId } },
+        pemanfaatanFilter: { rwId: student.assignedRwId },
         facilityFilter: {
           OR: [
             { rwId: student.assignedRwId },
-            ...(kel ? [{ rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } }] : []),
-            ...(student.kelompokId ? [{ kelompokId: student.kelompokId }] : []),
             { registeredByUserId: user.userId },
           ],
         },

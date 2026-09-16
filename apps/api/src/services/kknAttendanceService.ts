@@ -896,6 +896,26 @@ export class KknAttendanceService {
       });
       const studentIds = groups.flatMap((g) => g.students.map((s) => s.userId));
       whereCondition = { registeredByStudentId: { in: studentIds } };
+    } else {
+      const student = await prisma.studentKkn.findFirst({
+        where: { userId },
+        select: { assignedRwId: true, user: { select: { rwId: true } } },
+      });
+      const rwId = student?.assignedRwId || student?.user?.rwId;
+      if (rwId) {
+        whereCondition = {
+          AND: [
+            whereCondition,
+            {
+              OR: [
+                { rwId },
+                { user: { rwId } },
+                { user: { households: { some: { rwId } } } },
+              ],
+            },
+          ],
+        };
+      }
     }
 
     // Ambil warga yang di-register oleh mahasiswa kelompok binaan DPL / mahasiswa ybs
@@ -957,6 +977,7 @@ export class KknAttendanceService {
         address: household?.address || "-",
         kelurahan: household?.kelurahan || "",
         rw: household?.rw || "",
+        rwId: household?.rwId || u.user.rwId || primaryBin?.rwId || null,
         rt: household?.rt || "",
         totalPoints: u.user.totalPoints || 0,
         totalKg:

@@ -82,7 +82,8 @@ export class KknController {
   async getRegisteredWarga(req: Request, res: Response) {
     try {
       const kknUserId = req.user!.userId;
-      const rwId = req.query.rwId ? parseInt(req.query.rwId as string, 10) : undefined;
+      const rawRw = req.query.rwId || req.query.rw || req.query.idRw || req.query.rw_id;
+      const rwId = rawRw ? parseInt(rawRw as string, 10) : undefined;
       const search = req.query.search as string | undefined;
 
       const data = await kknService.getRegisteredWarga(kknUserId, { rwId, search });
@@ -129,7 +130,8 @@ export class KknController {
       const kknUserId = req.user!.userId;
       const status = req.query.status as string;
       const kelurahan = req.query.kelurahan as string;
-      const rwId = req.query.rw ? parseInt(req.query.rw as string, 10) : undefined;
+      const rawRw = req.query.rwId || req.query.rw || req.query.idRw || req.query.rw_id;
+      const rwId = rawRw ? parseInt(rawRw as string, 10) : undefined;
       const search = req.query.search as string;
 
       const data = await kknService.getWargaList(kknUserId, { status, kelurahan, rwId, search });
