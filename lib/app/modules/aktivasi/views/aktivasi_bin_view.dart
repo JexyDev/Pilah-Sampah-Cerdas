@@ -313,12 +313,20 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
   }
 
   String _mapError(String code, String? msg) {
+    if (code == 'BIN_RW_MISMATCH' || (msg != null && msg.contains('BIN_RW_MISMATCH'))) {
+      return 'Stiker Tempat Sampah ini dialokasikan khusus untuk wilayah RW lain. Silakan gunakan stiker yang dibagikan oleh Posko RW Anda.';
+    }
+
+    if (code == 'USER_RW_NOT_SET' || (msg != null && msg.contains('USER_RW_NOT_SET'))) {
+      return 'Wilayah domisili RW Anda belum terdaftar. Silakan lengkapi profil komunitas Anda terlebih dahulu.';
+    }
+
     if (code == 'ALREADY_ACTIVATED' ||
         code.startsWith('BIN_ALREADY_USED') ||
         (msg != null &&
             (msg.contains('BIN_ALREADY_USED') ||
                 msg.contains('ALREADY_ACTIVATED')))) {
-      return 'QR Tempat Sampah ini sudah diaktivasi oleh warga lain.';
+      return 'QR Tempat Sampah ini sudah diaktivasi. Anggota keluarga di rumah cukup menggunakan fitur Gabung Rumah Tangga pada profil/onboarding.';
     }
 
     if (code == 'HOUSEHOLDS_NOT_FOUND' ||
@@ -326,22 +334,30 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
         (msg != null &&
             (msg.contains('HOUSEHOLDS_NOT_FOUND') ||
                 msg.contains('HOUSEHOLD_REQUIRED')))) {
-      return 'Akun Anda belum memiliki Rumah Tangga terdaftar. Harap hubungi Admin/Mahasiswa untuk pendaftaran rumah Anda terlebih dahulu.';
+      return 'Akun Anda belum memiliki Rumah Tangga terdaftar. Harap lengkapi pendaftaran rumah tangga Anda terlebih dahulu.';
     }
 
     switch (code) {
       case 'BIN_NOT_FOUND':
-        return 'QR Code tempat sampah tidak terdaftar di sistem.';
+        return 'QR Code Tempat Sampah tidak terdaftar di sistem.';
+      case 'HEAD_NOT_FOUND':
+        return 'Nomor HP Kepala Keluarga tidak terdaftar di Berseka. Pastikan nomor sudah benar dan aktif.';
+      case 'HEAD_HAS_NO_BIN':
+        return 'Kepala Keluarga belum mengaktifkan Tempat Sampah di rumah. Harap minta Kepala Keluarga untuk aktivasi wadah terlebih dahulu.';
+      case 'CANNOT_JOIN_SELF':
+        return 'Anda tidak dapat memasukkan nomor telepon Anda sendiri.';
+      case 'ALREADY_FULLY_ACTIVE':
+        return 'Akun Anda sudah memiliki Tempat Sampah aktif terdaftar.';
       case 'BIN_CATEGORY_DUPLICATE':
-        return msg ?? 'Kategori tempat sampah sudah terdaftar untuk warga ini.';
+        return msg ?? 'Kategori Tempat Sampah sudah terdaftar untuk warga ini.';
       case 'ONBOARDING_INCOMPLETE_WRONG_CATEGORY':
         return msg ??
-            'Harap selesaikan aktivasi kategori tempat sampah yang belum terdaftar.';
+            'Harap selesaikan aktivasi kategori Tempat Sampah yang belum terdaftar.';
       default:
         if (msg != null && msg.isNotEmpty) {
           return msg;
         }
-        return 'Terjadi kesalahan. Silakan coba lagi.';
+        return 'Terjadi kendala pada sistem. Silakan coba beberapa saat lagi.';
     }
   }
 
