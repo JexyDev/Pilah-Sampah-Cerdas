@@ -421,54 +421,6 @@ class KelompokKknView extends ConsumerWidget {
                   ),
                 ),
                 
-                const SizedBox(height: 12),
-                
-                // KARTU 2: Total Akumulasi Poin Tim (Gamifikasi Seluruh Anggota)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.border),
-                    boxShadow: [
-                      BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Total Akumulasi Tim',
-                            style: TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryBlue.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Text('Gamifikasi', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primaryBlue)),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${kelompokData.cumulativeMemberPoints} PTS',
-                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: AppColors.primaryBlueDark, letterSpacing: -0.5),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Penjumlahan seluruh saldo poin dari ${kelompokData.members.length} anggota kelompok',
-                        style: const TextStyle(fontSize: 11, color: Colors.black54),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
 
                 _buildPoskoCard(context, ref, isCurrentUserLeader),
                 const SizedBox(height: 20),
