@@ -421,6 +421,8 @@ class KelompokKknView extends ConsumerWidget {
                   ),
                 ),
                 
+                const SizedBox(height: 12),
+                
 
                 _buildPoskoCard(context, ref, isCurrentUserLeader),
                 const SizedBox(height: 20),
