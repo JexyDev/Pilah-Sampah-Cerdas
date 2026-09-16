@@ -34,6 +34,9 @@ vi.mock("../lib/prisma.js", () => {
       kelompokKkn: {
         findMany: vi.fn().mockResolvedValue([]),
       },
+      studentKkn: {
+        findUnique: vi.fn().mockResolvedValue(null),
+      },
       systemConfig: {
         findUnique: vi.fn(),
       },

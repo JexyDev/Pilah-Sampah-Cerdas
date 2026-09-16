@@ -934,7 +934,7 @@ export class AuthService {
     let registeredByStudentId: string | null = null;
     if (scannerUser && scannerUser.role === "MAHASISWA_KKN") {
       registeredByStudentId = scannerUser.userId;
-      if (!userData.rwId) {
+      if (!userData.rwId && prisma.studentKkn) {
         const student = await prisma.studentKkn.findUnique({
           where: { userId: scannerUser.userId },
           select: { assignedRwId: true, user: { select: { rwId: true } } },
