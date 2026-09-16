@@ -96,8 +96,15 @@ describe("KKN Gamification Logic & Fixes", () => {
     vi.clearAllMocks();
   });
 
-  describe("1. syncProkerGamificationPoints (Proker Points Purely Group Assets, No Individual PointHistory)", () => {
-    it("should NOT award points to individual student PointHistory on proker submission, approval, or completion", async () => {
+  describe("1. syncProkerGamificationPoints (3-Step Proker Points - Jalur Gamifikasi Mahasiswa)", () => {
+    it("should award +2 points on Step 1 (DISETUJUI) for all group members", async () => {
+      vi.mocked(prisma.kelompokKkn.findUnique).mockResolvedValue({
+        id: "kel-1",
+        students: [{ userId: "user-1" }, { userId: "user-2" }],
+      } as any);
+
+      vi.mocked(prisma.pointHistory.findFirst).mockResolvedValue(null);
+
       await syncProkerGamificationPoints(
         "proker-1",
         "kel-1",
@@ -106,12 +113,32 @@ describe("KKN Gamification Logic & Fixes", () => {
         "Judul Proker"
       );
 
-      // Proker points HARAM masuk ke dompet individu mahasiswa
-      expect(prisma.pointHistory.createMany).not.toHaveBeenCalled();
-      expect(prisma.pointHistory.create).not.toHaveBeenCalled();
+      expect(prisma.pointHistory.createMany).toHaveBeenCalledWith({
+        data: [
+          {
+            userId: "user-1",
+            points: 2,
+            description: "Program Kerja Disetujui: Judul Proker [ProkerID:proker-1:DISETUJUI]",
+            kategori: "KKN_PROKER",
+          },
+          {
+            userId: "user-2",
+            points: 2,
+            description: "Program Kerja Disetujui: Judul Proker [ProkerID:proker-1:DISETUJUI]",
+            kategori: "KKN_PROKER",
+          },
+        ],
+      });
     });
 
-    it("should clean up any legacy PointHistory records associated with prokerId", async () => {
+    it("should award Step 2 (+2 points) when proker is SEDANG_BERJALAN", async () => {
+      vi.mocked(prisma.kelompokKkn.findUnique).mockResolvedValue({
+        id: "kel-1",
+        students: [{ userId: "user-1" }],
+      } as any);
+
+      vi.mocked(prisma.pointHistory.findFirst).mockResolvedValue(null);
+
       await syncProkerGamificationPoints(
         "proker-1",
         "kel-1",
@@ -120,23 +147,69 @@ describe("KKN Gamification Logic & Fixes", () => {
         "Judul Proker"
       );
 
-      expect(prisma.pointHistory.deleteMany).toHaveBeenCalledWith({
-        where: {
-          OR: [
-            { description: { contains: "[ProkerID:proker-1" } },
-            {
-              AND: [
-                { kategori: "KKN_PROKER" },
-                { description: { contains: "proker-1" } },
-              ],
-            },
-          ],
-        },
+      expect(prisma.pointHistory.createMany).toHaveBeenCalledWith({
+        data: [
+          {
+            userId: "user-1",
+            points: 2,
+            description: "Program Kerja Berjalan: Judul Proker [ProkerID:proker-1:BERJALAN]",
+            kategori: "KKN_PROKER",
+          },
+        ],
       });
+    });
+
+    it("should award Step 3 (+2 points) when proker is SELESAI", async () => {
+      vi.mocked(prisma.kelompokKkn.findUnique).mockResolvedValue({
+        id: "kel-1",
+        students: [{ userId: "user-1" }],
+      } as any);
+
+      vi.mocked(prisma.pointHistory.findFirst).mockResolvedValue(null);
+
+      await syncProkerGamificationPoints(
+        "proker-1",
+        "kel-1",
+        "DISETUJUI",
+        "SELESAI",
+        "Judul Proker"
+      );
+
+      expect(prisma.pointHistory.createMany).toHaveBeenCalledWith({
+        data: [
+          {
+            userId: "user-1",
+            points: 2,
+            description: "Program Kerja Selesai: Judul Proker [ProkerID:proker-1:SELESAI]",
+            kategori: "KKN_PROKER",
+          },
+        ],
+      });
+    });
+
+    it("should be idempotent and not create duplicate points if already awarded", async () => {
+      vi.mocked(prisma.kelompokKkn.findUnique).mockResolvedValue({
+        id: "kel-1",
+        students: [{ userId: "user-1" }],
+      } as any);
+
+      vi.mocked(prisma.pointHistory.findFirst).mockResolvedValue({
+        id: "pt-existing",
+        description: "Program Kerja Disetujui: Judul Proker [ProkerID:proker-1:DISETUJUI]",
+      } as any);
+
+      await syncProkerGamificationPoints(
+        "proker-1",
+        "kel-1",
+        "DISETUJUI",
+        "BELUM_MULAI",
+        "Judul Proker"
+      );
+
       expect(prisma.pointHistory.createMany).not.toHaveBeenCalled();
     });
 
-    it("should clean up legacy PointHistory when proker is rejected (DITOLAK)", async () => {
+    it("should delete points when proker is rejected (DITOLAK)", async () => {
       await syncProkerGamificationPoints(
         "proker-1",
         "kel-1",
@@ -146,22 +219,19 @@ describe("KKN Gamification Logic & Fixes", () => {
       );
 
       expect(prisma.pointHistory.deleteMany).toHaveBeenCalledWith({
-        where: {
-          OR: [
-            { description: { contains: "[ProkerID:proker-1" } },
-            {
-              AND: [
-                { kategori: "KKN_PROKER" },
-                { description: { contains: "proker-1" } },
-              ],
-            },
-          ],
-        },
+        where: { description: { contains: "[ProkerID:proker-1" } },
       });
       expect(prisma.pointHistory.createMany).not.toHaveBeenCalled();
     });
 
-    it("should not create PointHistory upon instant submission (BELUM_DISETUJUI)", async () => {
+    it("should award Step 1 (+2 points) instantly upon submission (BELUM_DISETUJUI) before DPL approval", async () => {
+      vi.mocked(prisma.kelompokKkn.findUnique).mockResolvedValue({
+        id: "kel-1",
+        students: [{ userId: "user-1" }, { userId: "user-2" }],
+      } as any);
+
+      vi.mocked(prisma.pointHistory.findFirst).mockResolvedValue(null);
+
       await syncProkerGamificationPoints(
         "proker-sub-1",
         "kel-1",
@@ -170,14 +240,50 @@ describe("KKN Gamification Logic & Fixes", () => {
         "Ide Proker Warga"
       );
 
+      expect(prisma.pointHistory.createMany).toHaveBeenCalledWith({
+        data: [
+          {
+            userId: "user-1",
+            points: 2,
+            description: "Pengajuan Program Kerja: Ide Proker Warga [ProkerID:proker-sub-1:PENGAJUAN]",
+            kategori: "KKN_PROKER",
+          },
+          {
+            userId: "user-2",
+            points: 2,
+            description: "Pengajuan Program Kerja: Ide Proker Warga [ProkerID:proker-sub-1:PENGAJUAN]",
+            kategori: "KKN_PROKER",
+          },
+        ],
+      });
+    });
+
+    it("should not duplicate Step 1 points when DPL subsequently approves an already submitted proker", async () => {
+      vi.mocked(prisma.kelompokKkn.findUnique).mockResolvedValue({
+        id: "kel-1",
+        students: [{ userId: "user-1" }],
+      } as any);
+
+      vi.mocked(prisma.pointHistory.findFirst).mockResolvedValue({
+        id: "pt-existing-pengajuan",
+        description: "Pengajuan Program Kerja: Ide Proker Warga [ProkerID:proker-sub-1:PENGAJUAN]",
+      } as any);
+
+      await syncProkerGamificationPoints(
+        "proker-sub-1",
+        "kel-1",
+        "DISETUJUI",
+        "BELUM_MULAI",
+        "Ide Proker Warga"
+      );
+
       expect(prisma.pointHistory.createMany).not.toHaveBeenCalled();
-      expect(prisma.pointHistory.create).not.toHaveBeenCalled();
     });
   });
 
-  describe("2. calculateGroupPoints & calculateDplPoints (Official 60:40 Formulas)", () => {
-    it("should calculate Poin Kelompok with 60% Proker + 40% Rata-rata Anggota (Example Rule)", async () => {
-      // Contoh aturan: 2 proker disetujui (+4), 2 sedang berlangsung (+8), 2 selesai (+12) = 24 poin proker
+  describe("2. calculateGroupPoints & calculateDplPoints (Official 60:40 Formulas - Jalur Akademik On-The-Fly)", () => {
+    it("should calculate Poin Kelompok with 60% Proker (Only Selesai Count * 6) + 40% Rata-rata Anggota", async () => {
+      // 2 proker disetujui (0), 2 sedang berlangsung (0), 2 selesai (2 * 6 = 12 poin proker akademik)
       const mockProkers = [
         { id: "p1", statusUsulan: "DISETUJUI", statusPelaksanaan: "BELUM_MULAI" },
         { id: "p2", statusUsulan: "DISETUJUI", statusPelaksanaan: "BELUM_MULAI" },
@@ -195,30 +301,52 @@ describe("KKN Gamification Logic & Fixes", () => {
 
       const res = await calculateGroupPoints("kel-1", mockProkers, ["user-1"]);
 
-      expect(res.poinProker).toBe(24);
+      // Proker belum selesai bernilai 0, hanya 2 proker selesai * 6 = 12 poin proker
+      expect(res.poinProker).toBe(12);
+      expect(res.prokerSelesaiCount).toBe(2);
       expect(res.rataRataPoinAnggota).toBe(4);
-      // Rumus: (24 * 0.6) + (4 * 0.4) = 14.4 + 1.6 = 16
-      expect(res.totalGroupPoints).toBe(16);
+      // Rumus: (12 * 0.6) + (4 * 0.4) = 7.2 + 1.6 = 8.8
+      expect(res.totalGroupPoints).toBe(8.8);
     });
 
-    it("should count submitted prokers (BELUM_DISETUJUI) as +2 base points and ignore rejected prokers (DITOLAK)", async () => {
+    it("should count only completed prokers (SELESAI) as +6 points and count uncompleted (BELUM_MULAI/SEDANG_BERJALAN) as 0", async () => {
       const mockProkers = [
-        { id: "p1", statusUsulan: "BELUM_DISETUJUI", statusPelaksanaan: "BELUM_MULAI" }, // +2
-        { id: "p2", statusUsulan: "BELUM_DISETUJUI", statusPelaksanaan: "SEDANG_BERJALAN" }, // +4
+        { id: "p1", statusUsulan: "BELUM_DISETUJUI", statusPelaksanaan: "BELUM_MULAI" }, // 0
+        { id: "p2", statusUsulan: "BELUM_DISETUJUI", statusPelaksanaan: "SEDANG_BERJALAN" }, // 0
         { id: "p3", statusUsulan: "DITOLAK", statusPelaksanaan: "BELUM_MULAI" }, // 0
+        { id: "p4", statusUsulan: "DISETUJUI", statusPelaksanaan: "SELESAI" }, // +6
       ];
 
       vi.mocked(prisma.pointHistory.findMany).mockResolvedValue([]);
 
       const res = await calculateGroupPoints("kel-1", mockProkers, ["user-1"]);
 
-      // p1 = 2, p2 = 4, p3 = 0 -> total poinProker = 6
+      // Hanya p4 yang selesai = 6 poin proker akademik
       expect(res.poinProker).toBe(6);
-      expect(res.prokerApprovedCount).toBe(2);
+      expect(res.prokerApprovedCount).toBe(3);
       expect(res.prokerSedangBerjalanCount).toBe(1);
-      expect(res.prokerSelesaiCount).toBe(0);
+      expect(res.prokerSelesaiCount).toBe(1);
       // (6 * 0.6) + (0 * 0.4) = 3.6
       expect(res.totalGroupPoints).toBe(3.6);
+    });
+
+    it("should calculate cumulative member average without dividing by totalActiveDays (growing points over time)", async () => {
+      // 2 mahasiswa dengan akumulasi beberapa hari (user-1: 20 pts, user-2: 30 pts, total 50 pts)
+      vi.mocked(prisma.pointHistory.findMany).mockResolvedValue([
+        { userId: "user-1", points: 10, createdAt: new Date("2026-09-01") } as any,
+        { userId: "user-1", points: 10, createdAt: new Date("2026-09-02") } as any,
+        { userId: "user-2", points: 15, createdAt: new Date("2026-09-01") } as any,
+        { userId: "user-2", points: 15, createdAt: new Date("2026-09-02") } as any,
+      ]);
+
+      const res = await calculateGroupPoints("kel-1", [], ["user-1", "user-2"]);
+
+      // Total kumulatif = 50. Jumlah anggota = 2.
+      // Rata-rata kumulatif = 50 / 2 = 25 (TIDAK dibagi 2 hari aktif)
+      expect(res.totalCumulativeMemberPoints).toBe(50);
+      expect(res.rataRataPoinAnggota).toBe(25);
+      // Rumus: (0 * 0.6) + (25 * 0.4) = 10
+      expect(res.totalGroupPoints).toBe(10);
     });
 
     it("should calculate Poin DPL using binary logbook (6 or 0) and 60% Logbook + 40% Kelompok", async () => {
