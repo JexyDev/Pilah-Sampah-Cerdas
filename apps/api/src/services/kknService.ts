@@ -4949,6 +4949,67 @@ export class KknService {
       }
     }
 
+    const oldPelaksanaan = String(proker.statusPelaksanaan || "").toUpperCase();
+    const newPelaksanaan = effectivePelaksanaan;
+
+    if (newPelaksanaan === "SEDANG_BERJALAN" && oldPelaksanaan !== "SEDANG_BERJALAN") {
+      try {
+        const kelompok = await prisma.kelompokKkn.findUnique({
+          where: { id: proker.kelompokId },
+          include: { students: { select: { userId: true } } },
+        });
+        const studentUserIds = (kelompok?.students || []).map((s) => s.userId).filter(Boolean);
+        if (studentUserIds.length > 0) {
+          await notificationIntegrationService.sendToUsers({
+            userIds: studentUserIds,
+            title: "Program Kerja Dimulai! 🚀 (+2 Poin)",
+            message: `Program kerja "${parsedJudul}" telah resmi dimulai. Seluruh anggota kelompok mendapatkan +2 poin.`,
+            triggerType: "PROKER_STARTED",
+            dataPayload: {
+              event: "REFRESH_PROKER_MAHASISWA",
+              type: "PROKER_BERJALAN",
+              entityId: id,
+              prokerId: id,
+              kelompokId: proker.kelompokId,
+              status: "SEDANG_BERJALAN",
+              statusPelaksanaan: "SEDANG_BERJALAN",
+              click_action: "FLUTTER_NOTIFICATION_CLICK",
+            },
+          });
+        }
+      } catch (err: any) {
+        console.warn("[kknService.updateProgramKerja] Push notification error:", err?.message);
+      }
+    } else if (newPelaksanaan === "SELESAI" && oldPelaksanaan !== "SELESAI") {
+      try {
+        const kelompok = await prisma.kelompokKkn.findUnique({
+          where: { id: proker.kelompokId },
+          include: { students: { select: { userId: true } } },
+        });
+        const studentUserIds = (kelompok?.students || []).map((s) => s.userId).filter(Boolean);
+        if (studentUserIds.length > 0) {
+          await notificationIntegrationService.sendToUsers({
+            userIds: studentUserIds,
+            title: "Program Kerja Selesai! 🎉 (+2 Poin)",
+            message: `Program kerja "${parsedJudul}" telah selesai dilaksanakan! Seluruh anggota kelompok mendapatkan +2 poin tambahan.`,
+            triggerType: "PROKER_COMPLETED",
+            dataPayload: {
+              event: "REFRESH_PROKER_MAHASISWA",
+              type: "PROKER_SELESAI",
+              entityId: id,
+              prokerId: id,
+              kelompokId: proker.kelompokId,
+              status: "SELESAI",
+              statusPelaksanaan: "SELESAI",
+              click_action: "FLUTTER_NOTIFICATION_CLICK",
+            },
+          });
+        }
+      } catch (err: any) {
+        console.warn("[kknService.updateProgramKerja] Push notification error:", err?.message);
+      }
+    }
+
     return await this.getProgramKerjaById(userId, id);
   }
 

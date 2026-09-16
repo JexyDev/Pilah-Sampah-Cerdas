@@ -901,15 +901,21 @@ export async function syncProkerGamificationPoints(
 }
 
 /**
- * Formula Poin Kelompok & Poin DPL KKN:
- * 1. Poin Kelompok = Poin Proker Utuh (Murni bilangan bulat statis tanpa pengali desimal)
- *    Poin Proker bersifat sekuens berurut (kumulatif):
+ * Formula Poin Kelompok & Poin DPL KKN (Standar Resmi):
+ * 1. Poin Kelompok: Bobot 60% Program Kerja + 40% Rata-rata Poin Anggota
+ *    Rumus: Poin Kelompok = (Poin Proker * 0.6) + (Rata-rata Poin Anggota * 0.4)
+ *    Poin Proker bersifat sekuensial (kumulatif per tahapan):
  *    - Status usulan DISETUJUI = +2 poin
  *    - Status pelaksanaan SEDANG_BERJALAN = +2 poin lagi (total 4 poin)
  *    - Status pelaksanaan SELESAI = +2 poin lagi (total 6 poin)
- *    Contoh: 2 proker disetujui (+4) & 2 selesai (+12) = 16 poin proker kelompok.
- * 2. Poin DPL = (Poin Logbook DPL * 0.5) + (Poin Kelompok * 0.5)
- *    Poin Logbook DPL: Setiap 1 logbook DPL = 5 poin (1 log = 5, 2 log = 10, dst).
+ *    Contoh: 2 proker disetujui (2*2=4) & 2 sedang berlangsung (2*4=8) & 2 selesai (2*6=12) = 24 poin proker.
+ *    Dengan rata-rata poin anggota = 4:
+ *    Poin Kelompok = (24 * 0.6) + (4 * 0.4) = 14.4 + 1.6 = 16 poin.
+ *
+ * 2. Poin DPL: Data Logbook DPL + Poin Kelompok (Bobot 60% Logbook + 40% Kelompok)
+ *    - Jika logbook DPL tersedia: 6 poin
+ *    - Jika tidak tersedia: 0 poin
+ *    Rumus: Poin DPL = (Poin Logbook * 0.6) + (Poin Kelompok * 0.4)
  */
 export async function calculateGroupPoints(
   kelompokId: string,
@@ -1057,8 +1063,9 @@ export async function calculateGroupPoints(
           : 0;
     }
 
-    // Skor Kelompok murni dijumlahkan utuh dari poin proker tanpa pecahan desimal
-    const totalGroupPoints = poinProker;
+    // Formula Poin Kelompok Resmi KKN: (Poin Proker * 0.6) + (Rata-rata Poin Anggota * 0.4)
+    const totalGroupPoints =
+      Math.round((poinProker * 0.6 + rataRataPoinAnggota * 0.4) * 10) / 10;
 
     return {
       totalGroupPoints,
@@ -1125,10 +1132,11 @@ export async function calculateDplPoints(
     });
 
     const hasLogbookDpl = logbookCount > 0;
-    // Arahan Atasan: Setiap 1 logs DPL = 5 poin (1 logs = 5, 2 logs = 10, dst)
-    // Formula Poin DPL Revisi (50:50 ratio): (Poin Logbook DPL * 0.5) + (Poin Kelompok * 0.5)
-    const poinLogbookDpl = logbookCount * 5;
-    const poinDpl = Math.round((poinLogbookDpl * 0.5 + poinKelompok * 0.5) * 10) / 10;
+    // Formula Resmi Poin DPL: (Poin Logbook DPL * 0.6) + (Poin Kelompok * 0.4)
+    // - Jika logbook DPL tersedia: 6 poin
+    // - Jika tidak tersedia: 0 poin
+    const poinLogbookDpl = hasLogbookDpl ? 6 : 0;
+    const poinDpl = Math.round((poinLogbookDpl * 0.6 + poinKelompok * 0.4) * 10) / 10;
 
     return {
       poinDpl,

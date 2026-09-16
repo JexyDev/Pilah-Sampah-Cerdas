@@ -46,6 +46,9 @@ vi.mock("../lib/prisma.js", () => {
       activityAttendance: {
         findFirst: vi.fn().mockResolvedValue(null),
       },
+      logbookDpl: {
+        count: vi.fn().mockResolvedValue(0),
+      },
     },
   };
 });
@@ -76,7 +79,11 @@ vi.mock("./auditTrailService.js", () => ({
 }));
 
 import { prisma } from "../lib/prisma.js";
-import { syncProkerGamificationPoints, calculateGroupPoints } from "./dplService.js";
+import {
+  syncProkerGamificationPoints,
+  calculateGroupPoints,
+  calculateDplPoints,
+} from "./dplService.js";
 import { kknAttendanceService } from "./kknAttendanceService.js";
 import { kknService } from "./kknService.js";
 
@@ -224,22 +231,52 @@ describe("KKN Gamification Logic & Fixes", () => {
     });
   });
 
-  describe("2. calculateGroupPoints (Pure Integer Group Score)", () => {
-    it("should return pure integer group points without decimal fraction multipliers", async () => {
-      // 1 approved proker (+2), 1 ongoing proker (+4), 1 finished proker (+6) = 12 total points
+  describe("2. calculateGroupPoints & calculateDplPoints (Official 60:40 Formulas)", () => {
+    it("should calculate Poin Kelompok with 60% Proker + 40% Rata-rata Anggota (Example Rule)", async () => {
+      // Contoh aturan: 2 proker disetujui (+4), 2 sedang berlangsung (+8), 2 selesai (+12) = 24 poin proker
       const mockProkers = [
         { id: "p1", statusUsulan: "DISETUJUI", statusPelaksanaan: "BELUM_MULAI" },
-        { id: "p2", statusUsulan: "DISETUJUI", statusPelaksanaan: "SEDANG_BERJALAN" },
-        { id: "p3", statusUsulan: "DISETUJUI", statusPelaksanaan: "SELESAI" },
+        { id: "p2", statusUsulan: "DISETUJUI", statusPelaksanaan: "BELUM_MULAI" },
+        { id: "p3", statusUsulan: "DISETUJUI", statusPelaksanaan: "SEDANG_BERJALAN" },
+        { id: "p4", statusUsulan: "DISETUJUI", statusPelaksanaan: "SEDANG_BERJALAN" },
+        { id: "p5", statusUsulan: "DISETUJUI", statusPelaksanaan: "SELESAI" },
+        { id: "p6", statusUsulan: "DISETUJUI", statusPelaksanaan: "SELESAI" },
       ];
 
-      vi.mocked(prisma.pointHistory.findMany).mockResolvedValue([]);
+      // Simulasi rata-rata poin harian anggota = 4 poin
+      const now = new Date("2026-09-15T08:00:00Z");
+      vi.mocked(prisma.pointHistory.findMany).mockResolvedValue([
+        { userId: "user-1", points: 4, createdAt: now } as any,
+      ]);
 
       const res = await calculateGroupPoints("kel-1", mockProkers, ["user-1"]);
 
-      expect(res.poinProker).toBe(12);
-      expect(res.totalGroupPoints).toBe(12);
-      expect(Number.isInteger(res.totalGroupPoints)).toBe(true);
+      expect(res.poinProker).toBe(24);
+      expect(res.rataRataPoinAnggota).toBe(4);
+      // Rumus: (24 * 0.6) + (4 * 0.4) = 14.4 + 1.6 = 16
+      expect(res.totalGroupPoints).toBe(16);
+    });
+
+    it("should calculate Poin DPL using binary logbook (6 or 0) and 60% Logbook + 40% Kelompok", async () => {
+      // Skenario A: Logbook DPL tersedia (count > 0) -> 6 poin
+      vi.mocked(prisma.logbookDpl.count).mockResolvedValue(2);
+      const resWithLogbook = await calculateDplPoints("dpl-1", "kel-1", 16);
+
+      expect(resWithLogbook.hasLogbookDpl).toBe(true);
+      expect(resWithLogbook.poinLogbookDpl).toBe(6);
+      expect(resWithLogbook.poinKelompok).toBe(16);
+      // Rumus: (6 * 0.6) + (16 * 0.4) = 3.6 + 6.4 = 10
+      expect(resWithLogbook.poinDpl).toBe(10);
+
+      // Skenario B: Logbook DPL tidak tersedia (count = 0) -> 0 poin
+      vi.mocked(prisma.logbookDpl.count).mockResolvedValue(0);
+      const resWithoutLogbook = await calculateDplPoints("dpl-1", "kel-1", 16);
+
+      expect(resWithoutLogbook.hasLogbookDpl).toBe(false);
+      expect(resWithoutLogbook.poinLogbookDpl).toBe(0);
+      expect(resWithoutLogbook.poinKelompok).toBe(16);
+      // Rumus: (0 * 0.6) + (16 * 0.4) = 0 + 6.4 = 6.4
+      expect(resWithoutLogbook.poinDpl).toBe(6.4);
     });
   });
 
