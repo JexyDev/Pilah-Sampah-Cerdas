@@ -179,7 +179,53 @@ final myWarga = allWarga.where((w) {
 
 ---
 
-## 4. Contoh Kontrak Payload API Terbaru
+## 4. Alur Lengkap: Registrasi Warga, Aktivasi Bin, & Mahasiswa Pendamping
+
+Backend telah menyelaraskan 3 siklus interaksi antara Mahasiswa KKN dan Warga:
+
+### A. Registrasi Warga Baru oleh Mahasiswa (`POST /api/v1/auth/register/warga`)
+- Mahasiswa membantu registrasi warga melalui scanner/form di aplikasi mobile.
+- Token mahasiswa yang melakukan registrasi ditangkap oleh backend (`scannerUser.userId`).
+- Backend otomatis:
+  1. Menetapkan `rwId` warga sesuai `assignedRwId` mahasiswa pendamping (jika tidak diinput spesifik).
+  2. Menyimpan referensi `registeredByStudentId` pada bin placeholder / user warga.
+  3. Mengembalikan objek user lengkap dengan `lifecycleState: "REGISTERED"` dan `rwId`.
+
+### B. Aktivasi Tempat Sampah Warga (`POST /api/v1/kkn/bins/activate`)
+- Mahasiswa memindai QR Tempat Sampah Organik & Anorganik milik warga.
+- Backend otomatis mengaitkan bin ke user warga, memperbarui status menjadi `ACTIVE_BOUND`, serta mengisi `registeredByStudentId: kknUserId`.
+- Jika warga belum memiliki `rwId`, backend secara otomatis mengisi `rwId` warga dan household ke `assignedRwId` mahasiswa pendamping agar data tidak menjadi yatim piatu (*orphaned*).
+
+### C. Profil Warga Menampilkan Mahasiswa Pendamping (`GET /api/v1/auth/me`)
+- Saat warga membuka aplikasi mobile dan memanggil `GET /api/v1/auth/me`, backend kini menyertakan objek `pendamping` dan `pendampingName`:
+```json
+{
+  "success": true,
+  "data": {
+    "id": "warga-uuid-123",
+    "name": "Pak Budi Santoso",
+    "role": "WARGA",
+    "rwId": 15,
+    "rw": "03",
+    "kelurahan": "Sadang Serang",
+    "pendampingName": "Jeremy Darrell",
+    "pendamping": {
+      "id": "mhs-uuid-456",
+      "name": "Jeremy Darrell",
+      "phone": "081298765432",
+      "nim": "12022001",
+      "jurusan": "Teknik Lingkungan",
+      "fakultas": "Fakultas Teknik",
+      "kelompokName": "Kelompok KKN 05"
+    }
+  }
+}
+```
+*Dengan field ini, mobile developer dapat langsung menampilkan kartu profil mahasiswa pendamping di dashboard/halaman profil warga.*
+
+---
+
+## 5. Contoh Kontrak Payload API Terbaru
 
 ### Request:
 ```http
@@ -219,7 +265,12 @@ Authorization: Bearer <TOKEN_MAHASISWA_KKN>
       "isActivated": true,
       "needsReeducation": false,
       "pendampingName": "Jeremy Darrell",
-      "mahasiswaId": "mhs-uuid-123",
+      "pendamping": {
+        "id": "mhs-uuid-456",
+        "name": "Jeremy Darrell"
+      },
+      "mahasiswaId": "mhs-uuid-456",
+      "registeredByStudentId": "mhs-uuid-456",
       "recentLogs": []
     }
   ]
@@ -228,11 +279,12 @@ Authorization: Bearer <TOKEN_MAHASISWA_KKN>
 
 ---
 
-## 5. Ringkasan Checklist Tim Mobile
+## 6. Ringkasan Checklist Tim Mobile
 
 - [ ] Ganti endpoint `ApiEndpoints.kknWarga` menjadi `ApiEndpoints.kknWargaDampingan` pada `getWargaDampingan()` di `api_kkn_repository.dart`.
 - [ ] Kirim parameter `?rwId=` dari `user.rwId` saat fetch warga dampingan.
 - [ ] Tambahkan `rwId: int?` pada `UserEntity` dan `WargaDampingan`.
+- [ ] Tampilkan informasi Mahasiswa Pendamping di halaman profil warga (`user.pendampingName` / `user.pendamping`).
 - [ ] Update filter wilayah di UI `monitoring_warga_view.dart` & `daftar_warga_view.dart` menggunakan pencocokan integer `rwId`.
 - [ ] Pisahkan data warga dampingan aktif dengan data pencarian aktivasi warga se-kelurahan.
 
