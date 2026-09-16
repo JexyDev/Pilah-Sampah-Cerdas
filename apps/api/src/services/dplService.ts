@@ -778,12 +778,13 @@ export async function calculatePersonalPointsForUsers(
  * 1. Tahap Usulan Disetujui: +2 poin per anggota kelompok (kategori: KKN_PROKER)
  * 2. Tahap Mulai Dikerjakan (Sedang Berjalan): +2 poin per anggota kelompok (kategori: KKN_PROKER)
 /**
- * Sinkronisasi Poin Gamifikasi Program Kerja KKN:
- * PERATURAN BISNIS MUTLAK:
- * Poin Proker adalah MURNI ASET KELOMPOK dan TIDAK BOLEH masuk ke saldo/dompet individu (PointHistory).
- * Poin Proker dihitung secara dinamis dan real-time oleh `calculateGroupPoints()`.
- * Fungsi ini bertugas membersihkan entri riwayat lama pada PointHistory (jika pernah tercatat)
- * agar timeline saldo personal mahasiswa di aplikasi Mobile tetap bersih.
+ * Sinkronisasi Poin Gamifikasi Program Kerja KKN (Jalur Gamifikasi Mahasiswa):
+ * Sesuai Final Blueprint V2:
+ * - Logika Instan: Injeksi poin +2 PTS ke tabel PointHistory individu mahasiswa pada setiap tahap:
+ *   1. Tahap Usulan Diajukan / Disetujui (+2 PTS)
+ *   2. Tahap Sedang Berjalan (+2 PTS)
+ *   3. Tahap Selesai (+2 PTS)
+ * - Skenario Batal: Jika DPL menolak proker (DITOLAK / TIDAK_DISETUJUI), hapus seluruh poin proker terkait.
  */
 export async function syncProkerGamificationPoints(
   prokerId: string,
@@ -793,23 +794,117 @@ export async function syncProkerGamificationPoints(
   prokerJudul?: string
 ) {
   try {
-    // Poin Proker HARAM masuk ke saldo personal mahasiswa (PointHistory).
-    // Bersihkan seluruh entri PointHistory yang terkait dengan ProkerID ini jika ada sisa dari versi sebelumnya.
-    await prisma.pointHistory
-      .deleteMany({
+    const kelompok = await prisma.kelompokKkn.findUnique({
+      where: { id: kelompokId },
+      include: { students: { select: { userId: true } } },
+    });
+    const studentUserIds = (kelompok?.students || []).map((s) => s.userId).filter(Boolean);
+    if (studentUserIds.length === 0) return;
+
+    const normUsulan = String(statusUsulan || "").toUpperCase();
+    const normPelaksanaan = String(statusPelaksanaan || "").toUpperCase();
+    const title = prokerJudul || "Program Kerja";
+
+    // Jika usulan ditolak, cabut seluruh poin proker yang telah diberikan
+    if (normUsulan === "DITOLAK" || normUsulan === "TIDAK_DISETUJUI") {
+      await prisma.pointHistory
+        .deleteMany({
+          where: { description: { contains: `[ProkerID:${prokerId}` } },
+        })
+        .catch(() => {});
+      return;
+    }
+
+    // GAMIFIKASI INSTAN:
+    // Tahap 1: Pengajuan Proker (+2 PTS)
+    const isStep1Eligible = normUsulan !== "DITOLAK" && normUsulan !== "TIDAK_DISETUJUI";
+    const isBerjalan =
+      normPelaksanaan === "SEDANG_BERJALAN" ||
+      normPelaksanaan === "BERJALAN" ||
+      normPelaksanaan === "SELESAI";
+    const isSelesai = normPelaksanaan === "SELESAI";
+
+    // 1. Step 1: Pengajuan / Disetujui (+2 PTS)
+    if (isStep1Eligible) {
+      const existingStep1 = await prisma.pointHistory.findFirst({
         where: {
+          description: { contains: `[ProkerID:${prokerId}` },
           OR: [
-            { description: { contains: `[ProkerID:${prokerId}` } },
+            { description: { contains: `[ProkerID:${prokerId}:PENGAJUAN]` } },
+            { description: { contains: `[ProkerID:${prokerId}:DISETUJUI]` } },
             {
               AND: [
-                { kategori: "KKN_PROKER" },
-                { description: { contains: prokerId } },
+                { description: { contains: `[ProkerID:${prokerId}]` } },
+                { description: { not: { contains: "BERJALAN" } } },
+                { description: { not: { contains: "SELESAI" } } },
               ],
             },
           ],
+          kategori: "KKN_PROKER",
         },
-      })
-      .catch(() => {});
+      });
+      if (!existingStep1) {
+        const isAlreadyApproved = normUsulan === "DISETUJUI" || normUsulan === "DITERIMA";
+        const step1Desc = isAlreadyApproved
+          ? `Program Kerja Disetujui: ${title} [ProkerID:${prokerId}:DISETUJUI]`
+          : `Pengajuan Program Kerja: ${title} [ProkerID:${prokerId}:PENGAJUAN]`;
+
+        await prisma.pointHistory
+          .createMany({
+            data: studentUserIds.map((uid) => ({
+              userId: uid,
+              points: 2,
+              description: step1Desc,
+              kategori: "KKN_PROKER",
+            })),
+          })
+          .catch(() => {});
+      }
+    }
+
+    // 2. Step 2: Sedang Berjalan (+2 PTS)
+    if (isBerjalan) {
+      const existingStep2 = await prisma.pointHistory.findFirst({
+        where: {
+          description: { contains: `[ProkerID:${prokerId}:BERJALAN]` },
+          kategori: "KKN_PROKER",
+        },
+      });
+      if (!existingStep2) {
+        await prisma.pointHistory
+          .createMany({
+            data: studentUserIds.map((uid) => ({
+              userId: uid,
+              points: 2,
+              description: `Program Kerja Berjalan: ${title} [ProkerID:${prokerId}:BERJALAN]`,
+              kategori: "KKN_PROKER",
+            })),
+          })
+          .catch(() => {});
+      }
+    }
+
+    // 3. Step 3: Selesai (+2 PTS)
+    if (isSelesai) {
+      const existingStep3 = await prisma.pointHistory.findFirst({
+        where: {
+          description: { contains: `[ProkerID:${prokerId}:SELESAI]` },
+          kategori: "KKN_PROKER",
+        },
+      });
+      if (!existingStep3) {
+        await prisma.pointHistory
+          .createMany({
+            data: studentUserIds.map((uid) => ({
+              userId: uid,
+              points: 2,
+              description: `Program Kerja Selesai: ${title} [ProkerID:${prokerId}:SELESAI]`,
+              kategori: "KKN_PROKER",
+            })),
+          })
+          .catch(() => {});
+      }
+    }
   } catch (err) {
     console.warn("[syncProkerGamificationPoints] Error:", err);
   }
@@ -896,12 +991,12 @@ export async function calculateGroupPoints(
       }
     }
 
-    // Poin Proker sekuensial (Disetujui (+2), Berlangsung (+2, total 4), Selesai (+2, total 6)):
-    // prokerApprovedCount mencakup semua yang disetujui (+2)
-    // prokerSedangBerjalanCount menambah +2 untuk yang sedang berjalan
-    // prokerSelesaiCount menambah +4 untuk yang selesai (berjalan +2 & selesai +2)
-    const poinProker =
-      prokerApprovedCount * 2 + prokerSedangBerjalanCount * 2 + prokerSelesaiCount * 4;
+    // JALUR SKOR AKADEMIK 60:40 (Komponen 60% Pencapaian Proker):
+    // Sesuai Final Blueprint V2:
+    // Hapus logika "cicilan poin" untuk proker yang belum beres!
+    // Proker yang masih Tahap 1 (Diajukan) dan Tahap 2 (Berjalan) poin akademiknya DIANGGAP NOL (0).
+    // Komponen 60% HANYA boleh dikalikan dari Proker yang sudah mutlak masuk Tahap 3 (SELESAI):
+    const poinProker = prokerSelesaiCount * 6;
 
     // 2. Ambil studentUserIds kelompok jika belum dioper
     let studentUserIds = studentUserIdsInput;
@@ -917,6 +1012,7 @@ export async function calculateGroupPoints(
     let totalCumulativeMemberPoints = 0;
     if (studentUserIds.length > 0) {
       // Ambil seluruh riwayat poin 3 komponen personal harian resmi (Kehadiran: 4, Waktu: 3, Logbook: 3)
+      // PROTEKSI DOUBLE-COUNTING: DILARANG KERAS memasukkan poin Gamifikasi Proker (Kategori KKN_PROKER).
       let personalPoints = await prisma.pointHistory.findMany({
         where: {
           userId: { in: studentUserIds },
@@ -927,10 +1023,14 @@ export async function calculateGroupPoints(
         select: { userId: true, points: true, createdAt: true },
       });
 
-      // Fallback toleran jika basis data pengujian/riil belum terlabeli kategori presensi
+      // Fallback toleran jika basis data pengujian/riil belum terlabeli kategori presensi (tetap proteksi anti-KKN_PROKER)
       if (personalPoints.length === 0) {
         personalPoints = await prisma.pointHistory.findMany({
-          where: { userId: { in: studentUserIds } },
+          where: {
+            userId: { in: studentUserIds },
+            kategori: { notIn: ["KKN_PROKER", "BONUS_LOGIN_PERTAMA", "REDUKSI_TONASE"] },
+            description: { not: { contains: "[ProkerID:" } },
+          },
           select: { userId: true, points: true, createdAt: true },
         });
       }
