@@ -594,7 +594,12 @@ export class BinService {
           .sendPushNotification(
             userObj.fcmToken,
             "Poin Bertambah!",
-            `Selamat! Anda mendapatkan +${totalPointsAwarded} poin dari setoran sampah Anda.`
+            `Selamat! Anda mendapatkan +${totalPointsAwarded} poin dari setoran sampah Anda.`,
+            "PUSH_ALARM",
+            {
+              event: "REFRESH_POIN_WARGA",
+              poinTambahan: String(totalPointsAwarded),
+            }
           )
           .catch((e) => console.error("FCM Error:", e));
       }
@@ -739,7 +744,12 @@ export class BinService {
         .sendPushNotification(
           userObj.fcmToken,
           "Poin Bertambah!",
-          `Selamat! Anda mendapatkan +${calculatedPoints} poin dari setoran sampah Anda.`
+          `Selamat! Anda mendapatkan +${calculatedPoints} poin dari setoran sampah Anda.`,
+          "PUSH_ALARM",
+          {
+            event: "REFRESH_POIN_WARGA",
+            poinTambahan: String(calculatedPoints),
+          }
         )
         .catch((e) => console.error("FCM Error:", e));
     }

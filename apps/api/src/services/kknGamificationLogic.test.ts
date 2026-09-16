@@ -21,6 +21,10 @@ vi.mock("../lib/prisma.js", () => {
       },
       studentKkn: {
         findUnique: vi.fn(),
+        findFirst: vi.fn(),
+        findMany: vi.fn().mockResolvedValue([]),
+      },
+      bin: {
         findMany: vi.fn().mockResolvedValue([]),
       },
       pointHistory: {
@@ -92,16 +96,8 @@ describe("KKN Gamification Logic & Fixes", () => {
     vi.clearAllMocks();
   });
 
-  describe("1. syncProkerGamificationPoints (3-Step Proker Points)", () => {
-    it("should award +2 points on Step 1 (DISETUJUI) for all group members", async () => {
-      vi.mocked(prisma.kelompokKkn.findUnique).mockResolvedValue({
-        id: "kel-1",
-        students: [{ userId: "user-1" }, { userId: "user-2" }],
-      } as any);
-
-      // No existing step 1 points
-      vi.mocked(prisma.pointHistory.findFirst).mockResolvedValue(null);
-
+  describe("1. syncProkerGamificationPoints (Proker Points Purely Group Assets, No Individual PointHistory)", () => {
+    it("should NOT award points to individual student PointHistory on proker submission, approval, or completion", async () => {
       await syncProkerGamificationPoints(
         "proker-1",
         "kel-1",
@@ -110,35 +106,12 @@ describe("KKN Gamification Logic & Fixes", () => {
         "Judul Proker"
       );
 
-      expect(prisma.pointHistory.createMany).toHaveBeenCalledWith({
-        data: [
-          {
-            userId: "user-1",
-            points: 2,
-            description: "Program Kerja Disetujui: Judul Proker [ProkerID:proker-1:DISETUJUI]",
-            kategori: "KKN_PROKER",
-          },
-          {
-            userId: "user-2",
-            points: 2,
-            description: "Program Kerja Disetujui: Judul Proker [ProkerID:proker-1:DISETUJUI]",
-            kategori: "KKN_PROKER",
-          },
-        ],
-      });
+      // Proker points HARAM masuk ke dompet individu mahasiswa
+      expect(prisma.pointHistory.createMany).not.toHaveBeenCalled();
+      expect(prisma.pointHistory.create).not.toHaveBeenCalled();
     });
 
-    it("should award Step 2 (+2 points) when proker is SEDANG_BERJALAN", async () => {
-      vi.mocked(prisma.kelompokKkn.findUnique).mockResolvedValue({
-        id: "kel-1",
-        students: [{ userId: "user-1" }],
-      } as any);
-
-      // Step 1 already exists, Step 2 does not exist
-      vi.mocked(prisma.pointHistory.findFirst)
-        .mockResolvedValueOnce({ id: "pt-1" } as any) // Step 1 check
-        .mockResolvedValueOnce(null); // Step 2 check
-
+    it("should clean up any legacy PointHistory records associated with prokerId", async () => {
       await syncProkerGamificationPoints(
         "proker-1",
         "kel-1",
@@ -147,76 +120,23 @@ describe("KKN Gamification Logic & Fixes", () => {
         "Judul Proker"
       );
 
-      expect(prisma.pointHistory.createMany).toHaveBeenCalledWith({
-        data: [
-          {
-            userId: "user-1",
-            points: 2,
-            description: "Program Kerja Berjalan: Judul Proker [ProkerID:proker-1:BERJALAN]",
-            kategori: "KKN_PROKER",
-          },
-        ],
+      expect(prisma.pointHistory.deleteMany).toHaveBeenCalledWith({
+        where: {
+          OR: [
+            { description: { contains: "[ProkerID:proker-1" } },
+            {
+              AND: [
+                { kategori: "KKN_PROKER" },
+                { description: { contains: "proker-1" } },
+              ],
+            },
+          ],
+        },
       });
-    });
-
-    it("should award Step 3 (+2 points) when proker is SELESAI", async () => {
-      vi.mocked(prisma.kelompokKkn.findUnique).mockResolvedValue({
-        id: "kel-1",
-        students: [{ userId: "user-1" }],
-      } as any);
-
-      // Step 1 & 2 exist, Step 3 does not exist
-      vi.mocked(prisma.pointHistory.findFirst)
-        .mockResolvedValueOnce({ id: "pt-1" } as any) // Step 1
-        .mockResolvedValueOnce({ id: "pt-2" } as any) // Step 2
-        .mockResolvedValueOnce(null); // Step 3
-
-      await syncProkerGamificationPoints(
-        "proker-1",
-        "kel-1",
-        "DISETUJUI",
-        "SELESAI",
-        "Judul Proker"
-      );
-
-      expect(prisma.pointHistory.createMany).toHaveBeenCalledWith({
-        data: [
-          {
-            userId: "user-1",
-            points: 2,
-            description: "Program Kerja Selesai: Judul Proker [ProkerID:proker-1:SELESAI]",
-            kategori: "KKN_PROKER",
-          },
-        ],
-      });
-    });
-
-    it("should be idempotent and not create duplicate points if already awarded", async () => {
-      vi.mocked(prisma.kelompokKkn.findUnique).mockResolvedValue({
-        id: "kel-1",
-        students: [{ userId: "user-1" }],
-      } as any);
-
-      // All steps already exist
-      vi.mocked(prisma.pointHistory.findFirst).mockResolvedValue({ id: "pt-existing" } as any);
-
-      await syncProkerGamificationPoints(
-        "proker-1",
-        "kel-1",
-        "DISETUJUI",
-        "SELESAI",
-        "Judul Proker"
-      );
-
       expect(prisma.pointHistory.createMany).not.toHaveBeenCalled();
     });
 
-    it("should delete points when proker is rejected (DITOLAK)", async () => {
-      vi.mocked(prisma.kelompokKkn.findUnique).mockResolvedValue({
-        id: "kel-1",
-        students: [{ userId: "user-1" }],
-      } as any);
-
+    it("should clean up legacy PointHistory when proker is rejected (DITOLAK)", async () => {
       await syncProkerGamificationPoints(
         "proker-1",
         "kel-1",
@@ -226,18 +146,22 @@ describe("KKN Gamification Logic & Fixes", () => {
       );
 
       expect(prisma.pointHistory.deleteMany).toHaveBeenCalledWith({
-        where: { description: { contains: "[ProkerID:proker-1" } },
+        where: {
+          OR: [
+            { description: { contains: "[ProkerID:proker-1" } },
+            {
+              AND: [
+                { kategori: "KKN_PROKER" },
+                { description: { contains: "proker-1" } },
+              ],
+            },
+          ],
+        },
       });
+      expect(prisma.pointHistory.createMany).not.toHaveBeenCalled();
     });
 
-    it("should award Step 1 (+2 points) instantly upon submission (BELUM_DISETUJUI) before DPL approval", async () => {
-      vi.mocked(prisma.kelompokKkn.findUnique).mockResolvedValue({
-        id: "kel-1",
-        students: [{ userId: "user-1" }, { userId: "user-2" }],
-      } as any);
-
-      vi.mocked(prisma.pointHistory.findFirst).mockResolvedValue(null);
-
+    it("should not create PointHistory upon instant submission (BELUM_DISETUJUI)", async () => {
       await syncProkerGamificationPoints(
         "proker-sub-1",
         "kel-1",
@@ -246,45 +170,8 @@ describe("KKN Gamification Logic & Fixes", () => {
         "Ide Proker Warga"
       );
 
-      expect(prisma.pointHistory.createMany).toHaveBeenCalledWith({
-        data: [
-          {
-            userId: "user-1",
-            points: 2,
-            description: "Pengajuan Program Kerja: Ide Proker Warga [ProkerID:proker-sub-1:PENGAJUAN]",
-            kategori: "KKN_PROKER",
-          },
-          {
-            userId: "user-2",
-            points: 2,
-            description: "Pengajuan Program Kerja: Ide Proker Warga [ProkerID:proker-sub-1:PENGAJUAN]",
-            kategori: "KKN_PROKER",
-          },
-        ],
-      });
-    });
-
-    it("should not duplicate Step 1 points when DPL subsequently approves an already submitted proker", async () => {
-      vi.mocked(prisma.kelompokKkn.findUnique).mockResolvedValue({
-        id: "kel-1",
-        students: [{ userId: "user-1" }],
-      } as any);
-
-      // findFirst returns the existing PENGAJUAN record
-      vi.mocked(prisma.pointHistory.findFirst).mockResolvedValue({
-        id: "pt-existing-pengajuan",
-        description: "Pengajuan Program Kerja: Ide Proker Warga [ProkerID:proker-sub-1:PENGAJUAN]",
-      } as any);
-
-      await syncProkerGamificationPoints(
-        "proker-sub-1",
-        "kel-1",
-        "DISETUJUI",
-        "BELUM_MULAI",
-        "Ide Proker Warga"
-      );
-
       expect(prisma.pointHistory.createMany).not.toHaveBeenCalled();
+      expect(prisma.pointHistory.create).not.toHaveBeenCalled();
     });
   });
 
@@ -412,6 +299,61 @@ describe("KKN Gamification Logic & Fixes", () => {
 
       // No point history records created for pemanfaatan form
       expect(prisma.pointHistory.createMany).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("5. getRegisteredWarga - Strict AND Isolation (Ownership & Wilayah)", () => {
+    it("should construct strict AND query separating ownership and wilayah to prevent data leakage", async () => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({
+        id: "mhs-1",
+        role: { name: "MAHASISWA_KKN" },
+      } as any);
+
+      vi.mocked(prisma.studentKkn.findFirst).mockResolvedValue({
+        userId: "mhs-1",
+        assignedRwId: 5,
+        kelompokId: "kel-1",
+        kelompok: {
+          kelurahan: "Sadang Serang",
+          students: [{ userId: "mhs-1" }, { userId: "mhs-2" }],
+        },
+      } as any);
+
+      vi.mocked(prisma.bin.findMany).mockResolvedValue([]);
+
+      await kknService.getRegisteredWarga("mhs-1", {});
+
+      expect(prisma.bin.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            AND: expect.arrayContaining([
+              expect.objectContaining({
+                OR: expect.arrayContaining([
+                  { registeredByStudentId: "mhs-1" },
+                  { qrBatch: { assignedPicUserId: "mhs-1" } },
+                  { kelompokId: "kel-1" },
+                  { registeredByStudentId: { in: ["mhs-1", "mhs-2"] } },
+                ]),
+              }),
+              expect.objectContaining({
+                OR: expect.arrayContaining([
+                  { rwId: 5 },
+                  { user: { rwId: 5 } },
+                  { user: { households: { some: { rwId: 5 } } } },
+                ]),
+              }),
+              expect.objectContaining({
+                rw: {
+                  kelurahan: {
+                    name: { contains: "Sadang Serang", mode: "insensitive" },
+                  },
+                },
+              }),
+            ]),
+            status: { in: ["ACTIVE_BOUND", "PENDING_APPROVAL"] },
+          }),
+        })
+      );
     });
   });
 });
