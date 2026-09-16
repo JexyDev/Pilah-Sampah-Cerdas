@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import {
   isTestOrDummyString,
   isTestUser,
@@ -10,6 +10,23 @@ import {
 } from "./filterTestingUtils.js";
 
 describe("filterTestingUtils", () => {
+  beforeAll(() => {
+    process.env.HIDE_TEST_DATA = "true";
+  });
+
+  afterAll(() => {
+    delete process.env.HIDE_TEST_DATA;
+  });
+
+  describe("default behavior (HIDE_TEST_DATA not true)", () => {
+    it("should not hide test data when HIDE_TEST_DATA is not true", () => {
+      delete process.env.HIDE_TEST_DATA;
+      expect(isTestOrDummyString("Kelompok TEST")).toBe(false);
+      expect(isTestKelompok({ name: "Kelompok TEST" })).toBe(false);
+      process.env.HIDE_TEST_DATA = "true";
+    });
+  });
+
   describe("isTestOrDummyString", () => {
     it("should detect testing keywords accurately", () => {
       expect(isTestOrDummyString("DPL TEST")).toBe(true);
