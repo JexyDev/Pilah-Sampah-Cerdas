@@ -369,33 +369,55 @@ export class KknService {
         } catch {}
       }
 
-      const orConditions: any[] = [
+      // 1. Klausa Ownership (Hak Cipta Kelompok/Mahasiswa)
+      const ownershipConditions: any[] = [
         { registeredByStudentId: kknUserId },
         { qrBatch: { assignedPicUserId: kknUserId } },
       ];
-
-      // Sertakan juga seluruh tempat sampah milik kelompok KKN dan yang didaftarkan rekan sekelompok
       if (studentProfile?.kelompokId) {
-        orConditions.push({ kelompokId: studentProfile.kelompokId });
+        ownershipConditions.push({ kelompokId: studentProfile.kelompokId });
       }
       const groupStudentUserIds =
         studentProfile?.kelompok?.students?.map((s: any) => s.userId).filter(Boolean) || [];
       if (groupStudentUserIds.length > 0) {
-        orConditions.push({ registeredByStudentId: { in: groupStudentUserIds } });
+        ownershipConditions.push({ registeredByStudentId: { in: groupStudentUserIds } });
       }
 
+      // 2. Klausa Wilayah Penugasan (Strict Support Multi-RW)
+      const wilayahConditions: any[] = [];
       if (effectiveRwId) {
-        orConditions.push({ rwId: effectiveRwId });
-        orConditions.push({ user: { rwId: effectiveRwId } });
-        orConditions.push({ user: { households: { some: { rwId: effectiveRwId } } } });
+        wilayahConditions.push(
+          { rwId: effectiveRwId },
+          { user: { rwId: effectiveRwId } },
+          { user: { households: { some: { rwId: effectiveRwId } } } }
+        );
       } else if (targetRwIds.length > 0) {
-        orConditions.push({ rwId: { in: targetRwIds } });
-        orConditions.push({ user: { rwId: { in: targetRwIds } } });
-        orConditions.push({ user: { households: { some: { rwId: { in: targetRwIds } } } } });
+        // Mode array IN untuk kelompok/mahasiswa Multi-RW
+        wilayahConditions.push(
+          { rwId: { in: targetRwIds } },
+          { user: { rwId: { in: targetRwIds } } },
+          { user: { households: { some: { rwId: { in: targetRwIds } } } } }
+        );
       }
 
+      // 3. Kunci Kelurahan Secara Eksplisit (Super Strict)
+      const kelurahanCondition = studentProfile?.kelompok?.kelurahan
+        ? {
+            rw: {
+              kelurahan: {
+                name: { contains: studentProfile.kelompok.kelurahan, mode: "insensitive" },
+              },
+            },
+          }
+        : {};
+
+      // 4. GABUNGKAN SECARA STRICT (AND)
       whereBin = {
-        OR: orConditions,
+        AND: [
+          { OR: ownershipConditions },
+          ...(wilayahConditions.length > 0 ? [{ OR: wilayahConditions }] : []),
+          ...(studentProfile?.kelompok?.kelurahan ? [kelurahanCondition] : []),
+        ],
       };
     }
 

@@ -777,8 +777,14 @@ export async function calculatePersonalPointsForUsers(
  * Sinkronisasi Poin Gamifikasi 3 Tahapan Program Kerja KKN:
  * 1. Tahap Usulan Disetujui: +2 poin per anggota kelompok (kategori: KKN_PROKER)
  * 2. Tahap Mulai Dikerjakan (Sedang Berjalan): +2 poin per anggota kelompok (kategori: KKN_PROKER)
- * 3. Tahap Selesai: +2 poin per anggota kelompok (kategori: KKN_PROKER)
- * Idempotensi dijamin via penandaan [ProkerID:<id>:<STEP>] di deskripsi PointHistory.
+/**
+ * Sinkronisasi Poin Gamifikasi Program Kerja KKN (Jalur Gamifikasi Mahasiswa):
+ * Sesuai Final Blueprint V2:
+ * - Logika Instan: Injeksi poin +2 PTS ke tabel PointHistory individu mahasiswa pada setiap tahap:
+ *   1. Tahap Usulan Diajukan / Disetujui (+2 PTS)
+ *   2. Tahap Sedang Berjalan (+2 PTS)
+ *   3. Tahap Selesai (+2 PTS)
+ * - Skenario Batal: Jika DPL menolak proker (DITOLAK / TIDAK_DISETUJUI), hapus seluruh poin proker terkait.
  */
 export async function syncProkerGamificationPoints(
   prokerId: string,
@@ -811,8 +817,6 @@ export async function syncProkerGamificationPoints(
 
     // GAMIFIKASI INSTAN:
     // Tahap 1: Pengajuan Proker (+2 PTS)
-    // Diberikan langsung saat proker diajukan/dibuat (meskipun status masih BELUM_DISETUJUI),
-    // selama usulan TIDAK DITOLAK.
     const isStep1Eligible = normUsulan !== "DITOLAK" && normUsulan !== "TIDAK_DISETUJUI";
     const isBerjalan =
       normPelaksanaan === "SEDANG_BERJALAN" ||
@@ -987,12 +991,12 @@ export async function calculateGroupPoints(
       }
     }
 
-    // Poin Proker sekuensial (Disetujui (+2), Berlangsung (+2, total 4), Selesai (+2, total 6)):
-    // prokerApprovedCount mencakup semua yang disetujui (+2)
-    // prokerSedangBerjalanCount menambah +2 untuk yang sedang berjalan
-    // prokerSelesaiCount menambah +4 untuk yang selesai (berjalan +2 & selesai +2)
-    const poinProker =
-      prokerApprovedCount * 2 + prokerSedangBerjalanCount * 2 + prokerSelesaiCount * 4;
+    // JALUR SKOR AKADEMIK 60:40 (Komponen 60% Pencapaian Proker):
+    // Sesuai Final Blueprint V2:
+    // Hapus logika "cicilan poin" untuk proker yang belum beres!
+    // Proker yang masih Tahap 1 (Diajukan) dan Tahap 2 (Berjalan) poin akademiknya DIANGGAP NOL (0).
+    // Komponen 60% HANYA boleh dikalikan dari Proker yang sudah mutlak masuk Tahap 3 (SELESAI):
+    const poinProker = prokerSelesaiCount * 6;
 
     // 2. Ambil studentUserIds kelompok jika belum dioper
     let studentUserIds = studentUserIdsInput;
@@ -1008,6 +1012,7 @@ export async function calculateGroupPoints(
     let totalCumulativeMemberPoints = 0;
     if (studentUserIds.length > 0) {
       // Ambil seluruh riwayat poin 3 komponen personal harian resmi (Kehadiran: 4, Waktu: 3, Logbook: 3)
+      // PROTEKSI DOUBLE-COUNTING: DILARANG KERAS memasukkan poin Gamifikasi Proker (Kategori KKN_PROKER).
       let personalPoints = await prisma.pointHistory.findMany({
         where: {
           userId: { in: studentUserIds },
@@ -1018,60 +1023,33 @@ export async function calculateGroupPoints(
         select: { userId: true, points: true, createdAt: true },
       });
 
-      // Fallback toleran jika basis data pengujian/riil belum terlabeli kategori presensi
+      // Fallback toleran jika basis data pengujian/riil belum terlabeli kategori presensi (tetap proteksi anti-KKN_PROKER)
       if (personalPoints.length === 0) {
         personalPoints = await prisma.pointHistory.findMany({
-          where: { userId: { in: studentUserIds } },
+          where: {
+            userId: { in: studentUserIds },
+            kategori: { notIn: ["KKN_PROKER", "BONUS_LOGIN_PERTAMA", "REDUKSI_TONASE"] },
+            description: { not: { contains: "[ProkerID:" } },
+          },
           select: { userId: true, points: true, createdAt: true },
         });
       }
 
-      // Hitung akumulasi per user per hari kalender
-      const groupActiveDaysSet = new Set<string>();
-      const userDayPointsMap = new Map<string, Map<string, number>>();
+      // Hitung total poin kumulatif seluruh anggota murni dari presensi & logbook
+      totalCumulativeMemberPoints = personalPoints.reduce(
+        (acc, curr) => acc + Number(curr.points || 0),
+        0
+      );
 
-      for (const uid of studentUserIds) {
-        userDayPointsMap.set(uid, new Map<string, number>());
-      }
-
-      for (const p of personalPoints) {
-        const createdAtDate =
-          p.createdAt instanceof Date ? p.createdAt : new Date(p.createdAt || Date.now());
-        const dayKey = (!isNaN(createdAtDate.getTime()) ? createdAtDate : new Date())
-          .toISOString()
-          .slice(0, 10);
-        groupActiveDaysSet.add(dayKey);
-        const userMap = userDayPointsMap.get(p.userId);
-        if (userMap) {
-          const curPts = userMap.get(dayKey) || 0;
-          userMap.set(dayKey, curPts + Number(p.points || 0));
-        }
-        totalCumulativeMemberPoints += Number(p.points || 0);
-      }
-
-      const totalActiveDays = Math.max(1, groupActiveDaysSet.size);
-
-      // Hitung rata-rata capaian harian per anggota (maks 10 poin/hari)
-      let sumDailyAvgAllMembers = 0;
-      for (const uid of studentUserIds) {
-        const userMap = userDayPointsMap.get(uid);
-        let userTotalCapped = 0;
-        if (userMap) {
-          for (const pts of userMap.values()) {
-            userTotalCapped += Math.min(10, pts);
-          }
-        }
-        const userDailyAvg = userTotalCapped / totalActiveDays;
-        sumDailyAvgAllMembers += Math.min(10, userDailyAvg);
-      }
-
+      // Rata-Rata KUMULATIF Anggota (Total Poin Seluruh Anggota / Jumlah Anggota)
+      // Sesuai Master Blueprint V2: Tidak dibagi dengan totalActiveDays agar poin kumulatif terus bertumbuh
       rataRataPoinAnggota =
-        groupActiveDaysSet.size > 0
-          ? Math.round((sumDailyAvgAllMembers / studentUserIds.length) * 10) / 10
+        studentUserIds.length > 0
+          ? Math.round((totalCumulativeMemberPoints / studentUserIds.length) * 10) / 10
           : 0;
     }
 
-    // Formula Poin Kelompok Resmi KKN: (Poin Proker * 0.6) + (Rata-rata Poin Anggota * 0.4)
+    // Formula Poin Kelompok Resmi KKN: (Poin Proker * 0.6) + (Rata-rata Kumulatif Poin Anggota * 0.4)
     const totalGroupPoints =
       Math.round((poinProker * 0.6 + rataRataPoinAnggota * 0.4) * 10) / 10;
 

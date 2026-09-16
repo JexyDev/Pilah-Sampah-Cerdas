@@ -335,7 +335,7 @@ export class BinRepository {
         include: { role: true },
       });
 
-      if (user && user.role.name === "WARGA" && user.wargaSubtype === "TAMBAHAN") {
+      if (user && user.role.name === "WARGA") {
         const streakDaysConfig = await tx.systemConfig.findUnique({
           where: { key: "streak_bonus_days" },
         });
