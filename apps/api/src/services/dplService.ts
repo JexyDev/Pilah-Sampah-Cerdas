@@ -809,23 +809,24 @@ export async function syncProkerGamificationPoints(
       return;
     }
 
-    const isApproved =
-      normUsulan === "DISETUJUI" ||
-      normUsulan === "DITERIMA" ||
-      normPelaksanaan === "SEDANG_BERJALAN" ||
-      normPelaksanaan === "SELESAI";
+    // GAMIFIKASI INSTAN:
+    // Tahap 1: Pengajuan Proker (+2 PTS)
+    // Diberikan langsung saat proker diajukan/dibuat (meskipun status masih BELUM_DISETUJUI),
+    // selama usulan TIDAK DITOLAK.
+    const isStep1Eligible = normUsulan !== "DITOLAK" && normUsulan !== "TIDAK_DISETUJUI";
     const isBerjalan =
       normPelaksanaan === "SEDANG_BERJALAN" ||
       normPelaksanaan === "BERJALAN" ||
       normPelaksanaan === "SELESAI";
     const isSelesai = normPelaksanaan === "SELESAI";
 
-    // 1. Step 1: Disetujui (+2 PTS)
-    if (isApproved) {
+    // 1. Step 1: Pengajuan / Disetujui (+2 PTS)
+    if (isStep1Eligible) {
       const existingStep1 = await prisma.pointHistory.findFirst({
         where: {
           description: { contains: `[ProkerID:${prokerId}` },
           OR: [
+            { description: { contains: `[ProkerID:${prokerId}:PENGAJUAN]` } },
             { description: { contains: `[ProkerID:${prokerId}:DISETUJUI]` } },
             {
               AND: [
@@ -839,12 +840,17 @@ export async function syncProkerGamificationPoints(
         },
       });
       if (!existingStep1) {
+        const isAlreadyApproved = normUsulan === "DISETUJUI" || normUsulan === "DITERIMA";
+        const step1Desc = isAlreadyApproved
+          ? `Program Kerja Disetujui: ${title} [ProkerID:${prokerId}:DISETUJUI]`
+          : `Pengajuan Program Kerja: ${title} [ProkerID:${prokerId}:PENGAJUAN]`;
+
         await prisma.pointHistory
           .createMany({
             data: studentUserIds.map((uid) => ({
               userId: uid,
               points: 2,
-              description: `Program Kerja Disetujui: ${title} [ProkerID:${prokerId}:DISETUJUI]`,
+              description: step1Desc,
               kategori: "KKN_PROKER",
             })),
           })
@@ -957,7 +963,9 @@ export async function calculateGroupPoints(
         else u = "BELUM_DISETUJUI";
       }
 
-      if (u === "DISETUJUI" || u === "DITERIMA") {
+      // Dalam Gamifikasi Instan, seluruh proker aktif/diajukan (selama tidak ditolak)
+      // bernilai +2 poin dasar (Step 1).
+      if (u !== "DITOLAK" && u !== "TIDAK_DISETUJUI") {
         prokerApprovedCount++;
         let pl = (p as any).statusPelaksanaan;
         if (!pl) {
@@ -3201,6 +3209,16 @@ export const dplService = {
     const proker = await prisma.programKerjaKkn.create({
       data: createPayload,
     });
+
+    const parsedJudul = parseProkerDeskripsi(proker.deskripsi).judul;
+    await syncProkerGamificationPoints(
+      proker.id,
+      targetKelompokId,
+      normalizedStatusUsulan,
+      normalizedStatusPelaksanaan,
+      parsedJudul
+    );
+
     return {
       ...proker,
       statusUsulan: (proker as any).statusUsulan || normalizedStatusUsulan,

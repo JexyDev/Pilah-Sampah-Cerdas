@@ -4169,6 +4169,15 @@ export class KknService {
       },
     });
 
+    // Gamifikasi Instan: Tembakkan +2 PTS ke seluruh anggota kelompok saat usulan diajukan
+    await syncProkerGamificationPoints(
+      proker.id,
+      kelompok.id,
+      "BELUM_DISETUJUI",
+      "BELUM_MULAI",
+      finalJudul
+    );
+
     // Notify DPL
     if (kelompok.dplId) {
       await prisma.notification

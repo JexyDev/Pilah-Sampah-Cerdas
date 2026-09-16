@@ -1352,11 +1352,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               ] as UserRole[],
             },
             {
-              to: "/master-data/jenis-tempat-sampah",
-              label: "Jenis & Preset Ukuran",
-              allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[],
-            },
-            {
               to: "/monitoring-pengelolaan/fasilitas",
               label: "Fasilitas",
               resource: "pemanfaatan",
