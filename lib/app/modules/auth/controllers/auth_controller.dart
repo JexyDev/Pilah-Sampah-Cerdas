@@ -440,6 +440,51 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  /// Bergabung ke Rumah Tangga Kepala Keluarga (Secondary Owner / Household Sharing)
+  Future<Map<String, dynamic>> joinHousehold(String headPhone) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final data = await _authRepository.joinHousehold(headPhone: headPhone);
+      final household = data['household'] as Map<String, dynamic>? ?? {};
+      final householdId = household['id']?.toString() ?? '';
+
+      if (state.user != null) {
+        state = state.copyWith(
+          isLoading: false,
+          user: state.user!.copyWith(
+            householdId: householdId.isNotEmpty ? householdId : state.user!.householdId,
+            lifecycleState: WargaLifecycle.fullyActive,
+            address: household['address']?.toString() ?? state.user!.address,
+            rw: household['rw']?.toString() ?? state.user!.rw,
+            kelurahan: household['kelurahan']?.toString() ?? state.user!.kelurahan,
+            kecamatan: household['kecamatan']?.toString() ?? state.user!.kecamatan,
+          ),
+        );
+      } else {
+        state = state.copyWith(isLoading: false);
+      }
+
+      // Sinkronisasi ulang profil lengkap
+      await fetchProfile();
+      return data;
+    } on AuthException catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.message);
+      rethrow;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      rethrow;
+    }
+  }
+
+  /// Ambil data detail rumah tangga aktif saat ini
+  Future<Map<String, dynamic>?> getMyHousehold() async {
+    try {
+      return await _authRepository.getMyHousehold();
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Upload foto profil
   Future<bool> uploadAvatar(String imagePath) async {
     state = state.copyWith(isLoading: true, clearError: true);
