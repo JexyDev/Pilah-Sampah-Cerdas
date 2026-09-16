@@ -2442,7 +2442,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
                       <td className="py-2.5 px-3 text-right">
                         <span
                           className="px-2.5 py-1 rounded-lg bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 font-black text-xs border border-teal-200 dark:border-teal-700/40 cursor-help"
-                          title={`Poin DPL = (Poin Logbook × 50%) + (Poin Kelompok × 50%) = (${d.logbookCount ?? (d.poinLogbook ? Math.round(d.poinLogbook / 5) : 0)} log × 5 = ${d.poinLogbook ?? 0} × 50%) + (${d.poinKelompok ?? 0} × 50%) = ${d.points}`}
+                          title={`Poin DPL = (Poin Logbook × 50%) + (Poin Kelompok × 50%) = (${d.poinLogbook ?? (d.hasLogbook ? 6 : 0)} × 50%) + (${d.poinKelompok ?? 0} × 50%) = ${d.points}`}
                         >
                           {d.points} Poin
                         </span>

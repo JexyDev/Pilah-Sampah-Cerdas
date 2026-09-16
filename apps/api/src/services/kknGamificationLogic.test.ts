@@ -349,7 +349,7 @@ describe("KKN Gamification Logic & Fixes", () => {
       expect(res.totalGroupPoints).toBe(10);
     });
 
-    it("should calculate Poin DPL using binary logbook (6 or 0) and 60% Logbook + 40% Kelompok", async () => {
+    it("should calculate Poin DPL using binary logbook (6 or 0) and 50% Logbook + 50% Kelompok", async () => {
       // Skenario A: Logbook DPL tersedia (count > 0) -> 6 poin
       vi.mocked(prisma.logbookDpl.count).mockResolvedValue(2);
       const resWithLogbook = await calculateDplPoints("dpl-1", "kel-1", 16);
@@ -357,8 +357,8 @@ describe("KKN Gamification Logic & Fixes", () => {
       expect(resWithLogbook.hasLogbookDpl).toBe(true);
       expect(resWithLogbook.poinLogbookDpl).toBe(6);
       expect(resWithLogbook.poinKelompok).toBe(16);
-      // Rumus: (6 * 0.6) + (16 * 0.4) = 3.6 + 6.4 = 10
-      expect(resWithLogbook.poinDpl).toBe(10);
+      // Rumus: (6 * 0.5) + (16 * 0.5) = 3 + 8 = 11
+      expect(resWithLogbook.poinDpl).toBe(11);
 
       // Skenario B: Logbook DPL tidak tersedia (count = 0) -> 0 poin
       vi.mocked(prisma.logbookDpl.count).mockResolvedValue(0);
@@ -367,8 +367,8 @@ describe("KKN Gamification Logic & Fixes", () => {
       expect(resWithoutLogbook.hasLogbookDpl).toBe(false);
       expect(resWithoutLogbook.poinLogbookDpl).toBe(0);
       expect(resWithoutLogbook.poinKelompok).toBe(16);
-      // Rumus: (0 * 0.6) + (16 * 0.4) = 0 + 6.4 = 6.4
-      expect(resWithoutLogbook.poinDpl).toBe(6.4);
+      // Rumus: (0 * 0.5) + (16 * 0.5) = 0 + 8 = 8
+      expect(resWithoutLogbook.poinDpl).toBe(8);
     });
   });
 
