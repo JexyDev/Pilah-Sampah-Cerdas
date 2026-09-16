@@ -2073,6 +2073,9 @@ const Dashboard: React.FC = () => {
   void trendInorganicAreaPath;
   void KpiCard;
 
+  const rawOrg = Number(stats?.komposisiSampah?.organikKg ?? 0);
+  const rawAnorg = Number(stats?.komposisiSampah?.anorganikKg ?? 0);
+
   return (
     <div className="w-full space-y-6 pb-12 text-slate-800 dark:text-slate-100 font-sans relative">
       {canAccessKknSub && (
