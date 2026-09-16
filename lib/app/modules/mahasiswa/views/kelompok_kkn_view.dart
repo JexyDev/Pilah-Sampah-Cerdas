@@ -414,15 +414,14 @@ class KelompokKknView extends ConsumerWidget {
                       ),
                       const SizedBox(height: 4),
                       const Text(
-                        'Formula: 60% Capaian Proker + 40% Rata-rata Anggota',
+                        'Formula: 60% Proker Selesai + 40% Rata-Rata Kumulatif Anggota',
                         style: TextStyle(fontSize: 11, color: Colors.black54),
                       ),
                     ],
                   ),
                 ),
                 
-                const SizedBox(height: 12),
-                
+                const SizedBox(height: 20),
 
                 _buildPoskoCard(context, ref, isCurrentUserLeader),
                 const SizedBox(height: 20),

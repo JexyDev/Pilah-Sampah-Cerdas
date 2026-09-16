@@ -342,8 +342,8 @@ class MahasiswaPoinView extends ConsumerWidget {
           ),
           SizedBox(height: 6),
           Text(
-            '• Poin Personal Harian: Check-In (+4 PTS), Durasi Terpenuhi (+3 PTS), dan Logbook Harian (+3 PTS) [Maks. 10 PTS/hari].\n'
-            '• Skor Kelompok Proker: Setiap tahapan proker dinilai (Disetujui +2, Berjalan +2, Selesai +2 PTS, total 6 PTS/proker). Seluruh anggota kelompok memperoleh skor yang sama.',
+            '• Poin Personal (Keringat Harian): Check-In (+4 PTS), Durasi (+3 PTS), Logbook (+3 PTS). Seluruh poin personal akan ditarik nilai Rata-Rata Kumulatifnya untuk menyumbang bobot 40% ke Nilai Akhir Kelompok.\n'
+            '• Skor Proker Kelompok (Gamifikasi): Proker Diajukan (+2 PTS), Berjalan (+2 PTS), Selesai (+2 PTS). Namun, poin bobot Akademik (60%) HANYA cair ke Nilai Akhir jika Proker sudah 100% SELESAI.',
             style: TextStyle(
               fontSize: 11,
               color: AppColors.textPrimary,
