@@ -23,6 +23,9 @@ const TEST_KEYWORDS = [
  * Memeriksa apakah sebuah string mengandung kata kunci uji coba/dummy
  */
 export function isTestOrDummyString(str?: string | null): boolean {
+  if (process.env.HIDE_TEST_DATA !== "true") {
+    return false;
+  }
   if (!str) return false;
   const lower = String(str).toLowerCase().trim();
   return TEST_KEYWORDS.some((kw) => lower.includes(kw));
