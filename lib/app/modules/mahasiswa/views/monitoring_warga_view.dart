@@ -78,50 +78,32 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
     String userKec,
     String userKel,
     String userRw,
+    int? userRwId,
   ) {
-    // Helper: bersihkan string kelurahan untuk perbandingan
-    String cleanKel(String val) => val
-        .toLowerCase()
-        .replaceAll('kel.', '')
-        .replaceAll('kelurahan', '')
-        .replaceAll('desa', '')
-        .trim();
-
-    final targetKelClean = cleanKel(userKel);
-    final targetRwSet = userRw
-        .split(',')
-        .map(
-          (s) => s
-              .replaceAll(RegExp(r'[^\d]'), '')
-              .replaceFirst(RegExp(r'^0+'), ''),
-        )
-        .where((s) => s.isNotEmpty)
-        .toSet();
-
     return allWarga.where((w) {
       if (w.role.isNotEmpty && w.role != 'WARGA') return false;
       // Blokir warga yang baru registrasi awal dan belum mengisi form Gabung Komunitas
       if (w.lifecycleState.toUpperCase() == 'REGISTERED') return false;
 
-      final wRwClean = w.rw
-          .replaceAll(RegExp(r'[^\d]'), '')
-          .replaceFirst(RegExp(r'^0+'), '');
-      final wKelClean = cleanKel(w.kelurahan);
-      final wAddr = w.address.toLowerCase();
+      // 1. Filter strict by ID RW numerik
+      if (userRwId != null && w.rwId != null) {
+        if (w.rwId != userRwId) return false;
+      } else {
+        // 2. Fallback untuk Multi-RW / string RW
+        final wRwClean = w.rw
+            .replaceAll(RegExp(r'[^\d]'), '')
+            .replaceFirst(RegExp(r'^0+'), '');
+            
+        final targetRwSet = userRw
+            .split(',')
+            .map((s) => s.replaceAll(RegExp(r'[^\d]'), '').replaceFirst(RegExp(r'^0+'), ''))
+            .where((s) => s.isNotEmpty)
+            .toSet();
 
-      final rwMatches =
-          targetRwSet.isEmpty ||
-          targetRwSet.contains(wRwClean) ||
-          targetRwSet.any(
-            (r) => wAddr.contains('rw $r') || wAddr.contains('rw 0$r'),
-          );
-      final kelMatches =
-          targetKelClean.isEmpty ||
-          wKelClean.contains(targetKelClean) ||
-          targetKelClean.contains(wKelClean) ||
-          wAddr.contains(targetKelClean);
-
-      if (!rwMatches || !kelMatches) return false;
+        if (targetRwSet.isNotEmpty && !targetRwSet.contains(wRwClean)) {
+           return false;
+        }
+      }
 
       if (_searchController.text.isNotEmpty) {
         final query = _searchController.text.toLowerCase();
@@ -140,6 +122,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
     String userKec,
     String userKel,
     String userRw,
+    int? userRwId,
   ) {
     try {
       return allWarga.map((e) {
@@ -212,12 +195,14 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
     // all registered & claimed citizens are included dynamically.
     final rawMerged = <WargaDampingan>[
       ...state.wargaList,
-      ..._getFilteredWargaAktivasi(
-        aktivasiState.wargaList,
-        userKec,
-        userKel,
-        userRw,
-      ),
+      if (isAktivasiBinMode)
+        ..._getFilteredWargaAktivasi(
+          aktivasiState.wargaList,
+          userKec,
+          userKel,
+          userRw,
+          user?.rwId,
+        ),
     ];
 
     // Remove duplicates safely: never collapse citizens with empty or placeholder ID
@@ -279,6 +264,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
       userKec,
       userKel,
       userRw,
+      user?.rwId,
     );
 
     return Scaffold(

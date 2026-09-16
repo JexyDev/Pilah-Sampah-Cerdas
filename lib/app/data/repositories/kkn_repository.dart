@@ -19,7 +19,7 @@ abstract class KknRepository {
   Future<ActiveTimelineResponse> getActiveTimeline();
 
   Future<List<WargaDampingan>?> getCachedWargaDampingan();
-  Future<List<WargaDampingan>> getWargaDampingan();
+  Future<List<WargaDampingan>> getWargaDampingan({int? rwId});
 
   /// Mendaftarkan warga baru melalui akun mahasiswa.
   /// Backend otomatis melakukan binding mahasiswa ↔ warga.

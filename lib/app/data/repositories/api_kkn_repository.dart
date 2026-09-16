@@ -120,10 +120,18 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<List<WargaDampingan>> getWargaDampingan() async {
+  Future<List<WargaDampingan>> getWargaDampingan({int? rwId}) async {
     List<dynamic> rawList = [];
     try {
-      final response = await apiClient.dio.get(ApiEndpoints.kknWarga);
+      final Map<String, dynamic> queryParams = {};
+      if (rwId != null) {
+        queryParams['rwId'] = rwId;
+      }
+
+      final response = await apiClient.dio.get(
+        ApiEndpoints.kknWargaDampingan,
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+      );
       if (response.statusCode == 200) {
         if (response.data is Map<String, dynamic>) {
           rawList =

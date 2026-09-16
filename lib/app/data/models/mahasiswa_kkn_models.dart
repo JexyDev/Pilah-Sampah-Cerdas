@@ -190,6 +190,7 @@ class WargaDampingan extends Equatable {
     this.kecamatan = '',
     this.kelurahan = '',
     this.rw = '',
+    this.rwId,
     this.mahasiswaId = '',
     this.pendampingName = '',
     this.status = '',
@@ -215,6 +216,7 @@ class WargaDampingan extends Equatable {
   final String kecamatan;
   final String kelurahan;
   final String rw;
+  final int? rwId;
   final String mahasiswaId;
   final String pendampingName;
   final String status;
@@ -598,6 +600,7 @@ class WargaDampingan extends Equatable {
       kecamatan: parsedKecamatan,
       kelurahan: parsedKelurahan,
       rw: parsedRw,
+      rwId: json['rwId'] != null ? int.tryParse(json['rwId'].toString()) : null,
       mahasiswaId: extractMhsId(),
       pendampingName: extractPendampingName(),
       status: rawStatus.isEmpty ? 'Aktif' : rawStatus,

@@ -1235,6 +1235,7 @@ class ApiAuthRepository implements AuthRepository {
       kecamatan: fetchedKecamatan,
       kelurahan: kelurahan,
       rw: rw,
+      rwId: userMap['rwId'] != null ? int.tryParse(userMap['rwId'].toString()) : (userMap['assignedRwId'] != null ? int.tryParse(userMap['assignedRwId'].toString()) : null),
       nim: nim,
       jurusan: jurusan,
       prodi: prodi,
