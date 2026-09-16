@@ -1035,52 +1035,21 @@ export async function calculateGroupPoints(
         });
       }
 
-      // Hitung akumulasi per user per hari kalender
-      const groupActiveDaysSet = new Set<string>();
-      const userDayPointsMap = new Map<string, Map<string, number>>();
+      // Hitung total poin kumulatif seluruh anggota murni dari presensi & logbook
+      totalCumulativeMemberPoints = personalPoints.reduce(
+        (acc, curr) => acc + Number(curr.points || 0),
+        0
+      );
 
-      for (const uid of studentUserIds) {
-        userDayPointsMap.set(uid, new Map<string, number>());
-      }
-
-      for (const p of personalPoints) {
-        const createdAtDate =
-          p.createdAt instanceof Date ? p.createdAt : new Date(p.createdAt || Date.now());
-        const dayKey = (!isNaN(createdAtDate.getTime()) ? createdAtDate : new Date())
-          .toISOString()
-          .slice(0, 10);
-        groupActiveDaysSet.add(dayKey);
-        const userMap = userDayPointsMap.get(p.userId);
-        if (userMap) {
-          const curPts = userMap.get(dayKey) || 0;
-          userMap.set(dayKey, curPts + Number(p.points || 0));
-        }
-        totalCumulativeMemberPoints += Number(p.points || 0);
-      }
-
-      const totalActiveDays = Math.max(1, groupActiveDaysSet.size);
-
-      // Hitung rata-rata capaian harian per anggota (maks 10 poin/hari)
-      let sumDailyAvgAllMembers = 0;
-      for (const uid of studentUserIds) {
-        const userMap = userDayPointsMap.get(uid);
-        let userTotalCapped = 0;
-        if (userMap) {
-          for (const pts of userMap.values()) {
-            userTotalCapped += Math.min(10, pts);
-          }
-        }
-        const userDailyAvg = userTotalCapped / totalActiveDays;
-        sumDailyAvgAllMembers += Math.min(10, userDailyAvg);
-      }
-
+      // Rata-Rata KUMULATIF Anggota (Total Poin Seluruh Anggota / Jumlah Anggota)
+      // Sesuai Master Blueprint V2: Tidak dibagi dengan totalActiveDays agar poin kumulatif terus bertumbuh
       rataRataPoinAnggota =
-        groupActiveDaysSet.size > 0
-          ? Math.round((sumDailyAvgAllMembers / studentUserIds.length) * 10) / 10
+        studentUserIds.length > 0
+          ? Math.round((totalCumulativeMemberPoints / studentUserIds.length) * 10) / 10
           : 0;
     }
 
-    // Formula Poin Kelompok Resmi KKN: (Poin Proker * 0.6) + (Rata-rata Poin Anggota * 0.4)
+    // Formula Poin Kelompok Resmi KKN: (Poin Proker * 0.6) + (Rata-rata Kumulatif Poin Anggota * 0.4)
     const totalGroupPoints =
       Math.round((poinProker * 0.6 + rataRataPoinAnggota * 0.4) * 10) / 10;
 

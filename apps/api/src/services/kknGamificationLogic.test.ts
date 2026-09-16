@@ -330,6 +330,25 @@ describe("KKN Gamification Logic & Fixes", () => {
       expect(res.totalGroupPoints).toBe(3.6);
     });
 
+    it("should calculate cumulative member average without dividing by totalActiveDays (growing points over time)", async () => {
+      // 2 mahasiswa dengan akumulasi beberapa hari (user-1: 20 pts, user-2: 30 pts, total 50 pts)
+      vi.mocked(prisma.pointHistory.findMany).mockResolvedValue([
+        { userId: "user-1", points: 10, createdAt: new Date("2026-09-01") } as any,
+        { userId: "user-1", points: 10, createdAt: new Date("2026-09-02") } as any,
+        { userId: "user-2", points: 15, createdAt: new Date("2026-09-01") } as any,
+        { userId: "user-2", points: 15, createdAt: new Date("2026-09-02") } as any,
+      ]);
+
+      const res = await calculateGroupPoints("kel-1", [], ["user-1", "user-2"]);
+
+      // Total kumulatif = 50. Jumlah anggota = 2.
+      // Rata-rata kumulatif = 50 / 2 = 25 (TIDAK dibagi 2 hari aktif)
+      expect(res.totalCumulativeMemberPoints).toBe(50);
+      expect(res.rataRataPoinAnggota).toBe(25);
+      // Rumus: (0 * 0.6) + (25 * 0.4) = 10
+      expect(res.totalGroupPoints).toBe(10);
+    });
+
     it("should calculate Poin DPL using binary logbook (6 or 0) and 60% Logbook + 40% Kelompok", async () => {
       // Skenario A: Logbook DPL tersedia (count > 0) -> 6 poin
       vi.mocked(prisma.logbookDpl.count).mockResolvedValue(2);
