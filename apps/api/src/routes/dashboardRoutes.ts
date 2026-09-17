@@ -9,6 +9,7 @@ import { Router } from "express";
 import { dashboardController } from "../controllers/dashboardController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
+import { kknExecutiveService } from "../services/kknExecutiveService.js";
 
 const router = Router();
 
@@ -198,6 +199,63 @@ router.get(
     "PANITIA_TASKFORCE",
   ]),
   dashboardController.exportKknExecutiveReport
+);
+
+/**
+ * GIS: Fasilitas Tata Kelola Sampah untuk peta
+ * Mengembalikan semua fasilitas (bukan posko_kkn) dengan koordinat dan info kelurahan/RW
+ */
+router.get(
+  "/kkn-executive/gis/facilities",
+  authMiddleware,
+  roleMiddleware(["PIMPINAN", "PEMIMPIN", "SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DLH", "PANITIA_TASKFORCE"]),
+  async (req, res) => {
+    try {
+      const { kelurahan, rw } = req.query as { kelurahan?: string; rw?: string };
+      const data = await kknExecutiveService.getWasteFacilitiesGis({ kelurahan, rw });
+      return res.json({ success: true, data });
+    } catch (e: any) {
+      return res.status(500).json({ success: false, message: e.message });
+    }
+  }
+);
+
+/**
+ * GIS: Overlay Kepatuhan per Kelurahan
+ * Menghitung persentase Bin aktif sebagai indikator kepatuhan per kelurahan
+ */
+router.get(
+  "/kkn-executive/gis/compliance-overlay",
+  authMiddleware,
+  roleMiddleware(["PIMPINAN", "PEMIMPIN", "SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DLH", "PANITIA_TASKFORCE"]),
+  async (req, res) => {
+    try {
+      const { kelurahan, rw } = req.query as { kelurahan?: string; rw?: string };
+      const data = await kknExecutiveService.getComplianceOverlay({ kelurahan, rw });
+      return res.json({ success: true, data });
+    } catch (e: any) {
+      return res.status(500).json({ success: false, message: e.message });
+    }
+  }
+);
+
+/**
+ * Tempat Sampah Teraktivasi
+ * Mengembalikan daftar Bin dengan status ASSIGNED_TO_PIC atau ACTIVE_BOUND
+ */
+router.get(
+  "/kkn-executive/waste/bins-activated",
+  authMiddleware,
+  roleMiddleware(["PIMPINAN", "PEMIMPIN", "SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DLH", "PANITIA_TASKFORCE"]),
+  async (req, res) => {
+    try {
+      const { kelurahan, rw } = req.query as { kelurahan?: string; rw?: string };
+      const data = await kknExecutiveService.getActivatedBinsBreakdown({ kelurahan, rw });
+      return res.json({ success: true, data });
+    } catch (e: any) {
+      return res.status(500).json({ success: false, message: e.message });
+    }
+  }
 );
 
 export default router;

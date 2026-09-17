@@ -283,8 +283,36 @@ export class AuthService {
         assignedZone:
           anyUser.petugasProfile?.assignedZone ||
           (rwName ? `${rwName}, Kel. ${kelurahanName || "Coblong"}` : "Kecamatan Coblong"),
+        availableRoles: (() => {
+          const userRoleNames = (anyUser.userRoles || []).map((ur: any) => ur.role?.name).filter(Boolean);
+          const roleSet = new Set<string>([userRoleName, ...userRoleNames]);
+          if (
+            userRoleName === "DEVELOPER" ||
+            userRoleName === "SUPER_USER" ||
+            userRoleNames.includes("DEVELOPER") ||
+            userRoleNames.includes("SUPER_USER")
+          ) {
+            [
+              "DEVELOPER",
+              "SUPER_USER",
+              "PIMPINAN",
+              "ADMIN_DLH",
+              "DPL",
+              "MPL",
+              "PANITIA_TASKFORCE",
+              "MAHASISWA_KKN",
+              "PETUGAS_RESIDU",
+              "RW",
+              "LURAH",
+              "CAMAT",
+              "WARGA",
+            ].forEach((r) => roleSet.add(r));
+          }
+          return Array.from(roleSet);
+        })(),
       },
     };
+
   }
 
   /**
@@ -792,8 +820,36 @@ export class AuthService {
       streakInfo,
       pendamping,
       pendampingName: pendamping?.name || null,
+      availableRoles: (() => {
+        const userRoleNames = ((user as any).userRoles || []).map((ur: any) => ur.role?.name).filter(Boolean);
+        const roleSet = new Set<string>([roleName, ...userRoleNames]);
+        if (
+          roleName === "DEVELOPER" ||
+          roleName === "SUPER_USER" ||
+          userRoleNames.includes("DEVELOPER") ||
+          userRoleNames.includes("SUPER_USER")
+        ) {
+          [
+            "DEVELOPER",
+            "SUPER_USER",
+            "PIMPINAN",
+            "ADMIN_DLH",
+            "DPL",
+            "MPL",
+            "PANITIA_TASKFORCE",
+            "MAHASISWA_KKN",
+            "PETUGAS_RESIDU",
+            "RW",
+            "LURAH",
+            "CAMAT",
+            "WARGA",
+          ].forEach((r) => roleSet.add(r));
+        }
+        return Array.from(roleSet);
+      })(),
     };
   }
+
 
 
   /**
@@ -1341,6 +1397,100 @@ export class AuthService {
       resetToken,
     };
   }
+
+  /**
+   * Mengganti peran aktif (Active Role Switcher - Opsi A)
+   * Menyimpan peran sebelumnya ke tabel relasi pengguna_peran agar selalu dapat ditukar kembali secara seamless.
+   */
+  async switchRole(userId: string, targetRoleName: string) {
+    const user = await authRepository.findUserById(userId);
+    if (!user) {
+      throw new Error("USER_NOT_FOUND");
+    }
+
+    const currentRoleName = user.role?.name;
+    const cleanTargetRole = String(targetRoleName || "").trim().toUpperCase();
+
+    // 1. Temukan target peran di database
+    const targetRole = await prisma.role.findFirst({
+      where: {
+        OR: [
+          { name: { equals: cleanTargetRole, mode: "insensitive" } },
+          { name: { equals: targetRoleName, mode: "insensitive" } },
+        ],
+      },
+    });
+
+    if (!targetRole) {
+      throw new Error("TARGET_ROLE_NOT_FOUND");
+    }
+
+    // 2. Validasi apakah pengguna berhak beralih ke peran tersebut
+    const isMaster = currentRoleName === "DEVELOPER" || currentRoleName === "SUPER_USER";
+    const userSecondaryRoleNames = ((user as any).userRoles || []).map((ur: any) =>
+      String(ur.role?.name || "").toUpperCase()
+    );
+
+    // Boleh jika: master developer/superuser, atau peran saat ini sama, atau ada di secondary roles
+    const isAllowed =
+      isMaster ||
+      currentRoleName?.toUpperCase() === cleanTargetRole ||
+      userSecondaryRoleNames.includes(cleanTargetRole);
+
+    if (!isAllowed) {
+      throw new Error("ROLE_NOT_PERMITTED");
+    }
+
+    // 3. Jika peran saat ini berbeda, lakukan pertukaran (reversible)
+    if (user.roleId !== targetRole.id) {
+      // Simpan role lama ke junction table jika belum ada
+      if (user.roleId) {
+        await (prisma as any).userRole.upsert({
+          where: {
+            userId_roleId: {
+              userId: user.id,
+              roleId: user.roleId,
+            },
+          },
+          create: {
+            userId: user.id,
+            roleId: user.roleId,
+          },
+          update: {},
+        });
+      }
+
+      // Perbarui peran utama di user
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { roleId: targetRole.id },
+      });
+
+      // Hapus targetRole dari secondary roles karena kini menjadi primary
+      await (prisma as any).userRole.deleteMany({
+        where: {
+          userId: user.id,
+          roleId: targetRole.id,
+        },
+      });
+    }
+
+    // 4. Generate token baru dengan peran target
+    const payload = {
+      userId: user.id,
+      role: targetRole.name,
+      rwId: user.rwId ?? undefined,
+    };
+    const accessToken = generateAccessToken(payload);
+    const updatedUser = await this.getCurrentUser(userId);
+
+    return {
+      accessToken,
+      currentRole: targetRole.name,
+      user: updatedUser,
+    };
+  }
 }
+
 
 export const authService = new AuthService();

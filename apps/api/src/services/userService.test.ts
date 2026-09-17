@@ -135,6 +135,7 @@ describe("UserService", () => {
         studentProfile: null,
         dplKelompok: [],
         petugasResidu: null,
+        petugasProfile: null,
       });
     });
 

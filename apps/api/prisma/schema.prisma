@@ -18,6 +18,7 @@ model Role {
   updatedAt   DateTime     @updatedAt @map("diperbarui_pada")
   users       User[]
   permissions Permission[]
+  userRoles   UserRole[]
 
   @@map("peran")
 }
@@ -39,6 +40,22 @@ model Permission {
   @@unique([roleId, resource])
   @@map("hak_akses")
 }
+
+/**
+ * Tabel junction peran tambahan untuk dukungan Multi-Role akun pengguna (Opsi A)
+ */
+model UserRole {
+  id        Int      @id @default(autoincrement())
+  userId    String   @map("id_pengguna")
+  roleId    Int      @map("id_peran")
+  createdAt DateTime @default(now()) @map("dibuat_pada")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@map("pengguna_peran")
+}
+
 
 // ─────────────────────────────────────────────
 // HIERARKI WILAYAH
@@ -192,6 +209,7 @@ model User {
   reviewedResets        BinResetRequest[]        @relation("ReviewedResets")
   assignedResets        BinResetRequest[]        @relation("ResetRequestPetugas")
   role                  Role?                    @relation(fields: [roleId], references: [id])
+  userRoles             UserRole[]
   rw                    Rw?                      @relation(fields: [rwId], references: [id])
   rt                    Rt?                      @relation(fields: [rtId], references: [id])
   petugasProfile        PetugasResidu?

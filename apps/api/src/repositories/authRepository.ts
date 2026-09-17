@@ -114,6 +114,11 @@ export class AuthRepository {
             },
           },
           petugasProfile: true,
+          userRoles: {
+            include: {
+              role: true,
+            },
+          },
           households: {
             include: {
               rw: {
@@ -131,9 +136,11 @@ export class AuthRepository {
             studentProfile?: any;
             dplKelompok?: any;
             petugasProfile?: any;
+            userRoles?: any[];
             households?: any[];
           })
         | null;
+
 
       return user;
     } catch (error: any) {
@@ -262,6 +269,11 @@ export class AuthRepository {
           },
         },
         petugasProfile: true,
+        userRoles: {
+          include: {
+            role: true,
+          },
+        },
         households: {
           include: {
             rw: {

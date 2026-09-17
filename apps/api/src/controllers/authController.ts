@@ -1324,6 +1324,40 @@ export class AuthController {
       res.status(500).json({ success: false, message: "Gagal menghapus sesi" });
     }
   }
+
+  /**
+   * POST /auth/switch-role
+
+   * Beralih peran aktif pengguna (Opsi A)
+   */
+  async switchRole(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = (req as any).user?.userId || (req as any).user?.id;
+      const { role } = req.body;
+      if (!role) {
+        res.status(400).json({ success: false, message: "Target role harus disertakan" });
+        return;
+      }
+      const result = await authService.switchRole(userId, role);
+      res.status(200).json({
+        success: true,
+        message: `Berhasil beralih ke peran ${result.currentRole}`,
+        data: result,
+      });
+    } catch (err: any) {
+      if (err.message === "TARGET_ROLE_NOT_FOUND") {
+        res.status(404).json({ success: false, message: "Peran target tidak ditemukan di sistem" });
+        return;
+      }
+      if (err.message === "ROLE_NOT_PERMITTED") {
+        res.status(403).json({ success: false, message: "Anda tidak memiliki izin untuk beralih ke peran ini" });
+        return;
+      }
+      console.error("[switchRole]", err);
+      res.status(500).json({ success: false, message: err.message || "Gagal beralih peran" });
+    }
+  }
 }
+
 
 export const authController = new AuthController();

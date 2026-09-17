@@ -571,4 +571,9 @@ router.delete(
   authController.forceLogoutUser
 );
 
+// Active role switch (Opsi A)
+router.post("/switch-role", authMiddleware, authController.switchRole);
+
 export default router;
+
+
