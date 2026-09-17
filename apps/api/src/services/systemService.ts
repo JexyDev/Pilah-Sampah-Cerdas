@@ -147,7 +147,7 @@ export const systemService = {
         image: "/image/kkn-hero-pemilahan.webp",
         badge: "Gerakan Kolaboratif",
         title: "Aksi Pemilahan Sampah Mandiri KKN Tematik UNIKOM 2026",
-        location: "Kecamatan Bojongsoang, Kab. Bandung",
+        location: "Kecamatan Coblong, Kota Bandung",
         metric: "340+ KK Terbina & Terdata",
         highlight: "100% Berbasis Deteksi AI & QR Code",
         isPublished: true,

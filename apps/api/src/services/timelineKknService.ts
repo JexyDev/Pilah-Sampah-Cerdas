@@ -1379,57 +1379,35 @@ export const timelineKknService = {
           : null,
       };
     } catch (error: any) {
-      console.warn(
-        "[timelineKknService.getActiveTimelineMahasiswa] fallback to mock data:",
+      console.error(
+        "[timelineKknService.getActiveTimelineMahasiswa] Database query error:",
         error?.message || error
       );
-      // Fallback mock data jika database offline/belum di-migrate
+      // Safe fallback: kembalikan struktur kosong yang jujur, jangan berhalusinasi dengan mock data fiktif
       return {
         summary: {
-          totalTahapan: 18,
-          totalSelesai: 10,
-          totalSedangBerjalan: 1,
-          totalBelumDimulai: 7,
-          progressPercentage: 56,
-          activeWeek: "Minggu 3",
-          activeFase: "Fase 2 - Pilot Project",
-          activeStageId: "stage-uuid-001",
-          activeStageTitle: "Penerapan sistem bank sampah di 2 RW percontohan",
+          totalTahapan: 0,
+          totalSelesai: 0,
+          totalSedangBerjalan: 0,
+          totalBelumDimulai: 0,
+          progressPercentage: 0,
+          activeWeek: "-",
+          activeFase: "-",
+          activeStageId: null,
+          activeStageTitle: null,
           todayDate: new Date().toISOString(),
         },
         activeFaseSummary: {
-          fase: "Fase 2 - Pilot Project",
-          faseName: "Fase 2 - Pilot Project",
-          totalTahapan: 4,
-          totalStageInFase: 4,
-          totalSelesai: 1,
-          completedStageInFase: 1,
-          totalSedangBerjalan: 1,
-          progressPercentage: 25,
+          fase: "-",
+          faseName: "-",
+          totalTahapan: 0,
+          totalStageInFase: 0,
+          totalSelesai: 0,
+          completedStageInFase: 0,
+          totalSedangBerjalan: 0,
+          progressPercentage: 0,
         },
-        data: {
-          id: "stage-uuid-001",
-          tahapMinggu: "Minggu 3",
-          fase: "Fase 2 - Pilot Project",
-          kegiatanUtama: "Penerapan sistem bank sampah di 2 RW percontohan",
-          tanggal: "15 Agustus - 21 Agustus",
-          status: "SEDANG_BERJALAN",
-          statusPelaksanaan: "SEDANG_BERJALAN",
-          rekomendasiAksi: [
-            "Pastikan 10 warga percontohan sudah mendaftar aplikasi",
-            "Foto tempat sampah terpilah (Organik & Anorganik) yang telah didistribusikan",
-          ],
-          pertanyaanKritis: [
-            "Berapa persen partisipasi warga percontohan minggu ini?",
-            "Apakah ada kendala teknis dalam penggunaan aplikasi oleh warga?",
-          ],
-          tipsSukses: ["Lakukan pembimbingan langsung door-to-door ke rumah warga percontohan."],
-          checklist: ["10 warga percontohan terdaftar", "Wadah sampah terpilah didistribusikan"],
-          indikatorKeberhasilan: [
-            "100% warga percontohan aktif memilah sampah",
-            "Data timbulan sampah harian tercatat di sistem",
-          ],
-        },
+        data: null,
       };
     }
   },

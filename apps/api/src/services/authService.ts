@@ -722,10 +722,14 @@ export class AuthService {
     });
     const totalPoints = userPointsSum._sum.points || 0;
 
-    const resolvedKelurahan =
-      kelurahanName || (roleName === "WARGA" ? "Sadang Serang" : "Coblong");
+    const resolvedKelurahan = kelurahanName || "";
     const resolvedRw =
-      rwName || (user.rwId ? `RW 0${user.rwId}` : roleName === "WARGA" ? "RW 03" : "");
+      rwName ||
+      (user.rwId
+        ? String(user.rwId).startsWith("RW")
+          ? String(user.rwId)
+          : `RW ${String(user.rwId).padStart(2, "0")}`
+        : "");
 
     const lifecycleState = (user as any).lifecycleState || "REGISTERED";
 
@@ -752,27 +756,20 @@ export class AuthService {
       pointKkn: totalPoints,
       contributionPoints: totalPoints,
       nim: studentProfile?.nim || null,
-      jurusan:
-        studentProfile?.jurusan ||
-        (roleName === "MAHASISWA_KKN" ? "Teknik Informatika" : null),
-      programStudi:
-        studentProfile?.jurusan ||
-        (roleName === "MAHASISWA_KKN" ? "Teknik Informatika" : null),
-      fakultas:
-        studentProfile?.fakultas ||
-        (roleName === "MAHASISWA_KKN" ? "Fakultas Teknik & Ilmu Komputer" : null),
+      jurusan: studentProfile?.jurusan || null,
+      programStudi: studentProfile?.jurusan || null,
+      fakultas: studentProfile?.fakultas || null,
       kelompokId: studentProfile?.kelompok?.id || null,
-      kelompokName:
-        studentProfile?.kelompok?.name ||
-        (roleName === "MAHASISWA_KKN" ? "Kelompok KKN 01" : null),
+      kelompokName: studentProfile?.kelompok?.name || null,
       poskoKkn:
+        studentProfile?.kelompok?.poskoKkn?.nama ||
         studentProfile?.kelompok?.name ||
-        studentProfile?.assignedRw?.name ||
-        (roleName === "MAHASISWA_KKN" ? `Posko Kel. ${resolvedKelurahan}` : null),
+        (studentProfile?.assignedRw?.name ? `RW ${studentProfile.assignedRw.name}` : null) ||
+        (roleName === "MAHASISWA_KKN" ? (resolvedKelurahan ? `Posko Kel. ${resolvedKelurahan}` : "Posko KKN") : null),
       poskoName:
         studentProfile?.kelompok?.name ||
         studentProfile?.assignedRw?.name ||
-        (roleName === "MAHASISWA_KKN" ? `Posko Kel. ${resolvedKelurahan}` : null),
+        (roleName === "MAHASISWA_KKN" ? (resolvedKelurahan ? `Posko Kel. ${resolvedKelurahan}` : "Posko KKN") : null),
       wilayahKkn: resolvedRw
         ? `${resolvedRw}, Kel. ${resolvedKelurahan}`
         : resolvedKelurahan
