@@ -2217,11 +2217,10 @@ export const penilaianKknService = {
 
       const dplAspects = [
         { score: currentSkorDplPerencanaan, weight: 20 },
-        { score: currentSkorDplKontribusi, weight: 10 },
+        { score: currentSkorDplKontribusi, weight: 20 },
         { score: resolvedSkorLogbook, weight: 20 },
         { score: currentSkorDplAnalisis, weight: 20 },
         { score: currentSkorDplOutput, weight: 20 },
-        { score: resolvedSkorLaporan, weight: 10 },
       ];
 
       const mitraAspects = [
@@ -2249,8 +2248,7 @@ export const penilaianKknService = {
         currentSkorDplKontribusi > 0 &&
         resolvedSkorLogbook > 0 &&
         currentSkorDplAnalisis > 0 &&
-        currentSkorDplOutput > 0 &&
-        resolvedSkorLaporan > 0;
+        currentSkorDplOutput > 0;
 
       const hasMitraAll =
         resolvedSkorMitraKehadiran > 0 &&
@@ -2270,7 +2268,9 @@ export const penilaianKknService = {
         effectiveSubtotalDpl,
         bobotMplPersen,
         bobotDplPersen,
-        true
+        true,
+        resolvedSkorLaporan,
+        bobotLaporanPersen
       );
 
       const kategoriNilai = calculateGradeCategory(nilaiAkhir, {
