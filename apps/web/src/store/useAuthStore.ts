@@ -63,6 +63,7 @@ export interface User {
   address?: string;
   rtRwId?: number;
   availableRoles?: string[];
+  rootRole?: string;
 }
 
 
@@ -352,6 +353,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         address: backendUser.address,
         rtRwId: backendUser.rtRwId,
         availableRoles: backendUser.availableRoles || [normalizedRole],
+        rootRole: backendUser.rootRole,
         ...avatarConfig,
       };
 
@@ -431,6 +433,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         phone: backendUser.phone,
         address: backendUser.address,
         rtRwId: backendUser.rtRwId,
+        availableRoles: backendUser.availableRoles || [normalizedRole],
+        rootRole: backendUser.rootRole,
         ...avatarConfig,
       };
 
@@ -478,6 +482,74 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       setStoredItem("psc_user", JSON.stringify(updatedUser), remember);
       return { user: updatedUser };
     });
+  },
+
+  switchRole: async (targetRole: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const res = await api.post("/auth/switch-role", { role: targetRole });
+      const payload = res.data?.data;
+      if (!payload || !payload.accessToken) {
+        throw new Error(res.data?.message || "Gagal beralih peran");
+      }
+
+      const { accessToken, user: backendUser } = payload;
+      const normalizedRole = normalizeRole(backendUser.peran || backendUser.role || targetRole);
+
+      // Simpan access token baru
+      const remember = localStorage.getItem("psc_remember_me") === "1";
+      setStoredItem("psc_access_token", accessToken, remember);
+
+      const avatarConfig = getAvatarConfig(normalizedRole);
+      const currentUser = get().user;
+
+      // Pertahankan rootRole agar identitas hak master tidak hilang saat beralih ke peran turunan
+      const rootRole =
+        backendUser.rootRole ||
+        currentUser?.rootRole ||
+        (["DEVELOPER"].includes(currentUser?.peran || "") ? "DEVELOPER" : undefined) ||
+        (["SUPER_USER"].includes(currentUser?.peran || "") ? "SUPER_USER" : undefined);
+
+      const user: User = {
+        id: backendUser.id,
+        name: backendUser.name,
+        email: backendUser.email,
+        peran: normalizedRole,
+        role: backendUser.role || normalizedRole,
+        rootRole,
+        wilayah:
+          ["PIMPINAN", "DEVELOPER", "SUPER_USER", "ADMIN_DLH"].includes(normalizedRole)
+            ? "Semua Wilayah"
+            : backendUser.wilayah ||
+              getWilayahByRole(
+                normalizedRole,
+                backendUser.kelurahan,
+                backendUser.kecamatan,
+                backendUser.rw
+              ),
+        kelurahan: backendUser.kelurahan,
+        kecamatan: backendUser.kecamatan || "",
+        rw: backendUser.rw,
+        dplKelompok: backendUser.dplKelompok,
+        avatar: computeAvatarInitials(backendUser.name),
+        fotoProfil: backendUser.fotoProfil,
+        phone: backendUser.phone,
+        address: backendUser.address,
+        rtRwId: backendUser.rtRwId,
+        availableRoles: backendUser.availableRoles || currentUser?.availableRoles || [normalizedRole],
+        ...avatarConfig,
+      };
+
+      setStoredItem("psc_user", JSON.stringify(user), remember);
+      set({ user, isAuthenticated: true, isLoading: false, error: null });
+      useThemeStore.getState().initTheme();
+      await get().fetchPermissions().catch(() => {});
+      return true;
+    } catch (err: any) {
+      const message = err?.response?.data?.message || err?.message || "Gagal beralih peran";
+      set({ isLoading: false, error: message });
+      throw new Error(message);
+    }
   },
 
   fetchPermissions: async () => {

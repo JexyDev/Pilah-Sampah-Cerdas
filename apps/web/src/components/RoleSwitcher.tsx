@@ -65,32 +65,52 @@ export const RoleSwitcher: React.FC = () => {
   if (!user) return null;
 
   const currentRole = (user.peran || (user as any).role || "").toUpperCase();
-  const isMaster = currentRole === "DEVELOPER" || currentRole === "SUPER_USER";
+  const rawRoles = (user.availableRoles || []).map((r) => r.toUpperCase());
+  const rootRole = ((user as any).rootRole || "").toUpperCase();
 
-  // Ambil daftar peran yang tersedia
-  let availableRoles = user.availableRoles || [];
-  if (availableRoles.length === 0) {
-    availableRoles = [currentRole];
-  }
+  const isDeveloper =
+    rootRole === "DEVELOPER" ||
+    currentRole === "DEVELOPER" ||
+    rawRoles.includes("DEVELOPER");
 
-  // Jika master developer / super user, izinkan switch ke semua peran operasional
-  if (isMaster) {
-    const standardRoles = [
-      "DEVELOPER",
-      "SUPER_USER",
-      "PIMPINAN",
-      "ADMIN_DLH",
-      "DPL",
-      "MPL",
-      "PANITIA_TASKFORCE",
-      "MAHASISWA_KKN",
-      "PETUGAS_RESIDU",
-      "RW",
-      "LURAH",
-      "CAMAT",
-      "WARGA",
-    ];
-    availableRoles = Array.from(new Set([...availableRoles, ...standardRoles]));
+  const isSuperUser =
+    !isDeveloper &&
+    (rootRole === "SUPER_USER" ||
+      currentRole === "SUPER_USER" ||
+      rawRoles.includes("SUPER_USER"));
+
+  const isMaster = isDeveloper || isSuperUser;
+
+  // FITUR KHUSUS SU DAN DEVELOPER: Jika bukan master, sembunyikan switcher
+  if (!isMaster && rawRoles.length <= 1) return null;
+
+  // 13 Peran Terstandarisasi Berseka
+  const ALL_13_ROLES = [
+    "DEVELOPER",
+    "SUPER_USER",
+    "PIMPINAN",
+    "ADMIN_DLH",
+    "DPL",
+    "MPL",
+    "PANITIA_TASKFORCE",
+    "MAHASISWA_KKN",
+    "PETUGAS_RESIDU",
+    "RW",
+    "LURAH",
+    "CAMAT",
+    "WARGA",
+  ];
+
+  let availableRoles: string[] = [];
+  if (isDeveloper) {
+    // Developer berhak atas seluruh 13 peran
+    availableRoles = ALL_13_ROLES;
+  } else if (isSuperUser) {
+    // Super User HANYA boleh beralih ke perannya dan peran di bawahnya (12 peran).
+    // SU DILARANG KERAS MASUK / MELIHAT DEVELOPER!
+    availableRoles = ALL_13_ROLES.filter((r) => r !== "DEVELOPER");
+  } else {
+    availableRoles = rawRoles;
   }
 
   // Hanya tampilkan switcher jika ada lebih dari 1 peran yang tersedia
@@ -112,8 +132,12 @@ export const RoleSwitcher: React.FC = () => {
         setIsOpen(false);
         // Refresh navigasi ke dasbor role terkait
         if (targetRole === "DPL") {
-          navigate("/pelaksanaan/kelompok");
+          navigate("/dashboard-dpl");
         } else if (targetRole === "MPL") {
+          navigate("/dashboard-mpl");
+        } else if (targetRole === "MAHASISWA_KKN") {
+          navigate("/dasbor?tab=kkn");
+        } else if (["ADMIN_DLH", "PIMPINAN", "PEMIMPIN", "CAMAT", "LURAH", "RW"].includes(targetRole)) {
           navigate("/dasbor");
         } else {
           navigate("/dasbor?tab=kkn");

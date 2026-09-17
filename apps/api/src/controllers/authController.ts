@@ -1349,6 +1349,10 @@ export class AuthController {
         res.status(404).json({ success: false, message: "Peran target tidak ditemukan di sistem" });
         return;
       }
+      if (err.message === "SUPER_USER_CANNOT_ACCESS_DEVELOPER") {
+        res.status(403).json({ success: false, message: "Super Admin tidak diizinkan beralih ke peran Developer" });
+        return;
+      }
       if (err.message === "ROLE_NOT_PERMITTED") {
         res.status(403).json({ success: false, message: "Anda tidak memiliki izin untuk beralih ke peran ini" });
         return;

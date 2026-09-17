@@ -682,6 +682,33 @@ export async function getKelompokWhere(dplUserId: string, role?: any) {
   // Pastikan relasi database strict by dplId tersinkronisasi
   await ensureDplKelompokRelation(dplUserId);
 
+  // Cek apakah DPL memiliki relasi kelompok terikat di database
+  const linkedCount = await prisma.kelompokKkn.count({
+    where: {
+      OR: [{ dplId: dplUserId }, { dpl: { id: dplUserId } }],
+    },
+  });
+
+  if (linkedCount > 0) {
+    // Tampilkan kelompok binaan milik DPL tersebut ("sesuai yang dia punya")
+    return {
+      OR: [{ dplId: dplUserId }, { dpl: { id: dplUserId } }],
+    };
+  }
+
+  // Fallback untuk Master (Super User / Developer) yang beralih peran ke DPL tetapi belum terikat kelompok khusus:
+  // Berikan akses pengawasan menyeluruh (all groups) agar tidak terjadi layar kosong (0 kelompok).
+  const masterUserRole = await (prisma as any).userRole.findFirst({
+    where: {
+      userId: dplUserId,
+      role: { name: { in: ["SUPER_USER", "DEVELOPER"] } },
+    },
+  });
+
+  if (masterUserRole) {
+    return {};
+  }
+
   // Relasi strict by ID: kelompok milik DPL ini
   return {
     OR: [{ dplId: dplUserId }, { dpl: { id: dplUserId } }],

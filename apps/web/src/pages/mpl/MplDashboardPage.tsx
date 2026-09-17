@@ -433,10 +433,10 @@ const MplDashboardPage: React.FC = () => {
           </div>
           <div>
             <h1 className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
-              Portal Mitra Pembimbing Lapangan
+              Dashboard & Portal Mitra Pembimbing Lapangan (MPL)
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Pemantauan program kerja, kehadiran, dan penilaian mahasiswa KKN binaan Mitra.
+              Pusat terpadu pemantauan wilayah binaan, program kerja, monitoring kehadiran, dan penilaian mitra KKN.
             </p>
           </div>
         </div>

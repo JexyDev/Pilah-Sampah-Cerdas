@@ -283,16 +283,19 @@ export class AuthService {
         assignedZone:
           anyUser.petugasProfile?.assignedZone ||
           (rwName ? `${rwName}, Kel. ${kelurahanName || "Coblong"}` : "Kecamatan Coblong"),
+        rootRole: (() => {
+          const userRoleNames = (anyUser.userRoles || []).map((ur: any) => ur.role?.name).filter(Boolean);
+          if (userRoleName === "DEVELOPER" || userRoleNames.includes("DEVELOPER")) return "DEVELOPER";
+          if (userRoleName === "SUPER_USER" || userRoleNames.includes("SUPER_USER")) return "SUPER_USER";
+          return null;
+        })(),
         availableRoles: (() => {
           const userRoleNames = (anyUser.userRoles || []).map((ur: any) => ur.role?.name).filter(Boolean);
-          const roleSet = new Set<string>([userRoleName, ...userRoleNames]);
-          if (
-            userRoleName === "DEVELOPER" ||
-            userRoleName === "SUPER_USER" ||
-            userRoleNames.includes("DEVELOPER") ||
-            userRoleNames.includes("SUPER_USER")
-          ) {
-            [
+          const isDeveloper = userRoleName === "DEVELOPER" || userRoleNames.includes("DEVELOPER");
+          const isSuperUser = !isDeveloper && (userRoleName === "SUPER_USER" || userRoleNames.includes("SUPER_USER"));
+
+          if (isDeveloper) {
+            return [
               "DEVELOPER",
               "SUPER_USER",
               "PIMPINAN",
@@ -306,9 +309,29 @@ export class AuthService {
               "LURAH",
               "CAMAT",
               "WARGA",
-            ].forEach((r) => roleSet.add(r));
+            ];
           }
-          return Array.from(roleSet);
+
+          if (isSuperUser) {
+            // Super User HANYA boleh beralih ke perannya dan peran di bawahnya (12 peran).
+            // SU DILARANG KERAS MASUK / MELIHAT DEVELOPER!
+            return [
+              "SUPER_USER",
+              "PIMPINAN",
+              "ADMIN_DLH",
+              "DPL",
+              "MPL",
+              "PANITIA_TASKFORCE",
+              "MAHASISWA_KKN",
+              "PETUGAS_RESIDU",
+              "RW",
+              "LURAH",
+              "CAMAT",
+              "WARGA",
+            ];
+          }
+
+          return Array.from(new Set<string>([userRoleName, ...userRoleNames]));
         })(),
       },
     };
@@ -820,16 +843,19 @@ export class AuthService {
       streakInfo,
       pendamping,
       pendampingName: pendamping?.name || null,
+      rootRole: (() => {
+        const userRoleNames = ((user as any).userRoles || []).map((ur: any) => ur.role?.name).filter(Boolean);
+        if (roleName === "DEVELOPER" || userRoleNames.includes("DEVELOPER")) return "DEVELOPER";
+        if (roleName === "SUPER_USER" || userRoleNames.includes("SUPER_USER")) return "SUPER_USER";
+        return null;
+      })(),
       availableRoles: (() => {
         const userRoleNames = ((user as any).userRoles || []).map((ur: any) => ur.role?.name).filter(Boolean);
-        const roleSet = new Set<string>([roleName, ...userRoleNames]);
-        if (
-          roleName === "DEVELOPER" ||
-          roleName === "SUPER_USER" ||
-          userRoleNames.includes("DEVELOPER") ||
-          userRoleNames.includes("SUPER_USER")
-        ) {
-          [
+        const isDeveloper = roleName === "DEVELOPER" || userRoleNames.includes("DEVELOPER");
+        const isSuperUser = !isDeveloper && (roleName === "SUPER_USER" || userRoleNames.includes("SUPER_USER"));
+
+        if (isDeveloper) {
+          return [
             "DEVELOPER",
             "SUPER_USER",
             "PIMPINAN",
@@ -843,9 +869,29 @@ export class AuthService {
             "LURAH",
             "CAMAT",
             "WARGA",
-          ].forEach((r) => roleSet.add(r));
+          ];
         }
-        return Array.from(roleSet);
+
+        if (isSuperUser) {
+          // Super User HANYA boleh beralih ke perannya dan peran di bawahnya (12 peran).
+          // SU DILARANG KERAS MASUK / MELIHAT DEVELOPER!
+          return [
+            "SUPER_USER",
+            "PIMPINAN",
+            "ADMIN_DLH",
+            "DPL",
+            "MPL",
+            "PANITIA_TASKFORCE",
+            "MAHASISWA_KKN",
+            "PETUGAS_RESIDU",
+            "RW",
+            "LURAH",
+            "CAMAT",
+            "WARGA",
+          ];
+        }
+
+        return Array.from(new Set<string>([roleName, ...userRoleNames]));
       })(),
     };
   }
@@ -1411,13 +1457,28 @@ export class AuthService {
     const currentRoleName = user.role?.name;
     const cleanTargetRole = String(targetRoleName || "").trim().toUpperCase();
 
+    // Mapping alias peran agar input dari frontend cocok dengan nama di tabel 'peran'
+    const roleAliases: Record<string, string[]> = {
+      PIMPINAN: ["PEMIMPIN", "PIMPINAN"],
+      PEMIMPIN: ["PEMIMPIN", "PIMPINAN"],
+      DPL: ["DPL", "DOSEN_PEMBIMBING"],
+      DOSEN_PEMBIMBING: ["DPL", "DOSEN_PEMBIMBING"],
+      MPL: ["MPL", "MITRA_PEMBIMBING_LAPANGAN"],
+      MITRA_PEMBIMBING_LAPANGAN: ["MPL", "MITRA_PEMBIMBING_LAPANGAN"],
+      PANITIA_TASKFORCE: ["PANITIA_TASKFORCE", "TASK_FORCE", "TASKFORCE"],
+      TASK_FORCE: ["PANITIA_TASKFORCE", "TASK_FORCE", "TASKFORCE"],
+      ADMIN_DLH: ["ADMIN_DLH", "DLH"],
+      PETUGAS_RESIDU: ["PETUGAS_RESIDU", "PETUGAS_PEMILAH"],
+    };
+
+    const candidateNames = roleAliases[cleanTargetRole] || [cleanTargetRole];
+
     // 1. Temukan target peran di database
     const targetRole = await prisma.role.findFirst({
       where: {
-        OR: [
-          { name: { equals: cleanTargetRole, mode: "insensitive" } },
-          { name: { equals: targetRoleName, mode: "insensitive" } },
-        ],
+        OR: candidateNames.flatMap((name) => [
+          { name: { equals: name, mode: "insensitive" } },
+        ]),
       },
     });
 
@@ -1426,19 +1487,27 @@ export class AuthService {
     }
 
     // 2. Validasi apakah pengguna berhak beralih ke peran tersebut
-    const isMaster = currentRoleName === "DEVELOPER" || currentRoleName === "SUPER_USER";
-    const userSecondaryRoleNames = ((user as any).userRoles || []).map((ur: any) =>
+    const userRoleNames = ((user as any).userRoles || []).map((ur: any) =>
       String(ur.role?.name || "").toUpperCase()
     );
+    const allKnownRoles = new Set<string>([
+      String(currentRoleName || "").toUpperCase(),
+      ...userRoleNames,
+    ]);
 
-    // Boleh jika: master developer/superuser, atau peran saat ini sama, atau ada di secondary roles
-    const isAllowed =
-      isMaster ||
-      currentRoleName?.toUpperCase() === cleanTargetRole ||
-      userSecondaryRoleNames.includes(cleanTargetRole);
+    const isDeveloper = allKnownRoles.has("DEVELOPER");
+    const isSuperUser = allKnownRoles.has("SUPER_USER");
 
-    if (!isAllowed) {
-      throw new Error("ROLE_NOT_PERMITTED");
+    // Validasi: Fitur switcher hierarkis khusus SU dan Developer
+    if (!isDeveloper && !isSuperUser) {
+      if (!allKnownRoles.has(cleanTargetRole) && !candidateNames.some((c) => allKnownRoles.has(c))) {
+        throw new Error("ROLE_NOT_PERMITTED");
+      }
+    }
+
+    // ATURAN MUTLAK HIERARKI: Super User DILARANG KERAS beralih ke Developer!
+    if (targetRole.name.toUpperCase() === "DEVELOPER" && !isDeveloper) {
+      throw new Error("SUPER_USER_CANNOT_ACCESS_DEVELOPER");
     }
 
     // 3. Jika peran saat ini berbeda, lakukan pertukaran (reversible)
