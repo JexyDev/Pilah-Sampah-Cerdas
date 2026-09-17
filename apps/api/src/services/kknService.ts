@@ -390,7 +390,7 @@ export class KknService {
                     ? {
                         kelurahan: {
                           name: {
-                            contains: studentProfile.kelompok.kelurahan,
+                            equals: studentProfile.kelompok.kelurahan,
                             mode: "insensitive",
                           },
                         },
@@ -421,6 +421,9 @@ export class KknService {
       }
       const groupStudentUserIds =
         studentProfile?.kelompok?.students?.map((s: any) => s.userId).filter(Boolean) || [];
+      if (!groupStudentUserIds.includes(kknUserId)) {
+        groupStudentUserIds.push(kknUserId);
+      }
       if (groupStudentUserIds.length > 0) {
         ownershipConditions.push({ registeredByStudentId: { in: groupStudentUserIds } });
       }
@@ -442,23 +445,33 @@ export class KknService {
         );
       }
 
-      // 3. Kunci Kelurahan Secara Eksplisit (Super Strict)
+      // 3. Kunci Kelurahan Secara Eksplisit (Super Strict dengan 'equals')
       const kelurahanCondition = studentProfile?.kelompok?.kelurahan
         ? {
             rw: {
               kelurahan: {
-                name: { contains: studentProfile.kelompok.kelurahan, mode: "insensitive" },
+                name: { equals: studentProfile.kelompok.kelurahan, mode: "insensitive" },
               },
             },
           }
         : {};
 
-      // 4. GABUNGKAN SECARA STRICT (AND)
+      // 4. GABUNGKAN SECARA STRICT (AND) DENGAN ISOLASI TOTAL KELOMPOK
       whereBin = {
         AND: [
           { OR: ownershipConditions },
           ...(wilayahConditions.length > 0 ? [{ OR: wilayahConditions }] : []),
           ...(studentProfile?.kelompok?.kelurahan ? [kelurahanCondition] : []),
+          ...(studentProfile?.kelompokId
+            ? [
+                {
+                  OR: [
+                    { kelompokId: studentProfile.kelompokId },
+                    { registeredByStudentId: { in: groupStudentUserIds } },
+                  ],
+                },
+              ]
+            : []),
         ],
       };
     }
@@ -855,6 +868,15 @@ export class KknService {
 
         const hasDefinedScope =
           Boolean(studentRwId) || Boolean(studentKelurahanName) || Boolean(student.kelompokId);
+
+        const foreignBinExists =
+          student.kelompokId &&
+          (warga.binOwnerships?.some((bo: any) => bo.bin?.kelompokId && bo.bin.kelompokId !== student.kelompokId) ||
+           warga.bins?.some((b: any) => b.kelompokId && b.kelompokId !== student.kelompokId));
+
+        if (foreignBinExists) {
+          throw new Error("FORBIDDEN_SCOPE");
+        }
 
         if (hasDefinedScope && wargaHasLocation) {
           const isScoped =
@@ -2039,7 +2061,21 @@ export class KknService {
   }
 
   async claimQr(kknUserId: string, qrCode: string, latitude?: number, longitude?: number) {
+    let student: any = null;
+    if (kknUserId) {
+      student = await prisma.studentKkn.findUnique({
+        where: { userId: kknUserId },
+        select: { kelompokId: true },
+      });
+    }
+
     let bin = await prisma.bin.findUnique({ where: { qrCode } });
+
+    if (bin && bin.kelompokId && student?.kelompokId && bin.kelompokId !== student.kelompokId) {
+      throw new Error(
+        `Tempat sampah ${bin.qrCode} bukan milik kelompok KKN Anda dan tidak dapat diklaim.`
+      );
+    }
 
     if (!bin) {
       let category = await prisma.wasteCategory.findFirst({ where: { name: "ORGANIC" } });
@@ -2051,6 +2087,7 @@ export class KknService {
           status: "ASSIGNED_TO_PIC",
           categoryId: category?.id,
           registeredByStudentId: kknUserId,
+          kelompokId: student?.kelompokId || null,
         },
       });
     } else {
@@ -2059,6 +2096,7 @@ export class KknService {
         data: {
           status: "ASSIGNED_TO_PIC",
           registeredByStudentId: kknUserId,
+          ...(bin.kelompokId ? {} : student?.kelompokId ? { kelompokId: student.kelompokId } : {}),
         },
       });
     }
@@ -2102,12 +2140,15 @@ export class KknService {
         }
       }
 
-      if (!resolvedRwId && kknUserId) {
-        const student = await tx.studentKkn.findUnique({
+      let student: any = null;
+      if (kknUserId) {
+        student = await tx.studentKkn.findUnique({
           where: { userId: kknUserId },
           include: { user: true },
         });
-        resolvedRwId = student?.assignedRwId || student?.user?.rwId || undefined;
+        if (!resolvedRwId) {
+          resolvedRwId = student?.assignedRwId || student?.user?.rwId || undefined;
+        }
       }
 
       if (!warga) {
@@ -2211,6 +2252,7 @@ export class KknService {
               longitude: lngVal,
               maxCapacityLiter,
               registeredByStudentId: kknUserId,
+              kelompokId: student?.kelompokId || null,
             },
           });
         } else {
@@ -2225,6 +2267,13 @@ export class KknService {
             );
           }
 
+          // Guard: reject if bin already registered by another kelompok
+          if (bin.kelompokId && student?.kelompokId && bin.kelompokId !== student.kelompokId) {
+            throw new Error(
+              `Tempat sampah ${bin.qrCode} bukan milik kelompok KKN Anda dan tidak dapat didaftarkan.`
+            );
+          }
+
           bin = await tx.bin.update({
             where: { id: bin.id },
             data: {
@@ -2235,6 +2284,7 @@ export class KknService {
               status: "ACTIVE_BOUND",
               maxCapacityLiter,
               registeredByStudentId: kknUserId,
+              ...(bin.kelompokId ? {} : student?.kelompokId ? { kelompokId: student.kelompokId } : {}),
             },
           });
         }
