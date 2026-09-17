@@ -26,6 +26,7 @@ vi.mock("../lib/prisma.js", () => {
       },
       bin: {
         findMany: vi.fn().mockResolvedValue([]),
+        count: vi.fn().mockResolvedValue(0),
       },
       pointHistory: {
         findFirst: vi.fn().mockResolvedValue(null),
@@ -282,8 +283,8 @@ describe("KKN Gamification Logic & Fixes", () => {
   });
 
   describe("2. calculateGroupPoints & calculateDplPoints (Official 60:40 Formulas - Jalur Akademik On-The-Fly)", () => {
-    it("should calculate Poin Kelompok with 60% Proker (Only Selesai Count * 6) + 40% Rata-rata Anggota", async () => {
-      // 2 proker disetujui (0), 2 sedang berlangsung (0), 2 selesai (2 * 6 = 12 poin proker akademik)
+    it("should calculate Poin Kelompok with 60% Proker (Sequential/Bertahap: Disetujui +2, Berjalan +4, Selesai +6) + 40% Rata-rata Anggota", async () => {
+      // 2 proker disetujui (2*2=4), 2 sedang berlangsung (2*4=8), 2 selesai (2*6=12) = 24 poin proker
       const mockProkers = [
         { id: "p1", statusUsulan: "DISETUJUI", statusPelaksanaan: "BELUM_MULAI" },
         { id: "p2", statusUsulan: "DISETUJUI", statusPelaksanaan: "BELUM_MULAI" },
@@ -301,18 +302,20 @@ describe("KKN Gamification Logic & Fixes", () => {
 
       const res = await calculateGroupPoints("kel-1", mockProkers, ["user-1"]);
 
-      // Proker belum selesai bernilai 0, hanya 2 proker selesai * 6 = 12 poin proker
-      expect(res.poinProker).toBe(12);
+      // Proker dihitung bertahap: (2*2) + (2*4) + (2*6) = 4 + 8 + 12 = 24 poin proker
+      expect(res.poinProker).toBe(24);
+      expect(res.prokerApprovedCount).toBe(6);
+      expect(res.prokerSedangBerjalanCount).toBe(2);
       expect(res.prokerSelesaiCount).toBe(2);
       expect(res.rataRataPoinAnggota).toBe(4);
-      // Rumus: (12 * 0.6) + (4 * 0.4) = 7.2 + 1.6 = 8.8
-      expect(res.totalGroupPoints).toBe(8.8);
+      // Rumus: (24 * 0.6) + (4 * 0.4) = 14.4 + 1.6 = 16
+      expect(res.totalGroupPoints).toBe(16);
     });
 
-    it("should count only completed prokers (SELESAI) as +6 points and count uncompleted (BELUM_MULAI/SEDANG_BERJALAN) as 0", async () => {
+    it("should calculate progressive proker points: BELUM_MULAI (+2), SEDANG_BERJALAN (+4), SELESAI (+6), and DITOLAK (0)", async () => {
       const mockProkers = [
-        { id: "p1", statusUsulan: "BELUM_DISETUJUI", statusPelaksanaan: "BELUM_MULAI" }, // 0
-        { id: "p2", statusUsulan: "BELUM_DISETUJUI", statusPelaksanaan: "SEDANG_BERJALAN" }, // 0
+        { id: "p1", statusUsulan: "BELUM_DISETUJUI", statusPelaksanaan: "BELUM_MULAI" }, // +2
+        { id: "p2", statusUsulan: "BELUM_DISETUJUI", statusPelaksanaan: "SEDANG_BERJALAN" }, // +4
         { id: "p3", statusUsulan: "DITOLAK", statusPelaksanaan: "BELUM_MULAI" }, // 0
         { id: "p4", statusUsulan: "DISETUJUI", statusPelaksanaan: "SELESAI" }, // +6
       ];
@@ -321,13 +324,13 @@ describe("KKN Gamification Logic & Fixes", () => {
 
       const res = await calculateGroupPoints("kel-1", mockProkers, ["user-1"]);
 
-      // Hanya p4 yang selesai = 6 poin proker akademik
-      expect(res.poinProker).toBe(6);
+      // Total poin proker: 2 + 4 + 0 + 6 = 12 poin
+      expect(res.poinProker).toBe(12);
       expect(res.prokerApprovedCount).toBe(3);
       expect(res.prokerSedangBerjalanCount).toBe(1);
       expect(res.prokerSelesaiCount).toBe(1);
-      // (6 * 0.6) + (0 * 0.4) = 3.6
-      expect(res.totalGroupPoints).toBe(3.6);
+      // (12 * 0.6) + (0 * 0.4) = 7.2
+      expect(res.totalGroupPoints).toBe(7.2);
     });
 
     it("should calculate cumulative member average without dividing by totalActiveDays (growing points over time)", async () => {
@@ -482,6 +485,97 @@ describe("KKN Gamification Logic & Fixes", () => {
           }),
         })
       );
+    });
+  });
+
+  describe("6. Real-time Proker Recalculation & Dashboard Field Separation", () => {
+    it("should recalculate totalGroupPoints sequentially as proker moves: Diajukan -> Berjalan -> Selesai", async () => {
+      // 1 proker progressing, with 2 students having 10 cumulative points (avg = 5 pts)
+      vi.mocked(prisma.pointHistory.findMany).mockResolvedValue([
+        { userId: "user-1", points: 5, createdAt: new Date() } as any,
+        { userId: "user-2", points: 5, createdAt: new Date() } as any,
+      ]);
+
+      // Stage 1: Diajukan (+2)
+      const stage1Prokers = [
+        { id: "p1", statusUsulan: "BELUM_DISETUJUI", statusPelaksanaan: "BELUM_MULAI" },
+      ];
+      const resStage1 = await calculateGroupPoints("kel-1", stage1Prokers, ["user-1", "user-2"]);
+      expect(resStage1.poinProker).toBe(2);
+      expect(resStage1.rataRataPoinAnggota).toBe(5);
+      // (2 * 0.6) + (5 * 0.4) = 1.2 + 2 = 3.2
+      expect(resStage1.totalGroupPoints).toBe(3.2);
+
+      // Stage 2: Berjalan (+4)
+      const stage2Prokers = [
+        { id: "p1", statusUsulan: "DISETUJUI", statusPelaksanaan: "SEDANG_BERJALAN" },
+      ];
+      const resStage2 = await calculateGroupPoints("kel-1", stage2Prokers, ["user-1", "user-2"]);
+      expect(resStage2.poinProker).toBe(4);
+      // (4 * 0.6) + (5 * 0.4) = 2.4 + 2 = 4.4
+      expect(resStage2.totalGroupPoints).toBe(4.4);
+
+      // Stage 3: Selesai (+6)
+      const stage3Prokers = [
+        { id: "p1", statusUsulan: "DISETUJUI", statusPelaksanaan: "SELESAI" },
+      ];
+      const resStage3 = await calculateGroupPoints("kel-1", stage3Prokers, ["user-1", "user-2"]);
+      expect(resStage3.poinProker).toBe(6);
+      // (6 * 0.6) + (5 * 0.4) = 3.6 + 2 = 5.6
+      expect(resStage3.totalGroupPoints).toBe(5.6);
+    });
+
+    it("should return separated metrics in getDashboardStats (personalPoints vs totalGroupPoints/poinProker)", async () => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({
+        id: "mhs-dash-1",
+        role: { name: "MAHASISWA_KKN" },
+      } as any);
+
+      vi.mocked(prisma.studentKkn.findUnique).mockResolvedValue({
+        id: "std-1",
+        userId: "mhs-dash-1",
+        nim: "12345678",
+        kelompokId: "kel-dash-1",
+        assignedRw: { id: 1, name: "RW 01", latitude: -6.89, longitude: 107.61 },
+      } as any);
+
+      vi.mocked(prisma.bin.count).mockResolvedValue(5);
+
+      // Point history for student: Presensi 4 + Durasi 3 + Logbook 3 = 10
+      vi.mocked(prisma.pointHistory.findMany).mockResolvedValue([
+        { userId: "mhs-dash-1", points: 4, kategori: "KKN_PRESENSI_HADIR", createdAt: new Date() } as any,
+        { userId: "mhs-dash-1", points: 3, kategori: "KKN_DURASI_MEMENUHI", createdAt: new Date() } as any,
+        { userId: "mhs-dash-1", points: 3, kategori: "KKN_LOGBOOK_HARIAN", createdAt: new Date() } as any,
+      ]);
+
+      // Prokers in kelompok
+      vi.mocked(prisma.programKerjaKkn.findMany).mockResolvedValue([
+        { id: "prk-1", statusUsulan: "DISETUJUI", statusPelaksanaan: "SEDANG_BERJALAN" } as any,
+      ]);
+
+      vi.mocked(prisma.studentKkn.findMany).mockResolvedValue([
+        { userId: "mhs-dash-1" } as any,
+      ]);
+
+      const dashboard = await kknService.getDashboardStats("mhs-dash-1");
+
+      expect(dashboard).toHaveProperty("stats");
+      // Personal points
+      expect(dashboard.stats.personalPoints).toBe(10);
+      expect(dashboard.stats.contributionPoints).toBe(10);
+      // Group points separated
+      expect(dashboard.stats).toHaveProperty("totalGroupPoints");
+      expect(dashboard.stats).toHaveProperty("poinKelompok");
+      expect(dashboard.stats).toHaveProperty("poinProker");
+      expect(dashboard.stats).toHaveProperty("rataRataPoinAnggota");
+
+      // poinProker for 1 SEDANG_BERJALAN = 4
+      expect(dashboard.stats.poinProker).toBe(4);
+      // rataRataPoinAnggota = 10
+      expect(dashboard.stats.rataRataPoinAnggota).toBe(10);
+      // totalGroupPoints = (4 * 0.6) + (10 * 0.4) = 2.4 + 4 = 6.4
+      expect(dashboard.stats.totalGroupPoints).toBe(6.4);
+      expect(dashboard.stats.poinKelompok).toBe(6.4);
     });
   });
 });

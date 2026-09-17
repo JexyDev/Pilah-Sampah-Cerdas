@@ -1,17 +1,23 @@
-﻿import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prisma } from "../lib/prisma.js";
 import { calculatePersonalPoints, calculatePersonalPointsForUsers } from "./dplService.js";
+import { logbookService } from "./logbookService.js";
+import { notificationIntegrationService } from "./notificationIntegrationService.js";
+import { auditTrailService } from "./auditTrailService.js";
 
 vi.mock("../lib/prisma.js", () => ({
   prisma: {
     pointHistory: {
       findMany: vi.fn(),
+      findFirst: vi.fn(),
+      create: vi.fn(),
     },
     user: {
       findUnique: vi.fn(),
     },
     studentKkn: {
       findFirst: vi.fn(),
+      findUnique: vi.fn(),
     },
     studentLeaveRequest: {
       findMany: vi.fn(),
@@ -22,10 +28,30 @@ vi.mock("../lib/prisma.js", () => ({
     notification: {
       findMany: vi.fn(),
       count: vi.fn(),
+      create: vi.fn(),
     },
     userNotificationSync: {
       findUnique: vi.fn(),
     },
+    systemConfig: {
+      findUnique: vi.fn(),
+    },
+    logbookKkn: {
+      create: vi.fn(),
+    },
+  },
+}));
+
+vi.mock("./notificationIntegrationService.js", () => ({
+  notificationIntegrationService: {
+    sendToUser: vi.fn().mockResolvedValue({ success: true }),
+    sendToUsers: vi.fn().mockResolvedValue({ success: true }),
+  },
+}));
+
+vi.mock("./auditTrailService.js", () => ({
+  auditTrailService: {
+    recordLogbookSubmit: vi.fn().mockResolvedValue(true),
   },
 }));
 
@@ -34,7 +60,7 @@ describe("Mobile Gamification & Personal Point Calculation", () => {
     vi.clearAllMocks();
   });
 
-  it("calculatePersonalPoints should accurately deduct penalty points from total balance", async () => {
+  it("calculatePersonalPoints should accurately separate pure personal points, proker points, and total balance with penalties", async () => {
     vi.mocked(prisma.pointHistory.findMany).mockResolvedValue([
       { points: 4, kategori: "KKN_PRESENSI_HADIR" } as any,
       { points: 3, kategori: "KKN_DURASI_MEMENUHI" } as any,
@@ -49,8 +75,32 @@ describe("Mobile Gamification & Personal Point Calculation", () => {
     expect(result.rawPemenuhanWaktu).toBe(3);
     expect(result.rawLogAktivitas).toBe(3);
     expect(result.poinPenalti).toBe(5);
-    // Total: 4 + 3 + 3 + 2 - 5 = 7
-    expect(result.personalPoints).toBe(7);
+    // Poin Personal Murni: 4 + 3 + 3 - 5 = 5
+    expect(result.personalPoints).toBe(5);
+    // Poin Proker Murni: 2
+    expect(result.prokerPoints).toBe(2);
+    // Total Gabungan: 4 + 3 + 3 + 2 - 5 = 7
+    expect(result.contributionPoints).toBe(7);
+  });
+
+  it("calculatePersonalPoints should match mobile scenario: 23 personal points, 6 proker points, 29 contribution points", async () => {
+    vi.mocked(prisma.pointHistory.findMany).mockResolvedValue([
+      { points: 12, kategori: "KKN_PRESENSI_HADIR" } as any,
+      { points: 5, kategori: "KKN_DURASI_MEMENUHI" } as any,
+      { points: 6, kategori: "KKN_LOGBOOK_HARIAN" } as any,
+      { points: 2, kategori: "KKN_PROKER", description: "Program Kerja Disetujui [ProkerID:1:DISETUJUI]" } as any,
+      { points: 2, kategori: "KKN_PROKER", description: "Program Kerja Berjalan [ProkerID:1:BERJALAN]" } as any,
+      { points: 2, kategori: "KKN_PROKER", description: "Program Kerja Selesai [ProkerID:1:SELESAI]" } as any,
+    ]);
+
+    const result = await calculatePersonalPoints("user-mhs-2");
+
+    // Presensi + Durasi + Logbook = 12 + 5 + 6 = 23
+    expect(result.personalPoints).toBe(23);
+    // Proker = 2 + 2 + 2 = 6
+    expect(result.prokerPoints).toBe(6);
+    // Total = 23 + 6 = 29
+    expect(result.contributionPoints).toBe(29);
   });
 
   it("calculatePersonalPointsForUsers should calculate total balance with penalties across multiple users", async () => {
@@ -65,5 +115,76 @@ describe("Mobile Gamification & Personal Point Calculation", () => {
 
     expect(resultMap.get("mhs-1")).toBe(7);
     expect(resultMap.get("mhs-2")).toBe(0);
+  });
+
+  describe("Logbook Submission Points & Metadata (Mobile Requirements)", () => {
+    const mockStudentUser = {
+      id: "mhs-1",
+      name: "Budi Santoso",
+      studentProfile: {
+        id: "stud-1",
+        nim: "10121001",
+        kelompokId: "kel-1",
+        kelompok: {
+          id: "kel-1",
+          name: "Kelompok 01",
+          dplId: "dpl-1",
+          students: [],
+        },
+      },
+    };
+
+    const mockPayload = {
+      tanggalKegiatan: "2026-08-20",
+      tempat: "Balai RW 05",
+      deskripsi: "Sosialisasi Pemilahan Sampah",
+      fotoBuktiUrl: "https://example.com/foto.jpg",
+    };
+
+    it("should award +3 points on first logbook for a date and return pointsAwarded: true", async () => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValue(mockStudentUser as any);
+      vi.mocked(prisma.logbookKkn.create).mockResolvedValue({
+        id: "log-1",
+        ...mockPayload,
+        tipeAktivitas: "INDIVIDU",
+      } as any);
+      // No existing point for this date
+      vi.mocked(prisma.pointHistory.findFirst).mockResolvedValue(null);
+      vi.mocked(prisma.pointHistory.create).mockResolvedValue({ id: "pt-1", points: 3 } as any);
+
+      const result = await logbookService.createMahasiswaLogbook("mhs-1", "MAHASISWA_KKN", mockPayload);
+
+      expect(result.pointsAwarded).toBe(true);
+      expect(result.pointsAdded).toBe(3);
+      expect(prisma.pointHistory.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            userId: "mhs-1",
+            points: 3,
+            kategori: "KKN_LOGBOOK_HARIAN",
+          }),
+        })
+      );
+    });
+
+    it("should return pointsAwarded: false and pointsAdded: 0 when logbook for that date already earned points", async () => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValue(mockStudentUser as any);
+      vi.mocked(prisma.logbookKkn.create).mockResolvedValue({
+        id: "log-2",
+        ...mockPayload,
+        tipeAktivitas: "INDIVIDU",
+      } as any);
+      // Already earned point for this date
+      vi.mocked(prisma.pointHistory.findFirst).mockResolvedValue({
+        id: "pt-existing",
+        points: 3,
+      } as any);
+
+      const result = await logbookService.createMahasiswaLogbook("mhs-1", "MAHASISWA_KKN", mockPayload);
+
+      expect(result.pointsAwarded).toBe(false);
+      expect(result.pointsAdded).toBe(0);
+      expect(prisma.pointHistory.create).not.toHaveBeenCalled();
+    });
   });
 });

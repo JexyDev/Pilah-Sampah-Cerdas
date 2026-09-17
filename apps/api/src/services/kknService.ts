@@ -198,16 +198,36 @@ export class KknService {
     const progressPct =
       maxLimit > 0 ? parseFloat(((totalRegistered / maxLimit) * 100).toFixed(2)) : 0;
 
-    // Points (Formula Resmi Poin Personal: (Kehadiran * 0.4) + (Pemenuhan Waktu * 0.3) + (Log Aktivitas * 0.3))
+    // Points (Formula Resmi Poin Personal: Kehadiran + Pemenuhan Waktu + Log Aktivitas)
+    let personalPoints = 0;
+    let prokerPoints = 0;
     let contributionPoints = 0;
     let personalScoreBreakdown: any = null;
     if (isSuperOrAdmin) {
       const pointsSum = await prisma.pointHistory.aggregate({ _sum: { points: true } });
       contributionPoints = Math.max(0, pointsSum._sum.points || 0);
+      personalPoints = contributionPoints;
+      prokerPoints = 0;
     } else {
       const personalData = await calculatePersonalPoints(userId);
-      contributionPoints = Math.max(0, personalData.personalPoints);
+      personalPoints = Math.max(0, personalData.personalPoints);
+      prokerPoints = Math.max(0, personalData.prokerPoints);
+      contributionPoints = Math.max(0, personalData.contributionPoints);
       personalScoreBreakdown = personalData;
+    }
+
+    // Kalkulasi Poin Kelompok & Proker (Pemisahan Field Dashboard KKN)
+    let groupPointsData: any = null;
+    if (student?.kelompokId) {
+      groupPointsData = await calculateGroupPoints(student.kelompokId);
+    } else {
+      const studentWithGroup = await prisma.studentKkn.findFirst({
+        where: { userId },
+        select: { kelompokId: true },
+      });
+      if (studentWithGroup?.kelompokId) {
+        groupPointsData = await calculateGroupPoints(studentWithGroup.kelompokId);
+      }
     }
 
     const poskoLat = student?.assignedRw?.latitude ? Number(student.assignedRw.latitude) : null;
@@ -241,14 +261,35 @@ export class KknService {
         totalRegistered: totalRegistered,
         remainingQuota,
         progressPct,
+        // Detail Poin Mahasiswa KKN (Pemisahan Personal & Proker)
+        personalPoints,
+        prokerPoints,
         contributionPoints,
         points: contributionPoints,
         totalPoints: contributionPoints,
         pointKkn: contributionPoints,
         personalScoreBreakdown,
+        // Pemisahan Metrik Kelompok & Proker (Kebutuhan Mobile Terpadu)
+        totalGroupPoints: groupPointsData?.totalGroupPoints ?? 0,
+        poinKelompok: groupPointsData?.totalGroupPoints ?? 0,
+        poinProker: groupPointsData?.poinProker ?? 0,
+        rataRataPoinAnggota: groupPointsData?.rataRataPoinAnggota ?? 0,
+        totalCumulativeMemberPoints: groupPointsData?.totalCumulativeMemberPoints ?? 0,
+        groupScoreBreakdown: groupPointsData,
         maxLimit,
       },
-      // Backward compatibility aliases
+      // Backward compatibility aliases & top-level direct access
+      personalPoints,
+      prokerPoints,
+      contributionPoints,
+      points: contributionPoints,
+      totalPoints: contributionPoints,
+      pointKkn: contributionPoints,
+      totalGroupPoints: groupPointsData?.totalGroupPoints ?? 0,
+      poinKelompok: groupPointsData?.totalGroupPoints ?? 0,
+      poinProker: groupPointsData?.poinProker ?? 0,
+      rataRataPoinAnggota: groupPointsData?.rataRataPoinAnggota ?? 0,
+      totalCumulativeMemberPoints: groupPointsData?.totalCumulativeMemberPoints ?? 0,
       nim: student?.nim || (isSuperOrAdmin ? "ADMIN" : "10123000"),
       jurusan: student?.jurusan || (isSuperOrAdmin ? "Monitoring Wilayah" : "Teknik Informatika"),
       programStudi:
@@ -259,10 +300,6 @@ export class KknService {
       totalRegisteredBins: totalRegistered,
       remainingQuota,
       progressPct,
-      contributionPoints,
-      points: contributionPoints,
-      totalPoints: contributionPoints,
-      pointKkn: contributionPoints,
       assignmentLimit: maxLimit,
       latitude: poskoLat,
       longitude: poskoLng,
@@ -3001,6 +3038,14 @@ export class KknService {
       poskoLongitude: poskoLng,
       radiusMeter,
       totalGroupPoints,
+      poinKelompok: totalGroupPoints,
+      poinProker: groupPointsData.poinProker,
+      rataRataPoinAnggota: groupPointsData.rataRataPoinAnggota,
+      totalCumulativeMemberPoints: groupPointsData.totalCumulativeMemberPoints,
+      prokerApprovedCount: groupPointsData.prokerApprovedCount,
+      prokerSedangBerjalanCount: groupPointsData.prokerSedangBerjalanCount,
+      prokerSelesaiCount: groupPointsData.prokerSelesaiCount,
+      groupScoreBreakdown: groupPointsData,
       members,
       linkGoogleDrive: group.linkGoogleDrive || null,
     };
@@ -4248,7 +4293,16 @@ export class KknService {
         .catch(() => {});
     }
 
-    return await this.getProgramKerjaById(userId, proker.id);
+    const prokerDetail = await this.getProgramKerjaById(userId, proker.id);
+    let totalGroupPoints: number | undefined;
+    if (kelompok.id) {
+      const groupRes = await calculateGroupPoints(kelompok.id);
+      totalGroupPoints = groupRes.totalGroupPoints;
+    }
+    return {
+      ...prokerDetail,
+      totalGroupPoints,
+    };
   }
 
   async getProgramKerja(userId: string, targetGroupId?: string, filters?: any) {
@@ -5180,7 +5234,16 @@ export class KknService {
       }
     }
 
-    return await this.getProgramKerjaById(userId, id);
+    const prokerDetail = await this.getProgramKerjaById(userId, id);
+    let totalGroupPoints: number | undefined;
+    if (proker.kelompokId) {
+      const groupRes = await calculateGroupPoints(proker.kelompokId);
+      totalGroupPoints = groupRes.totalGroupPoints;
+    }
+    return {
+      ...prokerDetail,
+      totalGroupPoints,
+    };
   }
 
   async deleteProgramKerja(userId: string, id: string) {
