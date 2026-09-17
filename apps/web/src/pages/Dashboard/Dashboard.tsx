@@ -1600,7 +1600,7 @@ const Dashboard: React.FC = () => {
     (user?.peran as string) === "MITRA_PEMBIMBING_LAPANGAN" ||
     (user?.peran as string) === "MITRA_PENDAMPING_LAPANGAN" ||
     (user?.peran as string) === "MITRA";
-  const canAccessKknSub = isPimpinan || isSuperOrDev || isMpl;
+  const canAccessKknSub = isPimpinan || isSuperOrDev;
 
   const tabParam = searchParams.get("tab");
   const isKknTab = tabParam === "kkn";
@@ -1608,7 +1608,7 @@ const Dashboard: React.FC = () => {
     ? "kkn"
     : tabParam === "tata-kelola-sampah" || tabParam === "sampah"
     ? "tata-kelola-sampah"
-    : isPimpinan || isMpl
+    : isPimpinan
     ? "kkn"
     : "tata-kelola-sampah";
 
@@ -1896,7 +1896,8 @@ const Dashboard: React.FC = () => {
       user?.peran === "RW" ||
       user?.peran === "DPL" ||
       user?.peran === "DOSEN_PEMBIMBING" ||
-      user?.peran === "PANITIA_TASKFORCE"
+      user?.peran === "PANITIA_TASKFORCE" ||
+      isMpl
     ) {
       setLoading(false);
       return;
@@ -1914,7 +1915,8 @@ const Dashboard: React.FC = () => {
   if (
     user?.peran === "DPL" ||
     user?.peran === "DOSEN_PEMBIMBING" ||
-    (user?.peran as string) === "DOSEN_PENDAMPING"
+    (user?.peran as string) === "DOSEN_PENDAMPING" ||
+    isMpl
   ) {
     return <DplDashboardPage />;
   }
