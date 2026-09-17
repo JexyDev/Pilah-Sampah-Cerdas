@@ -985,16 +985,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[],
         },
         {
-          to: "/dashboard-mpl",
-          icon: GraduationCap,
-          label: "Portal MPL",
-          allowed: [
-            "MPL",
-            "DEVELOPER",
-            "SUPER_USER",
-          ] as UserRole[],
-        },
-        {
           type: "group",
           label: "Pelaksanaan",
           icon: Briefcase,
