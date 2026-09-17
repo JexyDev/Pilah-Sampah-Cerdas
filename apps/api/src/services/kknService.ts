@@ -205,6 +205,7 @@ export class KknService {
 
     // Points (Formula Resmi Poin Personal: Kehadiran + Pemenuhan Waktu + Log Aktivitas)
     let personalPoints = 0;
+    let purePersonalPoints = 0;
     let prokerPoints = 0;
     let contributionPoints = 0;
     let personalScoreBreakdown: any = null;
@@ -212,12 +213,21 @@ export class KknService {
       const pointsSum = await prisma.pointHistory.aggregate({ _sum: { points: true } });
       contributionPoints = Math.max(0, pointsSum._sum.points || 0);
       personalPoints = contributionPoints;
+      purePersonalPoints = contributionPoints;
       prokerPoints = 0;
     } else {
       const personalData = await calculatePersonalPoints(userId);
-      personalPoints = Math.max(0, personalData.personalPoints);
+      purePersonalPoints = Math.max(0, personalData.personalPoints);
       contributionPoints = Math.max(0, personalData.contributionPoints);
-      personalScoreBreakdown = personalData;
+      // Penyesuaian UX Dasbor (Permintaan PO & Tim Mobile):
+      // APK mobile membaca key personalPoints untuk Card Dasbor utama.
+      // Nilai personalPoints ditimpa dengan contributionPoints (total saldo akhir termasuk bonus normalisasi & login)
+      // agar mahasiswa langsung melihat total saldo akhir, sementara poin murni lapangan tetap tersimpan di purePersonalPoints.
+      personalPoints = contributionPoints;
+      personalScoreBreakdown = {
+        ...personalData,
+        purePersonalPoints,
+      };
     }
 
     // Kalkulasi Poin Kelompok & Proker (Pemisahan Field Dashboard KKN)
@@ -272,8 +282,9 @@ export class KknService {
         totalRegistered: totalRegistered,
         remainingQuota,
         progressPct,
-        // Detail Poin Mahasiswa KKN (Pemisahan Personal & Proker)
-        personalPoints,
+        // Detail Poin Mahasiswa KKN (Penyesuaian UX Dasbor Mobile: personalPoints = contributionPoints)
+        personalPoints: contributionPoints,
+        purePersonalPoints,
         prokerPoints,
         contributionPoints,
         points: contributionPoints,
@@ -301,7 +312,8 @@ export class KknService {
         maxLimit,
       },
       // Backward compatibility aliases & top-level direct access
-      personalPoints,
+      personalPoints: contributionPoints,
+      purePersonalPoints,
       prokerPoints,
       contributionPoints,
       points: contributionPoints,
