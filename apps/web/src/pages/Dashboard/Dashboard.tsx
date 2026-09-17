@@ -1595,7 +1595,12 @@ const Dashboard: React.FC = () => {
 
   const isPimpinan = user?.peran === "PIMPINAN" || user?.peran === "PEMIMPIN";
   const isSuperOrDev = user?.peran === "SUPER_USER" || user?.peran === "DEVELOPER";
-  const canAccessKknSub = isPimpinan || isSuperOrDev;
+  const isMpl =
+    user?.peran === "MPL" ||
+    (user?.peran as string) === "MITRA_PEMBIMBING_LAPANGAN" ||
+    (user?.peran as string) === "MITRA_PENDAMPING_LAPANGAN" ||
+    (user?.peran as string) === "MITRA";
+  const canAccessKknSub = isPimpinan || isSuperOrDev || isMpl;
 
   const tabParam = searchParams.get("tab");
   const isKknTab = tabParam === "kkn";
@@ -1603,7 +1608,7 @@ const Dashboard: React.FC = () => {
     ? "kkn"
     : tabParam === "tata-kelola-sampah" || tabParam === "sampah"
     ? "tata-kelola-sampah"
-    : isPimpinan
+    : isPimpinan || isMpl
     ? "kkn"
     : "tata-kelola-sampah";
 
@@ -1891,10 +1896,6 @@ const Dashboard: React.FC = () => {
       user?.peran === "RW" ||
       user?.peran === "DPL" ||
       user?.peran === "DOSEN_PEMBIMBING" ||
-      user?.peran === "MPL" ||
-      (user?.peran as string) === "MITRA_PEMBIMBING_LAPANGAN" ||
-      (user?.peran as string) === "MITRA_PENDAMPING_LAPANGAN" ||
-      (user?.peran as string) === "MITRA" ||
       user?.peran === "PANITIA_TASKFORCE"
     ) {
       setLoading(false);
@@ -1913,11 +1914,7 @@ const Dashboard: React.FC = () => {
   if (
     user?.peran === "DPL" ||
     user?.peran === "DOSEN_PEMBIMBING" ||
-    (user?.peran as string) === "DOSEN_PENDAMPING" ||
-    user?.peran === "MPL" ||
-    (user?.peran as string) === "MITRA_PEMBIMBING_LAPANGAN" ||
-    (user?.peran as string) === "MITRA_PENDAMPING_LAPANGAN" ||
-    (user?.peran as string) === "MITRA"
+    (user?.peran as string) === "DOSEN_PENDAMPING"
   ) {
     return <DplDashboardPage />;
   }
