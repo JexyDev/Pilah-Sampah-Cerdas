@@ -42,7 +42,8 @@ import {
   Clock,
   RefreshCw,
   Radio,
-  FileCheck
+  FileCheck,
+  Lock
 } from "lucide-react";
 import L from "leaflet";
 import api from "../../services/api";
@@ -358,10 +359,18 @@ export const PoskoKknPage: React.FC = () => {
     });
   }, [fetchPoskoList, fetchFacilities, fetchKelompokList]);
 
-  // Kunci filter kelurahan otomatis untuk role MPL
+  // Kunci filter kelurahan otomatis untuk role MPL & fokus peta ke wilayah binaan
   useEffect(() => {
     if (isMpl && mplKelurahan) {
       setSelectedKelurahan(mplKelurahan);
+      const cleanMpl = mplKelurahan.toLowerCase().replace(/^(kelurahan|kel\.)\s*/i, "").trim();
+      const matched = Object.values(KELURAHAN_GEODATA).find(
+        (k) => k.name.toLowerCase().includes(cleanMpl) || cleanMpl.includes(k.name.toLowerCase())
+      );
+      if (matched) {
+        setMapTargetCenter(matched.centroid);
+        setMapTargetZoom(15);
+      }
     }
   }, [isMpl, mplKelurahan]);
 
@@ -2185,21 +2194,31 @@ export const PoskoKknPage: React.FC = () => {
               </div>
 
               {/* Filter Kelurahan */}
-              <select
-                value={selectedKelurahan}
-                onChange={(e) => {
-                  setSelectedKelurahan(e.target.value);
-                  setSelectedRw("ALL");
-                }}
-                className="px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-semibold outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/10 text-slate-800 dark:text-slate-100 transition-all cursor-pointer"
-              >
-                <option value="ALL">Semua Kelurahan</option>
-                {masterKelurahanList.map((k) => (
-                  <option key={k.id} value={k.name}>
-                    Kel. {formatWilayahName(k.name)}
-                  </option>
-                ))}
-              </select>
+              {isMpl && mplKelurahan ? (
+                <div className="px-3.5 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2 shrink-0 shadow-2xs">
+                  <MapPin size={14} className="text-emerald-600 shrink-0" />
+                  <span>Kel. {formatWilayahName(mplKelurahan)}</span>
+                  <span className="text-[10px] bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 font-extrabold px-1.5 py-0.5 rounded border border-purple-200 dark:border-purple-800 shrink-0 flex items-center gap-1">
+                    <Lock size={10} /> Wilayah Binaan
+                  </span>
+                </div>
+              ) : (
+                <select
+                  value={selectedKelurahan}
+                  onChange={(e) => {
+                    setSelectedKelurahan(e.target.value);
+                    setSelectedRw("ALL");
+                  }}
+                  className="px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-semibold outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/10 text-slate-800 dark:text-slate-100 transition-all cursor-pointer"
+                >
+                  <option value="ALL">Semua Kelurahan</option>
+                  {masterKelurahanList.map((k) => (
+                    <option key={k.id} value={k.name}>
+                      Kel. {formatWilayahName(k.name)}
+                    </option>
+                  ))}
+                </select>
+              )}
 
               {/* Filter RW */}
               <select
@@ -2215,11 +2234,15 @@ export const PoskoKknPage: React.FC = () => {
                 ))}
               </select>
 
-              {(selectedKelurahan !== "ALL" || selectedRw !== "ALL") && (
+              {((!isMpl && selectedKelurahan !== "ALL") || selectedRw !== "ALL") && (
                 <button
                   type="button"
                   onClick={() => {
-                    setSelectedKelurahan("ALL");
+                    if (isMpl && mplKelurahan) {
+                      setSelectedKelurahan(mplKelurahan);
+                    } else {
+                      setSelectedKelurahan("ALL");
+                    }
                     setSelectedRw("ALL");
                   }}
                   className="px-2.5 py-2 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"

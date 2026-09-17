@@ -65,36 +65,44 @@ export const calculateProgressiveAspectSubtotal = (
   return { rawSubtotal, normalizedSubtotal, totalAssessedWeight };
 };
 
-// Helper to calculate composite final score with dynamic weights (Default: Mitra 50% + DPL 50%)
+// Helper to calculate composite final score with dynamic weights (Default: Mitra 40% + DPL 40% + Laporan Akhir 20%)
 export const calculateCompositeScore = (
   subtotalMitra: number,
   subtotalDpl: number,
-  bobotMitraPersen: number = 50,
-  bobotDplPersen: number = 50,
-  normalizeSingleEvaluator: boolean = true
+  bobotMitraPersen: number = 40,
+  bobotDplPersen: number = 40,
+  normalizeSingleEvaluator: boolean = true,
+  skorLaporanAkhir: number = 0,
+  bobotLaporanPersen: number = 20
 ): number => {
   const sMitra = Number(subtotalMitra) || 0;
   const sDpl = Number(subtotalDpl) || 0;
-  const wMitra = (Number(bobotMitraPersen) || 50) / 100;
-  const wDpl = (Number(bobotDplPersen) || 50) / 100;
+  const sLap = Number(skorLaporanAkhir) || 0;
+  const wMitra = (Number(bobotMitraPersen) || 40) / 100;
+  const wDpl = (Number(bobotDplPersen) || 40) / 100;
+  const wLap = (Number(bobotLaporanPersen) || 20) / 100;
 
-  if (sMitra > 0 && sDpl > 0) {
-    return Number((sMitra * wMitra + sDpl * wDpl).toFixed(2));
+  const activeWeights =
+    (sMitra > 0 ? wMitra : 0) +
+    (sDpl > 0 ? wDpl : 0) +
+    (sLap > 0 ? wLap : 0);
+
+  if (activeWeights >= 0.99) {
+    return Number((sMitra * wMitra + sDpl * wDpl + sLap * wLap).toFixed(2));
   }
-  // Normalisasi Single Evaluator:
-  // Jika baru salah satu evaluator yang menilai dan opsi normalisasi aktif,
-  // nilai sementara adalah skor 100% basis dari evaluator tersebut (bukan dipotong separuh/50%).
-  if (normalizeSingleEvaluator) {
-    if (sDpl > 0 && sMitra === 0) {
-      return Number(sDpl.toFixed(2));
+
+  // Normalisasi Single / Partial Evaluator:
+  // Jika baru sebagian penilai yang mengisi dan normalisasi aktif,
+  // nilai sementara dihitung proporsional terhadap bobot yang sudah dinilai agar tidak jatuh ke vonis E prematur.
+  if (activeWeights > 0) {
+    const rawWeightedSum = sMitra * wMitra + sDpl * wDpl + sLap * wLap;
+    if (normalizeSingleEvaluator) {
+      return Number((rawWeightedSum / activeWeights).toFixed(2));
+    } else {
+      return Number(rawWeightedSum.toFixed(2));
     }
-    if (sMitra > 0 && sDpl === 0) {
-      return Number(sMitra.toFixed(2));
-    }
-  } else {
-    if (sDpl > 0) return Number((sDpl * wDpl).toFixed(2));
-    if (sMitra > 0) return Number((sMitra * wMitra).toFixed(2));
   }
+
   return 0;
 };
 
@@ -239,8 +247,9 @@ export const penilaianKknService = {
     const ruleConfigs = await configService.getRuleEngineConfigs().catch(() => null);
     const targetLogbook = ruleConfigs?.logbookTargetKegiatan || 24;
     const bobotLogbook = ruleConfigs?.logbookBobotPersen || 20;
-    const bobotDplPersen = ruleConfigs?.penilaianBobotDplPersen ?? 50;
-    const bobotMplPersen = ruleConfigs?.penilaianBobotMplPersen ?? 50;
+    const bobotDplPersen = ruleConfigs?.penilaianBobotDplPersen ?? 40;
+    const bobotMplPersen = ruleConfigs?.penilaianBobotMplPersen ?? 40;
+    const bobotLaporanPersen = (ruleConfigs as any)?.penilaianBobotLaporanPersen ?? 20;
     const targetDailyMinutes = (ruleConfigs?.attendanceMinDurationHours || 4) * 60;
 
     const pastSchedulesCount = await prisma.schedule
@@ -413,14 +422,13 @@ export const penilaianKknService = {
       calculateAspectScore(assessment.skorMitraDampak, 15) +
       calculateAspectScore(assessment.skorMitraInisiatif, 10);
 
-    // DPL academic 6 aspects (Total Bobot 100%: Perencanaan 20%, Kontribusi 10%, Logbook dinamis [default 20%], Analisis 20%, Output 20%, Laporan Akhir 10%)
+    // DPL academic 5 aspects (Total Bobot 100%: Perencanaan 20%, Kontribusi 20%, Logbook dinamis [default 20%], Analisis 20%, Output 20%)
     const subDpl =
       calculateAspectScore(assessment.skorDplPerencanaan, 20) +
-      calculateAspectScore(assessment.skorDplKontribusi, 10) +
+      calculateAspectScore(assessment.skorDplKontribusi, 20) +
       calculateAspectScore(assessment.skorDplLogbook, bobotLogbook) +
       calculateAspectScore(assessment.skorDplAnalisis, 20) +
-      calculateAspectScore(assessment.skorDplOutput, 20) +
-      calculateAspectScore(assessment.skorDplLaporanAkhir, 10);
+      calculateAspectScore(assessment.skorDplOutput, 20);
 
     const hasDplAny =
       assessment.skorDplPerencanaan > 0 ||
@@ -448,7 +456,9 @@ export const penilaianKknService = {
       subDpl,
       bobotMplPersen,
       bobotDplPersen,
-      true
+      true,
+      assessment.skorDplLaporanAkhir || 0,
+      bobotLaporanPersen
     );
     const kategori =
       totalNilai === 0 && !existing
@@ -457,6 +467,9 @@ export const penilaianKknService = {
 
     const kontribusiDpl = Number((subDpl * (bobotDplPersen / 100)).toFixed(2));
     const kontribusiMitra = Number((subMitra * (bobotMplPersen / 100)).toFixed(2));
+    const kontribusiLaporan = Number(
+      ((assessment.skorDplLaporanAkhir || 0) * (bobotLaporanPersen / 100)).toFixed(2)
+    );
 
     return {
       student: {
@@ -490,6 +503,7 @@ export const penilaianKknService = {
         bobotLogbook,
         bobotDplPersen,
         bobotMplPersen,
+        bobotLaporanPersen,
       },
       assessment: {
         ...assessment,
@@ -497,8 +511,10 @@ export const penilaianKknService = {
         subtotalDpl: Number(subDpl.toFixed(2)),
         kontribusiDpl,
         kontribusiMitra,
+        kontribusiLaporan,
         bobotDplPersen,
         bobotMplPersen,
+        bobotLaporanPersen,
         nilaiAkhir: totalNilai,
         kategoriNilai: kategori,
       },
@@ -740,22 +756,22 @@ export const penilaianKknService = {
       ).toFixed(2)
     );
 
-    // 3. Kalkulasi Subtotal DPL (Bobot total 100%: Perencanaan 20%, Kontribusi 10%, Logbook 20%, Analisis 20%, Output 20%, Laporan Akhir 10%)
+    // 3. Kalkulasi Subtotal DPL (5 aspek akademik DPL berbobot total 100%: Perencanaan 20%, Kontribusi 20%, Logbook 20%, Analisis 20%, Output 20%)
     const subtotalDpl = Number(
       (
         calculateAspectScore(skorDplPerencanaan, 20) +
-        calculateAspectScore(skorDplKontribusi, 10) +
+        calculateAspectScore(skorDplKontribusi, 20) +
         calculateAspectScore(skorDplLogbook, 20) +
         calculateAspectScore(skorDplAnalisis, 20) +
-        calculateAspectScore(skorDplOutput, 20) +
-        calculateAspectScore(skorDplLaporanAkhir, 10)
+        calculateAspectScore(skorDplOutput, 20)
       ).toFixed(2)
     );
 
-    // 4. Kalkulasi Nilai Akhir & Kategori (Formula Komposisi Dinamis Mitra & DPL)
+    // 4. Kalkulasi Nilai Akhir & Kategori (Formula Komposisi Dinamis: MPL 40% + DPL 40% + Laporan Akhir 20%)
     const ruleConfigs = await configService.getRuleEngineConfigs().catch(() => null);
-    const bobotDplPersen = ruleConfigs?.penilaianBobotDplPersen ?? 50;
-    const bobotMplPersen = ruleConfigs?.penilaianBobotMplPersen ?? 50;
+    const bobotDplPersen = ruleConfigs?.penilaianBobotDplPersen ?? 40;
+    const bobotMplPersen = ruleConfigs?.penilaianBobotMplPersen ?? 40;
+    const bobotLaporanPersen = (ruleConfigs as any)?.penilaianBobotLaporanPersen ?? 20;
 
     const hasDplAny =
       skorDplPerencanaan > 0 ||
@@ -783,7 +799,9 @@ export const penilaianKknService = {
       subtotalDpl,
       bobotMplPersen,
       bobotDplPersen,
-      true
+      true,
+      skorDplLaporanAkhir,
+      bobotLaporanPersen
     );
     const kategoriNilai = calculateGradeCategory(nilaiAkhir, {
       isFinalized: isFinal,
@@ -1034,10 +1052,12 @@ export const penilaianKknService = {
     );
 
     const ruleConfigs = await configService.getRuleEngineConfigs().catch(() => null);
-    const bobotDplPersen = ruleConfigs?.penilaianBobotDplPersen ?? 50;
-    const bobotMplPersen = ruleConfigs?.penilaianBobotMplPersen ?? 50;
+    const bobotDplPersen = ruleConfigs?.penilaianBobotDplPersen ?? 40;
+    const bobotMplPersen = ruleConfigs?.penilaianBobotMplPersen ?? 40;
+    const bobotLaporanPersen = (ruleConfigs as any)?.penilaianBobotLaporanPersen ?? 20;
     const wDpl = bobotDplPersen / 100;
     const wMpl = bobotMplPersen / 100;
+    const wLap = bobotLaporanPersen / 100;
 
     return students.map((s) => {
       const p = s.penilaianKkn;
@@ -1055,11 +1075,10 @@ export const penilaianKknService = {
           : Number(
               (
                 calculateAspectScore(skorDplPerencanaan, 20) +
-                calculateAspectScore(skorDplKontribusi, 10) +
+                calculateAspectScore(skorDplKontribusi, 20) +
                 calculateAspectScore(skorDplLogbook, 20) +
                 calculateAspectScore(skorDplAnalisis, 20) +
-                calculateAspectScore(skorDplOutput, 20) +
-                calculateAspectScore(skorDplLaporanAkhir, 10)
+                calculateAspectScore(skorDplOutput, 20)
               ).toFixed(2)
             ) || (directScore > 0 ? directScore : 0);
 
@@ -1098,9 +1117,10 @@ export const penilaianKknService = {
               ).toFixed(2)
             );
 
-      // Transparansi komposisi dinamis DPL + MPL
+      // Transparansi komposisi dinamis DPL 40% + MPL 40% + Laporan Akhir 20%
       const kontribusiDpl = Number((subtotalDpl * wDpl).toFixed(2));
       const kontribusiMitra = Number((subtotalMitra * wMpl).toFixed(2));
+      const kontribusiLaporan = Number((skorDplLaporanAkhir * wLap).toFixed(2));
 
       const hasDplAny =
         skorDplPerencanaan > 0 ||
@@ -1116,8 +1136,7 @@ export const penilaianKknService = {
         skorDplKontribusi > 0 &&
         skorDplLogbook > 0 &&
         skorDplAnalisis > 0 &&
-        skorDplOutput > 0 &&
-        skorDplLaporanAkhir > 0;
+        skorDplOutput > 0;
 
       const isComplete = (subtotalDpl > 0 || hasDplAll) && (subtotalMitra > 0 || hasMitraScores);
 
@@ -1126,7 +1145,9 @@ export const penilaianKknService = {
         subtotalDpl,
         bobotMplPersen,
         bobotDplPersen,
-        true
+        true,
+        skorDplLaporanAkhir,
+        bobotLaporanPersen
       );
 
       const finalNilai =
@@ -1179,8 +1200,10 @@ export const penilaianKknService = {
         kontribusiMitra,
         subtotalDpl,
         kontribusiDpl,
+        kontribusiLaporan,
         bobotDplPersen,
         bobotMplPersen,
+        bobotLaporanPersen,
         nilaiAkhir: finalNilai,
         kategori,
         status: p?.status || "BELUM_DINILAI",
