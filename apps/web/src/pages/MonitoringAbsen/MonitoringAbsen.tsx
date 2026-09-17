@@ -3669,7 +3669,15 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                               TARGET {formatHoursToUnits(configTargets.targetTotalJam || (scheduleTargetHours * (configTargets.targetTotalHari || 50))).toUpperCase()}
                             </span>
                           </th>
-                          <th className="py-3.5 px-4 text-center">POIN</th>
+                          <th
+                            className="py-3.5 px-4 text-center"
+                            title="Poin Presensi Harian: Check-In (+4 PTS) & Pemenuhan Durasi (+3 PTS). Maksimal presensi: 7 PTS. (Poin Logbook tercatat terpisah +3 PTS di modul Logbook)."
+                          >
+                            POIN
+                            <span className="block text-[9px] font-normal opacity-60 normal-case">
+                              MAKS. 7 PTS
+                            </span>
+                          </th>
                           <th className="py-3.5 px-4 text-center min-w-[160px]">AKSI</th>
                         </tr>
                       )}
@@ -3766,7 +3774,22 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         const actualCumMinutes = rec.totalMinutes !== undefined && rec.totalMinutes !== null ? Number(rec.totalMinutes) : Math.round((rec.totalHours || 0) * 60);
                         const percentCapaian = targetKumulatifMins > 0 ? Number(((actualCumMinutes / targetKumulatifMins) * 100).toFixed(2)) : 0;
                         const isExceeded = percentCapaian > 100;
-                        const poinDampingan = (isLeaveOrPending || isTanpaKeterangan || isBelumAdaJadwal || isBerlangsung) ? "0 PTS" : (isHadir ? "10 PTS" : "0 PTS");
+                        // Kalkulasi Poin Presensi Harian Sesuai Aturan Sistem & Gamifikasi Resmi:
+                        // - Check-In Presensi Masuk (KKN_PRESENSI_HADIR) = +4 PTS
+                        // - Pemenuhan Durasi Kerja Target Minimal (KKN_DURASI_MEMENUHI) = +3 PTS
+                        // - Total Poin Presensi Maksimal = 7 PTS (Logbook bernilai terpisah +3 PTS di modul logbook)
+                        const poinPresensi = (() => {
+                          if (isLeaveOrPending || isTanpaKeterangan || isBelumAdaJadwal || isTidakAdaKegiatan || !hasValidAttendanceSession) {
+                            return "0 PTS";
+                          }
+                          if (isHadir || isOverrideDpl || isFinished) {
+                            return isMemenuhiDurasi ? "7 PTS" : "4 PTS";
+                          }
+                          if (isBerlangsung || isTerjeda) {
+                            return "4 PTS";
+                          }
+                          return "0 PTS";
+                        })();
 
                         const avatarColors = [
                           "bg-emerald-100 text-emerald-800 border-emerald-200",
@@ -4209,8 +4232,23 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                             </td>
 
                             {/* 9. POIN */}
-                            <td className="py-3.5 px-4 text-center font-black text-emerald-700 dark:text-emerald-400">
-                              {poinDampingan}
+                            <td
+                              className={`py-3.5 px-4 text-center font-black ${
+                                poinPresensi === "7 PTS"
+                                  ? "text-emerald-700 dark:text-emerald-400"
+                                  : poinPresensi === "4 PTS"
+                                  ? "text-amber-700 dark:text-amber-400"
+                                  : "text-slate-400 dark:text-slate-500 font-semibold"
+                              }`}
+                              title={
+                                poinPresensi === "7 PTS"
+                                  ? "7 PTS (Presensi Masuk +4 PTS & Durasi Memenuhi +3 PTS)"
+                                  : poinPresensi === "4 PTS"
+                                  ? (isBerlangsung ? "4 PTS (Presensi Masuk tercatat, sesi sedang berlangsung)" : "4 PTS (Presensi Masuk tercatat, durasi belum memenuhi target)")
+                                  : "0 PTS (Tidak ada perolehan poin presensi)"
+                              }
+                            >
+                              {poinPresensi}
                             </td>
 
                             {/* 10. AKSI */}
