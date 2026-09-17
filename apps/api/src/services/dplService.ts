@@ -1072,7 +1072,7 @@ export async function calculateGroupPoints(
         where: {
           userId: { in: studentUserIds },
           kategori: {
-            in: ["KKN_PRESENSI_HADIR", "KKN_DURASI_MEMENUHI", "KKN_LOGBOOK_HARIAN", "POIN_KKN_FINAL"],
+            in: ["KKN_PRESENSI_HADIR", "KKN_DURASI_MEMENUHI", "KKN_LOGBOOK_HARIAN"],
           },
         },
         select: { userId: true, points: true, createdAt: true },
