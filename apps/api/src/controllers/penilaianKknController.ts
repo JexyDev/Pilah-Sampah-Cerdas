@@ -246,4 +246,18 @@ export const penilaianKknController = {
       res.status(500).json({ success: false, message: error.message || "Internal server error" });
     }
   },
+
+  /**
+   * Normalisasi Massal Penilaian Mahasiswa KKN (Admin / Developer Action)
+   */
+  normalizeAllAssessments: async (req: Request, res: Response) => {
+    try {
+      const operatorId = req.user?.userId || (req.user as any)?.id || "ADMIN";
+      const result = await penilaianKknService.normalizeAllStudentAssessments(operatorId);
+      res.status(200).json(result);
+    } catch (error: any) {
+      console.error("[penilaianKknController] normalizeAllAssessments error:", error);
+      res.status(500).json({ success: false, message: error.message || "Internal server error" });
+    }
+  },
 };

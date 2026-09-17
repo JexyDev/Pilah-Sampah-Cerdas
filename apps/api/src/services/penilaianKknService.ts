@@ -18,13 +18,22 @@ import {
 import { StatusPenilaianKkn, StatusProker, StatusLogbookKkn } from "@prisma/client";
 
 // Helper to determine category from score (Grading A-E)
-export const calculateGradeCategory = (score: number): string => {
+export const calculateGradeCategory = (
+  score: number,
+  options?: { isFinalized?: boolean; isComplete?: boolean }
+): string => {
   const num = Number(score) || 0;
   if (num >= 80) return "A";
   if (num >= 70) return "B";
   if (num >= 60) return "C";
   if (num >= 50) return "D";
-  if (num > 0) return "E";
+  if (num > 0) {
+    // Cegah vonis "E" prematur jika penilaian belum difinalisasi atau masih sebagian
+    if (options && (!options.isFinalized || options.isComplete === false)) {
+      return "Belum Lengkap";
+    }
+    return "E";
+  }
   return "Belum Dinilai";
 };
 
@@ -35,12 +44,34 @@ export const calculateAspectScore = (score: number, weight: number): number => {
   return Number(((safeScore * weight) / 100).toFixed(2));
 };
 
+// Helper to calculate progressive aspect subtotal when some aspects are still being assessed
+export const calculateProgressiveAspectSubtotal = (
+  aspects: Array<{ score: number; weight: number }>
+): { rawSubtotal: number; normalizedSubtotal: number; totalAssessedWeight: number } => {
+  let rawSubtotal = 0;
+  let totalAssessedWeight = 0;
+  for (const a of aspects) {
+    const s = Math.max(0, Math.min(100, Number(a.score) || 0));
+    rawSubtotal += (s * a.weight) / 100;
+    if (s > 0) {
+      totalAssessedWeight += a.weight;
+    }
+  }
+  rawSubtotal = Number(rawSubtotal.toFixed(2));
+  const normalizedSubtotal =
+    totalAssessedWeight > 0
+      ? Number(((rawSubtotal / totalAssessedWeight) * 100).toFixed(2))
+      : 0;
+  return { rawSubtotal, normalizedSubtotal, totalAssessedWeight };
+};
+
 // Helper to calculate composite final score with dynamic weights (Default: Mitra 50% + DPL 50%)
 export const calculateCompositeScore = (
   subtotalMitra: number,
   subtotalDpl: number,
   bobotMitraPersen: number = 50,
-  bobotDplPersen: number = 50
+  bobotDplPersen: number = 50,
+  normalizeSingleEvaluator: boolean = true
 ): number => {
   const sMitra = Number(subtotalMitra) || 0;
   const sDpl = Number(subtotalDpl) || 0;
@@ -50,12 +81,19 @@ export const calculateCompositeScore = (
   if (sMitra > 0 && sDpl > 0) {
     return Number((sMitra * wMitra + sDpl * wDpl).toFixed(2));
   }
-  // Nilai progresif/sementara berdasarkan kontribusi masing-masing
-  if (sDpl > 0) {
-    return Number((sDpl * wDpl).toFixed(2));
-  }
-  if (sMitra > 0) {
-    return Number((sMitra * wMitra).toFixed(2));
+  // Normalisasi Single Evaluator:
+  // Jika baru salah satu evaluator yang menilai dan opsi normalisasi aktif,
+  // nilai sementara adalah skor 100% basis dari evaluator tersebut (bukan dipotong separuh/50%).
+  if (normalizeSingleEvaluator) {
+    if (sDpl > 0 && sMitra === 0) {
+      return Number(sDpl.toFixed(2));
+    }
+    if (sMitra > 0 && sDpl === 0) {
+      return Number(sMitra.toFixed(2));
+    }
+  } else {
+    if (sDpl > 0) return Number((sDpl * wDpl).toFixed(2));
+    if (sMitra > 0) return Number((sMitra * wMitra).toFixed(2));
   }
   return 0;
 };
@@ -63,6 +101,7 @@ export const calculateCompositeScore = (
 export const penilaianKknService = {
   calculateCompositeScore,
   calculateAspectScore,
+  calculateProgressiveAspectSubtotal,
   calculateGradeCategory,
 
   /**
@@ -383,9 +422,38 @@ export const penilaianKknService = {
       calculateAspectScore(assessment.skorDplOutput, 20) +
       calculateAspectScore(assessment.skorDplLaporanAkhir, 10);
 
-    const totalNilai = calculateCompositeScore(subMitra, subDpl, bobotMplPersen, bobotDplPersen);
+    const hasDplAny =
+      assessment.skorDplPerencanaan > 0 ||
+      assessment.skorDplKontribusi > 0 ||
+      assessment.skorDplLogbook > 0 ||
+      assessment.skorDplAnalisis > 0 ||
+      assessment.skorDplOutput > 0 ||
+      assessment.skorDplLaporanAkhir > 0;
+
+    const hasMitraAny =
+      assessment.skorMitraKehadiran > 0 ||
+      assessment.skorMitraWargaBinaan > 0 ||
+      assessment.skorMitraProker > 0 ||
+      assessment.skorMitraKomunikasi > 0 ||
+      assessment.skorMitraTanggungJawab > 0 ||
+      assessment.skorMitraBuktiKegiatan > 0 ||
+      assessment.skorMitraDampak > 0 ||
+      assessment.skorMitraInisiatif > 0;
+
+    const isComplete = (subDpl > 0 || hasDplAny) && (subMitra > 0 || hasMitraAny);
+    const isFinalized = Boolean(assessment.isFinalized);
+
+    const totalNilai = calculateCompositeScore(
+      subMitra,
+      subDpl,
+      bobotMplPersen,
+      bobotDplPersen,
+      true
+    );
     const kategori =
-      totalNilai === 0 && !existing ? "Belum Dinilai" : calculateGradeCategory(totalNilai);
+      totalNilai === 0 && !existing
+        ? "Belum Dinilai"
+        : calculateGradeCategory(totalNilai, { isFinalized, isComplete });
 
     const kontribusiDpl = Number((subDpl * (bobotDplPersen / 100)).toFixed(2));
     const kontribusiMitra = Number((subMitra * (bobotMplPersen / 100)).toFixed(2));
@@ -688,10 +756,39 @@ export const penilaianKknService = {
     const ruleConfigs = await configService.getRuleEngineConfigs().catch(() => null);
     const bobotDplPersen = ruleConfigs?.penilaianBobotDplPersen ?? 50;
     const bobotMplPersen = ruleConfigs?.penilaianBobotMplPersen ?? 50;
-    const nilaiAkhir = calculateCompositeScore(subtotalMitra, subtotalDpl, bobotMplPersen, bobotDplPersen);
-    const kategoriNilai = calculateGradeCategory(nilaiAkhir);
 
+    const hasDplAny =
+      skorDplPerencanaan > 0 ||
+      skorDplKontribusi > 0 ||
+      skorDplLogbook > 0 ||
+      skorDplAnalisis > 0 ||
+      skorDplOutput > 0 ||
+      skorDplLaporanAkhir > 0;
+
+    const hasMitraAny =
+      skorMitraKehadiran > 0 ||
+      skorMitraWargaBinaan > 0 ||
+      skorMitraProker > 0 ||
+      skorMitraKomunikasi > 0 ||
+      skorMitraTanggungJawab > 0 ||
+      skorMitraBuktiKegiatan > 0 ||
+      skorMitraDampak > 0 ||
+      skorMitraInisiatif > 0;
+
+    const isComplete = (subtotalDpl > 0 || hasDplAny) && (subtotalMitra > 0 || hasMitraAny);
     const isFinal = Boolean(payload.isFinalizeAction);
+
+    const nilaiAkhir = calculateCompositeScore(
+      subtotalMitra,
+      subtotalDpl,
+      bobotMplPersen,
+      bobotDplPersen,
+      true
+    );
+    const kategoriNilai = calculateGradeCategory(nilaiAkhir, {
+      isFinalized: isFinal,
+      isComplete,
+    });
     const statusVal: StatusPenilaianKkn = isFinal
       ? StatusPenilaianKkn.FINAL
       : StatusPenilaianKkn.TERSIMPAN;
@@ -1005,18 +1102,6 @@ export const penilaianKknService = {
       const kontribusiDpl = Number((subtotalDpl * wDpl).toFixed(2));
       const kontribusiMitra = Number((subtotalMitra * wMpl).toFixed(2));
 
-      const calculatedNilaiAkhir =
-        subtotalDpl > 0 && subtotalMitra > 0
-          ? Number((kontribusiDpl + kontribusiMitra).toFixed(2))
-          : subtotalDpl > 0
-            ? kontribusiDpl
-            : subtotalMitra > 0
-              ? kontribusiMitra
-              : 0;
-
-      const finalNilai =
-        p && Number(p.nilaiAkhir) > 0 ? Number(p.nilaiAkhir) : calculatedNilaiAkhir;
-
       const hasDplAny =
         skorDplPerencanaan > 0 ||
         skorDplKontribusi > 0 ||
@@ -1033,6 +1118,21 @@ export const penilaianKknService = {
         skorDplAnalisis > 0 &&
         skorDplOutput > 0 &&
         skorDplLaporanAkhir > 0;
+
+      const isComplete = (subtotalDpl > 0 || hasDplAll) && (subtotalMitra > 0 || hasMitraScores);
+
+      const calculatedNilaiAkhir = calculateCompositeScore(
+        subtotalMitra,
+        subtotalDpl,
+        bobotMplPersen,
+        bobotDplPersen,
+        true
+      );
+
+      const finalNilai =
+        p && Number(p.nilaiAkhir) > 0 && (isComplete || p.status === "FINAL")
+          ? Number(p.nilaiAkhir)
+          : calculatedNilaiAkhir;
 
       let statusDpl = "BELUM_DINILAI";
       if (hasDplAll || (p && p.status === "FINAL") || (subtotalDpl > 0 && hasDplAll)) {
@@ -1055,6 +1155,14 @@ export const penilaianKknService = {
         statusPenilaian = "MENUNGGU_DPL";
       }
 
+      const isFinalized = Boolean(p?.isFinalized);
+      const kategori =
+        p?.kategoriNilai && isComplete && isFinalized
+          ? p.kategoriNilai
+          : finalNilai > 0
+            ? calculateGradeCategory(finalNilai, { isFinalized, isComplete })
+            : "Belum Dinilai";
+
       return {
         studentId: s.id,
         nama: s.name,
@@ -1074,9 +1182,7 @@ export const penilaianKknService = {
         bobotDplPersen,
         bobotMplPersen,
         nilaiAkhir: finalNilai,
-        kategori:
-          p?.kategoriNilai ||
-          (finalNilai > 0 ? calculateGradeCategory(finalNilai) : "Belum Dinilai"),
+        kategori,
         status: p?.status || "BELUM_DINILAI",
         statusDpl,
         statusMitra,
@@ -1538,9 +1644,21 @@ export const penilaianKknService = {
         const subtotalMitra = existing ? Number(existing.subtotalMitra) : 0;
         const currentSkorDplPerencanaan = existing?.skorDplPerencanaan ?? 0;
         const currentSkorDplKontribusi = existing?.skorDplKontribusi ?? 0;
-        const currentSkorDplLogbook = existing?.skorDplLogbook ?? 0;
+        let currentSkorDplLogbook = existing?.skorDplLogbook ?? 0;
         const currentSkorDplAnalisis = existing?.skorDplAnalisis ?? 0;
         const currentSkorDplOutput = existing?.skorDplOutput ?? 0;
+
+        // Auto-inject capaian logbook riil mahasiswa jika belum dinilai manual
+        if (currentSkorDplLogbook === 0) {
+          const targetLogbook = ruleConfigs?.logbookTargetKegiatan || 24;
+          const approvedCount = await prisma.logbookKkn.count({
+            where: {
+              statusApproval: StatusLogbookKkn.DISETUJUI_DPL,
+              OR: [{ penulisId: st.userId }, ...(kelompok?.id ? [{ kelompokId: kelompok.id }] : [])],
+            },
+          }).catch(() => 0);
+          currentSkorDplLogbook = Math.min(100, Math.round((approvedCount / targetLogbook) * 100));
+        }
 
         // Pertahankan nilai esai individual jika DPL sudah menyesuaikannya secara spesifik
         const hasCustomIndividualScore =
@@ -1553,24 +1671,44 @@ export const penilaianKknService = {
           ? existing.skorDplLaporanAkhir
           : finalScore;
 
-        const subtotalDpl = Number(
-          (
-            calculateAspectScore(currentSkorDplPerencanaan, 20) +
-            calculateAspectScore(currentSkorDplKontribusi, 10) +
-            calculateAspectScore(currentSkorDplLogbook, 20) +
-            calculateAspectScore(currentSkorDplAnalisis, 20) +
-            calculateAspectScore(currentSkorDplOutput, 20) +
-            calculateAspectScore(currentSkorDplLaporanAkhir, 10)
-          ).toFixed(2)
-        );
+        const aspectScores = [
+          { score: currentSkorDplPerencanaan, weight: 20 },
+          { score: currentSkorDplKontribusi, weight: 10 },
+          { score: currentSkorDplLogbook, weight: 20 },
+          { score: currentSkorDplAnalisis, weight: 20 },
+          { score: currentSkorDplOutput, weight: 20 },
+          { score: currentSkorDplLaporanAkhir, weight: 10 },
+        ];
+
+        const { rawSubtotal, normalizedSubtotal, totalAssessedWeight } =
+          calculateProgressiveAspectSubtotal(aspectScores);
+
+        // Jika semua aspek DPL sudah dinilai (bobot 100%), gunakan rawSubtotal.
+        // Jika baru sebagian dinilai (misal baru Laporan Akhir atau Laporan Akhir + Logbook),
+        // gunakan normalizedSubtotal agar nilai capaian DPL tidak jatuh ke 10%.
+        const subtotalDpl = totalAssessedWeight >= 100 ? rawSubtotal : normalizedSubtotal;
+
+        const hasDplAll =
+          currentSkorDplPerencanaan > 0 &&
+          currentSkorDplKontribusi > 0 &&
+          currentSkorDplLogbook > 0 &&
+          currentSkorDplAnalisis > 0 &&
+          currentSkorDplOutput > 0 &&
+          currentSkorDplLaporanAkhir > 0;
+
+        const isComplete = hasDplAll && subtotalMitra > 0;
 
         const nilaiAkhir = calculateCompositeScore(
           subtotalMitra,
           subtotalDpl,
           bobotMplPersen,
-          bobotDplPersen
+          bobotDplPersen,
+          true
         );
-        const kategoriNilai = calculateGradeCategory(nilaiAkhir);
+        const kategoriNilai = calculateGradeCategory(nilaiAkhir, {
+          isFinalized: false,
+          isComplete,
+        });
 
         await prisma.penilaianKknMahasiswa.upsert({
           where: { studentId: st.userId },
@@ -1593,6 +1731,7 @@ export const penilaianKknService = {
           update: {
             dplId: evaluatorId || kelompok.dplId || undefined,
             skorDplLaporanAkhir: currentSkorDplLaporanAkhir,
+            skorDplLogbook: currentSkorDplLogbook,
             subtotalDpl,
             nilaiAkhir,
             kategoriNilai,
@@ -1727,32 +1866,62 @@ export const penilaianKknService = {
     const subtotalMitra = existing ? Number(existing.subtotalMitra) : 0;
     const currentSkorDplPerencanaan = existing?.skorDplPerencanaan ?? 0;
     const currentSkorDplKontribusi = existing?.skorDplKontribusi ?? 0;
-    const currentSkorDplLogbook = existing?.skorDplLogbook ?? 0;
+    let currentSkorDplLogbook = existing?.skorDplLogbook ?? 0;
     const currentSkorDplAnalisis = existing?.skorDplAnalisis ?? 0;
     const currentSkorDplOutput = existing?.skorDplOutput ?? 0;
     const currentSkorDplLaporanAkhir = finalScore;
 
-    const subtotalDpl = Number(
-      (
-        calculateAspectScore(currentSkorDplPerencanaan, 20) +
-        calculateAspectScore(currentSkorDplKontribusi, 10) +
-        calculateAspectScore(currentSkorDplLogbook, 20) +
-        calculateAspectScore(currentSkorDplAnalisis, 20) +
-        calculateAspectScore(currentSkorDplOutput, 20) +
-        calculateAspectScore(currentSkorDplLaporanAkhir, 10)
-      ).toFixed(2)
-    );
-
     const ruleConfigs = await configService.getRuleEngineConfigs().catch(() => null);
     const bobotDplPersen = ruleConfigs?.penilaianBobotDplPersen ?? 50;
     const bobotMplPersen = ruleConfigs?.penilaianBobotMplPersen ?? 50;
+
+    // Auto-inject capaian logbook riil mahasiswa jika belum dinilai manual
+    if (currentSkorDplLogbook === 0) {
+      const targetLogbook = ruleConfigs?.logbookTargetKegiatan || 24;
+      const approvedCount = await prisma.logbookKkn.count({
+        where: {
+          statusApproval: StatusLogbookKkn.DISETUJUI_DPL,
+          OR: [{ penulisId: studentId }, ...(kelompokId ? [{ kelompokId }] : [])],
+        },
+      }).catch(() => 0);
+      currentSkorDplLogbook = Math.min(100, Math.round((approvedCount / targetLogbook) * 100));
+    }
+
+    const aspectScores = [
+      { score: currentSkorDplPerencanaan, weight: 20 },
+      { score: currentSkorDplKontribusi, weight: 10 },
+      { score: currentSkorDplLogbook, weight: 20 },
+      { score: currentSkorDplAnalisis, weight: 20 },
+      { score: currentSkorDplOutput, weight: 20 },
+      { score: currentSkorDplLaporanAkhir, weight: 10 },
+    ];
+
+    const { rawSubtotal, normalizedSubtotal, totalAssessedWeight } =
+      calculateProgressiveAspectSubtotal(aspectScores);
+
+    const subtotalDpl = totalAssessedWeight >= 100 ? rawSubtotal : normalizedSubtotal;
+
+    const hasDplAll =
+      currentSkorDplPerencanaan > 0 &&
+      currentSkorDplKontribusi > 0 &&
+      currentSkorDplLogbook > 0 &&
+      currentSkorDplAnalisis > 0 &&
+      currentSkorDplOutput > 0 &&
+      currentSkorDplLaporanAkhir > 0;
+
+    const isComplete = hasDplAll && subtotalMitra > 0;
+
     const nilaiAkhir = calculateCompositeScore(
       subtotalMitra,
       subtotalDpl,
       bobotMplPersen,
-      bobotDplPersen
+      bobotDplPersen,
+      true
     );
-    const kategoriNilai = calculateGradeCategory(nilaiAkhir);
+    const kategoriNilai = calculateGradeCategory(nilaiAkhir, {
+      isFinalized: false,
+      isComplete,
+    });
 
     const saved = await prisma.penilaianKknMahasiswa.upsert({
       where: { studentId },
@@ -1775,6 +1944,7 @@ export const penilaianKknService = {
       update: {
         dplId: dplId || undefined,
         skorDplLaporanAkhir: finalScore,
+        skorDplLogbook: currentSkorDplLogbook,
         subtotalDpl,
         nilaiAkhir,
         kategoriNilai,
@@ -1821,6 +1991,324 @@ export const penilaianKknService = {
       status: "Sudah Dinilai",
       catatan,
       penilaianRecord: saved,
+    };
+  },
+
+  /**
+   * Normalisasi Massal Seluruh Data Penilaian Mahasiswa KKN
+   * - Harmonisasi nilai laporan akhir kelompok ke seluruh mahasiswa
+   * - Auto-inject realisasi logbook disetujui riil (skala 0-100)
+   * - Auto-inject realisasi presensi GPS riil (skala 0-100)
+   * - Pembersihan teks tercemar H+5 pada catatan_penilaian_dpl
+   * - Hitung ulang subtotal DPL, subtotal Mitra, nilai akhir, dan kategori mutu bebas dari vonis "E palsu"
+   * - Pastikan konfigurasi bobot resmi tersimpan di konfigurasi_sistem
+   */
+  normalizeAllStudentAssessments: async (operatorId?: string) => {
+    // 1. Pastikan default config bobot di konfigurasi_sistem
+    try {
+      await (prisma as any).konfigurasiSistem.upsert({
+        where: { key: "penilaian_bobot_dpl_persen" },
+        update: {},
+        create: {
+          key: "penilaian_bobot_dpl_persen",
+          value: "50",
+          tipe: "NUMBER",
+          deskripsi: "Bobot penilaian akhir DPL (persen)",
+          diperbaruiOleh: operatorId || "SYSTEM_NORMALIZER",
+        },
+      });
+      await (prisma as any).konfigurasiSistem.upsert({
+        where: { key: "penilaian_bobot_mpl_persen" },
+        update: {},
+        create: {
+          key: "penilaian_bobot_mpl_persen",
+          value: "50",
+          tipe: "NUMBER",
+          deskripsi: "Bobot penilaian akhir Mitra Lapangan / MPL (persen)",
+          diperbaruiOleh: operatorId || "SYSTEM_NORMALIZER",
+        },
+      });
+    } catch (cfgErr: any) {
+      console.warn("[normalizeAllStudentAssessments] Config upsert warning:", cfgErr?.message);
+    }
+
+    const ruleConfigs = await configService.getRuleEngineConfigs().catch(() => null);
+    const targetLogbook = ruleConfigs?.logbookTargetKegiatan || 24;
+    const targetDailyMinutes = (ruleConfigs?.attendanceMinDurationHours || 4) * 60;
+    const bobotDplPersen = ruleConfigs?.penilaianBobotDplPersen ?? 50;
+    const bobotMplPersen = ruleConfigs?.penilaianBobotMplPersen ?? 50;
+
+    // 2. Ambil seluruh mahasiswa KKN riil
+    const allStudentsRaw = await prisma.user.findMany({
+      where: {
+        studentProfile: { isNot: null },
+      },
+      include: {
+        studentProfile: {
+          include: {
+            kelompok: {
+              include: {
+                programKerja: true,
+                dpl: true,
+              },
+            },
+            assignedRw: true,
+          },
+        },
+        penilaianKkn: true,
+      },
+    });
+
+    const students = allStudentsRaw.filter(
+      (s) =>
+        !isTestUser(s) &&
+        !isTestStudent(s.studentProfile) &&
+        !isTestKelompok(s.studentProfile?.kelompok)
+    );
+
+    let normalizedCount = 0;
+    let fixedScoreAnomalies = 0;
+    let cleanedH5Notes = 0;
+
+    for (const st of students) {
+      const profile = st.studentProfile;
+      if (!profile) continue;
+
+      const kelompok = profile.kelompok;
+      const kelompokId = kelompok?.id || null;
+      const dplId = kelompok?.dplId || kelompok?.dpl?.id || null;
+      const existing = st.penilaianKkn;
+
+      // Cek apakah ada catatan H+5 yang mencemari catatan penilaian DPL
+      let assessmentNote = profile.assessmentNote || "";
+      if (assessmentNote.includes("Dibatalkan otomatis oleh sistem (H+5)")) {
+        assessmentNote = "";
+        cleanedH5Notes++;
+      }
+
+      // Cek apakah kelompok sudah memiliki laporan akhir yang dinilai
+      let groupLaporanScore: number | null = null;
+      if (kelompok?.programKerja) {
+        const laporanProker =
+          kelompok.programKerja.find((p) => p.kategori?.toUpperCase() === "LAPORAN_AKHIR") ||
+          kelompok.programKerja.find((p) => p.deskripsi?.toLowerCase().includes("laporan akhir"));
+        if (laporanProker?.skorPenilaian !== null && laporanProker?.skorPenilaian !== undefined) {
+          groupLaporanScore = Number(laporanProker.skorPenilaian);
+        }
+      }
+
+      // Hitung kepatuhan logbook riil
+      const approvedLogbookCount = await prisma.logbookKkn
+        .count({
+          where: {
+            statusApproval: StatusLogbookKkn.DISETUJUI_DPL,
+            OR: [{ penulisId: st.id }, ...(kelompokId ? [{ kelompokId }] : [])],
+          },
+        })
+        .catch(() => 0);
+      const calculatedLogbookScore = Math.min(
+        100,
+        Math.round((approvedLogbookCount / targetLogbook) * 100)
+      );
+
+      // Hitung kehadiran presensi riil
+      const attendances = await prisma.activityAttendance
+        .findMany({
+          where: {
+            studentId: st.id,
+            status: { notIn: ["TIDAK_ADA_KEGIATAN", "SKIP_KEGIATAN"] },
+          },
+          select: {
+            status: true,
+            actualInZoneMinutes: true,
+            attendedAt: true,
+            checkOutAt: true,
+          },
+        })
+        .catch(() => []);
+
+      let sumAttendanceScores = 0;
+      for (const att of attendances) {
+        const stUpper = String(att.status || "").toUpperCase();
+        let mins = Math.min(480, Math.max(0, att.actualInZoneMinutes ?? 0));
+        if (mins === 0 && att.attendedAt && att.checkOutAt) {
+          mins = Math.floor(
+            (new Date(att.checkOutAt).getTime() - new Date(att.attendedAt).getTime()) / 60000
+          );
+        }
+        if (stUpper === "HADIR_MEMENUHI" || (stUpper === "HADIR" && mins >= targetDailyMinutes)) {
+          sumAttendanceScores += 100;
+        } else if (mins > 0) {
+          sumAttendanceScores += Math.min(100, Math.round((mins / targetDailyMinutes) * 100));
+        } else if (stUpper.includes("IZIN") || stUpper.includes("SAKIT")) {
+          sumAttendanceScores += 100;
+        }
+      }
+      const attendanceRate =
+        attendances.length > 0
+          ? Math.min(100, Math.max(0, Math.round(sumAttendanceScores / attendances.length)))
+          : 0;
+
+      // Resolusi aspek DPL
+      const currentSkorDplPerencanaan = existing?.skorDplPerencanaan ?? 0;
+      const currentSkorDplKontribusi = existing?.skorDplKontribusi ?? 0;
+      const currentSkorDplAnalisis = existing?.skorDplAnalisis ?? 0;
+      const currentSkorDplOutput = existing?.skorDplOutput ?? 0;
+      const resolvedSkorLogbook =
+        (existing?.skorDplLogbook ?? 0) > 0 ? existing!.skorDplLogbook : calculatedLogbookScore;
+
+      // Skor laporan akhir: prioritas existing individual -> groupLaporanScore -> direct assessmentScore
+      const directScore = Number(profile.assessmentScore || 0);
+      let resolvedSkorLaporan = existing?.skorDplLaporanAkhir ?? 0;
+      if (resolvedSkorLaporan === 0) {
+        if (groupLaporanScore !== null && groupLaporanScore > 0) {
+          resolvedSkorLaporan = groupLaporanScore;
+        } else if (directScore > 0) {
+          resolvedSkorLaporan = directScore;
+        }
+      }
+
+      // Aspek Mitra
+      const resolvedSkorMitraKehadiran =
+        (existing?.skorMitraKehadiran ?? 0) > 0 ? existing!.skorMitraKehadiran : attendanceRate;
+      const currentSkorMitraWargaBinaan = existing?.skorMitraWargaBinaan ?? 0;
+      const currentSkorMitraProker = existing?.skorMitraProker ?? 0;
+      const currentSkorMitraKomunikasi = existing?.skorMitraKomunikasi ?? 0;
+      const currentSkorMitraTanggungJawab = existing?.skorMitraTanggungJawab ?? 0;
+      const currentSkorMitraBuktiKegiatan = existing?.skorMitraBuktiKegiatan ?? 0;
+      const currentSkorMitraDampak = existing?.skorMitraDampak ?? 0;
+      const currentSkorMitraInisiatif = existing?.skorMitraInisiatif ?? 0;
+
+      const dplAspects = [
+        { score: currentSkorDplPerencanaan, weight: 20 },
+        { score: currentSkorDplKontribusi, weight: 10 },
+        { score: resolvedSkorLogbook, weight: 20 },
+        { score: currentSkorDplAnalisis, weight: 20 },
+        { score: currentSkorDplOutput, weight: 20 },
+        { score: resolvedSkorLaporan, weight: 10 },
+      ];
+
+      const mitraAspects = [
+        { score: resolvedSkorMitraKehadiran, weight: 15 },
+        { score: currentSkorMitraWargaBinaan, weight: 15 },
+        { score: currentSkorMitraProker, weight: 15 },
+        { score: currentSkorMitraKomunikasi, weight: 10 },
+        { score: currentSkorMitraTanggungJawab, weight: 10 },
+        { score: currentSkorMitraBuktiKegiatan, weight: 10 },
+        { score: currentSkorMitraDampak, weight: 15 },
+        { score: currentSkorMitraInisiatif, weight: 10 },
+      ];
+
+      const dplCalc = calculateProgressiveAspectSubtotal(dplAspects);
+      const mitraCalc = calculateProgressiveAspectSubtotal(mitraAspects);
+
+      const effectiveSubtotalDpl =
+        dplCalc.totalAssessedWeight >= 100 ? dplCalc.rawSubtotal : dplCalc.normalizedSubtotal;
+
+      const effectiveSubtotalMitra =
+        mitraCalc.totalAssessedWeight >= 100 ? mitraCalc.rawSubtotal : mitraCalc.normalizedSubtotal;
+
+      const hasDplAll =
+        currentSkorDplPerencanaan > 0 &&
+        currentSkorDplKontribusi > 0 &&
+        resolvedSkorLogbook > 0 &&
+        currentSkorDplAnalisis > 0 &&
+        currentSkorDplOutput > 0 &&
+        resolvedSkorLaporan > 0;
+
+      const hasMitraAll =
+        resolvedSkorMitraKehadiran > 0 &&
+        currentSkorMitraWargaBinaan > 0 &&
+        currentSkorMitraProker > 0 &&
+        currentSkorMitraKomunikasi > 0 &&
+        currentSkorMitraTanggungJawab > 0 &&
+        currentSkorMitraBuktiKegiatan > 0 &&
+        currentSkorMitraDampak > 0 &&
+        currentSkorMitraInisiatif > 0;
+
+      const isComplete = hasDplAll && hasMitraAll;
+      const isFinalized = Boolean(existing?.isFinalized);
+
+      const nilaiAkhir = calculateCompositeScore(
+        effectiveSubtotalMitra,
+        effectiveSubtotalDpl,
+        bobotMplPersen,
+        bobotDplPersen,
+        true
+      );
+
+      const kategoriNilai = calculateGradeCategory(nilaiAkhir, {
+        isFinalized,
+        isComplete,
+      });
+
+      // Deteksi apakah ada perbaikan anomali nilai (misal dari <= 10 menjadi skor wajar)
+      if (existing && Number(existing.nilaiAkhir) <= 10 && nilaiAkhir > 10) {
+        fixedScoreAnomalies++;
+      }
+
+      // Update StudentKkn
+      await prisma.studentKkn.update({
+        where: { id: profile.id },
+        data: {
+          assessmentScore: effectiveSubtotalDpl > 0 ? effectiveSubtotalDpl : directScore,
+          assessmentNote: assessmentNote || undefined,
+          isAssessed: effectiveSubtotalDpl > 0 || effectiveSubtotalMitra > 0,
+        },
+      });
+
+      // Upsert PenilaianKknMahasiswa
+      await prisma.penilaianKknMahasiswa.upsert({
+        where: { studentId: st.id },
+        create: {
+          studentId: st.id,
+          kelompokId,
+          dplId,
+          skorDplLaporanAkhir: resolvedSkorLaporan,
+          skorDplPerencanaan: currentSkorDplPerencanaan,
+          skorDplKontribusi: currentSkorDplKontribusi,
+          skorDplLogbook: resolvedSkorLogbook,
+          skorDplAnalisis: currentSkorDplAnalisis,
+          skorDplOutput: currentSkorDplOutput,
+          subtotalDpl: effectiveSubtotalDpl,
+          skorMitraKehadiran: resolvedSkorMitraKehadiran,
+          skorMitraWargaBinaan: currentSkorMitraWargaBinaan,
+          skorMitraProker: currentSkorMitraProker,
+          skorMitraKomunikasi: currentSkorMitraKomunikasi,
+          skorMitraTanggungJawab: currentSkorMitraTanggungJawab,
+          skorMitraBuktiKegiatan: currentSkorMitraBuktiKegiatan,
+          skorMitraDampak: currentSkorMitraDampak,
+          skorMitraInisiatif: currentSkorMitraInisiatif,
+          subtotalMitra: effectiveSubtotalMitra,
+          nilaiAkhir,
+          kategoriNilai,
+          catatanDpl: existing?.catatanDpl || assessmentNote || "",
+          status: existing?.status || StatusPenilaianKkn.TERSIMPAN,
+          isFinalized,
+        },
+        update: {
+          dplId: dplId || undefined,
+          skorDplLaporanAkhir: resolvedSkorLaporan,
+          skorDplLogbook: resolvedSkorLogbook,
+          subtotalDpl: effectiveSubtotalDpl,
+          skorMitraKehadiran: resolvedSkorMitraKehadiran,
+          subtotalMitra: effectiveSubtotalMitra,
+          nilaiAkhir,
+          kategoriNilai,
+          catatanDpl: existing?.catatanDpl || assessmentNote || "",
+        },
+      });
+
+      normalizedCount++;
+    }
+
+    return {
+      success: true,
+      totalStudents: students.length,
+      normalizedCount,
+      fixedScoreAnomalies,
+      cleanedH5Notes,
+      message: `Normalisasi berhasil untuk ${normalizedCount} mahasiswa. Diperbaiki ${fixedScoreAnomalies} anomali nilai dan dibersihkan ${cleanedH5Notes} catatan teks H+5.`,
     };
   },
 };
