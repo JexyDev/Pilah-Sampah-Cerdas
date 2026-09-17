@@ -423,15 +423,7 @@ export const mahasiswaPoinService = {
                 ? `DPL: ${(kelompokData as any).rataRataAssessment.toFixed(0)}`
                 : `DPL: Review Pending`;
 
-            // 2. Buat PointHistory baru dengan poin akhir hasil formula dan rincian transparan
-            await tx.pointHistory.create({
-              data: {
-                userId: mhs.userId,
-                points: Math.round(mhs.poinAkhir),
-                kategori: "POIN_KKN_FINAL",
-                description: `Poin KKN Kelompok (${kelompokData.kelompokName}): Proker Step ${Math.round((kelompokData as any).nilaiProkerStep)} | ${statusDpl} | Formula [60% Kelompok (${Math.round(kelompokData.komponenA)}) + 40% Coblong (${Math.round((kelompokData as any).komponenB || 0)})] = +${Math.round(mhs.poinAkhir)} PTS`,
-              },
-            });
+            // 2. Normalisasi poin dinonaktifkan sesuai aturan terbaru (tidak menambah PointHistory POIN_KKN_FINAL)
           }
         });
 
