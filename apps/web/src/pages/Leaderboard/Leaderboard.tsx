@@ -190,10 +190,11 @@ const Leaderboard: React.FC = () => {
         raw = pengangkut.map((p, i) => ({
           id: p.id,
           rank: i + 1,
-          name: p.name,
-          subtitle: p.wilayah,
+          name: p.namaDisplay || p.name,
+          subtitle: p.kelurahan ? `Kel. ${p.kelurahan}` : p.wilayah || "-",
           points: p.totalPoints,
         }));
+
       } else if (s1Tab === "kelurahan") {
         raw = (regions || []).map((k: any, i: number) => {
           const rawName = k.kelurahanName || k.name || `Kelurahan ${i + 1}`;

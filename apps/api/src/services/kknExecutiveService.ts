@@ -1101,4 +1101,235 @@ export const kknExecutiveService = {
 
     return XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
   },
+
+  /**
+   * Mengambil data fasilitas tata kelola sampah untuk tampilan peta GIS
+   * Mengecualikan fasilitas jenis posko_kkn (bukan fasilitas tata kelola sampah)
+   */
+  async getWasteFacilitiesGis(filters: { kelurahan?: string; rw?: string } = {}) {
+    // Normalisasi label Indonesia dari jenis fasilitas
+    const namaJenisMap: Record<string, string> = {
+      loseda: "Loseda/Proseda",
+      bata_terawang: "Bata Terawang",
+      rumah_maggot: "Rumah Maggot",
+      bank_sampah: "Bank Sampah",
+      tps: "TPS",
+      buruan_sae: "Buruan SAE",
+      poc: "POC",
+    };
+
+    // Bangun where clause untuk filter kelurahan (melalui relasi rw → kelurahan)
+    const facilityWhere: any = {
+      jenis: { not: "posko_kkn" },
+    };
+
+    if (filters.kelurahan) {
+      const rawKel = filters.kelurahan.replace(/^Kel\.\s*/i, "").trim();
+      if (rawKel && rawKel !== "ALL" && rawKel !== "Semua Kelurahan") {
+        facilityWhere.rw = {
+          kelurahan: {
+            name: { contains: rawKel, mode: "insensitive" },
+          },
+        };
+      }
+    }
+
+    const facilities = await prisma.facility.findMany({
+      where: facilityWhere,
+      select: {
+        id: true,
+        jenis: true,
+        nama: true,
+        alamat: true,
+        latitude: true,
+        longitude: true,
+        statusApproval: true,
+        rw: {
+          select: {
+            id: true,
+            name: true,
+            kelurahan: {
+              select: { id: true, name: true },
+            },
+          },
+        },
+      },
+      orderBy: { jenis: "asc" },
+    });
+
+    // Filter RW di memori jika ada filter RW
+    let result = facilities;
+    if (filters.rw) {
+      const rawRw = filters.rw.trim();
+      if (rawRw && rawRw !== "ALL" && rawRw !== "Semua RW") {
+        const rwNum = parseInt(rawRw.replace(/\D/g, ""), 10);
+        result = facilities.filter((f) => {
+          if (!f.rw) return false;
+          if (!isNaN(rwNum)) {
+            const rwNumFromName = parseInt(f.rw.name.replace(/\D/g, ""), 10);
+            return rwNumFromName === rwNum;
+          }
+          return f.rw.name.toLowerCase().includes(rawRw.toLowerCase());
+        });
+      }
+    }
+
+    return result.map((f) => ({
+      id: f.id,
+      jenis: f.jenis,
+      namaJenis: namaJenisMap[f.jenis] ?? f.jenis,
+      nama: f.nama,
+      alamat: f.alamat ?? null,
+      latitude: f.latitude ? Number(f.latitude) : null,
+      longitude: f.longitude ? Number(f.longitude) : null,
+      kelurahan: f.rw?.kelurahan?.name ?? null,
+      rwNama: f.rw?.name ?? null,
+      statusApproval: f.statusApproval,
+    }));
+  },
+
+  /**
+   * Mengambil data tempat sampah yang sudah teraktivasi (bukan status PRINTED)
+   * Status teraktivasi: ASSIGNED_TO_PIC, ACTIVE_BOUND
+   * Dikembalikan dengan informasi kelurahan dan RW
+   */
+  async getActivatedBinsBreakdown(filters: { kelurahan?: string; rw?: string } = {}) {
+    // Status yang dianggap "teraktivasi" (bukan PRINTED/BROKEN/INACTIVE)
+    const activatedStatuses = ["ASSIGNED_TO_PIC", "ACTIVE_BOUND"] as const;
+
+    const binWhere: any = {
+      status: { in: activatedStatuses },
+    };
+
+    // Filter kelurahan via relasi langsung kelurahanId → Kelurahan
+    if (filters.kelurahan) {
+      const rawKel = filters.kelurahan.replace(/^Kel\.\s*/i, "").trim();
+      if (rawKel && rawKel !== "ALL" && rawKel !== "Semua Kelurahan") {
+        binWhere.kelurahan = {
+          name: { contains: rawKel, mode: "insensitive" },
+        };
+      }
+    }
+
+    // Filter RW via relasi rwId → Rw
+    if (filters.rw) {
+      const rawRw = filters.rw.trim();
+      if (rawRw && rawRw !== "ALL" && rawRw !== "Semua RW") {
+        const rwNum = parseInt(rawRw.replace(/\D/g, ""), 10);
+        if (!isNaN(rwNum)) {
+          binWhere.rw = {
+            name: { contains: String(rwNum), mode: "insensitive" },
+          };
+        }
+      }
+    }
+
+    const bins = await prisma.bin.findMany({
+      where: binWhere,
+      select: {
+        id: true,
+        qrCode: true,
+        status: true,
+        latitude: true,
+        longitude: true,
+        createdAt: true,
+        kelurahan: {
+          select: { id: true, name: true },
+        },
+        rw: {
+          select: { id: true, name: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return {
+      total: bins.length,
+      bins: bins.map((b) => ({
+        id: b.id,
+        qrCode: b.qrCode,
+        kelurahan: b.kelurahan?.name ?? null,
+        rwNama: b.rw?.name ?? null,
+        status: b.status,
+        tanggalAktivasi: b.createdAt,
+        latitude: b.latitude ? Number(b.latitude) : null,
+        longitude: b.longitude ? Number(b.longitude) : null,
+      })),
+    };
+  },
+
+  /**
+   * Menghitung tingkat kepatuhan per kelurahan berdasarkan data aktual Bin
+   * Kepatuhan = persentase Bin berstatus ACTIVE_BOUND dari total Bin per kelurahan
+   */
+  async getComplianceOverlay(filters: { kelurahan?: string; rw?: string } = {}) {
+    // Bangun filter kelurahan
+    const kelurahanWhere: any = {};
+    if (filters.kelurahan) {
+      const rawKel = filters.kelurahan.replace(/^Kel\.\s*/i, "").trim();
+      if (rawKel && rawKel !== "ALL" && rawKel !== "Semua Kelurahan") {
+        kelurahanWhere.name = { contains: rawKel, mode: "insensitive" };
+      }
+    }
+
+    // Ambil semua kelurahan yang punya Bin
+    const kelurahanList = await prisma.kelurahan.findMany({
+      where: kelurahanWhere,
+      select: {
+        id: true,
+        name: true,
+        bins: {
+          where: filters.rw
+            ? (() => {
+                const rawRw = filters.rw.trim();
+                if (rawRw && rawRw !== "ALL" && rawRw !== "Semua RW") {
+                  const rwNum = parseInt(rawRw.replace(/\D/g, ""), 10);
+                  if (!isNaN(rwNum)) {
+                    return { rw: { name: { contains: String(rwNum), mode: "insensitive" } } };
+                  }
+                }
+                return {};
+              })()
+            : {},
+          select: {
+            id: true,
+            status: true,
+          },
+        },
+      },
+    });
+
+    // Hanya kelurahan yang punya minimal 1 Bin
+    const result = kelurahanList
+      .filter((kel) => kel.bins.length > 0)
+      .map((kel) => {
+        const totalBin = kel.bins.length;
+        const binAktif = kel.bins.filter((b) => b.status === "ACTIVE_BOUND").length;
+        const persentaseAktif = totalBin > 0 ? Math.round((binAktif / totalBin) * 100) : 0;
+
+        let tingkat: string;
+        let warna: string;
+        if (persentaseAktif >= 70) {
+          tingkat = "TINGGI";
+          warna = "#22c55e";
+        } else if (persentaseAktif >= 40) {
+          tingkat = "SEDANG";
+          warna = "#eab308";
+        } else {
+          tingkat = "RENDAH";
+          warna = "#ef4444";
+        }
+
+        return {
+          kelurahan: kel.name,
+          totalBin,
+          binAktif,
+          persentaseAktif,
+          tingkat,
+          warna,
+        };
+      });
+
+    return result;
+  },
 };

@@ -306,6 +306,13 @@ export const gamificationService = {
         name: true,
         email: true,
         rw: { select: { name: true } },
+        petugasProfile: {
+          select: {
+            namaDisplay: true,
+            kelurahan: true,
+            assignedZone: true,
+          },
+        },
         setoranManual: { select: { berat: true } },
         claimedTasks: {
           select: {
@@ -345,10 +352,17 @@ export const gamificationService = {
           0
         );
 
+        const displayName = p.petugasProfile?.namaDisplay || p.name;
+        const displayWilayah = p.petugasProfile?.kelurahan
+          ? `Kel. ${p.petugasProfile.kelurahan}`
+          : p.petugasProfile?.assignedZone || p.rw?.name || "Semua Area";
+
         return {
           id: p.id,
-          name: p.name,
-          wilayah: p.rw?.name || "Semua Area",
+          name: displayName,
+          namaDisplay: p.petugasProfile?.namaDisplay || null,
+          kelurahan: p.petugasProfile?.kelurahan || null,
+          wilayah: displayWilayah,
           totalCompleted,
           avgSlaMinutes: parseFloat(avgSlaMinutes.toFixed(2)),
           successRatePercent: parseFloat((successRate * 100).toFixed(2)),
@@ -356,6 +370,7 @@ export const gamificationService = {
           totalKgHandled: totalKg,
         };
       })
+
       .sort((a, b) => b.totalPoints - a.totalPoints)
       .slice(0, 10);
 

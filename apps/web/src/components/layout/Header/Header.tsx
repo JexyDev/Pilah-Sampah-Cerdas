@@ -22,6 +22,8 @@ import {
 import { useAuthStore } from "../../../store/useAuthStore";
 import { getProfilePhotoUrl, handleAvatarError } from "../../../utils/photoUtils";
 import api from "../../../services/api";
+import RoleSwitcher from "../../RoleSwitcher";
+
 
 const formatTimeAgo = (dateString?: string) => {
   if (!dateString) return "";
@@ -591,8 +593,12 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
           )}
         </div>
 
+        {/* Multi-Role Switcher (Opsi A) */}
+        <RoleSwitcher />
+
         {/* Vertical Separator */}
         <div className="h-5 sm:h-6 w-px bg-slate-200 dark:bg-slate-800 mx-0.5 shrink-0" />
+
 
         {/* User Profile Pill Card with Dropdown (Direct Navigation & Logout) */}
         <div className="relative" ref={profileRef}>

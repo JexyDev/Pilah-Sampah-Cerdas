@@ -87,6 +87,8 @@ const ManageConfigs = React.lazy(() => import("../pages/SuperUser/ManageConfigs"
 const KelolaPoinPengguna = React.lazy(() => import("../pages/KelolaPoinPengguna/KelolaPoinPengguna"));
 const ZonaInspectorPage = React.lazy(() => import("../pages/Developer/ZonaInspectorPage"));
 const KelolaLogbookPage = React.lazy(() => import("../pages/Developer/KelolaLogbookPage"));
+const PoinMahasiswaKknPage = React.lazy(() => import("../pages/Developer/PoinMahasiswaKknPage"));
+const MplDashboardPage = React.lazy(() => import("../pages/mpl/MplDashboardPage"));
 
 // Scroll Restoration Helper Component (Safari WebKit & Cross-Browser Safe)
 export const ScrollToTop: React.FC = () => {
@@ -1404,6 +1406,24 @@ const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute allowedRoles={["SUPER_USER", "DPL", "MPL", "MAHASISWA_KKN", "PANITIA_TASKFORCE", "PIMPINAN", "DEVELOPER"]}>
               <KknWargaMonitoring />
+            </ProtectedRoute>
+          }
+        />
+        {/* MPL Dashboard — Independent dari DPL, scope otomatis ke kelurahan MPL */}
+        <Route
+          path="/dashboard-mpl"
+          element={
+            <ProtectedRoute allowedRoles={["MPL", "MITRA_PEMBIMBING_LAPANGAN", "MITRA_PENDAMPING_LAPANGAN", "MITRA", "SUPER_USER", "DEVELOPER"]}>
+              <MplDashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        {/* Developer Tool: Simulasi & Normalisasi Poin Mahasiswa KKN */}
+        <Route
+          path="/developer/poin-mahasiswa-kkn"
+          element={
+            <ProtectedRoute allowedRoles={["DEVELOPER", "SUPER_USER"]}>
+              <PoinMahasiswaKknPage />
             </ProtectedRoute>
           }
         />
