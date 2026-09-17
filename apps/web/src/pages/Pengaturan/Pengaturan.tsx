@@ -121,6 +121,13 @@ const Pengaturan: React.FC = () => {
         } else if (["ADMIN_DLH", "SUPER_USER", "DEVELOPER"].includes(roleUpper)) {
           resolvedRw = "Seluruh Kota";
           resolvedKel = "Kota Bandung";
+        } else if (["MPL", "MITRA_PEMBIMBING_LAPANGAN", "MITRA_PENDAMPING_LAPANGAN", "MITRA"].includes(roleUpper)) {
+          resolvedRw = "Kelurahan Dampingan KKN";
+          if (!resolvedKel || resolvedKel === "-") {
+            resolvedKel = u.kelurahan || storeUser?.kelurahan || storeUser?.wilayah || "Kelurahan Binaan";
+          }
+        } else if (["DPL", "DOSEN_PEMBIMBING", "DOSEN_PENDAMPING"].includes(roleUpper)) {
+          resolvedRw = "Kelompok Binaan KKN";
         } else if (!resolvedRw) {
           resolvedRw = "RW 01";
         }
@@ -255,6 +262,19 @@ const Pengaturan: React.FC = () => {
   const avatarUrl = getProfilePhotoUrl(profileData.fotoProfil, profileData.name);
   const initials = profileData.name ? profileData.name.trim()[0].toUpperCase() : "P";
 
+  const getRoleDisplayName = (role: string) => {
+    const r = (role || "").toUpperCase();
+    if (r === "PEMIMPIN" || r === "PIMPINAN") return "PIMPINAN";
+    if (r === "MPL" || r === "MITRA_PEMBIMBING_LAPANGAN" || r === "MITRA_PENDAMPING_LAPANGAN" || r === "MITRA") {
+      return "MITRA PEMBIMBING LAPANGAN (MPL)";
+    }
+    if (r === "DPL" || r === "DOSEN_PEMBIMBING" || r === "DOSEN_PENDAMPING") {
+      return "DOSEN PEMBIMBING LAPANGAN (DPL)";
+    }
+    if (r === "PANITIA_TASKFORCE" || r === "TASK_FORCE") return "PANITIA TASKFORCE KKN";
+    return role;
+  };
+
   const menuItems = [
     { id: "profil" as TabType, label: "Pengaturan Profil", icon: User },
     ...(isDeveloper ? [
@@ -305,7 +325,7 @@ const Pengaturan: React.FC = () => {
             <div className="space-y-2 text-xs">
               <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-800/60">
                 <span className="text-[10px] font-black uppercase text-slate-400 block">Tingkat Akses / Role</span>
-                <p className="font-black text-[#009966] uppercase mt-0.5">{profileData.role === "PEMIMPIN" || profileData.role === "PIMPINAN" ? "PIMPINAN" : profileData.role}</p>
+                <p className="font-black text-[#009966] uppercase mt-0.5">{getRoleDisplayName(profileData.role)}</p>
               </div>
               <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-800/60">
                 <span className="text-[10px] font-black uppercase text-slate-400 block">Wilayah Tugas</span>
@@ -459,7 +479,7 @@ const Pengaturan: React.FC = () => {
 
                         <div className="space-y-1.5">
                           <label className="block text-xs font-black">Peran / Hak Akses</label>
-                          <input type="text" disabled className="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-600 dark:text-slate-400 font-extrabold uppercase cursor-not-allowed" value={profileData.role === "PEMIMPIN" || profileData.role === "PIMPINAN" ? "PIMPINAN" : profileData.role} />
+                          <input type="text" disabled className="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-600 dark:text-slate-400 font-extrabold uppercase cursor-not-allowed" value={getRoleDisplayName(profileData.role)} />
                         </div>
 
                         {profileData.role === "WARGA" && (
