@@ -1686,16 +1686,6 @@ export class KknService {
         });
       }
 
-      if (kknUserId) {
-        await tx.pointHistory.create({
-          data: {
-            userId: kknUserId,
-            points: 10,
-            description: `Aktivasi QR ${qrCode} Warga via Scan`,
-          },
-        });
-      }
-
       await tx.user.update({
         where: { id: wargaId },
         data: { lifecycleState: "FULLY_ACTIVE" },
@@ -1893,15 +1883,6 @@ export class KknService {
         }
       }
 
-      if (kknUserId) {
-        await tx.pointHistory.create({
-          data: {
-            userId: kknUserId,
-            points: 10,
-            description: "Aktivasi Bin Warga (Organik & Anorganik)",
-          },
-        });
-      }
       await tx.pointHistory.create({
         data: { userId: wargaId, points: 10, description: "Mendapatkan 2 Tempat Sampah" },
       });
@@ -1923,16 +1904,15 @@ export class KknService {
         action: "REQUEST_ACTIVATE_BIN",
       },
       orderBy: { timestamp: "desc" },
-      take: 10,
+      take: 50,
     });
 
     const pointLogs = await prisma.pointHistory.findMany({
       where: {
         userId: kknUserId,
-        description: { contains: "Laporan" },
       },
       orderBy: { createdAt: "desc" },
-      take: 10,
+      take: 100,
     });
 
     const combined = [
@@ -1947,7 +1927,7 @@ export class KknService {
       ...pointLogs.map((log) => ({
         id: log.id,
         title: log.description,
-        subtitle: `Mendapatkan +${log.points} poin`,
+        subtitle: log.points > 0 ? `Mendapatkan +${log.points} poin` : `${log.points} poin`,
         timestamp: log.createdAt,
         type: "laporan",
         points: log.points,
@@ -1955,7 +1935,7 @@ export class KknService {
     ];
 
     combined.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-    return combined.slice(0, 20);
+    return combined.slice(0, 100);
   }
 
   async handover(fromKknUserId: string, toKknUserId: string, rwId: number, notes?: string) {
