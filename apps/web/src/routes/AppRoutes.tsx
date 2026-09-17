@@ -1166,6 +1166,7 @@ const AppRoutes: React.FC = () => {
             <ProtectedRoute
               allowedRoles={[
                 "SUPER_USER",
+                "DEVELOPER",
                 "ADMIN_DLH",
                 "CAMAT",
                 "LURAH",
@@ -1173,8 +1174,15 @@ const AppRoutes: React.FC = () => {
                 "PETUGAS_RESIDU",
                 "MAHASISWA_KKN",
                 "PIMPINAN",
+                "PEMIMPIN",
                 "PANITIA_TASKFORCE",
                 "DPL",
+                "DOSEN_PEMBIMBING",
+                "DOSEN_PENDAMPING",
+                "MPL",
+                "MITRA_PEMBIMBING_LAPANGAN",
+                "MITRA_PENDAMPING_LAPANGAN",
+                "MITRA",
                 "WARGA",
               ]}
             >
