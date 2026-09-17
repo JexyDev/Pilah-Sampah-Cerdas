@@ -282,87 +282,45 @@ export const RekapNilaiKknPage: React.FC = () => {
 
   const handleExportExcel = () => {
     try {
-      const headerRow1 = [
+      const headerRow = [
         "No.",
         "NIM",
         "Nama Mahasiswa",
         "Kelompok",
-        "Otomatis dari Sistem",
-        "Nilai Individu (25%)",
-        "",
-        "",
-        "Program Kerja (25%)",
-        "",
-        "",
-        "Nilai Kelompok (25%)",
-        "",
-        "",
+        "Nilai DPL (0-100)",
+        "Kontribusi DPL (40%)",
+        "Nilai MPL (0-100)",
+        "Kontribusi MPL (40%)",
+        "Laporan Akhir (0-100)",
+        "Kontribusi Laporan (20%)",
         "Nilai Akhir",
         "Predikat",
         "Status",
       ];
 
-      const headerRow2 = [
-        "",
-        "",
-        "",
-        "",
-        "Kehadiran (25%)",
-        "DPL",
-        "MPL",
-        "Gabungan",
-        "DPL",
-        "MPL",
-        "Gabungan",
-        "DPL",
-        "MPL",
-        "Gabungan",
-        "",
-        "",
-        "",
-      ];
+      const dataRows = filteredStudents.map((s, idx) => {
+        const dpl = s.dplScore !== null && s.dplScore !== undefined ? s.dplScore : null;
+        const mpl = s.mplScore !== null && s.mplScore !== undefined ? s.mplScore : null;
+        const lap = s.laporanScore !== null && s.laporanScore !== undefined ? s.laporanScore : null;
 
-      const dataRows = filteredStudents.map((s, idx) => [
-        idx + 1,
-        s.nim,
-        s.name,
-        s.kelompokName,
-        s.kehadiran ?? "—",
-        s.individuDpl ?? "—",
-        s.individuMpl ?? "—",
-        s.individuGabungan !== null && s.individuGabungan !== undefined
-          ? s.individuGabungan.toFixed(1)
-          : "—",
-        s.prokerDpl ?? "—",
-        s.prokerMpl ?? "—",
-        s.prokerGabungan !== null && s.prokerGabungan !== undefined
-          ? s.prokerGabungan.toFixed(1)
-          : "—",
-        s.kelompokDpl ?? "—",
-        s.kelompokMpl ?? "—",
-        s.kelompokGabungan !== null && s.kelompokGabungan !== undefined
-          ? s.kelompokGabungan.toFixed(1)
-          : "—",
-        s.nilaiAkhir !== null && s.nilaiAkhir !== undefined ? s.nilaiAkhir.toFixed(1) : "—",
-        s.predikat ?? "—",
-        s.status ?? "—",
-      ]);
+        return [
+          idx + 1,
+          s.nim,
+          s.name,
+          s.kelompokName,
+          dpl !== null ? dpl.toFixed(1) : "—",
+          dpl !== null ? (dpl * 0.4).toFixed(1) : "—",
+          mpl !== null ? mpl.toFixed(1) : "—",
+          mpl !== null ? (mpl * 0.4).toFixed(1) : "—",
+          lap !== null ? lap.toFixed(1) : "—",
+          lap !== null ? (lap * 0.2).toFixed(1) : "—",
+          s.nilaiAkhir !== null && s.nilaiAkhir !== undefined ? s.nilaiAkhir.toFixed(1) : "—",
+          s.predikat ?? "—",
+          s.status ?? "—",
+        ];
+      });
 
-      const ws = XLSX.utils.aoa_to_sheet([headerRow1, headerRow2, ...dataRows]);
-
-      // Merge cells for multi-tier header
-      ws["!merges"] = [
-        { s: { r: 0, c: 0 }, e: { r: 1, c: 0 } }, // No
-        { s: { r: 0, c: 1 }, e: { r: 1, c: 1 } }, // NIM
-        { s: { r: 0, c: 2 }, e: { r: 1, c: 2 } }, // Nama Mahasiswa
-        { s: { r: 0, c: 3 }, e: { r: 1, c: 3 } }, // Kelompok
-        { s: { r: 0, c: 5 }, e: { r: 0, c: 7 } }, // Nilai Individu (25%)
-        { s: { r: 0, c: 8 }, e: { r: 0, c: 10 } }, // Program Kerja (25%)
-        { s: { r: 0, c: 11 }, e: { r: 0, c: 13 } }, // Nilai Kelompok (25%)
-        { s: { r: 0, c: 14 }, e: { r: 1, c: 14 } }, // Nilai Akhir
-        { s: { r: 0, c: 15 }, e: { r: 1, c: 15 } }, // Predikat
-        { s: { r: 0, c: 16 }, e: { r: 1, c: 16 } }, // Status
-      ];
+      const ws = XLSX.utils.aoa_to_sheet([headerRow, ...dataRows]);
 
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Rekap & Nilai Akhir");
