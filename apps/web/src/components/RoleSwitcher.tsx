@@ -111,9 +111,7 @@ export const RoleSwitcher: React.FC = () => {
         showToast.success(`Berhasil beralih ke peran ${ROLE_LABELS[targetRole]?.label || targetRole}`);
         setIsOpen(false);
         // Refresh navigasi ke dasbor role terkait
-        if (targetRole === "MPL") {
-          navigate("/dashboard-mpl");
-        } else if (targetRole === "DPL") {
+        if (targetRole === "DPL") {
           navigate("/pelaksanaan/kelompok");
         } else {
           navigate("/dasbor?tab=kkn");
