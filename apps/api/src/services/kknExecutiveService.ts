@@ -1144,6 +1144,10 @@ export const kknExecutiveService = {
         latitude: true,
         longitude: true,
         statusApproval: true,
+        pic: true,
+        kontak: true,
+        kapasitas: true,
+        foto: true,
         rw: {
           select: {
             id: true,
@@ -1185,6 +1189,10 @@ export const kknExecutiveService = {
       kelurahan: f.rw?.kelurahan?.name ?? null,
       rwNama: f.rw?.name ?? null,
       statusApproval: f.statusApproval,
+      pic: f.pic ?? null,
+      kontak: f.kontak ?? null,
+      kapasitas: f.kapasitas ?? null,
+      foto: f.foto ?? null,
     }));
   },
 
@@ -1251,6 +1259,7 @@ export const kknExecutiveService = {
         kelurahan: b.kelurahan?.name ?? null,
         rwNama: b.rw?.name ?? null,
         status: b.status,
+        createdAt: b.createdAt,
         tanggalAktivasi: b.createdAt,
         latitude: b.latitude ? Number(b.latitude) : null,
         longitude: b.longitude ? Number(b.longitude) : null,
