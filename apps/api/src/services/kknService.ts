@@ -5415,9 +5415,9 @@ export class KknService {
       try {
         const kelompok = await prisma.kelompokKkn.findUnique({
           where: { id: proker.kelompokId },
-          include: { dpl: { select: { id: true, userId: true } } },
+          select: { id: true, name: true, dplId: true },
         });
-        const dplUserId = kelompok?.dpl?.userId || (kelompok as any)?.dplId;
+        const dplUserId = kelompok?.dplId;
         if (dplUserId) {
           await notificationIntegrationService.sendToUsers({
             userIds: [dplUserId],
