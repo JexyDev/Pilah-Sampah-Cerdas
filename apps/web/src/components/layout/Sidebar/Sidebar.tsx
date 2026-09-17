@@ -955,6 +955,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             "PANITIA_TASKFORCE",
             "PIMPINAN",
             "PEMIMPIN",
+          ] as UserRole[],
+        },
         {
           to: "/developer/poin-mahasiswa-kkn",
           icon: Coins,
