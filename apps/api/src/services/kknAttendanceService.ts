@@ -2013,6 +2013,15 @@ export class KknAttendanceService {
       throw new Error("ATTENDANCE_NOT_FOUND: Belum ada data check-in hari ini untuk di-checkout.");
     }
 
+    // Idempotency: Jika mahasiswa sudah melakukan checkout sebelumnya dan ini bukan autoCheckout sistem,
+    // kembalikan record presensi yang sudah selesai tanpa memproses ulang
+    if (attendance.checkOutAt && !isAutoCheckout) {
+      console.log(
+        `[checkOut] Idempotency: Mahasiswa ${studentId} sudah tercatat checkout pada ${attendance.checkOutAt.toISOString()}`
+      );
+      return attendance;
+    }
+
     // Validasi Geofence: Mahasiswa WAJIB berada di dalam zona untuk checkout
     if (latitude !== undefined && longitude !== undefined) {
       const coSchedule = await prisma.schedule.findUnique({
