@@ -606,8 +606,20 @@ export class UserService {
                 : null,
             }
           : null,
+        petugasProfile: u.petugasProfile
+
+          ? {
+              id: u.petugasProfile.id,
+              nama: u.petugasProfile.nama,
+              namaDisplay: u.petugasProfile.namaDisplay || null,
+              kelurahan: u.petugasProfile.kelurahan || null,
+              assignedZone: u.petugasProfile.assignedZone || null,
+              kpiScore: u.petugasProfile.kpiScore ? Number(u.petugasProfile.kpiScore) : 100,
+            }
+          : null,
       };
     });
+
 
     if (search && search.trim()) {
       const qLower = search.trim().toLowerCase();
@@ -960,6 +972,8 @@ export class UserService {
             data: {
               userId: u.id,
               nama: u.name,
+              namaDisplay: data.namaDisplay || null,
+              kelurahan: data.kelurahan || null,
               noWa: u.phone || "-",
               whitelistStatus: "APPROVED",
               assignedZone: data.wilayah || "Semua Zona",
@@ -1342,6 +1356,8 @@ export class UserService {
             where: { userId: u.id },
             data: {
               nama: u.name,
+              namaDisplay: data.namaDisplay !== undefined ? data.namaDisplay : existingProfile.namaDisplay,
+              kelurahan: data.kelurahan !== undefined ? data.kelurahan : existingProfile.kelurahan,
               noWa: u.phone || existingProfile.noWa,
               assignedZone: data.wilayah !== undefined ? data.wilayah : existingProfile.assignedZone,
             },
@@ -1351,13 +1367,14 @@ export class UserService {
             data: {
               userId: u.id,
               nama: u.name,
+              namaDisplay: data.namaDisplay || null,
+              kelurahan: data.kelurahan || null,
               noWa: u.phone || "-",
               whitelistStatus: "APPROVED",
               assignedZone: data.wilayah || "Semua Zona",
             },
           });
         }
-
         const newRwId = parsedRwId || u.rwId;
         if (newRwId) {
           await tx.rw.updateMany({
