@@ -12,10 +12,17 @@ final prokerDataListProvider =
     FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
       final repo = ref.read(kknRepositoryProvider);
       final list = await repo.getProgramKerja();
-      return list.where((item) {
+      final filtered = list.where((item) {
         final kat = item['kategori']?.toString().toUpperCase() ?? '';
         return kat != 'LAPORAN_AKHIR';
       }).toList();
+      // Sort terbaru paling atas
+      filtered.sort((a, b) {
+        final dateA = a['createdAt']?.toString() ?? '';
+        final dateB = b['createdAt']?.toString() ?? '';
+        return dateB.compareTo(dateA);
+      });
+      return filtered;
     });
 
 class DataProkerView extends ConsumerStatefulWidget {
@@ -28,6 +35,81 @@ class DataProkerView extends ConsumerStatefulWidget {
 class _DataProkerViewState extends ConsumerState<DataProkerView> {
   // Tracking loading state per proker id
   final Map<String, bool> _loadingStatus = {};
+  int _selectedFilterIndex = 0; // 0: Semua, 1: Menunggu, 2: Berjalan, 3: Selesai
+
+  int _getProkerStatusCategory(Map<String, dynamic> item) {
+    final statusPl = (item['statusPelaksanaan'] ?? item['status_pelaksanaan'] ?? '')
+        .toString()
+        .toUpperCase();
+    final legacy = (item['status'] ?? '').toString().toUpperCase();
+
+    if (statusPl == 'SELESAI' || (statusPl.isEmpty && legacy == 'SELESAI')) {
+      return 3; // Selesai
+    }
+    if (statusPl == 'SEDANG_BERJALAN' ||
+        statusPl == 'SEDANG_DILAKSANAKAN' ||
+        statusPl == 'BERJALAN' ||
+        (statusPl.isEmpty &&
+            (legacy == 'SEDANG_BERJALAN' || legacy == 'SEDANG_DILAKSANAKAN'))) {
+      return 2; // Berjalan
+    }
+    return 1; // Menunggu
+  }
+
+  Widget _buildStatusFilter() {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _filterChip('Semua', 0),
+            const SizedBox(width: 8),
+            _filterChip('Menunggu', 1),
+            const SizedBox(width: 8),
+            _filterChip('Berjalan', 2),
+            const SizedBox(width: 8),
+            _filterChip('Selesai', 3),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _filterChip(String label, int index) {
+    final bool active = _selectedFilterIndex == index;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedFilterIndex = index),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+        decoration: BoxDecoration(
+          color: active ? AppColors.primaryGreen : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: active ? AppColors.primaryGreen : AppColors.border,
+          ),
+          boxShadow: active
+              ? [
+                  BoxShadow(
+                    color: AppColors.primaryGreen.withValues(alpha: 0.25),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: active ? Colors.white : AppColors.textSecondary,
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _buildUsulanBadge(String? statusUsulan, String? legacyStatus) {
     String u = (statusUsulan ?? '').toUpperCase();
@@ -362,8 +444,17 @@ class _DataProkerViewState extends ConsumerState<DataProkerView> {
           width: isRevisi || isDitolak ? 1.5 : 1,
         ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: id.isNotEmpty
+            ? () => Navigator.pushNamed(
+                context,
+                AppRoutes.prokerDetail,
+                arguments: {'id': id},
+              )
+            : null,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -402,49 +493,6 @@ class _DataProkerViewState extends ConsumerState<DataProkerView> {
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
                             color: AppColors.primaryBlue,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                if (isRevisi || isDitolak)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isRevisi
-                          ? Colors.orange.shade50
-                          : Colors.red.shade50,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isRevisi
-                            ? Colors.orange.shade300
-                            : Colors.red.shade300,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          isRevisi
-                              ? Icons.rate_review_rounded
-                              : Icons.cancel_rounded,
-                          size: 11,
-                          color: isRevisi
-                              ? Colors.orange.shade700
-                              : Colors.red.shade700,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          isRevisi ? 'Perlu Revisi' : 'Ditolak',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: isRevisi
-                                ? Colors.orange.shade700
-                                : Colors.red.shade700,
                           ),
                         ),
                       ],
@@ -504,14 +552,14 @@ class _DataProkerViewState extends ConsumerState<DataProkerView> {
                       ? Colors.orange.shade50
                       : isDitolak
                       ? Colors.red.shade50
-                      : AppColors.backgroundCanvas,
+                      : Colors.amber.shade50,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: isRevisi
                         ? Colors.orange.shade200
                         : isDitolak
                         ? Colors.red.shade200
-                        : AppColors.border,
+                        : Colors.amber.shade300,
                   ),
                 ),
                 child: Row(
@@ -522,13 +570,13 @@ class _DataProkerViewState extends ConsumerState<DataProkerView> {
                           ? Icons.rate_review_rounded
                           : isDitolak
                           ? Icons.cancel_rounded
-                          : Icons.feedback_outlined,
+                          : Icons.history_rounded,
                       size: 13,
                       color: isRevisi
                           ? Colors.orange.shade700
                           : isDitolak
                           ? Colors.red.shade700
-                          : AppColors.dangerRed,
+                          : Colors.amber.shade800,
                     ),
                     const SizedBox(width: 6),
                     Expanded(
@@ -540,7 +588,7 @@ class _DataProkerViewState extends ConsumerState<DataProkerView> {
                                 ? 'Catatan Revisi DPL:'
                                 : isDitolak
                                 ? 'Alasan Penolakan:'
-                                : 'Catatan DPL:',
+                                : 'Catatan DPL Sebelumnya:',
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
@@ -548,7 +596,7 @@ class _DataProkerViewState extends ConsumerState<DataProkerView> {
                                   ? Colors.orange.shade700
                                   : isDitolak
                                   ? Colors.red.shade700
-                                  : AppColors.dangerRed,
+                                  : Colors.amber.shade800,
                             ),
                           ),
                           const SizedBox(height: 2),
@@ -691,46 +739,7 @@ class _DataProkerViewState extends ConsumerState<DataProkerView> {
                               color: AppColors.primaryGreen,
                             ),
                           )
-                        : Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // Tombol Lihat Program
-                              TextButton.icon(
-                                style: TextButton.styleFrom(
-                                  foregroundColor: AppColors.primaryBlue,
-                                  backgroundColor: AppColors.primaryBlue
-                                      .withValues(alpha: 0.07),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  tapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                  minimumSize: Size.zero,
-                                ),
-                                icon: const Icon(
-                                  Icons.open_in_new_rounded,
-                                  size: 13,
-                                ),
-                                label: const Text(
-                                  'Lihat Program',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                onPressed: () => Navigator.pushNamed(
-                                  context,
-                                  AppRoutes.prokerDetail,
-                                  arguments: {'id': id},
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              // Tombol Selesaikan
-                              ElevatedButton.icon(
+                        : ElevatedButton.icon(
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppColors.primaryGreen,
                                   foregroundColor: Colors.white,
@@ -764,13 +773,12 @@ class _DataProkerViewState extends ConsumerState<DataProkerView> {
                                   judul,
                                 ),
                               ),
-                            ],
-                          ),
                 ],
               ),
             ],
           ],
         ),
+      ),
       ),
     );
   }
@@ -841,88 +849,158 @@ class _DataProkerViewState extends ConsumerState<DataProkerView> {
           ref.invalidate(prokerDataListProvider);
         },
       ),
-      body: listState.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.cloud_off_rounded,
-                  size: 52,
-                  color: AppColors.textSecondary,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  err.toString(),
-                  style: const TextStyle(color: AppColors.textSecondary),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton.icon(
-                  onPressed: () => ref.invalidate(prokerDataListProvider),
-                  icon: const Icon(Icons.refresh_rounded),
-                  label: const Text('Coba Lagi'),
-                ),
-              ],
-            ),
-          ),
-        ),
-        data: (list) {
-          if (list.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryGreen.withValues(alpha: 0.08),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.assignment_rounded,
-                      size: 48,
-                      color: AppColors.primaryGreen,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Belum ada program kerja',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 6),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 40),
-                    child: Text(
-                      'Tap tombol di bawah untuk mengajukan program kerja baru.',
-                      style: TextStyle(
-                        fontSize: 13,
+      body: Column(
+        children: [
+          _buildStatusFilter(),
+          Expanded(
+            child: listState.when(
+              loading: () => const Center(
+                child: CircularProgressIndicator(color: AppColors.primaryGreen),
+              ),
+              error: (err, _) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.cloud_off_rounded,
+                        size: 52,
                         color: AppColors.textSecondary,
                       ),
-                      textAlign: TextAlign.center,
-                    ),
+                      const SizedBox(height: 12),
+                      Text(
+                        err.toString(),
+                        style: const TextStyle(color: AppColors.textSecondary),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton.icon(
+                        onPressed: () => ref.invalidate(prokerDataListProvider),
+                        icon: const Icon(Icons.refresh_rounded),
+                        label: const Text('Coba Lagi'),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 80),
-                ],
+                ),
               ),
-            );
-          }
-          return RefreshIndicator(
-            onRefresh: () async {
-              ref.invalidate(prokerDataListProvider);
-              ref.invalidate(riwayatPemanfaatanProvider);
-            },
-            child: ListView.separated(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-              itemCount: list.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
-              itemBuilder: (ctx, i) => _buildProkerCard(ctx, list[i]),
+              data: (list) {
+                if (list.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryGreen.withValues(alpha: 0.08),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.assignment_rounded,
+                            size: 48,
+                            color: AppColors.primaryGreen,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Belum ada program kerja',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 40),
+                          child: Text(
+                            'Tap tombol di bawah untuk mengajukan program kerja baru.',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: AppColors.textSecondary,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        const SizedBox(height: 80),
+                      ],
+                    ),
+                  );
+                }
+
+                final filteredList = _selectedFilterIndex == 0
+                    ? list
+                    : list
+                        .where((item) =>
+                            _getProkerStatusCategory(item) ==
+                            _selectedFilterIndex)
+                        .toList();
+
+                if (filteredList.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            _selectedFilterIndex == 1
+                                ? Icons.pending_actions_rounded
+                                : _selectedFilterIndex == 2
+                                    ? Icons.play_circle_outline_rounded
+                                    : Icons.task_alt_rounded,
+                            size: 40,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Text(
+                          _selectedFilterIndex == 1
+                              ? 'Tidak ada proker yang menunggu'
+                              : _selectedFilterIndex == 2
+                                  ? 'Tidak ada proker yang sedang berjalan'
+                                  : 'Belum ada proker yang selesai',
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'Ganti filter atau ajukan program kerja baru.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 80),
+                      ],
+                    ),
+                  );
+                }
+
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    ref.invalidate(prokerDataListProvider);
+                    ref.invalidate(riwayatPemanfaatanProvider);
+                  },
+                  child: ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                    itemCount: filteredList.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    itemBuilder: (ctx, i) =>
+                        _buildProkerCard(ctx, filteredList[i]),
+                  ),
+                );
+              },
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }
