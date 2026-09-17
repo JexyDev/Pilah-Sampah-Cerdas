@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prisma } from "../lib/prisma.js";
 import { calculatePersonalPoints, calculatePersonalPointsForUsers } from "./dplService.js";
+import { kknService } from "./kknService.js";
 import { logbookService } from "./logbookService.js";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
 import { auditTrailService } from "./auditTrailService.js";
@@ -11,6 +12,7 @@ vi.mock("../lib/prisma.js", () => ({
       findMany: vi.fn(),
       findFirst: vi.fn(),
       create: vi.fn(),
+      groupBy: vi.fn(),
     },
     user: {
       findUnique: vi.fn(),
@@ -18,6 +20,12 @@ vi.mock("../lib/prisma.js", () => ({
     studentKkn: {
       findFirst: vi.fn(),
       findUnique: vi.fn(),
+    },
+    poskoKkn: {
+      findUnique: vi.fn(),
+    },
+    facility: {
+      findFirst: vi.fn(),
     },
     studentLeaveRequest: {
       findMany: vi.fn(),
@@ -115,6 +123,93 @@ describe("Mobile Gamification & Personal Point Calculation", () => {
 
     expect(resultMap.get("mhs-1")).toBe(7);
     expect(resultMap.get("mhs-2")).toBe(0);
+  });
+
+  it("calculatePersonalPointsForUsers should exclude KKN_PROKER points", async () => {
+    vi.mocked(prisma.pointHistory.findMany).mockResolvedValue([
+      { userId: "mhs-1", points: 30 } as any,
+    ]);
+
+    await calculatePersonalPointsForUsers(["mhs-1"]);
+
+    expect(prisma.pointHistory.findMany).toHaveBeenCalledWith({
+      where: {
+        userId: { in: ["mhs-1"] },
+        kategori: { notIn: ["KKN_PROKER"] },
+      },
+      select: { userId: true, points: true },
+    });
+  });
+
+  it("kknService.getMyGroup should filter out KKN_PROKER so member individualPoints reflects pure personal points (30 Pts instead of 38 Pts)", async () => {
+    vi.mocked(prisma.studentKkn.findUnique).mockResolvedValue({
+      id: "student-habik",
+      userId: "user-habik",
+      nim: "10121099",
+      jurusan: "Teknik Informatika",
+      fakultas: "STEI",
+      isKetua: true,
+      kelompokId: "kel-1",
+      kelompok: {
+        id: "kel-1",
+        name: "Kelompok 04",
+        kelurahan: "Sadang Serang",
+        dpl: {
+          id: "dpl-1",
+          name: "Dr. Pembimbing",
+          nip: "19800101",
+          phone: "08123456789",
+        },
+        students: [
+          {
+            id: "student-habik",
+            userId: "user-habik",
+            nim: "10121099",
+            jurusan: "Teknik Informatika",
+            fakultas: "STEI",
+            isKetua: true,
+            user: { name: "Habik" },
+          },
+          {
+            id: "student-temen",
+            userId: "user-temen",
+            nim: "10121100",
+            jurusan: "Teknik Elektro",
+            fakultas: "STEI",
+            isKetua: false,
+            user: { name: "Temen Habik" },
+          },
+        ],
+      },
+    } as any);
+
+    // Mock groupBy returning pure personal points (30 for Habik)
+    vi.mocked(prisma.pointHistory.groupBy).mockResolvedValue([
+      { userId: "user-habik", _sum: { points: 30 } } as any,
+      { userId: "user-temen", _sum: { points: 25 } } as any,
+    ]);
+
+    vi.mocked(prisma.programKerjaKkn.findMany).mockResolvedValue([]);
+    vi.mocked(prisma.pointHistory.findMany).mockResolvedValue([]);
+    vi.mocked(prisma.poskoKkn.findUnique).mockResolvedValue(null);
+    vi.mocked(prisma.facility.findFirst).mockResolvedValue(null);
+
+    const result = await kknService.getMyGroup("user-habik");
+
+    expect(result).not.toBeNull();
+    // Check that pointHistory.groupBy was called with kategori: { notIn: ["KKN_PROKER"] }
+    expect(prisma.pointHistory.groupBy).toHaveBeenCalledWith({
+      by: ["userId"],
+      where: {
+        userId: { in: ["user-habik", "user-temen"] },
+        kategori: { notIn: ["KKN_PROKER"] },
+      },
+      _sum: { points: true },
+    });
+
+    const habikMember = result!.members.find((m) => m.userId === "user-habik");
+    expect(habikMember).toBeDefined();
+    expect(habikMember!.individualPoints).toBe(30);
   });
 
   describe("Logbook Submission Points & Metadata (Mobile Requirements)", () => {
