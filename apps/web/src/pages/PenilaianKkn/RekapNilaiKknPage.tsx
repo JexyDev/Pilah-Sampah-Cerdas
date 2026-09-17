@@ -481,7 +481,7 @@ export const RekapNilaiKknPage: React.FC = () => {
             </div>
 
             {/* Filter Status */}
-            <div className="flex-1 sm:flex-initial min-w-[110px]">
+            <div className="flex-1 sm:flex-initial min-w-[130px]">
               <select
                 value={filterStatus}
                 onChange={(e) => {
@@ -492,8 +492,10 @@ export const RekapNilaiKknPage: React.FC = () => {
               >
                 <option value="ALL">Semua Status</option>
                 <option value="Lengkap">Lengkap</option>
+                <option value="Menunggu Laporan Akhir">Menunggu Laporan Akhir</option>
                 <option value="Menunggu MPL">Menunggu MPL</option>
                 <option value="Menunggu DPL">Menunggu DPL</option>
+                <option value="Menunggu DPL & MPL">Menunggu DPL & MPL</option>
               </select>
             </div>
 
@@ -563,29 +565,35 @@ export const RekapNilaiKknPage: React.FC = () => {
       {/* Legend & Info Bar - Responsive Wrap */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 text-xs w-full min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          {/* Badge 1: Otomatis dari Sistem */}
-          <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-900/60 px-3 py-1.5 rounded-xl text-slate-700 dark:text-slate-300 font-medium shadow-2xs">
-            <span className="w-2 h-2 rounded-full bg-[#1d4ed8] shrink-0" />
-            <span>
-              <strong className="text-[#1d4ed8] font-bold">Otomatis dari Sistem:</strong> Kehadiran
-              25%
-            </span>
-          </div>
-
-          {/* Badge 2: Penilaian DPL & MPL */}
+          {/* Badge 1: DPL 40% */}
           <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-900/60 px-3 py-1.5 rounded-xl text-slate-700 dark:text-slate-300 font-medium shadow-2xs">
             <span className="w-2 h-2 rounded-full bg-[#009966] shrink-0" />
             <span>
-              <strong className="text-[#009966] font-bold">Penilaian DPL & MPL:</strong> Nilai
-              Individu 25% • Program Kerja 25% • Nilai Kelompok 25%
+              <strong className="text-[#009966] font-bold">DPL:</strong> 40% (5 Aspek Akademik)
+            </span>
+          </div>
+
+          {/* Badge 2: MPL 40% */}
+          <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-sky-200 dark:border-sky-900/60 px-3 py-1.5 rounded-xl text-slate-700 dark:text-slate-300 font-medium shadow-2xs">
+            <span className="w-2 h-2 rounded-full bg-[#0284c7] shrink-0" />
+            <span>
+              <strong className="text-[#0284c7] font-bold">MPL:</strong> 40% (8 Aspek Lapangan)
+            </span>
+          </div>
+
+          {/* Badge 3: Laporan Akhir 20% */}
+          <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-900/60 px-3 py-1.5 rounded-xl text-slate-700 dark:text-slate-300 font-medium shadow-2xs">
+            <span className="w-2 h-2 rounded-full bg-[#6366f1] shrink-0" />
+            <span>
+              <strong className="text-[#6366f1] font-bold">Laporan Akhir:</strong> 20% (Telaah Laporan KKN)
             </span>
           </div>
         </div>
 
-        {/* Badge 3: Info Komposisi */}
+        {/* Badge 4: Info Komposisi */}
         <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-xl text-slate-600 dark:text-slate-400 font-medium shadow-2xs">
           <Info size={13} className="text-slate-500 shrink-0" />
-          <span>Komposisi Penilai: DPL 50% • MPL 50%</span>
+          <span>Formula Resmi: DPL 40% • MPL 40% • Laporan Akhir 20%</span>
         </div>
       </div>
 
@@ -615,123 +623,55 @@ export const RekapNilaiKknPage: React.FC = () => {
             className="overflow-x-auto w-full table-slidebar-container select-text"
             style={{ WebkitOverflowScrolling: "touch" }}
           >
-            <table className="w-full min-w-[1200px] text-center text-[11.5px] border-collapse">
-              {/* Table Head Multi-Tier */}
+            <table className="w-full min-w-[1000px] text-center text-[11.5px] border-collapse">
+              {/* Table Head */}
               <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900/90 shadow-2xs border-b border-slate-200 dark:border-slate-800">
                 <tr className="bg-slate-50/80 dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-bold border-b border-slate-200 dark:border-slate-800">
-                  <th
-                    rowSpan={2}
-                    className="py-3 px-3 w-12 border-r border-slate-200 dark:border-slate-800"
-                  >
+                  <th className="py-3 px-3 w-12 border-r border-slate-200 dark:border-slate-800">
                     No.
                   </th>
-                  <th
-                    rowSpan={2}
-                    className="py-3 px-3 w-28 border-r border-slate-200 dark:border-slate-800 text-left"
-                  >
+                  <th className="py-3 px-3 w-28 border-r border-slate-200 dark:border-slate-800 text-left">
                     NIM
                   </th>
-                  <th
-                    rowSpan={2}
-                    className="py-3 px-4 min-w-[180px] border-r border-slate-200 dark:border-slate-800 text-left"
-                  >
+                  <th className="py-3 px-4 min-w-[180px] border-r border-slate-200 dark:border-slate-800 text-left">
                     Nama Mahasiswa
                   </th>
-                  <th
-                    rowSpan={2}
-                    className="py-3 px-4 min-w-[160px] border-r border-slate-200 dark:border-slate-800 text-left"
-                  >
+                  <th className="py-3 px-4 min-w-[150px] border-r border-slate-200 dark:border-slate-800 text-left">
                     Kelompok
                   </th>
 
-                  {/* Colspan 1: Otomatis dari Sistem */}
-                  <th className="py-2 px-3 bg-[#f0f7ff] dark:bg-blue-950/50 text-[#1e40af] dark:text-blue-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[11.5px]">
-                    Otomatis dari Sistem
+                  {/* DPL Pillar (40%) */}
+                  <th className="py-2.5 px-3 bg-[#f0fdf4] dark:bg-emerald-950/50 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[11.5px] min-w-[120px]">
+                    <div>Nilai DPL</div>
+                    <span className="text-[10px] font-normal text-emerald-600 dark:text-emerald-400">Bobot 40%</span>
                   </th>
 
-                  {/* Colspan 3: Nilai Individu */}
-                  <th
-                    colSpan={3}
-                    className="py-2 px-3 bg-[#f0fdf4] dark:bg-emerald-950/50 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[11.5px]"
-                  >
-                    Nilai Individu (25%)
+                  {/* MPL Pillar (40%) */}
+                  <th className="py-2.5 px-3 bg-[#f0f9ff] dark:bg-sky-950/50 text-[#0369a1] dark:text-sky-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[11.5px] min-w-[120px]">
+                    <div>Nilai MPL</div>
+                    <span className="text-[10px] font-normal text-sky-600 dark:text-sky-400">Bobot 40%</span>
                   </th>
 
-                  {/* Colspan 3: Program Kerja */}
-                  <th
-                    colSpan={3}
-                    className="py-2 px-3 bg-[#f0fdf4] dark:bg-emerald-950/50 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[11.5px]"
-                  >
-                    Program Kerja (25%)
+                  {/* Laporan Akhir Pillar (20%) */}
+                  <th className="py-2.5 px-3 bg-[#f5f3ff] dark:bg-indigo-950/50 text-[#4338ca] dark:text-indigo-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[11.5px] min-w-[130px]">
+                    <div>Laporan Akhir</div>
+                    <span className="text-[10px] font-normal text-indigo-600 dark:text-indigo-400">Bobot 20%</span>
                   </th>
 
-                  {/* Colspan 3: Nilai Kelompok */}
-                  <th
-                    colSpan={3}
-                    className="py-2 px-3 bg-[#f0fdf4] dark:bg-emerald-950/50 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[11.5px]"
-                  >
-                    Nilai Kelompok (25%)
+                  {/* Nilai Akhir */}
+                  <th className="py-3 px-3 w-20 border-r border-slate-200 dark:border-slate-800 font-extrabold text-[#0f172a] dark:text-slate-100">
+                    <div>Nilai Akhir</div>
+                    <span className="text-[10px] font-normal text-slate-500">100%</span>
                   </th>
 
-                  <th
-                    rowSpan={2}
-                    className="py-3 px-3 w-16 border-r border-slate-200 dark:border-slate-800 font-extrabold text-[#0f172a] dark:text-slate-100"
-                  >
-                    Nilai
-                    <br />
-                    Akhir
-                  </th>
-                  <th
-                    rowSpan={2}
-                    className="py-3 px-3 w-14 border-r border-slate-200 dark:border-slate-800 font-bold"
-                  >
+                  {/* Predikat */}
+                  <th className="py-3 px-3 w-16 border-r border-slate-200 dark:border-slate-800 font-bold">
                     Predikat
                   </th>
-                  <th rowSpan={2} className="py-3 px-4 w-28 font-bold">
+
+                  {/* Status */}
+                  <th className="py-3 px-4 w-36 font-bold">
                     Status
-                  </th>
-                </tr>
-
-                {/* Sub-header row */}
-                <tr className="bg-slate-50/80 dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-800 text-[10.5px]">
-                  {/* Otomatis */}
-                  <th className="py-2 px-2.5 bg-[#f0f7ff]/70 dark:bg-blue-950/20 text-[#1e40af] dark:text-blue-300 border-r border-slate-200 dark:border-slate-800 font-bold">
-                    Kehadiran
-                    <br />
-                    (25%)
-                  </th>
-
-                  {/* Individu */}
-                  <th className="py-2 px-2 bg-[#f0fdf4]/70 dark:bg-emerald-950/20 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-medium">
-                    DPL
-                  </th>
-                  <th className="py-2 px-2 bg-[#f0fdf4]/70 dark:bg-emerald-950/20 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-medium">
-                    MPL
-                  </th>
-                  <th className="py-2 px-2 bg-[#f0fdf4]/70 dark:bg-emerald-950/20 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-bold">
-                    Gabungan
-                  </th>
-
-                  {/* Proker */}
-                  <th className="py-2 px-2 bg-[#f0fdf4]/70 dark:bg-emerald-950/20 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-medium">
-                    DPL
-                  </th>
-                  <th className="py-2 px-2 bg-[#f0fdf4]/70 dark:bg-emerald-950/20 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-medium">
-                    MPL
-                  </th>
-                  <th className="py-2 px-2 bg-[#f0fdf4]/70 dark:bg-emerald-950/20 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-bold">
-                    Gabungan
-                  </th>
-
-                  {/* Kelompok */}
-                  <th className="py-2 px-2 bg-[#f0fdf4]/70 dark:bg-emerald-950/20 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-medium">
-                    DPL
-                  </th>
-                  <th className="py-2 px-2 bg-[#f0fdf4]/70 dark:bg-emerald-950/20 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-medium">
-                    MPL
-                  </th>
-                  <th className="py-2 px-2 bg-[#f0fdf4]/70 dark:bg-emerald-950/20 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-bold">
-                    Gabungan
                   </th>
                 </tr>
               </thead>
@@ -740,7 +680,13 @@ export const RekapNilaiKknPage: React.FC = () => {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
                 {paginatedStudents.map((st, idx) => {
                   const isComplete = st.status === "Lengkap";
+                  const isWaitingLaporan = st.status === "Menunggu Laporan Akhir";
                   const isWaitingMpl = st.status === "Menunggu MPL";
+                  const isWaitingDpl = st.status === "Menunggu DPL";
+
+                  const dpl = st.dplScore !== null && st.dplScore !== undefined ? st.dplScore : null;
+                  const mpl = st.mplScore !== null && st.mplScore !== undefined ? st.mplScore : null;
+                  const lap = st.laporanScore !== null && st.laporanScore !== undefined ? st.laporanScore : null;
 
                   return (
                     <tr
@@ -767,56 +713,52 @@ export const RekapNilaiKknPage: React.FC = () => {
                         {formatKelompokName(st.kelompokName)}
                       </td>
 
-                      {/* Otomatis: Kehadiran (25%) */}
-                      <td className="py-3 px-3 border-r border-slate-100 dark:border-slate-800 font-semibold text-slate-800 dark:text-slate-200">
-                        {st.kehadiran ?? "—"}
+                      {/* Nilai DPL (40%) */}
+                      <td className="py-3 px-3 border-r border-slate-100 dark:border-slate-800">
+                        {dpl !== null ? (
+                          <div className="flex flex-col items-center">
+                            <span className="font-bold text-slate-900 dark:text-slate-100">
+                              {dpl.toFixed(1)}
+                            </span>
+                            <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 rounded mt-0.5">
+                              +{(dpl * 0.4).toFixed(1)} pts
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-slate-400">—</span>
+                        )}
                       </td>
 
-                      {/* Nilai Individu */}
-                      <td className="py-3 px-2 border-r border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-300">
-                        {st.individuDpl !== null && st.individuDpl !== undefined
-                          ? st.individuDpl
-                          : "—"}
-                      </td>
-                      <td className="py-3 px-2 border-r border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-300">
-                        {st.individuMpl !== null && st.individuMpl !== undefined
-                          ? st.individuMpl
-                          : "—"}
-                      </td>
-                      <td className="py-3 px-2 border-r border-slate-100 dark:border-slate-800 font-bold text-slate-900 dark:text-slate-100">
-                        {st.individuGabungan !== null && st.individuGabungan !== undefined
-                          ? st.individuGabungan.toFixed(1)
-                          : "—"}
-                      </td>
-
-                      {/* Program Kerja */}
-                      <td className="py-3 px-2 border-r border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-300">
-                        {st.prokerDpl !== null && st.prokerDpl !== undefined ? st.prokerDpl : "—"}
-                      </td>
-                      <td className="py-3 px-2 border-r border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-300">
-                        {st.prokerMpl !== null && st.prokerMpl !== undefined ? st.prokerMpl : "—"}
-                      </td>
-                      <td className="py-3 px-2 border-r border-slate-100 dark:border-slate-800 font-bold text-slate-900 dark:text-slate-100">
-                        {st.prokerGabungan !== null && st.prokerGabungan !== undefined
-                          ? st.prokerGabungan.toFixed(1)
-                          : "—"}
+                      {/* Nilai MPL (40%) */}
+                      <td className="py-3 px-3 border-r border-slate-100 dark:border-slate-800">
+                        {mpl !== null ? (
+                          <div className="flex flex-col items-center">
+                            <span className="font-bold text-slate-900 dark:text-slate-100">
+                              {mpl.toFixed(1)}
+                            </span>
+                            <span className="text-[10px] font-semibold text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/50 px-1.5 py-0.5 rounded mt-0.5">
+                              +{(mpl * 0.4).toFixed(1)} pts
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-slate-400">—</span>
+                        )}
                       </td>
 
-                      {/* Nilai Kelompok */}
-                      <td className="py-3 px-2 border-r border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-300">
-                        {st.kelompokDpl !== null && st.kelompokDpl !== undefined
-                          ? st.kelompokDpl
-                          : "—"}
-                      </td>
-                      <td className="py-3 px-2 border-r border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-300">
-                        {st.kelompokMpl !== null && st.kelompokMpl !== undefined
-                          ? st.kelompokMpl
-                          : "—"}
-                      </td>
-                      <td className="py-3 px-2 border-r border-slate-100 dark:border-slate-800 font-bold text-slate-900 dark:text-slate-100">
-                        {st.kelompokGabungan !== null && st.kelompokGabungan !== undefined
-                          ? st.kelompokGabungan.toFixed(1)
-                          : "—"}
+                      {/* Laporan Akhir (20%) */}
+                      <td className="py-3 px-3 border-r border-slate-100 dark:border-slate-800">
+                        {lap !== null ? (
+                          <div className="flex flex-col items-center">
+                            <span className="font-bold text-slate-900 dark:text-slate-100">
+                              {lap.toFixed(1)}
+                            </span>
+                            <span className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 px-1.5 py-0.5 rounded mt-0.5">
+                              +{(lap * 0.2).toFixed(1)} pts
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-slate-400">—</span>
+                        )}
                       </td>
 
                       {/* Nilai Akhir */}
@@ -834,16 +776,24 @@ export const RekapNilaiKknPage: React.FC = () => {
                       {/* Status */}
                       <td className="py-3 px-3 text-center">
                         {isComplete ? (
-                          <span className="inline-block px-3 py-1 rounded-md text-[11px] font-semibold bg-[#e6f9f0] dark:bg-emerald-950/50 text-[#00704a] dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60">
+                          <span className="inline-block px-3 py-1 rounded-md text-[11px] font-semibold bg-[#e6f9f0] dark:bg-emerald-950/50 text-[#00704a] dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 whitespace-nowrap">
                             Lengkap
+                          </span>
+                        ) : isWaitingLaporan ? (
+                          <span className="inline-block px-2.5 py-1 rounded-md text-[11px] font-semibold bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 whitespace-nowrap">
+                            Menunggu Laporan
                           </span>
                         ) : isWaitingMpl ? (
                           <span className="inline-block px-2.5 py-1 rounded-md text-[11px] font-semibold bg-[#fffbeb] dark:bg-amber-950/50 text-[#b45309] dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 whitespace-nowrap">
                             Menunggu MPL
                           </span>
-                        ) : (
+                        ) : isWaitingDpl ? (
                           <span className="inline-block px-2.5 py-1 rounded-md text-[11px] font-semibold bg-sky-50 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800/60 whitespace-nowrap">
-                            {st.status || "Menunggu DPL"}
+                            Menunggu DPL
+                          </span>
+                        ) : (
+                          <span className="inline-block px-2.5 py-1 rounded-md text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 whitespace-nowrap">
+                            {st.status || "Menunggu Penilaian"}
                           </span>
                         )}
                       </td>
@@ -923,61 +873,60 @@ export const RekapNilaiKknPage: React.FC = () => {
         </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 relative">
-          {/* Card 1: Sumber Nilai Otomatis */}
+          {/* Card 1: Penilaian Akademik DPL (40%) */}
           <div className="space-y-2 lg:pr-4 lg:border-r border-slate-200/80 dark:border-slate-800">
             <div className="flex items-center gap-2 text-[#00704a] dark:text-emerald-400 font-bold text-xs">
               <span className="w-5 h-5 rounded-full border-1.5 border-[#00704a] dark:border-emerald-400 flex items-center justify-center text-[11px]">
                 1
               </span>
-              <span>Sumber Nilai Otomatis</span>
+              <span>Penilaian DPL (40%)</span>
             </div>
             <p className="text-[12px] text-slate-600 dark:text-slate-400 leading-relaxed">
-              Kehadiran (bobot 25%) diperoleh langsung dari catatan presensi dan logbook aktivitas
-              mahasiswa yang tervalidasi pada sistem.
+              Evaluasi akademik oleh DPL (skala 0–100) mencakup 5 aspek berimbang (masing-masing 20%): Perencanaan, Kontribusi, Logbook, Analisis, dan Output KKN.
             </p>
           </div>
 
-          {/* Card 2: Gabungan Nilai DPL dan MPL */}
+          {/* Card 2: Penilaian Lapangan MPL (40%) */}
           <div className="space-y-2.5 lg:px-4 lg:border-r border-slate-200/80 dark:border-slate-800">
             <div className="flex items-center gap-2 text-[#00704a] dark:text-emerald-400 font-bold text-xs">
               <span className="w-5 h-5 rounded-full border-1.5 border-[#00704a] dark:border-emerald-400 flex items-center justify-center text-[11px]">
                 2
               </span>
-              <span>Gabungan Nilai DPL dan MPL</span>
+              <span>Penilaian MPL (40%)</span>
             </div>
             <p className="text-[12px] text-slate-600 dark:text-slate-400 leading-relaxed">
-              Tiga aspek evaluasi (Individu, Program Kerja, Kelompok) dihitung dari pembagian
-              seimbang: DPL 50% dan MPL 50%.
+              Evaluasi kinerja lapangan oleh MPL (skala 0–100) mencakup 8 aspek: Kehadiran, Warga Binaan, Program Kerja, Koordinasi Kelurahan/RW, Tanggung Jawab, Bukti Kegiatan, Dampak, dan Inisiatif.
             </p>
           </div>
 
-          {/* Card 3: Formula Nilai Akhir */}
+          {/* Card 3: Laporan Akhir (20%) */}
           <div className="space-y-2 lg:px-4 lg:border-r border-slate-200/80 dark:border-slate-800">
             <div className="flex items-center gap-2 text-[#00704a] dark:text-emerald-400 font-bold text-xs">
               <span className="w-5 h-5 rounded-full border-1.5 border-[#00704a] dark:border-emerald-400 flex items-center justify-center text-[11px]">
                 3
               </span>
-              <span>Formula Nilai Akhir</span>
+              <span>Laporan Akhir (20%)</span>
             </div>
-            <div className="text-[11.5px] font-mono text-slate-700 dark:text-slate-300 space-y-0.5 leading-relaxed font-medium">
-              <p>Nilai Akhir = (25% × Kehadiran)</p>
-              <p className="pl-16">+ (25% × Nilai Individu)</p>
-              <p className="pl-16">+ (25% × Program Kerja)</p>
-              <p className="pl-16">+ (25% × Nilai Kelompok)</p>
-            </div>
+            <p className="text-[12px] text-slate-600 dark:text-slate-400 leading-relaxed">
+              Penilaian telaah laporan akhir program kerja kelompok dan refleksi esai KKN (skala 0–100) yang divalidasi oleh DPL pada modul Telaah Laporan Akhir.
+            </p>
           </div>
 
-          {/* Card 4: Ketentuan Penerbitan */}
+          {/* Card 4: Formula Nilai Akhir */}
           <div className="space-y-2 lg:pl-4">
             <div className="flex items-center gap-2 text-[#00704a] dark:text-emerald-400 font-bold text-xs">
               <span className="w-5 h-5 rounded-full border-1.5 border-[#00704a] dark:border-emerald-400 flex items-center justify-center text-[11px]">
                 4
               </span>
-              <span>Ketentuan Penerbitan</span>
+              <span>Formula Nilai Akhir</span>
             </div>
-            <p className="text-[12px] text-slate-600 dark:text-slate-400 leading-relaxed">
-              Nilai akhir dan predikat mutu resmi diterbitkan setelah evaluasi DPL dan MPL terisi
-              lengkap. Nilai disajikan dengan pembulatan 1 desimal.
+            <div className="text-[11.5px] font-mono text-slate-700 dark:text-slate-300 space-y-0.5 leading-relaxed font-medium">
+              <p>Nilai Akhir = (40% × DPL)</p>
+              <p className="pl-16">+ (40% × MPL)</p>
+              <p className="pl-16">+ (20% × Laporan)</p>
+            </div>
+            <p className="text-[11px] text-slate-500 leading-tight">
+              Huruf Mutu: A (&ge;80), B (&ge;70), C (&ge;60), D (&ge;50), E (&lt;50).
             </p>
           </div>
         </div>
@@ -986,8 +935,7 @@ export const RekapNilaiKknPage: React.FC = () => {
         <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center gap-2 text-[11.5px] text-slate-500 dark:text-slate-400 font-medium">
           <Info size={14} className="shrink-0 text-slate-400" />
           <span>
-            Total bobot komponen nilai akhir = 100% (4 aspek berimbang masing-masing 25%). Form
-            penilaian DPL dan MPL dapat diakses sesuai peran.
+            Total bobot komponen nilai akhir = 100% (DPL 40% + MPL 40% + Laporan Akhir 20%). Jika laporan akhir belum selesai ditelaah, sistem melakukan normalisasi proporsional DPL &amp; MPL secara transparan.
           </span>
         </div>
       </div>
