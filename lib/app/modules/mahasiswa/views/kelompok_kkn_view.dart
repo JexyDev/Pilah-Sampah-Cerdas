@@ -466,7 +466,7 @@ class KelompokKknView extends ConsumerWidget {
                             ),
                             const SizedBox(height: 4),
                             const Text(
-                              'Hanya poin aktivitas murni (tanpa bonus/proker)',
+                              'Akumulasi poin dari seluruh anggota kelompok',
                               style: TextStyle(fontSize: 9, color: Colors.black54, height: 1.3),
                             ),
                           ],
