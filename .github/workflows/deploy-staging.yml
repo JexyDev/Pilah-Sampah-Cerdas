@@ -68,7 +68,7 @@ jobs:
           VPS_USER: ${{ secrets.STAGING_VPS_USERNAME || secrets.VPS_USERNAME }}
           VPS_PASS: ${{ secrets.STAGING_VPS_PASSWORD || secrets.VPS_PASSWORD }}
         run: |
-          sshpass -p "$VPS_PASS" ssh -T -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=3 -o PreferredAuthentications=password -o PubkeyAuthentication=no "$VPS_USER@$VPS_HOST" "VPS_PASS='$VPS_PASS' bash -s" << 'EOF'
+          sshpass -p "$VPS_PASS" ssh -T -o StrictHostKeyChecking=no -o ConnectTimeout=60 -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o TCPKeepAlive=yes -o PreferredAuthentications=password -o PubkeyAuthentication=no "$VPS_USER@$VPS_HOST" "VPS_PASS='$VPS_PASS' bash -s" << 'EOF'
             set -e
             export PATH=$PATH:/usr/local/bin:/usr/bin
 
@@ -79,12 +79,17 @@ jobs:
             fi
             cd "$REPO_DIR" || { echo "Directory $REPO_DIR not found"; exit 1; }
 
+            # Clean workspace to prevent local modifications from blocking fetch/reset
+            git checkout -f 2>/dev/null || true
+            git clean -fd 2>/dev/null || true
+
             git config extra.http.ipresolve 4 2>/dev/null || true
             for i in 1 2 3; do
               git fetch --depth=1 origin staging && break || sleep 3
             done || echo "WARNING: git fetch timed out, continuing..."
 
             git reset --hard origin/staging 2>/dev/null || true
+            git clean -fd 2>/dev/null || true
 
             echo "=== 2. Updating Backend (apps/api) ==="
             cd "$REPO_DIR"
@@ -97,9 +102,14 @@ jobs:
               cp -r "$REPO_DIR/node_modules/.prisma/." "$REPO_DIR/apps/api/node_modules/.prisma/" 2>/dev/null || true
             fi
             npx prisma migrate deploy || true
-            echo "=== 2.5. Synchronizing Student SKS Data ==="
-            FORCE_ALLOW_VPS_MUTATION=I_UNDERSTAND_THE_RISKS_OVERWRITE_VPS npx tsx scripts/sync-student-sks.ts --commit || echo "Sync SKS failed, continuing..."
-            npm run build
+
+            # Sinkronisasi beban SKS mahasiswa (hanya berjalan saat RUN_SKS_SYNC diaktifkan)
+            if [ "${RUN_SKS_SYNC:-false}" = "true" ]; then
+              echo "=== 2.5. Synchronizing Student SKS Data ==="
+              FORCE_ALLOW_VPS_MUTATION=I_UNDERSTAND_THE_RISKS_OVERWRITE_VPS npx tsx scripts/sync-student-sks.ts --commit 2>/dev/null || echo "Sync SKS failed or skipped, continuing..."
+            fi
+
+            NODE_OPTIONS="--max-old-space-size=4096" npm run build
 
             echo "=== 3. Reloading PM2 Backend Staging ==="
             pm2 restart psc-backend-staging --update-env 2>/dev/null || pm2 restart psc-backend --update-env 2>/dev/null || pm2 reload psc-backend 2>/dev/null || true
