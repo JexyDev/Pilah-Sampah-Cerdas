@@ -432,21 +432,21 @@ export const GisMapTab: React.FC = () => {
           onClick={() => setSelectedJenis("ALL")}
           className={`p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between ${
             selectedJenis === "ALL"
-              ? "bg-slate-900 text-white border-slate-900 shadow-md ring-2 ring-slate-700/30 dark:bg-white dark:text-slate-900 dark:border-white"
-              : "bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-slate-400 hover:shadow-xs"
+              ? "bg-emerald-50/90 dark:bg-emerald-950/60 border-emerald-600 text-emerald-950 dark:text-emerald-50 shadow-md ring-2 ring-emerald-600/25"
+              : "bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-emerald-400 hover:shadow-xs"
           }`}
         >
           <div className="flex items-center justify-between w-full mb-2">
-            <span className={`text-[10px] font-extrabold uppercase tracking-wider ${selectedJenis === "ALL" ? "opacity-80" : "text-slate-400 dark:text-slate-500"}`}>
+            <span className={`text-[10px] font-extrabold uppercase tracking-wider ${selectedJenis === "ALL" ? "text-emerald-800 dark:text-emerald-300" : "text-slate-400 dark:text-slate-500"}`}>
               Semua
             </span>
-            <div className={`p-1.5 rounded-lg ${selectedJenis === "ALL" ? "bg-white/20 dark:bg-slate-900/20" : "bg-slate-100 dark:bg-slate-800 text-slate-600"}`}>
+            <div className={`p-1.5 rounded-lg ${selectedJenis === "ALL" ? "bg-emerald-200/70 dark:bg-emerald-800/60 text-emerald-900 dark:text-emerald-200" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"}`}>
               <Boxes size={14} />
             </div>
           </div>
           <div>
-            <div className="text-2xl font-black tracking-tight">{metrics.total}</div>
-            <p className={`text-[11px] font-semibold mt-0.5 truncate ${selectedJenis === "ALL" ? "opacity-80" : "text-slate-400"}`}>
+            <div className={`text-2xl font-black tracking-tight ${selectedJenis === "ALL" ? "text-emerald-950 dark:text-white" : ""}`}>{metrics.total}</div>
+            <p className={`text-[11px] font-semibold mt-0.5 truncate ${selectedJenis === "ALL" ? "text-emerald-700/90 dark:text-emerald-300/90" : "text-slate-400"}`}>
               Total Titik
             </p>
           </div>
@@ -678,8 +678,8 @@ export const GisMapTab: React.FC = () => {
               onClick={() => setShowSatellite((v) => !v)}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
                 showSatellite
-                  ? "bg-slate-900 text-white shadow-2xs dark:bg-emerald-600"
-                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                  ? "bg-emerald-600 text-white shadow-xs"
+                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
               }`}
             >
               <Compass size={13} />
