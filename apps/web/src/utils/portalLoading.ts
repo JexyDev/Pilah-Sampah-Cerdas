@@ -39,6 +39,9 @@ export const ROLE_DISPLAY_NAMES: Record<string, string> = {
   PETUGAS: "Portal Petugas Residu",
   PEMILAH: "Portal Petugas Pemilah",
   MPL: "Portal Mitra Pembimbing Lapangan",
+  MITRA_PEMBIMBING_LAPANGAN: "Portal Mitra Pembimbing Lapangan",
+  MITRA_PENDAMPING_LAPANGAN: "Portal Mitra Pembimbing Lapangan",
+  MITRA: "Portal Mitra Pembimbing Lapangan",
 };
 
 /**

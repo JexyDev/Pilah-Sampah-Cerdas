@@ -26,8 +26,30 @@ vi.mock("../lib/prisma.js", () => {
       },
       bin: {
         findMany: vi.fn().mockResolvedValue([]),
+        findUnique: vi.fn().mockResolvedValue(null),
         count: vi.fn().mockResolvedValue(0),
       },
+      auditTrail: {
+        create: vi.fn().mockResolvedValue({ id: "audit-1" }),
+      },
+      $transaction: vi.fn(async (cb: any) => cb({
+        user: {
+          findMany: vi.fn().mockResolvedValue([]),
+          findUnique: vi.fn().mockResolvedValue(null),
+        },
+        studentKkn: {
+          findUnique: vi.fn(),
+          findFirst: vi.fn(),
+        },
+        bin: {
+          findMany: vi.fn().mockResolvedValue([]),
+          findUnique: vi.fn().mockResolvedValue(null),
+          updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+        },
+        pointHistory: {
+          create: vi.fn().mockResolvedValue({ id: "pt-1" }),
+        },
+      })),
       pointHistory: {
         findFirst: vi.fn().mockResolvedValue(null),
         findMany: vi.fn().mockResolvedValue([]),
@@ -476,15 +498,70 @@ describe("KKN Gamification Logic & Fixes", () => {
               expect.objectContaining({
                 rw: {
                   kelurahan: {
-                    name: { contains: "Sadang Serang", mode: "insensitive" },
+                    name: { equals: "Sadang Serang", mode: "insensitive" },
                   },
                 },
+              }),
+              expect.objectContaining({
+                OR: expect.arrayContaining([
+                  { kelompokId: "kel-1" },
+                  { registeredByStudentId: { in: expect.arrayContaining(["mhs-1", "mhs-2"]) } },
+                ]),
               }),
             ]),
             status: { in: ["ACTIVE_BOUND", "PENDING_APPROVAL"] },
           }),
         })
       );
+    });
+
+    it("should reject claimWargaMandiri if a bin is owned by another kelompok", async () => {
+      vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
+        return callback({
+          user: {
+            findUnique: vi.fn().mockResolvedValue({ id: "warga-1", rwId: 5 }),
+          },
+          studentKkn: {
+            findUnique: vi.fn().mockResolvedValue({
+              userId: "mhs-1",
+              kelompokId: "kel-7",
+            }),
+          },
+          bin: {
+            findMany: vi.fn().mockResolvedValue([
+              {
+                id: "bin-1",
+                qrCode: "BIN-SDG-10-001",
+                kelompokId: "kel-10", // Milik kelompok lain!
+                registeredByStudentId: null,
+                status: "ACTIVE_BOUND",
+              },
+            ]),
+            updateMany: vi.fn(),
+          },
+        });
+      });
+
+      await expect(
+        kknService.claimWargaMandiri("mhs-1", "warga-1")
+      ).rejects.toThrow(/kelompok KKN lain/);
+    });
+
+    it("should reject claimQr if the bin already belongs to another kelompok", async () => {
+      vi.mocked(prisma.studentKkn.findUnique).mockResolvedValue({
+        userId: "mhs-1",
+        kelompokId: "kel-7",
+      } as any);
+
+      vi.mocked(prisma.bin.findUnique).mockResolvedValue({
+        id: "bin-10",
+        qrCode: "BIN-SDG-10-002",
+        kelompokId: "kel-10",
+      } as any);
+
+      await expect(
+        kknService.claimQr("mhs-1", "BIN-SDG-10-002")
+      ).rejects.toThrow(/bukan milik kelompok KKN Anda/);
     });
   });
 
