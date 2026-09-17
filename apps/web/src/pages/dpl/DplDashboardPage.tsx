@@ -1739,38 +1739,6 @@ export const DplDashboardPage: React.FC = () => {
         )}
       </div>
 
-      {/* BANNER SAMBUTAN & AKSI CEPAT KHUSUS PERAN MPL (MITRA LAPANGAN) */}
-      {isMpl && (
-        <div className="bg-gradient-to-r from-teal-950 via-slate-900 to-emerald-950 text-white rounded-2xl p-4 sm:p-5 border border-teal-500/30 shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-in fade-in duration-200">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-2.5 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-400/30 text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
-                <Briefcase size={12} className="text-teal-300" />
-                Mitra Pembimbing Lapangan (MPL)
-              </span>
-              <span className="text-slate-400 text-xs">•</span>
-              <span className="text-xs font-semibold text-slate-300">
-                Wilayah Binaan: Kelurahan {dplKelurahanList.join(", ") || user?.wilayah || "Coblong"}
-              </span>
-            </div>
-            <h2 className="text-base sm:text-lg font-black text-white">
-              Dasbor Terpadu Pengawasan Lapangan &amp; Penilaian Mitra KKN
-            </h2>
-            <p className="text-slate-300 text-xs max-w-2xl leading-relaxed">
-              Selamat datang di Dasbor Terpadu KKN BERSEKA. Anda dapat memantau kelompok dampingan di kelurahan Anda, mengamati kehadiran mahasiswa, memonitor progres program kerja, dan memberikan <strong>Penilaian 8 Aspek Mitra</strong>.
-            </p>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <Link
-              to="/penilaian-kkn/mahasiswa"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-black text-xs transition shadow-md cursor-pointer"
-            >
-              <Star size={14} className="fill-slate-950 text-slate-950" />
-              <span>Penilaian Mahasiswa (8 Aspek)</span>
-            </Link>
-          </div>
-        </div>
-      )}
 
       {/* Card Terpadu: Hierarki Wilayah 3-Tingkat */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 shadow-xs space-y-4">
