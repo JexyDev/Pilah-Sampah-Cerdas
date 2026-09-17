@@ -396,7 +396,7 @@ export class KknService {
                     ? {
                         kelurahan: {
                           name: {
-                            contains: studentProfile.kelompok.kelurahan,
+                            equals: studentProfile.kelompok.kelurahan,
                             mode: "insensitive",
                           },
                         },
@@ -427,6 +427,9 @@ export class KknService {
       }
       const groupStudentUserIds =
         studentProfile?.kelompok?.students?.map((s: any) => s.userId).filter(Boolean) || [];
+      if (!groupStudentUserIds.includes(kknUserId)) {
+        groupStudentUserIds.push(kknUserId);
+      }
       if (groupStudentUserIds.length > 0) {
         ownershipConditions.push({ registeredByStudentId: { in: groupStudentUserIds } });
       }
@@ -448,23 +451,33 @@ export class KknService {
         );
       }
 
-      // 3. Kunci Kelurahan Secara Eksplisit (Super Strict)
+      // 3. Kunci Kelurahan Secara Eksplisit (Super Strict dengan 'equals')
       const kelurahanCondition = studentProfile?.kelompok?.kelurahan
         ? {
             rw: {
               kelurahan: {
-                name: { contains: studentProfile.kelompok.kelurahan, mode: "insensitive" },
+                name: { equals: studentProfile.kelompok.kelurahan, mode: "insensitive" },
               },
             },
           }
         : {};
 
-      // 4. GABUNGKAN SECARA STRICT (AND)
+      // 4. GABUNGKAN SECARA STRICT (AND) DENGAN ISOLASI TOTAL KELOMPOK
       whereBin = {
         AND: [
           { OR: ownershipConditions },
           ...(wilayahConditions.length > 0 ? [{ OR: wilayahConditions }] : []),
           ...(studentProfile?.kelompok?.kelurahan ? [kelurahanCondition] : []),
+          ...(studentProfile?.kelompokId
+            ? [
+                {
+                  OR: [
+                    { kelompokId: studentProfile.kelompokId },
+                    { registeredByStudentId: { in: groupStudentUserIds } },
+                  ],
+                },
+              ]
+            : []),
         ],
       };
     }
@@ -861,6 +874,15 @@ export class KknService {
 
         const hasDefinedScope =
           Boolean(studentRwId) || Boolean(studentKelurahanName) || Boolean(student.kelompokId);
+
+        const foreignBinExists =
+          student.kelompokId &&
+          (warga.binOwnerships?.some((bo: any) => bo.bin?.kelompokId && bo.bin.kelompokId !== student.kelompokId) ||
+           warga.bins?.some((b: any) => b.kelompokId && b.kelompokId !== student.kelompokId));
+
+        if (foreignBinExists) {
+          throw new Error("FORBIDDEN_SCOPE");
+        }
 
         if (hasDefinedScope && wargaHasLocation) {
           const isScoped =
@@ -1513,12 +1535,27 @@ export class KknService {
         );
       }
 
+      let studentProfile: any = null;
+      if (kknUserId) {
+        studentProfile = await tx.studentKkn.findUnique({
+          where: { userId: kknUserId },
+          select: { kelompokId: true, assignedRwId: true, user: { select: { rwId: true } } },
+        });
+
+        if (studentProfile?.kelompokId && bin.kelompokId && bin.kelompokId !== studentProfile.kelompokId) {
+          throw new Error(
+            `Tempat sampah ${bin.qrCode} bukan milik kelompok KKN Anda dan tidak dapat diaktivasi.`
+          );
+        }
+      }
+
       await tx.bin.update({
         where: { id: bin.id },
         data: {
           userId: wargaId,
           status: "ACTIVE_BOUND",
           registeredByStudentId: kknUserId,
+          ...(bin.kelompokId ? {} : studentProfile?.kelompokId ? { kelompokId: studentProfile.kelompokId } : {}),
           rwId: targetWarga.rwId ?? bin.rwId,
           ...(latitude && longitude ? { latitude, longitude } : {}),
         },
@@ -1635,9 +1672,10 @@ export class KknService {
       // ============================================================================
       let studentAssignedRwId: number | null = null;
       let kelompokCakupanRwList: string[] = [];
+      let student: any = null;
 
       if (kknUserId) {
-        const student = await tx.studentKkn.findUnique({
+        student = await tx.studentKkn.findUnique({
           where: { userId: kknUserId },
           include: {
             assignedRw: { select: { id: true, name: true, kelurahanId: true } },
@@ -1726,6 +1764,7 @@ export class KknService {
             userId: wargaId,
             status: "ACTIVE_BOUND",
             registeredByStudentId: kknUserId,
+            ...(bin.kelompokId ? {} : student?.kelompokId ? { kelompokId: student.kelompokId } : {}),
             rwId: resolvedTargetRwId ?? bin.rwId,
             kelurahanId: targetWargaRwRecord?.kelurahanId ?? bin.kelurahanId,
             ...(latitude && longitude ? { latitude, longitude } : {}),
@@ -2028,7 +2067,21 @@ export class KknService {
   }
 
   async claimQr(kknUserId: string, qrCode: string, latitude?: number, longitude?: number) {
+    let student: any = null;
+    if (kknUserId) {
+      student = await prisma.studentKkn.findUnique({
+        where: { userId: kknUserId },
+        select: { kelompokId: true },
+      });
+    }
+
     let bin = await prisma.bin.findUnique({ where: { qrCode } });
+
+    if (bin && bin.kelompokId && student?.kelompokId && bin.kelompokId !== student.kelompokId) {
+      throw new Error(
+        `Tempat sampah ${bin.qrCode} bukan milik kelompok KKN Anda dan tidak dapat diklaim.`
+      );
+    }
 
     if (!bin) {
       let category = await prisma.wasteCategory.findFirst({ where: { name: "ORGANIC" } });
@@ -2040,6 +2093,7 @@ export class KknService {
           status: "ASSIGNED_TO_PIC",
           categoryId: category?.id,
           registeredByStudentId: kknUserId,
+          kelompokId: student?.kelompokId || null,
         },
       });
     } else {
@@ -2048,6 +2102,7 @@ export class KknService {
         data: {
           status: "ASSIGNED_TO_PIC",
           registeredByStudentId: kknUserId,
+          ...(bin.kelompokId ? {} : student?.kelompokId ? { kelompokId: student.kelompokId } : {}),
         },
       });
     }
@@ -2091,12 +2146,15 @@ export class KknService {
         }
       }
 
-      if (!resolvedRwId && kknUserId) {
-        const student = await tx.studentKkn.findUnique({
+      let student: any = null;
+      if (kknUserId) {
+        student = await tx.studentKkn.findUnique({
           where: { userId: kknUserId },
           include: { user: true },
         });
-        resolvedRwId = student?.assignedRwId || student?.user?.rwId || undefined;
+        if (!resolvedRwId) {
+          resolvedRwId = student?.assignedRwId || student?.user?.rwId || undefined;
+        }
       }
 
       if (!warga) {
@@ -2200,6 +2258,7 @@ export class KknService {
               longitude: lngVal,
               maxCapacityLiter,
               registeredByStudentId: kknUserId,
+              kelompokId: student?.kelompokId || null,
             },
           });
         } else {
@@ -2214,6 +2273,13 @@ export class KknService {
             );
           }
 
+          // Guard: reject if bin already registered by another kelompok
+          if (bin.kelompokId && student?.kelompokId && bin.kelompokId !== student.kelompokId) {
+            throw new Error(
+              `Tempat sampah ${bin.qrCode} bukan milik kelompok KKN Anda dan tidak dapat didaftarkan.`
+            );
+          }
+
           bin = await tx.bin.update({
             where: { id: bin.id },
             data: {
@@ -2224,6 +2290,7 @@ export class KknService {
               status: "ACTIVE_BOUND",
               maxCapacityLiter,
               registeredByStudentId: kknUserId,
+              ...(bin.kelompokId ? {} : student?.kelompokId ? { kelompokId: student.kelompokId } : {}),
             },
           });
         }
@@ -5960,10 +6027,22 @@ export class KknService {
       // 1. Validasi warga
       const warga = await tx.user.findUnique({
         where: { id: wargaId },
-        select: { id: true, name: true, phone: true, address: true },
+        select: { id: true, name: true, phone: true, address: true, rwId: true },
       });
       if (!warga) {
         throw new Error("WARGA_NOT_FOUND");
+      }
+
+      // Validasi Mahasiswa Pemohon
+      const student = await tx.studentKkn.findUnique({
+        where: { userId: kknUserId },
+        include: {
+          kelompok: { select: { id: true, name: true, cakupanRw: true, kelurahan: true } },
+          assignedRw: { select: { id: true, name: true } },
+        },
+      });
+      if (!student) {
+        throw new Error("STUDENT_NOT_FOUND");
       }
 
       // 2. Cari tempat sampah aktif milik warga
@@ -5978,11 +6057,25 @@ export class KknService {
           binType: true,
           status: true,
           registeredByStudentId: true,
+          kelompokId: true,
+          rwId: true,
         },
       });
 
       if (bins.length === 0) {
         throw new Error("NO_ACTIVE_BINS");
+      }
+
+      // Proteksi Lintas Kelompok: Tolak jika tempat sampah terdaftar di kelompok KKN lain
+      if (student.kelompokId) {
+        const foreignBin = bins.find(
+          (b) => b.kelompokId && b.kelompokId !== student.kelompokId
+        );
+        if (foreignBin) {
+          throw new Error(
+            `Tempat sampah ${foreignBin.qrCode} milik warga ini terdaftar pada kelompok KKN lain dan tidak dapat diklaim.`
+          );
+        }
       }
 
       // 3. Filter bin yang belum terikat mahasiswa (mandiri)
@@ -5993,10 +6086,13 @@ export class KknService {
 
       const unassignedBinIds = unassignedBins.map((b) => b.id);
 
-      // 4. Update Bin untuk menetapkan pendamping
+      // 4. Update Bin untuk menetapkan pendamping & sinkronisasi kelompok
       await tx.bin.updateMany({
         where: { id: { in: unassignedBinIds } },
-        data: { registeredByStudentId: kknUserId },
+        data: {
+          registeredByStudentId: kknUserId,
+          ...(student.kelompokId ? { kelompokId: student.kelompokId } : {}),
+        },
       });
 
       // 5. Beri Poin Gamifikasi
