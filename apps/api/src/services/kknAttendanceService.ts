@@ -1437,8 +1437,12 @@ export class KknAttendanceService {
     let checkOutTime: Date | null = null;
     let method: string | null = null;
 
+    let attendance: any = null;
+    let currentActualMins = 0;
+    let currentActualSecs = 0;
+
     if (studentId) {
-      const attendance = await prisma.activityAttendance.findUnique({
+      attendance = await prisma.activityAttendance.findUnique({
         where: {
           studentId_scheduleId: {
             studentId,
@@ -1474,10 +1478,20 @@ export class KknAttendanceService {
         checkInTime = attendance.attendedAt;
         checkOutTime = attendance.checkOutAt;
         method = attendance.method;
+
+        currentActualMins =
+          attendance.status === "BERLANGSUNG" ||
+          attendance.status === "DALAM_RADIUS" ||
+          attendance.status === "DI_ZONA"
+            ? calculateLiveInZoneMinutes(attendance)
+            : (attendance.actualInZoneMinutes ?? 0);
+        currentActualSecs = calculateLiveInZoneSeconds(attendance);
       }
     }
 
-    const isMemenuhiDurasi = isAttended && attendanceStatus === "HADIR_MEMENUHI";
+    const isMemenuhiDurasi = isAttended
+      ? attendanceStatus === "HADIR_MEMENUHI"
+      : currentActualMins >= targetDurationMinutes;
 
     const groupPoskos = schedule.kelompokId ? await getGroupPoskoList(schedule.kelompokId) : [];
 
@@ -1537,8 +1551,11 @@ export class KknAttendanceService {
       latitude: effectiveLat,
       longitude: effectiveLng,
       radius: schedule.radius ? Number(schedule.radius) : defaultRadius,
+      radiusMeter: schedule.radius ? Number(schedule.radius) : defaultRadius,
       targetDurationMinutes,
       durationMinutes: targetDurationMinutes,
+      actualInZoneMinutes: currentActualMins,
+      actualInZoneSeconds: currentActualSecs,
       polygon: schedule.polygon,
       poskoList: groupPoskos,
       totalPosko: groupPoskos.length,
@@ -3919,6 +3936,12 @@ export class KknAttendanceService {
         jamMulai,
         jamSelesai,
         durasiWajibMenit,
+        latitude: latNum,
+        longitude: lngNum,
+        radius: poskoRadiusNum,
+        radiusMeter: poskoRadiusNum,
+        location: locationStr,
+        alamat: locationStr,
         lokasi: {
           alamat: locationStr,
           latitude: latNum,
@@ -4479,6 +4502,14 @@ export class KknAttendanceService {
       jamSelesai: timeRange.jamSelesai,
       durasiWajibMenit,
       attendedAt: attendance.attendedAt.toISOString(),
+      latitude:
+        matchedPosko?.latitude ?? (schedule.latitude ? Number(schedule.latitude) : latitude),
+      longitude:
+        matchedPosko?.longitude ?? (schedule.longitude ? Number(schedule.longitude) : longitude),
+      radius: matchedPosko?.radius ?? (schedule.radius || 200),
+      radiusMeter: matchedPosko?.radius ?? (schedule.radius || 200),
+      location: matchedPosko?.alamat || schedule.location || "Lokasi Kegiatan KKN",
+      alamat: matchedPosko?.alamat || schedule.location || "Lokasi Kegiatan KKN",
       lokasi: {
         alamat: matchedPosko?.alamat || schedule.location || "Lokasi Kegiatan KKN",
         latitude:
