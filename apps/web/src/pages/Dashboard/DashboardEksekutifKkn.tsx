@@ -37,7 +37,6 @@ import {
   XCircle,
   AlertCircle,
   Phone,
-  Recycle,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -61,9 +60,7 @@ import LeaderboardWidget from "../../components/LeaderboardWidget";
 import { fetchMasterWilayah, type MasterKelurahanItem } from "../../utils/areaFilterUtils";
 import { isTestKelompok, isTestStudent, isTestUser } from "../../utils/filterTestingUtils";
 import { calculateProkerMetrics } from "../../utils/prokerMetrics";
-// Tab Tata Kelola Sampah (GIS & Tempat Sampah Aktif)
-import GisMapTab from "../SuperUser/GisMapTab";
-import TempatSampahAktifPage from "../SuperUser/TempatSampahAktifPage";
+
 
 interface KknExecutiveData {
   lastUpdated: string;
@@ -304,8 +301,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
   const [dplModalPage, setDplModalPage] = useState(1);
   const DPL_MODAL_PER_PAGE = 8;
 
-  // Tab internal Tata Kelola Sampah (GIS Peta & Tempat Sampah Aktif)
-  const [tataKelolaTab, setTataKelolaTab] = useState<"gis" | "bins">("gis");
+
 
   // Ambil data master Wilayah & RW
   useEffect(() => {
@@ -2745,69 +2741,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
         )}
       </div>
 
-      {/* =========================================================================
-          SECTION BARU: TATA KELOLA SAMPAH (GIS PETA & TEMPAT SAMPAH TERAKTIVASI)
-          Hanya ditampilkan untuk Pimpinan, SUPER_USER, DEVELOPER, ADMIN_DLH, DLH,
-          dan PANITIA_TASKFORCE — sesuai role yang mengakses dashboard ini.
-      ========================================================================= */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-0 overflow-hidden">
-        {/* Header Tata Kelola Sampah */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-5 border-b border-slate-100 dark:border-slate-800">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-400 flex items-center justify-center border border-teal-200/60 dark:border-teal-700/40">
-              <Recycle size={20} />
-            </div>
-            <div>
-              <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                Tata Kelola Sampah
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300 border border-teal-200 dark:border-teal-800/40">
-                  Geospasial & Aktivasi
-                </span>
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Pemantauan fasilitas sampah berbasis peta GIS dan data tempat sampah teraktivasi warga.
-              </p>
-            </div>
-          </div>
 
-          {/* Sub-Tab Switcher */}
-          <div className="flex items-center p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 self-start sm:self-auto shrink-0">
-            <button
-              type="button"
-              onClick={() => setTataKelolaTab("gis")}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                tataKelolaTab === "gis"
-                  ? "bg-white dark:bg-slate-900 text-teal-700 dark:text-teal-300 shadow-xs border border-slate-200/60 dark:border-slate-700"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
-              }`}
-            >
-              <MapPin size={13} className={tataKelolaTab === "gis" ? "text-teal-600 dark:text-teal-400" : "text-slate-400"} />
-              <span>Peta GIS</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setTataKelolaTab("bins")}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                tataKelolaTab === "bins"
-                  ? "bg-white dark:bg-slate-900 text-teal-700 dark:text-teal-300 shadow-xs border border-slate-200/60 dark:border-slate-700"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
-              }`}
-            >
-              <Recycle size={13} className={tataKelolaTab === "bins" ? "text-teal-600 dark:text-teal-400" : "text-slate-400"} />
-              <span>Tempat Sampah Aktif</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Tab Content */}
-        <div className="p-5">
-          {tataKelolaTab === "gis" ? (
-            <GisMapTab />
-          ) : (
-            <TempatSampahAktifPage />
-          )}
-        </div>
-      </div>
 
       {/* Modal Detail Anggota Kelompok & Fasilitas */}
       {selectedGroupForDetail && (

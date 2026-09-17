@@ -150,15 +150,16 @@ Kepatuhan per Kelurahan = (Jumlah Bin ACTIVE_BOUND) / (Total Bin di kelurahan) x
 | 4.5  | Route `GET /dashboard/kkn-executive/gis/facilities`          | `apps/api/src/routes/dashboardRoutes.ts`                    | [x]    |
 | 4.6  | Route `GET /dashboard/kkn-executive/gis/compliance-overlay`  | idem                                                        | [x]    |
 | 4.7  | Route `GET /dashboard/kkn-executive/waste/bins-activated`    | idem                                                        | [x]    |
-| 4.8  | Tab GIS/Peta di frontend eksekutif (Leaflet.js)              | `apps/web/src/.../GisMapTab.tsx`                            | [ ]    |
-| 4.9  | Marker per fasilitas — ikon berbeda per jenis                | idem                                                        | [ ]    |
-| 4.10 | Popup marker: nama, jenis, kelurahan, RW                     | idem                                                        | [ ]    |
-| 4.11 | Overlay warna kepatuhan per kelurahan                        | idem                                                        | [ ]    |
-| 4.12 | Filter kelurahan + RW di peta                                | idem                                                        | [ ]    |
-| 4.13 | Tab Tempat Sampah Teraktivasi                                | `apps/web/src/.../TempatSampahAktifPage.tsx`                | [ ]    |
-| 4.14 | Kolom: ID, QR Code, Kelurahan, RW, Tgl Aktivasi              | idem                                                        | [ ]    |
-| 4.15 | Tab Tata Kelola Sampah di halaman pimpinan                   | idem                                                        | [ ]    |
-| 4.16 | Akses: role DLH + PIMPINAN + SUPER_USER                      | idem                                                        | [ ]    |
+| 4.8  | Tab GIS/Peta di frontend eksekutif (Leaflet.js)              | `apps/web/src/pages/SuperUser/GisMapTab.tsx`                | [x]    |
+| 4.9  | Marker per fasilitas — ikon berbeda per jenis                | idem                                                        | [x]    |
+| 4.10 | Popup marker: nama, jenis, kelurahan, RW                     | idem                                                        | [x]    |
+| 4.11 | Overlay warna kepatuhan per kelurahan                        | idem                                                        | [x]    |
+| 4.12 | Filter kelurahan + RW di peta                                | idem                                                        | [x]    |
+| 4.13 | Tab Tempat Sampah Teraktivasi                                | `apps/web/src/pages/SuperUser/TempatSampahAktifPage.tsx`    | [x]    |
+| 4.14 | Kolom: ID, QR Code, Kelurahan, RW, Tgl Aktivasi              | idem                                                        | [x]    |
+| 4.15 | Tab Tata Kelola Sampah di dasbor pimpinan/eksekutif          | `apps/web/src/pages/Dashboard/Dashboard.tsx`                | [x]    |
+| 4.16 | Akses: role DLH + PIMPINAN + SUPER_USER                      | idem                                                        | [x]    |
+| 4.17 | Isolasi Ranah: Tab KKN 100% bebas dari modul fasilitas sampah | `apps/web/src/pages/Dashboard/DashboardEksekutifKkn.tsx`    | [x]    |
 
 ### Checklist QC
 
@@ -170,6 +171,8 @@ Kepatuhan per Kelurahan = (Jumlah Bin ACTIVE_BOUND) / (Total Bin di kelurahan) x
 | Q4.4 | Overlay warna                   | Tiga kategori berbeda warna sesuai formula                 |
 | Q4.5 | Tempat sampah aktif             | Minimal 138 data tampil (status ASSIGNED_TO_PIC + ACTIVE_BOUND) |
 | Q4.6 | Filter kelurahan/RW             | Data ter-filter benar                                      |
+| Q4.7 | Isolasi Tab KKN                 | Tab KKN murni data mahasiswa & proker (0% elemen sampah)   |
+| Q4.8 | Tab Tata Kelola Sampah          | Wadah resmi terpadu untuk Ringkasan, Peta GIS, & Tempat Sampah Aktif |
 
 ---
 

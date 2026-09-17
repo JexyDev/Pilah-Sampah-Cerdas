@@ -1,4 +1,4 @@
-﻿# 📋 LAPORAN PANDUAN PENGUJIAN FITUR BARU BERSEKA
+# 📋 LAPORAN PANDUAN PENGUJIAN FITUR BARU BERSEKA
 **Notulensi Rapat 17 September 2026**
 *Platform Tata Kelola Sampah & KKN Tematik BERSEKA*
 
@@ -104,31 +104,37 @@ Di mana:
 
 ---
 
-## 4. 🗺️ Dashboard Eksekutif KKN: Peta GIS & Tempat Sampah Teraktivasi
+## 4. 🗺️ Dasbor Eksekutif: Tab Tata Kelola Sampah (Peta GIS & Tempat Sampah Teraktivasi)
 
-### A. Komponen yang Dihadirkan
-Pada Dashboard Eksekutif (`/dashboard-eksekutif-kkn`), kini terdapat tab **"Tata Kelola Sampah"** dengan dua sub-fitur:
-1. **Peta GIS Interaktif (Leaflet.js)**:
-   - Menampilkan koordinat fasilitas sampah: Rumah Maggot (hijau tua), TPS (abu-abu), Bank Sampah (biru), Bata Terawang (ungu), Loseda/POC (oranye), Buruan SAE (cyan).
-   - Setiap titik dapat diklik untuk melihat popup detail (nama fasilitas, jenis, kelurahan, RW, status verifikasi).
-   - Dilengkapi **Overlay Kepatuhan Kelurahan**:
-     - $\ge 70\%$ : Tingkat TINGGI (Warna Hijau `#22c55e`)
-     - $40\% - 69\%$ : Tingkat SEDANG (Warna Kuning `#eab308`)
-     - $< 40\%$ : Tingkat RENDAH (Warna Merah `#ef4444`)
-2. **Tempat Sampah Teraktivasi**:
-   - Menampilkan daftar inventaris tempat sampah berstatus aktif (`ACTIVE_BOUND` dan `ASSIGNED_TO_PIC`).
-   - Dilengkapi kartu statistik total tempat sampah aktif, filter kelurahan/RW, pencarian QR Code, serta paginasi tabel.
+### A. Konsep Isolasi Ranah (*Domain Separation*)
+Sesuai hasil diskusi rapat Zoom dan notulensi, Dasbor Eksekutif (`/dasbor`) dibagi secara tegas menjadi dua ranah independen:
+1. **Tab "Kuliah Kerja Nyata" (`?tab=kkn`)**: Khusus menyajikan metrik kelompok KKN, proker, bimbingan DPL & MPL, presensi, konversi SKS, dan evaluasi mahasiswa (0% elemen sampah).
+2. **Tab "Tata Kelola Sampah" (`?tab=tata-kelola-sampah`)**: Wadah resmi terpadu yang memuat seluruh instrumen persampahan Kecamatan Coblong dengan 3 sub-tab:
+   - **Peta GIS Interaktif (Leaflet.js)**:
+     - Menampilkan koordinat fasilitas sampah: Rumah Maggot (hijau tua), TPS (abu-abu), Bank Sampah (biru), Bata Terawang (ungu), Loseda/POC (oranye), Buruan SAE (cyan).
+     - Filter posko KKN aktif (`jenis != "posko_kkn"` tidak ditampilkan di peta fasilitas sampah).
+     - Setiap titik dapat diklik untuk melihat popup detail (nama fasilitas, jenis, kelurahan, RW, status verifikasi, PIC, kontak WA).
+     - Dilengkapi **Overlay Kepatuhan Kelurahan**:
+       - $\ge 70\%$ : Tingkat TINGGI (Warna Hijau `#22c55e`)
+       - $40\% - 69\%$ : Tingkat SEDANG (Warna Kuning `#eab308`)
+       - $< 40\%$ : Tingkat RENDAH (Warna Merah `#ef4444`)
+   - **Tempat Sampah Teraktivasi**:
+     - Menampilkan daftar inventaris tempat sampah berstatus aktif (`ACTIVE_BOUND` dan `ASSIGNED_TO_PIC`).
+     - Dilengkapi kartu statistik total tempat sampah aktif, filter kelurahan/RW, pencarian QR Code, serta paginasi tabel.
+   - **Ringkasan & Metrik**:
+     - Metrik timbulan pemilahan sampah, komposisi sampah, tren mingguan, dan evaluasi kelurahan.
 
 ### B. Langkah-Langkah Pengujian:
 1. Beralih ke peran **PIMPINAN**, **SUPER_USER**, atau **DEVELOPER**.
-2. Masuk ke halaman **Dasbor Eksekutif KKN** (`/dashboard-eksekutif-kkn`).
-3. Klik tab **"Tata Kelola Sampah"**.
-4. Uji sub-tab **"Peta GIS"**:
-   - Coba zoom in/out dan geser peta wilayah Kecamatan Coblong.
-   - Gunakan filter dropdown Kelurahan (Dago, Sadang Serang, Sekeloa, dll).
-   - Klik salah satu pin/lingkaran fasilitas untuk membuka popup informasinya.
-5. Uji sub-tab **"Tempat Sampah Aktif"**:
-   - Periksa apakah seluruh tempat sampah teraktivasi tampil dengan benar beserta badge status dan tanggal aktivasinya.
+2. Masuk ke halaman **Dasbor** (`/dasbor`).
+3. **Uji Isolasi Tab KKN**:
+   - Klik tab **"Kuliah Kerja Nyata"** (`?tab=kkn`).
+   - Gulir ke bawah: pastikan **TIDAK ADA** modul sampah atau peta GIS fasilitas.
+4. **Uji Tab Tata Kelola Sampah**:
+   - Klik tab **"Tata Kelola Sampah"** (`?tab=tata-kelola-sampah`).
+   - Uji sub-tab **"Peta GIS Fasilitas"**: Zoom, filter kelurahan, dan klik marker fasilitas.
+   - Uji sub-tab **"Tempat Sampah Teraktivasi"**: Periksa daftar QR Code dan status aktif.
+   - Uji sub-tab **"Ringkasan & Metrik"**: Periksa kartu KPI timbulan sampah dan komposisi.
 
 ---
 

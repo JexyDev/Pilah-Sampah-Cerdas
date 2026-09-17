@@ -83,16 +83,25 @@ Per tanggal **17 September 2026**, seluruh kode backend API dan web frontend tel
 
 ---
 
-### 2.4. Dashboard Eksekutif KKN: Peta GIS & Tempat Sampah Teraktivasi
-* **Halaman Pengujian:** URL `/dashboard-eksekutif-kkn` $\rightarrow$ Tab *"Tata Kelola Sampah"*.
-* **Komponen yang Diuji:**
-  1. **Peta GIS Interaktif (Leaflet.js):**
-     - Marker Rumah Maggot, TPS, Bank Sampah, Bata Terawang, Loseda/POC, dan Buruan SAE muncul pada koordinat yang benar di wilayah Coblong.
-     - Setiap marker dapat diklik untuk membuka popup informasi detail.
+### 2.4. Dashboard Eksekutif: Tata Kelola Sampah (Peta GIS & Tempat Sampah Teraktivasi)
+* **Aturan Isolasi Domain (Domain Isolation Rule):**
+  - **Tab KKN (`/dasbor?tab=kkn`):** Khusus murni data KKN Tematik (proker, logbook, presensi, DPL/MPL, kelompok, leaderboard). **Wajib 0% bebas dari modul fasilitas sampah.**
+  - **Tab Tata Kelola Sampah (`/dasbor?tab=tata-kelola-sampah`):** Wadah resmi mandiri untuk seluruh pemantauan persampahan Coblong.
+* **Halaman Pengujian:** URL `/dasbor?tab=tata-kelola-sampah`
+* **Sub-Tab yang Diuji:**
+  1. **Sub-Tab Peta GIS Fasilitas (`view=gis`):**
+     - Marker Rumah Maggot, TPS, Bank Sampah, Bata Terawang, Loseda/POC, dan Buruan SAE muncul pada koordinat yang benar di wilayah Coblong (83 titik).
+     - Filter posko KKN aktif (`jenis != "posko_kkn"` tidak ditampilkan di peta fasilitas sampah).
+     - Setiap marker dapat diklik untuk membuka popup informasi detail (PIC, kontak, foto, link maps).
      - Layer poligon/indikator kepatuhan kelurahan menampilkan warna sesuai standar: Hijau ($\ge 70\%$), Kuning ($40\%-69\%$), Merah ($< 40\%$).
-  2. **Tabel Tempat Sampah Teraktivasi:**
+  2. **Sub-Tab Tempat Sampah Teraktivasi (`view=bins`):**
      - Menampilkan daftar inventaris tempat sampah berstatus aktif (`ACTIVE_BOUND` dan `ASSIGNED_TO_PIC`).
      - Filter pencarian QR code dan kelurahan berfungsi akurat.
+  3. **Sub-Tab Ringkasan & Metrik (`view=ringkasan`):**
+     - Metrik timbulan sampah, komposisi sampah, tren mingguan, dan evaluasi kelurahan.
+* **Kriteria Lulus Isolasi Domain (Pass Criteria):**
+  1. Saat membuka tab *"Kuliah Kerja Nyata"*, tidak ada lagi kartu/modul *"Tata Kelola Sampah (Geospasial & Aktivasi)"* di bagian bawah halaman.
+  2. Seluruh visualisasi peta GIS dan tempat sampah aktif berpindah dan tersaji rapi di tab *"Tata Kelola Sampah"*.
 
 ---
 
