@@ -64,28 +64,20 @@ class KelompokKknView extends ConsumerWidget {
     bool hasFoundLeader = false;
     final membersToDisplay = <KelompokMemberData>[];
 
-    final mhsState = ref.watch(mahasiswaControllerProvider);
-    final personalPoints = mhsState.dashboard?.contributionPoints;
-
     for (final m in uniqueMembers.values) {
       final isUser = user != null &&
           ((m.userId.isNotEmpty && m.userId == user.id) ||
               (m.nim.isNotEmpty && user.nim.isNotEmpty && m.nim == user.nim) ||
               (m.name.toLowerCase().trim() == user.name.toLowerCase().trim()));
 
-      // Selalu sinkronkan poin pengguna login dengan personal points terkini
-      final resolvedMember = (isUser && personalPoints != null)
-          ? m.copyWith(individualPoints: personalPoints)
-          : m;
-
-      if (resolvedMember.isLeader && !hasFoundLeader) {
-        membersToDisplay.add(resolvedMember);
+      if (m.isLeader && !hasFoundLeader) {
+        membersToDisplay.add(m);
         hasFoundLeader = true;
-      } else if (resolvedMember.isLeader && hasFoundLeader) {
+      } else if (m.isLeader && hasFoundLeader) {
         // Strip leader status dari anggota kedua yang isLeader=true
-        membersToDisplay.add(resolvedMember.copyWith(isLeader: false));
+        membersToDisplay.add(m.copyWith(isLeader: false));
       } else {
-        membersToDisplay.add(resolvedMember);
+        membersToDisplay.add(m);
       }
     }
     // Urutkan: Ketua di atas, sisanya berdasarkan urutan asli
