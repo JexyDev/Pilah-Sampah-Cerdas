@@ -38,18 +38,23 @@ export const MahasiswaMobileApp: React.FC = () => {
 
   // Sync state if URL query params change
   useEffect(() => {
-    if (requestedTab && ["beranda", "presensi", "logbook", "proker", "profil"].includes(requestedTab)) {
+    if (
+      requestedTab &&
+      ["beranda", "presensi", "logbook", "proker", "profil"].includes(requestedTab) &&
+      requestedTab !== activeTab
+    ) {
       setActiveTab(requestedTab);
     }
     if (requestedAction === "create-logbook" || searchParams.get("create") === "1") {
       setIsLogbookModalOpen(true);
     }
-  }, [requestedTab, requestedAction, searchParams]);
+  }, [requestedTab, requestedAction]);
 
   const handleTabChange = (newTab: "beranda" | "presensi" | "logbook" | "proker" | "profil") => {
+    if (newTab === activeTab) return;
     setActiveTab(newTab);
     // Sync to URL search params cleanly without reload
-    const nextParams = new URLSearchParams(searchParams);
+    const nextParams = new URLSearchParams(window.location.search);
     nextParams.set("tab", newTab);
     nextParams.delete("action");
     nextParams.delete("create");
@@ -68,39 +73,32 @@ export const MahasiswaMobileApp: React.FC = () => {
   return (
     <IOSSafariGate>
       <MahasiswaMobileShell activeTab={activeTab} onTabChange={handleTabChange}>
-        {(tab) => {
-          switch (tab) {
-            case "beranda":
-              return (
-                <MahasiswaMobileHome
-                  onNavigateTab={handleTabChange}
-                  onOpenLogbookModal={() => setIsLogbookModalOpen(true)}
-                  refreshTrigger={logbookRefreshTrigger}
-                />
-              );
-            case "presensi":
-              return <MahasiswaPresensiMobile />;
-            case "logbook":
-              return (
-                <MahasiswaLogbookMobile
-                  onOpenCreateModal={() => setIsLogbookModalOpen(true)}
-                  refreshTrigger={logbookRefreshTrigger}
-                />
-              );
-            case "proker":
-              return <MahasiswaProkerMobile onProkerCreated={fetchProkerList} />;
-            case "profil":
-              return <MahasiswaProfilMobile />;
-            default:
-              return (
-                <MahasiswaMobileHome
-                  onNavigateTab={handleTabChange}
-                  onOpenLogbookModal={() => setIsLogbookModalOpen(true)}
-                  refreshTrigger={logbookRefreshTrigger}
-                />
-              );
-          }
-        }}
+        {() => (
+          <div className="relative w-full">
+            <div className={activeTab === "beranda" ? "block" : "hidden"}>
+              <MahasiswaMobileHome
+                onNavigateTab={handleTabChange}
+                onOpenLogbookModal={() => setIsLogbookModalOpen(true)}
+                refreshTrigger={logbookRefreshTrigger}
+              />
+            </div>
+            <div className={activeTab === "presensi" ? "block" : "hidden"}>
+              <MahasiswaPresensiMobile />
+            </div>
+            <div className={activeTab === "logbook" ? "block" : "hidden"}>
+              <MahasiswaLogbookMobile
+                onOpenCreateModal={() => setIsLogbookModalOpen(true)}
+                refreshTrigger={logbookRefreshTrigger}
+              />
+            </div>
+            <div className={activeTab === "proker" ? "block" : "hidden"}>
+              <MahasiswaProkerMobile onProkerCreated={fetchProkerList} />
+            </div>
+            <div className={activeTab === "profil" ? "block" : "hidden"}>
+              <MahasiswaProfilMobile />
+            </div>
+          </div>
+        )}
       </MahasiswaMobileShell>
 
       {/* Global Logbook Modal */}

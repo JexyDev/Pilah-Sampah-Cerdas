@@ -121,30 +121,47 @@ export const MahasiswaPresensiMobile: React.FC = () => {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
-  // Live Ping Engine State
+  // Live Ping Engine State & Refs
+  const isMountedRef = useRef<boolean>(true);
+  const lastPingTimeRef = useRef<number>(0);
+  const isPingingServerRef = useRef<boolean>(false);
   const [liveInZoneSecs, setLiveInZoneSecs] = useState<number>(0);
   const [isLiveActiveInZone, setIsLiveActiveInZone] = useState<boolean>(false);
   const [, setLastPingTime] = useState<Date | null>(null);
   const [, setIsPingingServer] = useState(false);
 
-  // 1. Ambil Data Posko, Jadwal Kegiatan Aktif, & Riwayat Presensi
+  // 1. Lifecycle & Inisialisasi Data Posko, Jadwal Kegiatan Aktif, & Riwayat Presensi
   useEffect(() => {
+    isMountedRef.current = true;
     fetchPoskoData();
-    fetchKegiatanAktif();
+    fetchKegiatanAktif(false);
     fetchRiwayatPresensi();
+    return () => {
+      isMountedRef.current = false;
+    };
   }, []);
 
-  // 2. Live Ping Engine Function (Kirim GPS Periodik ke Backend VPS)
+  // 2. Live Ping Engine Function (Kirim GPS Periodik ke Backend VPS dengan Throttling 15s)
   const pingServerLocation = async (lat: number, lng: number, _acc?: number) => {
+    const now = Date.now();
+    // Cegah flooding request dari watchPosition GPS frekuensi tinggi
+    if (isPingingServerRef.current || now - lastPingTimeRef.current < 15000) {
+      return;
+    }
+
     try {
+      isPingingServerRef.current = true;
       setIsPingingServer(true);
       const res = await api.post("/kkn/location-ping", {
         latitude: lat,
         longitude: lng,
       });
 
+      if (!isMountedRef.current) return;
+
       if (res.data?.success && res.data?.data) {
         const d = res.data.data;
+        lastPingTimeRef.current = Date.now();
         setLastPingTime(new Date());
 
         if (d.attendanceStatus === "BERLANGSUNG") {
@@ -152,9 +169,9 @@ export const MahasiswaPresensiMobile: React.FC = () => {
           if (typeof d.actualInZoneSeconds === "number" && d.actualInZoneSeconds > 0) {
             setLiveInZoneSecs((prev) => Math.max(prev, d.actualInZoneSeconds));
           }
-          // Refresh kegiatan jika status baru saja bertransisi
+          // Refresh kegiatan jika status baru saja bertransisi (silent background)
           if (primaryKegiatan && primaryKegiatan.statusKehadiran !== "BERLANGSUNG") {
-            fetchKegiatanAktif();
+            fetchKegiatanAktif(true);
           }
         } else if (d.attendanceStatus === "TERJEDA") {
           setIsLiveActiveInZone(false);
@@ -162,7 +179,7 @@ export const MahasiswaPresensiMobile: React.FC = () => {
             setLiveInZoneSecs((prev) => Math.max(prev, d.actualInZoneSeconds));
           }
           if (primaryKegiatan && primaryKegiatan.statusKehadiran !== "TERJEDA") {
-            fetchKegiatanAktif();
+            fetchKegiatanAktif(true);
           }
         } else {
           setIsLiveActiveInZone(false);
@@ -171,7 +188,10 @@ export const MahasiswaPresensiMobile: React.FC = () => {
     } catch (e) {
       console.warn("[GPS Ping] Gagal mengirim koordinat ke server:", e);
     } finally {
-      setIsPingingServer(false);
+      isPingingServerRef.current = false;
+      if (isMountedRef.current) {
+        setIsPingingServer(false);
+      }
     }
   };
 
@@ -243,7 +263,7 @@ export const MahasiswaPresensiMobile: React.FC = () => {
       });
     }, 20000);
 
-    // C. iOS Safari Wakeup Handler: Saat tab dibuka kembali dari background / layar nyala
+    // C. iOS Safari Wakeup Handler: Saat tab dibuka kembali dari background / layar aktif
     const handleWakeup = () => {
       if (document.visibilityState === "visible") {
         navigator.geolocation.getCurrentPosition(handlePosition, handlePosError, {
@@ -251,19 +271,18 @@ export const MahasiswaPresensiMobile: React.FC = () => {
           maximumAge: 0,
           timeout: 10000,
         });
-        fetchKegiatanAktif();
+        // Gunakan silent background refresh agar layout tidak melompat (jumping)
+        fetchKegiatanAktif(true);
         fetchRiwayatPresensi();
       }
     };
 
     document.addEventListener("visibilitychange", handleWakeup);
-    window.addEventListener("focus", handleWakeup);
 
     return () => {
       if (watchId !== null) navigator.geolocation.clearWatch(watchId);
       if (intervalId) clearInterval(intervalId);
       document.removeEventListener("visibilitychange", handleWakeup);
-      window.removeEventListener("focus", handleWakeup);
     };
   }, [posko, allGroupPoskos]);
 
@@ -417,10 +436,13 @@ export const MahasiswaPresensiMobile: React.FC = () => {
     }
   };
 
-  const fetchKegiatanAktif = async () => {
+  const fetchKegiatanAktif = async (isBackground = false) => {
     try {
-      setIsLoadingKegiatan(true);
+      if (!isBackground && kegiatanList.length === 0) {
+        setIsLoadingKegiatan(true);
+      }
       const res = await api.get("/kkn/kegiatan-aktif");
+      if (!isMountedRef.current) return;
       const list = res.data?.data || [];
       const safeList = Array.isArray(list) ? list : [];
       setKegiatanList(safeList);
@@ -478,7 +500,9 @@ export const MahasiswaPresensiMobile: React.FC = () => {
     } catch (err) {
       console.error("Gagal memuat kegiatan aktif", err);
     } finally {
-      setIsLoadingKegiatan(false);
+      if (isMountedRef.current && !isBackground) {
+        setIsLoadingKegiatan(false);
+      }
     }
   };
 
@@ -1590,68 +1614,6 @@ export const MahasiswaPresensiMobile: React.FC = () => {
         </div>
       )}
 
-      {/* 7. Modal Konfirmasi Check-Out Presensi */}
-      {showCheckOutModal && (
-        <div className="fixed inset-0 z-[100] bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-sm w-full p-5 shadow-2xl space-y-4 animate-scale-in">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-rose-100 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
-                <CheckCircle2 size={20} />
-              </div>
-              <div className="min-w-0">
-                <h4 className="text-sm font-black text-slate-900 dark:text-white">
-                  Akhiri Sesi &amp; Presensi Pulang?
-                </h4>
-                <p className="text-[10px] text-slate-500 font-mono">
-                  {primaryKegiatan?.namaKegiatan || "Sesi Kegiatan Aktif"}
-                </p>
-              </div>
-            </div>
-
-            <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 space-y-2 text-xs text-slate-600 dark:text-slate-300">
-              <div className="flex justify-between items-center text-[11px]">
-                <span className="text-slate-500">Durasi Tercatat:</span>
-                <span className="font-bold text-slate-900 dark:text-white">{primaryKegiatan?.durasiLapangFormatted || elapsedTime}</span>
-              </div>
-              {primaryKegiatan?.canCheckoutNow === false && primaryKegiatan?.earliestCheckoutTimeString && (
-                <div className="p-2 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-xl text-[11px] text-amber-800 dark:text-amber-300 font-semibold">
-                  ⚠️ Peringatan: Jam pulang minimal adalah pukul {primaryKegiatan.earliestCheckoutTimeString}. Jika Anda checkout lebih awal, presensi dapat ditolak oleh sistem.
-                </div>
-              )}
-              <p className="text-[11px] leading-relaxed">
-                Pastikan Anda telah menyelesaikan kegiatan hari ini. Waktu kepulangan akan dicatat dan sesi presensi akan dikunci.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => setShowCheckOutModal(false)}
-                disabled={isSubmitting}
-                className="py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition cursor-pointer"
-              >
-                Batal
-              </button>
-
-              <button
-                type="button"
-                onClick={handleCheckOut}
-                disabled={isSubmitting}
-                className="py-2.5 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black uppercase tracking-wider transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 size={13} className="animate-spin" />
-                    <span>Memproses...</span>
-                  </>
-                ) : (
-                  <span>Ya, Presensi Pulang</span>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
       {/* 7. Modal Konfirmasi Check-Out / Selesai Sesi */}
       {showCheckOutModal && (
         <div className="fixed inset-0 z-[100] bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
@@ -1709,6 +1671,12 @@ export const MahasiswaPresensiMobile: React.FC = () => {
                       </span>
                     </div>
                   </div>
+
+                  {primaryKegiatan?.canCheckoutNow === false && primaryKegiatan?.earliestCheckoutTimeString && (
+                    <div className="p-2 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-xl text-[11px] text-amber-800 dark:text-amber-300 font-semibold">
+                      ⚠️ Peringatan: Jam pulang minimal adalah pukul {primaryKegiatan.earliestCheckoutTimeString}. Jika Anda checkout lebih awal, presensi dapat ditolak oleh sistem.
+                    </div>
+                  )}
 
                   {!isTargetMet ? (
                     <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-2xl text-[11px] text-amber-800 dark:text-amber-300 space-y-1">
