@@ -657,6 +657,8 @@ model PetugasResidu {
   noWa            String   @map("no_wa")
   kpiScore        Decimal  @default(100.0) @map("skor_kpi") @db.Decimal(5, 2)
   assignedZone    String?  @map("zona_ditugaskan")
+  namaDisplay     String?  @map("nama_display")   // Nama tampilan publik sesuai daerah, contoh: "Petugas Kelurahan Dago 01"
+  kelurahan       String?  @map("kelurahan")       // Kelurahan penugasan petugas mobile
   createdAt       DateTime @default(now()) @map("dibuat_pada")
   updatedAt       DateTime @updatedAt @map("diperbarui_pada")
   latitude        Decimal? @map("latitude") @db.Decimal(11, 8)

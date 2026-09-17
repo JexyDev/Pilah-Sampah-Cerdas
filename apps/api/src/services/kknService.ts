@@ -216,7 +216,6 @@ export class KknService {
     } else {
       const personalData = await calculatePersonalPoints(userId);
       personalPoints = Math.max(0, personalData.personalPoints);
-      prokerPoints = Math.max(0, personalData.prokerPoints);
       contributionPoints = Math.max(0, personalData.contributionPoints);
       personalScoreBreakdown = personalData;
     }
@@ -233,6 +232,13 @@ export class KknService {
       if (studentWithGroup?.kelompokId) {
         groupPointsData = await calculateGroupPoints(studentWithGroup.kelompokId);
       }
+    }
+
+    // Tarik prokerPoints langsung dari hitungan kolektif grup, bukan dari personalData
+    if (groupPointsData) {
+      prokerPoints = groupPointsData.poinProker ?? 0;
+    } else {
+      prokerPoints = 0;
     }
 
     const poskoLat = student?.assignedRw?.latitude ? Number(student.assignedRw.latitude) : null;
