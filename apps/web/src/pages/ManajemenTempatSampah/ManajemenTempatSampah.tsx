@@ -526,7 +526,7 @@ const ManajemenTempatSampah: React.FC = () => {
       setBins(res.data.data || []);
     } catch (err) {
       setError("Gagal memuat data dari server.");
-      toast.error("Gagal memuat data tempat sampah");
+      toast.error("Gagal memuat data kode QR tempat sampah");
     } finally {
       setLoading(false);
     }
@@ -613,7 +613,7 @@ const ManajemenTempatSampah: React.FC = () => {
       };
 
       await api.put(`/bins/${selectedBin}`, payload);
-      toast.success("Data tempat sampah berhasil diperbarui!");
+      toast.success("Data kode QR tempat sampah berhasil diperbarui!");
       closeFormModal();
       await fetchBins();
       await fetchHouseholds();
@@ -700,7 +700,7 @@ const ManajemenTempatSampah: React.FC = () => {
 
   const handleExportCSV = () => {
     if (!bins || bins.length === 0) {
-      toast.error("Tidak ada data tempat sampah dalam tabel untuk diekspor.");
+      toast.error("Tidak ada data kode QR tempat sampah dalam tabel untuk diekspor.");
       return;
     }
     const headers = ["ID", "Kode QR", "Kategori", "Status", "Kapasitas (L)", "Pemilik / Warga", "Wilayah RW", "Kelurahan", "Tanggal Aktivasi"];
@@ -787,8 +787,8 @@ const ManajemenTempatSampah: React.FC = () => {
                   : "bg-slate-100/80 dark:bg-slate-800/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200/80 dark:bg-slate-800/80 dark:hover:bg-slate-700"
               }`}
             >
-              <Box size={15} />
-              <span>Data Tempat Sampah</span>
+              <QrCode size={15} />
+              <span>Kode QR Tempat Sampah</span>
             </button>
             <button
               type="button"
@@ -1450,14 +1450,14 @@ const ManajemenTempatSampah: React.FC = () => {
             <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-xs flex items-center justify-between transition-all hover:shadow-md">
               <div>
                 <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider">
-                  TOTAL TEMPAT SAMPAH
+                  TOTAL KODE QR TEMPAT SAMPAH
                 </p>
                 <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1">
                   {bins.length}
                 </h3>
               </div>
               <div className="w-11 h-11 rounded-2xl bg-[#009966]/10 text-[#009966] dark:text-emerald-400 flex items-center justify-center border border-[#009966]/20 dark:border-emerald-700/40 shadow-2xs">
-                <Trash2 size={20} />
+                <QrCode size={20} />
               </div>
             </div>
 
@@ -1597,7 +1597,7 @@ const ManajemenTempatSampah: React.FC = () => {
                       <Loader2 className="animate-spin text-[#009966]" size={24} />
                     </div>
                     <div>
-                      <p className="text-xs font-black text-slate-800 dark:text-slate-200">Memuat Data Tempat Sampah...</p>
+                      <p className="text-xs font-black text-slate-800 dark:text-slate-200">Memuat Data Kode QR Tempat Sampah...</p>
                       <p className="text-[11px] text-slate-400 font-medium mt-0.5">Menghubungkan ke server BERSEKA real-time.</p>
                     </div>
                   </div>
@@ -1611,7 +1611,7 @@ const ManajemenTempatSampah: React.FC = () => {
                       <AlertTriangle size={24} />
                     </div>
                     <div>
-                      <p className="text-xs font-black text-slate-900 dark:text-slate-100">Gagal Memuat Data Tempat Sampah</p>
+                      <p className="text-xs font-black text-slate-900 dark:text-slate-100">Gagal Memuat Data Kode QR Tempat Sampah</p>
                       <p className="text-[11px] text-rose-500 font-semibold mt-0.5">{error}</p>
                     </div>
                     <button
@@ -1836,7 +1836,7 @@ const ManajemenTempatSampah: React.FC = () => {
             ) : (
               <EmptyTableState
                 colSpan={isReadOnly ? 10 : 11}
-                entityName="Tempat Sampah"
+                entityName="Kode QR Tempat Sampah"
                 isSearch={!!(searchInput || statusFilter)}
                 searchQuery={searchInput}
                 onResetSearch={() => {
@@ -2068,7 +2068,7 @@ const ManajemenTempatSampah: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-lg font-black text-slate-900 dark:text-slate-100 tracking-tight">
-                    Ubah Data Tempat Sampah
+                    Ubah Data Kode QR Tempat Sampah
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
                     Perbarui informasi tempat sampah fisik.
