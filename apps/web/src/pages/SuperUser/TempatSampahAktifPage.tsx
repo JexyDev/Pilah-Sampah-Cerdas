@@ -4,8 +4,8 @@
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  *
  * Halaman Tempat Sampah Teraktivasi (Dasbor Eksekutif & Monitoring Lapangan):
- * - Kartu metrik eksekutif (Total, Aktif & Terikat, Ditugaskan ke PIC, Cakupan Wilayah)
- * - Filter cepat status (Semua, Aktif & Terikat, Ditugaskan ke PIC)
+ * - Kartu metrik eksekutif (Total Teraktivasi, Aktif & Terikat, Cakupan Wilayah)
+ * - Filter cepat status (Semua Status, Aktif & Terikat)
  * - Pencarian multi-kriteria instan (QR Code, Kategori, RW, Kelurahan, Pemilik)
  * - Filter Kelurahan & RW terintegrasi
  * - Tabel data super-lengkap, rapi, dan terurut (Sortable columns & quick sorter)
@@ -185,17 +185,12 @@ const getStatusBadge = (status: string): string => {
   if (s === "ACTIVE_BOUND" || s.includes("ACTIVE")) {
     return "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-700/60";
   }
-  if (s === "ASSIGNED_TO_PIC" || s.includes("ASSIGNED")) {
-    return "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-300/80 dark:border-blue-700/60";
-  }
   return "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700";
 };
 
 const getStatusLabel = (status: string): string => {
   const s = status?.toUpperCase() ?? "";
-  if (s === "ACTIVE_BOUND") return "Aktif & Terikat";
-  if (s === "ASSIGNED_TO_PIC") return "Dialokasikan ke Petugas";
-  if (s === "ACTIVE") return "Aktif";
+  if (s === "ACTIVE_BOUND" || s === "ACTIVE") return "Aktif & Terikat";
   return status || "-";
 };
 
@@ -269,7 +264,6 @@ export const TempatSampahAktifPage: React.FC = () => {
       if (statusFilter !== "ALL") {
         const s = (bin.status || "").toUpperCase();
         if (statusFilter === "ACTIVE_BOUND" && s !== "ACTIVE_BOUND") return false;
-        if (statusFilter === "ASSIGNED_TO_PIC" && s !== "ASSIGNED_TO_PIC") return false;
       }
 
       // Filter Kategori (Organik vs Anorganik)
@@ -336,7 +330,6 @@ export const TempatSampahAktifPage: React.FC = () => {
   // ── Statistik Metrik Eksekutif ──────────────────────────────────────────────
   const metrics = useMemo(() => {
     let activeBound = 0;
-    let assignedPic = 0;
     let organikCount = 0;
     let anorganikCount = 0;
     const uniqueKelurahan = new Set<string>();
@@ -344,8 +337,7 @@ export const TempatSampahAktifPage: React.FC = () => {
 
     bins.forEach((b) => {
       const s = (b.status || "").toUpperCase();
-      if (s === "ACTIVE_BOUND") activeBound++;
-      else if (s === "ASSIGNED_TO_PIC") assignedPic++;
+      if (s === "ACTIVE_BOUND" || s.includes("ACTIVE")) activeBound++;
 
       const catInfo = getBinCategoryInfo(b.qrCode, b.kategoriNama);
       if (catInfo.isOrganik) organikCount++;
@@ -358,7 +350,6 @@ export const TempatSampahAktifPage: React.FC = () => {
     return {
       total: bins.length,
       activeBound,
-      assignedPic,
       organikCount,
       anorganikCount,
       kelurahanCount: uniqueKelurahan.size,
@@ -575,8 +566,8 @@ export const TempatSampahAktifPage: React.FC = () => {
         </div>
       </div>
 
-      {/* ── 4 KPI Summary Cards ──────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* ── 3 KPI Summary Cards ──────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Card 1: Total Teraktivasi */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs flex flex-col justify-between hover:border-blue-400/60 transition-colors">
           <div className="flex items-center justify-between w-full mb-3">
@@ -618,27 +609,7 @@ export const TempatSampahAktifPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Card 3: Dialokasikan ke Petugas */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs flex flex-col justify-between hover:border-indigo-400/60 transition-colors">
-          <div className="flex items-center justify-between w-full mb-3">
-            <span className="text-[10.5px] font-extrabold uppercase tracking-wider text-indigo-700 dark:text-indigo-400">
-              Dialokasikan ke Petugas
-            </span>
-            <div className="p-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
-              <UserCheck size={18} />
-            </div>
-          </div>
-          <div>
-            <div className="text-3xl font-black tracking-tight text-indigo-600 dark:text-indigo-400">
-              {loading ? "..." : metrics.assignedPic.toLocaleString("id-ID")}
-            </div>
-            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1 truncate">
-              Dalam Distribusi Petugas
-            </p>
-          </div>
-        </div>
-
-        {/* Card 4: Wilayah Terjangkau */}
+        {/* Card 3: Wilayah Terjangkau */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs flex flex-col justify-between hover:border-amber-400/60 transition-colors">
           <div className="flex items-center justify-between w-full mb-3">
             <span className="text-[10.5px] font-extrabold uppercase tracking-wider text-amber-700 dark:text-amber-400">
@@ -697,25 +668,6 @@ export const TempatSampahAktifPage: React.FC = () => {
             <span>Aktif &amp; Terikat</span>
             <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
               {metrics.activeBound}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setStatusFilter("ASSIGNED_TO_PIC");
-              setPage(1);
-            }}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shrink-0 ${
-              statusFilter === "ASSIGNED_TO_PIC"
-                ? "bg-blue-600 text-white shadow-xs"
-                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
-            }`}
-          >
-            <UserCheck size={13} />
-            <span>Dialokasikan ke Petugas</span>
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300">
-              {metrics.assignedPic}
             </span>
           </button>
 
@@ -1059,9 +1011,7 @@ export const TempatSampahAktifPage: React.FC = () => {
                                 <span>{getStatusLabel(bin.status)}</span>
                               </span>
                               <span className="text-[10px] text-slate-400 dark:text-slate-500 pl-1">
-                                {(bin.status || "").includes("ACTIVE")
-                                  ? "Siap Operasi & Pemilahan"
-                                  : "Dalam Distribusi Petugas"}
+                                Siap Operasi &amp; Pemilahan
                               </span>
                             </div>
                           </td>
