@@ -4407,7 +4407,7 @@ export class KknService {
       const whereClause: any = {
         OR: [
           { statusUsulan: { in: ["DISETUJUI", "DITERIMA"] } },
-          { status: { in: ["DISETUJUI", "DITERIMA"] } },
+          { status: "DITERIMA" },
         ],
         AND: [
           {
