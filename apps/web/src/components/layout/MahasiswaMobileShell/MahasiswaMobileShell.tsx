@@ -44,12 +44,13 @@ export const MahasiswaMobileShell: React.FC<MahasiswaMobileShellProps> = ({
   const currentTab = controlledTab || internalTab;
 
   const handleSelectTab = (tab: "beranda" | "presensi" | "logbook" | "proker" | "profil") => {
+    if (tab === currentTab) return;
     if (onTabChange) {
       onTabChange(tab);
     } else {
       setInternalTab(tab);
     }
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo(0, 0);
   };
 
   const handleLogout = () => {
@@ -61,7 +62,7 @@ export const MahasiswaMobileShell: React.FC<MahasiswaMobileShellProps> = ({
   return (
     <div className="min-h-[100dvh] bg-slate-100 dark:bg-slate-950 flex flex-col font-sans text-slate-800 dark:text-slate-100 antialiased selection:bg-emerald-500 selection:text-white">
       {/* 1. Mobile Top App Bar (iOS Status-Bar Safe) */}
-      <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 shadow-2xs pt-[env(safe-area-inset-top,0px)]">
+      <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 shadow-2xs pt-[env(safe-area-inset-top,0px)] select-none">
         <div className="max-w-md mx-auto px-4 h-14 flex items-center justify-between gap-3">
           {/* Left: App Logo & Role Title */}
           <div className="flex items-center gap-2.5 min-w-0">
@@ -86,8 +87,9 @@ export const MahasiswaMobileShell: React.FC<MahasiswaMobileShellProps> = ({
           {/* Right: Quick Profile Initials & Logout */}
           <div className="flex items-center gap-2 shrink-0">
             <button
+              type="button"
               onClick={() => handleSelectTab("profil")}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl transition-colors cursor-pointer select-none touch-manipulation active:opacity-75 ${
                 currentTab === "profil"
                   ? "bg-emerald-500 text-white shadow-xs"
                   : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
@@ -110,14 +112,15 @@ export const MahasiswaMobileShell: React.FC<MahasiswaMobileShellProps> = ({
       </main>
 
       {/* 3. Ergonomic Bottom Navigation Bar (iOS Home-Indicator Safe, z-30 to stay below modals) */}
-      <nav className="fixed bottom-0 left-0 right-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg border-t border-slate-200/80 dark:border-slate-800 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] pb-[env(safe-area-inset-bottom,0px)]">
+      <nav className="fixed bottom-0 left-0 right-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg border-t border-slate-200/80 dark:border-slate-800 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] pb-[env(safe-area-inset-bottom,0px)] select-none touch-manipulation">
         <div className="max-w-md mx-auto px-2 h-15 flex items-center justify-around">
           {/* Tab 1: Beranda */}
           <button
+            type="button"
             onClick={() => handleSelectTab("beranda")}
-            className={`flex flex-col items-center justify-center flex-1 py-1 transition-all duration-200 cursor-pointer ${
+            className={`flex flex-col items-center justify-center flex-1 py-1 cursor-pointer select-none touch-manipulation active:opacity-70 transition-colors ${
               currentTab === "beranda"
-                ? "text-emerald-700 dark:text-emerald-400 font-bold scale-105"
+                ? "text-emerald-700 dark:text-emerald-400 font-black"
                 : "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 font-medium"
             }`}
           >
@@ -127,10 +130,11 @@ export const MahasiswaMobileShell: React.FC<MahasiswaMobileShellProps> = ({
 
           {/* Tab 2: Presensi GPS */}
           <button
+            type="button"
             onClick={() => handleSelectTab("presensi")}
-            className={`flex flex-col items-center justify-center flex-1 py-1 transition-all duration-200 cursor-pointer ${
+            className={`flex flex-col items-center justify-center flex-1 py-1 cursor-pointer select-none touch-manipulation active:opacity-70 transition-colors ${
               currentTab === "presensi"
-                ? "text-emerald-700 dark:text-emerald-400 font-bold scale-105"
+                ? "text-emerald-700 dark:text-emerald-400 font-black"
                 : "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 font-medium"
             }`}
           >
@@ -140,10 +144,11 @@ export const MahasiswaMobileShell: React.FC<MahasiswaMobileShellProps> = ({
 
           {/* Tab 3: Logbook (Center High-Impact Action) */}
           <button
+            type="button"
             onClick={() => handleSelectTab("logbook")}
-            className={`flex flex-col items-center justify-center flex-1 py-1 transition-all duration-200 cursor-pointer ${
+            className={`flex flex-col items-center justify-center flex-1 py-1 cursor-pointer select-none touch-manipulation active:opacity-70 transition-colors ${
               currentTab === "logbook"
-                ? "text-emerald-700 dark:text-emerald-400 font-bold scale-105"
+                ? "text-emerald-700 dark:text-emerald-400 font-black"
                 : "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 font-medium"
             }`}
           >
@@ -153,10 +158,11 @@ export const MahasiswaMobileShell: React.FC<MahasiswaMobileShellProps> = ({
 
           {/* Tab 4: Proker */}
           <button
+            type="button"
             onClick={() => handleSelectTab("proker")}
-            className={`flex flex-col items-center justify-center flex-1 py-1 transition-all duration-200 cursor-pointer ${
+            className={`flex flex-col items-center justify-center flex-1 py-1 cursor-pointer select-none touch-manipulation active:opacity-70 transition-colors ${
               currentTab === "proker"
-                ? "text-emerald-700 dark:text-emerald-400 font-bold scale-105"
+                ? "text-emerald-700 dark:text-emerald-400 font-black"
                 : "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 font-medium"
             }`}
           >
@@ -166,10 +172,11 @@ export const MahasiswaMobileShell: React.FC<MahasiswaMobileShellProps> = ({
 
           {/* Tab 5: Profil */}
           <button
+            type="button"
             onClick={() => handleSelectTab("profil")}
-            className={`flex flex-col items-center justify-center flex-1 py-1 transition-all duration-200 cursor-pointer ${
+            className={`flex flex-col items-center justify-center flex-1 py-1 cursor-pointer select-none touch-manipulation active:opacity-70 transition-colors ${
               currentTab === "profil"
-                ? "text-emerald-700 dark:text-emerald-400 font-bold scale-105"
+                ? "text-emerald-700 dark:text-emerald-400 font-black"
                 : "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 font-medium"
             }`}
           >
