@@ -26,8 +26,30 @@ vi.mock("../lib/prisma.js", () => {
       },
       bin: {
         findMany: vi.fn().mockResolvedValue([]),
+        findUnique: vi.fn().mockResolvedValue(null),
         count: vi.fn().mockResolvedValue(0),
       },
+      auditTrail: {
+        create: vi.fn().mockResolvedValue({ id: "audit-1" }),
+      },
+      $transaction: vi.fn(async (cb: any) => cb({
+        user: {
+          findMany: vi.fn().mockResolvedValue([]),
+          findUnique: vi.fn().mockResolvedValue(null),
+        },
+        studentKkn: {
+          findUnique: vi.fn(),
+          findFirst: vi.fn(),
+        },
+        bin: {
+          findMany: vi.fn().mockResolvedValue([]),
+          findUnique: vi.fn().mockResolvedValue(null),
+          updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+        },
+        pointHistory: {
+          create: vi.fn().mockResolvedValue({ id: "pt-1" }),
+        },
+      })),
       pointHistory: {
         findFirst: vi.fn().mockResolvedValue(null),
         findMany: vi.fn().mockResolvedValue([]),
