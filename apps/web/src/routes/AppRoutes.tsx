@@ -1409,8 +1409,8 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
-        {/* MPL Dashboard — Dialihkan langsung ke Dasbor KKN Kombinasi */}
-        <Route path="/dashboard-mpl" element={<Navigate to="/dasbor?tab=kkn" replace />} />
+        {/* MPL Dashboard — Dialihkan langsung ke Dasbor KKN */}
+        <Route path="/dashboard-mpl" element={<Navigate to="/dasbor" replace />} />
         {/* Developer Tool: Simulasi & Normalisasi Poin Mahasiswa KKN */}
         <Route
           path="/developer/poin-mahasiswa-kkn"

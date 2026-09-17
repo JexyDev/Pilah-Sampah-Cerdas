@@ -1,4 +1,4 @@
-﻿-- AlterTable: Add display name and kelurahan to petugas_residu
+-- AlterTable: Add display name and kelurahan to petugas_residu
 ALTER TABLE "petugas_residu" ADD COLUMN IF NOT EXISTS "nama_display" TEXT;
 ALTER TABLE "petugas_residu" ADD COLUMN IF NOT EXISTS "kelurahan" TEXT;
 
