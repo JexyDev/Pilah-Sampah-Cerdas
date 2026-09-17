@@ -45,11 +45,15 @@ export class PointRepository {
   }
 
   /**
-   * Get total accumulated points by user ID
+   * Get total accumulated points by user ID (Protected against KKN_PROKER leak)
    */
   async getTotalPoints(userId: string): Promise<number> {
     const aggregate = await db.pointHistory.aggregate({
-      where: { userId },
+      where: {
+        userId,
+        kategori: { notIn: ["KKN_PROKER"] },
+        NOT: { description: { contains: "[ProkerID:" } },
+      },
       _sum: {
         points: true,
       },

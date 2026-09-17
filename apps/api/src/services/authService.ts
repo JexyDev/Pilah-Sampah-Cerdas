@@ -7,6 +7,7 @@ import { prisma } from "../lib/prisma.js";
  */
 
 import { authRepository } from "../repositories/authRepository.js";
+import { calculateValidIndividualPoints } from "./pointService.js";
 
 import { comparePassword, hashPassword } from "../utils/hashUtils.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwtUtils.js";
@@ -245,12 +246,8 @@ export class AuthService {
       }
     }
 
-    // Aggregate user points
-    const userPointsSum = await prisma.pointHistory.aggregate({
-      where: { userId: user.id },
-      _sum: { points: true },
-    });
-    const totalPoints = userPointsSum._sum.points || 0;
+    // Aggregate user points via centralized anti-leak function (SSOT)
+    const totalPoints = await calculateValidIndividualPoints(user.id);
 
     const lifecycleState = (user as any).lifecycleState || "REGISTERED";
     const isRegisteredWarga = userRoleName === "WARGA" && lifecycleState === "REGISTERED";
@@ -744,11 +741,8 @@ export class AuthService {
       user.studentProfile?.assignedRw?.kelurahan?.kecamatan?.name ||
       "Coblong";
 
-    const userPointsSum = await prisma.pointHistory.aggregate({
-      where: { userId: user.id },
-      _sum: { points: true },
-    });
-    const totalPoints = userPointsSum._sum.points || 0;
+    // Aggregate user points via centralized anti-leak function (SSOT)
+    const totalPoints = await calculateValidIndividualPoints(user.id);
 
     const resolvedKelurahan = kelurahanName || "";
     const resolvedRw =

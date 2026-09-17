@@ -3,6 +3,12 @@ import { configService } from "./configService.js";
 import { normalizeProkerKategori } from "./kknService.js";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
 import { isTestKelompok, isTestStudent, isTestUser } from "../utils/filterTestingUtils.js";
+import {
+  calculateValidIndividualPoints,
+  calculateValidIndividualPointsForUsers,
+} from "./pointService.js";
+
+export { calculateValidIndividualPoints, calculateValidIndividualPointsForUsers };
 
 export function parseProkerDeskripsi(rawDeskripsi?: string | null): {
   judul: string;
@@ -1880,19 +1886,8 @@ export const dplService = {
       leaveRequestsByStudent.set(l.studentId, list);
     }
 
-    // Batch query points via groupBy
-    const allPoints = await prisma.pointHistory.groupBy({
-      by: ["userId"],
-      where: {
-        userId: { in: studentUserIds },
-        kategori: { notIn: ["KKN_PROKER"] },
-      },
-      _sum: { points: true },
-    });
-    const pointsByStudent = new Map<string, number>();
-    for (const p of allPoints) {
-      pointsByStudent.set(p.userId, p._sum.points || 0);
-    }
+    // Batch query points via centralized anti-leak function (SSOT)
+    const pointsByStudent = await calculateValidIndividualPointsForUsers(studentUserIds);
 
     const targetDailyMinutes =
       (ruleConfigs?.attendanceMinDurationHours || configTargets?.targetHarianJam || 4) * 60;
@@ -4093,12 +4088,7 @@ export const dplService = {
           : 0;
 
       for (const st of grp.students) {
-        const points = await prisma.pointHistory.aggregate({
-          where: { userId: st.userId, points: { gt: 0 } },
-          _sum: { points: true },
-        });
-
-        const rawPoints = Number(points._sum.points || 0);
+        const rawPoints = await calculateValidIndividualPoints(st.userId);
         // Poin dampingan normalized to 0-100 scale (default base 85 if active)
         const poinDampinganScore =
           rawPoints > 0 ? Math.min(100, Math.max(70, Math.round((rawPoints / 100) * 10) + 75)) : 80;
