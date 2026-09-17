@@ -65,6 +65,50 @@ async function initFirebase() {
 // Fire initialization asynchronously
 initFirebase();
 
+// Anti-spam debounce cache: mencegah pengiriman berulang ke token yang sama dalam kurun waktu 10 detik
+const fcmDebounceMap = new Map<string, number>();
+
+// Bersihkan cache debounce secara periodik
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, timestamp] of fcmDebounceMap.entries()) {
+    if (now - timestamp > 60000) {
+      fcmDebounceMap.delete(key);
+    }
+  }
+}, 5 * 60 * 1000).unref();
+
+/**
+ * Filter trigger push notification untuk MAHASISWA_KKN:
+ * Hanya 4 trigger esensial yang diizinkan memunculkan push popup di HP mahasiswa:
+ * 1. Presensi (Check-in, Check-out)
+ * 2. Verifikasi DPL (Izin, Sakit, Logbook)
+ * 3. Proker (Update status proker)
+ * 4. Broadcast / Pengumuman resmi
+ */
+export function isTriggerAllowedForMahasiswa(triggerType?: string): boolean {
+  if (!triggerType) return false;
+  const upper = triggerType.toUpperCase();
+  return (
+    upper.startsWith("PRESENSI") ||
+    upper.startsWith("CHECKIN") ||
+    upper.startsWith("CHECKOUT") ||
+    upper.startsWith("ATTENDANCE") ||
+    upper.startsWith("AUTO_CHECKOUT") ||
+    upper.startsWith("LOGBOOK_") ||
+    upper.startsWith("LEAVE_") ||
+    upper.startsWith("IZIN_") ||
+    upper.startsWith("PROKER_") ||
+    upper.startsWith("PROGRAM_KERJA") ||
+    upper.startsWith("BROADCAST") ||
+    upper.startsWith("PENGUMUMAN") ||
+    upper.startsWith("ANNOUNCEMENT") ||
+    upper.startsWith("SYSTEM_BROADCAST") ||
+    upper.startsWith("ALERT_URGENT") ||
+    upper.startsWith("TEST_")
+  );
+}
+
 export const notificationIntegrationService = {
   /**
    * WhatsApp Wablas/Fonnte Sender interface
@@ -117,6 +161,18 @@ export const notificationIntegrationService = {
     triggerType: string = "PUSH_ALARM",
     dataPayload?: Record<string, string>
   ) => {
+    // 1. Anti-Spam Debounce: 10 detik per token & trigger
+    const debounceKey = `${token}:${triggerType || ""}:${title || ""}`;
+    const lastSent = fcmDebounceMap.get(debounceKey);
+    const now = Date.now();
+    if (lastSent && now - lastSent < 10000) {
+      console.log(
+        `⏱️ [FCM Debounce] Menekan spam push notification duplikat ke token ${token.slice(0, 10)}... (trigger: ${triggerType})`
+      );
+      return { success: true, messageId: "debounced" };
+    }
+    fcmDebounceMap.set(debounceKey, now);
+
     let statusKirim = "SUCCESS";
     let messageId = `fcm-${Date.now()}`;
 
@@ -203,25 +259,36 @@ export const notificationIntegrationService = {
         },
       });
 
-      // 2. Ambil token FCM pengguna
+      // 2. Ambil token FCM pengguna serta peran/profilnya
       const user = await prisma.user.findUnique({
         where: { id: userId },
-        select: { fcmToken: true },
+        select: {
+          fcmToken: true,
+          role: { select: { name: true } },
+          studentProfile: { select: { id: true } },
+        },
       });
 
-      // 3. Kirim push notification jika token tersedia
+      // 3. Kirim push notification jika token tersedia dan lolos filter anti-spam mahasiswa
       let pushResult = null;
       if (user?.fcmToken) {
-        pushResult = await notificationIntegrationService.sendPushNotification(
-          user.fcmToken,
-          title,
-          message,
-          triggerType,
-          {
-            notificationId: notif.id,
-            ...dataPayload,
-          }
-        );
+        const isMahasiswa = Boolean(user.studentProfile) || user.role?.name === "MAHASISWA_KKN";
+        if (isMahasiswa && !isTriggerAllowedForMahasiswa(triggerType)) {
+          console.log(
+            `🔕 [FCM Suppressed] Push notification popup untuk mahasiswa ditekan (trigger: ${triggerType}, title: ${title})`
+          );
+        } else {
+          pushResult = await notificationIntegrationService.sendPushNotification(
+            user.fcmToken,
+            title,
+            message,
+            triggerType,
+            {
+              notificationId: notif.id,
+              ...dataPayload,
+            }
+          );
+        }
       }
 
       return { notification: notif, pushResult };
@@ -267,18 +334,30 @@ export const notificationIntegrationService = {
         )
       );
 
-      // 2. Ambil seluruh token FCM pengguna yang ada
+      // 2. Ambil seluruh token FCM pengguna yang ada beserta peran/profil mahasiswa
       const users = await prisma.user.findMany({
         where: {
           id: { in: uniqueUserIds },
           fcmToken: { not: null },
         },
-        select: { id: true, fcmToken: true },
+        select: {
+          id: true,
+          fcmToken: true,
+          role: { select: { name: true } },
+          studentProfile: { select: { id: true } },
+        },
       });
 
-      // 3. Kirim push notification ke setiap user yang memiliki fcmToken
+      // 3. Kirim push notification ke setiap user yang memiliki fcmToken (jika bukan trigger yang ditekan untuk mahasiswa)
       const pushPromises = users.map((u) => {
         if (!u.fcmToken) return Promise.resolve(null);
+        const isMahasiswa = Boolean(u.studentProfile) || u.role?.name === "MAHASISWA_KKN";
+        if (isMahasiswa && !isTriggerAllowedForMahasiswa(triggerType)) {
+          console.log(
+            `🔕 [FCM Suppressed] Push notification multi-user untuk mahasiswa ${u.id} ditekan (trigger: ${triggerType})`
+          );
+          return Promise.resolve(null);
+        }
         const userNotif = createdNotifs.find((n) => n?.userId === u.id);
         return notificationIntegrationService
           .sendPushNotification(u.fcmToken, title, message, triggerType, {

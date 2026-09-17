@@ -725,6 +725,31 @@ export class LogbookService {
     const diverifikasiDplPada: Date | null =
       statusApproval === StatusLogbookKkn.DISETUJUI_DPL ? new Date() : null;
 
+    // Anti-Spam / Idempotency Check: Cegah input ganda logbook akibat tap berulang (< 30 detik)
+    const thirtySecAgo = new Date(Date.now() - 30 * 1000);
+    const recentDuplicate = await prisma.logbookKkn.findFirst({
+      where: {
+        penulisId: targetUserId,
+        tanggalKegiatan: activityDate,
+        createdAt: { gte: thirtySecAgo },
+      },
+      include: {
+        penulis: { select: { name: true } },
+        kelompok: { select: { name: true } },
+      },
+    });
+
+    if (recentDuplicate) {
+      console.warn(
+        `[createMahasiswaLogbook] Idempotency: Menolak input ganda logbook tanggal ${activityDate.toISOString().slice(0, 10)} dari user ${targetUserId}`
+      );
+      return {
+        ...recentDuplicate,
+        pointsAwarded: false,
+        pointsAdded: 0,
+      };
+    }
+
     const logbook = await prisma.logbookKkn.create({
       data: {
         kelompokId: targetKelompokId,
@@ -1140,6 +1165,62 @@ export class LogbookService {
         catatanDpl: catatanDpl || undefined,
       },
     });
+
+    // Aturan Tata Kelola Poin Logbook:
+    // 1. Poin (+3 PTS) telah diberikan instan di awal saat mahasiswa submit logbook.
+    // 2. ACC DPL dilarang keras meng-insert row baru ke riwayat_poin.
+    // 3. Jika DPL meminta revisi (action === 'REVISI'), poin logbook untuk tanggal kegiatan tersebut ditarik (points = 0).
+    // 4. Jika logbook disetujui kembali (action === 'APPROVE') setelah revisi, pulihkan poinnya menjadi 3 PTS (tanpa duplikasi row).
+    const actDateStr = logbook.tanggalKegiatan.toISOString().split("T")[0];
+    if (action === "REVISI") {
+      try {
+        await prisma.pointHistory.updateMany({
+          where: {
+            userId: logbook.penulisId,
+            kategori: "KKN_LOGBOOK_HARIAN",
+            description: { contains: actDateStr },
+            points: { gt: 0 },
+          },
+          data: {
+            points: 0,
+          },
+        });
+      } catch (err) {
+        console.warn(`[verifikasiByDpl] Gagal menarik poin logbook revisi (${actDateStr}):`, err);
+      }
+    } else if (action === "APPROVE") {
+      try {
+        const existingPoint = await prisma.pointHistory.findFirst({
+          where: {
+            userId: logbook.penulisId,
+            kategori: "KKN_LOGBOOK_HARIAN",
+            description: { contains: actDateStr },
+          },
+        });
+
+        if (existingPoint && existingPoint.points === 0) {
+          // Pulihkan poin menjadi 3 jika sebelumnya dinolkan karena status revisi
+          await prisma.pointHistory.update({
+            where: { id: existingPoint.id },
+            data: { points: 3 },
+          });
+        } else if (!existingPoint) {
+          // Fallback jika logbook lama belum pernah tercatat pointHistory
+          await prisma.pointHistory.create({
+            data: {
+              userId: logbook.penulisId,
+              points: 3,
+              description: `Poin pengisian logbook harian KKN (${actDateStr})`,
+              kategori: "KKN_LOGBOOK_HARIAN",
+              redeemable: false,
+            },
+          });
+        }
+        // JANGAN tambah row baru jika existingPoint.points === 3!
+      } catch (err) {
+        console.warn(`[verifikasiByDpl] Gagal memulihkan poin logbook approved (${actDateStr}):`, err);
+      }
+    }
 
     // Notifikasi in-app DB & Push Notification FCM ke Penulis
     const notifTitleDpl =
