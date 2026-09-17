@@ -258,6 +258,77 @@ const getAttendanceBadgeClass = (rate: number) => {
   };
 };
 
+/**
+ * Menghitung Progres Program Kerja Kelompok KKN sesuai arahan resmi CEO:
+ * Rumus: (proker yang sedang berjalan / total proker disetujui) * 100%
+ * - Pembilang (activeCount): Proker yang aktif berjalan / telah tuntas (sedang berjalan + selesai).
+ * - Penyebut (approvedCount): Total proker yang disetujui (statusUsulan === 'DISETUJUI' / bukan ditolak).
+ */
+export const calculateGroupProkerProgress = (programKerja?: any[]) => {
+  const prokers = Array.isArray(programKerja) ? programKerja : [];
+  if (prokers.length === 0) {
+    return {
+      rate: 0,
+      activeCount: 0,
+      ongoingCount: 0,
+      doneCount: 0,
+      approvedCount: 0,
+      totalCount: 0,
+    };
+  }
+
+  // Filter proker yang tidak ditolak
+  const nonRejected = prokers.filter((p: any) => {
+    const u = String(p.statusUsulan || "").toUpperCase();
+    const s = String(p.status || "").toUpperCase();
+    return u !== "DITOLAK" && s !== "DITOLAK";
+  });
+
+  // Proker yang disetujui DPL
+  const approved = nonRejected.filter((p: any) => {
+    const u = String(p.statusUsulan || "").toUpperCase();
+    const s = String(p.status || "").toUpperCase();
+    const pl = String(p.statusPelaksanaan || "").toUpperCase();
+    return (
+      u === "DISETUJUI" ||
+      s === "DISETUJUI" ||
+      s === "DITERIMA" ||
+      pl === "SEDANG_BERJALAN" ||
+      pl === "SELESAI"
+    );
+  });
+
+  // Basis penyebut: proker yang disetujui DPL. Jika data proker belum di-flag DISETUJUI, fallback ke proker non-ditolak
+  const approvedCount = approved.length > 0 ? approved.length : nonRejected.length;
+
+  // Proker sedang berjalan
+  const ongoingCount = nonRejected.filter((p: any) => {
+    const pl = String(p.statusPelaksanaan || "").toUpperCase();
+    const s = String(p.status || "").toUpperCase();
+    return pl === "SEDANG_BERJALAN" || s === "SEDANG_BERJALAN";
+  }).length;
+
+  // Proker selesai
+  const doneCount = nonRejected.filter((p: any) => {
+    const pl = String(p.statusPelaksanaan || "").toUpperCase();
+    const s = String(p.status || "").toUpperCase();
+    return pl === "SELESAI" || s === "SELESAI";
+  }).length;
+
+  // Proker berjalan (sedang berjalan + tuntas selesai)
+  const activeCount = ongoingCount + doneCount;
+  const rate = approvedCount > 0 ? Math.min(100, Math.round((activeCount / approvedCount) * 100)) : 0;
+
+  return {
+    rate,
+    activeCount,
+    ongoingCount,
+    doneCount,
+    approvedCount,
+    totalCount: prokers.length,
+  };
+};
+
 export const DashboardEksekutifKkn: React.FC = () => {
   const navigate = useNavigate();
 
@@ -627,15 +698,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
       if (attendanceFilter === "GE_60" && attRate < 60) return false;
 
       // 4. Filter Proker (<60% atau >=60%)
-      const totalProker = g.programKerja?.length || 0;
-      const completedProker = g.programKerja?.filter(
-        (p: any) => p.statusPelaksanaan === "SELESAI" || p.status === "SELESAI"
-      ).length || 0;
-      const ongoingProker = g.programKerja?.filter(
-        (p: any) => p.statusPelaksanaan === "SEDANG_BERJALAN" || p.status === "SEDANG_BERJALAN"
-      ).length || 0;
-      const weightedProker = completedProker + (ongoingProker * 0.5);
-      const prokerRate = totalProker > 0 ? (weightedProker / totalProker) * 100 : 0;
+      const { rate: prokerRate } = calculateGroupProkerProgress(g.programKerja);
       if (prokerFilter === "UNDER_60" && prokerRate >= 60) return false;
       if (prokerFilter === "GE_60" && prokerRate < 60) return false;
 
@@ -683,16 +746,9 @@ export const DashboardEksekutifKkn: React.FC = () => {
         : 0;
     const countAttendanceUnder60 = filteredGroups.filter((g) => (g.avgAttendanceRate || 0) < 60).length;
     const countProkerUnder60 = filteredGroups.filter((g) => {
-      const totalP = g.programKerja?.length || 0;
-      if (totalP === 0) return true;
-      const doneP = g.programKerja?.filter(
-        (p: any) => p.statusPelaksanaan === "SELESAI" || p.status === "SELESAI"
-      ).length || 0;
-      const ongoingP = g.programKerja?.filter(
-        (p: any) => p.statusPelaksanaan === "SEDANG_BERJALAN" || p.status === "SEDANG_BERJALAN"
-      ).length || 0;
-      const weightedP = doneP + (ongoingP * 0.5);
-      return (weightedP / totalP) * 100 < 60;
+      const { rate, approvedCount } = calculateGroupProkerProgress(g.programKerja);
+      if (approvedCount === 0) return true;
+      return rate < 60;
     }).length;
 
     return {
@@ -2653,15 +2709,13 @@ export const DashboardEksekutifKkn: React.FC = () => {
                 ? g.cakupanRw
                 : "-";
               
-              const totalP = g.programKerja?.length || 0;
-              const doneP = g.programKerja?.filter(
-                (p: any) => p.statusPelaksanaan === "SELESAI" || p.status === "SELESAI"
-              ).length || 0;
-              const ongoingP = g.programKerja?.filter(
-                (p: any) => p.statusPelaksanaan === "SEDANG_BERJALAN" || p.status === "SEDANG_BERJALAN"
-              ).length || 0;
-              const weightedP = doneP + (ongoingP * 0.5);
-              const prokerRate = totalP > 0 ? Math.round((weightedP / totalP) * 100) : 0;
+              const {
+                rate: prokerRate,
+                activeCount: activeP,
+                ongoingCount: ongoingP,
+                doneCount: doneP,
+                approvedCount: totalP,
+              } = calculateGroupProkerProgress(g.programKerja);
               const isLowAtt = (g.avgAttendanceRate || 0) < 60;
               const isLowProker = totalP > 0 && prokerRate < 60;
 
@@ -2724,14 +2778,17 @@ export const DashboardEksekutifKkn: React.FC = () => {
 
                     <div>
                       <span className="text-[10px] text-slate-400 block font-medium">Progres Proker</span>
-                      <span className={`font-black text-xs px-2 py-0.5 rounded-md border inline-block mt-0.5 ${
-                        prokerRate >= 80
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300"
-                          : prokerRate >= 60
-                          ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/60 dark:text-blue-300"
-                          : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300"
-                      }`} title={`${doneP} Selesai, ${ongoingP} Sedang Berjalan, dari total ${totalP} Proker`}>
-                        {prokerRate}% ({doneP}/{totalP})
+                      <span
+                        className={`font-black text-xs px-2 py-0.5 rounded-md border inline-block mt-0.5 ${
+                          prokerRate >= 80
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300"
+                            : prokerRate >= 60
+                            ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/60 dark:text-blue-300"
+                            : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300"
+                        }`}
+                        title={`${activeP} dari ${totalP} Proker Disetujui (${ongoingP} Sedang Berjalan, ${doneP} Selesai)`}
+                      >
+                        {prokerRate}% ({activeP}/{totalP})
                       </span>
                     </div>
                   </div>
