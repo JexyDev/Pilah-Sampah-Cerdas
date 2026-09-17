@@ -65,7 +65,7 @@ class KelompokKknView extends ConsumerWidget {
     final membersToDisplay = <KelompokMemberData>[];
 
     final mhsState = ref.watch(mahasiswaControllerProvider);
-    final personalPoints = mhsState.dashboard?.personalPoints ?? mhsState.dashboard?.contributionPoints;
+    final personalPoints = mhsState.dashboard?.contributionPoints;
 
     for (final m in uniqueMembers.values) {
       final isUser = user != null &&
