@@ -272,9 +272,12 @@ const ManajemenPengguna: React.FC = () => {
     wilayah: "Kota Bandung",
     kecamatan: "Kecamatan Terdaftar",
     petugasResiduId: "",
+    namaDisplay: "",
+    petugasKelurahan: "",
     dplId: "",
     sks: 0,
   });
+
 
   const formatPhone = (phone: string) => {
     if (!phone) return "-";
@@ -695,9 +698,12 @@ const ManajemenPengguna: React.FC = () => {
       wilayah: u.wilayah || (u.role === "ADMIN_DLH" ? "Kota Bandung" : ""),
       kecamatan: u.kecamatan || u.rw?.kelurahan?.kecamatan?.name || kecamatanList[0]?.name || "Kecamatan Terdaftar",
       petugasResiduId: u.petugasResidu?.id || "",
+      namaDisplay: u.petugasProfile?.namaDisplay || (u as any).namaDisplay || "",
+      petugasKelurahan: u.petugasProfile?.kelurahan || (u as any).kelurahan || "",
       dplId: u.studentProfile?.kelompok?.dplId || u.studentProfile?.kelompok?.dpl?.id || u.dplId || "",
       sks: u.studentProfile?.sks !== undefined && u.studentProfile?.sks !== null ? Number(u.studentProfile.sks) : (u.sks !== undefined && u.sks !== null ? Number(u.sks) : 0),
     });
+
     setShowPassword(false);
     setIsModalOpen(true);
   };
@@ -841,7 +847,12 @@ const ManajemenPengguna: React.FC = () => {
       if (formData.roleName === "RW") {
         payload.petugasResiduId = formData.petugasResiduId || null;
       }
+      if (formData.roleName === "PETUGAS_RESIDU") {
+        payload.namaDisplay = formData.namaDisplay || null;
+        payload.kelurahan = formData.petugasKelurahan || (modalKelurahan ? modalKelurahan.replace(/^Kel\.\s*/i, "").trim() : null);
+      }
       if (formData.roleName === "MPL") {
+
         if (modalKelurahan) {
           const cleanKel = modalKelurahan.replace(/^Kel\.\s*/i, "").trim();
           payload.address = `Kel. ${cleanKel}`;
@@ -2673,19 +2684,49 @@ const ManajemenPengguna: React.FC = () => {
                         </div>
                       )}
 
-                      {/* PETUGAS_RESIDU Wilayah Penugasan */}
+                      {/* PETUGAS_RESIDU Wilayah Penugasan & Nama Display Daerah */}
                       {formData.roleName === "PETUGAS_RESIDU" && (
-                        <div>
-                          <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Wilayah Penugasan</label>
-                          <input
-                            type="text"
-                            value={formData.wilayah}
-                            onChange={(e) => setFormData({ ...formData, wilayah: e.target.value })}
-                            placeholder="TPS 3R / Wilayah Penugasan Operasional"
-                            className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none"
-                          />
-                        </div>
+                        <>
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                              Nama Tampilan Publik (Sesuai Daerah)
+                            </label>
+                            <input
+                              type="text"
+                              value={formData.namaDisplay}
+                              onChange={(e) => setFormData({ ...formData, namaDisplay: e.target.value })}
+                              placeholder="Contoh: Petugas Kelurahan Dago 01"
+                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none"
+                            />
+                            <p className="text-[10px] text-slate-400 mt-1">
+                              Nama ini yang akan muncul di Peringkat/Leaderboard dan laporan wilayah operasional.
+                            </p>
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                              Kelurahan Penugasan
+                            </label>
+                            <input
+                              type="text"
+                              value={formData.petugasKelurahan}
+                              onChange={(e) => setFormData({ ...formData, petugasKelurahan: e.target.value })}
+                              placeholder="Contoh: Dago / Sadang Serang / Sekeloa"
+                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Wilayah Penugasan / Posko</label>
+                            <input
+                              type="text"
+                              value={formData.wilayah}
+                              onChange={(e) => setFormData({ ...formData, wilayah: e.target.value })}
+                              placeholder="TPS 3R / Wilayah Penugasan Operasional"
+                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none"
+                            />
+                          </div>
+                        </>
                       )}
+
 
                       {/* Address for WARGA, RW, PETUGAS_RESIDU */}
                       {["WARGA", "RW", "PETUGAS_RESIDU"].includes(formData.roleName) && (

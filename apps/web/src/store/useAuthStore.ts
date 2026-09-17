@@ -62,7 +62,9 @@ export interface User {
   phone?: string;
   address?: string;
   rtRwId?: number;
+  availableRoles?: string[];
 }
+
 
 interface AuthState {
   user: User | null;
@@ -76,9 +78,11 @@ interface AuthState {
   logout: () => Promise<void>;
   updateWilayah: (newWilayah: string) => void;
   updateUser: (updatedFields: Partial<User>) => void;
+  switchRole: (targetRole: string) => Promise<boolean>;
   fetchPermissions: () => Promise<void>;
   can: (resource: string, action?: keyof PermissionActions) => boolean;
 }
+
 
 const normalizeRole = (role: string): UserRole => {
   if (["DEVELOPER", "Developer", "developer", "dev"].includes(role)) return "DEVELOPER";
@@ -347,8 +351,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         phone: backendUser.phone,
         address: backendUser.address,
         rtRwId: backendUser.rtRwId,
+        availableRoles: backendUser.availableRoles || [normalizedRole],
         ...avatarConfig,
       };
+
 
       setStoredItem("psc_user", JSON.stringify(user), rememberMe);
       set({ user, isAuthenticated: true, isLoading: false, error: null });
