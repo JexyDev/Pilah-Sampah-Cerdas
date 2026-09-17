@@ -38,10 +38,10 @@ export const ROLE_DISPLAY_NAMES: Record<string, string> = {
   PETUGAS_RESIDU: "Portal Petugas Residu",
   PETUGAS: "Portal Petugas Residu",
   PEMILAH: "Portal Petugas Pemilah",
-  MPL: "Portal Mitra Pembimbing Lapangan",
-  MITRA_PEMBIMBING_LAPANGAN: "Portal Mitra Pembimbing Lapangan",
-  MITRA_PENDAMPING_LAPANGAN: "Portal Mitra Pembimbing Lapangan",
-  MITRA: "Portal Mitra Pembimbing Lapangan",
+  MPL: "Dasbor Mitra Pembimbing Lapangan",
+  MITRA_PEMBIMBING_LAPANGAN: "Dasbor Mitra Pembimbing Lapangan",
+  MITRA_PENDAMPING_LAPANGAN: "Dasbor Mitra Pembimbing Lapangan",
+  MITRA: "Dasbor Mitra Pembimbing Lapangan",
 };
 
 /**
@@ -97,7 +97,7 @@ export const getPortalLoadingText = (role?: string, customSuffix: string = "..."
     return `Memuat Portal Petugas${customSuffix}`;
   }
   if (cleanRole === "MPL") {
-    return `Memuat Portal MPL${customSuffix}`;
+    return `Memuat Dasbor Mitra${customSuffix}`;
   }
 
   const displayName = ROLE_DISPLAY_NAMES[cleanRole];
