@@ -24,6 +24,11 @@ import {
 } from "./dplService.js";
 import { calculateNilaiEkonomi } from "./pemanfaatanService.js";
 import { evaluateSortingStatus } from "../utils/sortingEvaluation.js";
+import {
+  extractProkerEndDate,
+  isProkerExpired,
+  getTodayWibDateString,
+} from "../utils/prokerDateUtils.js";
 
 export function normalizeProkerKategori(kategori?: string | null): string {
   if (!kategori) return "Lainnya";
@@ -4305,6 +4310,151 @@ export class KknService {
     };
   }
 
+  /**
+   * Auto-cancel program kerja KKN yang telah melewati batas akhir pelaksanaan (endDate)
+   * dan belum dimulai (status: DISETUJUI, statusPelaksanaan: BELUM_MULAI).
+   *
+   * Aturan Bisnis (17 September 2026):
+   * - Pembatalan otomatis JANGAN lagi berpatokan pada "5 hari setelah tanggal approve".
+   * - Gunakan Tanggal Akhir Pelaksanaan (tanggalPelaksanaan endDate).
+   * - Proker HANYA akan dibatalkan otomatis jika:
+   *   1. Status saat ini adalah DISETUJUI (Belum dimulai / BELUM_MULAI).
+   *   2. Tanggal hari ini (Current Date WIB) sudah melewati Tanggal Akhir Pelaksanaan proker tersebut.
+   *
+   * @param options optional filter untuk membatasi kelompok tertentu
+   * @returns jumlah proker yang berhasil dibatalkan
+   */
+  public async autoCancelExpiredProker(options?: {
+    kelompokId?: string;
+    kelompokIds?: string[];
+  }): Promise<number> {
+    try {
+      const todayWibStr = getTodayWibDateString();
+
+      const whereClause: any = {
+        OR: [
+          { statusUsulan: { in: ["DISETUJUI", "DITERIMA"] } },
+          { status: { in: ["DISETUJUI", "DITERIMA"] } },
+        ],
+        AND: [
+          {
+            OR: [
+              { statusPelaksanaan: "BELUM_MULAI" },
+              { statusPelaksanaan: null },
+              { statusPelaksanaan: "" },
+            ],
+          },
+          {
+            status: { notIn: ["SEDANG_BERJALAN", "SELESAI", "DITOLAK"] },
+          },
+          {
+            statusUsulan: { notIn: ["DITOLAK", "KADALUARSA_OTOMATIS", "KADALUARSA"] },
+          },
+        ],
+      };
+
+      if (options?.kelompokId) {
+        whereClause.kelompokId = options.kelompokId;
+      } else if (options?.kelompokIds && options.kelompokIds.length > 0) {
+        whereClause.kelompokId = { in: options.kelompokIds };
+      }
+
+      const candidates = await prisma.programKerjaKkn.findMany({
+        where: whereClause,
+        select: {
+          id: true,
+          kelompokId: true,
+          deskripsi: true,
+          waktuPelaksanaan: true,
+          statusPelaksanaan: true,
+          statusUsulan: true,
+        },
+      });
+
+      if (candidates.length === 0) {
+        return 0;
+      }
+
+      let cancelledCount = 0;
+
+      for (const candidate of candidates) {
+        if (!isProkerExpired(candidate.waktuPelaksanaan, todayWibStr)) {
+          continue;
+        }
+
+        const endDate = extractProkerEndDate(candidate.waktuPelaksanaan);
+        const parsed = parseProkerDeskripsi(candidate.deskripsi);
+        const judul = parsed.judul || "Program Kerja";
+        const cancellationReason = endDate
+          ? `Dibatalkan otomatis oleh sistem: Program kerja tidak dimulai hingga melewati batas akhir pelaksanaan (${endDate}).`
+          : "Dibatalkan otomatis oleh sistem: Program kerja telah melewati batas akhir pelaksanaan dan belum dimulai.";
+
+        await prisma.programKerjaKkn.update({
+          where: { id: candidate.id },
+          data: {
+            statusUsulan: "KADALUARSA_OTOMATIS",
+            status: "DITOLAK",
+            catatanDpl: cancellationReason,
+          },
+        });
+
+        cancelledCount++;
+
+        // Revoke gamification points jika pernah terinjeksi
+        await syncProkerGamificationPoints(
+          candidate.id,
+          candidate.kelompokId,
+          "KADALUARSA_OTOMATIS",
+          candidate.statusPelaksanaan,
+          judul
+        ).catch(() => {});
+
+        // Kirim notifikasi ke mahasiswa kelompok KKN
+        try {
+          const kelompok = await prisma.kelompokKkn.findUnique({
+            where: { id: candidate.kelompokId },
+            include: { students: { select: { userId: true } } },
+          });
+          const studentUserIds = (kelompok?.students || [])
+            .map((s) => s.userId)
+            .filter(Boolean);
+
+          if (studentUserIds.length > 0) {
+            await notificationIntegrationService.sendToUsers({
+              userIds: studentUserIds,
+              title: "Program Kerja Dibatalkan Otomatis ⚠️",
+              message: `Program kerja "${judul}" telah dibatalkan otomatis oleh sistem karena melewati batas akhir pelaksanaan (${endDate || "-"}) dan belum dimulai.`,
+              triggerType: "PROKER_AUTO_CANCELLED",
+              dataPayload: {
+                event: "REFRESH_PROKER_MAHASISWA",
+                type: "PROKER_KADALUARSA",
+                entityId: candidate.id,
+                prokerId: candidate.id,
+                kelompokId: candidate.kelompokId,
+                status: "DITOLAK",
+                statusUsulan: "KADALUARSA_OTOMATIS",
+                click_action: "FLUTTER_NOTIFICATION_CLICK",
+              },
+            });
+          }
+        } catch (notifErr: any) {
+          console.warn("[autoCancelExpiredProker] Notification error:", notifErr?.message);
+        }
+      }
+
+      if (cancelledCount > 0) {
+        console.log(
+          `[autoCancelExpiredProker] Berhasil membatalkan otomatis ${cancelledCount} proker yang melewati batas akhir pelaksanaan.`
+        );
+      }
+
+      return cancelledCount;
+    } catch (error) {
+      console.error("[autoCancelExpiredProker] Error executing auto-cancel:", error);
+      return 0;
+    }
+  }
+
   async getProgramKerja(userId: string, targetGroupId?: string, filters?: any) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -4379,24 +4529,16 @@ export class KknService {
       ];
     }
 
-    // Enforce H+5 Soft-Expiry Rule: If approved > 5 days ago and still BELUM_MULAI, soft-cancel
-    const fiveDaysAgo = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000);
-    await prisma.programKerjaKkn
-      .updateMany({
-        where: {
-          ...whereClause,
-          statusUsulan: "DISETUJUI",
-          statusPelaksanaan: "BELUM_MULAI",
-          updatedAt: { lt: fiveDaysAgo },
-        },
-        data: {
-          statusUsulan: "KADALUARSA_OTOMATIS",
-          status: "DITOLAK",
-          catatanDpl:
-            "Dibatalkan otomatis oleh sistem (H+5): Program kerja tidak dimulai dalam 5 hari setelah disetujui.",
-        },
-      })
-      .catch(() => {});
+    // Auto-cancel proker yang telah melewati batas akhir pelaksanaan (endDate) dan belum dimulai
+    if (whereClause.kelompokId) {
+      if (typeof whereClause.kelompokId === "string") {
+        await this.autoCancelExpiredProker({ kelompokId: whereClause.kelompokId });
+      } else if (Array.isArray(whereClause.kelompokId.in)) {
+        await this.autoCancelExpiredProker({ kelompokIds: whereClause.kelompokId.in });
+      }
+    } else {
+      await this.autoCancelExpiredProker();
+    }
 
     const list = await prisma.programKerjaKkn.findMany({
       where: whereClause,

@@ -145,9 +145,31 @@ export class CronService {
       tzOptions
     );
 
+    // Auto-cancel proker KKN yang telah melewati batas akhir pelaksanaan (endDate) pada 00:05 WIB
+    cron.schedule(
+      "5 0 * * *",
+      () => {
+        this.checkExpiredProkers();
+      },
+      tzOptions
+    );
+
     console.log(
       "[CronService] Escalation and optimization cron jobs started (Asia/Jakarta Timezone)."
     );
+  }
+
+  public async checkExpiredProkers() {
+    try {
+      console.log("[CronService] Running proker auto-cancel check based on execution end date...");
+      const { kknService } = await import("./kknService.js");
+      const cancelledCount = await kknService.autoCancelExpiredProker();
+      console.log(
+        `[CronService] Proker auto-cancel completed. ${cancelledCount} proker dibatalkan.`
+      );
+    } catch (e) {
+      console.error("[CronService] checkExpiredProkers error:", e);
+    }
   }
   public async cleanupStaleData() {
     try {
