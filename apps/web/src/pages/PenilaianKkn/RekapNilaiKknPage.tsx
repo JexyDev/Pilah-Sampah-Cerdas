@@ -71,50 +71,33 @@ export const RekapNilaiKknPage: React.FC = () => {
 
       if (res && res.students && res.students.length > 0) {
         const formatted = res.students.map((s) => {
-          const dplIndiv =
-            s.individuDpl !== undefined && s.individuDpl !== null
-              ? s.individuDpl
-              : (s.skorIndividu ?? null);
-          const mplIndiv =
-            s.individuMpl !== undefined && s.individuMpl !== null ? s.individuMpl : null;
-          const indivGab =
-            dplIndiv !== null && mplIndiv !== null
-              ? Math.round(((50 * dplIndiv + 50 * mplIndiv) / 100) * 10) / 10
-              : null;
+          const dplScore =
+            s.dplScore !== undefined && s.dplScore !== null
+              ? s.dplScore
+              : s.individuDpl !== undefined && s.individuDpl !== null
+                ? s.individuDpl
+                : (s.skorIndividu ?? null);
 
-          const dplProk =
-            s.prokerDpl !== undefined && s.prokerDpl !== null
-              ? s.prokerDpl
-              : (s.skorProkerKelompok ?? null);
-          const mplProk = s.prokerMpl !== undefined && s.prokerMpl !== null ? s.prokerMpl : null;
-          const prokGab =
-            dplProk !== null && mplProk !== null
-              ? Math.round(((50 * dplProk + 50 * mplProk) / 100) * 10) / 10
-              : null;
+          const mplScore =
+            s.mplScore !== undefined && s.mplScore !== null
+              ? s.mplScore
+              : s.individuMpl !== undefined && s.individuMpl !== null
+                ? s.individuMpl
+                : null;
 
-          const dplKel =
-            s.kelompokDpl !== undefined && s.kelompokDpl !== null ? s.kelompokDpl : null;
-          const mplKel =
-            s.kelompokMpl !== undefined && s.kelompokMpl !== null ? s.kelompokMpl : null;
-          const kelGab =
-            dplKel !== null && mplKel !== null
-              ? Math.round(((50 * dplKel + 50 * mplKel) / 100) * 10) / 10
+          const laporanScore =
+            s.laporanScore !== undefined && s.laporanScore !== null
+              ? s.laporanScore
               : null;
 
           const keh = s.kehadiran ?? s.tingkatKehadiran ?? 0;
 
-          let nAkhir: number | null = null;
-          let pred: string | null = null;
+          let nAkhir: number | null = s.nilaiAkhir ?? null;
+          let pred: string | null = s.predikat ?? null;
           let stat = s.status || "Menunggu Penilaian";
 
-          if (
-            dplIndiv !== null &&
-            mplIndiv !== null &&
-            indivGab !== null &&
-            prokGab !== null &&
-            kelGab !== null
-          ) {
-            const rawScore = 0.25 * keh + 0.25 * indivGab + 0.25 * prokGab + 0.25 * kelGab;
+          if (dplScore !== null && mplScore !== null && laporanScore !== null) {
+            const rawScore = 0.4 * dplScore + 0.4 * mplScore + 0.2 * laporanScore;
             nAkhir = Math.round(rawScore * 10) / 10;
             pred =
               nAkhir >= 80
@@ -127,14 +110,29 @@ export const RekapNilaiKknPage: React.FC = () => {
                       ? "D"
                       : "E";
             stat = "Lengkap";
+          } else if (dplScore !== null && mplScore !== null) {
+            // Normalisasi sementara jika DPL dan MPL sudah menilai tapi Laporan Akhir belum selesai telaah
+            const rawScore = (dplScore + mplScore) / 2;
+            nAkhir = Math.round(rawScore * 10) / 10;
+            pred =
+              nAkhir >= 80
+                ? "A"
+                : nAkhir >= 70
+                  ? "B"
+                  : nAkhir >= 60
+                    ? "C"
+                    : nAkhir >= 50
+                      ? "D"
+                      : "E";
+            stat = "Menunggu Laporan Akhir";
           } else {
             nAkhir = null;
             pred = null;
-            if (dplIndiv === null && mplIndiv === null) {
+            if (dplScore === null && mplScore === null) {
               stat = "Menunggu DPL & MPL";
-            } else if (dplIndiv === null) {
+            } else if (dplScore === null) {
               stat = "Menunggu DPL";
-            } else {
+            } else if (mplScore === null) {
               stat = "Menunggu MPL";
             }
           }
@@ -142,15 +140,9 @@ export const RekapNilaiKknPage: React.FC = () => {
           return {
             ...s,
             kehadiran: keh,
-            individuDpl: dplIndiv,
-            individuMpl: mplIndiv,
-            individuGabungan: indivGab,
-            prokerDpl: dplProk,
-            prokerMpl: mplProk,
-            prokerGabungan: prokGab,
-            kelompokDpl: dplKel,
-            kelompokMpl: mplKel,
-            kelompokGabungan: kelGab,
+            dplScore,
+            mplScore,
+            laporanScore,
             nilaiAkhir: nAkhir,
             predikat: pred,
             status: stat,
@@ -190,11 +182,10 @@ export const RekapNilaiKknPage: React.FC = () => {
     if (typeof s.nilaiAkhir === "number" && !isNaN(s.nilaiAkhir)) {
       return s.nilaiAkhir;
     }
-    const keh = s.kehadiran ?? s.tingkatKehadiran ?? 0;
-    const indiv = s.individuGabungan ?? s.individuDpl ?? s.individuMpl ?? 0;
-    const proker = s.prokerGabungan ?? s.prokerDpl ?? s.prokerMpl ?? 0;
-    const kelompok = s.kelompokGabungan ?? s.kelompokDpl ?? s.kelompokMpl ?? 0;
-    return 0.25 * keh + 0.25 * indiv + 0.25 * proker + 0.25 * kelompok;
+    const dpl = s.dplScore ?? 0;
+    const mpl = s.mplScore ?? 0;
+    const lap = s.laporanScore ?? 0;
+    return 0.4 * dpl + 0.4 * mpl + 0.2 * lap;
   };
 
   // Filtered & Sorted Students
@@ -244,6 +235,7 @@ export const RekapNilaiKknPage: React.FC = () => {
     const lengkap = filteredStudents.filter((s) => s.status === "Lengkap").length;
     const menungguMpl = filteredStudents.filter((s) => s.status === "Menunggu MPL").length;
     const menungguDpl = filteredStudents.filter((s) => s.status === "Menunggu DPL").length;
+    const menungguLaporan = filteredStudents.filter((s) => s.status === "Menunggu Laporan Akhir").length;
 
     const completedScores = filteredStudents
       .map((s) => s.nilaiAkhir)
@@ -254,7 +246,7 @@ export const RekapNilaiKknPage: React.FC = () => {
         ? (completedScores.reduce((acc, c) => acc + c, 0) / completedScores.length).toFixed(1)
         : "—";
 
-    return { total, lengkap, menungguMpl, menungguDpl, avgScore };
+    return { total, lengkap, menungguMpl, menungguDpl, menungguLaporan, avgScore };
   }, [filteredStudents]);
 
   // Smart Pagination bounds & windowing
