@@ -27,6 +27,11 @@ router.post(
   authMiddleware,
   penilaianKknController.saveLaporanAkhirScore
 );
-router.post("/normalize", authMiddleware, penilaianKknController.normalizeAllAssessments);
+router.post(
+  "/normalize",
+  authMiddleware,
+  penilaianKknController.normalizeAllAssessments
+);
+
 
 export default router;

@@ -248,13 +248,18 @@ export const penilaianKknController = {
   },
 
   /**
-   * Normalisasi Massal Penilaian Mahasiswa KKN (Admin / Developer Action)
+   * Normalisasi Massal Seluruh Penilaian Mahasiswa KKN
+   * Mengharmonisasi skor laporan akhir, logbook, presensi GPS, dan membersihkan teks anomali H+5
    */
   normalizeAllAssessments: async (req: Request, res: Response) => {
     try {
-      const operatorId = req.user?.userId || (req.user as any)?.id || "ADMIN";
-      const result = await penilaianKknService.normalizeAllStudentAssessments(operatorId);
-      res.status(200).json(result);
+      const result = await penilaianKknService.normalizeAllStudentAssessments();
+      res.status(200).json({
+        success: true,
+        message: result.message,
+        data: result,
+      });
+
     } catch (error: any) {
       console.error("[penilaianKknController] normalizeAllAssessments error:", error);
       res.status(500).json({ success: false, message: error.message || "Internal server error" });
