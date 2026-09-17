@@ -958,6 +958,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           ] as UserRole[],
         },
         {
+          to: "/dashboard-mpl",
+          icon: GraduationCap,
+          label: "Portal MPL",
+          allowed: [
+            "MPL",
+            "DEVELOPER",
+            "SUPER_USER",
+          ] as UserRole[],
+        },
+        {
+          to: "/developer/poin-mahasiswa-kkn",
+          icon: Coins,
+          label: "Simulasi Poin KKN",
+          allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[],
+        },
+        {
           type: "group",
           label: "Pelaksanaan",
           icon: Briefcase,
