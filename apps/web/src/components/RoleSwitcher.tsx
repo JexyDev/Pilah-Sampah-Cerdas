@@ -114,7 +114,7 @@ export const RoleSwitcher: React.FC = () => {
         if (targetRole === "DPL") {
           navigate("/pelaksanaan/kelompok");
         } else if (targetRole === "MPL") {
-          navigate("/dasbor");
+          navigate("/dashboard-mpl");
         } else {
           navigate("/dasbor?tab=kkn");
         }
