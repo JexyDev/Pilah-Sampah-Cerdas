@@ -906,7 +906,7 @@ export const MasterQrManager: React.FC = () => {
             <div className="px-6 py-4 bg-[#009966] text-white flex justify-between items-center">
               <h3 className="font-bold text-base flex items-center gap-2">
                 <Pencil size={18} />
-                Ubah Data Tempat Sampah
+                Ubah Data Kode QR Tempat Sampah
               </h3>
               <button
                 type="button"
