@@ -183,6 +183,15 @@ export class PointService {
    * Adjust points manually by Admin / RW
    */
   async adjustPoints(userId: string, points: number, description: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { fcmToken: true, role: { select: { name: true } } },
+    });
+
+    if (points < 0 && (user?.role?.name === "MAHASISWA_KKN" || user?.role?.name === "PETUGAS_RESIDU")) {
+      throw new Error("Sistem penalti (minus poin) untuk Mahasiswa dan Petugas telah dinonaktifkan.");
+    }
+
     return prisma.$transaction(async (tx) => {
       const history = await tx.pointHistory.create({
         data: {
@@ -200,11 +209,6 @@ export class PointService {
         },
       });
 
-      // Coba kirim silent push jika user punya fcmToken
-      const user = await tx.user.findUnique({
-        where: { id: userId },
-        select: { fcmToken: true, role: { select: { name: true } } },
-      });
       if (user?.fcmToken) {
         const eventType =
           user.role.name === "WARGA" ? "REFRESH_POIN_WARGA" : "REFRESH_POIN_MAHASISWA";

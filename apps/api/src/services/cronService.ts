@@ -288,19 +288,10 @@ export class CronService {
           },
         });
         if (count === 0) {
-          const penaltyPercent = 15;
-          const newScore = Math.max(0, Number(petugas.kpiScore) - penaltyPercent);
-          await prisma.petugasResidu.update({
-            where: { id: petugas.id },
-            data: { kpiScore: newScore },
-          });
-          await prisma.auditTrail.create({
-            data: {
-              action: "SYSTEM_KPI_PENALTY",
-              userId: petugas.userId,
-              newValue: { petugasId: petugas.id, kpiScore: newScore },
-            },
-          });
+          // Sistem penalti untuk Petugas Pemilah telah dinonaktifkan sesuai aturan tata kelola
+          console.log(
+            `[CronService] Shift penalty disabled: Petugas ${petugas.id} (user: ${petugas.userId}) has 0 submissions, kpiScore remains intact (${petugas.kpiScore}).`
+          );
         }
       }
     } catch (e) {

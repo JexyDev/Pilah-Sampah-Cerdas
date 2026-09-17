@@ -949,16 +949,6 @@ export class BinService {
           },
         });
 
-        if (bin.qrBatch?.assignedPicUserId) {
-          await tx.pointHistory.create({
-            data: {
-              userId: bin.qrBatch.assignedPicUserId,
-              points: 10,
-              description: `Warga aktivasi bin ${bin.qrCode}`,
-              kategori: "PARTISIPASI_STREAK",
-            },
-          });
-        }
 
         await tx.auditTrail.create({
           data: {
@@ -1918,14 +1908,6 @@ export class BinService {
           },
         });
 
-        await tx.pointHistory.create({
-          data: {
-            userId: assignedPicUserId,
-            points: 10,
-            description: `Registrasi pembimbingan warga: ${bin.user?.name || "Warga"}`,
-            kategori: "IDE_DAUR_ULANG",
-          },
-        });
       } else {
         await tx.pointHistory.create({
           data: {
