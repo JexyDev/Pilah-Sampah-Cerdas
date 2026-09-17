@@ -995,6 +995,7 @@ export async function calculateGroupPoints(
   totalGroupPoints: number;
   poinProker: number;
   rataRataPoinAnggota: number;
+  pureRataRataPoinAnggota?: number;
   totalCumulativeMemberPoints?: number;
   pureTotalCumulativeMemberPoints?: number;
   cumulativeMemberPoints?: number;
@@ -1075,14 +1076,16 @@ export async function calculateGroupPoints(
     }
 
     let rataRataPoinAnggota = 0;
+    let pureRataRataPoinAnggota = 0;
     let totalCumulativeMemberPoints = 0;
+    let pureTotalCumulativeMemberPoints = 0;
     let totalNormalizationBonus = 0;
     let averageNormalizationBonus = 0;
     let totalCumulativeMemberPointsWithNormalization = 0;
 
     if (studentUserIds.length > 0) {
-      // Ambil seluruh riwayat poin 3 komponen personal harian resmi (Kehadiran: 4, Waktu: 3, Logbook: 3)
-      // PROTEKSI DOUBLE-COUNTING: DILARANG KERAS memasukkan poin Gamifikasi Proker (Kategori KKN_PROKER).
+      // 1. Ambil riwayat poin 3 komponen personal harian resmi (Kehadiran: 4, Waktu: 3, Logbook: 3)
+      // untuk keperluan pencatatan murni audit akademik
       let personalPoints = await prisma.pointHistory.findMany({
         where: {
           userId: { in: studentUserIds },
@@ -1105,14 +1108,17 @@ export async function calculateGroupPoints(
         });
       }
 
-      // Hitung total poin kumulatif seluruh anggota murni dari presensi & logbook
-      totalCumulativeMemberPoints = personalPoints.reduce(
+      // Hitung total poin kumulatif seluruh anggota murni dari presensi & logbook (arsip audit)
+      pureTotalCumulativeMemberPoints = personalPoints.reduce(
         (acc, curr) => acc + Number(curr.points || 0),
         0
       );
+      pureRataRataPoinAnggota =
+        studentUserIds.length > 0
+          ? Math.round((pureTotalCumulativeMemberPoints / studentUserIds.length) * 10) / 10
+          : 0;
 
-      // Ambil poin normalisasi (POIN_KKN_FINAL) secara terpisah HANYA untuk field tampilan komposit
-      // PROTEKSI REKURSI: Poin ini TIDAK BOLEH dicampur ke totalCumulativeMemberPoints maupun rataRataPoinAnggota
+      // 2. Ambil poin normalisasi (POIN_KKN_FINAL) secara terpisah
       let normalizationPoints: any[] = [];
       try {
         normalizationPoints = await prisma.pointHistory.findMany({
@@ -1138,18 +1144,51 @@ export async function calculateGroupPoints(
         studentUserIds.length > 0
           ? Math.round((totalNormalizationBonus / studentUserIds.length) * 10) / 10
           : 0;
-      totalCumulativeMemberPointsWithNormalization =
-        totalCumulativeMemberPoints + totalNormalizationBonus;
 
-      // Rata-Rata KUMULATIF Anggota (Total Poin Seluruh Anggota / Jumlah Anggota)
-      // Sesuai Master Blueprint V2: Tidak dibagi dengan totalActiveDays agar poin kumulatif terus bertumbuh
-      rataRataPoinAnggota =
+      // 3. Ambil bonus login anggota (BONUS_LOGIN_PERTAMA)
+      let loginBonusPoints: any[] = [];
+      try {
+        loginBonusPoints = await prisma.pointHistory.findMany({
+          where: {
+            userId: { in: studentUserIds },
+            kategori: "BONUS_LOGIN_PERTAMA",
+          },
+          select: { userId: true, points: true, kategori: true },
+        });
+      } catch (loginErr) {
+        console.warn("[calculateGroupPoints] Gagal mengambil BONUS_LOGIN_PERTAMA:", loginErr);
+      }
+
+      const validLoginBonusPoints = loginBonusPoints.filter(
+        (p: any) => p.kategori === "BONUS_LOGIN_PERTAMA"
+      );
+
+      const totalLoginBonus = validLoginBonusPoints.reduce(
+        (acc: number, curr: any) => acc + Number(curr.points || 0),
+        0
+      );
+
+      // Total saldo dinamis kumulatif seluruh anggota (murni presensi + bonus login + normalisasi, bernilai ratusan)
+      // Sesuai Tiket Perubahan Logika Bisnis PO 17 Sep 2026:
+      // Nilai ini yang menjadi variabel pembagian rataRataPoinAnggota
+      totalCumulativeMemberPoints =
+        pureTotalCumulativeMemberPoints + totalNormalizationBonus + totalLoginBonus;
+      totalCumulativeMemberPointsWithNormalization = totalCumulativeMemberPoints;
+
+      // Rata-Rata KUMULATIF Anggota (Total Saldo Seluruh Anggota / Jumlah Anggota)
+      // Sesuai Tiket Perubahan Logika Bisnis PO 17 Sep 2026:
+      // Menggunakan total saldo seluruh anggota bernilai ratusan agar pembagian di UI Mobile cocok 100% secara matematika.
+      const rawRataRata =
         studentUserIds.length > 0
-          ? Math.round((totalCumulativeMemberPoints / studentUserIds.length) * 10) / 10
+          ? totalCumulativeMemberPoints / studentUserIds.length
           : 0;
+
+      // Safety Guardrail & Asimtot Limit (Maksimal 1000 PTS untuk mencegah anomali data / infinite loop)
+      const MAX_AVERAGE_CAP = 1000;
+      rataRataPoinAnggota = Math.round(Math.min(rawRataRata, MAX_AVERAGE_CAP) * 10) / 10;
     }
 
-    // Formula Poin Kelompok Resmi KKN: (Poin Proker * 0.6) + (Rata-rata Kumulatif Poin Anggota * 0.4)
+    // Formula Poin Kelompok Resmi KKN: (Poin Proker * 0.6) + (Rata-rata Saldo Kumulatif Anggota * 0.4)
     const totalGroupPoints =
       Math.round((poinProker * 0.6 + rataRataPoinAnggota * 0.4) * 10) / 10;
 
@@ -1157,10 +1196,11 @@ export async function calculateGroupPoints(
       totalGroupPoints,
       poinProker,
       rataRataPoinAnggota,
+      pureRataRataPoinAnggota,
       totalCumulativeMemberPoints,
-      pureTotalCumulativeMemberPoints: totalCumulativeMemberPoints,
+      pureTotalCumulativeMemberPoints,
       totalCumulativeMemberPointsWithNormalization,
-      cumulativeMemberPoints: totalCumulativeMemberPointsWithNormalization,
+      cumulativeMemberPoints: totalCumulativeMemberPoints,
       totalNormalizationBonus,
       averageNormalizationBonus,
       prokerApprovedCount,
@@ -1173,6 +1213,7 @@ export async function calculateGroupPoints(
       totalGroupPoints: 0,
       poinProker: 0,
       rataRataPoinAnggota: 0,
+      pureRataRataPoinAnggota: 0,
       totalCumulativeMemberPoints: 0,
       pureTotalCumulativeMemberPoints: 0,
       totalCumulativeMemberPointsWithNormalization: 0,
