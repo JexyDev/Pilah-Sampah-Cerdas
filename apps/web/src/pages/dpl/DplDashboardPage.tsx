@@ -30,9 +30,12 @@ import {
   Download,
   FileSpreadsheet,
   RotateCcw,
+  Star,
+  Briefcase,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
+import api from "../../services/api";
 import {
   dplService,
   type GroupSummary,
@@ -218,6 +221,55 @@ export const DplDashboardPage: React.FC = () => {
   const [previewEvidence, setPreviewEvidence] = useState<{ url: string; title: string } | null>(null);
   const [decidingLeaveId, setDecidingLeaveId] = useState<string | null>(null);
   const [reviewingRequest, setReviewingRequest] = useState<any | null>(null);
+
+  // State Khusus Penilaian Mitra (MPL 8 Aspek)
+  const [mplAssessingStudent, setMplAssessingStudent] = useState<any | null>(null);
+  const [savingMplAssessment, setSavingMplAssessment] = useState(false);
+  const [formNilaiMpl, setFormNilaiMpl] = useState({
+    skorKehadiran: 4,
+    skorWargaBinaan: 4,
+    skorProker: 4,
+    skorKomunikasi: 4,
+    skorTanggungJawab: 4,
+    skorBuktiKegiatan: 4,
+    skorDampak: 4,
+    skorInisiatif: 4,
+  });
+
+  const handleSaveMplAssessment = async () => {
+    if (!mplAssessingStudent) return;
+    setSavingMplAssessment(true);
+    try {
+      const studentId = mplAssessingStudent.id || mplAssessingStudent.studentId || mplAssessingStudent.userId;
+      const res = await api.post("/mpl/penilaian/assess", {
+        mahasiswaId: studentId,
+        skorKehadiran: formNilaiMpl.skorKehadiran,
+        skorWargaBinaan: formNilaiMpl.skorWargaBinaan,
+        skorProker: formNilaiMpl.skorProker,
+        skorKomunikasi: formNilaiMpl.skorKomunikasi,
+        skorTanggungJawab: formNilaiMpl.skorTanggungJawab,
+        skorBuktiKegiatan: formNilaiMpl.skorBuktiKegiatan,
+        skorDampak: formNilaiMpl.skorDampak,
+        skorInisiatif: formNilaiMpl.skorInisiatif,
+      });
+
+      if (res.data?.success) {
+        toast.success(res.data.message || "Penilaian Mitra berhasil disimpan!");
+        setMplAssessingStudent(null);
+        await loadDashboardData();
+      } else {
+        toast.error(res.data?.message || "Gagal menyimpan penilaian mitra.");
+      }
+    } catch (err: any) {
+      const msg =
+        err.response?.data?.message ||
+        err.message ||
+        "Gagal menyimpan penilaian mitra.";
+      toast.error(msg);
+    } finally {
+      setSavingMplAssessment(false);
+    }
+  };
 
   useEffect(() => {
     loadDashboardData();
@@ -1066,6 +1118,7 @@ export const DplDashboardPage: React.FC = () => {
                           <th className="py-3 px-3">Program Studi</th>
                           <th className="py-3 px-3 text-center">Presensi Lapangan</th>
                           <th className="py-3 px-3 text-center">Jam Presensi</th>
+                          {isMpl && <th className="py-3 px-3 text-center">Penilaian Mitra</th>}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
@@ -1099,6 +1152,19 @@ export const DplDashboardPage: React.FC = () => {
                             <td className="py-2.5 px-3 text-center font-bold text-slate-800 dark:text-slate-200">
                               {st.totalHours || 0} Jam {st.remainingMinutes ? `${st.remainingMinutes}m` : ""}
                             </td>
+                            {isMpl && (
+                              <td className="py-2.5 px-3 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() => setMplAssessingStudent(st)}
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-700/60 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition cursor-pointer shadow-2xs"
+                                  title="Beri Penilaian Mitra (8 Aspek) untuk Mahasiswa ini"
+                                >
+                                  <Star size={12} className="text-amber-500 fill-amber-500" />
+                                  <span>Nilai Mitra</span>
+                                </button>
+                              </td>
+                            )}
                           </tr>
                         ))}
                       </tbody>
@@ -1154,6 +1220,131 @@ export const DplDashboardPage: React.FC = () => {
                   className="px-5 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 font-bold text-xs rounded-xl transition cursor-pointer"
                 >
                   Tutup
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL 6: PENILAIAN 8 ASPEK MITRA PEMBIMBING LAPANGAN (MPL) */}
+        {mplAssessingStudent && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-slate-900/70 backdrop-blur-xs animate-in fade-in duration-200">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
+              {/* Header Modal */}
+              <div className="flex justify-between items-start px-6 py-4 bg-gradient-to-r from-teal-900 via-slate-900 to-emerald-950 text-white shrink-0">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-400/30 text-[10px] font-extrabold uppercase tracking-wider flex items-center gap-1">
+                      <Star size={11} className="fill-teal-300" />
+                      Penilaian Mitra Lapangan
+                    </span>
+                    <span className="text-slate-400 text-xs">•</span>
+                    <span className="text-xs font-semibold text-slate-300">
+                      8 Aspek Standar KKN
+                    </span>
+                  </div>
+                  <h3 className="text-base sm:text-lg font-black text-white">
+                    {mplAssessingStudent.name || "Mahasiswa KKN"}
+                  </h3>
+                  <p className="text-xs text-slate-300">
+                    NIM: {mplAssessingStudent.nim || "-"} • {mplAssessingStudent.jurusan || "Mahasiswa"}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMplAssessingStudent(null)}
+                  className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/20 text-white/80 hover:text-white transition cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-5 sm:p-6 overflow-y-auto space-y-4 flex-1 text-xs">
+                <div className="bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800/60 p-3.5 rounded-2xl flex items-start gap-2.5 text-teal-800 dark:text-teal-300">
+                  <Briefcase size={16} className="shrink-0 mt-0.5 text-teal-600" />
+                  <div>
+                    <p className="font-bold">Panduan Penilaian Mitra Pembimbing Lapangan (MPL):</p>
+                    <p className="mt-0.5 text-[11px] text-teal-700 dark:text-teal-400 leading-relaxed">
+                      Berikan penilaian skala 1 s/d 5 (1 = Sangat Kurang, 3 = Cukup, 5 = Sangat Baik) untuk masing-masing aspek evaluasi mahasiswa.
+                    </p>
+                  </div>
+                </div>
+
+                {/* 8 Aspek Penilaian */}
+                <div className="space-y-3 divide-y divide-slate-100 dark:divide-slate-800">
+                  {[
+                    { key: "skorKehadiran", label: "1. Kehadiran di Lingkungan RW / Posko", desc: "Konsistensi kehadiran fisik dan keterlibatan aktif di posko RW" },
+                    { key: "skorWargaBinaan", label: "2. Partisipasi Warga Binaan & Sosialisasi", desc: "Kemampuan memotivasi dan mendampingi warga dalam memilah sampah" },
+                    { key: "skorProker", label: "3. Pelaksanaan Program Kerja Lapangan", desc: "Kesesuaian realisasi kegiatan program kerja dengan target yang ditentukan" },
+                    { key: "skorKomunikasi", label: "4. Komunikasi dengan Aparatur Wilayah", desc: "Kelancaran koordinasi dengan pengurus RW, RT, LPM, dan Kelurahan" },
+                    { key: "skorTanggungJawab", label: "5. Tanggung Jawab & Sikap Perilaku", desc: "Etika, sopan santun, dan ketepatan menjalankan amanah penugasan" },
+                    { key: "skorBuktiKegiatan", label: "6. Dokumentasi & Bukti Kegiatan", desc: "Kerapian pelaporan logbook dan dokumentasi visual kegiatan lapangan" },
+                    { key: "skorDampak", label: "7. Dampak Positif Lingkungan", desc: "Kontribusi nyata terhadap pengurangan timbulan sampah di wilayah" },
+                    { key: "skorInisiatif", label: "8. Inisiatif & Solusi Lapangan", desc: "Daya tanggap dalam memecahkan kendala operasional pengelolaan sampah" },
+                  ].map((aspek, idx) => {
+                    const currentScore = (formNilaiMpl as any)[aspek.key] || 4;
+                    return (
+                      <div key={aspek.key} className={idx > 0 ? "pt-3" : ""}>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1.5">
+                          <div>
+                            <span className="font-extrabold text-slate-800 dark:text-slate-100 block text-xs">
+                              {aspek.label}
+                            </span>
+                            <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                              {aspek.desc}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            {[1, 2, 3, 4, 5].map((val) => (
+                              <button
+                                key={val}
+                                type="button"
+                                onClick={() => setFormNilaiMpl((prev) => ({ ...prev, [aspek.key]: val }))}
+                                className={`w-8 h-8 rounded-xl font-black text-xs transition cursor-pointer flex items-center justify-center ${
+                                  currentScore === val
+                                    ? "bg-teal-600 text-white shadow-xs scale-105"
+                                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
+                                }`}
+                              >
+                                {val}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-700/80 flex items-center justify-between gap-3 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setMplAssessingStudent(null)}
+                  disabled={savingMplAssessment}
+                  className="px-4 py-2.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 font-bold text-xs rounded-xl transition cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveMplAssessment}
+                  disabled={savingMplAssessment}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-md transition cursor-pointer"
+                >
+                  {savingMplAssessment ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                      <span>Menyimpan...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 size={14} />
+                      <span>Simpan Penilaian Mitra</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -1524,13 +1715,13 @@ export const DplDashboardPage: React.FC = () => {
             </span>
           </div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
-            {isPimpinan ? "Dasbor Monitoring KKN Pimpinan" : isMpl ? "Dasbor Monitoring KKN MPL" : "Dasbor KKN DPL"}
+            {isPimpinan ? "Dasbor Monitoring KKN Pimpinan" : isMpl ? "Dasbor Mitra Pembimbing Lapangan (MPL)" : "Dasbor KKN DPL"}
           </h1>
           <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm max-w-2xl">
             {isPimpinan
               ? "Ringkasan eksekutif pemantauan seluruh kelompok KKN binaan, DPL pengampu, capaian presensi lapangan, dan status pelaksanaan program kerja."
               : isMpl
-              ? "Ringkasan pemantauan posko, aktivitas harian mahasiswa, progres program kerja, dan kehadiran di wilayah binaan."
+              ? "Ringkasan pemantauan posko, aktivitas harian mahasiswa, progres program kerja, dan evaluasi penilaian mitra 8 aspek di wilayah binaan."
               : "Ringkasan eksekutif ekosistem KKN binaan, capaian presensi lapangan, dan status penilaian akademik."}
           </p>
         </div>
@@ -1547,6 +1738,39 @@ export const DplDashboardPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* BANNER SAMBUTAN & AKSI CEPAT KHUSUS PERAN MPL (MITRA LAPANGAN) */}
+      {isMpl && (
+        <div className="bg-gradient-to-r from-teal-950 via-slate-900 to-emerald-950 text-white rounded-2xl p-4 sm:p-5 border border-teal-500/30 shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-in fade-in duration-200">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="px-2.5 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-400/30 text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
+                <Briefcase size={12} className="text-teal-300" />
+                Mitra Pembimbing Lapangan (MPL)
+              </span>
+              <span className="text-slate-400 text-xs">•</span>
+              <span className="text-xs font-semibold text-slate-300">
+                Wilayah Binaan: Kelurahan {dplKelurahanList.join(", ") || user?.wilayah || "Coblong"}
+              </span>
+            </div>
+            <h2 className="text-base sm:text-lg font-black text-white">
+              Dasbor Terpadu Pengawasan Lapangan &amp; Penilaian Mitra KKN
+            </h2>
+            <p className="text-slate-300 text-xs max-w-2xl leading-relaxed">
+              Selamat datang di Dasbor Terpadu KKN BERSEKA. Anda dapat memantau kelompok dampingan di kelurahan Anda, mengamati kehadiran mahasiswa, memonitor progres program kerja, dan memberikan <strong>Penilaian 8 Aspek Mitra</strong>.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Link
+              to="/penilaian-kkn/mahasiswa"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-black text-xs transition shadow-md cursor-pointer"
+            >
+              <Star size={14} className="fill-slate-950 text-slate-950" />
+              <span>Penilaian Mahasiswa (8 Aspek)</span>
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Card Terpadu: Hierarki Wilayah 3-Tingkat */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 shadow-xs space-y-4">
@@ -1608,7 +1832,7 @@ export const DplDashboardPage: React.FC = () => {
       </div>
 
       {/* Quick Action Navigation Cards (Pintu Akses Operasional) */}
-      <div className={`grid grid-cols-2 ${isMpl ? "lg:grid-cols-3" : "lg:grid-cols-4"} gap-3.5 sm:gap-4`}>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
         <Link
           to="/manajemen-ekosistem-kkn"
           className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3.5 sm:p-4 rounded-2xl hover:border-emerald-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
@@ -1622,20 +1846,18 @@ export const DplDashboardPage: React.FC = () => {
           <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition shrink-0" />
         </Link>
 
-        {!isMpl && (
-          <Link
-            to="/monitoring-absen"
-            className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3.5 sm:p-4 rounded-2xl hover:border-amber-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 rounded-xl group-hover:bg-amber-600 group-hover:text-white transition shrink-0">
-                <ClipboardCheck size={20} />
-              </div>
-              <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">Presensi</h4>
+        <Link
+          to="/monitoring-absen"
+          className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3.5 sm:p-4 rounded-2xl hover:border-amber-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 rounded-xl group-hover:bg-amber-600 group-hover:text-white transition shrink-0">
+              <ClipboardCheck size={20} />
             </div>
-            <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition shrink-0" />
-          </Link>
-        )}
+            <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">Presensi</h4>
+          </div>
+          <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition shrink-0" />
+        </Link>
 
         <Link
           to="/program-kerja-kkn"
@@ -1658,85 +1880,83 @@ export const DplDashboardPage: React.FC = () => {
             <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded-xl group-hover:bg-emerald-600 group-hover:text-white transition shrink-0">
               <Award size={20} />
             </div>
-            <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">Penilaian</h4>
+            <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">{isMpl ? "Penilaian Mitra" : "Penilaian"}</h4>
           </div>
           <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition shrink-0" />
         </Link>
       </div>
 
       {/* Metrik Agregat Presensi & Program Kerja */}
-      <div className={`grid grid-cols-1 ${isMpl ? "lg:grid-cols-1" : "lg:grid-cols-3"} gap-4`}>
-        {/* Left: Metrik Presensi Mahasiswa - Disembunyikan khusus untuk peran MPL */}
-        {!isMpl && (
-          <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-              <div>
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
-                  Presensi Lapangan
-                </span>
-                <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100 mt-0.5">
-                  Tingkat Presensi Mahasiswa
-                </h3>
-              </div>
-              <Link
-                to="/monitoring-absen"
-                className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 flex items-center gap-1 group"
-                title="Buka Halaman Presensi"
-              >
-                <span>Presensi</span>
-                <ChevronRight size={14} className="group-hover:translate-x-0.5 transition" />
-              </Link>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Left: Metrik Presensi Mahasiswa - Aktif untuk semua termasuk MPL */}
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+            <div>
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
+                Presensi Lapangan
+              </span>
+              <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100 mt-0.5">
+                Tingkat Presensi Mahasiswa
+              </h3>
             </div>
-
             <Link
               to="/monitoring-absen"
-              className="flex items-center justify-between gap-4 bg-emerald-50/70 hover:bg-emerald-100/80 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-700/40 p-4 rounded-xl transition group cursor-pointer"
-              title="Lihat Detail Presensi Lapangan"
+              className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 flex items-center gap-1 group"
+              title="Buka Halaman Presensi"
             >
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-emerald-600 group-hover:bg-emerald-700 text-white flex items-center justify-center font-extrabold shadow-sm shrink-0 transition">
-                  <CalendarCheck size={24} />
-                </div>
-                <div>
-                  <span className="text-2xl font-black text-emerald-900 dark:text-emerald-300">
-                    {groups.length > 0 ? avgOverallAttendance : 0}%
-                  </span>
-                  <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-bold">Rerata Presensi Kelompok</p>
-                </div>
-              </div>
-              <ChevronRight size={18} className="text-emerald-600 dark:text-emerald-400 group-hover:translate-x-1 transition shrink-0" />
+              <span>Presensi</span>
+              <ChevronRight size={14} className="group-hover:translate-x-0.5 transition" />
             </Link>
-
-            <div className="bg-slate-50 dark:bg-slate-800 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-700 flex flex-wrap items-center justify-around gap-1 text-xs font-medium">
-              <Link
-                to="/monitoring-kegiatan/pengajuan-izin"
-                className="text-blue-700 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline font-bold px-2 py-1 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/50 transition cursor-pointer flex items-center gap-1"
-                title="Buka Halaman Pengajuan Izin/Sakit (Filter Sakit)"
-              >
-                <span>{gradeDistribution.totalSakit} Sakit</span>
-              </Link>
-              <span className="text-slate-300 dark:text-slate-600">•</span>
-              <Link
-                to="/monitoring-kegiatan/pengajuan-izin"
-                className="text-purple-700 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 hover:underline font-bold px-2 py-1 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-950/50 transition cursor-pointer flex items-center gap-1"
-                title="Buka Halaman Pengajuan Izin/Sakit (Filter Izin)"
-              >
-                <span>{gradeDistribution.totalIzin} Izin</span>
-              </Link>
-              <span className="text-slate-300 dark:text-slate-600">•</span>
-              <Link
-                to="/monitoring-absen"
-                className="text-rose-700 dark:text-rose-400 hover:text-rose-800 dark:hover:text-rose-300 hover:underline font-bold px-2 py-1 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/50 transition cursor-pointer flex items-center gap-1"
-                title="Buka Halaman Presensi (Tanpa Keterangan)"
-              >
-                <span>{gradeDistribution.totalAlpha} Tanpa Keterangan</span>
-              </Link>
-            </div>
           </div>
-        )}
+
+          <Link
+            to="/monitoring-absen"
+            className="flex items-center justify-between gap-4 bg-emerald-50/70 hover:bg-emerald-100/80 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-700/40 p-4 rounded-xl transition group cursor-pointer"
+            title="Lihat Detail Presensi Lapangan"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-emerald-600 group-hover:bg-emerald-700 text-white flex items-center justify-center font-extrabold shadow-sm shrink-0 transition">
+                <CalendarCheck size={24} />
+              </div>
+              <div>
+                <span className="text-2xl font-black text-emerald-900 dark:text-emerald-300">
+                  {groups.length > 0 ? avgOverallAttendance : 0}%
+                </span>
+                <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-bold">Rerata Presensi Kelompok</p>
+              </div>
+            </div>
+            <ChevronRight size={18} className="text-emerald-600 dark:text-emerald-400 group-hover:translate-x-1 transition shrink-0" />
+          </Link>
+
+          <div className="bg-slate-50 dark:bg-slate-800 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-700 flex flex-wrap items-center justify-around gap-1 text-xs font-medium">
+            <Link
+              to="/monitoring-kegiatan/pengajuan-izin"
+              className="text-blue-700 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline font-bold px-2 py-1 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/50 transition cursor-pointer flex items-center gap-1"
+              title="Buka Halaman Pengajuan Izin/Sakit (Filter Sakit)"
+            >
+              <span>{gradeDistribution.totalSakit} Sakit</span>
+            </Link>
+            <span className="text-slate-300 dark:text-slate-600">•</span>
+            <Link
+              to="/monitoring-kegiatan/pengajuan-izin"
+              className="text-purple-700 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 hover:underline font-bold px-2 py-1 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-950/50 transition cursor-pointer flex items-center gap-1"
+              title="Buka Halaman Pengajuan Izin/Sakit (Filter Izin)"
+            >
+              <span>{gradeDistribution.totalIzin} Izin</span>
+            </Link>
+            <span className="text-slate-300 dark:text-slate-600">•</span>
+            <Link
+              to="/monitoring-absen"
+              className="text-rose-700 dark:text-rose-400 hover:text-rose-800 dark:hover:text-rose-300 hover:underline font-bold px-2 py-1 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/50 transition cursor-pointer flex items-center gap-1"
+              title="Buka Halaman Presensi (Tanpa Keterangan)"
+            >
+              <span>{gradeDistribution.totalAlpha} Tanpa Keterangan</span>
+            </Link>
+          </div>
+        </div>
 
         {/* Right: Program Kerja yang Diusulkan */}
-        <div className={`${isMpl ? "lg:col-span-1" : "lg:col-span-2"} bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-4`}>
+        <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
             <div>
               <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
