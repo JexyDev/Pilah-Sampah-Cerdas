@@ -305,19 +305,23 @@ export class KknService {
         poinKelompok: groupPointsData?.totalGroupPoints ?? 0,
         poinProker: groupPointsData?.poinProker ?? 0,
         rataRataPoinAnggota: groupPointsData?.rataRataPoinAnggota ?? 0,
-        // Penyesuaian UX Dasbor & Halaman Kelompok Mobile (Change Request Tahap 2):
+        pureRataRataPoinAnggota: groupPointsData?.pureRataRataPoinAnggota ?? 0,
+        // Penyesuaian UX Dasbor & Halaman Kelompok Mobile (Tiket Core Formula PO 17 Sep 2026):
         // APK mobile membaca totalCumulativeMemberPoints / cumulativeMemberPoints untuk Card Total Akumulasi Tim.
-        // Swap value: Timpa dengan nilai gabungan dinamis (dengan normalisasi ratusan PTS),
+        // Berisi nilai gabungan dinamis (ratusan PTS) yang menjadi dasar pembagian rataRataPoinAnggota,
         // dan simpan poin harian murni di pureTotalCumulativeMemberPoints untuk audit akademik.
         totalCumulativeMemberPoints:
-          groupPointsData?.totalCumulativeMemberPointsWithNormalization ??
           groupPointsData?.totalCumulativeMemberPoints ??
+          groupPointsData?.totalCumulativeMemberPointsWithNormalization ??
           0,
         cumulativeMemberPoints:
+          groupPointsData?.cumulativeMemberPoints ??
           groupPointsData?.totalCumulativeMemberPointsWithNormalization ??
+          0,
+        pureTotalCumulativeMemberPoints:
+          groupPointsData?.pureTotalCumulativeMemberPoints ??
           groupPointsData?.totalCumulativeMemberPoints ??
           0,
-        pureTotalCumulativeMemberPoints: groupPointsData?.totalCumulativeMemberPoints ?? 0,
         totalCumulativeMemberPointsWithNormalization:
           groupPointsData?.totalCumulativeMemberPointsWithNormalization ??
           groupPointsData?.totalCumulativeMemberPoints ??
@@ -344,15 +348,19 @@ export class KknService {
       poinKelompok: groupPointsData?.totalGroupPoints ?? 0,
       poinProker: groupPointsData?.poinProker ?? 0,
       rataRataPoinAnggota: groupPointsData?.rataRataPoinAnggota ?? 0,
+      pureRataRataPoinAnggota: groupPointsData?.pureRataRataPoinAnggota ?? 0,
       totalCumulativeMemberPoints:
-        groupPointsData?.totalCumulativeMemberPointsWithNormalization ??
         groupPointsData?.totalCumulativeMemberPoints ??
+        groupPointsData?.totalCumulativeMemberPointsWithNormalization ??
         0,
       cumulativeMemberPoints:
+        groupPointsData?.cumulativeMemberPoints ??
         groupPointsData?.totalCumulativeMemberPointsWithNormalization ??
+        0,
+      pureTotalCumulativeMemberPoints:
+        groupPointsData?.pureTotalCumulativeMemberPoints ??
         groupPointsData?.totalCumulativeMemberPoints ??
         0,
-      pureTotalCumulativeMemberPoints: groupPointsData?.totalCumulativeMemberPoints ?? 0,
       totalCumulativeMemberPointsWithNormalization:
         groupPointsData?.totalCumulativeMemberPointsWithNormalization ??
         groupPointsData?.totalCumulativeMemberPoints ??
@@ -3205,20 +3213,25 @@ export class KknService {
       totalGroupPoints,
       poinKelompok: totalGroupPoints,
       poinProker: groupPointsData.poinProker,
-      // Penyesuaian UX Halaman Kelompok Mobile (Change Request Tahap 2):
+      rataRataPoinAnggota: groupPointsData.rataRataPoinAnggota,
+      pureRataRataPoinAnggota: groupPointsData.pureRataRataPoinAnggota ?? 0,
+      // Penyesuaian UX Halaman Kelompok Mobile (Tiket Core Formula PO 17 Sep 2026):
       // APK mobile membaca totalCumulativeMemberPoints / cumulativeMemberPoints untuk Card "Total Akumulasi Tim".
-      // Swap value: Masukkan totalCumulativeMemberPointsWithNormalization (nilai gabungan dinamis ratusan)
-      // ke dalam key `cumulativeMemberPoints` dan `totalCumulativeMemberPoints` agar tidak nyangkut di 57 PTS.
-      // Simpan nilai harian murni pada `pureTotalCumulativeMemberPoints` untuk audit akademik.
+      // Berisi nilai total saldo dinamis anggota (ratusan PTS) yang menjadi dasar pembagian rataRataPoinAnggota,
+      // sehingga jika dibagi 4 anggota dan dikali 40%, hasilnya cocok 100% dengan Skor Terbobot Kelompok.
+      // Simpan nilai harian murni pada pureTotalCumulativeMemberPoints untuk audit akademik.
       totalCumulativeMemberPoints:
-        groupPointsData.totalCumulativeMemberPointsWithNormalization ??
         groupPointsData.totalCumulativeMemberPoints ??
+        groupPointsData.totalCumulativeMemberPointsWithNormalization ??
         0,
       cumulativeMemberPoints:
+        groupPointsData.cumulativeMemberPoints ??
         groupPointsData.totalCumulativeMemberPointsWithNormalization ??
+        0,
+      pureTotalCumulativeMemberPoints:
+        groupPointsData.pureTotalCumulativeMemberPoints ??
         groupPointsData.totalCumulativeMemberPoints ??
         0,
-      pureTotalCumulativeMemberPoints: groupPointsData.totalCumulativeMemberPoints ?? 0,
       totalCumulativeMemberPointsWithNormalization:
         groupPointsData.totalCumulativeMemberPointsWithNormalization ??
         groupPointsData.totalCumulativeMemberPoints ??
