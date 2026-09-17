@@ -717,5 +717,44 @@ describe("KKN Gamification Logic & Fixes", () => {
       expect(dashboard.stats.totalGroupPoints).toBe(6.4);
       expect(dashboard.stats.poinKelompok).toBe(6.4);
     });
+
+    it("should map contributionPoints (including normalization bonus) into personalPoints for Mobile UX compatibility", async () => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({
+        id: "mhs-dash-bonus",
+        role: { name: "MAHASISWA_KKN" },
+      } as any);
+
+      vi.mocked(prisma.studentKkn.findUnique).mockResolvedValue({
+        id: "std-bonus",
+        userId: "mhs-dash-bonus",
+        nim: "10123001",
+        kelompokId: "kel-dash-bonus",
+        assignedRw: { id: 2, name: "RW 02", latitude: -6.89, longitude: 107.61 },
+      } as any);
+
+      vi.mocked(prisma.bin.count).mockResolvedValue(10);
+
+      // Student has 30 pure field points + 49 normalization bonus = 79 total balance
+      vi.mocked(prisma.pointHistory.findMany).mockResolvedValue([
+        { userId: "mhs-dash-bonus", points: 15, kategori: "KKN_PRESENSI_HADIR", createdAt: new Date() } as any,
+        { userId: "mhs-dash-bonus", points: 10, kategori: "KKN_DURASI_MEMENUHI", createdAt: new Date() } as any,
+        { userId: "mhs-dash-bonus", points: 5, kategori: "KKN_LOGBOOK_HARIAN", createdAt: new Date() } as any,
+        { userId: "mhs-dash-bonus", points: 49, kategori: "POIN_KKN_FINAL", description: "Normalisasi Nilai KKN", createdAt: new Date() } as any,
+      ]);
+
+      vi.mocked(prisma.programKerjaKkn.findMany).mockResolvedValue([]);
+      vi.mocked(prisma.studentKkn.findMany).mockResolvedValue([{ userId: "mhs-dash-bonus" } as any]);
+
+      const dashboard = await kknService.getDashboardStats("mhs-dash-bonus");
+
+      // Mobile APK expects personalPoints to show total balance (79)
+      expect(dashboard.personalPoints).toBe(79);
+      expect(dashboard.contributionPoints).toBe(79);
+      expect(dashboard.stats.personalPoints).toBe(79);
+      expect(dashboard.stats.contributionPoints).toBe(79);
+      // Pure field points preserved in purePersonalPoints
+      expect(dashboard.purePersonalPoints).toBe(30);
+      expect(dashboard.stats.purePersonalPoints).toBe(30);
+    });
   });
 });
