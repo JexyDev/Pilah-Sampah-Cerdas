@@ -246,4 +246,22 @@ export const penilaianKknController = {
       res.status(500).json({ success: false, message: error.message || "Internal server error" });
     }
   },
+
+  /**
+   * Normalisasi Massal Seluruh Penilaian Mahasiswa KKN
+   * Mengharmonisasi skor laporan akhir, logbook, presensi GPS, dan membersihkan teks anomali H+5
+   */
+  normalizeAllAssessments: async (req: Request, res: Response) => {
+    try {
+      const result = await penilaianKknService.normalizeAllStudentAssessments();
+      res.status(200).json({
+        success: true,
+        message: result.message,
+        data: result,
+      });
+    } catch (error: any) {
+      console.error("[penilaianKknController] normalizeAllAssessments error:", error);
+      res.status(500).json({ success: false, message: error.message || "Internal server error" });
+    }
+  },
 };

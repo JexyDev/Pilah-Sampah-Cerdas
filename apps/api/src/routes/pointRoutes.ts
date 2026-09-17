@@ -7,8 +7,10 @@
 
 import { Router } from "express";
 import { pointController } from "../controllers/pointController.js";
+import { mahasiswaPoinController } from "../controllers/mahasiswaPoinController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
+
 
 const router = Router();
 
@@ -227,6 +229,43 @@ router.delete(
   authMiddleware,
   roleMiddleware(["DEVELOPER"]),
   pointController.voidTransactionDeveloper
+);
+
+
+// ─────────────────────────────────────────────
+// KKN: PERHITUNGAN POIN MAHASISWA
+// ─────────────────────────────────────────────
+
+/**
+ * @swagger
+ * /api/v1/points/kkn/simulasi:
+ *   get:
+ *     summary: "[DEVELOPER/SUPER_USER] Simulasi preview formula poin KKN semua kelompok (tanpa commit ke DB)"
+ *     tags: [Points]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get(
+  "/kkn/simulasi",
+  authMiddleware,
+  roleMiddleware(["DEVELOPER", "SUPER_USER"]),
+  mahasiswaPoinController.simulasiFormula
+);
+
+/**
+ * @swagger
+ * /api/v1/points/kkn/normalisasi-bulk:
+ *   post:
+ *     summary: "[DEVELOPER ONLY] Normalisasi dan commit poin KKN final ke PointHistory semua mahasiswa"
+ *     tags: [Points]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post(
+  "/kkn/normalisasi-bulk",
+  authMiddleware,
+  roleMiddleware(["DEVELOPER"]),
+  mahasiswaPoinController.normalisasiPoinBulk
 );
 
 export default router;

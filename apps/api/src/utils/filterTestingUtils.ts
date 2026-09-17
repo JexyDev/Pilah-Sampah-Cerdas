@@ -35,15 +35,19 @@ export function isTestOrDummyString(str?: string | null): boolean {
  * Memeriksa apakah data User (DPL, Mahasiswa, Warga, Petugas) merupakan akun uji coba/dummy
  */
 export function isTestUser(
-  user?: {
-    id?: string | null;
-    name?: string | null;
-    email?: string | null;
-    nip?: string | null;
-    phone?: string | null;
-  } | null
+  user?:
+    | {
+        id?: string | null;
+        name?: string | null;
+        email?: string | null;
+        nip?: string | null;
+        phone?: string | null;
+      }
+    | string
+    | null
 ): boolean {
   if (!user) return false;
+  if (typeof user === "string") return isTestOrDummyString(user);
   if (isTestOrDummyString(user.name)) return true;
   if (isTestOrDummyString(user.email)) return true;
   if (isTestOrDummyString(user.nip)) return true;
@@ -54,15 +58,19 @@ export function isTestUser(
  * Memeriksa apakah data Kelompok KKN merupakan kelompok uji coba/dummy
  */
 export function isTestKelompok(
-  kelompok?: {
-    id?: string | null;
-    name?: string | null;
-    kelurahan?: string | null;
-    dplNamaMentah?: string | null;
-    dpl?: any;
-  } | null
+  kelompok?:
+    | {
+        id?: string | null;
+        name?: string | null;
+        kelurahan?: string | null;
+        dplNamaMentah?: string | null;
+        dpl?: any;
+      }
+    | string
+    | null
 ): boolean {
   if (!kelompok) return false;
+  if (typeof kelompok === "string") return isTestOrDummyString(kelompok);
   if (isTestOrDummyString(kelompok.name)) return true;
   if (isTestOrDummyString(kelompok.kelurahan)) return true;
   if (isTestOrDummyString(kelompok.dplNamaMentah)) return true;
@@ -74,15 +82,19 @@ export function isTestKelompok(
  * Memeriksa apakah data Mahasiswa KKN merupakan mahasiswa uji coba/dummy
  */
 export function isTestStudent(
-  student?: {
-    id?: string | null;
-    nim?: string | null;
-    name?: string | null;
-    user?: any;
-    kelompok?: any;
-  } | null
+  student?:
+    | {
+        id?: string | null;
+        nim?: string | null;
+        name?: string | null;
+        user?: any;
+        kelompok?: any;
+      }
+    | string
+    | null
 ): boolean {
   if (!student) return false;
+  if (typeof student === "string") return isTestOrDummyString(student);
   if (isTestOrDummyString(student.nim)) return true;
   if (isTestOrDummyString(student.name)) return true;
   if (student.user && isTestUser(student.user)) return true;

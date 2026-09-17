@@ -789,22 +789,17 @@ export class UserService {
       throw new Error("ROLE_NOT_FOUND");
     }
 
-    if (roleName === "PETUGAS_RESIDU" && rwId) {
-      const area = await prisma.rw.findUnique({ where: { id: parseInt(rwId) } });
-      if (area) {
-        const rwMatch = area.name.match(/RW\s+(\d+)/i);
-        if (rwMatch) {
-          const rwNumber = rwMatch[1];
-          const existingPetugas = await prisma.user.findFirst({
-            where: {
-              role: { name: "PETUGAS_RESIDU" },
-              rw: { name: { contains: `RW ${rwNumber}` } },
-            },
-          });
-          if (existingPetugas) {
-            throw new Error("RW_ALREADY_HAS_PETUGAS_RESIDU");
-          }
-        }
+    if (roleName === "PETUGAS_RESIDU" && effectiveRwId) {
+      const targetRwId = parseInt(effectiveRwId);
+      const existingPetugas = await prisma.user.findFirst({
+        where: {
+          rwId: targetRwId,
+          role: { name: "PETUGAS_RESIDU" },
+          status: { not: "Nonaktif" },
+        },
+      });
+      if (existingPetugas) {
+        throw new Error("RW_ALREADY_HAS_PETUGAS_RESIDU");
       }
     }
 
@@ -955,6 +950,30 @@ export class UserService {
         }
       }
 
+      // Automatically create PetugasResidu profile and link to RW
+      if (roleName === "PETUGAS_RESIDU") {
+        const existingProfile = await tx.petugasResidu.findUnique({
+          where: { userId: u.id },
+        });
+        if (!existingProfile) {
+          await tx.petugasResidu.create({
+            data: {
+              userId: u.id,
+              nama: u.name,
+              noWa: u.phone || "-",
+              whitelistStatus: "APPROVED",
+              assignedZone: data.wilayah || "Semua Zona",
+            },
+          });
+        }
+        if (u.rwId) {
+          await tx.rw.update({
+            where: { id: u.rwId },
+            data: { petugasResiduId: u.id },
+          });
+        }
+      }
+
       return u;
     });
 
@@ -1039,22 +1058,17 @@ export class UserService {
     const checkRtRwId = inputRwId !== undefined ? inputRwId : user.rwId;
 
     if (checkRoleName === "PETUGAS_RESIDU" && checkRtRwId) {
-      const area = await prisma.rw.findUnique({ where: { id: parseInt(checkRtRwId) } });
-      if (area) {
-        const rwMatch = area.name.match(/RW\s+(\d+)/i);
-        if (rwMatch) {
-          const rwNumber = rwMatch[1];
-          const existingPetugas = await prisma.user.findFirst({
-            where: {
-              id: { not: user.id },
-              role: { name: "PETUGAS_RESIDU" },
-              rw: { name: { contains: `RW ${rwNumber}` } },
-            },
-          });
-          if (existingPetugas) {
-            throw new Error("RW_ALREADY_HAS_PETUGAS_RESIDU");
-          }
-        }
+      const targetRwId = parseInt(checkRtRwId);
+      const existingPetugas = await prisma.user.findFirst({
+        where: {
+          id: { not: user.id },
+          rwId: targetRwId,
+          role: { name: "PETUGAS_RESIDU" },
+          status: { not: "Nonaktif" },
+        },
+      });
+      if (existingPetugas) {
+        throw new Error("RW_ALREADY_HAS_PETUGAS_RESIDU");
       }
     }
 
@@ -1314,6 +1328,45 @@ export class UserService {
           await tx.rw.update({
             where: { id: rwAreaId },
             data: { petugasResiduId: petugasResiduId || null },
+          });
+        }
+      }
+
+      // Sync Petugas Residu profile and RW linkage when updating a PETUGAS_RESIDU user
+      if (checkRoleName === "PETUGAS_RESIDU" || u.role.name === "PETUGAS_RESIDU") {
+        const existingProfile = await tx.petugasResidu.findUnique({
+          where: { userId: u.id },
+        });
+        if (existingProfile) {
+          await tx.petugasResidu.update({
+            where: { userId: u.id },
+            data: {
+              nama: u.name,
+              noWa: u.phone || existingProfile.noWa,
+              assignedZone: data.wilayah !== undefined ? data.wilayah : existingProfile.assignedZone,
+            },
+          });
+        } else {
+          await tx.petugasResidu.create({
+            data: {
+              userId: u.id,
+              nama: u.name,
+              noWa: u.phone || "-",
+              whitelistStatus: "APPROVED",
+              assignedZone: data.wilayah || "Semua Zona",
+            },
+          });
+        }
+
+        const newRwId = parsedRwId || u.rwId;
+        if (newRwId) {
+          await tx.rw.updateMany({
+            where: { petugasResiduId: u.id, id: { not: newRwId } },
+            data: { petugasResiduId: null },
+          });
+          await tx.rw.update({
+            where: { id: newRwId },
+            data: { petugasResiduId: u.id },
           });
         }
       }

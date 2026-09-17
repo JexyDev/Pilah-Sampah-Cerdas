@@ -569,8 +569,10 @@ describe("KKN Gamification Logic & Fixes", () => {
       expect(dashboard.stats).toHaveProperty("poinProker");
       expect(dashboard.stats).toHaveProperty("rataRataPoinAnggota");
 
-      // poinProker for 1 SEDANG_BERJALAN = 4
+      // poinProker & prokerPoints for 1 SEDANG_BERJALAN = 4
       expect(dashboard.stats.poinProker).toBe(4);
+      expect(dashboard.stats.prokerPoints).toBe(4);
+      expect(dashboard.prokerPoints).toBe(4);
       // rataRataPoinAnggota = 10
       expect(dashboard.stats.rataRataPoinAnggota).toBe(10);
       // totalGroupPoints = (4 * 0.6) + (10 * 0.4) = 2.4 + 4 = 6.4
