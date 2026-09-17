@@ -22,6 +22,10 @@ import {
   calculatePersonalPoints,
   syncProkerGamificationPoints,
 } from "./dplService.js";
+import {
+  calculateValidIndividualPoints,
+  calculateValidIndividualPointsForUsers,
+} from "./pointService.js";
 import { calculateNilaiEkonomi } from "./pemanfaatanService.js";
 import { evaluateSortingStatus } from "../utils/sortingEvaluation.js";
 import {
@@ -210,7 +214,10 @@ export class KknService {
     let contributionPoints = 0;
     let personalScoreBreakdown: any = null;
     if (isSuperOrAdmin) {
-      const pointsSum = await prisma.pointHistory.aggregate({ _sum: { points: true } });
+      const pointsSum = await prisma.pointHistory.aggregate({
+        where: { kategori: { notIn: ["KKN_PROKER"] } },
+        _sum: { points: true },
+      });
       contributionPoints = Math.max(0, pointsSum._sum.points || 0);
       personalPoints = contributionPoints;
       purePersonalPoints = contributionPoints;
@@ -218,7 +225,8 @@ export class KknService {
     } else {
       const personalData = await calculatePersonalPoints(userId);
       purePersonalPoints = Math.max(0, personalData.personalPoints);
-      contributionPoints = Math.max(0, personalData.contributionPoints);
+      // Gunakan fungsi sentralisasi anti-bocor untuk menjamin saldo akhir 100% bersih dari aksi KKN_PROKER
+      contributionPoints = await calculateValidIndividualPoints(userId);
       // Penyesuaian UX Dasbor (Permintaan PO & Tim Mobile):
       // APK mobile membaca key personalPoints untuk Card Dasbor utama.
       // Nilai personalPoints ditimpa dengan contributionPoints (total saldo akhir termasuk bonus normalisasi & login)
@@ -226,6 +234,7 @@ export class KknService {
       personalPoints = contributionPoints;
       personalScoreBreakdown = {
         ...personalData,
+        contributionPoints,
         purePersonalPoints,
       };
     }
@@ -3066,20 +3075,7 @@ export class KknService {
 
     const group = student.kelompok;
     const memberUserIds = group.students.map((s) => s.userId);
-
-    const pointsAgg = await prisma.pointHistory.groupBy({
-      by: ["userId"],
-      where: {
-        userId: { in: memberUserIds },
-        kategori: { notIn: ["KKN_PROKER"] },
-      },
-      _sum: { points: true },
-    });
-
-    const pointsMap = new Map<string, number>();
-    pointsAgg.forEach((item) => {
-      pointsMap.set(item.userId, Math.max(0, item._sum.points || 0));
-    });
+    const pointsMap = await calculateValidIndividualPointsForUsers(memberUserIds);
 
     const members = group.students.map((s) => {
       const p = pointsMap.get(s.userId) || 0;

@@ -197,12 +197,15 @@ describe("Mobile Gamification & Personal Point Calculation", () => {
     const result = await kknService.getMyGroup("user-habik");
 
     expect(result).not.toBeNull();
-    // Check that pointHistory.groupBy was called with kategori: { notIn: ["KKN_PROKER"] }
+    // Check that pointHistory.groupBy was called with kategori: { notIn: ["KKN_PROKER"] } and anti-leak proker description guard
     expect(prisma.pointHistory.groupBy).toHaveBeenCalledWith({
       by: ["userId"],
       where: {
         userId: { in: ["user-habik", "user-temen"] },
         kategori: { notIn: ["KKN_PROKER"] },
+        NOT: {
+          description: { contains: "[ProkerID:" },
+        },
       },
       _sum: { points: true },
     });
