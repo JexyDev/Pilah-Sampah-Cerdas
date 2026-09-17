@@ -767,9 +767,12 @@ export class LogbookService {
       },
     });
 
+    let pointsAwarded = false;
+    let pointsAdded = 0;
+
     if (!existingLogbookPoint) {
-      await prisma.pointHistory
-        .create({
+      try {
+        await prisma.pointHistory.create({
           data: {
             userId: targetUserId,
             points: 3,
@@ -777,8 +780,12 @@ export class LogbookService {
             kategori: "KKN_LOGBOOK_HARIAN",
             redeemable: false,
           },
-        })
-        .catch(() => {});
+        });
+        pointsAwarded = true;
+        pointsAdded = 3;
+      } catch (err) {
+        console.warn("[createMahasiswaLogbook] Gagal mencatat poin:", err);
+      }
     }
 
 
@@ -832,7 +839,11 @@ export class LogbookService {
       })
       .catch((err) => console.warn("[Audit] Logbook submit log error:", err));
 
-    return logbook;
+    return {
+      ...logbook,
+      pointsAwarded,
+      pointsAdded,
+    };
   }
 
   /**

@@ -698,6 +698,8 @@ export async function getKelompokWhere(dplUserId: string, role?: any) {
  */
 export async function calculatePersonalPoints(userId: string): Promise<{
   personalPoints: number;
+  prokerPoints: number;
+  contributionPoints: number;
   poinKehadiran: number;
   poinPemenuhanWaktu: number;
   poinLogAktivitas: number;
@@ -705,15 +707,17 @@ export async function calculatePersonalPoints(userId: string): Promise<{
   rawKehadiran: number;
   rawPemenuhanWaktu: number;
   rawLogAktivitas: number;
+  rawProker: number;
 }> {
   const allPoints = await prisma.pointHistory.findMany({
     where: { userId },
-    select: { points: true, kategori: true },
+    select: { points: true, kategori: true, description: true },
   });
 
   let rawKehadiran = 0;
   let rawPemenuhanWaktu = 0;
   let rawLogAktivitas = 0;
+  let rawProker = 0;
   let poinPenalti = 0;
   let totalBalance = 0;
 
@@ -721,19 +725,64 @@ export async function calculatePersonalPoints(userId: string): Promise<{
     const val = Number(p.points || 0);
     totalBalance += val;
 
-    if (p.kategori === "KKN_PRESENSI_HADIR") rawKehadiran += val;
-    else if (p.kategori === "KKN_DURASI_MEMENUHI") rawPemenuhanWaktu += val;
-    else if (p.kategori === "KKN_LOGBOOK_HARIAN") rawLogAktivitas += val;
-    else if (val < 0) poinPenalti += Math.abs(val);
+    const lowerDesc = (p.description || "").toLowerCase();
+
+    if (
+      p.kategori === "KKN_PRESENSI_HADIR" ||
+      lowerDesc.includes("kehadiran (check-in)") ||
+      lowerDesc.includes("presensi masuk")
+    ) {
+      rawKehadiran += val;
+    } else if (
+      p.kategori === "KKN_DURASI_MEMENUHI" ||
+      lowerDesc.includes("kepulangan (check-out)") ||
+      lowerDesc.includes("pemenuhan waktu") ||
+      lowerDesc.includes("durasi kkn")
+    ) {
+      rawPemenuhanWaktu += val;
+    } else if (
+      p.kategori === "KKN_LOGBOOK_HARIAN" ||
+      lowerDesc.includes("logbook")
+    ) {
+      rawLogAktivitas += val;
+    } else if (
+      p.kategori === "KKN_PROKER" ||
+      lowerDesc.includes("[prokerid:") ||
+      lowerDesc.includes("program kerja")
+    ) {
+      rawProker += val;
+    } else if (val < 0) {
+      poinPenalti += Math.abs(val);
+    } else {
+      // Fallback toleran jika poin aktivitas lapangan belum terlabeli
+      if (
+        !lowerDesc.includes("warga") &&
+        !lowerDesc.includes("bonus_login") &&
+        !lowerDesc.includes("reduksi_tonase")
+      ) {
+        rawLogAktivitas += val;
+      }
+    }
   }
 
   const poinKehadiran = rawKehadiran;
   const poinPemenuhanWaktu = rawPemenuhanWaktu;
   const poinLogAktivitas = rawLogAktivitas;
-  const personalPoints = Math.max(0, totalBalance);
+
+  // Poin Personal Murni = (Kehadiran + Pemenuhan Waktu + Logbook Harian) - Penalti
+  const personalPoints = Math.max(
+    0,
+    rawKehadiran + rawPemenuhanWaktu + rawLogAktivitas - poinPenalti
+  );
+  // Poin Program Kerja Murni
+  const prokerPoints = Math.max(0, rawProker);
+  // Total Akumulasi Gabungan (Legacy / Total Balance)
+  const contributionPoints = Math.max(0, totalBalance);
 
   return {
     personalPoints,
+    prokerPoints,
+    contributionPoints,
     poinKehadiran,
     poinPemenuhanWaktu,
     poinLogAktivitas,
@@ -741,6 +790,7 @@ export async function calculatePersonalPoints(userId: string): Promise<{
     rawKehadiran,
     rawPemenuhanWaktu,
     rawLogAktivitas,
+    rawProker,
   };
 }
 
@@ -951,6 +1001,7 @@ export async function calculateGroupPoints(
     let prokerApprovedCount = 0;
     let prokerSedangBerjalanCount = 0;
     let prokerSelesaiCount = 0;
+    let poinProker = 0;
 
     for (const p of prokers) {
       const legacySt = String(p.status || "").toUpperCase();
@@ -967,8 +1018,11 @@ export async function calculateGroupPoints(
         else u = "BELUM_DISETUJUI";
       }
 
-      // Dalam Gamifikasi Instan, seluruh proker aktif/diajukan (selama tidak ditolak)
-      // bernilai +2 poin dasar (Step 1).
+      // Dalam Kalkulasi Bertahap, seluruh proker aktif/diajukan (selama tidak ditolak)
+      // langsung mencairkan poin dan diakumulasikan secara real-time:
+      // - Tahap 1 (Diajukan / Disetujui, belum mulai): +2 Poin
+      // - Tahap 2 (Sedang Berjalan): +2 Poin lagi (akumulasi 4 Poin)
+      // - Tahap 3 (Selesai): +2 Poin lagi (akumulasi 6 Poin)
       if (u !== "DITOLAK" && u !== "TIDAK_DISETUJUI") {
         prokerApprovedCount++;
         let pl = (p as any).statusPelaksanaan;
@@ -985,18 +1039,15 @@ export async function calculateGroupPoints(
 
         if (pl === "SELESAI") {
           prokerSelesaiCount++;
+          poinProker += 6;
         } else if (pl === "SEDANG_BERJALAN") {
           prokerSedangBerjalanCount++;
+          poinProker += 4;
+        } else {
+          poinProker += 2;
         }
       }
     }
-
-    // JALUR SKOR AKADEMIK 60:40 (Komponen 60% Pencapaian Proker):
-    // Sesuai Final Blueprint V2:
-    // Hapus logika "cicilan poin" untuk proker yang belum beres!
-    // Proker yang masih Tahap 1 (Diajukan) dan Tahap 2 (Berjalan) poin akademiknya DIANGGAP NOL (0).
-    // Komponen 60% HANYA boleh dikalikan dari Proker yang sudah mutlak masuk Tahap 3 (SELESAI):
-    const poinProker = prokerSelesaiCount * 6;
 
     // 2. Ambil studentUserIds kelompok jika belum dioper
     let studentUserIds = studentUserIdsInput;
@@ -2602,6 +2653,7 @@ export const dplService = {
         message: notifMessage,
         triggerType: status === "APPROVED" ? "LEAVE_APPROVED" : "LEAVE_REJECTED",
         dataPayload: {
+          event: "REFRESH_KEGIATAN_MAHASISWA",
           type: "IZIN",
           status,
           leaveId: requestId,
@@ -2662,6 +2714,29 @@ export const dplService = {
           reviewedAt: new Date(),
         },
       });
+
+      try {
+        const studentProfile = await prisma.studentKkn.findFirst({
+          where: { OR: [{ userId: req.studentId }, { id: req.studentId }] },
+        });
+        const targetStudentId = studentProfile?.userId || req.studentId;
+        await notificationIntegrationService.sendToUser({
+          userId: targetStudentId,
+          title: "Pembatalan Izin Ditolak DPL ❌",
+          message: note || "Permohonan pembatalan izin ditolak DPL. Izin tetap berlaku.",
+          triggerType: "LEAVE_CANCEL_REJECTED",
+          dataPayload: {
+            event: "REFRESH_KEGIATAN_MAHASISWA",
+            type: "BATAL_IZIN",
+            status: "APPROVED",
+            leaveId: requestId,
+            click_action: "FLUTTER_NOTIFICATION_CLICK",
+          },
+        });
+      } catch (notifErr) {
+        console.warn("[decideCancelLeaveRequest] Gagal kirim notifikasi:", notifErr);
+      }
+
       return updated;
     }
 
@@ -2726,6 +2801,25 @@ export const dplService = {
           method: "OVERRIDE_DPL",
         },
       });
+    }
+
+    // Kirim notifikasi ke mahasiswa
+    try {
+      await notificationIntegrationService.sendToUser({
+        userId: targetStudentId,
+        title: "Pembatalan Izin Disetujui DPL ✅",
+        message: note || "Izin dibatalkan dan disetujui DPL. Status presensi diubah menjadi Hadir.",
+        triggerType: "LEAVE_CANCEL_APPROVED",
+        dataPayload: {
+          event: "REFRESH_KEGIATAN_MAHASISWA",
+          type: "BATAL_IZIN",
+          status: "OVERRIDDEN_HADIR",
+          leaveId: requestId,
+          click_action: "FLUTTER_NOTIFICATION_CLICK",
+        },
+      });
+    } catch (notifErr) {
+      console.warn("[decideCancelLeaveRequest] Gagal kirim notifikasi:", notifErr);
     }
 
     return updated;
@@ -2796,24 +2890,9 @@ export const dplService = {
     const groupIds = groups.map((g) => g.id);
     const groupMap = new Map(groups.map((g) => [g.id, g]));
 
-    // Enforce H+5 Soft-Expiry Rule: If approved > 5 days ago and still BELUM_MULAI, soft-cancel
-    const fiveDaysAgo = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000);
-    await prisma.programKerjaKkn
-      .updateMany({
-        where: {
-          kelompokId: { in: groupIds },
-          statusUsulan: "DISETUJUI",
-          statusPelaksanaan: "BELUM_MULAI",
-          updatedAt: { lt: fiveDaysAgo },
-        },
-        data: {
-          statusUsulan: "KADALUARSA_OTOMATIS",
-          status: "DITOLAK",
-          catatanDpl:
-            "Dibatalkan otomatis oleh sistem (H+5): Program kerja tidak dimulai dalam 5 hari setelah disetujui.",
-        },
-      })
-      .catch(() => {});
+    // Auto-cancel proker yang telah melewati batas akhir pelaksanaan (endDate) dan belum dimulai
+    const { kknService } = await import("./kknService.js");
+    await kknService.autoCancelExpiredProker({ kelompokIds: groupIds });
 
     const prokerWhere: any = {
       kelompokId: { in: groupIds },
@@ -3337,10 +3416,17 @@ export const dplService = {
       parsedJudul
     );
 
+    let totalGroupPoints: number | undefined;
+    if (prokerExisting.kelompokId) {
+      const groupRes = await calculateGroupPoints(prokerExisting.kelompokId);
+      totalGroupPoints = groupRes.totalGroupPoints;
+    }
+
     return {
       ...proker,
       statusUsulan: (proker as any).statusUsulan || effectiveUsulan,
       statusPelaksanaan: (proker as any).statusPelaksanaan || effectivePelaksanaan,
+      totalGroupPoints,
     };
   },
 
@@ -3555,10 +3641,17 @@ export const dplService = {
       );
     }
 
+    let totalGroupPoints: number | undefined;
+    if (prokerExisting.kelompokId) {
+      const groupRes = await calculateGroupPoints(prokerExisting.kelompokId);
+      totalGroupPoints = groupRes.totalGroupPoints;
+    }
+
     return {
       ...proker,
       statusUsulan: (proker as any).statusUsulan || statusUsulan,
       statusPelaksanaan: (proker as any).statusPelaksanaan || newStatusPelaksanaan,
+      totalGroupPoints,
     };
   },
 

@@ -624,7 +624,11 @@ export const DashboardEksekutifKkn: React.FC = () => {
       const completedProker = g.programKerja?.filter(
         (p: any) => p.statusPelaksanaan === "SELESAI" || p.status === "SELESAI"
       ).length || 0;
-      const prokerRate = totalProker > 0 ? (completedProker / totalProker) * 100 : 0;
+      const ongoingProker = g.programKerja?.filter(
+        (p: any) => p.statusPelaksanaan === "SEDANG_BERJALAN" || p.status === "SEDANG_BERJALAN"
+      ).length || 0;
+      const weightedProker = completedProker + (ongoingProker * 0.5);
+      const prokerRate = totalProker > 0 ? (weightedProker / totalProker) * 100 : 0;
       if (prokerFilter === "UNDER_60" && prokerRate >= 60) return false;
       if (prokerFilter === "GE_60" && prokerRate < 60) return false;
 
@@ -677,7 +681,11 @@ export const DashboardEksekutifKkn: React.FC = () => {
       const doneP = g.programKerja?.filter(
         (p: any) => p.statusPelaksanaan === "SELESAI" || p.status === "SELESAI"
       ).length || 0;
-      return (doneP / totalP) * 100 < 60;
+      const ongoingP = g.programKerja?.filter(
+        (p: any) => p.statusPelaksanaan === "SEDANG_BERJALAN" || p.status === "SEDANG_BERJALAN"
+      ).length || 0;
+      const weightedP = doneP + (ongoingP * 0.5);
+      return (weightedP / totalP) * 100 < 60;
     }).length;
 
     return {
@@ -2642,7 +2650,11 @@ export const DashboardEksekutifKkn: React.FC = () => {
               const doneP = g.programKerja?.filter(
                 (p: any) => p.statusPelaksanaan === "SELESAI" || p.status === "SELESAI"
               ).length || 0;
-              const prokerRate = totalP > 0 ? Math.round((doneP / totalP) * 100) : 0;
+              const ongoingP = g.programKerja?.filter(
+                (p: any) => p.statusPelaksanaan === "SEDANG_BERJALAN" || p.status === "SEDANG_BERJALAN"
+              ).length || 0;
+              const weightedP = doneP + (ongoingP * 0.5);
+              const prokerRate = totalP > 0 ? Math.round((weightedP / totalP) * 100) : 0;
               const isLowAtt = (g.avgAttendanceRate || 0) < 60;
               const isLowProker = totalP > 0 && prokerRate < 60;
 
@@ -2711,7 +2723,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
                           : prokerRate >= 60
                           ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/60 dark:text-blue-300"
                           : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300"
-                      }`}>
+                      }`} title={`${doneP} Selesai, ${ongoingP} Sedang Berjalan, dari total ${totalP} Proker`}>
                         {prokerRate}% ({doneP}/{totalP})
                       </span>
                     </div>

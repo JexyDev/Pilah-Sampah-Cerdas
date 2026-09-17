@@ -1,0 +1,25 @@
+sequenceDiagram
+    autonumber
+    actor Mhs as Mahasiswa (Mobile Flutter)
+    participant API as Backend API (Express.js)
+    participant KknSvc as KknService (getDashboardStats)
+    participant DplSvc as DplService (calculatePersonalPoints)
+    participant DB as Database (PointHistory Table)
+
+    Note over Mhs,DB: 1. Permintaan Dashboard KKN
+    Mhs->>API: GET /api/kkn/dashboard (Bearer Token)
+    API->>KknSvc: getDashboardStats(userId)
+
+    Note over KknSvc,DB: 2. Pengambilan Riwayat Poin di DB
+    KknSvc->>DplSvc: calculatePersonalPoints(userId)
+    DplSvc->>DB: prisma.pointHistory.findMany({ where: { userId } })
+    DB-->>DplSvc: Daftar PointHistory (Presensi, Waktu, Logbook, Proker, Penalti)
+
+    Note over DplSvc: 3. Kalkulasi Pemisahan Metrik:<br/>• personalPoints = (Kehadiran + Waktu + Logbook) - Penalti (e.g. 23 PTS)<br/>• prokerPoints = Kategori KKN_PROKER (e.g. 6 PTS)<br/>• contributionPoints = Total Balance (e.g. 29 PTS)
+    DplSvc-->>KknSvc: { personalPoints: 23, prokerPoints: 6, contributionPoints: 29, ... }
+
+    Note over KknSvc: 4. Injeksi Properti Terpisah ke Root & Object stats:<br/>{ personalPoints, prokerPoints, contributionPoints, ... }
+    KknSvc-->>API: Data Dashboard Terstruktur
+    API-->>Mhs: 200 OK (Payload JSON dengan detail terpisah)
+
+    Note over Mhs: 5. Render di Aplikasi Flutter:<br/>• Beranda (mahasiswa_view.dart) -> Menampilkan personalPoints (23 PTS)<br/>• Rincian (mahasiswa_poin_view.dart) -> Rincian 23 Personal + 6 Proker
