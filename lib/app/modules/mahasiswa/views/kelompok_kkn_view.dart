@@ -87,6 +87,12 @@ class KelompokKknView extends ConsumerWidget {
       return 0;
     });
 
+    // Kalkulasi manual penjumlahan seluruh poin member sesuai request (override dari backend)
+    final dynamicCumulativePoints = membersToDisplay.fold<int>(
+      0,
+      (sum, m) => sum + (m.individualPoints ?? 0),
+    );
+
     final isCurrentUserLeader =
         user != null &&
         membersToDisplay.any(
@@ -453,7 +459,7 @@ class KelompokKknView extends ConsumerWidget {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              '${kelompokData.cumulativeMemberPoints} PTS',
+                              '$dynamicCumulativePoints PTS',
                               style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.primaryBlue, letterSpacing: -0.5),
                             ),
                             const SizedBox(height: 4),

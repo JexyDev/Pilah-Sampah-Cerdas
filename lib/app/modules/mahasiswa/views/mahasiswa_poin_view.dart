@@ -25,7 +25,7 @@ class MahasiswaPoinView extends ConsumerWidget {
     final user = ref.watch(authProvider).user;
 
     final mhsState = ref.watch(mahasiswaControllerProvider);
-    final personalPoints = mhsState.dashboard?.personalPoints ?? 0;
+    final personalPoints = mhsState.dashboard?.contributionPoints ?? 0;
     final int groupScoreProker = mhsState.dashboard?.prokerPoints ?? 0;
     final int totalProkerPoints = groupScoreProker; // untuk label total
 
