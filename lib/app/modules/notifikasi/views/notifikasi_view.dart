@@ -135,35 +135,44 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
                   final isSel = _selectedFilter == filter;
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
-                    child: ChoiceChip(
-                      showCheckmark: false,
-                      visualDensity: VisualDensity.compact,
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      label: Text(
-                        filter,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
-                          color: isSel ? Colors.white : AppColors.textPrimary,
+                    child: GestureDetector(
+                      onTap: () => setState(() => _selectedFilter = filter),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 7,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isSel ? AppColors.primaryGreen : Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isSel
+                                ? AppColors.primaryGreen
+                                : AppColors.border,
+                          ),
+                          boxShadow: isSel
+                              ? [
+                                  BoxShadow(
+                                    color: AppColors.primaryGreen.withValues(
+                                      alpha: 0.25,
+                                    ),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ]
+                              : null,
+                        ),
+                        child: Text(
+                          filter,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: isSel
+                                ? Colors.white
+                                : AppColors.textSecondary,
+                          ),
                         ),
                       ),
-                      selected: isSel,
-                      selectedColor: AppColors.primaryGreen,
-                      backgroundColor: Colors.white,
-                      side: BorderSide(
-                        color: isSel ? AppColors.primaryGreen : AppColors.border,
-                        width: 1,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      onSelected: (val) {
-                        if (val) setState(() => _selectedFilter = filter);
-                      },
                     ),
                   );
                 }).toList(),

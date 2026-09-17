@@ -785,13 +785,13 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
                     _logStatusFilterIndex == 0,
                     () => setState(() => _logStatusFilterIndex = 0),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 8),
                   _buildFilterChip(
                     'Sesuai (${logs.where((l) => l.isCorrect).length})',
                     _logStatusFilterIndex == 1,
                     () => setState(() => _logStatusFilterIndex = 1),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 8),
                   _buildFilterChip(
                     'Tidak Sesuai (${logs.where((l) => !l.isCorrect).length})',
                     _logStatusFilterIndex == 2,
@@ -884,25 +884,31 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
   }
 
   Widget _buildFilterChip(String label, bool isSelected, VoidCallback onTap) {
-    return InkWell(
+    return GestureDetector(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primaryGreen
-              : AppColors.backgroundCanvas,
-          borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
+          color: isSelected ? AppColors.primaryGreen : Colors.white,
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected ? AppColors.primaryGreen : AppColors.border,
           ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.primaryGreen.withValues(alpha: 0.25),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
         child: Text(
           label,
           style: TextStyle(
-            fontSize: 11,
-            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
             color: isSelected ? Colors.white : AppColors.textSecondary,
           ),
         ),
