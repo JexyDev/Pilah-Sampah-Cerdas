@@ -124,18 +124,6 @@ export const rwService = {
         });
       }
 
-      // Bonus 10 poin ke Mahasiswa KKN jika ada PIC
-      if (bin.qrBatch?.assignedPicUserId) {
-        await tx.pointHistory.create({
-          data: {
-            userId: bin.qrBatch.assignedPicUserId,
-            points: 10,
-            description: `Membantu aktivasi bin ${bin.qrCode}`,
-            kategori: "PARTISIPASI_STREAK",
-          },
-        });
-      }
-
       if (bin.user?.phone) {
         await notificationService.sendWhatsApp(
           bin.user.phone,
@@ -154,8 +142,8 @@ export const rwService = {
           await notificationIntegrationService
             .sendPushNotification(
               pic.fcmToken,
-              "Poin Bertambah!",
-              `Registrasi ${bin.user.name} berhasil diaktivasi, kamu dapat +10 poin`
+              "Aktivasi Berhasil",
+              `Registrasi tempat sampah ${bin.user.name} telah disetujui oleh RW.`
             )
             .catch((e) => console.error("FCM Error in approveBin:", e));
         }

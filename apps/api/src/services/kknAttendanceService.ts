@@ -1800,26 +1800,8 @@ export class KknAttendanceService {
           },
         });
 
-        // Award points if not already awarded (+4 poin kehadiran)
-        if (!isAutoAlpa) {
-          const existingPoint = await tx.pointHistory.findFirst({
-            where: {
-              userId: studentId,
-              description: { contains: scheduleId },
-            },
-          });
-          if (!existingPoint) {
-            await tx.pointHistory.create({
-              data: {
-                userId: studentId,
-                points: 4,
-                description: `Poin kehadiran KKN (Check-In): ${actLoc?.title || scheduleId} (${method})`,
-                kategori: "KKN_PRESENSI_HADIR",
-                redeemable: false,
-              },
-            });
-          }
-        }
+        // Aturan Poin Baru: Poin kehadiran (Check-In) dinonaktifkan permanen.
+        // Kehadiran divalidasi murni berdasarkan waktu Check-In dan Check-Out.
 
         // Forward notification to DPL dashboard
         const dplUser = studentUser?.studentProfile?.kelompok?.dpl;
@@ -1857,18 +1839,6 @@ export class KknAttendanceService {
         },
       });
 
-      // Award +4 points to student on Check-In if NOT ALPA
-      if (!isAutoAlpa) {
-        await tx.pointHistory.create({
-          data: {
-            userId: studentId,
-            points: 4,
-            description: `Poin kehadiran (Check-In) KKN: ${actLoc?.title || scheduleId} (${method})`,
-            kategori: "KKN_PRESENSI_HADIR",
-            redeemable: false,
-          },
-        });
-      }
 
       // Forward notification to DPL dashboard
       const dplUser = studentUser?.studentProfile?.kelompok?.dpl;
@@ -2321,28 +2291,6 @@ export class KknAttendanceService {
       },
     });
 
-    // Award +3 points to student on Check-Out ONLY IF duration targets met (HADIR_MEMENUHI)
-    if (isMemenuhi) {
-      const existingCheckoutPoint = await prisma.pointHistory.findFirst({
-        where: {
-          userId: studentId,
-          kategori: "KKN_DURASI_MEMENUHI",
-          createdAt: { gte: startOfDay },
-        },
-      });
-
-      if (!existingCheckoutPoint) {
-        await prisma.pointHistory.create({
-          data: {
-            userId: studentId,
-            points: 3,
-            description: `Poin durasi harian terpenuhi (${durationMinutes} menit): ${updated.schedule?.title || updated.scheduleId}`,
-            kategori: "KKN_DURASI_MEMENUHI",
-            redeemable: false,
-          },
-        });
-      }
-    }
 
     // Broadcast checkout event via WebSocket
     websocketService.broadcastStudentCheckout({
@@ -4394,27 +4342,6 @@ export class KknAttendanceService {
       },
     });
 
-    // Award +4 points to student on Check-In (Mulai Kegiatan) if not already awarded today
-    const startOfDay = new Date(`${todayStr}T00:00:00+07:00`);
-    const existingCheckInPoint = await prisma.pointHistory.findFirst({
-      where: {
-        userId: studentUserId,
-        kategori: "KKN_PRESENSI_HADIR",
-        createdAt: { gte: startOfDay },
-      },
-    });
-
-    if (!existingCheckInPoint) {
-      await prisma.pointHistory.create({
-        data: {
-          userId: studentUserId,
-          points: 4,
-          description: `Poin kehadiran KKN (Check-In): ${schedule.title || scheduleId}`,
-          kategori: "KKN_PRESENSI_HADIR",
-          redeemable: false,
-        },
-      });
-    }
 
     // Record into system history / audit trail
     const isResumeSession = existingSession?.status === "TERJEDA";
