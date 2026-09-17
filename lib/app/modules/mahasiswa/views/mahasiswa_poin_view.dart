@@ -329,7 +329,7 @@ class MahasiswaPoinView extends ConsumerWidget {
           Text(
             '• Poin Personal: Didapat dari Presensi (+4), Durasi (+3), dan Logbook (+3). Akumulasi poin seluruh anggota menyumbang bobot 40% ke Nilai Kelompok.\n\n'
             '• Skor Proker Kelompok: Didapat dari progres tiap proker (Disetujui: +2, Berjalan: +4, Selesai: +6). Total skor proker menyumbang bobot 60% ke Nilai Kelompok.\n\n'
-            '• Formula KKN: (Skor Proker × 60%) + (Rata-rata Poin Personal × 40%). Nilai akhir ini akan dibagikan kembali ke semua anggota sebagai Poin Normalisasi.',
+            '• Formula Nilai Kelompok: (Skor Proker × 60%) + (Rata-rata Poin Personal × 40%).',
             style: TextStyle(
               fontSize: 11,
               color: AppColors.textPrimary,
