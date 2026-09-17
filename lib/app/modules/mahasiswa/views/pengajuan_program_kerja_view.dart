@@ -13,6 +13,9 @@ import '../../../data/services/notification_engine.dart';
 import '../controllers/mahasiswa_notifikasi_controller.dart';
 import '../controllers/riwayat_kkn_controller.dart';
 import 'data_proker_view.dart' show prokerDataListProvider;
+import '../controllers/mahasiswa_controller.dart' show mahasiswaControllerProvider;
+import '../controllers/kelompok_kkn_controller.dart' show kelompokKknProvider;
+import '../../riwayat/controllers/riwayat_controller.dart' show pointHistoryProvider;
 
 class PengajuanProgramKerjaView extends ConsumerStatefulWidget {
   final Map<String, dynamic>? initialData;
@@ -249,7 +252,10 @@ class _PengajuanProgramKerjaViewState
         ref.invalidate(prokerDataListProvider);
         ref.invalidate(mahasiswaNotificationsProvider);
         ref.invalidate(riwayatKknControllerProvider);
-
+        ref.invalidate(kelompokKknProvider);
+        ref.read(kelompokKknProvider.notifier).fetchKelompok();
+        ref.invalidate(pointHistoryProvider);
+        ref.read(mahasiswaControllerProvider.notifier).fetchDashboardData();
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('Berhasil diajukan!')));

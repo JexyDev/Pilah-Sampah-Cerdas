@@ -115,33 +115,7 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
       }
 
       // Filter atau Fallback: Pastikan data sesuai dengan target RW (baik single-RW maupun multi-RW)
-      if (data.isEmpty && (kelurahan.isNotEmpty || rw.isNotEmpty)) {
-        final allRaw = await repo.getWargaForAktivasi(
-          search: search.isEmpty ? null : search,
-        );
-        data = allRaw.where((e) {
-          final w = e is WargaDampingan
-              ? e
-              : WargaDampingan.fromJson(e as Map<String, dynamic>);
-          final wRw = cleanRw(w.rw);
-          final wKel = cleanKel(w.kelurahan);
-          final wAddr = w.address.toLowerCase();
-
-          final rwMatches =
-              targetRwSet.isEmpty ||
-              targetRwSet.contains(wRw) ||
-              targetRwSet.any(
-                (r) => wAddr.contains('rw $r') || wAddr.contains('rw 0$r'),
-              );
-          final kelMatches =
-              targetKelClean.isEmpty ||
-              wKel.contains(targetKelClean) ||
-              targetKelClean.contains(wKel) ||
-              wAddr.contains(targetKelClean);
-
-          return rwMatches && kelMatches;
-        }).toList();
-      } else if (isMultiRw && data.isNotEmpty) {
+      if (isMultiRw && data.isNotEmpty) {
         // Jika data dari backend kelurahan ada, saring hanya yang masuk di cakupan RW
         data = data.where((e) {
           final w = e is WargaDampingan

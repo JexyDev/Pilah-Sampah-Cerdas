@@ -56,9 +56,9 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
         // Ini terjadi pada akun bulk-insert yang tidak punya wilayah di profil
         final kelompok = ref.read(kelompokKknProvider).kelompok;
         if (kelurahan.isEmpty && kelompok != null) {
-          final loc = kelompok.poskoLocation;
-          if (loc.isNotEmpty && loc != '-') {
-            kelurahan = loc;
+          final kel = kelompok.kelurahan;
+          if (kel != null && kel.isNotEmpty && kel != '-') {
+            kelurahan = kel;
           }
         }
         if (rw.isEmpty && kelompok != null && kelompok.cakupanRw.isNotEmpty) {
@@ -206,8 +206,8 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
     String userKel = user?.kelurahan ?? '';
     String userRw = user?.rw ?? '';
     if (userKel.isEmpty) {
-      final loc = kelompokState.kelompok?.poskoLocation ?? '';
-      if (loc.isNotEmpty && loc != '-') userKel = loc;
+      final kel = kelompokState.kelompok?.kelurahan ?? '';
+      if (kel.isNotEmpty && kel != '-') userKel = kel;
     }
 
     final isAktivasiBinMode =

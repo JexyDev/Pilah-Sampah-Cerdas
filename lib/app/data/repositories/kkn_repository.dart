@@ -275,7 +275,7 @@ abstract class KknRepository {
   Future<bool> deleteLogbookPemanfaatan(String id);
 
   /// Input Logbook Harian (Umum) oleh Mahasiswa
-  Future<bool> submitLogbookHarian(
+  Future<Map<String, dynamic>> submitLogbookHarian(
     Map<String, dynamic> data, {
     String? imagePath,
     List<String>? imagePaths,

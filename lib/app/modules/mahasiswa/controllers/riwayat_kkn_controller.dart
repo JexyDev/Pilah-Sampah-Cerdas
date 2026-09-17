@@ -288,7 +288,42 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
         debugPrint('[RiwayatKknNotifier] getLogbookList error: $e');
       }
 
-      // Note: Program Kerja yang berpoin dipusatkan di Page Poin (MahasiswaPoinView), bukan di Page Riwayat.
+      // Ambil data Program Kerja dan masukkan ke Riwayat
+      try {
+        final prokerList = await kknRepo.getProgramKerja();
+        for (final p in prokerList) {
+          final statusUsulan = p['statusUsulan']?.toString() ?? p['status']?.toString() ?? 'BELUM_DISETUJUI';
+          
+          final judul = p['judul']?.toString() ?? 'Program Kerja';
+          final statusPelaksanaan = p['statusPelaksanaan']?.toString() ?? '';
+          final dateStr = p['tanggal']?.toString() ?? p['createdAt']?.toString() ?? '';
+          final timestamp = (DateTime.tryParse(dateStr) ?? DateTime.now()).toLocal();
+          
+          String sub = 'Proker Diajukan (Menunggu ACC)';
+          if (statusUsulan == 'DITOLAK' || statusUsulan == 'TIDAK_DISETUJUI') {
+            sub = 'Proker Perlu Revisi / Ditolak';
+          } else if (statusUsulan == 'DISETUJUI' || statusUsulan == 'DITERIMA' || statusUsulan == 'SELESAI') {
+            sub = 'Proker Disetujui (ACC)';
+            if (statusPelaksanaan == 'SEDANG_BERJALAN') sub = 'Proker Sedang Berjalan';
+            if (statusPelaksanaan == 'SELESAI') sub = 'Proker Selesai (Menunggu Klaim 60%)';
+          }
+
+          parsedLogs.add(
+            KknHistoryLog(
+              title: judul,
+              subtitle: sub,
+              timestamp: timestamp,
+              type: KknHistoryType.proker,
+              points: null,
+              isGpsActive: false,
+              scheduleId: 'proker_${p['id']}',
+              rawData: p,
+            ),
+          );
+        }
+      } catch (e) {
+        debugPrint('[RiwayatKknNotifier] getProgramKerja error: $e');
+      }
 
       // 6. Ambil data Laporan Pemanfaatan Sampah & Catat Hasil Panen (Aktivitas Non-Poin)
       try {
@@ -321,15 +356,14 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
               .toLocal();
           final id = item['id']?.toString() ?? '';
 
+          final parsedHasilNum = (hasil is num) ? hasil : (num.tryParse(hasil?.toString() ?? '0') ?? 0);
           final hasHarvest =
-              (hasil is num && hasil > 0) || (item['hasHarvested'] == true);
+              parsedHasilNum > 0 || (item['hasHarvested'] == true);
+
           if (hasHarvest) {
-            final hasilNum = (hasil is num)
-                ? hasil
-                : num.tryParse(hasil.toString()) ?? 0;
-            final hasilStr = hasilNum % 1 == 0
-                ? '${hasilNum.toInt()}'
-                : hasilNum.toStringAsFixed(1);
+            final hasilStr = parsedHasilNum % 1 == 0
+                ? '${parsedHasilNum.toInt()}'
+                : parsedHasilNum.toStringAsFixed(1);
             final subText = (nilaiEkonomi != null && (nilaiEkonomi as num) > 0)
                 ? 'Hasil panen: $hasilStr kg • Nilai: Rp ${NumberFormat('#,###').format(nilaiEkonomi)}'
                 : 'Hasil panen: $hasilStr kg';

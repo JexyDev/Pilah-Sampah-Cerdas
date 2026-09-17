@@ -32,7 +32,7 @@ class KelompokKknView extends ConsumerWidget {
           groupName: kel != '-' ? 'Kelompok KKN $kel RW $rw' : 'Kelompok KKN',
           poskoLocation: kel != '-' ? 'Posko KKN RW $rw, $kelDisplay' : '-',
           dosenPembimbing: '-',
-          totalGroupPoints: 0,
+          totalGroupPoints: 0.0,
           // Fallback hanya menampilkan user sendiri, tanpa menjadikannya Ketua
           // isLeader=false agar tidak misleading ketika data backend belum dimuat
           members: user != null
@@ -376,49 +376,104 @@ class KelompokKknView extends ConsumerWidget {
                 const SizedBox(height: 16),
 
                 // KARTU 1: Skor Terbobot KKN (Evaluasi Resmi DPL)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.border),
-                    boxShadow: [
-                      BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Skor Terbobot Kelompok (KKN)',
-                            style: TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryGreen.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.border),
+                          boxShadow: [
+                            BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Expanded(
+                                  child: Text(
+                                    'Skor Terbobot Kelompok',
+                                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Text('KKN', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primaryGreen)),
+                                ),
+                              ],
                             ),
-                            child: const Text('Akademik/DPL', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primaryGreen)),
-                          ),
-                        ],
+                            const SizedBox(height: 8),
+                            Text(
+                              '${kelompokData.totalGroupPoints.toStringAsFixed(1)} Poin',
+                              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.primaryGreen, letterSpacing: -0.5),
+                            ),
+                            const SizedBox(height: 4),
+                            const Text(
+                              'Formula: 60% Proker + 40% Rerata Anggota',
+                              style: TextStyle(fontSize: 9, color: Colors.black54, height: 1.3),
+                            ),
+                          ],
+                        ),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${kelompokData.totalGroupPoints} Poin',
-                        style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: AppColors.primaryGreen, letterSpacing: -0.5),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.border),
+                          boxShadow: [
+                            BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Expanded(
+                                  child: Text(
+                                    'Total Akumulasi Tim',
+                                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w600, height: 1.1),
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryBlue.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(Icons.groups_outlined, size: 14, color: AppColors.primaryBlue),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              '${kelompokData.cumulativeMemberPoints} PTS',
+                              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.primaryBlue, letterSpacing: -0.5),
+                            ),
+                            const SizedBox(height: 4),
+                            const Text(
+                              'Total gabungan seluruh poin individu anggota',
+                              style: TextStyle(fontSize: 9, color: Colors.black54, height: 1.3),
+                            ),
+                          ],
+                        ),
                       ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Formula: 60% Proker Selesai + 40% Rata-Rata Kumulatif Anggota',
-                        style: TextStyle(fontSize: 11, color: Colors.black54),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
                 
                 const SizedBox(height: 20),
@@ -597,7 +652,7 @@ class KelompokKknView extends ConsumerWidget {
                               ),
                             ),
                             const Text(
-                              'Individu',
+                              'Poin Total',
                               style: TextStyle(
                                 fontSize: 10,
                                 color: AppColors.textSecondary,

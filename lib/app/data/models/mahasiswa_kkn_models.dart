@@ -23,6 +23,8 @@ class KknDashboardData extends Equatable {
     required this.remainingQuota,
     required this.progressPercentage,
     required this.contributionPoints,
+    this.personalPoints,
+    this.prokerPoints,
   });
 
   final String nim;
@@ -32,6 +34,8 @@ class KknDashboardData extends Equatable {
   final int remainingQuota;
   final double progressPercentage;
   final int contributionPoints;
+  final int? personalPoints;
+  final int? prokerPoints;
 
   factory KknDashboardData.fromJson(Map<String, dynamic> json) {
     final student = json['studentKkn'] as Map<String, dynamic>? ?? {};
@@ -50,6 +54,12 @@ class KknDashboardData extends Equatable {
                 stats['totalPoints'] ??
                 0)
             as num?;
+
+    final personalPointVal =
+        (json['personalPoints'] ?? stats['personalPoints']) as num?;
+    
+    final prokerPointVal =
+        (json['prokerPoints'] ?? stats['prokerPoints']) as num?;
 
     final totalBins =
         (json['totalRegisteredBins'] ??
@@ -88,6 +98,8 @@ class KknDashboardData extends Equatable {
       remainingQuota: quota?.toInt() ?? 0,
       progressPercentage: progress?.toDouble() ?? 0.0,
       contributionPoints: pointVal?.toInt() ?? 0,
+      personalPoints: personalPointVal?.toInt(),
+      prokerPoints: prokerPointVal?.toInt(),
     );
   }
 
@@ -934,10 +946,14 @@ class KelompokKknData extends Equatable {
     this.dplNip = '-',
     this.dplPhone = '-',
     required this.poskoLocation,
+    this.kelurahan,
     required this.totalGroupPoints,
     required this.members,
     this.linkGoogleDrive,
     this.cakupanRw = const [],
+    this.cumulativeMemberPoints = 0,
+    this.rataRataPoinAnggota = 0.0,
+    this.poinProker = 0.0,
   });
 
   final String groupId;
@@ -946,15 +962,22 @@ class KelompokKknData extends Equatable {
   final String dplNip;
   final String dplPhone;
   final String poskoLocation;
-  final int totalGroupPoints;
+  final String? kelurahan;
+  final double totalGroupPoints;
   final List<KelompokMemberData> members;
   final List<String> cakupanRw;
 
   /// Link Google Drive folder kelompok, null jika belum diset Admin.
   final String? linkGoogleDrive;
 
-  /// Total Penjumlahan Poin Individu Seluruh Anggota
-  int get cumulativeMemberPoints => members.fold(0, (sum, m) => sum + m.individualPoints);
+  /// Total Penjumlahan Poin Individu Seluruh Anggota (Murni tanpa Proker)
+  final int cumulativeMemberPoints;
+
+  /// Nilai murni rata-rata poin anggota (di-pass dari backend)
+  final double rataRataPoinAnggota;
+
+  /// Nilai poin proker murni (di-pass dari backend)
+  final double poinProker;
 
   factory KelompokKknData.fromJson(Map<String, dynamic> json) {
     final membersList =
@@ -1079,13 +1102,18 @@ class KelompokKknData extends Equatable {
           json['lokasiPosko']?.toString() ??
           json['kelurahan']?.toString() ??
           '-',
+      kelurahan: json['kelurahan']?.toString(),
       totalGroupPoints:
-          (json['totalGroupPoints'] as num?)?.toInt() ??
-          (json['totalPoints'] as num?)?.toInt() ??
-          0,
+          (json['totalGroupPoints'] as num?)?.toDouble() ??
+          (json['totalPoints'] as num?)?.toDouble() ??
+          0.0,
       members: membersList,
       linkGoogleDrive: driveUrl,
       cakupanRw: parsedCakupan,
+      cumulativeMemberPoints: (json['totalCumulativeMemberPoints'] as num?)?.toInt() ?? 
+                              membersList.fold(0, (sum, m) => sum + m.individualPoints),
+      rataRataPoinAnggota: (json['rataRataPoinAnggota'] as num?)?.toDouble() ?? 0.0,
+      poinProker: (json['poinProker'] as num?)?.toDouble() ?? 0.0,
     );
   }
 
@@ -1098,8 +1126,12 @@ class KelompokKknData extends Equatable {
     dosenPembimbing,
     dplNip,
     dplPhone,
+    kelurahan,
     linkGoogleDrive,
     cakupanRw,
+    cumulativeMemberPoints,
+    rataRataPoinAnggota,
+    poinProker,
   ];
 }
 

@@ -303,7 +303,10 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
         }
 
         final isPoin = type.contains('POIN') || titleUpper.contains('POIN');
-        final payloadRoute = isPoin ? 'ROUTE_POIN' : 'ROUTE_NOTIF';
+        final isHistory = type.contains('LEAVE_') || type.contains('PROKER_') || type.contains('KEGIATAN_');
+        final payloadRoute = isPoin 
+            ? 'ROUTE_POIN' 
+            : (isHistory ? 'ROUTE_HISTORY' : 'ROUTE_NOTIF');
 
         // Tampilkan notifikasi sistem di luar aplikasi (system notification tray)
         NotificationEngine().showGenericNotification(

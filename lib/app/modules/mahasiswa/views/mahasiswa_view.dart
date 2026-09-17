@@ -1422,7 +1422,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
     final logbookCount = logbookAsync.value?.length ?? 0;
 
     // 7. Total Poin Personal
-    final personalPoints = mhsState.dashboard?.contributionPoints ?? 0;
+    final personalPoints = mhsState.dashboard?.personalPoints ?? mhsState.dashboard?.contributionPoints ?? 0;
 
     return Container(
       padding: const EdgeInsets.all(16),

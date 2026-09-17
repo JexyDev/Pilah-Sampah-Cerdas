@@ -1725,24 +1725,24 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
           await FirebaseNotificationService().saveNotification(
             userId: user.id,
             role: user.role.name,
-            title: 'Absensi KKN Berhasil 📍',
+            title: 'Selesai Kegiatan KKN Berhasil 📍',
             desc:
-                'Presensi Geofence KKN di $kelurahan ($rw) berhasil tercatat (+4 PTS).',
+                'Presensi Selesai Kegiatan di $kelurahan ($rw) berhasil tercatat (+3 PTS).',
             type: 'PRESENSI_KKN_SUKSES',
           );
           LocalNotificationCacheService().addNotification(
             userId: user.id,
             role: user.role.name,
-            title: 'Absensi KKN Berhasil ✅',
+            title: 'Selesai Kegiatan KKN Berhasil ✅',
             desc:
-                'Presensi Geofence KKN di $kelurahan ($rw) berhasil tercatat (+4 PTS).',
+                'Presensi Selesai Kegiatan di $kelurahan ($rw) berhasil tercatat (+3 PTS).',
             type: 'PRESENSI_KKN_SUKSES',
           );
           NotificationEngine().showGenericNotification(
             id: DateTime.now().millisecondsSinceEpoch.remainder(10000),
-            title: 'Absensi KKN Berhasil ✅',
+            title: 'Selesai Kegiatan KKN Berhasil ✅',
             body:
-                'Presensi Geofence KKN di $kelurahan ($rw) berhasil tercatat (+4 PTS).',
+                'Presensi Selesai Kegiatan di $kelurahan ($rw) berhasil tercatat (+3 PTS).',
           );
         }
         ref.invalidate(mahasiswaNotificationsProvider);

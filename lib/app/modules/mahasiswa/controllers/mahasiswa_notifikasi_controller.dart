@@ -5,7 +5,7 @@ import '../../auth/controllers/auth_controller.dart';
 
 import '../../../data/services/firebase_notification_service.dart';
 import '../../../data/services/local_notification_cache_service.dart';
-import '../../../data/services/notification_engine.dart';
+
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/utils/input_sanitizer.dart';
 
@@ -376,6 +376,12 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
   for (final notif in list) {
     if (!_isMahasiswaNotification(notif)) continue;
 
+    // Filter notifikasi dinamis "palsu" dari backend lama agar tidak redundan 
+    // karena notifikasi yang asli (Push Notification) sudah tersimpan di database
+    if (notif.id.startsWith('leave-mhs-') || notif.id.startsWith('proker-')) {
+      continue;
+    }
+
     // Bersihkan metadata sistem seperti [ReportID:xxxx] dari judul dan deskripsi
     final sanitizedTitle = InputSanitizer.cleanSystemMessage(notif.title);
     final sanitizedDesc = InputSanitizer.cleanSystemMessage(notif.desc);
@@ -414,17 +420,6 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
     final notifKey = 'mhs_${userId}_${finalNotif.id}';
     if (!notif.isRead && !_mhsShownNotifIds.contains(notifKey)) {
       _mhsShownNotifIds.add(notifKey);
-      if (finalNotif.type.startsWith('PROKER_') ||
-          finalNotif.type == 'IZIN' ||
-          finalNotif.type == 'PEMANFAATAN_SAMPAH' ||
-          finalNotif.type == 'PANEN_HASIL') {
-        NotificationEngine().showGenericNotification(
-          id: finalNotif.id.hashCode.remainder(100000),
-          title: finalNotif.title,
-          body: finalNotif.desc,
-          payload: 'ROUTE_HISTORY',
-        );
-      }
     }
   }
 

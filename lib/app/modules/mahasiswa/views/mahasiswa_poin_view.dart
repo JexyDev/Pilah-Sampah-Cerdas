@@ -24,25 +24,10 @@ class MahasiswaPoinView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authProvider).user;
 
-    final historyAsync = ref.watch(pointHistoryProvider);
-    
-    int totalProkerPoints = 0;
-    int calculatedPersonalPoints = 0;
-    
-    // 1. Dapatkan poin Proker murni & hitung poin personal (Checkin, Checkout, Logbook, Penalty)
-    historyAsync.whenData((history) {
-      for (final log in history) {
-        final kat = (log.kategori ?? '').toUpperCase();
-        if (kat == 'KKN_PROKER') {
-          totalProkerPoints += log.points;
-        } else if (kat != 'REDUKSI_TONASE' && log.points > 0) {
-          calculatedPersonalPoints += log.points;
-        }
-      }
-    });
-
-    final personalPoints = calculatedPersonalPoints;
-    final int groupScoreProker = totalProkerPoints;
+    final mhsState = ref.watch(mahasiswaControllerProvider);
+    final personalPoints = mhsState.dashboard?.personalPoints ?? 0;
+    final int groupScoreProker = mhsState.dashboard?.prokerPoints ?? 0;
+    final int totalProkerPoints = groupScoreProker; // untuk label total
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -342,8 +327,8 @@ class MahasiswaPoinView extends ConsumerWidget {
           ),
           SizedBox(height: 6),
           Text(
-            '• Poin Personal (Keringat Harian): Check-In (+4 PTS), Durasi (+3 PTS), Logbook (+3 PTS). Seluruh poin personal akan ditarik nilai Rata-Rata Kumulatifnya untuk menyumbang bobot 40% ke Nilai Akhir Kelompok.\n'
-            '• Skor Proker Kelompok (Gamifikasi): Proker Diajukan (+2 PTS), Berjalan (+2 PTS), Selesai (+2 PTS). Namun, poin bobot Akademik (60%) HANYA cair ke Nilai Akhir jika Proker sudah 100% SELESAI.',
+            '• Poin Personal (100% Milik Anda): Didapat dari Presensi (+4), Durasi (+3), dan Logbook (+3). Poin ini murni milik Anda dan tidak akan hilang/hangus, melainkan dikumpulkan untuk menyumbang bobot Rata-Rata Kumulatif (40%) ke Poin kelompok.\n\n'
+            '• Skor Proker Kelompok (60%): Didapat dari progres kelompok (Diajukan +2, Berjalan +2, Selesai +2). Poin langsung diakumulasikan (cair bertahap) dengan 40% Rata-Rata Kumulatif Anggota tanpa harus menunggu proker 100% selesai.',
             style: TextStyle(
               fontSize: 11,
               color: AppColors.textPrimary,

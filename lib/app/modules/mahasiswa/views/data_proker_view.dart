@@ -6,6 +6,7 @@ import '../../../routes/app_routes.dart';
 import 'riwayat_pemanfaatan_view.dart' show riwayatPemanfaatanProvider;
 import '../../riwayat/controllers/riwayat_controller.dart' show pointHistoryProvider;
 import '../controllers/mahasiswa_controller.dart' show mahasiswaControllerProvider;
+import '../controllers/kelompok_kkn_controller.dart' show kelompokKknProvider;
 
 final prokerDataListProvider =
     FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
@@ -199,6 +200,8 @@ class _DataProkerViewState extends ConsumerState<DataProkerView> {
         );
         ref.invalidate(prokerDataListProvider);
         ref.invalidate(pointHistoryProvider);
+        ref.invalidate(kelompokKknProvider);
+        ref.read(kelompokKknProvider.notifier).fetchKelompok();
         ref.read(mahasiswaControllerProvider.notifier).fetchDashboardData();
       } else {
         messenger.showSnackBar(

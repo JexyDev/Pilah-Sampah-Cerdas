@@ -1306,7 +1306,7 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<bool> submitLogbookHarian(
+  Future<Map<String, dynamic>> submitLogbookHarian(
     Map<String, dynamic> data, {
     String? imagePath,
     List<String>? imagePaths,
@@ -1348,7 +1348,10 @@ class ApiKknRepository implements KknRepository {
         ApiEndpoints.logbookMahasiswa,
         data: requestData,
       );
-      return response.statusCode == 200 || response.statusCode == 201;
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return response.data as Map<String, dynamic>;
+      }
+      return {'success': false, 'message': 'Unknown error'};
     } catch (e) {
       if (e is DioException) {
         final rawData = e.response?.data?.toString() ?? 'null';
