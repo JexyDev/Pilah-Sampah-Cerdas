@@ -6165,15 +6165,13 @@ export class KknService {
         },
       });
 
-      // 5. Beri Poin Gamifikasi
-      const points = 5;
-      const pointDesc = `Mengklaim pembimbingan warga mandiri: ${warga.name}`;
-      await tx.pointHistory.create({
+      // 5. Buat Notifikasi Konfirmasi Klaim (Tanpa Poin Gamifikasi)
+      const notifMessage = `Mengklaim pembimbingan warga mandiri: ${warga.name}`;
+      await tx.notification.create({
         data: {
           userId: kknUserId,
-          points,
-          description: pointDesc,
-          kategori: "PARTISIPASI_STREAK",
+          title: "Klaim Warga Dampingan Berhasil",
+          message: notifMessage,
         },
       });
 
@@ -6184,9 +6182,9 @@ export class KknService {
           ({ registeredByStudentId: _registeredByStudentId, ...rest }) => rest
         ),
         gamification: {
-          pointsEarned: points,
+          pointsEarned: 0,
           category: "PARTISIPASI_STREAK",
-          description: pointDesc,
+          description: notifMessage,
         },
         claimedAt: new Date().toISOString(),
       };
