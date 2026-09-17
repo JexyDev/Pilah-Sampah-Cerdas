@@ -2899,10 +2899,10 @@ export class KknService {
       const p = pointsMap.get(s.userId) || 0;
       return {
         userId: s.userId,
-        nim: s.nim || "1301210000",
+        nim: s.nim || "-",
         name: s.user?.name || "Mahasiswa KKN",
-        jurusan: s.jurusan || "Teknik Informatika",
-        fakultas: s.fakultas || "Informatika",
+        jurusan: s.jurusan || "-",
+        fakultas: s.fakultas || "-",
         individualPoints: p,
         isLeader: Boolean(s.isKetua),
       };
@@ -2911,36 +2911,70 @@ export class KknService {
     const groupPointsData = await calculateGroupPoints(group.id, undefined, memberUserIds);
     const totalGroupPoints = groupPointsData.totalGroupPoints;
 
-    const registeredPosko = await prisma.facility.findFirst({
-      where: {
-        kelompokId: group.id,
-        jenis: "posko_kkn",
-      },
-      include: { rw: true },
-      orderBy: { createdAt: "desc" },
+    // Prioritas 1: Ambil posko terdaftar dari tabel resmi posko_kkn
+    const primaryPosko = await prisma.poskoKkn.findUnique({
+      where: { kelompokId: group.id },
     });
 
+    // Prioritas 2: Fallback ke tabel facility jika posko didaftarkan sebagai fasilitas
+    const registeredFacility = !primaryPosko
+      ? await prisma.facility.findFirst({
+          where: {
+            kelompokId: group.id,
+            jenis: "posko_kkn",
+          },
+          include: { rw: true },
+          orderBy: { createdAt: "desc" },
+        })
+      : null;
+
     const isUserLeader = Boolean(student.isKetua);
-    const poskoLat = registeredPosko?.latitude
-      ? Number(registeredPosko.latitude)
-      : student.assignedRw?.latitude
-        ? Number(student.assignedRw.latitude)
-        : null;
-    const poskoLng = registeredPosko?.longitude
-      ? Number(registeredPosko.longitude)
-      : student.assignedRw?.longitude
-        ? Number(student.assignedRw.longitude)
-        : null;
-    const poskoLocationName =
-      registeredPosko?.nama ||
-      (student.assignedRw?.name
+
+    let poskoLat: number | null = null;
+    let poskoLng: number | null = null;
+    let poskoLocationName: string = "-";
+    let poskoAlamat: string = "-";
+    let poskoFoto: string | null = null;
+    let poskoStatus: string = "UNREGISTERED";
+    let radiusMeter: number = 500;
+    let poskoFacilityId: string | null = null;
+
+    if (primaryPosko) {
+      poskoLat = Number(primaryPosko.latitude);
+      poskoLng = Number(primaryPosko.longitude);
+      poskoLocationName = primaryPosko.nama || `Posko KKN ${group.name}`;
+      poskoAlamat = primaryPosko.alamat || "-";
+      poskoFoto = primaryPosko.fotoUrl || null;
+      poskoStatus = "REGISTERED";
+      radiusMeter = Number(primaryPosko.radius) || 500;
+      poskoFacilityId = primaryPosko.id;
+    } else if (registeredFacility) {
+      poskoLat = registeredFacility.latitude ? Number(registeredFacility.latitude) : null;
+      poskoLng = registeredFacility.longitude ? Number(registeredFacility.longitude) : null;
+      poskoLocationName = registeredFacility.nama;
+      poskoAlamat = registeredFacility.alamat || "-";
+      poskoFoto = registeredFacility.foto || null;
+      poskoStatus = registeredFacility.statusApproval || "REGISTERED";
+      radiusMeter = 500;
+      poskoFacilityId = registeredFacility.id;
+    } else {
+      poskoLat = student.assignedRw?.latitude ? Number(student.assignedRw.latitude) : null;
+      poskoLng = student.assignedRw?.longitude ? Number(student.assignedRw.longitude) : null;
+      poskoLocationName = student.assignedRw?.name
         ? `RW ${student.assignedRw.name}`
-        : `Kel. ${group.kelurahan || "Coblong"}`);
-    const poskoStatus = registeredPosko?.statusApproval || "UNREGISTERED";
+        : group.kelurahan
+          ? `Kel. ${group.kelurahan}`
+          : "-";
+      poskoAlamat = student.assignedRw?.name || "-";
+      poskoStatus = "UNREGISTERED";
+      radiusMeter = 500;
+    }
 
     return {
       groupId: group.id,
       groupName: group.name,
+      kelurahan: group.kelurahan || null,
+      cakupanRw: group.cakupanRw || null,
       dosenPembimbing: group.dpl?.name || group.dplNamaMentah || "Dosen Pembimbing Lapangan",
       dplName: group.dpl?.name || group.dplNamaMentah || "Dosen Pembimbing Lapangan",
       dplNip: group.dpl?.nip || "-",
@@ -2956,16 +2990,16 @@ export class KknService {
           }
         : null,
       poskoLocation: poskoLocationName,
-      poskoAlamat: registeredPosko?.alamat || student.assignedRw?.name || "-",
-      poskoFoto: registeredPosko?.foto || null,
+      poskoAlamat,
+      poskoFoto,
       poskoStatus,
-      poskoFacilityId: registeredPosko?.id || null,
+      poskoFacilityId,
       isUserLeader,
       latitude: poskoLat,
       longitude: poskoLng,
       poskoLatitude: poskoLat,
       poskoLongitude: poskoLng,
-      radiusMeter: 500,
+      radiusMeter,
       totalGroupPoints,
       members,
       linkGoogleDrive: group.linkGoogleDrive || null,

@@ -396,7 +396,7 @@ export const KurasiLandingPage: React.FC = () => {
     image: "/image/kkn-hero-sorting.webp",
     badge: "Gerakan Kolaboratif",
     title: "",
-    location: "Kecamatan Bojongsoang, Kab. Bandung",
+    location: "Kecamatan Coblong, Kota Bandung",
     metric: "100+ KK Terbina",
     highlight: "100% Berbasis QR Code",
     isPublished: true,
@@ -410,7 +410,7 @@ export const KurasiLandingPage: React.FC = () => {
     categoryColor: "bg-emerald-100 text-emerald-800 border-emerald-200",
     initiator: "",
     initiatorBadge: "Terverifikasi KKN",
-    location: "Kecamatan Bojongsoang",
+    location: "Kecamatan Coblong",
     imageUrl: "/image/activity-2.webp",
     currentAmount: 0,
     targetAmount: 500,
@@ -428,7 +428,7 @@ export const KurasiLandingPage: React.FC = () => {
     category: "Inovasi & KKN",
     date: new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }),
     readTime: "3 min baca",
-    location: "Kecamatan Bojongsoang",
+    location: "Kecamatan Coblong",
     imageUrl: "/image/activity-1.webp",
     summary: "",
     content: "",
@@ -794,7 +794,7 @@ export const KurasiLandingPage: React.FC = () => {
           category: item.prokerKategori || "Logbook KKN",
           date: dateStr,
           readTime: "3 min baca",
-          location: item.kelurahan ? `Kel. ${item.kelurahan}, Bojongsoang` : (item.tempat || "Kecamatan Bojongsoang"),
+          location: item.kelurahan ? `Kel. ${item.kelurahan}, Coblong` : (item.tempat || "Kecamatan Coblong"),
           imageUrl: getSafeImageUrl(item.fotoBuktiUrl, "/image/activity-1.webp"),
           summary: summaryText,
           content: `${item.deskripsi || ""}\n\nLokasi: ${item.tempat || "-"}\nKelompok: ${kelompokNama || "-"}\nPenulis: ${item.penulisNama || "-"}`,
@@ -821,7 +821,7 @@ export const KurasiLandingPage: React.FC = () => {
           category: item.kategori ? `Proker ${item.kategori}` : "Inisiatif KKN",
           date: dateStr,
           readTime: "3 min baca",
-          location: item.kelurahan ? `Kel. ${item.kelurahan}, Bojongsoang` : "Kecamatan Bojongsoang",
+          location: item.kelurahan ? `Kel. ${item.kelurahan}, Coblong` : "Kecamatan Coblong",
           imageUrl: getSafeImageUrl(item.fotoBuktiUrl, "/image/activity-2.webp"),
           summary: (item.deskripsi || "").slice(0, 140) + ((item.deskripsi || "").length > 140 ? "..." : ""),
           content: `${item.deskripsi || ""}\n\nKategori Program: ${item.kategori || "-"}\nKelompok: ${kelompokNama || "-"}\nWilayah: Kel. ${item.kelurahan || "Coblong"}`,
@@ -1130,7 +1130,7 @@ export const KurasiLandingPage: React.FC = () => {
       image: "/image/kkn-hero-sorting.webp",
       badge: "Gerakan Kolaboratif",
       title: "",
-      location: "Kecamatan Bojongsoang, Kab. Bandung",
+      location: "Kecamatan Coblong, Kota Bandung",
       metric: "100+ KK Terbina",
       highlight: "100% Berbasis QR Code",
       isPublished: true,
@@ -1222,7 +1222,7 @@ export const KurasiLandingPage: React.FC = () => {
       category: "Inovasi & KKN",
       date: new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }),
       readTime: "3 min baca",
-      location: "Kecamatan Bojongsoang",
+      location: "Kecamatan Coblong",
       imageUrl: "/image/activity-1.webp",
       summary: "",
       content: "",
@@ -2134,7 +2134,7 @@ export const KurasiLandingPage: React.FC = () => {
                     type="text"
                     value={slideForm.location}
                     onChange={(e) => setSlideForm({ ...slideForm, location: e.target.value })}
-                    placeholder="Contoh: Kec. Bojongsoang"
+                    placeholder="Contoh: Kec. Coblong"
                     className="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold focus:outline-none"
                   />
                 </div>
