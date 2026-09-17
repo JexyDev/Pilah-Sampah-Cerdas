@@ -990,6 +990,9 @@ export async function calculateGroupPoints(
   poinProker: number;
   rataRataPoinAnggota: number;
   totalCumulativeMemberPoints?: number;
+  totalCumulativeMemberPointsWithNormalization?: number;
+  totalNormalizationBonus?: number;
+  averageNormalizationBonus?: number;
   prokerApprovedCount: number;
   prokerSedangBerjalanCount: number;
   prokerSelesaiCount: number;
@@ -1065,6 +1068,10 @@ export async function calculateGroupPoints(
 
     let rataRataPoinAnggota = 0;
     let totalCumulativeMemberPoints = 0;
+    let totalNormalizationBonus = 0;
+    let averageNormalizationBonus = 0;
+    let totalCumulativeMemberPointsWithNormalization = 0;
+
     if (studentUserIds.length > 0) {
       // Ambil seluruh riwayat poin 3 komponen personal harian resmi (Kehadiran: 4, Waktu: 3, Logbook: 3)
       // PROTEKSI DOUBLE-COUNTING: DILARANG KERAS memasukkan poin Gamifikasi Proker (Kategori KKN_PROKER).
@@ -1078,12 +1085,12 @@ export async function calculateGroupPoints(
         select: { userId: true, points: true, createdAt: true },
       });
 
-      // Fallback toleran jika basis data pengujian/riil belum terlabeli kategori presensi (tetap proteksi anti-KKN_PROKER)
+      // Fallback toleran jika basis data pengujian/riil belum terlabeli kategori presensi (tetap proteksi anti-KKN_PROKER & anti-POIN_KKN_FINAL)
       if (personalPoints.length === 0) {
         personalPoints = await prisma.pointHistory.findMany({
           where: {
             userId: { in: studentUserIds },
-            kategori: { notIn: ["KKN_PROKER", "BONUS_LOGIN_PERTAMA", "REDUKSI_TONASE"] },
+            kategori: { notIn: ["KKN_PROKER", "BONUS_LOGIN_PERTAMA", "REDUKSI_TONASE", "POIN_KKN_FINAL"] },
             description: { not: { contains: "[ProkerID:" } },
           },
           select: { userId: true, points: true, createdAt: true },
@@ -1095,6 +1102,36 @@ export async function calculateGroupPoints(
         (acc, curr) => acc + Number(curr.points || 0),
         0
       );
+
+      // Ambil poin normalisasi (POIN_KKN_FINAL) secara terpisah HANYA untuk field tampilan komposit
+      // PROTEKSI REKURSI: Poin ini TIDAK BOLEH dicampur ke totalCumulativeMemberPoints maupun rataRataPoinAnggota
+      let normalizationPoints: any[] = [];
+      try {
+        normalizationPoints = await prisma.pointHistory.findMany({
+          where: {
+            userId: { in: studentUserIds },
+            kategori: "POIN_KKN_FINAL",
+          },
+          select: { userId: true, points: true, kategori: true },
+        });
+      } catch (normErr) {
+        console.warn("[calculateGroupPoints] Gagal mengambil POIN_KKN_FINAL:", normErr);
+      }
+
+      const validNormalizationPoints = normalizationPoints.filter(
+        (p: any) => p.kategori === "POIN_KKN_FINAL"
+      );
+
+      totalNormalizationBonus = validNormalizationPoints.reduce(
+        (acc: number, curr: any) => acc + Number(curr.points || 0),
+        0
+      );
+      averageNormalizationBonus =
+        studentUserIds.length > 0
+          ? Math.round((totalNormalizationBonus / studentUserIds.length) * 10) / 10
+          : 0;
+      totalCumulativeMemberPointsWithNormalization =
+        totalCumulativeMemberPoints + totalNormalizationBonus;
 
       // Rata-Rata KUMULATIF Anggota (Total Poin Seluruh Anggota / Jumlah Anggota)
       // Sesuai Master Blueprint V2: Tidak dibagi dengan totalActiveDays agar poin kumulatif terus bertumbuh
@@ -1113,6 +1150,9 @@ export async function calculateGroupPoints(
       poinProker,
       rataRataPoinAnggota,
       totalCumulativeMemberPoints,
+      totalCumulativeMemberPointsWithNormalization,
+      totalNormalizationBonus,
+      averageNormalizationBonus,
       prokerApprovedCount,
       prokerSedangBerjalanCount,
       prokerSelesaiCount,
@@ -1124,6 +1164,9 @@ export async function calculateGroupPoints(
       poinProker: 0,
       rataRataPoinAnggota: 0,
       totalCumulativeMemberPoints: 0,
+      totalCumulativeMemberPointsWithNormalization: 0,
+      totalNormalizationBonus: 0,
+      averageNormalizationBonus: 0,
       prokerApprovedCount: 0,
       prokerSedangBerjalanCount: 0,
       prokerSelesaiCount: 0,

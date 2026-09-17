@@ -286,6 +286,17 @@ export class KknService {
         poinProker: groupPointsData?.poinProker ?? 0,
         rataRataPoinAnggota: groupPointsData?.rataRataPoinAnggota ?? 0,
         totalCumulativeMemberPoints: groupPointsData?.totalCumulativeMemberPoints ?? 0,
+        totalCumulativeMemberPointsWithNormalization:
+          groupPointsData?.totalCumulativeMemberPointsWithNormalization ??
+          groupPointsData?.totalCumulativeMemberPoints ??
+          0,
+        totalNormalizationBonus: groupPointsData?.totalNormalizationBonus ?? 0,
+        averageNormalizationBonus: groupPointsData?.averageNormalizationBonus ?? 0,
+        totalTeamPointsWithNormalization:
+          groupPointsData?.totalCumulativeMemberPointsWithNormalization ??
+          groupPointsData?.totalCumulativeMemberPoints ??
+          0,
+        poinNormalisasiTim: groupPointsData?.totalNormalizationBonus ?? 0,
         groupScoreBreakdown: groupPointsData,
         maxLimit,
       },
@@ -301,6 +312,17 @@ export class KknService {
       poinProker: groupPointsData?.poinProker ?? 0,
       rataRataPoinAnggota: groupPointsData?.rataRataPoinAnggota ?? 0,
       totalCumulativeMemberPoints: groupPointsData?.totalCumulativeMemberPoints ?? 0,
+      totalCumulativeMemberPointsWithNormalization:
+        groupPointsData?.totalCumulativeMemberPointsWithNormalization ??
+        groupPointsData?.totalCumulativeMemberPoints ??
+        0,
+      totalNormalizationBonus: groupPointsData?.totalNormalizationBonus ?? 0,
+      averageNormalizationBonus: groupPointsData?.averageNormalizationBonus ?? 0,
+      totalTeamPointsWithNormalization:
+        groupPointsData?.totalCumulativeMemberPointsWithNormalization ??
+        groupPointsData?.totalCumulativeMemberPoints ??
+        0,
+      poinNormalisasiTim: groupPointsData?.totalNormalizationBonus ?? 0,
       nim: student?.nim || (isSuperOrAdmin ? "ADMIN" : "10123000"),
       jurusan: student?.jurusan || (isSuperOrAdmin ? "Monitoring Wilayah" : "Teknik Informatika"),
       programStudi:
@@ -3157,6 +3179,17 @@ export class KknService {
       poinProker: groupPointsData.poinProker,
       rataRataPoinAnggota: groupPointsData.rataRataPoinAnggota,
       totalCumulativeMemberPoints: groupPointsData.totalCumulativeMemberPoints,
+      totalCumulativeMemberPointsWithNormalization:
+        groupPointsData.totalCumulativeMemberPointsWithNormalization ??
+        groupPointsData.totalCumulativeMemberPoints ??
+        0,
+      totalNormalizationBonus: groupPointsData.totalNormalizationBonus ?? 0,
+      averageNormalizationBonus: groupPointsData.averageNormalizationBonus ?? 0,
+      totalTeamPointsWithNormalization:
+        groupPointsData.totalCumulativeMemberPointsWithNormalization ??
+        groupPointsData.totalCumulativeMemberPoints ??
+        0,
+      poinNormalisasiTim: groupPointsData.totalNormalizationBonus ?? 0,
       prokerApprovedCount: groupPointsData.prokerApprovedCount,
       prokerSedangBerjalanCount: groupPointsData.prokerSedangBerjalanCount,
       prokerSelesaiCount: groupPointsData.prokerSelesaiCount,
