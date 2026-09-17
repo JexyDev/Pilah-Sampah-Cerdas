@@ -4,6 +4,7 @@
  * Safety: Protected by vpsSafetyGuard, supports --dry-run (default) and --commit.
  */
 
+import 'dotenv/config';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
