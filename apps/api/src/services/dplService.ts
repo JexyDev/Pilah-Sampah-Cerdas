@@ -4066,73 +4066,59 @@ export const dplService = {
 
         const pRecord = st.user?.penilaianKkn;
 
-        // DPL Individu Score (Murni dari input DPL, tanpa skor fiktif)
+        // DPL Score (Murni dari evaluasi akademik DPL)
         const dplIndivRaw = pRecord?.subtotalDpl
           ? Number(pRecord.subtotalDpl)
           : st.isAssessed
             ? Number(st.assessmentScore ?? 0)
             : null;
-        const dplIndiv = dplIndivRaw !== null ? dplIndivRaw : null;
+        const dplScore = dplIndivRaw !== null ? dplIndivRaw : null;
 
-        // MPL Individu Score (Murni dari input MPL, tanpa skor fiktif)
+        // MPL Score (Murni dari evaluasi lapangan MPL)
         const mplIndivRaw = pRecord?.subtotalMitra ? Number(pRecord.subtotalMitra) : null;
-        const mplIndiv = mplIndivRaw !== null && mplIndivRaw > 0 ? mplIndivRaw : null;
+        const mplScore = mplIndivRaw !== null && mplIndivRaw > 0 ? mplIndivRaw : null;
 
-        // Gabungan Individu: ((50 * DPL) + (50 * MPL)) / 100
-        const indivGabungan =
-          mplIndiv !== null && dplIndiv !== null
-            ? Math.round(((50 * dplIndiv + 50 * mplIndiv) / 100) * 10) / 10
-            : null;
-
-        // Proker DPL & MPL Scores
-        const dplProker =
-          prokerAvgScore > 0
-            ? Math.round(prokerAvgScore * 10) / 10
-            : dplIndiv !== null
-              ? dplIndiv
+        // Laporan Akhir Score (dari penelaahan laporan kelompok KKN)
+        const laporanAkhirProker = grp.programKerja.find(
+          (p: any) =>
+            p.kategori?.toUpperCase() === "LAPORAN_AKHIR" ||
+            p.deskripsi?.toLowerCase().includes("laporan akhir")
+        );
+        const laporanAkhirScoreRaw =
+          pRecord?.skorDplLaporanAkhir && Number(pRecord.skorDplLaporanAkhir) > 0
+            ? Number(pRecord.skorDplLaporanAkhir)
+            : laporanAkhirProker?.skorPenilaian
+              ? Number(laporanAkhirProker.skorPenilaian)
               : null;
-        const mplProker = mplIndiv !== null ? mplIndiv : null;
-        const prokerGabungan =
-          mplProker !== null && dplProker !== null
-            ? Math.round(((50 * dplProker + 50 * mplProker) / 100) * 10) / 10
-            : null;
+        const laporanScore = laporanAkhirScoreRaw !== null ? laporanAkhirScoreRaw : null;
 
-        // Kelompok DPL & MPL Scores
-        const dplKelompok = dplIndiv !== null ? dplIndiv : null;
-        const mplKelompok = mplIndiv !== null ? mplIndiv : null;
-        const kelompokGabungan =
-          mplKelompok !== null && dplKelompok !== null
-            ? Math.round(((50 * dplKelompok + 50 * mplKelompok) / 100) * 10) / 10
-            : null;
+        // Bobot Komposisi Resmi: DPL 40% + MPL 40% + Laporan Akhir 20%
+        const wDpl = (ruleConfigs?.penilaianBobotDplPersen ?? 40) / 100;
+        const wMpl = (ruleConfigs?.penilaianBobotMplPersen ?? 40) / 100;
+        const wLap = ((ruleConfigs as any)?.penilaianBobotLaporanPersen ?? 20) / 100;
 
-        // Nilai Akhir & Huruf Mutu: HANYA DITERBITKAN JIKA KEDUA PIHAK (DPL & MPL) LENGKAP
+        // Nilai Akhir & Huruf Mutu
         let finalScore: number | null = null;
         let gradeLetter: string | null = null;
         let statusStr = "Menunggu Penilaian";
 
-        if (dplIndiv === null && mplIndiv === null) {
+        if (dplScore === null && mplScore === null && laporanScore === null) {
+          statusStr = "Menunggu Penilaian";
+        } else if (dplScore === null && mplScore === null) {
           statusStr = "Menunggu DPL & MPL";
-        } else if (dplIndiv === null) {
+        } else if (dplScore === null) {
           statusStr = "Menunggu DPL";
-        } else if (mplIndiv === null) {
+        } else if (mplScore === null) {
           statusStr = "Menunggu MPL";
+        } else if (laporanScore === null) {
+          statusStr = "Menunggu Laporan Akhir";
         }
 
         const effectiveKehadiran = attRate > 0 ? attRate : 0;
         const effectivePoin = poinDampinganScore > 0 ? poinDampinganScore : 0;
 
-        if (
-          dplIndiv !== null &&
-          mplIndiv !== null &&
-          indivGabungan !== null &&
-          prokerGabungan !== null &&
-          kelompokGabungan !== null
-        ) {
-          const calcScore =
-            0.25 * effectiveKehadiran +
-            0.25 * indivGabungan +
-            0.25 * prokerGabungan +
-            0.25 * kelompokGabungan;
+        if (dplScore !== null && mplScore !== null && laporanScore !== null) {
+          const calcScore = wDpl * dplScore + wMpl * mplScore + wLap * laporanScore;
           finalScore = Math.round(calcScore * 10) / 10;
           if (finalScore >= 80) gradeLetter = "A";
           else if (finalScore >= 70) gradeLetter = "B";
@@ -4140,6 +4126,16 @@ export const dplService = {
           else if (finalScore >= 50) gradeLetter = "D";
           else gradeLetter = "E";
           statusStr = "Lengkap";
+        } else if (dplScore !== null && mplScore !== null) {
+          // Normalisasi sementara jika DPL dan MPL sudah menilai
+          const calcScore = dplScore * 0.5 + mplScore * 0.5;
+          finalScore = Math.round(calcScore * 10) / 10;
+          if (finalScore >= 80) gradeLetter = "A";
+          else if (finalScore >= 70) gradeLetter = "B";
+          else if (finalScore >= 60) gradeLetter = "C";
+          else if (finalScore >= 50) gradeLetter = "D";
+          else gradeLetter = "E";
+          statusStr = "Menunggu Laporan Akhir";
         }
 
         if (finalScore !== null) {
@@ -4160,20 +4156,23 @@ export const dplService = {
           isKetua: Boolean(st.isKetua),
           kehadiran: effectiveKehadiran,
           poinDampingan: effectivePoin,
-          individuDpl: dplIndiv,
-          individuMpl: mplIndiv,
-          individuGabungan: indivGabungan,
-          prokerDpl: dplProker,
-          prokerMpl: mplProker,
-          prokerGabungan: prokerGabungan,
-          kelompokDpl: dplKelompok,
-          kelompokMpl: mplKelompok,
-          kelompokGabungan: kelompokGabungan,
+          dplScore,
+          mplScore,
+          laporanScore,
+          individuDpl: dplScore,
+          individuMpl: mplScore,
+          individuGabungan: dplScore !== null && mplScore !== null ? Math.round(((dplScore + mplScore) / 2) * 10) / 10 : null,
+          prokerDpl: dplScore,
+          prokerMpl: mplScore,
+          prokerGabungan: dplScore !== null && mplScore !== null ? Math.round(((dplScore + mplScore) / 2) * 10) / 10 : null,
+          kelompokDpl: dplScore,
+          kelompokMpl: mplScore,
+          kelompokGabungan: dplScore !== null && mplScore !== null ? Math.round(((dplScore + mplScore) / 2) * 10) / 10 : null,
           nilaiAkhir: finalScore,
           predikat: gradeLetter,
           status: statusStr,
           // Compatibility fields
-          skorIndividu: dplIndiv || 0,
+          skorIndividu: dplScore || 0,
           catatanIndividu: st.assessmentNote || "",
           skorProkerKelompok: Math.round(prokerAvgScore * 100) / 100,
           tingkatKehadiran: effectiveKehadiran,

@@ -331,6 +331,40 @@ export class PoskoKknService {
           } else {
             whereClause = { kelompokId: "NONE" };
           }
+        } else if (
+          normalizedRole.includes("MPL") ||
+          normalizedRole.includes("MITRA")
+        ) {
+          const userMpl = await prisma.user.findUnique({
+            where: { id: userId },
+            include: { rw: { include: { kelurahan: true } } },
+          });
+          let kelurahanName: string | null = null;
+          if (userMpl?.rw?.kelurahan?.name) {
+            kelurahanName = userMpl.rw.kelurahan.name;
+          } else if (userMpl?.address) {
+            kelurahanName = userMpl.address.replace(/^Kel\.\s*/i, "").trim();
+          } else if (userMpl?.name) {
+            const allKelurahans = await prisma.kelurahan.findMany({ select: { name: true } });
+            const match = allKelurahans.find((k) =>
+              userMpl.name.toLowerCase().includes(k.name.toLowerCase())
+            );
+            if (match) kelurahanName = match.name;
+          }
+
+          const orConditions: any[] = [
+            { kelompok: { mplId: userId } },
+            { kelompok: { mpl: { id: userId } } },
+          ];
+          if (kelurahanName) {
+            orConditions.push({
+              kelompok: { kelurahan: { equals: kelurahanName, mode: "insensitive" } },
+            });
+            orConditions.push({
+              kelompok: { kelurahan: { contains: kelurahanName, mode: "insensitive" } },
+            });
+          }
+          whereClause = { OR: orConditions };
         }
       }
     }

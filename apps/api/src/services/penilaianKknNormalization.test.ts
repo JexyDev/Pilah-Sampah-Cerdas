@@ -104,6 +104,24 @@ describe("Penilaian KKN - Normalisasi Formula & Anti Nilai E Prematur", () => {
       const composite = calculateCompositeScore(subtotalMitra, subtotalDpl, 50, 50, false);
       expect(composite).toBe(40.0);
     });
+
+    it("should calculate 40% DPL + 40% MPL + 20% Laporan Akhir when all 3 components are assessed", () => {
+      const subtotalMitra = 80;
+      const subtotalDpl = 90;
+      const skorLaporanAkhir = 100;
+      const composite = calculateCompositeScore(subtotalMitra, subtotalDpl, 40, 40, true, skorLaporanAkhir, 20);
+      // (80 * 0.4) + (90 * 0.4) + (100 * 0.2) = 32 + 36 + 20 = 88.00
+      expect(composite).toBe(88.0);
+    });
+
+    it("should normalize dynamically when only DPL and MPL (40% + 40%) are assessed but Laporan is pending", () => {
+      const subtotalMitra = 80;
+      const subtotalDpl = 90;
+      const skorLaporanAkhir = 0;
+      const composite = calculateCompositeScore(subtotalMitra, subtotalDpl, 40, 40, true, skorLaporanAkhir, 20);
+      // (80 * 0.4 + 90 * 0.4) / (0.4 + 0.4) = 68 / 0.8 = 85.00
+      expect(composite).toBe(85.0);
+    });
   });
 
   describe("calculateGradeCategory", () => {

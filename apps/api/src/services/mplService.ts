@@ -13,6 +13,7 @@ import {
   calculateCompositeScore,
   calculateAspectScore,
 } from "./penilaianKknService.js";
+import { parseProkerDeskripsi } from "./dplService.js";
 import {
   isTestKelompok,
   isTestStudent,
@@ -66,6 +67,17 @@ async function getMplKelurahan(userId: string): Promise<{
     if (matchedKel) {
       return { kelurahanName: matchedKel.name, kelurahanId: matchedKel.id };
     }
+  }
+
+  // Prioritas 4: Fallback untuk developer / super user tanpa kelurahan terikat
+  // agar tetap bisa melihat data kelompok MPL (default: Cipaganti)
+  const roleRecord = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { role: true },
+  });
+  const rName = roleRecord?.role?.name?.toUpperCase() || "";
+  if (rName.includes("DEVELOPER") || rName.includes("SUPER_USER")) {
+    return { kelurahanName: "Cipaganti", kelurahanId: null };
   }
 
   return { kelurahanName: null, kelurahanId: null };
@@ -224,17 +236,37 @@ export const mplService = {
       orderBy: { createdAt: "desc" },
     });
 
-    return prokerList.map((p) => ({
-      id: p.id,
-      deskripsi: p.deskripsi,
-      status: p.status,
-      statusPelaksanaan: p.statusPelaksanaan,
-      kelompok: p.kelompok
-        ? { id: p.kelompok.id, name: p.kelompok.name, kelurahan: p.kelompok.kelurahan }
-        : null,
-      createdAt: p.createdAt,
-      updatedAt: p.updatedAt,
-    }));
+    return prokerList.map((p) => {
+      const parsed = parseProkerDeskripsi(p.deskripsi);
+      const judul = parsed.judul && parsed.judul !== "-" ? parsed.judul : (p.deskripsi || "Program Kerja");
+      const st = String(p.status || "").toUpperCase();
+      let statusPel = p.statusPelaksanaan;
+      if (!statusPel) {
+        if (st === "SELESAI") statusPel = "SELESAI";
+        else if (st === "SEDANG_BERJALAN" || st === "BERJALAN" || st === "DISETUJUI") statusPel = "SEDANG_BERJALAN";
+        else statusPel = "BELUM_MULAI";
+      }
+
+      return {
+        id: p.id,
+        deskripsi: parsed.deskripsi || p.deskripsi,
+        namaProker: judul,
+        judul,
+        kelompokName: p.kelompok?.name || "Kelompok KKN",
+        kelompokId: p.kelompokId,
+        kelurahan: p.kelompok?.kelurahan || null,
+        status: p.status,
+        statusPelaksanaan: statusPel,
+        target: p.waktuPelaksanaan || p.kategori || "Target Pelaksanaan KKN",
+        tanggalMulai: p.createdAt,
+        tanggalSelesai: p.updatedAt,
+        kelompok: p.kelompok
+          ? { id: p.kelompok.id, name: p.kelompok.name, kelurahan: p.kelompok.kelurahan }
+          : null,
+        createdAt: p.createdAt,
+        updatedAt: p.updatedAt,
+      };
+    });
   },
 
   // -------------------------------------------------------------------------
@@ -311,33 +343,37 @@ export const mplService = {
       }
     }
 
-    return filteredStudents.map((s) => {
-      const summary = attendanceMap.get(s.userId) ?? {
-        hadir: 0, izin: 0, sakit: 0, alpa: 0, total: 0,
-      };
-      const persenHadir =
-        summary.total > 0
-          ? Math.round(
-              ((summary.hadir + summary.izin + summary.sakit) / summary.total) * 100
-            )
-          : 0;
+    const { kelurahanName } = await getMplKelurahan(mplUserId);
+
+    return filteredKelompok.map((k) => {
+      const kStudents = filteredStudents.filter((s) => s.kelompokId === k.id);
+      let hadir = 0;
+      let izin = 0;
+      let sakit = 0;
+      let alpa = 0;
+      let totalSesi = 0;
+
+      for (const s of kStudents) {
+        const summary = attendanceMap.get(s.userId);
+        if (summary) {
+          hadir += summary.hadir;
+          izin += summary.izin;
+          sakit += summary.sakit;
+          alpa += summary.alpa;
+          totalSesi += summary.total;
+        }
+      }
 
       return {
-        studentId: s.userId,
-        studentKknId: s.id,
-        nama: s.user?.name ?? "-",
-        nim: s.nim ?? "-",
-        kelompok: s.kelompok
-          ? { id: s.kelompok.id, name: s.kelompok.name }
-          : null,
-        presensi: {
-          hadir: summary.hadir,
-          izin: summary.izin,
-          sakit: summary.sakit,
-          alpa: summary.alpa,
-          total: summary.total,
-          persenKehadiran: persenHadir,
-        },
+        kelompokId: k.id,
+        kelompokName: k.name,
+        kelurahan: k.kelurahan || kelurahanName || "Cipaganti",
+        hadir,
+        izin,
+        sakit,
+        alpa,
+        totalSesi,
+        mahasiswaCount: kStudents.length,
       };
     });
   },
@@ -415,15 +451,35 @@ export const mplService = {
       );
 
       return {
+        id: s.userId,
         studentId: s.userId,
         studentKknId: s.id,
         nama: s.user?.name ?? "-",
+        name: s.user?.name ?? "-",
         nim: s.nim ?? "-",
+        kelompokId: s.kelompokId,
+        kelompokName: s.kelompok?.name ?? "-",
         kelompok: s.kelompok
           ? { id: s.kelompok.id, name: s.kelompok.name }
           : null,
         sudahDinilaiDpl,
+        dplSudahMenilai: sudahDinilaiDpl,
         bisaDinilaiMpl: sudahDinilaiDpl,
+        penilaian: penilaian
+          ? {
+              sudahDinilai: Boolean(
+                penilaian.subtotalMitra && Number(penilaian.subtotalMitra) > 0
+              ),
+              skorKehadiran: penilaian.skorMitraKehadiran ?? undefined,
+              skorWargaBinaan: penilaian.skorMitraWargaBinaan ?? undefined,
+              skorProker: penilaian.skorMitraProker ?? undefined,
+              skorKomunikasi: penilaian.skorMitraKomunikasi ?? undefined,
+              skorTanggungJawab: penilaian.skorMitraTanggungJawab ?? undefined,
+              skorBuktiKegiatan: penilaian.skorMitraBuktiKegiatan ?? undefined,
+              skorDampak: penilaian.skorMitraDampak ?? undefined,
+              skorInisiatif: penilaian.skorMitraInisiatif ?? undefined,
+            }
+          : undefined,
         skorMitraSekarang: penilaian
           ? {
               kehadiran: penilaian.skorMitraKehadiran,
