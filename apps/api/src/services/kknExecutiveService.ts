@@ -1241,6 +1241,16 @@ export const kknExecutiveService = {
         latitude: true,
         longitude: true,
         createdAt: true,
+        maxCapacityLiter: true,
+        category: {
+          select: { id: true, name: true },
+        },
+        user: {
+          select: { id: true, name: true, phone: true },
+        },
+        registeredByStudent: {
+          select: { id: true, name: true },
+        },
         kelurahan: {
           select: { id: true, name: true },
         },
@@ -1263,6 +1273,11 @@ export const kknExecutiveService = {
         tanggalAktivasi: b.createdAt,
         latitude: b.latitude ? Number(b.latitude) : null,
         longitude: b.longitude ? Number(b.longitude) : null,
+        kategoriNama: b.category?.name ?? null,
+        pemilikNama: b.user?.name ?? null,
+        pemilikPhone: b.user?.phone ?? null,
+        pendaftarNama: b.registeredByStudent?.name ?? null,
+        kapasitasLiter: b.maxCapacityLiter ? Number(b.maxCapacityLiter) : 25,
       })),
     };
   },

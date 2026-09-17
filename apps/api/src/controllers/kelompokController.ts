@@ -141,7 +141,8 @@ export const kelompokController = {
 
   getDpls: async (req: Request, res: Response): Promise<void> => {
     try {
-      const dpls = await kelompokService.getDplList();
+      const user = (req as any).user;
+      const dpls = await kelompokService.getDplList(user);
       res.status(200).json({ success: true, data: dpls });
     } catch (error) {
       console.error("[KelompokController] getDpls error:", error);

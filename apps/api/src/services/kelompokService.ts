@@ -177,9 +177,85 @@ export const kelompokService = {
     });
   },
 
-  getDplList: async () => {
+  getDplList: async (user?: any) => {
+    let whereClause: any = { role: { name: { in: ["DPL", "DOSEN_PEMBIMBING"] } } };
+
+    if (user) {
+      const rawRole = user.role;
+      const roleName = String(
+        typeof rawRole === "object" ? rawRole?.name : rawRole || ""
+      ).toUpperCase();
+
+      const isMpl = [
+        "MPL",
+        "MITRA_PEMBIMBING_LAPANGAN",
+        "MITRA_PENDAMPING_LAPANGAN",
+        "MITRA",
+      ].some((r) => roleName.includes(r));
+
+      if (isMpl) {
+        const userId = user.userId || user.id;
+        const userMpl = await prisma.user.findUnique({
+          where: { id: userId },
+          include: { rw: { include: { kelurahan: true } } },
+        });
+        let kelurahanName: string | null = null;
+        if (userMpl?.rw?.kelurahan?.name) {
+          kelurahanName = userMpl.rw.kelurahan.name;
+        } else if (userMpl?.address) {
+          kelurahanName = userMpl.address.replace(/^Kel\.\s*/i, "").trim();
+        } else if (userMpl?.name) {
+          const allKelurahans = await prisma.kelurahan.findMany({ select: { name: true } });
+          const match = allKelurahans.find((k) =>
+            userMpl.name.toLowerCase().includes(k.name.toLowerCase())
+          );
+          if (match) kelurahanName = match.name;
+        }
+
+        const orConds: any[] = [
+          { mplId: userId },
+          { mpl: { id: userId } },
+        ];
+        if (kelurahanName) {
+          orConds.push({ kelurahan: { equals: kelurahanName, mode: "insensitive" } });
+          orConds.push({ kelurahan: { contains: kelurahanName, mode: "insensitive" } });
+        }
+
+        const scopedGroups = await prisma.kelompokKkn.findMany({
+          where: { OR: orConds },
+          select: { dplId: true, dplNamaMentah: true },
+        });
+
+        const dplIds = Array.from(
+          new Set(scopedGroups.map((g) => g.dplId).filter(Boolean))
+        ) as string[];
+        const dplNames = Array.from(
+          new Set(scopedGroups.map((g) => g.dplNamaMentah).filter(Boolean))
+        ) as string[];
+
+        const dplConditions: any[] = [];
+        if (dplIds.length > 0) dplConditions.push({ id: { in: dplIds } });
+        if (dplNames.length > 0) {
+          dplConditions.push({
+            name: { in: dplNames, mode: "insensitive" },
+          });
+        }
+
+        if (dplConditions.length > 0) {
+          whereClause = {
+            AND: [
+              { role: { name: { in: ["DPL", "DOSEN_PEMBIMBING"] } } },
+              { OR: dplConditions },
+            ],
+          };
+        } else {
+          return [];
+        }
+      }
+    }
+
     return prisma.user.findMany({
-      where: { role: { name: { in: ["DPL", "DOSEN_PEMBIMBING"] } } },
+      where: whereClause,
       select: { id: true, name: true, phone: true, nip: true, email: true, programStudi: true },
       orderBy: { name: "asc" },
     });
