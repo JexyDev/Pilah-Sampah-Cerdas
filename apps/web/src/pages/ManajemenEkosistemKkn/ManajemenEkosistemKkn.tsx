@@ -42,8 +42,10 @@ import {
 
 export const ManajemenEkosistemKkn: React.FC = () => {
   const { user: currentUser } = useAuthStore();
-  const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(currentUser?.peran || "");
-  const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "DPL", "DOSEN_PEMBIMBING", "PEMIMPIN", "PIMPINAN"].includes(currentUser?.peran || "");
+  const userRole = String(currentUser?.peran || (currentUser as any)?.role || "").toUpperCase();
+  const isDpl = ["DPL", "DOSEN_PEMBIMBING"].some((r) => userRole.includes(r));
+  const isMpl = ["MPL", "MITRA_PEMBIMBING_LAPANGAN", "MITRA_PENDAMPING_LAPANGAN", "MITRA"].some((r) => userRole.includes(r));
+  const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "DPL", "DOSEN_PEMBIMBING", "PEMIMPIN", "PIMPINAN", "MPL", "MITRA_PEMBIMBING_LAPANGAN", "MITRA_PENDAMPING_LAPANGAN", "MITRA"].some((r) => userRole.includes(r));
 
   const [activeTab, setActiveTab] = useState("kelompok");
 
@@ -310,9 +312,52 @@ export const ManajemenEkosistemKkn: React.FC = () => {
     return filteredKelompokList.slice(start, start + rowsPerPage);
   }, [filteredKelompokList, currentPage, rowsPerPage]);
 
+  // DPL List scoped by kelompok jika user adalah MPL
+  const effectiveDplList = useMemo(() => {
+    if (!isMpl) return dplList;
+
+    // Kumpulkan DPL yang terkait dengan kelompok binaan MPL
+    const scopedDplIds = new Set(
+      kelompokList
+        .map((k) => k.dplId || k.dpl?.id)
+        .filter(Boolean)
+    );
+    const scopedDplNames = new Set(
+      kelompokList
+        .map((k) => k.dpl?.name || k.dplNamaMentah)
+        .filter(Boolean)
+        .map((n: string) => n.toLowerCase().trim())
+    );
+
+    // Filter dplList agar hanya memuat DPL kelompok binaan
+    const scoped = dplList.filter(
+      (dp) =>
+        scopedDplIds.has(dp.id) ||
+        scopedDplNames.has((dp.name || "").toLowerCase().trim())
+    );
+
+    // Fallback jika dplList dari API belum terisi atau DPL hanya ada di objek kelompok
+    if (scoped.length === 0 && kelompokList.length > 0) {
+      const extracted: any[] = [];
+      const seen = new Set<string>();
+      for (const k of kelompokList) {
+        if (k.dpl && !seen.has(k.dpl.id || k.dpl.name)) {
+          seen.add(k.dpl.id || k.dpl.name);
+          extracted.push(k.dpl);
+        } else if (k.dplNamaMentah && !seen.has(k.dplNamaMentah)) {
+          seen.add(k.dplNamaMentah);
+          extracted.push({ id: k.dplId || k.id, name: k.dplNamaMentah });
+        }
+      }
+      return extracted;
+    }
+
+    return scoped;
+  }, [dplList, isMpl, kelompokList]);
+
   // Filtered DPL List
   const filteredDplList = useMemo(() => {
-    return dplList.filter((dp) => {
+    return effectiveDplList.filter((dp) => {
       if (!searchDpl) return true;
       const s = searchDpl.toLowerCase();
       return (
@@ -322,7 +367,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
         (dp.nip || "").toLowerCase().includes(s)
       );
     });
-  }, [dplList, searchDpl]);
+  }, [effectiveDplList, searchDpl]);
 
   const totalDplPages = Math.max(1, Math.ceil(filteredDplList.length / dplRowsPerPage));
   const paginatedDpl = useMemo(() => {
@@ -339,7 +384,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
   }, [kelompokList]);
   const kelompokWithoutLeader = totalKelompok - kelompokWithLeader;
 
-  const totalDpl = dplList.length;
+  const totalDpl = effectiveDplList.length;
   const kelompokWithDpl = useMemo(() => {
     return kelompokList.filter(
       (k) => !!k.dplId || !!k.dpl || (k.dplNamaMentah && k.dplNamaMentah.trim() !== "")
@@ -640,7 +685,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
             ? [{ id: "kelompok", label: `Kelompok Saya (${kelompokList.length})`, icon: GraduationCap }]
             : [
                 { id: "kelompok", label: `Kelompok KKN (${kelompokList.length})`, icon: GraduationCap },
-                { id: "dpl", label: `Dosen Pembimbing (${dplList.length})`, icon: User },
+                { id: "dpl", label: `Dosen Pembimbing (${effectiveDplList.length})`, icon: User },
                 { id: "universitas", label: `Universitas Mitra (${uniList.length})`, icon: BookOpen }
               ]
           ).map((tab) => {
@@ -1160,7 +1205,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                   className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all bg-white dark:bg-slate-900 cursor-pointer"
                 >
                   <option value="">Pilih DPL (Opsional)</option>
-                  {dplList.map((dp) => (
+                  {effectiveDplList.map((dp) => (
                     <option key={dp.id} value={dp.id}>
                       {dp.name}
                     </option>

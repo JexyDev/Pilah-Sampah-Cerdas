@@ -42,7 +42,8 @@ import {
   Clock,
   RefreshCw,
   Radio,
-  FileCheck
+  FileCheck,
+  Lock
 } from "lucide-react";
 import L from "leaflet";
 import api from "../../services/api";
@@ -215,8 +216,9 @@ const INITIAL_FORM_STATE = {
 export const PoskoKknPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const userRole = String(user?.peran || "").toUpperCase();
+  const userRole = String(user?.peran || (user as any)?.role || "").toUpperCase();
   const isDpl = ["DPL", "DOSEN_PEMBIMBING", "DOSEN_PEMBIMBING_LAPANGAN"].some((r) => userRole.includes(r));
+  const isMpl = ["MPL", "MITRA_PEMBIMBING_LAPANGAN", "MITRA_PENDAMPING_LAPANGAN", "MITRA"].some((r) => userRole.includes(r));
   const isDeveloperOrAdmin = [
     "DEVELOPER",
     "SUPER_USER",
@@ -225,8 +227,21 @@ export const PoskoKknPage: React.FC = () => {
     "PANITIA_TASKFORCE",
     "PEMIMPIN",
     "PIMPINAN"
-  ].includes(userRole);
-  const canEditPosko = isDeveloperOrAdmin || isDpl;
+  ].some((r) => userRole.includes(r));
+  const canEditPosko = (isDeveloperOrAdmin || isDpl) && !isMpl;
+
+  // Wilayah Binaan MPL
+  const mplKelurahan = useMemo(() => {
+    if (!isMpl) return "";
+    if ((user as any)?.kelurahan) return (user as any).kelurahan;
+    if (user?.address) return user.address.replace(/^Kel\.\s*/i, "").trim();
+    if (user?.name) {
+      const known = ["Cipaganti", "Dago", "Lebak Gede", "Lebak Siliwangi", "Sadang Serang", "Sekeloa"];
+      const match = known.find((k) => user.name.toLowerCase().includes(k.toLowerCase()));
+      if (match) return match;
+    }
+    return "Cipaganti";
+  }, [isMpl, user]);
 
   const [items, setItems] = useState<PoskoItem[]>([]);
   const [facilities, setFacilities] = useState<FacilityItem[]>([]);
@@ -344,23 +359,52 @@ export const PoskoKknPage: React.FC = () => {
     });
   }, [fetchPoskoList, fetchFacilities, fetchKelompokList]);
 
+  // Kunci filter kelurahan otomatis untuk role MPL & fokus peta ke wilayah binaan
+  useEffect(() => {
+    if (isMpl && mplKelurahan) {
+      setSelectedKelurahan(mplKelurahan);
+      const cleanMpl = mplKelurahan.toLowerCase().replace(/^(kelurahan|kel\.)\s*/i, "").trim();
+      const matched = Object.values(KELURAHAN_GEODATA).find(
+        (k) => k.name.toLowerCase().includes(cleanMpl) || cleanMpl.includes(k.name.toLowerCase())
+      );
+      if (matched) {
+        setMapTargetCenter(matched.centroid);
+        setMapTargetZoom(15);
+      }
+    }
+  }, [isMpl, mplKelurahan]);
+
   // ============================================================================
   // ✅ PERBAIKAN BUG: Unique Group Aggregation untuk Menghindari Multi-Counting
   // ============================================================================
   const metrics = useMemo(() => {
-    const totalPosko = items.length;
-    const verified = items.filter((i) => i.statusApproval === "APPROVED").length;
+    let scopedItems = items;
+    let scopedKelompokList = kelompokList;
+    if (isMpl && mplKelurahan) {
+      const cleanMpl = mplKelurahan.toLowerCase().replace(/^(kelurahan|kel\.)\s*/i, "").trim();
+      scopedItems = items.filter((i) => {
+        const k = (i.kelurahan || "").toLowerCase().replace(/^(kelurahan|kel\.)\s*/i, "").trim();
+        return k.includes(cleanMpl) || cleanMpl.includes(k);
+      });
+      scopedKelompokList = kelompokList.filter((g) => {
+        const k = (g.kelurahan || "").toLowerCase().replace(/^(kelurahan|kel\.)\s*/i, "").trim();
+        return k.includes(cleanMpl) || cleanMpl.includes(k);
+      });
+    }
+
+    const totalPosko = scopedItems.length;
+    const verified = scopedItems.filter((i) => i.statusApproval === "APPROVED").length;
 
     // 1. Gunakan Map untuk mengisolasi 1 kelompokId -> 1 totalAnggota riil (mencegah double-counting jika ada multi-posko)
     const uniqueGroupStudentMap = new Map<string, number>();
-    items.forEach((item) => {
+    scopedItems.forEach((item) => {
       const key = item.kelompokId || item.id;
       if (key && !uniqueGroupStudentMap.has(key)) {
         uniqueGroupStudentMap.set(key, item.totalAnggota || 0);
       }
     });
 
-    const totalKelompok = Math.max(kelompokList.length, uniqueGroupStudentMap.size);
+    const totalKelompok = Math.max(scopedKelompokList.length, uniqueGroupStudentMap.size);
 
     // 2. Jumlahkan total mahasiswa riil hanya dari kelompok yang unik
     const totalMahasiswaPosko = Array.from(uniqueGroupStudentMap.values()).reduce(
@@ -369,7 +413,7 @@ export const PoskoKknPage: React.FC = () => {
     );
 
     // 3. Hitung total mahasiswa dari seluruh kelompok KKN (termasuk yang belum ada posko)
-    let totalMahasiswaSemua = kelompokList.reduce(
+    let totalMahasiswaSemua = scopedKelompokList.reduce(
       (acc, curr) => acc + (curr.students?.length || 0),
       0
     );
@@ -379,10 +423,10 @@ export const PoskoKknPage: React.FC = () => {
 
     // 4. Hitung unik DPL pembimbing
     const dplSet = new Set<string>();
-    items.forEach((i) => {
+    scopedItems.forEach((i) => {
       if (i.dplName && !i.dplName.includes("Belum")) dplSet.add(i.dplName.trim());
     });
-    kelompokList.forEach((k) => {
+    scopedKelompokList.forEach((k) => {
       if (k.dpl?.name && !k.dpl.name.includes("Belum")) dplSet.add(k.dpl.name.trim());
       else if (k.dplNamaMentah && !k.dplNamaMentah.includes("Belum")) dplSet.add(k.dplNamaMentah.trim());
     });
@@ -396,14 +440,22 @@ export const PoskoKknPage: React.FC = () => {
       totalMahasiswaSemua,
       totalDpl,
     };
-  }, [items, kelompokList]);
+  }, [items, kelompokList, isMpl, mplKelurahan]);
 
   // Kelompok yang belum mendaftarkan titik Posko KKN
   const groupsWithoutPosko = useMemo(() => {
-    if (!kelompokList.length) return [];
+    let scopedKelompokList = kelompokList;
+    if (isMpl && mplKelurahan) {
+      const cleanMpl = mplKelurahan.toLowerCase().replace(/^(kelurahan|kel\.)\s*/i, "").trim();
+      scopedKelompokList = kelompokList.filter((g) => {
+        const k = (g.kelurahan || "").toLowerCase().replace(/^(kelurahan|kel\.)\s*/i, "").trim();
+        return k.includes(cleanMpl) || cleanMpl.includes(k);
+      });
+    }
+    if (!scopedKelompokList.length) return [];
     const registeredKelompokIds = new Set(items.map((i) => String(i.kelompokId || "")));
-    return kelompokList.filter((k) => !registeredKelompokIds.has(String(k.id)));
-  }, [kelompokList, items]);
+    return scopedKelompokList.filter((k) => !registeredKelompokIds.has(String(k.id)));
+  }, [kelompokList, items, isMpl, mplKelurahan]);
 
   // Filtered Items
   const filteredItems = useMemo(() => {
@@ -706,11 +758,13 @@ export const PoskoKknPage: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
-            {isDpl ? "Posko KKN Kelompok Bimbingan" : "Posko KKN Mahasiswa"}
+            {isDpl ? "Posko KKN Kelompok Bimbingan" : isMpl ? `Posko KKN Kelurahan ${formatWilayahName(mplKelurahan)}` : "Posko KKN Mahasiswa"}
           </h1>
           <p className="text-slate-500 text-xs mt-1">
             {isDpl
               ? "Pangkalan posko, kontak tim mahasiswa, titik koordinat GPS, dan lokasi kelompok KKN binaan Anda."
+              : isMpl
+              ? `Direktori posko kegiatan kelompok KKN binaan Mitra Pembimbing Lapangan di Kelurahan ${formatWilayahName(mplKelurahan)}.`
               : "Direktori pangkalan posko kegiatan mahasiswa KKN, kelompok binaan, dosen pembimbing lapangan (DPL), dan titik koordinat GPS di seluruh wilayah operasional."}
           </p>
         </div>
@@ -2140,21 +2194,31 @@ export const PoskoKknPage: React.FC = () => {
               </div>
 
               {/* Filter Kelurahan */}
-              <select
-                value={selectedKelurahan}
-                onChange={(e) => {
-                  setSelectedKelurahan(e.target.value);
-                  setSelectedRw("ALL");
-                }}
-                className="px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-semibold outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/10 text-slate-800 dark:text-slate-100 transition-all cursor-pointer"
-              >
-                <option value="ALL">Semua Kelurahan</option>
-                {masterKelurahanList.map((k) => (
-                  <option key={k.id} value={k.name}>
-                    Kel. {formatWilayahName(k.name)}
-                  </option>
-                ))}
-              </select>
+              {isMpl && mplKelurahan ? (
+                <div className="px-3.5 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2 shrink-0 shadow-2xs">
+                  <MapPin size={14} className="text-emerald-600 shrink-0" />
+                  <span>Kel. {formatWilayahName(mplKelurahan)}</span>
+                  <span className="text-[10px] bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 font-extrabold px-1.5 py-0.5 rounded border border-purple-200 dark:border-purple-800 shrink-0 flex items-center gap-1">
+                    <Lock size={10} /> Wilayah Binaan
+                  </span>
+                </div>
+              ) : (
+                <select
+                  value={selectedKelurahan}
+                  onChange={(e) => {
+                    setSelectedKelurahan(e.target.value);
+                    setSelectedRw("ALL");
+                  }}
+                  className="px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-semibold outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/10 text-slate-800 dark:text-slate-100 transition-all cursor-pointer"
+                >
+                  <option value="ALL">Semua Kelurahan</option>
+                  {masterKelurahanList.map((k) => (
+                    <option key={k.id} value={k.name}>
+                      Kel. {formatWilayahName(k.name)}
+                    </option>
+                  ))}
+                </select>
+              )}
 
               {/* Filter RW */}
               <select
@@ -2170,11 +2234,15 @@ export const PoskoKknPage: React.FC = () => {
                 ))}
               </select>
 
-              {(selectedKelurahan !== "ALL" || selectedRw !== "ALL") && (
+              {((!isMpl && selectedKelurahan !== "ALL") || selectedRw !== "ALL") && (
                 <button
                   type="button"
                   onClick={() => {
-                    setSelectedKelurahan("ALL");
+                    if (isMpl && mplKelurahan) {
+                      setSelectedKelurahan(mplKelurahan);
+                    } else {
+                      setSelectedKelurahan("ALL");
+                    }
                     setSelectedRw("ALL");
                   }}
                   className="px-2.5 py-2 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
