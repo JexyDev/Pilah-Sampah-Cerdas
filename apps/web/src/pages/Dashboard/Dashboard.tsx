@@ -1952,7 +1952,7 @@ const Dashboard: React.FC = () => {
           </button>
           <button
             type="button"
-            onClick={() => setSearchParams({ tab: "tata-kelola-sampah" })}
+            onClick={() => setSearchParams({ tab: "tata-kelola-sampah", view: activeWasteView })}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
               activeSubTab !== "kkn"
                 ? "bg-white dark:bg-slate-900 text-[#009966] dark:text-emerald-400 shadow-xs border border-slate-200/80 dark:border-slate-700 font-black"
