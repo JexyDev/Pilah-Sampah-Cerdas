@@ -397,6 +397,13 @@ router.get(
   kknController.getMyGroup
 );
 
+router.get(
+  "/kelompok-saya",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknController.getMyGroup
+);
+
 /**
  * @swagger
  * /api/v1/kkn/posko/register:

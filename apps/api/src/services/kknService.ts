@@ -3001,13 +3001,16 @@ export class KknService {
 
     const pointsAgg = await prisma.pointHistory.groupBy({
       by: ["userId"],
-      where: { userId: { in: memberUserIds } },
+      where: {
+        userId: { in: memberUserIds },
+        kategori: { notIn: ["KKN_PROKER"] },
+      },
       _sum: { points: true },
     });
 
     const pointsMap = new Map<string, number>();
     pointsAgg.forEach((item) => {
-      pointsMap.set(item.userId, item._sum.points || 0);
+      pointsMap.set(item.userId, Math.max(0, item._sum.points || 0));
     });
 
     const members = group.students.map((s) => {
