@@ -438,7 +438,7 @@ export const WargaRegistrationWizard: React.FC<Props> = ({ onSuccess, onCancel }
               
               <div className="bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-700/40 p-4 rounded-lg flex gap-3 text-amber-800 dark:text-amber-300 text-sm">
                 <Info className="w-5 h-5 shrink-0" />
-                <p>Setelah disubmit, tempat sampah warga akan <strong>langsung aktif</strong> (ACTIVE_BOUND) dan poin bonus partisipasi akan langsung ditambahkan.</p>
+                <p>Setelah data disimpan, tempat sampah warga akan <strong>langsung aktif dan terhubung</strong> serta poin bonus partisipasi akan langsung ditambahkan.</p>
               </div>
             </div>
           )}

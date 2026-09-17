@@ -971,7 +971,7 @@ export const GisMapTab: React.FC = () => {
                   Tingkat Kepatuhan Aktivasi Tempat Sampah per Kelurahan
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Perbandingan tempat sampah teraktivasi (ACTIVE_BOUND) terhadap total unit di setiap kelurahan
+                  Perbandingan tempat sampah teraktivasi terhadap total unit di setiap kelurahan
                 </p>
               </div>
             </div>

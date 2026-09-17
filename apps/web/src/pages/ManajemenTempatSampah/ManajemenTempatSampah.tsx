@@ -18,6 +18,7 @@ import { EmptyTableState } from "../../components/common/EmptyTableState";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import KategoriSampah from "../KategoriSampah/KategoriSampah";
 import MasterQrManager from "../SuperUser/MasterQrManager";
+import TempatSampahAktifPage from "../SuperUser/TempatSampahAktifPage";
 import { MapContainer, Marker, Popup, Circle, Polygon, Tooltip, useMap, useMapEvents } from "react-leaflet";
 import {
   ThemeTileLayer,
@@ -103,14 +104,16 @@ const ManajemenTempatSampah: React.FC = () => {
   const isReadOnly = ["CAMAT", "LURAH", "PANITIA_TASKFORCE", "PEMIMPIN", "PIMPINAN", "DPL", "DOSEN_PEMBIMBING"].includes(user?.peran || "");
   const [searchParams, setSearchParams] = useSearchParams();
 
-  type TabType = "kodefikasi" | "monitoring" | "kategori" | "batch_qr";
+  type TabType = "teraktivasi" | "kodefikasi" | "monitoring" | "kategori" | "batch_qr";
 
   const getTabFromUrl = (): TabType => {
     const tab = searchParams.get("tab");
-    if (tab === "monitoring") return "monitoring";
+    if (tab === "teraktivasi" || tab === "aktif" || tab === "bins" || tab === "real") return "teraktivasi";
+    if (tab === "monitoring" || tab === "peta" || tab === "gis") return "monitoring";
     if (tab === "kategori") return "kategori";
-    if (tab === "batch_qr" || tab === "batch-qr" || tab === "qr" || tab === "batch") return "batch_qr";
-    return "kodefikasi";
+    if (tab === "batch_qr" || tab === "batch-qr" || tab === "qr" || tab === "batch" || tab === "stiker") return "batch_qr";
+    if (tab === "kodefikasi" || tab === "semua" || tab === "all") return "kodefikasi";
+    return "teraktivasi";
   };
 
   const [activeTab, setActiveTab] = useState<TabType>(getTabFromUrl());
@@ -497,16 +500,27 @@ const ManajemenTempatSampah: React.FC = () => {
 
   const filteredBins = useMemo(() => {
     return bins.filter((bin) => {
-      if (!statusFilter || statusFilter === "Semua Status") return true;
+      if (!statusFilter || statusFilter === "Semua Status" || statusFilter === "Semua Status Keterisian") return true;
+      if (statusFilter === "Teraktivasi Warga" || statusFilter === "ACTIVE_BOUND") {
+        return bin.status === "ACTIVE_BOUND" || bin.wargaName || bin.user?.name;
+      }
+      if (statusFilter === "Stiker Belum Terikat" || statusFilter === "Stiker Belum Terikat (PRINTED)" || statusFilter === "PRINTED") {
+        return (bin.status === "PRINTED" || bin.status === "PENDING_APPROVAL") && !bin.wargaName && !bin.user?.name;
+      }
+      if (statusFilter === "Ditugaskan ke PIC" || statusFilter === "ASSIGNED_TO_PIC") {
+        return bin.status === "ASSIGNED_TO_PIC";
+      }
       const cap = Number(bin.kapasitas || 0);
       const isPenuh = cap > 90 || bin.status === "Penuh" || bin.realStatus === "BROKEN";
       const isSedang = !isPenuh && cap >= 70;
       const isAman = !isPenuh && !isSedang && cap < 70;
 
-      if (statusFilter === "Aman") return isAman;
-      if (statusFilter === "Sedang") return isSedang;
-      if (statusFilter === "Penuh") return isPenuh;
-      if (statusFilter === "Perbaikan") return bin.status === "Perbaikan" || bin.realStatus === "PENDING_APPROVAL";
+      if (statusFilter === "Aman" || statusFilter === "Aman (<70%)") return isAman;
+      if (statusFilter === "Sedang" || statusFilter === "Sedang (70-89%)") return isSedang;
+      if (statusFilter === "Penuh" || statusFilter === "Penuh (≥90%)") return isPenuh;
+      if (statusFilter === "Perbaikan" || statusFilter === "Perbaikan / Rusak") {
+        return bin.status === "Perbaikan" || bin.realStatus === "BROKEN" || bin.realStatus === "PENDING_APPROVAL" || bin.status === "BROKEN";
+      }
       return true;
     });
   }, [bins, statusFilter]);
@@ -780,15 +794,15 @@ const ManajemenTempatSampah: React.FC = () => {
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={() => handleTabChange("kodefikasi")}
+              onClick={() => handleTabChange("teraktivasi")}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer ${
-                activeTab === "kodefikasi"
+                activeTab === "teraktivasi"
                   ? "bg-[#009966] text-white shadow-xs"
-                  : "bg-slate-100/80 dark:bg-slate-800/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200/80 dark:bg-slate-800/80 dark:hover:bg-slate-700"
+                  : "bg-slate-100/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-slate-200/80 dark:hover:bg-slate-700"
               }`}
             >
-              <QrCode size={15} />
-              <span>Kode QR Tempat Sampah</span>
+              <Trash2 size={15} />
+              <span>Tempat Sampah Teraktivasi (166 Unit)</span>
             </button>
             <button
               type="button"
@@ -796,11 +810,35 @@ const ManajemenTempatSampah: React.FC = () => {
               className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer ${
                 activeTab === "batch_qr"
                   ? "bg-[#009966] text-white shadow-xs"
-                  : "bg-slate-100/80 dark:bg-slate-800/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200/80 dark:bg-slate-800/80 dark:hover:bg-slate-700"
+                  : "bg-slate-100/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-slate-200/80 dark:hover:bg-slate-700"
               }`}
             >
               <QrCode size={15} />
-              <span>Batch Kode QR (Cetak Stiker)</span>
+              <span>Stiker &amp; Master QR (Cetak Stiker)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleTabChange("kodefikasi")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+                activeTab === "kodefikasi"
+                  ? "bg-[#009966] text-white shadow-xs"
+                  : "bg-slate-100/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-slate-200/80 dark:hover:bg-slate-700"
+              }`}
+            >
+              <Box size={15} />
+              <span>Semua Inventaris &amp; Logistik</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleTabChange("monitoring")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+                activeTab === "monitoring"
+                  ? "bg-[#009966] text-white shadow-xs"
+                  : "bg-slate-100/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-slate-200/80 dark:hover:bg-slate-700"
+              }`}
+            >
+              <Map size={15} />
+              <span>Peta GIS Sebaran</span>
             </button>
           </div>
 
@@ -819,7 +857,9 @@ const ManajemenTempatSampah: React.FC = () => {
       </div>
 
       {/* 3. Sub-Tab Contents */}
-      {activeTab === "batch_qr" ? (
+      {activeTab === "teraktivasi" ? (
+        <TempatSampahAktifPage />
+      ) : activeTab === "batch_qr" ? (
         <MasterQrManager />
       ) : activeTab === "kategori" ? (
         <KategoriSampah openAddModalSignal={openKategoriAddSignal} />
@@ -1450,24 +1490,24 @@ const ManajemenTempatSampah: React.FC = () => {
             <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-xs flex items-center justify-between transition-all hover:shadow-md">
               <div>
                 <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider">
-                  TOTAL KODE QR TEMPAT SAMPAH
+                  TOTAL INVENTARIS SISTEM
                 </p>
                 <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1">
                   {bins.length}
                 </h3>
               </div>
-              <div className="w-11 h-11 rounded-2xl bg-[#009966]/10 text-[#009966] dark:text-emerald-400 flex items-center justify-center border border-[#009966]/20 dark:border-emerald-700/40 shadow-2xs">
-                <QrCode size={20} />
+              <div className="w-11 h-11 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-100 dark:border-blue-700/50 shadow-2xs">
+                <Box size={20} />
               </div>
             </div>
 
             <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-xs flex items-center justify-between transition-all hover:shadow-md">
               <div>
-                <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider">
-                  STATUS AMAN
+                <p className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
+                  TERAKTIVASI WARGA (REAL)
                 </p>
                 <h3 className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
-                  {bins.filter((b) => b.status === "ACTIVE_BOUND" || b.status === "ACTIVE" || b.status === "Normal" || b.status === "Aman" || b.kapasitas < 70).length}
+                  {bins.filter((b) => b.status === "ACTIVE_BOUND" || b.status === "ACTIVE" || b.wargaName || b.user?.name).length}
                 </h3>
               </div>
               <div className="w-11 h-11 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-100 dark:border-emerald-700/50 shadow-2xs">
@@ -1477,29 +1517,25 @@ const ManajemenTempatSampah: React.FC = () => {
 
             <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-xs flex items-center justify-between transition-all hover:shadow-md">
               <div>
-                <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider">
-                  KAPASITAS PENUH (&gt;80%)
+                <p className="text-[11px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+                  STIKER BELUM TERIKAT
                 </p>
                 <h3 className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1">
-                  {bins.filter((b) => {
-                    const vol = Number(b.currentVolumeLiter || 0);
-                    const max = Number(b.maxCapacityLiter || 25);
-                    return (max > 0 && (vol / max) >= 0.8) || b.status === "Penuh";
-                  }).length}
+                  {bins.filter((b) => (b.status === "PRINTED" || b.status === "PENDING_APPROVAL") && !b.wargaName && !b.user?.name).length}
                 </h3>
               </div>
               <div className="w-11 h-11 rounded-2xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-100 dark:border-amber-700/50 shadow-2xs">
-                <AlertTriangle size={20} />
+                <QrCode size={20} />
               </div>
             </div>
 
             <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-xs flex items-center justify-between transition-all hover:shadow-md">
               <div>
-                <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider">
-                  FISIK RUSAK
+                <p className="text-[11px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-wider">
+                  RUSAK / PERBAIKAN
                 </p>
                 <h3 className="text-2xl font-black text-rose-600 dark:text-rose-400 mt-1">
-                  {bins.filter((b) => b.status === "BROKEN" || b.realStatus === "BROKEN" || b.status === "Rusak").length}
+                  {bins.filter((b) => b.status === "BROKEN" || b.realStatus === "BROKEN" || b.status === "Rusak" || b.status === "Perbaikan").length}
                 </h3>
               </div>
               <div className="w-11 h-11 rounded-2xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center border border-rose-100 dark:border-rose-700/50 shadow-2xs">
@@ -1531,24 +1567,39 @@ const ManajemenTempatSampah: React.FC = () => {
               className="flex items-center gap-2.5 px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-extrabold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all cursor-pointer shadow-2xs"
             >
               <span className={`w-2 h-2 rounded-full ${
-                statusFilter === "Aman" || statusFilter === "ACTIVE" || statusFilter === "Aktif" ? "bg-emerald-500" : statusFilter === "Penuh" ? "bg-rose-500" : statusFilter === "Sedang" ? "bg-amber-500" : statusFilter === "Perbaikan" ? "bg-rose-500" : "bg-slate-400"
+                statusFilter === "Teraktivasi Warga" || statusFilter === "Aman" || statusFilter === "Aman (<70%)" || statusFilter === "ACTIVE" || statusFilter === "Aktif"
+                  ? "bg-emerald-500"
+                  : statusFilter === "Stiker Belum Terikat" || statusFilter === "Sedang" || statusFilter === "Sedang (70-89%)"
+                  ? "bg-amber-500"
+                  : statusFilter === "Penuh" || statusFilter === "Penuh (≥90%)" || statusFilter === "Perbaikan" || statusFilter === "Perbaikan / Rusak"
+                  ? "bg-rose-500"
+                  : "bg-slate-400"
               }`} />
-              <span>{statusFilter ? statusFilter : "Semua Status Keterisian"}</span>
+              <span>{statusFilter ? statusFilter : "Semua Status"}</span>
               <ChevronDown size={14} className="text-slate-400" />
             </button>
 
             {isStatusDropdownOpen && (
               <>
                 <div className="fixed inset-0 z-20" onClick={() => setIsStatusDropdownOpen(false)} />
-                <div className="absolute right-0 mt-2 w-52 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-xl z-30 p-1.5 space-y-1 animate-in fade-in zoom-in-95 duration-150">
-                  {["Semua Status Keterisian", "Aman", "Sedang", "Penuh", "Perbaikan"].map((st) => {
-                    const isSelected = (st === "Semua Status Keterisian" && !statusFilter) || statusFilter === st;
+                <div className="absolute right-0 mt-2 w-60 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-xl z-30 p-1.5 space-y-1 animate-in fade-in zoom-in-95 duration-150">
+                  {[
+                    "Semua Status",
+                    "Teraktivasi Warga",
+                    "Stiker Belum Terikat",
+                    "Ditugaskan ke PIC",
+                    "Aman (<70%)",
+                    "Sedang (70-89%)",
+                    "Penuh (≥90%)",
+                    "Perbaikan / Rusak",
+                  ].map((st) => {
+                    const isSelected = (st === "Semua Status" && !statusFilter) || statusFilter === st;
                     return (
                       <button
                         key={st}
                         type="button"
                         onClick={() => {
-                          setStatusFilter(st === "Semua Status Keterisian" ? "" : st);
+                          setStatusFilter(st === "Semua Status" ? "" : st);
                           setIsStatusDropdownOpen(false);
                         }}
                         className={`w-full text-left px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
@@ -1726,12 +1777,17 @@ const ManajemenTempatSampah: React.FC = () => {
                       {bin.wargaName || bin.user?.name || bin.status === "ACTIVE_BOUND" ? (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/50">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                          Tercetak &amp; Aktif
+                          Teraktivasi Warga (Real Bin)
+                        </span>
+                      ) : bin.status === "ASSIGNED_TO_PIC" ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700/50">
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                          Ditugaskan ke PIC
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                          Tercetak (Belum Terikat)
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700/50">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                          Stiker Belum Terikat (PRINTED)
                         </span>
                       )}
                     </td>

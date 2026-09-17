@@ -1504,6 +1504,7 @@ interface KpiCardProps {
   trendLabel?: string;
   trendUp?: boolean;
   linkTo?: string;
+  onClick?: () => void;
 }
 
 const renderKpiIcon = (name: string) => {
@@ -1537,11 +1538,14 @@ const KpiCard: React.FC<KpiCardProps> = ({
   trendLabel,
   trendUp,
   linkTo,
+  onClick,
 }) => {
   const styles = KPI_COLOR_STYLES[color];
+  const isClickable = Boolean(linkTo || onClick);
   const content = (
     <div
-      className={`bg-white dark:bg-slate-900 shadow-xs rounded-2xl p-5 border border-slate-200 dark:border-slate-800 border-t-4 ${styles.border} flex flex-col justify-between h-full hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group ${linkTo ? "cursor-pointer" : ""}`}
+      onClick={!linkTo ? onClick : undefined}
+      className={`bg-white dark:bg-slate-900 shadow-xs rounded-2xl p-5 border border-slate-200 dark:border-slate-800 border-t-4 ${styles.border} flex flex-col justify-between h-full hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group ${isClickable ? "cursor-pointer" : ""}`}
     >
       <div className="flex items-center gap-3">
         <div
@@ -1582,7 +1586,7 @@ const KpiCard: React.FC<KpiCardProps> = ({
 
   if (linkTo) {
     return (
-      <Link to={linkTo} className="block h-full">
+      <Link to={linkTo} onClick={onClick} className="block h-full">
         {content}
       </Link>
     );
@@ -2317,7 +2321,11 @@ const Dashboard: React.FC = () => {
           trend={stats?.tempatSampahAktif?.trend}
           trendLabel={stats?.tempatSampahAktif?.trendLabel}
           trendUp={stats?.tempatSampahAktif?.trendUp}
-          linkTo="/monitoring-pengelolaan/tempat-sampah"
+          linkTo="/dasbor?tab=tata-kelola-sampah&view=bins"
+          onClick={() => {
+            setSearchParams({ tab: "tata-kelola-sampah", view: "bins" });
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
         />
         <KpiCard
           iconName="location_on"
@@ -3300,10 +3308,14 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
             <Link
-              to="/monitoring-pengelolaan/tempat-sampah"
+              to="/dasbor?tab=tata-kelola-sampah&view=bins"
+              onClick={() => {
+                setSearchParams({ tab: "tata-kelola-sampah", view: "bins" });
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
               className="text-xs font-extrabold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 transition-colors flex items-center gap-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 px-3.5 py-2 rounded-xl border border-emerald-500/20"
             >
-              Lihat Semua Data <ChevronRight size={14} />
+              Lihat Tempat Sampah Teraktivasi <ChevronRight size={14} />
             </Link>
           </div>
 

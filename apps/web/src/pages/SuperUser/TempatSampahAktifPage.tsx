@@ -176,7 +176,7 @@ const getStatusBadge = (status: string): string => {
 const getStatusLabel = (status: string): string => {
   const s = status?.toUpperCase() ?? "";
   if (s === "ACTIVE_BOUND") return "Aktif & Terikat";
-  if (s === "ASSIGNED_TO_PIC") return "Diberikan ke Petugas";
+  if (s === "ASSIGNED_TO_PIC") return "Dialokasikan ke Petugas";
   if (s === "ACTIVE") return "Aktif";
   return status || "-";
 };
@@ -591,16 +591,16 @@ export const TempatSampahAktifPage: React.FC = () => {
               {loading ? "..." : metrics.activeBound.toLocaleString("id-ID")}
             </div>
             <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1 truncate">
-              Status ACTIVE_BOUND ({metrics.total > 0 ? Math.round((metrics.activeBound / metrics.total) * 100) : 0}%)
+              Telah Terpasang di Warga ({metrics.total > 0 ? Math.round((metrics.activeBound / metrics.total) * 100) : 0}%)
             </p>
           </div>
         </div>
 
-        {/* Card 3: Ditugaskan ke Petugas */}
+        {/* Card 3: Dialokasikan ke Petugas */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs flex flex-col justify-between hover:border-indigo-400/60 transition-colors">
           <div className="flex items-center justify-between w-full mb-3">
             <span className="text-[10.5px] font-extrabold uppercase tracking-wider text-indigo-700 dark:text-indigo-400">
-              Diberikan ke Petugas
+              Dialokasikan ke Petugas
             </span>
             <div className="p-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
               <UserCheck size={18} />
@@ -611,7 +611,7 @@ export const TempatSampahAktifPage: React.FC = () => {
               {loading ? "..." : metrics.assignedPic.toLocaleString("id-ID")}
             </div>
             <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1 truncate">
-              Status ASSIGNED_TO_PIC ({metrics.assignedPic} unit)
+              Dalam Distribusi Petugas ({metrics.assignedPic} unit)
             </p>
           </div>
         </div>
@@ -691,7 +691,7 @@ export const TempatSampahAktifPage: React.FC = () => {
             }`}
           >
             <UserCheck size={13} />
-            <span>Diberikan ke Petugas</span>
+            <span>Dialokasikan ke Petugas</span>
             <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300">
               {metrics.assignedPic}
             </span>
@@ -1039,7 +1039,7 @@ export const TempatSampahAktifPage: React.FC = () => {
                               <span className="text-[10px] text-slate-400 dark:text-slate-500 pl-1">
                                 {(bin.status || "").includes("ACTIVE")
                                   ? "Siap Operasi & Pemilahan"
-                                  : "Penyerahan Fisik Petugas"}
+                                  : "Dalam Distribusi Petugas"}
                               </span>
                             </div>
                           </td>

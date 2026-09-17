@@ -19,7 +19,7 @@ export const KknQrClaim = ({ onClaimSuccess }: { onClaimSuccess: () => void }) =
           const { latitude, longitude } = position.coords;
           try {
             await api.post("/kkn/qr/claim", { qrCode, latitude, longitude });
-            toast.success("QR berhasil diklaim (ASSIGNED_TO_PIC)!");
+            toast.success("QR berhasil diklaim dan siap didistribusikan!");
             setQrCode("");
             onClaimSuccess();
           } catch (err: any) {

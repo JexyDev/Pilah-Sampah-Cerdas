@@ -246,7 +246,24 @@ router.get(
 router.get(
   "/kkn-executive/waste/bins-activated",
   authMiddleware,
-  roleMiddleware(["PIMPINAN", "PEMIMPIN", "SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DLH", "PANITIA_TASKFORCE"]),
+  roleMiddleware([
+    "PIMPINAN",
+    "PEMIMPIN",
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "DLH",
+    "PANITIA_TASKFORCE",
+    "CAMAT",
+    "LURAH",
+    "RW",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "MPL",
+    "MAHASISWA_KKN",
+    "PETUGAS_RESIDU",
+    "WARGA",
+  ]),
   async (req, res) => {
     try {
       const { kelurahan, rw } = req.query as { kelurahan?: string; rw?: string };
