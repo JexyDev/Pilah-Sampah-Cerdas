@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
@@ -23,7 +23,7 @@ import {
   Loader2
 } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
-import showToast from "../utils/toast";
+import showToast from "../utils/showToast";
 
 const ROLE_LABELS: Record<string, { label: string; icon: React.ElementType; color: string }> = {
   DEVELOPER: { label: "Developer", icon: Sparkles, color: "text-purple-600 bg-purple-50 dark:bg-purple-950/50" },
