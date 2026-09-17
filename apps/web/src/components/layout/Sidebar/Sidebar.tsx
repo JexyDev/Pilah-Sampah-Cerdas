@@ -25,6 +25,7 @@ import {
   Recycle,
   Info,
   Globe,
+  Coins,
   Radio,
   BookOpen,
   X,
