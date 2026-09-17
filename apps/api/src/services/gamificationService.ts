@@ -5,6 +5,10 @@ import {
   calculatePersonalPointsForUsers,
 } from "./dplService.js";
 import {
+  calculateValidIndividualPoints,
+  calculateValidIndividualPointsForUsers,
+} from "./pointService.js";
+import {
   isTestUser,
   isTestKelompok,
   isTestStudent,
@@ -249,7 +253,7 @@ export const gamificationService = {
       .sort((a, b) => b.totalPoints - a.totalPoints)
       .slice(0, 10);
 
-    // 4. Mahasiswa KKN Leaderboard
+    // 4. Mahasiswa KKN Leaderboard (Anti-Bocor Proker via SSOT)
     const mahasiswaUsers = await prisma.user.findMany({
       where: { role: { name: "MAHASISWA_KKN" } },
       select: {
@@ -270,15 +274,18 @@ export const gamificationService = {
             },
           },
         },
-        pointHistory: { select: { points: true } },
       },
     });
 
-    const mahasiswaLeaderboard = mahasiswaUsers
-      .filter((m: any) => !isTestUser(m) && !isTestStudent(m.studentProfile))
+    const validMahasiswaList = mahasiswaUsers.filter(
+      (m: any) => !isTestUser(m) && !isTestStudent(m.studentProfile)
+    );
+    const mhsUserIds = validMahasiswaList.map((m: any) => m.id);
+    const validPointsMap = await calculateValidIndividualPointsForUsers(mhsUserIds);
+
+    const mahasiswaLeaderboard = validMahasiswaList
       .map((m: any) => {
-        // Points directly earned by Mahasiswa
-        const ownPoints = m.pointHistory.reduce((acc: number, cur: any) => acc + cur.points, 0);
+        const ownPoints = validPointsMap.get(m.id) ?? 0;
         const area = m.studentProfile?.assignedRw;
 
         return {
@@ -407,7 +414,7 @@ export const gamificationService = {
     );
 
     const studentUserIds = students.map((s: any) => s.userId).filter(Boolean);
-    const personalPointsMap = await calculatePersonalPointsForUsers(studentUserIds);
+    const personalPointsMap = await calculateValidIndividualPointsForUsers(studentUserIds);
 
     const studentLeaderboard = students.map((s: any) => {
       let totalHours = 0;
