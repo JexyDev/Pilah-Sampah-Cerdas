@@ -803,6 +803,7 @@ export async function calculatePersonalPointsForUsers(
   const points = await prisma.pointHistory.findMany({
     where: {
       userId: { in: userIds },
+      kategori: { notIn: ["KKN_PROKER"] },
     },
     select: { userId: true, points: true },
   });
@@ -1836,7 +1837,10 @@ export const dplService = {
     // Batch query points via groupBy
     const allPoints = await prisma.pointHistory.groupBy({
       by: ["userId"],
-      where: { userId: { in: studentUserIds } },
+      where: {
+        userId: { in: studentUserIds },
+        kategori: { notIn: ["KKN_PROKER"] },
+      },
       _sum: { points: true },
     });
     const pointsByStudent = new Map<string, number>();
