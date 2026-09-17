@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
@@ -31,6 +31,7 @@ import {
   BookOpen,
   Award,
   AlertTriangle,
+  Lock,
 } from "lucide-react";
 import { useAuthStore } from "../../store/useAuthStore";
 import api from "../../services/api";
@@ -163,7 +164,7 @@ const MplDashboardPage: React.FC = () => {
 
   // Role check MPL
   const userRole = String(user?.peran || (user as any)?.role || "").toUpperCase();
-  const isMpl = ["MPL", "MITRA_PEMBIMBING_LAPANGAN", "MITRA_PENDAMPING_LAPANGAN", "MITRA"].includes(userRole);
+  const isMpl = ["MPL", "MITRA_PEMBIMBING_LAPANGAN", "MITRA_PENDAMPING_LAPANGAN", "MITRA"].some(r => userRole.includes(r));
 
   // ── Tab aktif ────────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<"dashboard" | "pelaksanaan" | "monitoring" | "penilaian">("dashboard");
@@ -172,6 +173,14 @@ const MplDashboardPage: React.FC = () => {
   const [dashData, setDashData] = useState<MplDashboardData | null>(null);
   const [dashLoading, setDashLoading] = useState(true);
   const [dashError, setDashError] = useState("");
+
+  // Kelurahan MPL Binaan yang terkunci
+  const mplKelurahan = useMemo(() => {
+    if (dashData?.kelurahan && dashData.kelurahan !== "Tidak Diketahui") return dashData.kelurahan;
+    if ((user as any)?.kelurahan) return (user as any).kelurahan;
+    if (user?.address) return user.address.replace(/^Kel\.\s*/i, "").trim();
+    return "";
+  }, [dashData?.kelurahan, user]);
 
   const fetchDashboard = useCallback(async () => {
     setDashLoading(true);
@@ -295,13 +304,22 @@ const MplDashboardPage: React.FC = () => {
     }
   }, [nilaiKelompokId]);
 
-  // ── Load data sesuai tab aktif ────────────────────────────────────────────────
+  // ── Load data sesuai tab aktif & scoping MPL ─────────────────────────────────
+  // Selalu muat ringkasan dashboard agar wilayah MPL diketahui
   useEffect(() => {
-    if (activeTab === "dashboard") fetchDashboard();
-  }, [activeTab, fetchDashboard]);
+    fetchDashboard();
+  }, [fetchDashboard]);
+
+  // Kunci kelurahan otomatis bila user adalah MPL
+  useEffect(() => {
+    if (isMpl && mplKelurahan) {
+      setPelKelurahan(mplKelurahan);
+      setMonKelurahan(mplKelurahan);
+    }
+  }, [isMpl, mplKelurahan]);
 
   useEffect(() => {
-    if (activeTab === "pelaksanaan") {
+    if (activeTab === "pelaksanaan" || activeTab === "penilaian") {
       fetchKelompok();
     }
   }, [activeTab, fetchKelompok]);
@@ -542,17 +560,31 @@ const MplDashboardPage: React.FC = () => {
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 shadow-xs">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               {/* Filter Kelurahan */}
-              <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-xl">
-                <MapPin size={13} className="text-emerald-600 shrink-0" />
-                <select
-                  value={pelKelurahan}
-                  onChange={(e) => { setPelKelurahan(e.target.value); setPelKelompokId(""); }}
-                  className="bg-transparent outline-none text-xs font-semibold text-slate-700 dark:text-slate-200 w-full cursor-pointer"
-                  aria-label="Filter Kelurahan Proker"
-                >
-                  {KELURAHAN_OPTIONS.map(k => <option key={k} value={k}>{k}</option>)}
-                </select>
-              </div>
+              {isMpl && mplKelurahan ? (
+                <div className="flex items-center justify-between gap-2 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-xl">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <MapPin size={13} className="text-emerald-600 shrink-0" />
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+                      Kel. {mplKelurahan}
+                    </span>
+                  </div>
+                  <span className="inline-flex items-center gap-1 text-[10px] bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 font-extrabold px-1.5 py-0.5 rounded border border-purple-200 dark:border-purple-800 shrink-0">
+                    <Lock size={10} /> Wilayah Binaan
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-xl">
+                  <MapPin size={13} className="text-emerald-600 shrink-0" />
+                  <select
+                    value={pelKelurahan}
+                    onChange={(e) => { setPelKelurahan(e.target.value); setPelKelompokId(""); }}
+                    className="bg-transparent outline-none text-xs font-semibold text-slate-700 dark:text-slate-200 w-full cursor-pointer"
+                    aria-label="Filter Kelurahan Proker"
+                  >
+                    {KELURAHAN_OPTIONS.map(k => <option key={k} value={k}>{k}</option>)}
+                  </select>
+                </div>
+              )}
 
               {/* Filter RW */}
               <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-xl">
@@ -634,11 +666,21 @@ const MplDashboardPage: React.FC = () => {
                         paginatedProker.map((p, idx) => (
                           <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
                             <td className="p-3 text-slate-500">{(prokerPage - 1) * ITEMS_PER_PAGE + idx + 1}</td>
-                            <td className="p-3 font-semibold text-slate-800 dark:text-slate-200">{p.namaProker}</td>
-                            <td className="p-3 text-slate-600 dark:text-slate-400">{p.kelompokName}</td>
-                            <td className="p-3 text-slate-600 dark:text-slate-400">{p.target || "-"}</td>
-                            <td className="p-3 text-slate-600 dark:text-slate-400">{fmtDate(p.tanggalMulai)}</td>
-                            <td className="p-3 text-slate-600 dark:text-slate-400">{fmtDate(p.tanggalSelesai)}</td>
+                            <td className="p-3 font-semibold text-slate-800 dark:text-slate-200">
+                              {p.namaProker || (p as any).judul || (p as any).deskripsi || "-"}
+                            </td>
+                            <td className="p-3 text-slate-600 dark:text-slate-400">
+                              {p.kelompokName || (p as any).kelompok?.name || "-"}
+                            </td>
+                            <td className="p-3 text-slate-600 dark:text-slate-400">
+                              {p.target || (p as any).waktuPelaksanaan || (p as any).kategori || "-"}
+                            </td>
+                            <td className="p-3 text-slate-600 dark:text-slate-400">
+                              {fmtDate(p.tanggalMulai || (p as any).createdAt)}
+                            </td>
+                            <td className="p-3 text-slate-600 dark:text-slate-400">
+                              {fmtDate(p.tanggalSelesai || (p as any).updatedAt)}
+                            </td>
                             <td className="p-3">
                               <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${getProkerBadge(p.statusPelaksanaan)}`}>
                                 {getProkerLabel(p.statusPelaksanaan)}
@@ -677,17 +719,32 @@ const MplDashboardPage: React.FC = () => {
         <div className="space-y-4">
           {/* Filter & Tombol */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 shadow-xs flex flex-col sm:flex-row items-start sm:items-center gap-3">
-            <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-xl flex-1">
-              <MapPin size={13} className="text-emerald-600 shrink-0" />
-              <select
-                value={monKelurahan}
-                onChange={(e) => setMonKelurahan(e.target.value)}
-                className="bg-transparent outline-none text-xs font-semibold text-slate-700 dark:text-slate-200 w-full cursor-pointer"
-                aria-label="Filter Kelurahan Monitoring"
-              >
-                {KELURAHAN_OPTIONS.map(k => <option key={k} value={k}>{k}</option>)}
-              </select>
-            </div>
+            {/* Filter Kelurahan */}
+            {isMpl && mplKelurahan ? (
+              <div className="flex items-center justify-between gap-2 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-xl flex-1">
+                <div className="flex items-center gap-2 min-w-0">
+                  <MapPin size={13} className="text-emerald-600 shrink-0" />
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+                    Kel. {mplKelurahan}
+                  </span>
+                </div>
+                <span className="inline-flex items-center gap-1 text-[10px] bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 font-extrabold px-1.5 py-0.5 rounded border border-purple-200 dark:border-purple-800 shrink-0">
+                  <Lock size={10} /> Wilayah Binaan
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-xl flex-1">
+                <MapPin size={13} className="text-emerald-600 shrink-0" />
+                <select
+                  value={monKelurahan}
+                  onChange={(e) => setMonKelurahan(e.target.value)}
+                  className="bg-transparent outline-none text-xs font-semibold text-slate-700 dark:text-slate-200 w-full cursor-pointer"
+                  aria-label="Filter Kelurahan Monitoring"
+                >
+                  {KELURAHAN_OPTIONS.map(k => <option key={k} value={k}>{k}</option>)}
+                </select>
+              </div>
+            )}
             <div className="relative flex-1">
               <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
@@ -855,17 +912,17 @@ const MplDashboardPage: React.FC = () => {
                     <div className="flex items-center justify-between p-4 gap-3">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-400 flex items-center justify-center font-black text-sm shrink-0">
-                          {(mhs.name || "?").charAt(0).toUpperCase()}
+                          {((mhs.name || (mhs as any).nama) || "?").charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{mhs.name}</p>
+                          <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{mhs.name || (mhs as any).nama}</p>
                           <p className="text-xs text-slate-500">{mhs.nim} {mhs.jurusan ? `• ${mhs.jurusan}` : ""}</p>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0">
                         {/* Status DPL */}
-                        {!mhs.dplSudahMenilai ? (
+                        {!(mhs.dplSudahMenilai ?? (mhs as any).sudahDinilaiDpl) ? (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
                             <Clock size={10} />Menunggu DPL
                           </span>
@@ -880,13 +937,13 @@ const MplDashboardPage: React.FC = () => {
                         )}
 
                         {/* Tombol Nilai */}
-                        {mhs.dplSudahMenilai && (
+                        {(mhs.dplSudahMenilai ?? (mhs as any).sudahDinilaiDpl) && (
                           <button
                             type="button"
-                            onClick={() => activeMhsId === mhs.id ? setActiveMhsId(null) : openNilaiForm(mhs)}
+                            onClick={() => activeMhsId === (mhs.id || (mhs as any).studentId) ? setActiveMhsId(null) : openNilaiForm(mhs)}
                             className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl cursor-pointer transition-colors"
                           >
-                            {activeMhsId === mhs.id ? "Tutup" : mhs.penilaian?.sudahDinilai ? "Edit Nilai" : "Nilai"}
+                            {activeMhsId === (mhs.id || (mhs as any).studentId) ? "Tutup" : mhs.penilaian?.sudahDinilai ? "Edit Nilai" : "Nilai"}
                           </button>
                         )}
                       </div>
