@@ -24,6 +24,9 @@ import ResiduDashboard from "../ResiduDashboard/ResiduDashboard";
 import DplDashboardPage from "../dpl/DplDashboardPage";
 import TaskforceDashboardPage from "../taskforce/TaskforceDashboardPage";
 import DashboardEksekutifKkn from "./DashboardEksekutifKkn";
+import GisMapTab from "../SuperUser/GisMapTab";
+import TempatSampahAktifPage from "../SuperUser/TempatSampahAktifPage";
+import MplDashboardPage from "../mpl/MplDashboardPage";
 import { getPortalLoadingText } from "../../utils/portalLoading";
 import LeaderboardWidget from "../../components/LeaderboardWidget";
 import { CustomSelect, type SelectOption } from "../../components/common/CustomSelect";
@@ -1595,11 +1598,12 @@ const Dashboard: React.FC = () => {
 
   const isPimpinan = user?.peran === "PIMPINAN" || user?.peran === "PEMIMPIN";
   const isSuperOrDev = user?.peran === "SUPER_USER" || user?.peran === "DEVELOPER";
+  const userPeran = (user?.peran || (user as any)?.role || "").toUpperCase();
   const isMpl =
-    user?.peran === "MPL" ||
-    (user?.peran as string) === "MITRA_PEMBIMBING_LAPANGAN" ||
-    (user?.peran as string) === "MITRA_PENDAMPING_LAPANGAN" ||
-    (user?.peran as string) === "MITRA";
+    userPeran === "MPL" ||
+    userPeran === "MITRA_PEMBIMBING_LAPANGAN" ||
+    userPeran === "MITRA_PENDAMPING_LAPANGAN" ||
+    userPeran === "MITRA";
   const canAccessKknSub = isPimpinan || isSuperOrDev;
 
   const tabParam = searchParams.get("tab");
@@ -1611,6 +1615,9 @@ const Dashboard: React.FC = () => {
     : isPimpinan
     ? "kkn"
     : "tata-kelola-sampah";
+
+  const viewParam = searchParams.get("view");
+  const activeWasteView = viewParam === "gis" ? "gis" : viewParam === "bins" ? "bins" : "ringkasan";
 
   const [stats, setStats] = useState<any>(null);
   const [recentBins, setRecentBins] = useState<any[]>([]);
@@ -1915,10 +1922,13 @@ const Dashboard: React.FC = () => {
   if (
     user?.peran === "DPL" ||
     user?.peran === "DOSEN_PEMBIMBING" ||
-    (user?.peran as string) === "DOSEN_PENDAMPING" ||
-    isMpl
+    (user?.peran as string) === "DOSEN_PENDAMPING"
   ) {
     return <DplDashboardPage />;
+  }
+
+  if (isMpl) {
+    return <MplDashboardPage />;
   }
 
   if (user?.peran === "PANITIA_TASKFORCE") {
@@ -2093,7 +2103,7 @@ const Dashboard: React.FC = () => {
           </button>
           <button
             type="button"
-            onClick={() => setSearchParams({ tab: "tata-kelola-sampah" })}
+            onClick={() => setSearchParams({ tab: "tata-kelola-sampah", view: activeWasteView })}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
               activeSubTab !== "kkn"
                 ? "bg-white dark:bg-slate-900 text-[#009966] dark:text-emerald-400 shadow-xs border border-slate-200/80 dark:border-slate-700 font-black"
@@ -2106,8 +2116,61 @@ const Dashboard: React.FC = () => {
         </div>
       )}
 
-      {/* 1. Header Bar (Clean Multi-Tier Executive UI - Konsisten dengan Analisis Sistem) */}
-      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-4">
+      {/* Sub-Tab Selector Tata Kelola Sampah: Ringkasan & Metrik | Peta GIS Fasilitas | Tempat Sampah Teraktivasi */}
+      <div className="bg-white dark:bg-slate-900 p-2 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+          <button
+            type="button"
+            onClick={() => setSearchParams({ tab: "tata-kelola-sampah", view: "ringkasan" })}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              activeWasteView === "ringkasan"
+                ? "bg-white dark:bg-slate-900 text-[#009966] dark:text-emerald-400 shadow-xs border border-slate-200/60 dark:border-slate-700 font-black"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+            }`}
+          >
+            <BarChart size={14} className={activeWasteView === "ringkasan" ? "text-[#009966] dark:text-emerald-400" : "text-slate-400"} />
+            <span>Ringkasan & Metrik</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setSearchParams({ tab: "tata-kelola-sampah", view: "gis" })}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              activeWasteView === "gis"
+                ? "bg-white dark:bg-slate-900 text-[#009966] dark:text-emerald-400 shadow-xs border border-slate-200/60 dark:border-slate-700 font-black"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+            }`}
+          >
+            <MapPin size={14} className={activeWasteView === "gis" ? "text-[#009966] dark:text-emerald-400" : "text-slate-400"} />
+            <span>Peta GIS Fasilitas</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setSearchParams({ tab: "tata-kelola-sampah", view: "bins" })}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              activeWasteView === "bins"
+                ? "bg-white dark:bg-slate-900 text-[#009966] dark:text-emerald-400 shadow-xs border border-slate-200/60 dark:border-slate-700 font-black"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+            }`}
+          >
+            <Trash2 size={14} className={activeWasteView === "bins" ? "text-[#009966] dark:text-emerald-400" : "text-slate-400"} />
+            <span>Tempat Sampah Teraktivasi</span>
+          </button>
+        </div>
+
+        <div className="px-3 py-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse" />
+          <span>Wilayah: Kecamatan Coblong</span>
+        </div>
+      </div>
+
+      {activeWasteView === "gis" ? (
+        <GisMapTab />
+      ) : activeWasteView === "bins" ? (
+        <TempatSampahAktifPage />
+      ) : (
+        <>
+          {/* 1. Header Bar (Clean Multi-Tier Executive UI - Konsisten dengan Analisis Sistem) */}
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-4">
         {/* Top Tier: Title & Live Badge */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -2248,7 +2311,6 @@ const Dashboard: React.FC = () => {
           trend={stats?.totalPengguna?.trend}
           trendLabel={stats?.totalPengguna?.trendLabel}
           trendUp={stats?.totalPengguna?.trendUp}
-          linkTo="/pengguna"
         />
         <KpiCard
           iconName="delete"
@@ -3589,6 +3651,8 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+        </>
       )}
 
       <ConfirmModal

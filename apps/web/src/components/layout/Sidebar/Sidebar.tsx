@@ -903,6 +903,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
   };
 
   const getFilteredGroupChildren = (groupLabel: string, items: any[]) => {
+    if (groupLabel === "Log Aktivitas" && isMpl) {
+      return [];
+    }
     if (groupLabel === "Wilayah" || groupLabel === "Data Wilayah") {
       if (isPimpinan) return [];
       if (
@@ -962,6 +965,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           icon: Coins,
           label: "Simulasi Poin KKN",
           allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[],
+        },
+        {
+          to: "/dashboard-mpl",
+          icon: GraduationCap,
+          label: "Portal MPL",
+          allowed: [
+            "MPL",
+            "DEVELOPER",
+            "SUPER_USER",
+          ] as UserRole[],
         },
         {
           type: "group",
