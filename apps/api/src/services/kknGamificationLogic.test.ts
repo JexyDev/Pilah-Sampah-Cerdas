@@ -374,6 +374,67 @@ describe("KKN Gamification Logic & Fixes", () => {
       expect(res.totalGroupPoints).toBe(10);
     });
 
+    it("should provide composite normalization fields without contaminating pure cumulative points or group points (Anti-Double Counting)", async () => {
+      // Kelompok beranggotakan 4 mahasiswa:
+      // Poin presensi murni: 57 total (15, 14, 14, 14)
+      // Bonus POIN_KKN_FINAL: +49 untuk masing-masing 4 mahasiswa (total bonus 196)
+      vi.mocked(prisma.pointHistory.findMany).mockImplementation((args: any) => {
+        const where = args?.where;
+        if (where?.kategori?.in) {
+          return Promise.resolve([
+            { userId: "u1", points: 15, kategori: "KKN_PRESENSI_HADIR", createdAt: new Date() },
+            { userId: "u2", points: 14, kategori: "KKN_PRESENSI_HADIR", createdAt: new Date() },
+            { userId: "u3", points: 14, kategori: "KKN_PRESENSI_HADIR", createdAt: new Date() },
+            { userId: "u4", points: 14, kategori: "KKN_PRESENSI_HADIR", createdAt: new Date() },
+          ]) as any;
+        }
+        if (where?.kategori === "POIN_KKN_FINAL") {
+          return Promise.resolve([
+            { userId: "u1", points: 49, kategori: "POIN_KKN_FINAL" },
+            { userId: "u2", points: 49, kategori: "POIN_KKN_FINAL" },
+            { userId: "u3", points: 49, kategori: "POIN_KKN_FINAL" },
+            { userId: "u4", points: 49, kategori: "POIN_KKN_FINAL" },
+          ]) as any;
+        }
+        return Promise.resolve([]) as any;
+      });
+
+      const res = await calculateGroupPoints("kel-1", [], ["u1", "u2", "u3", "u4"]);
+
+      // 1. Verifikasi kemurnian formula dasar (Poin murni tidak terkontaminasi!)
+      expect(res.totalCumulativeMemberPoints).toBe(57);
+      expect(res.rataRataPoinAnggota).toBe(14.3); // 57 / 4 = 14.25 -> 14.3
+      expect(res.totalGroupPoints).toBe(5.7); // (0 * 0.6) + (14.3 * 0.4) = 5.72 -> 5.7
+
+      // 2. Verifikasi field komposit tampilan aman (non-rekursif)
+      expect(res.totalNormalizationBonus).toBe(196); // 49 * 4
+      expect(res.averageNormalizationBonus).toBe(49);
+      expect(res.totalCumulativeMemberPointsWithNormalization).toBe(253); // 57 + 196 = 253
+
+      // 3. Verifikasi sifat idempoten (panggilan kedua tidak memicu rekursi/inflasi)
+      const resSecondCall = await calculateGroupPoints("kel-1", [], ["u1", "u2", "u3", "u4"]);
+      expect(resSecondCall.totalCumulativeMemberPoints).toBe(57);
+      expect(resSecondCall.totalCumulativeMemberPointsWithNormalization).toBe(253);
+    });
+
+    it("should handle groups without POIN_KKN_FINAL gracefully with fallback to pure points", async () => {
+      vi.mocked(prisma.pointHistory.findMany).mockImplementation((args: any) => {
+        const where = args?.where;
+        if (where?.kategori?.in) {
+          return Promise.resolve([
+            { userId: "u1", points: 20, kategori: "KKN_PRESENSI_HADIR", createdAt: new Date() },
+          ]) as any;
+        }
+        return Promise.resolve([]) as any;
+      });
+
+      const res = await calculateGroupPoints("kel-1", [], ["u1"]);
+      expect(res.totalCumulativeMemberPoints).toBe(20);
+      expect(res.totalNormalizationBonus).toBe(0);
+      expect(res.averageNormalizationBonus).toBe(0);
+      expect(res.totalCumulativeMemberPointsWithNormalization).toBe(20);
+    });
+
     it("should calculate Poin DPL using binary logbook (6 or 0) and 50% Logbook + 50% Kelompok", async () => {
       // Skenario A: Logbook DPL tersedia (count > 0) -> 6 poin
       vi.mocked(prisma.logbookDpl.count).mockResolvedValue(2);
