@@ -60,6 +60,7 @@ import { dplService, type GroupSummary, type StudentDetail } from "../../service
 import LeaderboardWidget from "../../components/LeaderboardWidget";
 import { fetchMasterWilayah, type MasterKelurahanItem } from "../../utils/areaFilterUtils";
 import { isTestKelompok, isTestStudent, isTestUser } from "../../utils/filterTestingUtils";
+import { calculateProkerMetrics } from "../../utils/prokerMetrics";
 // Tab Tata Kelola Sampah (GIS & Tempat Sampah Aktif)
 import GisMapTab from "../SuperUser/GisMapTab";
 import TempatSampahAktifPage from "../SuperUser/TempatSampahAktifPage";
@@ -258,76 +259,6 @@ const getAttendanceBadgeClass = (rate: number) => {
   };
 };
 
-/**
- * Menghitung Progres Program Kerja Kelompok KKN sesuai arahan resmi CEO:
- * Rumus: (proker yang sedang berjalan / total proker disetujui) * 100%
- * - Pembilang (activeCount): Proker yang aktif berjalan / telah tuntas (sedang berjalan + selesai).
- * - Penyebut (approvedCount): Total proker yang disetujui (statusUsulan === 'DISETUJUI' / bukan ditolak).
- */
-export const calculateGroupProkerProgress = (programKerja?: any[]) => {
-  const prokers = Array.isArray(programKerja) ? programKerja : [];
-  if (prokers.length === 0) {
-    return {
-      rate: 0,
-      activeCount: 0,
-      ongoingCount: 0,
-      doneCount: 0,
-      approvedCount: 0,
-      totalCount: 0,
-    };
-  }
-
-  // Filter proker yang tidak ditolak
-  const nonRejected = prokers.filter((p: any) => {
-    const u = String(p.statusUsulan || "").toUpperCase();
-    const s = String(p.status || "").toUpperCase();
-    return u !== "DITOLAK" && s !== "DITOLAK";
-  });
-
-  // Proker yang disetujui DPL
-  const approved = nonRejected.filter((p: any) => {
-    const u = String(p.statusUsulan || "").toUpperCase();
-    const s = String(p.status || "").toUpperCase();
-    const pl = String(p.statusPelaksanaan || "").toUpperCase();
-    return (
-      u === "DISETUJUI" ||
-      s === "DISETUJUI" ||
-      s === "DITERIMA" ||
-      pl === "SEDANG_BERJALAN" ||
-      pl === "SELESAI"
-    );
-  });
-
-  // Basis penyebut: proker yang disetujui DPL. Jika data proker belum di-flag DISETUJUI, fallback ke proker non-ditolak
-  const approvedCount = approved.length > 0 ? approved.length : nonRejected.length;
-
-  // Proker sedang berjalan
-  const ongoingCount = nonRejected.filter((p: any) => {
-    const pl = String(p.statusPelaksanaan || "").toUpperCase();
-    const s = String(p.status || "").toUpperCase();
-    return pl === "SEDANG_BERJALAN" || s === "SEDANG_BERJALAN";
-  }).length;
-
-  // Proker selesai
-  const doneCount = nonRejected.filter((p: any) => {
-    const pl = String(p.statusPelaksanaan || "").toUpperCase();
-    const s = String(p.status || "").toUpperCase();
-    return pl === "SELESAI" || s === "SELESAI";
-  }).length;
-
-  // Proker berjalan (sedang berjalan + tuntas selesai)
-  const activeCount = ongoingCount + doneCount;
-  const rate = approvedCount > 0 ? Math.min(100, Math.round((activeCount / approvedCount) * 100)) : 0;
-
-  return {
-    rate,
-    activeCount,
-    ongoingCount,
-    doneCount,
-    approvedCount,
-    totalCount: prokers.length,
-  };
-};
 
 export const DashboardEksekutifKkn: React.FC = () => {
   const navigate = useNavigate();
@@ -698,9 +629,9 @@ export const DashboardEksekutifKkn: React.FC = () => {
       if (attendanceFilter === "GE_60" && attRate < 60) return false;
 
       // 4. Filter Proker (<60% atau >=60%)
-      const { rate: prokerRate } = calculateGroupProkerProgress(g.programKerja);
-      if (prokerFilter === "UNDER_60" && prokerRate >= 60) return false;
-      if (prokerFilter === "GE_60" && prokerRate < 60) return false;
+      const prokerMetrics = calculateProkerMetrics(g.programKerja);
+      if (prokerFilter === "UNDER_60" && prokerMetrics.rate >= 60) return false;
+      if (prokerFilter === "GE_60" && prokerMetrics.rate < 60) return false;
 
       // 5. Search Query
       if (groupSearchQuery.trim()) {
@@ -746,9 +677,8 @@ export const DashboardEksekutifKkn: React.FC = () => {
         : 0;
     const countAttendanceUnder60 = filteredGroups.filter((g) => (g.avgAttendanceRate || 0) < 60).length;
     const countProkerUnder60 = filteredGroups.filter((g) => {
-      const { rate, approvedCount } = calculateGroupProkerProgress(g.programKerja);
-      if (approvedCount === 0) return true;
-      return rate < 60;
+      const metrics = calculateProkerMetrics(g.programKerja);
+      return metrics.total === 0 || metrics.isLowProker;
     }).length;
 
     return {
@@ -2709,15 +2639,9 @@ export const DashboardEksekutifKkn: React.FC = () => {
                 ? g.cakupanRw
                 : "-";
               
-              const {
-                rate: prokerRate,
-                activeCount: activeP,
-                ongoingCount: ongoingP,
-                doneCount: doneP,
-                approvedCount: totalP,
-              } = calculateGroupProkerProgress(g.programKerja);
+              const prokerMetrics = calculateProkerMetrics(g.programKerja);
               const isLowAtt = (g.avgAttendanceRate || 0) < 60;
-              const isLowProker = totalP > 0 && prokerRate < 60;
+              const isLowProker = prokerMetrics.isLowProker;
 
               return (
                 <div
@@ -2780,15 +2704,15 @@ export const DashboardEksekutifKkn: React.FC = () => {
                       <span className="text-[10px] text-slate-400 block font-medium">Progres Proker</span>
                       <span
                         className={`font-black text-xs px-2 py-0.5 rounded-md border inline-block mt-0.5 ${
-                          prokerRate >= 80
+                          prokerMetrics.rate >= 80
                             ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300"
-                            : prokerRate >= 60
+                            : prokerMetrics.rate >= 60
                             ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/60 dark:text-blue-300"
                             : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300"
                         }`}
-                        title={`${activeP} dari ${totalP} Proker Disetujui (${ongoingP} Sedang Berjalan, ${doneP} Selesai)`}
+                        title={prokerMetrics.tooltip}
                       >
-                        {prokerRate}% ({activeP}/{totalP})
+                        {prokerMetrics.rate}% ({prokerMetrics.ratioLabel})
                       </span>
                     </div>
                   </div>
