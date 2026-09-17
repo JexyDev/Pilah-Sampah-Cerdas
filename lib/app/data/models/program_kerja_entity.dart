@@ -71,6 +71,10 @@ class ProgramKerjaEntity {
       } else {
         resolvedPelaksanaan = 'BELUM_MULAI';
       }
+    } else if (resolvedPelaksanaan == 'SEDANG_BERLANGSUNG' ||
+        resolvedPelaksanaan == 'BERLANGSUNG' ||
+        resolvedPelaksanaan == 'SEDANG_DILAKSANAKAN') {
+      resolvedPelaksanaan = 'SEDANG_BERJALAN';
     }
 
     return ProgramKerjaEntity(

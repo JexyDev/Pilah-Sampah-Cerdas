@@ -173,6 +173,8 @@ class _DataProkerViewState extends ConsumerState<DataProkerView> {
     return p == 'SEDANG_BERJALAN' ||
         p == 'SEDANG_DILAKSANAKAN' ||
         p == 'BERJALAN' ||
+        p == 'SEDANG_BERLANGSUNG' ||
+        p == 'BERLANGSUNG' ||
         (p.isEmpty && (l == 'SEDANG_BERJALAN' || l == 'SEDANG_DILAKSANAKAN'));
   }
 

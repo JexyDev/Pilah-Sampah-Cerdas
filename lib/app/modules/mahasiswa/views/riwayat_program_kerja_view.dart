@@ -121,7 +121,9 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
       label = 'Berakhir';
     } else if (p == 'SEDANG_BERJALAN' ||
         p == 'SEDANG_DILAKSANAKAN' ||
-        p == 'BERJALAN') {
+        p == 'BERJALAN' ||
+        p == 'SEDANG_BERLANGSUNG' ||
+        p == 'BERLANGSUNG') {
       color = AppColors.primaryBlue;
       label = 'Sedang Berlangsung';
     } else {
@@ -161,6 +163,9 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
       points = 6;
     } else if (sPel == 'SEDANG_BERJALAN' ||
         sPel == 'BERJALAN' ||
+        sPel == 'SEDANG_BERLANGSUNG' ||
+        sPel == 'BERLANGSUNG' ||
+        sPel == 'SEDANG_DILAKSANAKAN' ||
         leg == 'SEDANG_BERJALAN') {
       points = 4;
     } else if (sUsl == 'DISETUJUI' ||
