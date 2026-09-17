@@ -215,6 +215,75 @@ describe("Mobile Gamification & Personal Point Calculation", () => {
     expect(habikMember!.individualPoints).toBe(30);
   });
 
+  it("kknService.getMyGroup should swap cumulativeMemberPoints to totalCumulativeMemberPointsWithNormalization for Mobile UX Card compatibility", async () => {
+    vi.mocked(prisma.studentKkn.findUnique).mockResolvedValue({
+      id: "student-acef",
+      userId: "user-acef",
+      nim: "12345678",
+      jurusan: "Teknik Informatika",
+      fakultas: "UNIKOM",
+      isKetua: false,
+      kelompokId: "kel-test",
+      kelompok: {
+        id: "kel-test",
+        name: "Kelompok TEST",
+        kelurahan: "Sadang Serang",
+        dpl: {
+          id: "dpl-1",
+          name: "Dr. Pembimbing",
+          nip: "19800101",
+          phone: "08123456789",
+        },
+        students: [
+          {
+            id: "student-acef",
+            userId: "user-acef",
+            nim: "12345678",
+            jurusan: "Teknik Informatika",
+            fakultas: "UNIKOM",
+            isKetua: false,
+            user: { name: "Acef Testing" },
+          },
+        ],
+      },
+    } as any);
+
+    vi.mocked(prisma.pointHistory.groupBy).mockResolvedValue([
+      { userId: "user-acef", _sum: { points: 99 } } as any,
+    ]);
+
+    // Mock pointHistory for calculateGroupPoints:
+    // Pure daily attendance = 57, Normalization bonus = 196 (total = 253)
+    vi.mocked(prisma.pointHistory.findMany).mockImplementation((args: any) => {
+      const where = args?.where;
+      if (where?.kategori?.in) {
+        return Promise.resolve([
+          { userId: "user-acef", points: 57, kategori: "KKN_PRESENSI_HADIR", createdAt: new Date() },
+        ]) as any;
+      }
+      if (where?.kategori === "POIN_KKN_FINAL") {
+        return Promise.resolve([
+          { userId: "user-acef", points: 196, kategori: "POIN_KKN_FINAL" },
+        ]) as any;
+      }
+      return Promise.resolve([]) as any;
+    });
+
+    vi.mocked(prisma.programKerjaKkn.findMany).mockResolvedValue([]);
+    vi.mocked(prisma.poskoKkn.findUnique).mockResolvedValue(null);
+    vi.mocked(prisma.facility.findFirst).mockResolvedValue(null);
+
+    const result = await kknService.getMyGroup("user-acef");
+
+    expect(result).not.toBeNull();
+    // Verify that the mobile UX Card fields receive the dynamic composite value (253)
+    expect(result!.cumulativeMemberPoints).toBe(253);
+    expect(result!.totalCumulativeMemberPoints).toBe(253);
+    expect(result!.totalCumulativeMemberPointsWithNormalization).toBe(253);
+    // Verify pure points are preserved for academic audit
+    expect(result!.pureTotalCumulativeMemberPoints).toBe(57);
+  });
+
   describe("Logbook Submission Points & Metadata (Mobile Requirements)", () => {
     const mockStudentUser = {
       id: "mhs-1",
