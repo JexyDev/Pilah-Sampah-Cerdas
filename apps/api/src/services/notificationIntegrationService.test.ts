@@ -91,7 +91,11 @@ describe("Notification Integration Service - Push Notifications", () => {
     });
     expect(mockUserFindUnique).toHaveBeenCalledWith({
       where: { id: "user-mhs-1" },
-      select: { fcmToken: true },
+      select: {
+        fcmToken: true,
+        role: { select: { name: true } },
+        studentProfile: { select: { id: true } },
+      },
     });
     expect(mockNotificationLogCreate).toHaveBeenCalled();
     expect(result?.notification.id).toBe("notif-uuid-1");
@@ -125,9 +129,71 @@ describe("Notification Integration Service - Push Notifications", () => {
         id: { in: ["mhs-1", "mhs-2"] },
         fcmToken: { not: null },
       },
-      select: { id: true, fcmToken: true },
+      select: {
+        id: true,
+        fcmToken: true,
+        role: { select: { name: true } },
+        studentProfile: { select: { id: true } },
+      },
     });
     expect(mockNotificationLogCreate).toHaveBeenCalledTimes(2);
     expect(res).toHaveLength(2);
+  });
+
+  it("sendPushNotification should debounce rapid duplicate push notifications within 10s window", async () => {
+    const res1 = await notificationIntegrationService.sendPushNotification(
+      "debounce-token-xyz",
+      "Check-In Sukses",
+      "Presensi masuk berhasil dicatat.",
+      "CHECKIN_SUCCESS"
+    );
+    expect(res1.success).toBe(true);
+    expect(res1.messageId).not.toBe("debounced");
+
+    // Immediate second call should be debounced
+    const res2 = await notificationIntegrationService.sendPushNotification(
+      "debounce-token-xyz",
+      "Check-In Sukses",
+      "Presensi masuk berhasil dicatat.",
+      "CHECKIN_SUCCESS"
+    );
+    expect(res2.success).toBe(true);
+    expect(res2.messageId).toBe("debounced");
+  });
+
+  it("sendToUser should suppress FCM push for Mahasiswa when trigger is non-essential (e.g. GPS alarm)", async () => {
+    mockNotificationCreate.mockResolvedValueOnce({
+      id: "notif-uuid-gps",
+      userId: "user-mhs-spam",
+      title: "GPS Alert",
+      message: "Anda berada di luar zona posko.",
+      isRead: false,
+    });
+
+    mockUserFindUnique.mockResolvedValueOnce({
+      id: "user-mhs-spam",
+      fcmToken: "fcm-mhs-gps-token",
+      role: { name: "MAHASISWA_KKN" },
+      studentProfile: { id: "student-123" },
+    });
+
+    const result = await notificationIntegrationService.sendToUser({
+      userId: "user-mhs-spam",
+      title: "GPS Alert",
+      message: "Anda berada di luar zona posko.",
+      triggerType: "GPS_OUT_OF_BOUNDS",
+    });
+
+    // In-app notification created in DB
+    expect(mockNotificationCreate).toHaveBeenCalledWith({
+      data: {
+        userId: "user-mhs-spam",
+        title: "GPS Alert",
+        message: "Anda berada di luar zona posko.",
+        isRead: false,
+      },
+    });
+    // But FCM push is suppressed (null)
+    expect(result?.pushResult).toBeNull();
   });
 });

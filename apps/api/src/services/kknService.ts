@@ -4118,7 +4118,9 @@ export class KknService {
           attendanceForActiveSchedule.status = "HADIR_MEMENUHI";
           attendanceForActiveSchedule.checkOutAt = checkoutTime;
           attendanceForActiveSchedule.actualInZoneMinutes =
-            autoCheckoutResult?.data?.actualInZoneMinutes ?? targetDurationMinutes;
+            (autoCheckoutResult as any)?.actualInZoneMinutes ??
+            (autoCheckoutResult as any)?.data?.actualInZoneMinutes ??
+            targetDurationMinutes;
         }
       } catch (checkoutErr) {
         console.error(
