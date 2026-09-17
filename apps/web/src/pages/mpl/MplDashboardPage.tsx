@@ -342,7 +342,18 @@ const MplDashboardPage: React.FC = () => {
   const handleSaveNilai = async (studentId: string) => {
     setSaving(true);
     try {
-      await api.post("/mpl/penilaian/assess", { studentId, ...formNilai });
+      await api.post("/mpl/penilaian/assess", {
+        studentId,
+        skorMitraKehadiran: formNilai.skorKehadiran,
+        skorMitraWargaBinaan: formNilai.skorWargaBinaan,
+        skorMitraProker: formNilai.skorProker,
+        skorMitraKomunikasi: formNilai.skorKomunikasi,
+        skorMitraTanggungJawab: formNilai.skorTanggungJawab,
+        skorMitraBuktiKegiatan: formNilai.skorBuktiKegiatan,
+        skorMitraDampak: formNilai.skorDampak,
+        skorMitraInisiatif: formNilai.skorInisiatif,
+        ...formNilai,
+      });
       showToast.success("Penilaian berhasil disimpan!");
       setActiveMhsId(null);
       fetchMahasiswaPenilaian();

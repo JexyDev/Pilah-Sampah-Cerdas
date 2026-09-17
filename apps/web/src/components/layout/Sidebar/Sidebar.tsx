@@ -25,7 +25,6 @@ import {
   Recycle,
   Info,
   Globe,
-  Coins,
   Radio,
   BookOpen,
   X,
@@ -977,12 +976,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             "PIMPINAN",
             "PEMIMPIN",
           ] as UserRole[],
-        },
-        {
-          to: "/developer/poin-mahasiswa-kkn",
-          icon: Coins,
-          label: "Simulasi Poin KKN",
-          allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[],
         },
         {
           type: "group",
