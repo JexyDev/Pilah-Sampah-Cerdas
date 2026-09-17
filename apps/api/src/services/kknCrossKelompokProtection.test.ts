@@ -9,6 +9,7 @@ vi.mock("../lib/prisma.js", () => {
     bin: { findUnique: vi.fn(), findMany: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
     binOwnership: { findFirst: vi.fn(), create: vi.fn() },
     pointHistory: { create: vi.fn() },
+    notification: { create: vi.fn().mockResolvedValue({}) },
     household: { findFirst: vi.fn(), create: vi.fn(), updateMany: vi.fn().mockResolvedValue({}) },
     rw: { findUnique: vi.fn() },
   };
@@ -155,13 +156,21 @@ describe("KKN Cross-Kelompok Protection Tests", () => {
     ]);
 
     vi.mocked(prisma.bin.updateMany).mockResolvedValueOnce({ count: 1 } as any);
-    vi.mocked(prisma.pointHistory.create).mockResolvedValueOnce({} as any);
+    vi.mocked(prisma.notification.create).mockResolvedValueOnce({} as any);
 
     const res = await kknService.claimWargaMandiri("user-mhs-10", "warga-1");
     expect(res.claimedBinsCount).toBe(1);
+    expect(res.gamification.pointsEarned).toBe(0);
     expect(prisma.bin.updateMany).toHaveBeenCalledWith({
       where: { id: { in: ["bin-10"] } },
       data: { registeredByStudentId: "user-mhs-10", kelompokId: "kelompok-10" },
+    });
+    expect(prisma.notification.create).toHaveBeenCalledWith({
+      data: {
+        userId: "user-mhs-10",
+        title: "Klaim Warga Dampingan Berhasil",
+        message: expect.stringContaining("Pak Budi"),
+      },
     });
   });
 });

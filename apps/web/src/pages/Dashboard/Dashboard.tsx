@@ -1922,13 +1922,10 @@ const Dashboard: React.FC = () => {
   if (
     user?.peran === "DPL" ||
     user?.peran === "DOSEN_PEMBIMBING" ||
-    (user?.peran as string) === "DOSEN_PENDAMPING"
+    (user?.peran as string) === "DOSEN_PENDAMPING" ||
+    isMpl
   ) {
     return <DplDashboardPage />;
-  }
-
-  if (isMpl) {
-    return <MplDashboardPage />;
   }
 
   if (user?.peran === "PANITIA_TASKFORCE") {

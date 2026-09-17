@@ -1417,15 +1417,8 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
-        {/* MPL Dashboard — Independent dari DPL, scope otomatis ke kelurahan MPL */}
-        <Route
-          path="/dashboard-mpl"
-          element={
-            <ProtectedRoute allowedRoles={["MPL", "MITRA_PEMBIMBING_LAPANGAN", "MITRA_PENDAMPING_LAPANGAN", "MITRA", "SUPER_USER", "DEVELOPER"]}>
-              <MplDashboardPage />
-            </ProtectedRoute>
-          }
-        />
+        {/* MPL Dashboard Redirect — terintegrasi penuh ke /dasbor */}
+        <Route path="/dashboard-mpl" element={<Navigate to="/dasbor" replace />} />
         {/* Developer Tool: Simulasi & Normalisasi Poin Mahasiswa KKN */}
         <Route
           path="/developer/poin-mahasiswa-kkn"
