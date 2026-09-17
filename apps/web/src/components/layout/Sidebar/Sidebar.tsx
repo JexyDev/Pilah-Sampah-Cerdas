@@ -906,6 +906,24 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     if (groupLabel === "Log Aktivitas" && isMpl) {
       return [];
     }
+    if (groupLabel === "Monitoring Kegiatan" && isMpl) {
+      return (items || [])
+        .filter(
+          (c: any) =>
+            c.to !== "/monitoring-kegiatan/presensi" &&
+            c.to !== "/monitoring-absen" &&
+            hasAccess(c.allowed, c.resource)
+        )
+        .map((c: any) => {
+          if (c.children && Array.isArray(c.children)) {
+            return {
+              ...c,
+              children: c.children.filter((sub: any) => hasAccess(sub.allowed, sub.resource)),
+            };
+          }
+          return c;
+        });
+    }
     if (groupLabel === "Wilayah" || groupLabel === "Data Wilayah") {
       if (isPimpinan) return [];
       if (
@@ -1089,7 +1107,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "ADMIN_DLH",
                 "DPL",
                 "DOSEN_PEMBIMBING",
-                "MPL",
                 "PANITIA_TASKFORCE",
                 "PIMPINAN",
                 "CAMAT",

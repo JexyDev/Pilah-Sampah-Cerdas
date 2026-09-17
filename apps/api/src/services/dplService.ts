@@ -758,7 +758,10 @@ export async function calculatePersonalPoints(userId: string): Promise<{
       if (
         !lowerDesc.includes("warga") &&
         !lowerDesc.includes("bonus_login") &&
-        !lowerDesc.includes("reduksi_tonase")
+        !lowerDesc.includes("reduksi_tonase") &&
+        p.kategori !== "POIN_KKN_FINAL" &&
+        !lowerDesc.includes("poin kkn kelompok") &&
+        !lowerDesc.includes("normalisasi poin kkn")
       ) {
         rawLogAktivitas += val;
       }
@@ -803,7 +806,7 @@ export async function calculatePersonalPointsForUsers(
   const points = await prisma.pointHistory.findMany({
     where: {
       userId: { in: userIds },
-      kategori: { notIn: ["KKN_PROKER"] },
+      kategori: { notIn: ["KKN_PROKER", "POIN_KKN_FINAL"] },
     },
     select: { userId: true, points: true },
   });

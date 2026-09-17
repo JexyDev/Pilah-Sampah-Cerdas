@@ -28,6 +28,8 @@ import {
   Phone,
   Building2,
   Play,
+  Lock,
+  MapPin,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
@@ -79,22 +81,37 @@ const GoogleDriveIcon = () => (
 export const ProgramKerjaKkn: React.FC = () => {
   const { user } = useAuthStore();
   const userRole = String(user?.peran || (user as any)?.role || "").toUpperCase();
-  const isPimpinan = ["PEMIMPIN", "PIMPINAN", "CAMAT", "LURAH", "KEPALA_DESA", "REKTOR"].includes(
-    userRole
+  const isPimpinan = ["PEMIMPIN", "PIMPINAN", "CAMAT", "LURAH", "KEPALA_DESA", "REKTOR"].some((r) =>
+    userRole.includes(r)
   );
-  const isMpl = ["MPL", "MITRA_PEMBIMBING_LAPANGAN", "MITRA_PENDAMPING_LAPANGAN", "MITRA"].includes(
-    userRole
+  const isMpl = ["MPL", "MITRA_PEMBIMBING_LAPANGAN", "MITRA_PENDAMPING_LAPANGAN", "MITRA"].some((r) =>
+    userRole.includes(r)
   );
-  const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(userRole);
+  const isDpl = ["DPL", "DOSEN_PEMBIMBING"].some((r) => userRole.includes(r));
   const isDeveloper = userRole === "DEVELOPER" || userRole === "SUPER_USER";
-  const isManagement = ["SUPER_USER", "PANITIA_TASKFORCE", "DEVELOPER", "ADMIN_DLH"].includes(
-    userRole
+  const isManagement = ["SUPER_USER", "PANITIA_TASKFORCE", "DEVELOPER", "ADMIN_DLH"].some((r) =>
+    userRole.includes(r)
   );
-  const isStudent = ["MAHASISWA_KKN", "MAHASISWA", "STUDENT"].includes(userRole);
+  const isStudent = ["MAHASISWA_KKN", "MAHASISWA", "STUDENT"].some((r) => userRole.includes(r));
   const isKetua = Boolean(
     (user as any)?.isKetua || (user as any)?.studentProfile?.isKetua || (user as any)?.isLeader
   );
   const canModifyProker = !isMpl && !isPimpinan && (isManagement || isDpl || (isStudent && isKetua));
+
+  // Scoping Wilayah Binaan MPL
+  const mplKelurahan = useMemo(() => {
+    if (!isMpl) return "";
+    if ((user as any)?.kelurahan) return (user as any).kelurahan;
+    if (user?.address) return user.address.replace(/^Kel\.\s*/i, "").trim();
+    if (user?.name) {
+      const known = ["Cipaganti", "Dago", "Lebak Gede", "Lebak Siliwangi", "Sadang Serang", "Sekeloa"];
+      const match = known.find((k) => user.name.toLowerCase().includes(k.toLowerCase()));
+      if (match) return match;
+    }
+    return "Cipaganti";
+  }, [isMpl, user]);
+
+  const showKelompokInfo = isDeveloper || isManagement || isMpl || isPimpinan;
 
   const [searchParams] = useSearchParams();
 
@@ -148,6 +165,46 @@ export const ProgramKerjaKkn: React.FC = () => {
       setCategoryFilter(cat);
     }
   }, [searchParams]);
+
+  // Auto-lock selectedKelurahan untuk role MPL ke wilayah binaan
+  useEffect(() => {
+    if (isMpl && mplKelurahan) {
+      setSelectedKelurahan(mplKelurahan);
+    }
+  }, [isMpl, mplKelurahan]);
+
+  // Handler Reset Seluruh Filter (Mempertahankan lock MPL)
+  const handleResetAllFilters = () => {
+    setSearchQuery("");
+    if (isMpl && mplKelurahan) {
+      setSelectedKelurahan(mplKelurahan);
+    } else {
+      setSelectedKelurahan("ALL");
+    }
+    setSelectedRw("ALL");
+    if (isManagement || isMpl) {
+      setSelectedKelompokId("ALL");
+    }
+    setCategoryFilter("ALL");
+    setSourceFilter("ALL");
+    setStatusUsulanFilter("ALL");
+    setStatusPelaksanaanFilter("ALL");
+    setStartDateFilter("");
+    setEndDateFilter("");
+  };
+
+  const hasActiveFilter = Boolean(
+    searchQuery.trim() ||
+    (!isMpl && selectedKelurahan !== "ALL") ||
+    selectedRw !== "ALL" ||
+    selectedKelompokId !== "ALL" ||
+    categoryFilter !== "ALL" ||
+    sourceFilter !== "ALL" ||
+    statusUsulanFilter !== "ALL" ||
+    statusPelaksanaanFilter !== "ALL" ||
+    startDateFilter ||
+    endDateFilter
+  );
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -416,6 +473,43 @@ export const ProgramKerjaKkn: React.FC = () => {
             }
           } catch (e) {
             console.error("Gagal memuat fallback kelompok:", e);
+          }
+        }
+      } else if (isMpl) {
+        // MPL gets groups strictly in their assigned kelurahan
+        try {
+          const res = await api.get("/mpl/groups");
+          const list = res.data?.data || res.data || [];
+          if (Array.isArray(list) && list.length > 0) {
+            groups = list.map((g: any) => ({
+              id: g.id,
+              name: g.name,
+              kelurahan: g.kelurahan,
+              cakupanRw: g.cakupanRw,
+            }));
+          }
+        } catch (e) {
+          console.warn("Gagal memuat kelompok MPL:", e);
+        }
+        if (groups.length === 0) {
+          try {
+            const kelRes = await api.get("/kelompok?limit=0");
+            const list =
+              kelRes.data?.groups ||
+              kelRes.data?.data ||
+              (Array.isArray(kelRes.data) ? kelRes.data : []);
+            if (Array.isArray(list) && list.length > 0) {
+              groups = list
+                .filter((g: any) => !mplKelurahan || isKelurahanMatching(g.kelurahan, mplKelurahan))
+                .map((g: any) => ({
+                  id: g.id,
+                  name: g.name,
+                  kelurahan: g.kelurahan,
+                  cakupanRw: g.cakupanRw,
+                }));
+            }
+          } catch (e) {
+            console.error("Gagal memuat fallback kelompok MPL:", e);
           }
         }
       } else {
@@ -741,13 +835,13 @@ export const ProgramKerjaKkn: React.FC = () => {
   // Auto reset Kelompok if no longer available in filtered list
   useEffect(() => {
     if (
-      isManagement &&
+      (isManagement || isMpl) &&
       selectedKelompokId !== "ALL" &&
       !availableKelompokList.some((k) => k.id === selectedKelompokId)
     ) {
       setSelectedKelompokId("ALL");
     }
-  }, [isManagement, availableKelompokList, selectedKelompokId]);
+  }, [isManagement, isMpl, availableKelompokList, selectedKelompokId]);
 
   // Filtered proker data
   const filteredProkers = useMemo(() => {
@@ -1241,16 +1335,32 @@ export const ProgramKerjaKkn: React.FC = () => {
       </div>
 
       {/* Toolbar Filter */}
-      <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-3">
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-2.5 flex-1">
-            {/* Filter 1: Kelurahan */}
-            <div>
-              <span className="text-[10.5px] font-bold text-slate-500 block mb-1">Kelurahan</span>
+      <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3.5">
+        {/* Row 1: Filter Dropdowns Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3 w-full">
+          {/* Filter 1: Kelurahan */}
+          <div>
+            <span className="text-[10.5px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+              Kelurahan
+            </span>
+            {isMpl && mplKelurahan ? (
+              <div className="w-full px-3 py-2 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center justify-between gap-1.5 shadow-2xs h-[38px]">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <MapPin size={13} className="text-emerald-600 shrink-0" />
+                  <span className="truncate">Kel. {mplKelurahan}</span>
+                </div>
+                <span className="text-[9.5px] uppercase font-black bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 px-1.5 py-0.5 rounded border border-purple-200 dark:border-purple-800 shrink-0 flex items-center gap-1">
+                  <Lock size={9} /> Binaan
+                </span>
+              </div>
+            ) : (
               <select
                 value={selectedKelurahan}
-                onChange={(e) => setSelectedKelurahan(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
+                onChange={(e) => {
+                  setSelectedKelurahan(e.target.value);
+                  setSelectedRw("ALL");
+                }}
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer h-[38px]"
               >
                 <option value="ALL">Semua Kelurahan</option>
                 {masterKelurahans.map((kel) => {
@@ -1262,187 +1372,188 @@ export const ProgramKerjaKkn: React.FC = () => {
                   );
                 })}
               </select>
-            </div>
+            )}
+          </div>
 
-            {/* Filter 2: RW */}
-            <div>
-              <span className="text-[10.5px] font-bold text-slate-500 block mb-1">RW</span>
+          {/* Filter 2: RW */}
+          <div>
+            <span className="text-[10.5px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+              RW
+            </span>
+            <select
+              value={selectedRw}
+              onChange={(e) => setSelectedRw(e.target.value)}
+              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer h-[38px]"
+            >
+              <option value="ALL">Semua RW</option>
+              {rwOptions.map((rwLabel) => (
+                <option key={rwLabel} value={rwLabel}>
+                  {rwLabel}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Filter 3: Kelompok */}
+          <div>
+            <span className="text-[10.5px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+              Kelompok
+            </span>
+            {isDpl && kelompokList.length <= 1 ? (
+              <div className="w-full px-3 py-2 bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/50 rounded-xl text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center justify-between gap-1.5 shadow-2xs h-[38px]">
+                <span className="truncate">
+                  {kelompokList[0]?.name || "Kelompok Binaan Anda"}
+                </span>
+                <span className="text-[9.5px] uppercase font-black bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded shrink-0">
+                  Binaan
+                </span>
+              </div>
+            ) : (
               <select
-                value={selectedRw}
-                onChange={(e) => setSelectedRw(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
+                value={selectedKelompokId}
+                onChange={(e) => setSelectedKelompokId(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer h-[38px]"
               >
-                <option value="ALL">Semua RW</option>
-                {rwOptions.map((rwLabel) => (
-                  <option key={rwLabel} value={rwLabel}>
-                    {rwLabel}
+                {(isManagement || isMpl) && <option value="ALL">Semua Kelompok</option>}
+                {availableKelompokList.map((k) => (
+                  <option key={k.id} value={k.id}>
+                    {k.name}
                   </option>
                 ))}
               </select>
-            </div>
-
-            {/* Filter 3: Kelompok */}
-            <div>
-              <span className="text-[10.5px] font-bold text-slate-500 block mb-1">Kelompok</span>
-              {isDpl && kelompokList.length <= 1 ? (
-                <div className="w-full px-3 py-2 bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/50 rounded-xl text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center justify-between gap-1.5 shadow-2xs">
-                  <span className="truncate">
-                    {kelompokList[0]?.name || "Kelompok Binaan Anda"}
-                  </span>
-                  <span className="text-[9.5px] uppercase font-black bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded shrink-0">
-                    Binaan
-                  </span>
-                </div>
-              ) : (
-                <select
-                  value={selectedKelompokId}
-                  onChange={(e) => setSelectedKelompokId(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
-                >
-                  {isManagement && <option value="ALL">Semua Kelompok</option>}
-                  {availableKelompokList.map((k) => (
-                    <option key={k.id} value={k.id}>
-                      {k.name}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-
-            {/* Filter 4: Kategori */}
-            <div>
-              <span className="text-[10.5px] font-bold text-slate-500 block mb-1">Kategori</span>
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
-              >
-                <option value="ALL">Semua Kategori</option>
-                <option value="Pemilahan">Pemilahan</option>
-                <option value="Pengangkutan">Pengangkutan</option>
-                <option value="Pengolahan">Pengolahan</option>
-                <option value="Pemanfaatan">Pemanfaatan</option>
-                <option value="Edukasi & Sosialisasi">Edukasi & Sosialisasi</option>
-                <option value="Lainnya">Lainnya</option>
-              </select>
-            </div>
-
-            {/* Filter 5: Sumber */}
-            <div>
-              <span className="text-[10.5px] font-bold text-slate-500 block mb-1">Sumber</span>
-              <select
-                value={sourceFilter}
-                onChange={(e) => setSourceFilter(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
-              >
-                <option value="ALL">Semua Sumber</option>
-                <option value="Mahasiswa">Mahasiswa</option>
-                <option value="DPL">DPL</option>
-              </select>
-            </div>
-
-            {/* Filter 6: Status Usulan */}
-            <div>
-              <span className="text-[10.5px] font-bold text-slate-500 block mb-1">
-                Status Usulan
-              </span>
-              <select
-                value={statusUsulanFilter}
-                onChange={(e) => setStatusUsulanFilter(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
-              >
-                <option value="ALL">Semua Usulan</option>
-                <option value="BELUM_DISETUJUI">Menunggu Persetujuan</option>
-                <option value="DISETUJUI">Disetujui</option>
-                <option value="DITOLAK">Ditolak</option>
-                <option value="KADALUARSA">Kadaluarsa (H+5)</option>
-              </select>
-            </div>
-
-            {/* Filter 7: Status Pelaksanaan */}
-            <div>
-              <span className="text-[10.5px] font-bold text-slate-500 block mb-1">
-                Status Pelaksanaan
-              </span>
-              <select
-                value={statusPelaksanaanFilter}
-                onChange={(e) => setStatusPelaksanaanFilter(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
-              >
-                <option value="ALL">Semua Pelaksanaan</option>
-                <option value="BELUM_MULAI">Belum Mulai</option>
-                <option value="SEDANG_BERJALAN">Sedang Berlangsung</option>
-                <option value="SELESAI">Selesai</option>
-              </select>
-            </div>
+            )}
           </div>
 
-          {/* Filter 6: Cari Program Kerja */}
-          <div className="w-full md:w-64">
-            <span className="text-[10.5px] font-bold text-slate-500 block mb-1">
-              Cari program kerja
+          {/* Filter 4: Kategori */}
+          <div>
+            <span className="text-[10.5px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+              Kategori
             </span>
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Cari deskripsi kegiatan..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-3 pr-8 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 outline-none focus:border-emerald-500 focus:bg-white transition font-medium"
-              />
-              <Search
-                size={14}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-              />
-            </div>
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer h-[38px]"
+            >
+              <option value="ALL">Semua Kategori</option>
+              <option value="Pemilahan">Pemilahan</option>
+              <option value="Pengangkutan">Pengangkutan</option>
+              <option value="Pengolahan">Pengolahan</option>
+              <option value="Pemanfaatan">Pemanfaatan</option>
+              <option value="Edukasi & Sosialisasi">Edukasi & Sosialisasi</option>
+              <option value="Lainnya">Lainnya</option>
+            </select>
+          </div>
+
+          {/* Filter 5: Status Usulan */}
+          <div>
+            <span className="text-[10.5px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+              Status Usulan
+            </span>
+            <select
+              value={statusUsulanFilter}
+              onChange={(e) => setStatusUsulanFilter(e.target.value)}
+              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer h-[38px]"
+            >
+              <option value="ALL">Semua Usulan</option>
+              <option value="BELUM_DISETUJUI">Menunggu Persetujuan</option>
+              <option value="DISETUJUI">Disetujui</option>
+              <option value="DITOLAK">Ditolak</option>
+              <option value="KADALUARSA">Kadaluarsa (H+5)</option>
+            </select>
+          </div>
+
+          {/* Filter 6: Status Pelaksanaan */}
+          <div>
+            <span className="text-[10.5px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+              Status Pelaksanaan
+            </span>
+            <select
+              value={statusPelaksanaanFilter}
+              onChange={(e) => setStatusPelaksanaanFilter(e.target.value)}
+              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer h-[38px]"
+            >
+              <option value="ALL">Semua Pelaksanaan</option>
+              <option value="BELUM_MULAI">Belum Mulai</option>
+              <option value="SEDANG_BERJALAN">Sedang Berlangsung</option>
+              <option value="SELESAI">Selesai</option>
+            </select>
           </div>
         </div>
 
-        {/* Sub Filter Row: Date Range & Ekspor XLSX */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/80">
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            <span className="text-slate-400 font-semibold flex items-center gap-1 text-[11px]">
-              <Calendar size={13} className="text-emerald-600" /> Filter Tanggal Dibuat:
-            </span>
+        {/* Row 2: Search Bar + Filter Tanggal + Actions */}
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+          {/* Kotak Pencarian Leluasa */}
+          <div className="relative flex-1 max-w-md">
             <input
-              type="date"
-              value={startDateFilter}
-              onChange={(e) => setStartDateFilter(e.target.value)}
-              className="px-2.5 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
+              type="text"
+              placeholder="Cari judul, deskripsi kegiatan, kelompok, atau mahasiswa..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-8 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 outline-none focus:border-emerald-500 focus:bg-white transition font-medium h-[38px]"
             />
-            <span className="text-slate-400 text-xs">s/d</span>
-            <input
-              type="date"
-              value={endDateFilter}
-              onChange={(e) => setEndDateFilter(e.target.value)}
-              className="px-2.5 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
+            <Search
+              size={15}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
             />
-            {(startDateFilter || endDateFilter) && (
+            {searchQuery && (
               <button
                 type="button"
-                onClick={() => {
-                  setStartDateFilter("");
-                  setEndDateFilter("");
-                }}
-                className="text-[11px] font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1 ml-1 cursor-pointer"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer p-0.5"
+                title="Hapus pencarian"
               >
-                <RotateCcw size={11} /> Reset
+                <X size={13} />
+              </button>
+            )}
+          </div>
+
+          {/* Action Tools: Date Range + Reset + Ekspor */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1.5 text-xs bg-slate-50 dark:bg-slate-800/60 px-2.5 py-1 rounded-xl border border-slate-200 dark:border-slate-800 h-[38px]">
+              <span className="text-slate-400 font-semibold flex items-center gap-1 text-[11px] shrink-0">
+                <Calendar size={13} className="text-emerald-600" /> Waktu:
+              </span>
+              <input
+                type="date"
+                value={startDateFilter}
+                onChange={(e) => setStartDateFilter(e.target.value)}
+                className="bg-transparent border-0 text-xs text-slate-800 dark:text-slate-200 outline-none cursor-pointer w-28"
+                title="Tanggal Mulai Dibuat"
+              />
+              <span className="text-slate-400 text-xs">-</span>
+              <input
+                type="date"
+                value={endDateFilter}
+                onChange={(e) => setEndDateFilter(e.target.value)}
+                className="bg-transparent border-0 text-xs text-slate-800 dark:text-slate-200 outline-none cursor-pointer w-28"
+                title="Tanggal Akhir Dibuat"
+              />
+            </div>
+
+            {hasActiveFilter && (
+              <button
+                type="button"
+                onClick={handleResetAllFilters}
+                className="flex items-center gap-1 px-3 py-2 text-xs font-semibold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/40 rounded-xl border border-rose-200 dark:border-rose-900/60 transition cursor-pointer h-[38px] shadow-2xs"
+                title="Reset semua filter ke kondisi awal"
+              >
+                <RotateCcw size={12} />
+                <span>Reset</span>
               </button>
             )}
 
-            {/* 1 Tombol Standar Ekspor XLSX */}
             <button
               type="button"
               onClick={handleExportXlsx}
               disabled={!startDateFilter || !endDateFilter}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/60 cursor-pointer ml-1"
+              className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl border transition shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/60 cursor-pointer h-[38px]"
               title={
                 !startDateFilter || !endDateFilter
-                  ? "Pilih tanggal awal dan tanggal akhir terlebih dahulu untuk mengekspor"
+                  ? "Pilih tanggal awal dan akhir terlebih dahulu untuk ekspor"
                   : "Ekspor data program kerja ke XLSX"
               }
             >
-              <FileSpreadsheet size={13} />
+              <FileSpreadsheet size={14} />
               <span>Ekspor XLSX</span>
             </button>
           </div>
@@ -1462,7 +1573,7 @@ export const ProgramKerjaKkn: React.FC = () => {
             isSearch={
               !!(
                 searchQuery ||
-                selectedKelurahan !== "ALL" ||
+                (!isMpl && selectedKelurahan !== "ALL") ||
                 selectedRw !== "ALL" ||
                 (selectedKelompokId !== "ALL" && !isDpl) ||
                 categoryFilter !== "ALL" ||
@@ -1472,16 +1583,7 @@ export const ProgramKerjaKkn: React.FC = () => {
               )
             }
             searchQuery={searchQuery}
-            onResetSearch={() => {
-              setSearchQuery("");
-              setSelectedKelurahan("ALL");
-              setSelectedRw("ALL");
-              if (isManagement) setSelectedKelompokId("ALL");
-              setCategoryFilter("ALL");
-              setSourceFilter("ALL");
-              setStatusUsulanFilter("ALL");
-              setStatusPelaksanaanFilter("ALL");
-            }}
+            onResetSearch={handleResetAllFilters}
           />
         ) : (
           <>
@@ -1492,7 +1594,7 @@ export const ProgramKerjaKkn: React.FC = () => {
                   <tr className="bg-slate-50/90 dark:bg-slate-800/90 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase tracking-wider font-bold">
                     <th className="py-3.5 px-3 w-12 text-center">No</th>
                     <th className="py-3.5 px-3 w-36 text-center">Waktu Dibuat</th>
-                    {isDeveloper && (
+                    {showKelompokInfo && (
                       <th className="py-3.5 px-3 min-w-[170px] text-left">Kelompok & Wilayah</th>
                     )}
                     {isDeveloper && (
@@ -1538,7 +1640,7 @@ export const ProgramKerjaKkn: React.FC = () => {
                             </span>
                           </div>
                         </td>
-                        {isDeveloper && (
+                        {showKelompokInfo && (
                           <td className="py-3.5 px-3">
                             <div className="flex flex-col gap-0.5">
                               <span className="font-bold text-slate-900 dark:text-slate-100 text-xs flex items-center gap-1.5">
@@ -1725,8 +1827,8 @@ export const ProgramKerjaKkn: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Developer Info: Kelompok & Penginput */}
-                    {isDeveloper && (
+                    {/* Kelompok & Penginput Info */}
+                    {showKelompokInfo && (
                       <div className="p-2.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-800/80 text-xs space-y-1.5">
                         <div className="flex items-center justify-between gap-2">
                           <span className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 truncate">

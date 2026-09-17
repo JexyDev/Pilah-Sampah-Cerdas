@@ -75,6 +75,7 @@ export const mahasiswaPoinService = {
     kelompokName: string;
     nilaiProkerStep: number;
     rataRataAssessmentAnggota: number;
+    dplDinilaiCount: number;
     komponenA: number;
     komponenABobot: number;
   }> {
@@ -133,16 +134,28 @@ export const mahasiswaPoinService = {
     });
 
     let rataRataAssessmentAnggota = 0;
+    let dplDinilaiCount = 0;
     if (mahasiswaValid.length > 0) {
-      const sumAssessment = mahasiswaValid.reduce((acc, s) => {
-        const score = s.assessmentScore !== null ? Number(s.assessmentScore) : 0;
-        return acc + score;
-      }, 0);
-      rataRataAssessmentAnggota = sumAssessment / mahasiswaValid.length;
+      const mahasiswaDinilai = mahasiswaValid.filter(
+        (s) => s.assessmentScore !== null && Number(s.assessmentScore) > 0
+      );
+      dplDinilaiCount = mahasiswaDinilai.length;
+      if (dplDinilaiCount > 0) {
+        const sumAssessment = mahasiswaDinilai.reduce((acc, s) => {
+          return acc + Number(s.assessmentScore);
+        }, 0);
+        rataRataAssessmentAnggota = sumAssessment / dplDinilaiCount;
+      }
     }
 
-    // ── KomponenA = (nilaiProkerStep + rataRataAssessment) / 2 ─
-    const komponenA = (nilaiProkerStep + rataRataAssessmentAnggota) / 2;
+    // ── KomponenA: Single-Evaluator Progresif (Graceful Handling DPL Pending) ──
+    // Jika belum ada anggota yang dinilai DPL, jangan dibagi 2 dengan nol.
+    // Gunakan 100% basis capaian proker kelompok (nilaiProkerStep).
+    // Ketika DPL sudah menilai, barulah (nilaiProkerStep + rataRataAssessmentAnggota) / 2.
+    const komponenA =
+      dplDinilaiCount > 0
+        ? (nilaiProkerStep + rataRataAssessmentAnggota) / 2
+        : nilaiProkerStep;
 
     // ── KomponenABobot = komponenA * 0.6 ──────────────────────
     const komponenABobot = komponenA * 0.6;
@@ -152,6 +165,7 @@ export const mahasiswaPoinService = {
       kelompokName: kelompok.name,
       nilaiProkerStep: parseFloat(nilaiProkerStep.toFixed(4)),
       rataRataAssessmentAnggota: parseFloat(rataRataAssessmentAnggota.toFixed(4)),
+      dplDinilaiCount,
       komponenA: parseFloat(komponenA.toFixed(4)),
       komponenABobot: parseFloat(komponenABobot.toFixed(4)),
     };
@@ -172,8 +186,12 @@ export const mahasiswaPoinService = {
     kelompokList: Array<{
       kelompokId: string;
       kelompokName: string;
+      nilaiProkerStep: number;
+      rataRataAssessment: number;
+      dplDinilaiCount: number;
       komponenA: number;
       komponenABobot: number;
+      komponenB: number;
       komponenBBobot: number;
       poinAkhir: number;
       mahasiswaList: Array<{
@@ -255,14 +273,27 @@ export const mahasiswaPoinService = {
       });
 
       let rataRataAssessment = 0;
+      let dplDinilaiCount = 0;
       if (mahasiswaValid.length > 0) {
-        const sumAssessment = mahasiswaValid.reduce((acc, s) => {
-          return acc + (s.assessmentScore !== null ? Number(s.assessmentScore) : 0);
-        }, 0);
-        rataRataAssessment = sumAssessment / mahasiswaValid.length;
+        const mahasiswaDinilai = mahasiswaValid.filter(
+          (s) => s.assessmentScore !== null && Number(s.assessmentScore) > 0
+        );
+        dplDinilaiCount = mahasiswaDinilai.length;
+        if (dplDinilaiCount > 0) {
+          const sumAssessment = mahasiswaDinilai.reduce((acc, s) => {
+            return acc + Number(s.assessmentScore);
+          }, 0);
+          rataRataAssessment = sumAssessment / dplDinilaiCount;
+        }
       }
 
-      const komponenA = (nilaiProkerStep + rataRataAssessment) / 2;
+      // Single-Evaluator Progresif (Graceful Handling DPL Pending):
+      // Jika DPL belum menilai sama sekali (dplDinilaiCount === 0), Komponen A = nilaiProkerStep.
+      // Mahasiswa tidak dihukum dibagi nol selama proses penilaian DPL masih berjalan.
+      const komponenA =
+        dplDinilaiCount > 0
+          ? (nilaiProkerStep + rataRataAssessment) / 2
+          : nilaiProkerStep;
       const komponenABobot = komponenA * 0.6;
 
       return {
@@ -270,6 +301,7 @@ export const mahasiswaPoinService = {
         mahasiswaValid,
         nilaiProkerStep,
         rataRataAssessment,
+        dplDinilaiCount,
         komponenA,
         komponenABobot,
       };
@@ -282,7 +314,15 @@ export const mahasiswaPoinService = {
 
     // ── Susun kelompokList dengan poinAkhir per mahasiswa ─────
     const kelompokList = intermediates.map((item) => {
-      const { kelompok, mahasiswaValid, komponenA, komponenABobot } = item;
+      const {
+        kelompok,
+        mahasiswaValid,
+        nilaiProkerStep,
+        rataRataAssessment,
+        dplDinilaiCount,
+        komponenA,
+        komponenABobot,
+      } = item;
       const poinAkhir = komponenABobot + komponenBBobot;
 
       const mahasiswaList = mahasiswaValid.map((s) => ({
@@ -295,8 +335,12 @@ export const mahasiswaPoinService = {
       return {
         kelompokId: kelompok.id,
         kelompokName: kelompok.name,
+        nilaiProkerStep: parseFloat(nilaiProkerStep.toFixed(4)),
+        rataRataAssessment: parseFloat(rataRataAssessment.toFixed(4)),
+        dplDinilaiCount,
         komponenA: parseFloat(komponenA.toFixed(4)),
         komponenABobot: parseFloat(komponenABobot.toFixed(4)),
+        komponenB: parseFloat(rataRataPoinKelompok.toFixed(4)),
         komponenBBobot: parseFloat(komponenBBobot.toFixed(4)),
         poinAkhir: parseFloat(poinAkhir.toFixed(2)),
         mahasiswaList,
@@ -373,13 +417,19 @@ export const mahasiswaPoinService = {
               },
             });
 
-            // 2. Buat PointHistory baru dengan poin akhir hasil formula
+            // Status DPL untuk deskripsi transparan
+            const statusDpl =
+              (kelompokData as any).dplDinilaiCount && (kelompokData as any).dplDinilaiCount > 0
+                ? `DPL: ${(kelompokData as any).rataRataAssessment.toFixed(0)}`
+                : `DPL: Review Pending`;
+
+            // 2. Buat PointHistory baru dengan poin akhir hasil formula dan rincian transparan
             await tx.pointHistory.create({
               data: {
                 userId: mhs.userId,
                 points: Math.round(mhs.poinAkhir),
                 kategori: "POIN_KKN_FINAL",
-                description: `Normalisasi poin KKN dari formula kelompok (${kelompokData.kelompokName})`,
+                description: `Poin KKN Kelompok (${kelompokData.kelompokName}): Proker Step ${Math.round((kelompokData as any).nilaiProkerStep)} | ${statusDpl} | Formula [60% Kelompok (${Math.round(kelompokData.komponenA)}) + 40% Coblong (${Math.round((kelompokData as any).komponenB || 0)})] = +${Math.round(mhs.poinAkhir)} PTS`,
               },
             });
           }

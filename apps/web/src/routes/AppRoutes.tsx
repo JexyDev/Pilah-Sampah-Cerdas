@@ -284,7 +284,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/monitoring-absen"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PIMPINAN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING", "MPL"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PIMPINAN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING"]}>
               <MonitoringAbsen />
             </ProtectedRoute>
           }
@@ -292,7 +292,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/monitoring-kegiatan/presensi"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PIMPINAN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING", "MPL"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PIMPINAN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING"]}>
               <MonitoringAbsen />
             </ProtectedRoute>
           }
