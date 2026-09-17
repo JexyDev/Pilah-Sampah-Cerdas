@@ -1731,7 +1731,7 @@ export class KknAttendanceService {
     });
 
     const finalNama = inputNama || studentUser?.name || "Mahasiswa KKN";
-    const finalNim = inputNim || studentUser?.studentProfile?.nim || "1301210000";
+    const finalNim = inputNim || studentUser?.studentProfile?.nim || "-";
     const finalKodeZona = inputKodeZona || actLoc?.title || scheduleId;
     const statusText = isAutoAlpa ? "Alpa (Tanpa Keterangan)" : "Hadir (Dalam Radius)";
 

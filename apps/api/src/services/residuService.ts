@@ -313,7 +313,7 @@ export class ResiduService {
     const pointRatePerKg = pointRateConfig ? parseInt(pointRateConfig, 10) : 5;
 
     const rtRwStr = user.rw?.name || petugas.assignedZone || "01/02";
-    const kelurahanStr = user.rw?.kelurahan?.name || "Bojongsoang";
+    const kelurahanStr = user.rw?.kelurahan?.name || "Coblong";
     const petugasIdStr = `PTR-${petugas.id.slice(0, 6).toUpperCase()}`;
 
     const totalViolationsToday = await prisma.violation.count({
