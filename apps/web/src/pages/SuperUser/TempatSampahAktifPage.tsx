@@ -39,9 +39,7 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  Eye,
   Compass,
-  Download,
   SlidersHorizontal,
 } from "lucide-react";
 import api from "../../services/api";
@@ -903,9 +901,9 @@ export const TempatSampahAktifPage: React.FC = () => {
                       </div>
                     </th>
 
-                    {/* Titik Lokasi & Aksi */}
+                    {/* Titik Lokasi / Peta */}
                     <th className="p-3.5 pr-5 text-slate-400 font-bold uppercase tracking-wider text-right">
-                      Aksi &amp; Peta
+                      Peta
                     </th>
                   </tr>
                 </thead>
@@ -1061,38 +1059,24 @@ export const TempatSampahAktifPage: React.FC = () => {
                             </div>
                           </td>
 
-                          {/* 7. Aksi: Preview & Peta */}
+                          {/* 7. Navigasi Peta Google Maps */}
                           <td className="p-3.5 pr-5 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
-                              {/* Tombol Preview QR */}
-                              <button
-                                type="button"
-                                onClick={() => setPreviewBin(bin)}
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-[11px] font-bold transition cursor-pointer border border-slate-200 dark:border-slate-700"
-                                title="Lihat Detail & Poster QR"
+                            {hasCoords ? (
+                              <a
+                                href={`https://www.google.com/maps/search/?api=1&query=${latNum},${lngNum}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-600 dark:text-blue-300 text-[11px] font-bold transition cursor-pointer border border-blue-200 dark:border-blue-800/60"
+                                title={`Buka Titik Koordinat di Google Maps (${latNum}, ${lngNum})`}
                               >
-                                <Eye size={12} />
-                                <span className="hidden sm:inline">Lihat QR</span>
-                              </button>
-
-                              {/* Tombol Peta Google Maps */}
-                              {hasCoords ? (
-                                <a
-                                  href={`https://www.google.com/maps/search/?api=1&query=${latNum},${lngNum}`}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-600 dark:text-blue-300 text-[11px] font-bold transition cursor-pointer border border-blue-200 dark:border-blue-800/60"
-                                  title={`Buka Titik Koordinat di Google Maps (${latNum}, ${lngNum})`}
-                                >
-                                  <ExternalLink size={12} />
-                                  <span>Peta</span>
-                                </a>
-                              ) : (
-                                <span className="text-slate-400 dark:text-slate-600 text-[10.5px] italic px-2">
-                                  Tanpa GPS
-                                </span>
-                              )}
-                            </div>
+                                <ExternalLink size={12} />
+                                <span>Peta</span>
+                              </a>
+                            ) : (
+                              <span className="text-slate-400 dark:text-slate-600 text-[10.5px] italic px-2">
+                                Tanpa GPS
+                              </span>
+                            )}
                           </td>
                         </tr>
                       );
