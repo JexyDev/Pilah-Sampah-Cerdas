@@ -996,6 +996,8 @@ export async function calculateGroupPoints(
   poinProker: number;
   rataRataPoinAnggota: number;
   totalCumulativeMemberPoints?: number;
+  pureTotalCumulativeMemberPoints?: number;
+  cumulativeMemberPoints?: number;
   totalCumulativeMemberPointsWithNormalization?: number;
   totalNormalizationBonus?: number;
   averageNormalizationBonus?: number;
@@ -1156,7 +1158,9 @@ export async function calculateGroupPoints(
       poinProker,
       rataRataPoinAnggota,
       totalCumulativeMemberPoints,
+      pureTotalCumulativeMemberPoints: totalCumulativeMemberPoints,
       totalCumulativeMemberPointsWithNormalization,
+      cumulativeMemberPoints: totalCumulativeMemberPointsWithNormalization,
       totalNormalizationBonus,
       averageNormalizationBonus,
       prokerApprovedCount,
@@ -1170,7 +1174,9 @@ export async function calculateGroupPoints(
       poinProker: 0,
       rataRataPoinAnggota: 0,
       totalCumulativeMemberPoints: 0,
+      pureTotalCumulativeMemberPoints: 0,
       totalCumulativeMemberPointsWithNormalization: 0,
+      cumulativeMemberPoints: 0,
       totalNormalizationBonus: 0,
       averageNormalizationBonus: 0,
       prokerApprovedCount: 0,

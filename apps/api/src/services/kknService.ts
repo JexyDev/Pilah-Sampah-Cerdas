@@ -305,7 +305,19 @@ export class KknService {
         poinKelompok: groupPointsData?.totalGroupPoints ?? 0,
         poinProker: groupPointsData?.poinProker ?? 0,
         rataRataPoinAnggota: groupPointsData?.rataRataPoinAnggota ?? 0,
-        totalCumulativeMemberPoints: groupPointsData?.totalCumulativeMemberPoints ?? 0,
+        // Penyesuaian UX Dasbor & Halaman Kelompok Mobile (Change Request Tahap 2):
+        // APK mobile membaca totalCumulativeMemberPoints / cumulativeMemberPoints untuk Card Total Akumulasi Tim.
+        // Swap value: Timpa dengan nilai gabungan dinamis (dengan normalisasi ratusan PTS),
+        // dan simpan poin harian murni di pureTotalCumulativeMemberPoints untuk audit akademik.
+        totalCumulativeMemberPoints:
+          groupPointsData?.totalCumulativeMemberPointsWithNormalization ??
+          groupPointsData?.totalCumulativeMemberPoints ??
+          0,
+        cumulativeMemberPoints:
+          groupPointsData?.totalCumulativeMemberPointsWithNormalization ??
+          groupPointsData?.totalCumulativeMemberPoints ??
+          0,
+        pureTotalCumulativeMemberPoints: groupPointsData?.totalCumulativeMemberPoints ?? 0,
         totalCumulativeMemberPointsWithNormalization:
           groupPointsData?.totalCumulativeMemberPointsWithNormalization ??
           groupPointsData?.totalCumulativeMemberPoints ??
@@ -332,7 +344,15 @@ export class KknService {
       poinKelompok: groupPointsData?.totalGroupPoints ?? 0,
       poinProker: groupPointsData?.poinProker ?? 0,
       rataRataPoinAnggota: groupPointsData?.rataRataPoinAnggota ?? 0,
-      totalCumulativeMemberPoints: groupPointsData?.totalCumulativeMemberPoints ?? 0,
+      totalCumulativeMemberPoints:
+        groupPointsData?.totalCumulativeMemberPointsWithNormalization ??
+        groupPointsData?.totalCumulativeMemberPoints ??
+        0,
+      cumulativeMemberPoints:
+        groupPointsData?.totalCumulativeMemberPointsWithNormalization ??
+        groupPointsData?.totalCumulativeMemberPoints ??
+        0,
+      pureTotalCumulativeMemberPoints: groupPointsData?.totalCumulativeMemberPoints ?? 0,
       totalCumulativeMemberPointsWithNormalization:
         groupPointsData?.totalCumulativeMemberPointsWithNormalization ??
         groupPointsData?.totalCumulativeMemberPoints ??
@@ -3185,8 +3205,20 @@ export class KknService {
       totalGroupPoints,
       poinKelompok: totalGroupPoints,
       poinProker: groupPointsData.poinProker,
-      rataRataPoinAnggota: groupPointsData.rataRataPoinAnggota,
-      totalCumulativeMemberPoints: groupPointsData.totalCumulativeMemberPoints,
+      // Penyesuaian UX Halaman Kelompok Mobile (Change Request Tahap 2):
+      // APK mobile membaca totalCumulativeMemberPoints / cumulativeMemberPoints untuk Card "Total Akumulasi Tim".
+      // Swap value: Masukkan totalCumulativeMemberPointsWithNormalization (nilai gabungan dinamis ratusan)
+      // ke dalam key `cumulativeMemberPoints` dan `totalCumulativeMemberPoints` agar tidak nyangkut di 57 PTS.
+      // Simpan nilai harian murni pada `pureTotalCumulativeMemberPoints` untuk audit akademik.
+      totalCumulativeMemberPoints:
+        groupPointsData.totalCumulativeMemberPointsWithNormalization ??
+        groupPointsData.totalCumulativeMemberPoints ??
+        0,
+      cumulativeMemberPoints:
+        groupPointsData.totalCumulativeMemberPointsWithNormalization ??
+        groupPointsData.totalCumulativeMemberPoints ??
+        0,
+      pureTotalCumulativeMemberPoints: groupPointsData.totalCumulativeMemberPoints ?? 0,
       totalCumulativeMemberPointsWithNormalization:
         groupPointsData.totalCumulativeMemberPointsWithNormalization ??
         groupPointsData.totalCumulativeMemberPoints ??
