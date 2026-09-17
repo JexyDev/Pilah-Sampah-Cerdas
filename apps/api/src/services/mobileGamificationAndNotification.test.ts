@@ -125,7 +125,7 @@ describe("Mobile Gamification & Personal Point Calculation", () => {
     expect(resultMap.get("mhs-2")).toBe(0);
   });
 
-  it("calculatePersonalPointsForUsers should exclude KKN_PROKER points", async () => {
+  it("calculatePersonalPointsForUsers should exclude KKN_PROKER and POIN_KKN_FINAL points", async () => {
     vi.mocked(prisma.pointHistory.findMany).mockResolvedValue([
       { userId: "mhs-1", points: 30 } as any,
     ]);
@@ -135,7 +135,7 @@ describe("Mobile Gamification & Personal Point Calculation", () => {
     expect(prisma.pointHistory.findMany).toHaveBeenCalledWith({
       where: {
         userId: { in: ["mhs-1"] },
-        kategori: { notIn: ["KKN_PROKER"] },
+        kategori: { notIn: ["KKN_PROKER", "POIN_KKN_FINAL"] },
       },
       select: { userId: true, points: true },
     });
