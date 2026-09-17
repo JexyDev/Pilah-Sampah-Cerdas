@@ -94,21 +94,23 @@ const getBinCategoryInfo = (qrCode: string, kategoriNama?: string | null): Categ
   const qUpper = (qrCode || "").toUpperCase();
   const kUpper = (kategoriNama || "").toUpperCase();
 
-  const isOrganik = qUpper.includes("-OGN-") || kUpper.includes("ORGANIK") || kUpper.includes("OGN");
-  const isAnorganik = qUpper.includes("-AGN-") || kUpper.includes("ANORGANIK") || kUpper.includes("AGN") || kUpper.includes("NON_ORGANIC");
+  // 1. Deteksi Anorganik lebih dahulu (karena kata "ANORGANIK" mengandung substring "ORGANIK")
+  const isAnorganik =
+    qUpper.includes("-AGN-") ||
+    kUpper.includes("ANORGANIK") ||
+    kUpper.includes("ANORGANIC") ||
+    kUpper.includes("NON_ORGANIC") ||
+    kUpper.includes("NON-ORGANIK") ||
+    kUpper.includes("NON ORGANIK") ||
+    kUpper.includes("AGN");
 
-  if (isOrganik) {
-    return {
-      label: "ORGANIK",
-      isOrganik: true,
-      isAnorganik: false,
-      bgClass: "bg-emerald-50 dark:bg-emerald-950/50",
-      textClass: "text-emerald-700 dark:text-emerald-300",
-      borderClass: "border-emerald-200 dark:border-emerald-800/60",
-      badgeClass: "bg-emerald-100/80 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 border-emerald-300/60 dark:border-emerald-700/50",
-      icon: <Leaf size={12} className="text-emerald-600 dark:text-emerald-400" />,
-    };
-  }
+  // 2. Deteksi Organik (hanya jika bukan Anorganik dan memenuhi kriteria Organik)
+  const isOrganik =
+    !isAnorganik &&
+    (qUpper.includes("-OGN-") ||
+      kUpper.includes("ORGANIK") ||
+      kUpper.includes("ORGANIC") ||
+      kUpper.includes("OGN"));
 
   if (isAnorganik) {
     return {
@@ -118,8 +120,23 @@ const getBinCategoryInfo = (qrCode: string, kategoriNama?: string | null): Categ
       bgClass: "bg-amber-50 dark:bg-amber-950/50",
       textClass: "text-amber-700 dark:text-amber-300",
       borderClass: "border-amber-200 dark:border-amber-800/60",
-      badgeClass: "bg-amber-100/80 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 border-amber-300/60 dark:border-amber-700/50",
+      badgeClass:
+        "bg-amber-100/80 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 border-amber-300/60 dark:border-amber-700/50",
       icon: <Recycle size={12} className="text-amber-600 dark:text-amber-400" />,
+    };
+  }
+
+  if (isOrganik) {
+    return {
+      label: "ORGANIK",
+      isOrganik: true,
+      isAnorganik: false,
+      bgClass: "bg-emerald-50 dark:bg-emerald-950/50",
+      textClass: "text-emerald-700 dark:text-emerald-300",
+      borderClass: "border-emerald-200 dark:border-emerald-800/60",
+      badgeClass:
+        "bg-emerald-100/80 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 border-emerald-300/60 dark:border-emerald-700/50",
+      icon: <Leaf size={12} className="text-emerald-600 dark:text-emerald-400" />,
     };
   }
 
@@ -130,7 +147,8 @@ const getBinCategoryInfo = (qrCode: string, kategoriNama?: string | null): Categ
     bgClass: "bg-blue-50 dark:bg-blue-950/50",
     textClass: "text-blue-700 dark:text-blue-300",
     borderClass: "border-blue-200 dark:border-blue-800/60",
-    badgeClass: "bg-blue-100/80 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200 border-blue-300/60 dark:border-blue-700/50",
+    badgeClass:
+      "bg-blue-100/80 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200 border-blue-300/60 dark:border-blue-700/50",
     icon: <Trash2 size={12} className="text-blue-600 dark:text-blue-400" />,
   };
 };
@@ -268,13 +286,16 @@ export const TempatSampahAktifPage: React.FC = () => {
         const rw = (bin.rwNama || "").toLowerCase();
         const kel = (bin.kelurahan || "").toLowerCase();
         const owner = (bin.pemilikNama || "").toLowerCase();
-        const registrant = (bin.pendaftarNama || "").toLowerCase();
+        const cat = (bin.kategoriNama || "").toLowerCase();
+        const catLabel = getBinCategoryInfo(bin.qrCode, bin.kategoriNama).label.toLowerCase();
         return (
           qr.includes(q) ||
           rw.includes(q) ||
           kel.includes(q) ||
           owner.includes(q) ||
-          registrant.includes(q)
+          registrant.includes(q) ||
+          cat.includes(q) ||
+          catLabel.includes(q)
         );
       }
 
