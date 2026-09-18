@@ -206,7 +206,7 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                                     user?.role == UserRole.unknown) {
                                   final isRegisteredOrNoHh =
                                       user?.lifecycleState ==
-                                          WargaLifecycle.registered ||
+                                          WargaLifecycle.registered &&
                                       (user?.householdId ?? '').isEmpty;
                                   if (isRegisteredOrNoHh) {
                                     return _GabungKomunitasCard();
@@ -840,8 +840,8 @@ class _BerandaViewState extends ConsumerState<BerandaView>
 
     final isUnjoined =
         (user?.role == UserRole.warga || user?.role == UserRole.unknown) &&
-        (user?.lifecycleState == WargaLifecycle.registered ||
-            (user?.householdId ?? '').isEmpty);
+        user?.lifecycleState == WargaLifecycle.registered &&
+        (user?.householdId ?? '').isEmpty;
 
     String displayRole = roleName;
     if (user?.role == UserRole.warga || user?.role == UserRole.unknown) {
@@ -1095,8 +1095,8 @@ class _BerandaViewState extends ConsumerState<BerandaView>
               final isUnjoined =
                   (user?.role == UserRole.warga ||
                       user?.role == UserRole.unknown) &&
-                  (user?.lifecycleState == WargaLifecycle.registered ||
-                      (user?.householdId ?? '').isEmpty);
+                  user?.lifecycleState == WargaLifecycle.registered &&
+                  (user?.householdId ?? '').isEmpty;
               final rawRw = user?.formattedRw ?? user?.rw ?? '';
               final rwText = rawRw.isNotEmpty && rawRw != '-'
                   ? 'RW $rawRw'
@@ -1117,17 +1117,15 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                         ? wilayahList.join(' • ')
                         : 'Wilayah Warga');
 
-              final registeredAddress = (user?.address ?? '').trim();
-              final displayAddress = locState.address ?? registeredAddress;
+              final displayAddress = locState.address;
 
               return UserLocationCard(
+                title: 'Titik Alamat Anda Sekarang',
                 wilayahTitle: wilayahTitle,
-                isFetchingAddress:
-                    locState.isFetchingAddress,
+                isFetchingAddress: locState.isFetchingAddress,
                 address: displayAddress,
                 position: locState.position,
-                isHomeAddress:
-                    false, // Menandakan bahwa ini adalah live location, bukan fixed home address
+                isHomeAddress: false,
                 onRefresh: () => ref
                     .read(userLocationProvider.notifier)
                     .refreshLocation(context: context),

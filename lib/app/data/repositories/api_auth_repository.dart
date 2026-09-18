@@ -554,6 +554,13 @@ class ApiAuthRepository implements AuthRepository {
               familySize: hhFamilySize ?? user.familySize,
             );
           }
+        } else {
+          final cachedHouseholdId = await secureStorage.read(
+            key: AppConfig.householdIdKey,
+          );
+          if (cachedHouseholdId != null && cachedHouseholdId.isNotEmpty) {
+            return user.copyWith(householdId: cachedHouseholdId);
+          }
         }
       }
     } catch (e) {
@@ -1651,10 +1658,17 @@ class ApiAuthRepository implements AuthRepository {
       }
       throw const AuthException('JOIN_FAILED', 'Gagal bergabung ke Rumah Tangga');
     } on DioException catch (e) {
-      final errCode = e.response?.data?['error']?.toString() ??
-          e.response?.data?['code']?.toString() ??
+      final resData = e.response?.data;
+      final Map<String, dynamic>? errorMap = resData is Map<String, dynamic>
+          ? resData
+          : (resData is Map ? Map<String, dynamic>.from(resData) : null);
+      final errCode = errorMap?['error']?.toString() ??
+          errorMap?['code']?.toString() ??
           '';
-      final errMsg = e.response?.data?['message']?.toString();
+      final errMsg = errorMap?['message']?.toString() ??
+          (resData is String && resData.isNotEmpty && !resData.contains('<html')
+              ? resData
+              : null);
       final mappedMsg = _mapHouseholdError(errCode, errMsg);
       throw AuthException(
         errCode.isNotEmpty ? errCode : 'JOIN_FAILED',

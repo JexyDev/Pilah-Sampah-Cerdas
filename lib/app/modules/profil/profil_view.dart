@@ -405,8 +405,8 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
     final user = userAsync.user;
     final binsAsync = ref.watch(binsProvider);
     final isUnjoined = (user?.role == UserRole.warga || user?.role == UserRole.unknown) &&
-        (user?.lifecycleState == WargaLifecycle.registered ||
-            (user?.householdId ?? '').isEmpty);
+        user?.lifecycleState == WargaLifecycle.registered &&
+        (user?.householdId ?? '').isEmpty;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
