@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
+import '../../core/utils/platform_utils.dart';
 
 class LocationService {
   LocationService._();
@@ -15,6 +18,10 @@ class LocationService {
     String? customMessage,
     bool mandatory = false,
   }) async {
+    if (!PlatformUtils.isMobile) {
+      return LocationPermission.always;
+    }
+
     bool serviceEnabled;
     LocationPermission permission;
 
@@ -170,82 +177,154 @@ class LocationService {
 
   /// Mendapatkan koordinat saat ini
   Future<Position?> getCurrentLocation() async {
-    try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) return null;
-
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
-        return null;
-      }
-
-      Position? pos;
-      // FIX: Timeout diperpanjang ke 15 detik & gunakan medium accuracy
-      // (menggabungkan Cell Tower + Wi-Fi + GPS) untuk cold-start lebih cepat.
-      // Jika masih timeout, coba ulang dengan low accuracy (network-only),
-      // lalu fallback ke last known position.
+    if (PlatformUtils.isMobile) {
       try {
-        pos = await Geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.medium,
-            distanceFilter: 0,
-          ),
-        ).timeout(const Duration(seconds: 15));
-      } catch (_) {
-        // Retry dengan akurasi lebih rendah (network-only, lebih cepat)
-        try {
-          pos = await Geolocator.getCurrentPosition(
-            locationSettings: const LocationSettings(
-              accuracy: LocationAccuracy.low,
-              distanceFilter: 0,
-            ),
-          ).timeout(const Duration(seconds: 8));
-        } catch (_) {
-          pos = await Geolocator.getLastKnownPosition();
+        bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+        if (serviceEnabled) {
+          LocationPermission permission = await Geolocator.checkPermission();
+          if (permission != LocationPermission.denied &&
+              permission != LocationPermission.deniedForever) {
+            Position? pos;
+            try {
+              pos = await Geolocator.getCurrentPosition(
+                locationSettings: const LocationSettings(
+                  accuracy: LocationAccuracy.medium,
+                  distanceFilter: 0,
+                ),
+              ).timeout(const Duration(seconds: 10));
+            } catch (_) {
+              try {
+                pos = await Geolocator.getCurrentPosition(
+                  locationSettings: const LocationSettings(
+                    accuracy: LocationAccuracy.low,
+                    distanceFilter: 0,
+                  ),
+                ).timeout(const Duration(seconds: 6));
+              } catch (_) {
+                pos = await Geolocator.getLastKnownPosition();
+              }
+            }
+            if (pos != null) return pos;
+          }
         }
-      }
-      return pos;
-    } catch (_) {
-      return null;
+      } catch (_) {}
     }
+
+    // Fallback: IP Geolocation untuk platform desktop/Linux atau saat hardware GPS tidak tersedia
+    try {
+      final uri = Uri.parse('http://ip-api.com/json');
+      final data = await _httpGetJson(uri);
+      if (data is Map<String, dynamic> && data['status'] == 'success') {
+        final lat = (data['lat'] as num).toDouble();
+        final lon = (data['lon'] as num).toDouble();
+        return Position(
+          longitude: lon,
+          latitude: lat,
+          timestamp: DateTime.now(),
+          accuracy: 100,
+          altitude: 0,
+          altitudeAccuracy: 0,
+          heading: 0,
+          headingAccuracy: 0,
+          speed: 0,
+          speedAccuracy: 0,
+        );
+      }
+    } catch (_) {}
+
+    return null;
   }
 
   /// Mengonversi koordinat (lat, lng) ke nama alamat ringkas (reverse geocoding)
   /// Format disesuaikan dengan standar tampilan di modul Mahasiswa.
   Future<String?> getAddressFromCoordinates(double lat, double lng) async {
-    // ponytail: reverse geocoding placemark; fallback jika gagal/offline
-    try {
-      final placemarks = await Geocoding()
-          .placemarkFromCoordinates(lat, lng)
-          .timeout(const Duration(seconds: 8));
-      if (placemarks.isNotEmpty) {
-        final p = placemarks.first;
-        String address = '';
-        if (p.street != null && p.street!.isNotEmpty) {
-          address = p.street!;
-          if (p.country != null && p.country!.isNotEmpty) {
-            address = address.replaceAll(', ${p.country!}', '').trim();
-            if (address.endsWith(',')) {
-              address = address.substring(0, address.length - 1);
+    // 1. Coba native Geocoding (Android & iOS)
+    if (PlatformUtils.isMobile) {
+      try {
+        final placemarks = await Geocoding()
+            .placemarkFromCoordinates(lat, lng)
+            .timeout(const Duration(seconds: 5));
+        if (placemarks.isNotEmpty) {
+          final p = placemarks.first;
+          String address = '';
+          if (p.street != null && p.street!.isNotEmpty) {
+            address = p.street!;
+            if (p.country != null && p.country!.isNotEmpty) {
+              address = address.replaceAll(', ${p.country!}', '').trim();
+              if (address.endsWith(',')) {
+                address = address.substring(0, address.length - 1);
+              }
             }
+          } else {
+            final parts = <String>[];
+            if (p.subLocality != null && p.subLocality!.isNotEmpty) {
+              parts.add(p.subLocality!);
+            }
+            if (p.locality != null && p.locality!.isNotEmpty) {
+              parts.add(p.locality!);
+            }
+            address = parts.join(', ');
           }
-        } else {
-          final parts = <String>[];
-          if (p.subLocality != null && p.subLocality!.isNotEmpty) {
-            parts.add(p.subLocality!);
-          }
-          if (p.locality != null && p.locality!.isNotEmpty) {
-            parts.add(p.locality!);
-          }
-          address = parts.join(', ');
+          if (address.isNotEmpty) return address;
         }
-        if (address.isEmpty) address = 'Lokasi tidak diketahui';
-        return address;
+      } catch (_) {
+        // Native geocoding tidak tersedia / gagal
       }
-      return 'Lokasi tidak ditemukan';
-    } catch (_) {
-      return 'Gagal memuat alamat';
     }
+
+    // 2. Fallback OpenStreetMap (Nominatim) Reverse Geocoding (Semua Platform termasuk Linux & Web)
+    try {
+      final uri = Uri.parse(
+        'https://nominatim.openstreetmap.org/reverse?format=json&lat=$lat&lon=$lng&zoom=18&addressdetails=1',
+      );
+      final data = await _httpGetJson(
+        uri,
+        headers: {'User-Agent': 'BersekaMobile/1.0'},
+      );
+
+      if (data is Map<String, dynamic>) {
+        final addr = data['address'] as Map<String, dynamic>?;
+        if (addr != null) {
+          final road = addr['road'] ?? addr['pedestrian'] ?? addr['neighbourhood'] ?? addr['suburb'];
+          final village = addr['village'] ?? addr['suburb'] ?? addr['city_district'];
+          final city = addr['city'] ?? addr['county'] ?? addr['state'];
+          final parts = [road, village, city]
+              .where((e) => e != null && e.toString().trim().isNotEmpty)
+              .toList();
+          if (parts.isNotEmpty) {
+            return parts.join(', ');
+          }
+        }
+        final displayName = data['display_name'] as String?;
+        if (displayName != null && displayName.isNotEmpty) {
+          final parts = displayName.split(',');
+          if (parts.length > 3) {
+            return parts.take(3).join(',').trim();
+          }
+          return displayName;
+        }
+      }
+    } catch (_) {}
+
+    return 'Koordinat GPS: ${lat.toStringAsFixed(4)}, ${lng.toStringAsFixed(4)}';
+  }
+
+  Future<dynamic> _httpGetJson(Uri uri, {Map<String, String>? headers}) async {
+    HttpClient? client;
+    try {
+      client = HttpClient()..connectionTimeout = const Duration(seconds: 5);
+      final request = await client.getUrl(uri);
+      headers?.forEach((k, v) => request.headers.set(k, v));
+      final response = await request.close().timeout(const Duration(seconds: 5));
+      if (response.statusCode == 200) {
+        final body = await response.transform(utf8.decoder).join();
+        return jsonDecode(body);
+      }
+    } catch (_) {
+      return null;
+    } finally {
+      client?.close(force: true);
+    }
+    return null;
   }
 }
