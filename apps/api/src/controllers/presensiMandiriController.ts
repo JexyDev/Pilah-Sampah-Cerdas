@@ -195,8 +195,8 @@ export const presensiMandiriController = {
     try {
       const kelompokId = req.query.kelompokId as string | undefined;
       const userRole = req.user?.role;
-      const isDevOrSuper = userRole === "DEVELOPER" || userRole === "SUPER_USER";
-      const includeTestAccounts = req.query.includeTestAccounts === "true" && isDevOrSuper;
+      const isDevOnly = userRole === "DEVELOPER";
+      const includeTestAccounts = req.query.includeTestAccounts === "true" && isDevOnly;
       const result = await presensiMandiriService.getLiveMap({ kelompokId, includeTestAccounts });
       res.status(200).json({ success: true, data: result });
     } catch (error: any) {
@@ -213,8 +213,8 @@ export const presensiMandiriController = {
     try {
       const { kelompokId, tanggalMulai, tanggalAkhir, status, page, limit } = req.query;
       const userRole = req.user?.role;
-      const isDevOrSuper = userRole === "DEVELOPER" || userRole === "SUPER_USER";
-      const includeTestAccounts = req.query.includeTestAccounts === "true" && isDevOrSuper;
+      const isDevOnly = userRole === "DEVELOPER";
+      const includeTestAccounts = req.query.includeTestAccounts === "true" && isDevOnly;
       const result = await presensiMandiriService.getAll({
         kelompokId: kelompokId as string,
         tanggalMulai: tanggalMulai as string,

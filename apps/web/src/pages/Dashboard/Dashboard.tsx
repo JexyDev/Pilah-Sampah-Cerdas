@@ -1,4 +1,4 @@
-import { X, Star, Banknote, Recycle, AlertCircle, Eye, LineChart, BarChart, Leaf, TrendingUp, TrendingDown, Wallet, Zap, MapPin, AlertTriangle, Truck, Pencil, Trash2, Calendar, ChevronRight, GraduationCap, Search, CheckCircle2, Sparkles, RotateCcw, Award, RefreshCcw, RefreshCw, Settings, Save, Loader2, Building2, History, Home, Bell, Megaphone, Archive, Send, Users, ShoppingBag } from "lucide-react";
+import { X, Star, Banknote, Recycle, AlertCircle, Eye, LineChart, BarChart, Leaf, TrendingUp, TrendingDown, Wallet, Zap, MapPin, AlertTriangle, Truck, Pencil, Trash2, Calendar, ChevronLeft, ChevronRight, GraduationCap, Search, CheckCircle2, Sparkles, RotateCcw, Award, RefreshCcw, RefreshCw, Settings, Save, Loader2, Building2, History, Home, Bell, Megaphone, Archive, Send, Users, ShoppingBag } from "lucide-react";
 
 /**
  * Project: BERSEKA
@@ -2022,6 +2022,29 @@ const Dashboard: React.FC = () => {
       <div className="w-full space-y-6 pb-12 font-sans text-slate-800 dark:text-slate-100 relative">
         {renderTabSwitcher()}
         <GisMapTab />
+      </div>
+    );
+  }
+
+  // Khusus View Bins pada Tab Tata Kelola Sampah (/dasbor?tab=tata-kelola-sampah&view=bins)
+  if (activeSubTab === "tata-kelola-sampah" && activeWasteView === "bins") {
+    return (
+      <div className="w-full space-y-6 pb-12 font-sans text-slate-800 dark:text-slate-100 relative">
+        {renderTabSwitcher()}
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => {
+              setSearchParams({ tab: "tata-kelola-sampah" });
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all cursor-pointer shadow-2xs"
+          >
+            <ChevronLeft size={14} />
+            <span>Kembali ke Ringkasan Tata Kelola Sampah</span>
+          </button>
+        </div>
+        <TempatSampahAktifPage />
       </div>
     );
   }
