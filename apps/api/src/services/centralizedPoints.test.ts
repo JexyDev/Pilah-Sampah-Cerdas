@@ -39,17 +39,37 @@ describe("Centralized Anti-Leak Individual Points Architecture (SSOT)", () => {
   });
 
   describe("calculateValidIndividualPoints", () => {
-    it("should query prisma.pointHistory.aggregate with permanent KKN_PROKER exclusion filter", async () => {
+    it("should query prisma.pointHistory.aggregate with KKN_PROKER, REDUKSI_TONASE, and BONUS_LOGIN_PERTAMA exclusion filters for Mahasiswa KKN", async () => {
       vi.mocked(prisma.pointHistory.aggregate).mockResolvedValue({
-        _sum: { points: 79 },
+        _sum: { points: 10 },
       } as any);
 
-      const points = await calculateValidIndividualPoints("user-habik-1");
+      const points = await calculateValidIndividualPoints("user-habik-1", "MAHASISWA_KKN");
 
-      expect(points).toBe(79);
+      expect(points).toBe(10);
       expect(prisma.pointHistory.aggregate).toHaveBeenCalledWith({
         where: {
           userId: "user-habik-1",
+          kategori: { notIn: ["KKN_PROKER", "REDUKSI_TONASE", "BONUS_LOGIN_PERTAMA"] },
+          NOT: {
+            description: { contains: "[ProkerID:" },
+          },
+        },
+        _sum: { points: true },
+      });
+    });
+
+    it("should keep REDUKSI_TONASE intact for WARGA users while still excluding KKN_PROKER", async () => {
+      vi.mocked(prisma.pointHistory.aggregate).mockResolvedValue({
+        _sum: { points: 150 },
+      } as any);
+
+      const points = await calculateValidIndividualPoints("user-warga-1", "WARGA");
+
+      expect(points).toBe(150);
+      expect(prisma.pointHistory.aggregate).toHaveBeenCalledWith({
+        where: {
+          userId: "user-warga-1",
           kategori: { notIn: ["KKN_PROKER"] },
           NOT: {
             description: { contains: "[ProkerID:" },
@@ -85,9 +105,9 @@ describe("Centralized Anti-Leak Individual Points Architecture (SSOT)", () => {
       expect(prisma.pointHistory.groupBy).not.toHaveBeenCalled();
     });
 
-    it("should batch-query points for all requested users with KKN_PROKER exclusion filter", async () => {
+    it("should batch-query points for all requested users with KKN_PROKER, REDUKSI_TONASE, and BONUS_LOGIN_PERTAMA exclusion filters", async () => {
       vi.mocked(prisma.pointHistory.groupBy).mockResolvedValue([
-        { userId: "mhs-1", _sum: { points: 79 } } as any,
+        { userId: "mhs-1", _sum: { points: 10 } } as any,
         { userId: "mhs-2", _sum: { points: 45 } } as any,
       ]);
 
@@ -97,7 +117,7 @@ describe("Centralized Anti-Leak Individual Points Architecture (SSOT)", () => {
         by: ["userId"],
         where: {
           userId: { in: ["mhs-1", "mhs-2", "mhs-3"] },
-          kategori: { notIn: ["KKN_PROKER"] },
+          kategori: { notIn: ["KKN_PROKER", "REDUKSI_TONASE", "BONUS_LOGIN_PERTAMA"] },
           NOT: {
             description: { contains: "[ProkerID:" },
           },
@@ -105,7 +125,7 @@ describe("Centralized Anti-Leak Individual Points Architecture (SSOT)", () => {
         _sum: { points: true },
       });
 
-      expect(resultMap.get("mhs-1")).toBe(79);
+      expect(resultMap.get("mhs-1")).toBe(10);
       expect(resultMap.get("mhs-2")).toBe(45);
       // mhs-3 had no records, defaults cleanly to 0
       expect(resultMap.get("mhs-3")).toBe(0);
