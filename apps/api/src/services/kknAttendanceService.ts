@@ -2385,6 +2385,21 @@ export class KknAttendanceService {
           },
         })
         .catch((err) => console.warn("[FCM] Gagal mengirim notif checkout:", err));
+    } else {
+      // Broadcast Notifikasi Lonceng & Push FCM ke Mahasiswa (Check-Out Tercatat / Durasi Parsial)
+      notificationIntegrationService
+        .sendToUser({
+          userId: studentId,
+          title: "Check-Out Berhasil! ⏱️",
+          message: `Presensi keluar KKN (${updated.schedule?.title || "Kegiatan"}) berhasil dicatat. Total durasi: ${Math.floor(durationMinutes)} menit.`,
+          triggerType: "CHECKOUT_TERCATAT",
+          dataPayload: {
+            attendanceId: updated.id,
+            scheduleId: updated.scheduleId,
+            click_action: "FLUTTER_NOTIFICATION_CLICK",
+          },
+        })
+        .catch((err) => console.warn("[FCM] Gagal mengirim notif checkout:", err));
     }
     websocketService.broadcastStudentCheckout({
       attendanceId: updated.id,

@@ -446,10 +446,16 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
           kategori: "KKN_PRESENSI_HADIR",
         }),
       });
+      expect(prisma.notification.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          userId: studentId,
+          title: "Check-In Berhasil! 📍",
+        }),
+      });
       expect(result.status).toBe("HADIR_MEMENUHI");
     });
 
-    it("should award +3 points when student checks out (kepulangan)", async () => {
+    it("should award +3 points and send bell notification when student checks out (kepulangan)", async () => {
       const startOfDay = new Date();
       startOfDay.setHours(0, 0, 0, 0);
 
@@ -499,6 +505,12 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
           points: 3,
           description: expect.stringContaining("Poin durasi harian terpenuhi"),
           kategori: "KKN_DURASI_MEMENUHI",
+        }),
+      });
+      expect(prisma.notification.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          userId: studentId,
+          title: "Pemenuhan Waktu Tercatat! ⏱️",
         }),
       });
     });
@@ -622,6 +634,12 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       expect(result.data.status).toBe("HADIR_TIDAK_MEMENUHI");
       expect(result.data.statusDisplay).toBe("Hadir & Tidak Memenuhi");
       expect(result.data.isMemenuhiDurasi).toBe(false);
+      expect(prisma.notification.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          userId: studentId,
+          title: "Check-Out Berhasil! ⏱️",
+        }),
+      });
     });
 
     it("should guarantee status HADIR_MEMENUHI and min duration when isAutoCheckout is true", async () => {
