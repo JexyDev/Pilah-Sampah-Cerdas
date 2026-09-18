@@ -876,11 +876,11 @@ export const ProgramKerjaKkn: React.FC = () => {
 
   // Filtered proker data
   const filteredProkers = useMemo(() => {
-    return prokerList.filter((item) => {
+    const filtered = prokerList.filter((item) => {
       if (
         isTestProker(item) ||
         isTestKelompok({
-          name: item.kelompokName || item.namaKelompok || item.kelompok?.name,
+          name: item.kelompokName || (item as any).namaKelompok || (item as any).kelompok?.name,
           dplNamaMentah: item.dplName,
           dplName: item.dplName,
         })

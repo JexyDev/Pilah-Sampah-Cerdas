@@ -85,6 +85,31 @@ export function isTestUser(
 }
 
 /**
+ * Memeriksa apakah data DPL (Dosen Pembimbing Lapangan) merupakan akun uji coba/dummy
+ */
+export function isTestDpl(
+  dpl?: {
+    id?: string | null;
+    name?: string | null;
+    nama?: string | null;
+    dplName?: string | null;
+    dplNama?: string | null;
+    email?: string | null;
+    nip?: string | null;
+    phone?: string | null;
+    isTestAccount?: boolean | null;
+    [key: string]: any;
+  } | null
+): boolean {
+  if (!dpl) return false;
+  if (typeof dpl === "string") return isTestOrDummyString(dpl);
+  if (dpl.isTestAccount) return true;
+  if (isTestUser(dpl)) return true;
+  if (isTestOrDummyString(dpl.nama || dpl.name || dpl.dplNama || dpl.dplName)) return true;
+  return false;
+}
+
+/**
  * Memeriksa apakah data Kelompok KKN merupakan kelompok uji coba/dummy
  */
 export function isTestKelompok(
@@ -226,21 +251,25 @@ export function isTestProker(
 }
 
 export function filterNonTestUsers<T>(list: T[]): T[] {
-  return list.filter((u) => !isTestUser(u));
+  return list.filter((u) => !isTestUser(u as any));
+}
+
+export function filterNonTestDpl<T>(list: T[]): T[] {
+  return list.filter((d) => !isTestDpl(d as any));
 }
 
 export function filterNonTestKelompok<T>(list: T[]): T[] {
-  return list.filter((k) => !isTestKelompok(k));
+  return list.filter((k) => !isTestKelompok(k as any));
 }
 
 export function filterNonTestStudents<T>(list: T[]): T[] {
-  return list.filter((s) => !isTestStudent(s));
+  return list.filter((s) => !isTestStudent(s as any));
 }
 
 export function filterNonTestPosko<T>(list: T[]): T[] {
-  return list.filter((p) => !isTestPosko(p));
+  return list.filter((p) => !isTestPosko(p as any));
 }
 
 export function filterNonTestProker<T>(list: T[]): T[] {
-  return list.filter((p) => !isTestProker(p));
+  return list.filter((p) => !isTestProker(p as any));
 }

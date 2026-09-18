@@ -46,6 +46,7 @@ vi.mock("../lib/prisma.js", () => ({
     },
     logbookKkn: {
       create: vi.fn(),
+      findFirst: vi.fn().mockResolvedValue(null),
     },
   },
 }));
