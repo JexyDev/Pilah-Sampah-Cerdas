@@ -483,30 +483,20 @@ class _KomunitasOnboardingViewState
                       : [],
                 ),
                 alignment: Alignment.center,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.family_restroom_rounded,
-                      size: 16,
-                      color: _selectedTab == 0
-                          ? AppColors.primaryGreen
-                          : AppColors.textSecondary,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Gabung Rumah Tangga',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: _selectedTab == 0
-                            ? FontWeight.bold
-                            : FontWeight.w600,
-                        color: _selectedTab == 0
-                            ? AppColors.primaryGreen
-                            : AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  'Gabung Rumah Tangga',
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: _selectedTab == 0
+                        ? FontWeight.bold
+                        : FontWeight.w600,
+                    color: _selectedTab == 0
+                        ? AppColors.primaryGreen
+                        : AppColors.textSecondary,
+                  ),
                 ),
               ),
             ),
@@ -531,30 +521,20 @@ class _KomunitasOnboardingViewState
                       : [],
                 ),
                 alignment: Alignment.center,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.home_work_rounded,
-                      size: 16,
-                      color: _selectedTab == 1
-                          ? AppColors.primaryGreen
-                          : AppColors.textSecondary,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Daftar Rumah Baru',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: _selectedTab == 1
-                            ? FontWeight.bold
-                            : FontWeight.w600,
-                        color: _selectedTab == 1
-                            ? AppColors.primaryGreen
-                            : AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  'Daftar Rumah Baru',
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: _selectedTab == 1
+                        ? FontWeight.bold
+                        : FontWeight.w600,
+                    color: _selectedTab == 1
+                        ? AppColors.primaryGreen
+                        : AppColors.textSecondary,
+                  ),
                 ),
               ),
             ),
