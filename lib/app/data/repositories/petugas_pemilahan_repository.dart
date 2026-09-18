@@ -27,6 +27,7 @@ abstract class PetugasPemilahanRepository {
     required double actualWeightKg,
     required String classification,
     required String photoPath,
+    required String photoTimbanganPath,
     double? latitude,
     double? longitude,
   });
@@ -46,7 +47,7 @@ abstract class PetugasPemilahanRepository {
   Future<List<Map<String, dynamic>>> getDaftarPengajuanWarga();
 
   /// Terima / Klaim pengajuan reset tempat sampah dari Warga (Mendukung Audit Trail Strict Gatekeeper)
-  Future<bool> claimPengajuanReset(
+  Future<Map<String, dynamic>> claimPengajuanReset(
     String pengajuanId, {
     String? emptyBinPhotoPath,
     String? scannedQrCode,

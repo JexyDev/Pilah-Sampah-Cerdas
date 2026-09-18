@@ -23,6 +23,8 @@ class KknDashboardData extends Equatable {
     required this.remainingQuota,
     required this.progressPercentage,
     required this.contributionPoints,
+    this.personalPoints,
+    this.prokerPoints,
   });
 
   final String nim;
@@ -32,6 +34,8 @@ class KknDashboardData extends Equatable {
   final int remainingQuota;
   final double progressPercentage;
   final int contributionPoints;
+  final int? personalPoints;
+  final int? prokerPoints;
 
   factory KknDashboardData.fromJson(Map<String, dynamic> json) {
     final student = json['studentKkn'] as Map<String, dynamic>? ?? {};
@@ -50,6 +54,12 @@ class KknDashboardData extends Equatable {
                 stats['totalPoints'] ??
                 0)
             as num?;
+
+    final personalPointVal =
+        (json['personalPoints'] ?? stats['personalPoints']) as num?;
+    
+    final prokerPointVal =
+        (json['prokerPoints'] ?? stats['prokerPoints']) as num?;
 
     final totalBins =
         (json['totalRegisteredBins'] ??
@@ -88,6 +98,8 @@ class KknDashboardData extends Equatable {
       remainingQuota: quota?.toInt() ?? 0,
       progressPercentage: progress?.toDouble() ?? 0.0,
       contributionPoints: pointVal?.toInt() ?? 0,
+      personalPoints: personalPointVal?.toInt(),
+      prokerPoints: prokerPointVal?.toInt(),
     );
   }
 
@@ -190,6 +202,7 @@ class WargaDampingan extends Equatable {
     this.kecamatan = '',
     this.kelurahan = '',
     this.rw = '',
+    this.rwId,
     this.mahasiswaId = '',
     this.pendampingName = '',
     this.status = '',
@@ -203,6 +216,7 @@ class WargaDampingan extends Equatable {
     this.backendTotalActivities,
     this.backendCorrectCount,
     this.backendIncorrectCount,
+    this.lifecycleState = '',
   });
 
   final String wargaId;
@@ -214,6 +228,7 @@ class WargaDampingan extends Equatable {
   final String kecamatan;
   final String kelurahan;
   final String rw;
+  final int? rwId;
   final String mahasiswaId;
   final String pendampingName;
   final String status;
@@ -227,6 +242,7 @@ class WargaDampingan extends Equatable {
   final int? backendTotalActivities;
   final int? backendCorrectCount;
   final int? backendIncorrectCount;
+  final String lifecycleState;
 
   /// Total aktivitas pemilahan
   int get totalActivities => backendTotalActivities ?? recentLogs.length;
@@ -281,6 +297,7 @@ class WargaDampingan extends Equatable {
     int? backendTotalActivities,
     int? backendCorrectCount,
     int? backendIncorrectCount,
+    String? lifecycleState,
   }) {
     return WargaDampingan(
       wargaId: wargaId ?? this.wargaId,
@@ -307,15 +324,18 @@ class WargaDampingan extends Equatable {
       backendCorrectCount: backendCorrectCount ?? this.backendCorrectCount,
       backendIncorrectCount:
           backendIncorrectCount ?? this.backendIncorrectCount,
+      lifecycleState: lifecycleState ?? this.lifecycleState,
     );
   }
 
   factory WargaDampingan.fromJson(Map<String, dynamic> json) {
-    final logs =
+    final rawLogs =
         (json['recentLogs'] as List<dynamic>?)
             ?.map((e) => WasteLogEntry.fromJson(e as Map<String, dynamic>))
             .toList() ??
         [];
+    rawLogs.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final logs = rawLogs;
 
     String extractedBinId = json['binId']?.toString() ?? '';
     if (extractedBinId.isEmpty &&
@@ -592,6 +612,7 @@ class WargaDampingan extends Equatable {
       kecamatan: parsedKecamatan,
       kelurahan: parsedKelurahan,
       rw: parsedRw,
+      rwId: json['rwId'] != null ? int.tryParse(json['rwId'].toString()) : null,
       mahasiswaId: extractMhsId(),
       pendampingName: extractPendampingName(),
       status: rawStatus.isEmpty ? 'Aktif' : rawStatus,
@@ -612,6 +633,10 @@ class WargaDampingan extends Equatable {
           json['role']?.toString().toUpperCase() ??
           json['user']?['role']?.toString().toUpperCase() ??
           'WARGA',
+      lifecycleState:
+          json['lifecycleState']?.toString() ??
+          json['user']?['lifecycleState']?.toString() ??
+          '',
       totalPoints:
           (json['totalPoints'] as num?)?.toInt() ??
           (json['totalPoin'] as num?)?.toInt() ??
@@ -921,10 +946,14 @@ class KelompokKknData extends Equatable {
     this.dplNip = '-',
     this.dplPhone = '-',
     required this.poskoLocation,
+    this.kelurahan,
     required this.totalGroupPoints,
     required this.members,
     this.linkGoogleDrive,
     this.cakupanRw = const [],
+    this.cumulativeMemberPoints = 0,
+    this.rataRataPoinAnggota = 0.0,
+    this.poinProker = 0.0,
   });
 
   final String groupId;
@@ -933,18 +962,22 @@ class KelompokKknData extends Equatable {
   final String dplNip;
   final String dplPhone;
   final String poskoLocation;
-  final int totalGroupPoints;
+  final String? kelurahan;
+  final double totalGroupPoints;
   final List<KelompokMemberData> members;
   final List<String> cakupanRw;
 
   /// Link Google Drive folder kelompok, null jika belum diset Admin.
   final String? linkGoogleDrive;
 
-  /// Penjumlahan Poin Kelompok (Fallback Client-Side Sum)
-  int get calculatedTotalPoints {
-    if (totalGroupPoints > 0) return totalGroupPoints;
-    return members.fold(0, (sum, m) => sum + m.individualPoints);
-  }
+  /// Total Penjumlahan Poin Individu Seluruh Anggota (Murni tanpa Proker)
+  final int cumulativeMemberPoints;
+
+  /// Nilai murni rata-rata poin anggota (di-pass dari backend)
+  final double rataRataPoinAnggota;
+
+  /// Nilai poin proker murni (di-pass dari backend)
+  final double poinProker;
 
   factory KelompokKknData.fromJson(Map<String, dynamic> json) {
     final membersList =
@@ -1069,13 +1102,18 @@ class KelompokKknData extends Equatable {
           json['lokasiPosko']?.toString() ??
           json['kelurahan']?.toString() ??
           '-',
+      kelurahan: json['kelurahan']?.toString(),
       totalGroupPoints:
-          (json['totalGroupPoints'] as num?)?.toInt() ??
-          (json['totalPoints'] as num?)?.toInt() ??
-          0,
+          (json['totalGroupPoints'] as num?)?.toDouble() ??
+          (json['totalPoints'] as num?)?.toDouble() ??
+          0.0,
       members: membersList,
       linkGoogleDrive: driveUrl,
       cakupanRw: parsedCakupan,
+      cumulativeMemberPoints: (json['totalCumulativeMemberPoints'] as num?)?.toInt() ?? 
+                              membersList.fold(0, (sum, m) => sum + m.individualPoints),
+      rataRataPoinAnggota: (json['rataRataPoinAnggota'] as num?)?.toDouble() ?? 0.0,
+      poinProker: (json['poinProker'] as num?)?.toDouble() ?? 0.0,
     );
   }
 
@@ -1088,8 +1126,12 @@ class KelompokKknData extends Equatable {
     dosenPembimbing,
     dplNip,
     dplPhone,
+    kelurahan,
     linkGoogleDrive,
     cakupanRw,
+    cumulativeMemberPoints,
+    rataRataPoinAnggota,
+    poinProker,
   ];
 }
 
@@ -1275,3 +1317,91 @@ class JenisFasilitas extends Equatable {
   @override
   List<Object?> get props => [id, key, nama, iconUrl, isActive];
 }
+
+/// ─────────────────────────────────────────────────────────────────────────────
+/// Model untuk data Fasilitas Tata Kelola Sampah (GET / POST /api/v1/facilities)
+/// ─────────────────────────────────────────────────────────────────────────────
+class FasilitasTataKelolaSampah extends Equatable {
+  final String id;
+  final String jenis;
+  final String nama;
+  final String pic;
+  final String? kontak;
+  final String kepemilikan; // "MILIK_RW" atau "PRIBADI"
+  final double kapasitas;
+  final double latitude;
+  final double longitude;
+  final String alamat;
+  final String? foto;
+  final int? rwId;
+
+  const FasilitasTataKelolaSampah({
+    required this.id,
+    required this.jenis,
+    required this.nama,
+    required this.pic,
+    this.kontak,
+    this.kepemilikan = 'PRIBADI',
+    this.kapasitas = 0.0,
+    required this.latitude,
+    required this.longitude,
+    required this.alamat,
+    this.foto,
+    this.rwId,
+  });
+
+  bool get isMilikRw => kepemilikan == 'MILIK_RW';
+  bool get isPribadi => kepemilikan == 'PRIBADI';
+
+  factory FasilitasTataKelolaSampah.fromJson(Map<String, dynamic> json) {
+    return FasilitasTataKelolaSampah(
+      id: json['id']?.toString() ?? '',
+      jenis: json['jenis']?.toString() ?? '',
+      nama: json['nama']?.toString() ?? '',
+      pic: json['pic']?.toString() ?? '',
+      kontak: json['kontak']?.toString(),
+      kepemilikan: json['kepemilikan']?.toString() ?? 'PRIBADI',
+      kapasitas: double.tryParse(json['kapasitas']?.toString() ?? '0') ?? 0.0,
+      latitude: double.tryParse(json['latitude']?.toString() ?? '0') ?? 0.0,
+      longitude: double.tryParse(json['longitude']?.toString() ?? '0') ?? 0.0,
+      alamat: json['alamat']?.toString() ?? '',
+      foto: json['foto']?.toString(),
+      rwId: (json['rwId'] as num?)?.toInt(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'jenis': jenis,
+      'nama': nama,
+      'pic': pic,
+      if (kontak != null) 'kontak': kontak,
+      'kepemilikan': kepemilikan,
+      'kapasitas': kapasitas,
+      'latitude': latitude,
+      'longitude': longitude,
+      'alamat': alamat,
+      if (foto != null) 'foto': foto,
+      if (rwId != null) 'rwId': rwId,
+    };
+  }
+
+  @override
+  List<Object?> get props => [
+        id,
+        jenis,
+        nama,
+        pic,
+        kontak,
+        kepemilikan,
+        kapasitas,
+        latitude,
+        longitude,
+        alamat,
+        foto,
+        rwId,
+      ];
+}
+
+typedef FasilitasWarga = FasilitasTataKelolaSampah;

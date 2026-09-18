@@ -53,6 +53,10 @@ abstract class AuthRepository {
     int? familySize,
   });
 
+  /// Mendaftar komunitas untuk menggenerate komunitas_id unik.
+  /// Returns ID komunitas yang baru di-generate.
+  Future<String> registerKomunitas();
+
   /// Request token untuk lupa kata sandi.
   Future<String?> forgotPassword({required String phone});
 
@@ -78,6 +82,12 @@ abstract class AuthRepository {
 
   /// Fetch dynamic list of registered Kelurahan & RT/RW from Web Admin roles backend.
   Future<Map<String, dynamic>> fetchTerritories();
+
+  /// Bergabung ke Rumah Tangga Kepala Keluarga yang sudah memiliki Tempat Sampah aktif.
+  Future<Map<String, dynamic>> joinHousehold({required String headPhone});
+
+  /// Mengambil data detail rumah tangga aktif saat ini, anggota, dan tipe kepemilikan.
+  Future<Map<String, dynamic>?> getMyHousehold();
 }
 
 /// Exception khusus untuk auth errors.

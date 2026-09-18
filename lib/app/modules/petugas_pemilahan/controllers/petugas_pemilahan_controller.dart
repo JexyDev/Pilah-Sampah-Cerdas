@@ -232,6 +232,7 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
     required double actualWeightKg,
     required String classification,
     required String photoPath,
+    required String photoTimbanganPath,
     double? latitude,
     double? longitude,
   }) async {
@@ -243,6 +244,7 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
         actualWeightKg: actualWeightKg,
         classification: classification,
         photoPath: photoPath,
+        photoTimbanganPath: photoTimbanganPath,
         latitude: latitude,
         longitude: longitude,
       );
@@ -286,7 +288,7 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
     String dateRange,
     String type,
   ) {
-    return rawList.where((item) {
+    final filtered = rawList.where((item) {
       // 1. Filter Date Range
       final rawDate =
           item['timestamp']?.toString() ??
@@ -333,6 +335,17 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
       }
       return true;
     }).toList();
+
+    filtered.sort((a, b) {
+      final rawA = a['timestamp']?.toString() ?? a['submittedAt']?.toString() ?? a['createdAt']?.toString();
+      final rawB = b['timestamp']?.toString() ?? b['submittedAt']?.toString() ?? b['createdAt']?.toString();
+      DateTime dtA = DateTime.fromMillisecondsSinceEpoch(0);
+      DateTime dtB = DateTime.fromMillisecondsSinceEpoch(0);
+      try { if (rawA != null) dtA = DateTime.parse(rawA).toLocal(); } catch (_) {}
+      try { if (rawB != null) dtB = DateTime.parse(rawB).toLocal(); } catch (_) {}
+      return dtB.compareTo(dtA);
+    });
+    return filtered;
   }
 
   Future<void> setHistoryFilters({String? dateRange, String? type}) async {
@@ -391,7 +404,7 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
     }
   }
 
-  Future<bool> claimPengajuanReset(
+  Future<Map<String, dynamic>?> claimPengajuanReset(
     String pengajuanId, {
     String? emptyBinPhotoPath,
     String? scannedQrCode,
@@ -401,7 +414,7 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       final repo = _ref.read(petugasPemilahanRepositoryProvider);
-      final ok = await repo.claimPengajuanReset(
+      final result = await repo.claimPengajuanReset(
         pengajuanId,
         emptyBinPhotoPath: emptyBinPhotoPath,
         scannedQrCode: scannedQrCode,
@@ -412,13 +425,13 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
       // agar tidak terjadi duplikasi dengan notifikasi server.
       await refreshAll();
       state = state.copyWith(isLoading: false);
-      return ok;
+      return result;
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
         errorMessage: NetworkExceptionHelper.getErrorMessage(e),
       );
-      return false;
+      return null;
     }
   }
 }

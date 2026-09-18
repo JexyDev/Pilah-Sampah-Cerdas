@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
@@ -127,10 +128,23 @@ class PengajuanWargaView extends ConsumerWidget {
     final wargaName = pengajuan['wargaName'] ?? '';
     final alasan = pengajuan['alasan'] ?? '';
     final binCode = pengajuan['binCode'] ?? '';
-    final category = pengajuan['category']?.toString() ?? 'Organik';
+    String category = pengajuan['category']?.toString() ?? 'Organik';
+    if (category.toUpperCase() == 'NON_ORGANIC') {
+      category = 'Anorganik';
+    } else if (category.toUpperCase() == 'ORGANIC') {
+      category = 'Organik';
+    }
+
     final alamat = pengajuan['address'] ?? pengajuan['alamat'] ?? '';
     final rtRw = pengajuan['rtRw']?.toString() ?? '';
-    final createdAt = pengajuan['createdAt'] ?? '';
+    
+    String createdAt = pengajuan['createdAt']?.toString() ?? '';
+    try {
+      if (createdAt.isNotEmpty) {
+        final dt = DateTime.parse(createdAt).toLocal();
+        createdAt = DateFormat('dd MMM yyyy, HH:mm', 'id_ID').format(dt);
+      }
+    } catch (_) {}
     final evidencePhotoUrl = pengajuan['evidencePhotoUrl']?.toString() ?? '';
 
     return Container(

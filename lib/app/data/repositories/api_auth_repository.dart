@@ -554,6 +554,13 @@ class ApiAuthRepository implements AuthRepository {
               familySize: hhFamilySize ?? user.familySize,
             );
           }
+        } else {
+          final cachedHouseholdId = await secureStorage.read(
+            key: AppConfig.householdIdKey,
+          );
+          if (cachedHouseholdId != null && cachedHouseholdId.isNotEmpty) {
+            return user.copyWith(householdId: cachedHouseholdId);
+          }
         }
       }
     } catch (e) {
@@ -711,6 +718,46 @@ class ApiAuthRepository implements AuthRepository {
         'UNKNOWN_ERROR',
         NetworkExceptionHelper.getErrorMessage(e),
       );
+    }
+  }
+  @override
+  Future<String> registerKomunitas() async {
+    try {
+      final response = await apiClient.dio.post(
+        '/users/komunitas/register',
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final komunitasId = response.data?['data']?['komunitas_id']?.toString();
+        if (komunitasId != null) {
+          // Update local storage user data to have this new komunitasId
+          final currentUserStr = await secureStorage.read(
+            key: AppConfig.userDataKey,
+          );
+          if (currentUserStr != null) {
+            final currentUserMap =
+                jsonDecode(currentUserStr) as Map<String, dynamic>;
+            currentUserMap['komunitas_id'] = komunitasId;
+            await secureStorage.write(
+              key: AppConfig.userDataKey,
+              value: jsonEncode(currentUserMap),
+            );
+          }
+          return komunitasId;
+        }
+        throw const AuthException('INVALID_RESPONSE', 'komunitas_id tidak ditemukan');
+      }
+      throw AuthException(
+        'REGISTER_FAILED',
+        response.data?['message']?.toString() ?? 'Gagal mendaftar komunitas',
+      );
+    } on DioException catch (e) {
+      final message = e.response?.data?['message']?.toString();
+      throw AuthException(
+        'REGISTER_FAILED',
+        message ?? 'Gagal menghubungi server',
+      );
+    } catch (e) {
+      throw AuthException('UNKNOWN_ERROR', 'Terjadi kesalahan: $e');
     }
   }
 
@@ -1187,6 +1234,7 @@ class ApiAuthRepository implements AuthRepository {
       phone: userMap['phone']?.toString() ?? '',
       address: fullAddress,
       email: userMap['email']?.toString(),
+      komunitasId: userMap['komunitas_id']?.toString(),
       role: UserRoleExtension.fromApi(extractRawRole()),
       fotoProfil: userMap['fotoProfil']?.toString(),
       provinsi: provinsi,
@@ -1194,6 +1242,7 @@ class ApiAuthRepository implements AuthRepository {
       kecamatan: fetchedKecamatan,
       kelurahan: kelurahan,
       rw: rw,
+      rwId: userMap['rwId'] != null ? int.tryParse(userMap['rwId'].toString()) : (userMap['assignedRwId'] != null ? int.tryParse(userMap['assignedRwId'].toString()) : null),
       nim: nim,
       jurusan: jurusan,
       prodi: prodi,
@@ -1530,5 +1579,118 @@ class ApiAuthRepository implements AuthRepository {
       'rawKota': kotaListRaw,
       'rawKecamatan': kecamatanListRaw,
     };
+  }
+
+  String _mapHouseholdError(String code, String? msg) {
+    switch (code) {
+      case 'BIN_RW_MISMATCH':
+        return 'Stiker Tempat Sampah ini dialokasikan khusus untuk wilayah RW lain. Silakan gunakan stiker yang dibagikan oleh Posko RW Anda.';
+      case 'USER_RW_NOT_SET':
+        return 'Wilayah domisili RW Anda belum terdaftar. Silakan lengkapi profil komunitas Anda terlebih dahulu.';
+      case 'HEAD_NOT_FOUND':
+        return 'Nomor HP Kepala Keluarga tidak terdaftar di Berseka. Pastikan nomor sudah benar dan aktif.';
+      case 'HEAD_HAS_NO_BIN':
+        return 'Kepala Keluarga belum mengaktifkan Tempat Sampah di rumah. Harap minta Kepala Keluarga untuk aktivasi wadah terlebih dahulu.';
+      case 'CANNOT_JOIN_SELF':
+        return 'Anda tidak dapat memasukkan nomor telepon Anda sendiri.';
+      case 'ALREADY_FULLY_ACTIVE':
+        return 'Akun Anda sudah memiliki Tempat Sampah aktif terdaftar.';
+      default:
+        return msg ?? 'Terjadi kendala pada sistem. Silakan coba beberapa saat lagi.';
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> joinHousehold({required String headPhone}) async {
+    final cleanPhone = PhoneFormatter.prepareLoginPhoneInput(headPhone);
+    try {
+      final response = await apiClient.dio.post(
+        '/households/join',
+        data: {'headPhone': cleanPhone},
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = response.data['data'] as Map<String, dynamic>? ?? {};
+        final household = data['household'] as Map<String, dynamic>? ?? {};
+        final householdId = household['id']?.toString() ?? '';
+
+        if (householdId.isNotEmpty) {
+          await secureStorage.write(
+            key: AppConfig.householdIdKey,
+            value: householdId,
+          );
+        }
+
+        // Perbarui cache data user lokal ke FULLY_ACTIVE
+        final currentUserStr = await secureStorage.read(
+          key: AppConfig.userDataKey,
+        );
+        if (currentUserStr != null) {
+          final currentUserMap =
+              jsonDecode(currentUserStr) as Map<String, dynamic>;
+          currentUserMap['lifecycleState'] = 'FULLY_ACTIVE';
+          if (household['address'] != null) {
+            currentUserMap['address'] = household['address'];
+          }
+          if (household['rw'] != null) {
+            currentUserMap['rw'] = household['rw'];
+          }
+          if (household['kelurahan'] != null) {
+            currentUserMap['kelurahan'] = household['kelurahan'];
+          }
+          if (household['kecamatan'] != null) {
+            currentUserMap['kecamatan'] = household['kecamatan'];
+          }
+          final dynamic returnedKomunitasId = data['user']?['komunitas_id'] ??
+              data['user']?['komunitasId'] ??
+              data['komunitas_id'] ??
+              data['komunitasId'];
+          if (returnedKomunitasId != null) {
+            currentUserMap['komunitas_id'] = returnedKomunitasId.toString();
+          }
+          await secureStorage.write(
+            key: AppConfig.userDataKey,
+            value: jsonEncode(currentUserMap),
+          );
+        }
+
+        return data;
+      }
+      throw const AuthException('JOIN_FAILED', 'Gagal bergabung ke Rumah Tangga');
+    } on DioException catch (e) {
+      final resData = e.response?.data;
+      final Map<String, dynamic>? errorMap = resData is Map<String, dynamic>
+          ? resData
+          : (resData is Map ? Map<String, dynamic>.from(resData) : null);
+      final errCode = errorMap?['error']?.toString() ??
+          errorMap?['code']?.toString() ??
+          '';
+      final errMsg = errorMap?['message']?.toString() ??
+          (resData is String && resData.isNotEmpty && !resData.contains('<html')
+              ? resData
+              : null);
+      final mappedMsg = _mapHouseholdError(errCode, errMsg);
+      throw AuthException(
+        errCode.isNotEmpty ? errCode : 'JOIN_FAILED',
+        mappedMsg,
+      );
+    } catch (e) {
+      if (e is AuthException) rethrow;
+      throw AuthException('UNKNOWN_ERROR', 'Terjadi kesalahan: $e');
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>?> getMyHousehold() async {
+    try {
+      final response = await apiClient.dio.get('/households/my-household');
+      if (response.statusCode == 200) {
+        return response.data['data'] as Map<String, dynamic>?;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('[ApiAuthRepository] getMyHousehold silent error: $e');
+      return null;
+    }
   }
 }

@@ -56,9 +56,9 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
         // Ini terjadi pada akun bulk-insert yang tidak punya wilayah di profil
         final kelompok = ref.read(kelompokKknProvider).kelompok;
         if (kelurahan.isEmpty && kelompok != null) {
-          final loc = kelompok.poskoLocation;
-          if (loc.isNotEmpty && loc != '-') {
-            kelurahan = loc;
+          final kel = kelompok.kelurahan;
+          if (kel != null && kel.isNotEmpty && kel != '-') {
+            kelurahan = kel;
           }
         }
         if (rw.isEmpty && kelompok != null && kelompok.cakupanRw.isNotEmpty) {
@@ -78,6 +78,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
     String userKec,
     String userKel,
     String userRw,
+    int? userRwId,
   ) {
     // Helper: bersihkan string kelurahan untuk perbandingan
     String cleanKel(String val) => val
@@ -100,6 +101,8 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
 
     return allWarga.where((w) {
       if (w.role.isNotEmpty && w.role != 'WARGA') return false;
+      // Blokir warga yang baru registrasi awal dan belum mengisi form Gabung Komunitas
+      if (w.lifecycleState.toUpperCase() == 'REGISTERED') return false;
 
       final wRwClean = w.rw
           .replaceAll(RegExp(r'[^\d]'), '')
@@ -107,17 +110,23 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
       final wKelClean = cleanKel(w.kelurahan);
       final wAddr = w.address.toLowerCase();
 
-      final rwMatches =
-          targetRwSet.isEmpty ||
-          targetRwSet.contains(wRwClean) ||
-          targetRwSet.any(
-            (r) => wAddr.contains('rw $r') || wAddr.contains('rw 0$r'),
-          );
-      final kelMatches =
-          targetKelClean.isEmpty ||
-          wKelClean.contains(targetKelClean) ||
-          targetKelClean.contains(wKelClean) ||
-          wAddr.contains(targetKelClean);
+      // 1. Cek kecocokan RW (Dukung Multi-RW)
+      bool rwMatches = false;
+      if (userRwId != null && w.rwId != null && w.rwId == userRwId) {
+        rwMatches = true;
+      } else {
+        // Murni pencocokan string, tanpa dummy bypass (jika kosong = false)
+        rwMatches = targetRwSet.contains(wRwClean) ||
+            targetRwSet.any(
+              (r) => wAddr.contains('rw $r') || wAddr.contains('rw 0$r'),
+            );
+      }
+
+      // 2. Cek kecocokan Kelurahan tanpa dummy bypass
+      final kelMatches = targetKelClean.isNotEmpty &&
+          (wKelClean.contains(targetKelClean) ||
+              targetKelClean.contains(wKelClean) ||
+              wAddr.contains(targetKelClean));
 
       if (!rwMatches || !kelMatches) return false;
 
@@ -138,6 +147,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
     String userKec,
     String userKel,
     String userRw,
+    int? userRwId,
   ) {
     try {
       return allWarga.map((e) {
@@ -196,8 +206,8 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
     String userKel = user?.kelurahan ?? '';
     String userRw = user?.rw ?? '';
     if (userKel.isEmpty) {
-      final loc = kelompokState.kelompok?.poskoLocation ?? '';
-      if (loc.isNotEmpty && loc != '-') userKel = loc;
+      final kel = kelompokState.kelompok?.kelurahan ?? '';
+      if (kel.isNotEmpty && kel != '-') userKel = kel;
     }
 
     final isAktivasiBinMode =
@@ -210,12 +220,14 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
     // all registered & claimed citizens are included dynamically.
     final rawMerged = <WargaDampingan>[
       ...state.wargaList,
-      ..._getFilteredWargaAktivasi(
-        aktivasiState.wargaList,
-        userKec,
-        userKel,
-        userRw,
-      ),
+      if (isAktivasiBinMode)
+        ..._getFilteredWargaAktivasi(
+          aktivasiState.wargaList,
+          userKec,
+          userKel,
+          userRw,
+          user?.rwId,
+        ),
     ];
 
     // Remove duplicates safely: never collapse citizens with empty or placeholder ID
@@ -277,6 +289,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
       userKec,
       userKel,
       userRw,
+      user?.rwId,
     );
 
     return Scaffold(
@@ -489,7 +502,7 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                         ),
                         child: Text(
                           userRw.isNotEmpty
-                              ? (userRw.startsWith('RW')
+                              ? (userRw.trim().toUpperCase().startsWith('RW')
                                     ? userRw
                                     : 'RW $userRw')
                               : '-',
@@ -679,11 +692,11 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                           Builder(
                             builder: (_) {
                               final rtStr = warga.rw.isNotEmpty
-                                  ? (warga.rw.startsWith('RW')
+                                  ? (warga.rw.trim().toUpperCase().startsWith('RW')
                                         ? warga.rw
                                         : 'RW ${warga.rw}')
                                   : (userRw.isNotEmpty
-                                        ? (userRw.startsWith('RW')
+                                        ? (userRw.trim().toUpperCase().startsWith('RW')
                                               ? userRw
                                               : 'RW $userRw')
                                         : '-');

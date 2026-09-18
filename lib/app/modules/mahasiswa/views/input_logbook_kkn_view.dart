@@ -6,7 +6,13 @@ import 'package:file_picker/file_picker.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../data/services/notification_engine.dart';
+import '../../../data/services/local_notification_cache_service.dart';
+import '../../auth/controllers/auth_controller.dart';
+import '../controllers/riwayat_kkn_controller.dart';
 import '../controllers/mahasiswa_notifikasi_controller.dart';
+import '../controllers/mahasiswa_controller.dart';
+import '../../riwayat/controllers/riwayat_controller.dart'
+    show pointHistoryProvider, totalPointsProvider;
 import 'riwayat_program_kerja_view.dart'; // import provider untuk dropdown program kerja
 
 final fasilitasWargaListProvider =
@@ -319,36 +325,65 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
         if (_selectedFasilitasId != null) 'fasilitasId': _selectedFasilitasId,
       };
 
-      if (widget.initialData != null) {
+      bool isEdit = widget.initialData != null;
+      int pointsAdded = 0;
+
+      if (isEdit) {
         await repo.editLogbookHarian(
           widget.initialData!['id'],
           payload,
-          imagePath: _selectedFiles.isNotEmpty
-              ? _selectedFiles.first.path
-              : null,
+          imagePath: _selectedFiles.isNotEmpty ? _selectedFiles.first.path : null,
         );
       } else {
-        await repo.submitLogbookHarian(
+        final res = await repo.submitLogbookHarian(
           payload,
           imagePaths: _selectedFiles.map((f) => f.path).toList(),
         );
+        if (res['data'] != null && res['data']['pointsAdded'] != null) {
+          pointsAdded = (res['data']['pointsAdded'] as num).toInt();
+        }
       }
 
       if (mounted) {
+        final bool isBerpoin = pointsAdded > 0;
+        final String titleText = isBerpoin
+            ? 'Logbook Terkirim! +$pointsAdded PTS 🎉'
+            : 'Logbook Terkirim! ✅';
+        final String bodyText = isBerpoin
+            ? 'Laporan aktivitas harian Anda masuk dan mendapat +$pointsAdded PTS. Menunggu validasi DPL.'
+            : 'Laporan aktivitas "${_deskripsiCtrl.text.trim()}" telah masuk ke riwayat dan menunggu validasi DPL.';
+        final String routePayload = isBerpoin ? 'ROUTE_POIN' : 'ROUTE_HISTORY';
+        final String typeStr = isBerpoin ? 'PANEN_HASIL' : 'KEGIATAN_DIAJUKAN';
+
         NotificationEngine().showGenericNotification(
           id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
-          title: 'Logbook Berhasil Dikirim! ✅',
-          body:
-              'Laporan aktivitas harian Anda telah masuk dan menunggu validasi DPL.',
+          title: titleText,
+          body: bodyText,
           color: AppColors.primaryGreen,
-          payload: 'ROUTE_POIN',
+          payload: routePayload,
         );
 
+        final user = ref.read(authProvider).user;
+        if (user != null) {
+          LocalNotificationCacheService().addNotification(
+            userId: user.id,
+            role: user.role.name,
+            title: titleText,
+            desc: bodyText,
+            type: typeStr,
+            id: 'local_lb_${DateTime.now().millisecondsSinceEpoch}',
+          );
+        }
+
+        ref.invalidate(riwayatKknControllerProvider);
         ref.invalidate(mahasiswaNotificationsProvider);
+        ref.read(mahasiswaControllerProvider.notifier).fetchDashboardData();
+        ref.invalidate(pointHistoryProvider);
+        ref.invalidate(totalPointsProvider);
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Berhasil mencatat logbook harian!'),
+            content: Text('Berhasil mencatat logbook harian! (+3 Poin)'),
             backgroundColor: AppColors.success,
           ),
         );
@@ -704,7 +739,7 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
 
                     const SizedBox(height: 16),
                     const Text(
-                      'Fasilitas Warga Terkait',
+                      'Fasilitas Tata Kelola Sampah Terkait',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 13,
@@ -1577,7 +1612,7 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
                     child: Row(
                       children: [
                         const Text(
-                          'Pilih Fasilitas Warga',
+                          'Pilih Fasilitas Tata Kelola Sampah',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -1616,7 +1651,7 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
                           currentSelectedId: _selectedFasilitasId,
                           title: 'Tidak terkait fasilitas',
                           description:
-                              'Logbook ini tidak berhubungan dengan fasilitas warga manapun',
+                              'Logbook ini tidak berhubungan dengan fasilitas tata kelola sampah manapun',
                           icon: Icons.link_off_rounded,
                           onSelect: (id) =>
                               setState(() => _selectedFasilitasId = id),

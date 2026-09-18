@@ -207,6 +207,11 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
+                shadows: [
+                  Shadow(color: Colors.white, blurRadius: 4),
+                  Shadow(color: Colors.white, blurRadius: 8),
+                  Shadow(color: Colors.white, blurRadius: 12),
+                ],
               ),
             ),
           ),
@@ -221,6 +226,10 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
                 fontSize: 12,
                 fontWeight: FontWeight.w800,
                 color: AppColors.textPrimary,
+                shadows: [
+                  Shadow(color: Colors.white, blurRadius: 4),
+                  Shadow(color: Colors.white, blurRadius: 8),
+                ],
               ),
             ),
           ),
@@ -238,12 +247,12 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
       {
         'active': Icons.home_rounded,
         'inactive': Icons.home_outlined,
-        'label': isPetugas ? 'Beranda' : 'Home',
+        'label': 'Beranda',
       },
       {
         'active': Icons.history_rounded,
         'inactive': Icons.history_outlined,
-        'label': isPetugas ? 'Riwayat' : 'History',
+        'label': 'Riwayat',
       },
       // Note: Index 2 is skipped by AnimatedBottomNavigationBar if GapLocation.center is used.
       // We map builder indices: 0 -> 0, 1 -> 1, 2 -> 3, 3 -> 4
@@ -257,7 +266,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
       {
         'active': Icons.person_rounded,
         'inactive': Icons.person_outline_rounded,
-        'label': isPetugas ? 'Profil' : 'Profile',
+        'label': 'Profil',
       },
     ];
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../routes/app_routes.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
 import '../../../data/models/mahasiswa_kkn_models.dart';
@@ -91,7 +92,7 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryGreen,
+              backgroundColor: Colors.white,
             ),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Klaim', style: TextStyle(color: Colors.white)),
@@ -152,8 +153,8 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
       return Scaffold(
         backgroundColor: AppColors.backgroundCanvas,
         appBar: AppBar(
-          backgroundColor: AppColors.primaryGreen,
-          foregroundColor: Colors.white,
+          backgroundColor: Colors.white,
+          foregroundColor: AppColors.textPrimary,
           title: const Text('Detail Warga'),
         ),
         body: const Center(
@@ -168,8 +169,8 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
-        backgroundColor: AppColors.primaryGreen,
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.white,
+        foregroundColor: AppColors.textPrimary,
         elevation: 0,
         title: const Text(
           'Detail Warga',
@@ -261,13 +262,7 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
   ) {
     return Container(
       width: double.infinity,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [AppColors.primaryGreen, AppColors.successDark],
-        ),
-      ),
+      color: Colors.white,
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -277,7 +272,7 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
             width: 52,
             height: 52,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
+              color: AppColors.primaryGreen.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -288,7 +283,7 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w700,
-                  color: Colors.white,
+                  color: AppColors.primaryGreen,
                 ),
               ),
             ),
@@ -303,7 +298,7 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
-                    color: Colors.white,
+                    color: AppColors.textPrimary,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -313,7 +308,7 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
                     const Icon(
                       Icons.location_on_outlined,
                       size: 14,
-                      color: Colors.white70,
+                      color: AppColors.textSecondary,
                     ),
                     const SizedBox(width: 4),
                     Expanded(
@@ -321,7 +316,7 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
                         _formatWargaAddress(warga),
                         style: const TextStyle(
                           fontSize: 12,
-                          color: Colors.white70,
+                          color: AppColors.textSecondary,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -335,14 +330,14 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
                       const Icon(
                         Icons.phone_outlined,
                         size: 14,
-                        color: Colors.white70,
+                        color: AppColors.textSecondary,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         warga.phone,
                         style: const TextStyle(
                           fontSize: 12,
-                          color: Colors.white70,
+                          color: AppColors.textSecondary,
                         ),
                       ),
                     ],
@@ -354,7 +349,7 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
                     const Icon(
                       Icons.delete_outline_rounded,
                       size: 14,
-                      color: Colors.white70,
+                      color: AppColors.textSecondary,
                     ),
                     const SizedBox(width: 4),
                     Expanded(
@@ -367,7 +362,7 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
                               anorg != null && anorg.trim().isNotEmpty;
                           const defaultStyle = TextStyle(
                             fontSize: 12,
-                            color: Colors.white,
+                            color: AppColors.textPrimary,
                             fontWeight: FontWeight.w600,
                           );
 
@@ -406,7 +401,11 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
                               warga.binId == 'Belum Ada Tempat Sampah') {
                             return const Text(
                               'Belum Ada Tempat Sampah',
-                              style: defaultStyle,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                                fontWeight: FontWeight.w600,
+                              ),
                               overflow: TextOverflow.ellipsis,
                             );
                           }
@@ -420,19 +419,19 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
                     ),
                   ],
                 ),
-                if (warga.isActivated) ...[
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    if (warga.isActivated) ...[
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 8,
                           vertical: 3,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
+                          color: AppColors.primaryGreen.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: Colors.white38),
+                          border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.3)),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -440,7 +439,7 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
                             const Icon(
                               Icons.verified_rounded,
                               size: 12,
-                              color: Colors.white,
+                              color: AppColors.primaryGreen,
                             ),
                             const SizedBox(width: 4),
                             Flexible(
@@ -465,7 +464,7 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
                                     style: const TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.white,
+                                      color: AppColors.primaryGreen,
                                     ),
                                     overflow: TextOverflow.ellipsis,
                                   );
@@ -475,34 +474,79 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
                           ],
                         ),
                       ),
-                      if (warga.pendampingName.isEmpty &&
-                          warga.mahasiswaId.isEmpty) ...[
-                        const SizedBox(width: 8),
-                        InkWell(
-                          onTap: () => _handleClaimWarga(context, ref, warga),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: const Text(
-                              'Klaim Warga',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.primaryGreen,
+                    ] else ...[
+                      InkWell(
+                        onTap: () {
+                          Navigator.pushNamed(
+                            context,
+                            AppRoutes.aktivasiWarga,
+                            arguments: {
+                              'warga': {
+                                'id': warga.wargaId,
+                                'name': warga.wargaName,
+                                'rw': warga.rw,
+                                'kelurahan': warga.kelurahan,
+                                'address': warga.address,
+                              },
+                            },
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryBlue.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: AppColors.primaryBlue.withValues(alpha: 0.3)),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.qr_code_scanner, size: 12, color: AppColors.primaryBlue),
+                              SizedBox(width: 4),
+                              Text(
+                                'Aktivasi Tempat Sampah',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primaryBlue,
+                                ),
                               ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                    if (warga.pendampingName.isEmpty &&
+                        warga.mahasiswaId.isEmpty) ...[
+                      const SizedBox(width: 8),
+                      InkWell(
+                        onTap: () => _handleClaimWarga(context, ref, warga),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.warningOrange.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: AppColors.warningOrange.withValues(alpha: 0.3)),
+                          ),
+                          child: const Text(
+                            'Klaim Warga',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.warningOrange,
                             ),
                           ),
                         ),
-                      ],
+                      ),
                     ],
-                  ),
-                ],
+                  ],
+                ),
               ],
             ),
           ),
@@ -741,13 +785,13 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
                     _logStatusFilterIndex == 0,
                     () => setState(() => _logStatusFilterIndex = 0),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 8),
                   _buildFilterChip(
                     'Sesuai (${logs.where((l) => l.isCorrect).length})',
                     _logStatusFilterIndex == 1,
                     () => setState(() => _logStatusFilterIndex = 1),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 8),
                   _buildFilterChip(
                     'Tidak Sesuai (${logs.where((l) => !l.isCorrect).length})',
                     _logStatusFilterIndex == 2,
@@ -840,25 +884,31 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
   }
 
   Widget _buildFilterChip(String label, bool isSelected, VoidCallback onTap) {
-    return InkWell(
+    return GestureDetector(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primaryGreen
-              : AppColors.backgroundCanvas,
-          borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
+          color: isSelected ? AppColors.primaryGreen : Colors.white,
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected ? AppColors.primaryGreen : AppColors.border,
           ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.primaryGreen.withValues(alpha: 0.25),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
         child: Text(
           label,
           style: TextStyle(
-            fontSize: 11,
-            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
             color: isSelected ? Colors.white : AppColors.textSecondary,
           ),
         ),

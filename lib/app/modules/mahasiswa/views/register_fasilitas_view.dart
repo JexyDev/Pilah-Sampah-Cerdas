@@ -32,6 +32,7 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
   final MapController _mapController = MapController();
 
   String _kapasitasUnit = 'Kg';
+  String _selectedKepemilikan = 'PRIBADI';
 
   String? _selectedJenis;
   String? _photoPath;
@@ -212,12 +213,13 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
           latitude: _selectedLocation!.latitude,
           longitude: _selectedLocation!.longitude,
           imagePath: _photoPath!,
+          kepemilikan: _selectedKepemilikan,
         );
 
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Berhasil mendaftarkan fasilitas warga!'),
+          content: Text('Berhasil mendaftarkan fasilitas tata kelola sampah!'),
           backgroundColor: AppColors.primaryGreen,
         ),
       );
@@ -501,9 +503,12 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
       child: Scaffold(
         backgroundColor: AppColors.backgroundCanvas,
         appBar: AppBar(
-          title: const Text(
-            'Daftar Fasilitas Warga',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          title: const FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              'Daftar Fasilitas Tata Kelola Sampah',
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+            ),
           ),
           backgroundColor: Colors.white,
           foregroundColor: AppColors.textPrimary,
@@ -572,6 +577,16 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                                 ? 'Nama fasilitas wajib diisi'
                                 : null,
                           ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Hak Kepemilikan',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          _buildKepemilikanSelector(),
                         ],
                       ),
                       const SizedBox(height: 16),
@@ -582,7 +597,7 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                         icon: Icons.contact_mail_rounded,
                         children: [
                           const Text(
-                            'PIC (Penanggung Jawab Warga)',
+                            'Pemilik Fasilitas',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 13,
@@ -592,20 +607,20 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                           _StyledTextField(
                             controller: _picController,
                             hintText:
-                                'Nama Warga / Pengelola Fasilitas (cth: Ibu Siti)',
+                                'Nama Warga / Pemilik Fasilitas (cth: Ibu Siti)',
                             validator: (val) {
                               if (val == null || val.trim().isEmpty) {
-                                return 'Nama PIC / Pengelola Warga wajib diisi';
+                                return 'Nama Pemilik Fasilitas wajib diisi';
                               }
                               if (val.trim().length < 3) {
-                                return 'Nama PIC minimal 3 karakter';
+                                return 'Nama Pemilik Fasilitas minimal 3 karakter';
                               }
                               return null;
                             },
                           ),
                           const SizedBox(height: 16),
                           const Text(
-                            'Kontak PIC',
+                            'Kontak Pemilik Fasilitas',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 13,
@@ -614,10 +629,10 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                           const SizedBox(height: 8),
                           _StyledTextField(
                             controller: _kontakController,
-                            hintText: 'Masukkan Nomor Telepon PIC',
+                            hintText: 'Masukkan Nomor Telepon Pemilik Fasilitas',
                             keyboardType: TextInputType.phone,
                             validator: (val) => (val == null || val.isEmpty)
-                                ? 'Kontak wajib diisi'
+                                ? 'Kontak Pemilik Fasilitas wajib diisi'
                                 : null,
                           ),
                           const SizedBox(height: 16),
@@ -1230,6 +1245,97 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildKepemilikanSelector() {
+    return Row(
+      children: [
+        _buildKepemilikanOption(
+          value: 'PRIBADI',
+          title: 'Milik Pribadi',
+          subtitle: 'Milik warga perorangan',
+        ),
+        const SizedBox(width: 12),
+        _buildKepemilikanOption(
+          value: 'MILIK_RW',
+          title: 'Milik RW',
+          subtitle: 'Fasilitas komunal RW',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildKepemilikanOption({
+    required String value,
+    required String title,
+    required String subtitle,
+  }) {
+    final isSelected = _selectedKepemilikan == value;
+    return Expanded(
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            _selectedKepemilikan = value;
+          });
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? AppColors.primaryGreen.withValues(alpha: 0.06)
+                : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected ? AppColors.primaryGreen : Colors.grey.shade300,
+              width: isSelected ? 1.5 : 1.0,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                isSelected
+                    ? Icons.radio_button_checked_rounded
+                    : Icons.radio_button_off_rounded,
+                color: isSelected
+                    ? AppColors.primaryGreen
+                    : Colors.grey.shade400,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: isSelected
+                            ? AppColors.primaryGreen
+                            : AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        color: isSelected
+                            ? AppColors.primaryGreen.withValues(alpha: 0.8)
+                            : AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

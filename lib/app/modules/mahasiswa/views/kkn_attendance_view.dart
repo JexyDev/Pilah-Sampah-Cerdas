@@ -365,7 +365,9 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
               if (success) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Presensi Selesai Kegiatan berhasil!'),
+                    content: Text(
+                      'Presensi Selesai Kegiatan berhasil! (+3 Poin Durasi Terpenuhi)',
+                    ),
                     backgroundColor: AppColors.primaryGreen,
                     behavior: SnackBarBehavior.floating,
                   ),
@@ -1301,7 +1303,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                                 ? 'Sesi berhasil dilanjutkan.'
                                 : statusAktifSekarang == 'BERLANGSUNG'
                                 ? 'Sinkronisasi sesi aktif berhasil.'
-                                : '+10 Poin berhasil didapatkan dari Presensi Masuk!',
+                                : '+4 Poin berhasil didapatkan dari Presensi Masuk!',
                           ),
                           backgroundColor: AppColors.primaryGreen,
                         ),

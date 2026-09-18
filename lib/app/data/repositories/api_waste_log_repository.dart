@@ -61,7 +61,7 @@ class ApiWasteLogRepository implements WasteLogRepository {
           value: jsonEncode(data),
         );
 
-        return data.map((json) {
+        final list = data.map((json) {
           final map = json is Map<String, dynamic>
               ? json
               : (json is Map
@@ -69,6 +69,8 @@ class ApiWasteLogRepository implements WasteLogRepository {
                   : <String, dynamic>{});
           return _mapWasteLog(map, userId);
         }).toList();
+        list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        return list;
       }
       return [];
     } on DioException catch (e) {
@@ -150,9 +152,10 @@ class ApiWasteLogRepository implements WasteLogRepository {
 
         if (userEntry != null) {
           final rank = userEntry['rank'];
-          return '$rank';
+          final total = data.length;
+          return '$rank/$total';
         }
-        return '-';
+        return '-/${data.length}';
       }
       return '-';
     } on DioException catch (_) {
@@ -334,6 +337,7 @@ class ApiWasteLogRepository implements WasteLogRepository {
       wasteType: wasteType,
       description: desc,
       createdAt: createdAt,
+      kategori: json['kategori']?.toString(),
     );
   }
 

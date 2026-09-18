@@ -9,6 +9,7 @@ import '../../auth/controllers/auth_controller.dart';
 import '../../../data/models/mahasiswa_kkn_models.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../controllers/posko_kkn_controller.dart';
+import '../controllers/mahasiswa_controller.dart';
 import '../../../routes/app_routes.dart';
 
 class KelompokKknView extends ConsumerWidget {
@@ -31,7 +32,7 @@ class KelompokKknView extends ConsumerWidget {
           groupName: kel != '-' ? 'Kelompok KKN $kel RW $rw' : 'Kelompok KKN',
           poskoLocation: kel != '-' ? 'Posko KKN RW $rw, $kelDisplay' : '-',
           dosenPembimbing: '-',
-          totalGroupPoints: 0,
+          totalGroupPoints: 0.0,
           // Fallback hanya menampilkan user sendiri, tanpa menjadikannya Ketua
           // isLeader=false agar tidak misleading ketika data backend belum dimuat
           members: user != null
@@ -83,7 +84,13 @@ class KelompokKknView extends ConsumerWidget {
 
     final isCurrentUserLeader =
         user != null &&
-        membersToDisplay.any((m) => m.userId == user.id && m.isLeader);
+        membersToDisplay.any(
+          (m) =>
+              ((m.userId.isNotEmpty && m.userId == user.id) ||
+                  (m.name.toLowerCase().trim() ==
+                      user.name.toLowerCase().trim())) &&
+              m.isLeader,
+        );
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -114,12 +121,18 @@ class KelompokKknView extends ConsumerWidget {
               Icons.refresh_rounded,
               color: AppColors.textPrimary,
             ),
-            onPressed: () => notifier.fetchKelompok(),
+            onPressed: () async {
+              await notifier.fetchKelompok();
+              await ref.read(mahasiswaControllerProvider.notifier).fetchAll();
+            },
           ),
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () => notifier.fetchKelompok(),
+        onRefresh: () async {
+          await notifier.fetchKelompok();
+          await ref.read(mahasiswaControllerProvider.notifier).fetchAll();
+        },
         color: AppColors.primaryGreen,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -349,74 +362,34 @@ class KelompokKknView extends ConsumerWidget {
                 _buildGoogleDriveCard(context, kelompokData.linkGoogleDrive),
                 const SizedBox(height: 16),
 
-                // Card Total Poin Kelompok (Akumulasi)
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: AppColors.primaryGreen.withValues(alpha: 0.3),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primaryGreen.withValues(alpha: 0.08),
-                        blurRadius: 16,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
+                // KARTU 1 & 2: Poin Kelompok (Evaluasi Resmi DPL) & Total Akumulasi
+                IntrinsicHeight(
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryGreen.withValues(alpha: 0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.stars_rounded,
-                          color: AppColors.primaryGreen,
-                          size: 36,
-                        ),
+                      _buildPointCard(
+                        color: AppColors.primaryGreen,
+                        headerIcon: Icons.groups_rounded,
+                        title: 'Poin Kelompok',
+                        description: 'Formula: 60% Proker + 40% Rerata Anggota',
+                        blockIcon: Icons.star_rounded,
+                        bigValue: kelompokData.totalGroupPoints.toStringAsFixed(2).replaceAll(RegExp(r'0*$'), '').replaceAll(RegExp(r'\.$'), ''),
+                        unit: 'Poin',
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Poin Akumulasi Kelompok',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppColors.textSecondary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${kelompokData.calculatedTotalPoints} Poin',
-                              style: const TextStyle(
-                                fontSize: 26,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.primaryGreen,
-                                letterSpacing: -0.5,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'Penjumlahan poin individu ${membersToDisplay.length} anggota kelompok',
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: Colors.black45,
-                              ),
-                            ),
-                          ],
-                        ),
+                      const SizedBox(width: 12),
+                      _buildPointCard(
+                        color: AppColors.primaryBlue,
+                        headerIcon: Icons.person_rounded,
+                        title: 'Total Poin anggota kelompok',
+                        description: 'Total Poin Akademik KKN (Presensi & Logbook) Tim',
+                        blockIcon: Icons.groups_rounded,
+                        bigValue: kelompokData.cumulativeMemberPoints.toString(),
+                        unit: 'PTS',
                       ),
                     ],
                   ),
                 ),
+                
                 const SizedBox(height: 20),
 
                 _buildPoskoCard(context, ref, isCurrentUserLeader),
@@ -464,10 +437,13 @@ class KelompokKknView extends ConsumerWidget {
                   separatorBuilder: (_, __) => const SizedBox(height: 10),
                   itemBuilder: (context, index) {
                     final member = membersToDisplay[index];
-                    final isCurrentUser =
-                        user != null &&
-                        (member.name.toLowerCase().trim() ==
-                            user.name.toLowerCase().trim());
+                    final isCurrentUser = user != null &&
+                        ((member.userId.isNotEmpty && member.userId == user.id) ||
+                            (member.nim.isNotEmpty &&
+                                user.nim.isNotEmpty &&
+                                member.nim == user.nim) ||
+                            (member.name.toLowerCase().trim() ==
+                                user.name.toLowerCase().trim()));
                     return Card(
                       elevation: 1,
                       shape: RoundedRectangleBorder(
@@ -590,7 +566,7 @@ class KelompokKknView extends ConsumerWidget {
                               ),
                             ),
                             const Text(
-                              'Individu',
+                              'Poin Total',
                               style: TextStyle(
                                 fontSize: 10,
                                 color: AppColors.textSecondary,
@@ -638,6 +614,123 @@ class KelompokKknView extends ConsumerWidget {
               ],
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPointCard({
+    required Color color,
+    required IconData headerIcon,
+    required String title,
+    required String description,
+    required IconData blockIcon,
+    required String bigValue,
+    required String unit,
+  }) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(headerIcon, color: color, size: 20),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                      height: 1.2,
+                    ),
+                  ),
+                ),
+                const Icon(Icons.info_outline_rounded, size: 16, color: Colors.grey),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Expanded(
+              child: Text(
+                description,
+                style: const TextStyle(
+                  fontSize: 10.5,
+                  color: AppColors.textSecondary,
+                  height: 1.3,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: color,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(blockIcon, color: Colors.white, size: 16),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          bigValue,
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w900,
+                            color: color,
+                            letterSpacing: -0.5,
+                            height: 1.0,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          unit,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: color,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -146,12 +146,20 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
     required double actualWeightKg,
     required String classification,
     required String photoPath,
+    required String photoTimbanganPath,
     double? latitude,
     double? longitude,
   }) async {
     try {
       final compressedPhotoPath = await ImageCompressor.compressImage(
         photoPath,
+        maxSizeBytes: 500 * 1024,
+        maxWidth: 1280,
+        maxHeight: 720,
+      );
+
+      final compressedTimbanganPath = await ImageCompressor.compressImage(
+        photoTimbanganPath,
         maxSizeBytes: 500 * 1024,
         maxWidth: 1280,
         maxHeight: 720,
@@ -165,6 +173,11 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
         'image': await MultipartFile.fromFile(
           compressedPhotoPath,
           filename: compressedPhotoPath.split(RegExp(r'[\\/]')).last,
+          contentType: MediaType('image', 'jpeg'),
+        ),
+        'imageTimbangan': await MultipartFile.fromFile(
+          compressedTimbanganPath,
+          filename: compressedTimbanganPath.split(RegExp(r'[\\/]')).last,
           contentType: MediaType('image', 'jpeg'),
         ),
         'isGlobalBin': true,
@@ -349,7 +362,7 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
   /// Klaim pengajuan pengosongan dari warga menggunakan endpoint PUT /api/v1/bins/reset/:id/approve
   /// Mendukung kontrak audit trail: emptyBinPhoto, scannedQrCode, latitude, longitude
   @override
-  Future<bool> claimPengajuanReset(
+  Future<Map<String, dynamic>> claimPengajuanReset(
     String pengajuanId, {
     String? emptyBinPhotoPath,
     String? scannedQrCode,
@@ -389,17 +402,23 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
         ApiEndpoints.binsApproveReset(pengajuanId),
         data: data,
       );
-      return response.statusCode == 200 || response.statusCode == 201;
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        if (response.data is Map<String, dynamic>) {
+          return response.data['data'] as Map<String, dynamic>? ?? response.data as Map<String, dynamic>;
+        }
+        return {'success': true};
+      }
+      throw Exception('Failed to claim pengajuan');
     } on DioException catch (e) {
       debugPrint(
         '[ApiPetugasPemilahanRepository] Error claimPengajuanReset: $e',
       );
-      return false;
+      throw Exception(e.message ?? 'Server error');
     } catch (e) {
       debugPrint(
         '[ApiPetugasPemilahanRepository] Error claimPengajuanReset: $e',
       );
-      return false;
+      throw Exception(e.toString());
     }
   }
 }

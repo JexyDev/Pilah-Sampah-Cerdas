@@ -27,15 +27,22 @@ class KelompokMahasiswaLeaderboardEntity extends Equatable {
     required this.namaKelompok,
     required this.namaDpl,
     required this.anggota,
+    this.avgScore,
   });
 
   final String kelompokId;
   final String namaKelompok;
   final String namaDpl;
   final List<MahasiswaAnggotaEntity> anggota;
+  
+  /// Nilai Poin Kelompok Resmi (Terbobot KKN: 60% Proker + 40% Rata-rata Anggota)
+  final double? avgScore;
 
-  /// Akumulasi Poin Kelompok = SUM(poin individu seluruh anggota) (A.12)
+  /// Akumulasi Poin Kelompok
   int get totalPoinKelompok {
+    if (avgScore != null && avgScore! > 0) {
+      return avgScore!.round();
+    }
     return anggota.fold<int>(0, (sum, item) => sum + item.poinIndividu);
   }
 

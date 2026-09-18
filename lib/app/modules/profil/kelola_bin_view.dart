@@ -6,7 +6,7 @@ import '../../routes/app_routes.dart';
 import '../../data/models/bin_entity.dart';
 import '../auth/controllers/auth_controller.dart';
 import '../../data/models/user_entity.dart';
-
+import '../../data/services/location_service.dart';
 class KelolaBinView extends ConsumerWidget {
   const KelolaBinView({super.key});
 
@@ -365,10 +365,40 @@ class KelolaBinView extends ConsumerWidget {
   }
 }
 
-class _BinCardLarge extends StatelessWidget {
+class _BinCardLarge extends StatefulWidget {
   const _BinCardLarge({required this.bin, this.user});
   final BinEntity bin;
   final UserEntity? user;
+
+  @override
+  State<_BinCardLarge> createState() => _BinCardLargeState();
+}
+
+class _BinCardLargeState extends State<_BinCardLarge> {
+  String _address = 'Memuat lokasi...';
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAddress();
+  }
+
+  Future<void> _fetchAddress() async {
+    try {
+      final addr = await LocationService.instance.getAddressFromCoordinates(widget.bin.lat, widget.bin.lng);
+      if (mounted) {
+        setState(() {
+          _address = addr ?? 'Lokasi tidak diketahui';
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _address = 'Gagal memuat lokasi';
+        });
+      }
+    }
+  }
 
   String _getDisplayStatus(BinEntity bin) {
     if (!bin.isActive) {
@@ -416,6 +446,7 @@ class _BinCardLarge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bin = widget.bin;
     final isOrganic = bin.binType == WasteType.organic;
     final color = isOrganic
         ? AppColors.organicColor
@@ -454,7 +485,7 @@ class _BinCardLarge extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Pemilik: ${user?.name ?? '-'}',
+                      'Pemilik: ${widget.user?.name ?? '-'}',
                       style: const TextStyle(
                         color: AppColors.textPrimary,
                         fontSize: 12,
@@ -522,8 +553,28 @@ class _BinCardLarge extends StatelessWidget {
                 : '${(bin.capacityPercent * 100).toStringAsFixed(0)}% terisi — ${bin.currentVolumeL.toStringAsFixed(0)} / ${bin.maxCapacityL.toStringAsFixed(0)} L (Est. ${bin.currentWeightKg.toStringAsFixed(1)} / ${bin.maxWeightKg.toStringAsFixed(1)} kg)',
             style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
           ),
+          const SizedBox(height: 12),
+          // Lokasi Koordinat (Reverse Geocoding)
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.location_on_rounded, size: 14, color: AppColors.textHint),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  _address,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textHint,
+                    height: 1.3,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
 }
+
