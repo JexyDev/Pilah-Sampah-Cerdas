@@ -608,7 +608,6 @@ export class UserService {
             }
           : null,
         petugasProfile: u.petugasProfile
-
           ? {
               id: u.petugasProfile.id,
               nama: u.petugasProfile.nama,
@@ -618,6 +617,8 @@ export class UserService {
               kpiScore: u.petugasProfile.kpiScore ? Number(u.petugasProfile.kpiScore) : 100,
             }
           : null,
+        namaAsli: u.petugasProfile?.nama || null,
+        namaDisplay: u.petugasProfile?.namaDisplay || null,
       };
     });
 
@@ -664,6 +665,10 @@ export class UserService {
           mhsKelompok,
           lurahRws,
           u.petugasResidu?.name,
+          u.namaAsli,
+          u.namaDisplay,
+          u.petugasProfile?.nama,
+          u.petugasProfile?.namaDisplay,
         ]
           .filter(Boolean)
           .join(" ")
@@ -973,8 +978,8 @@ export class UserService {
           await tx.petugasResidu.create({
             data: {
               userId: u.id,
-              nama: u.name,
-              namaDisplay: data.namaDisplay || null,
+              nama: data.namaAsli || u.name,
+              namaDisplay: data.namaDisplay || u.name,
               kelurahan: data.kelurahan || null,
               noWa: u.phone || "-",
               whitelistStatus: "APPROVED",
@@ -1360,8 +1365,8 @@ export class UserService {
           await tx.petugasResidu.update({
             where: { userId: u.id },
             data: {
-              nama: u.name,
-              namaDisplay: data.namaDisplay !== undefined ? data.namaDisplay : existingProfile.namaDisplay,
+              nama: data.namaAsli !== undefined ? (data.namaAsli || u.name) : (existingProfile.nama || u.name),
+              namaDisplay: data.namaDisplay !== undefined ? (data.namaDisplay || u.name) : (existingProfile.namaDisplay || u.name),
               kelurahan: data.kelurahan !== undefined ? data.kelurahan : existingProfile.kelurahan,
               noWa: u.phone || existingProfile.noWa,
               assignedZone: data.wilayah !== undefined ? data.wilayah : existingProfile.assignedZone,
@@ -1371,8 +1376,8 @@ export class UserService {
           await tx.petugasResidu.create({
             data: {
               userId: u.id,
-              nama: u.name,
-              namaDisplay: data.namaDisplay || null,
+              nama: data.namaAsli || u.name,
+              namaDisplay: data.namaDisplay || u.name,
               kelurahan: data.kelurahan || null,
               noWa: u.phone || "-",
               whitelistStatus: "APPROVED",

@@ -315,6 +315,7 @@ export const gamificationService = {
         rw: { select: { name: true } },
         petugasProfile: {
           select: {
+            nama: true,
             namaDisplay: true,
             kelurahan: true,
             assignedZone: true,
@@ -368,6 +369,7 @@ export const gamificationService = {
           id: p.id,
           name: displayName,
           namaDisplay: p.petugasProfile?.namaDisplay || null,
+          namaAsli: p.petugasProfile?.nama || null,
           kelurahan: p.petugasProfile?.kelurahan || null,
           wilayah: displayWilayah,
           totalCompleted,

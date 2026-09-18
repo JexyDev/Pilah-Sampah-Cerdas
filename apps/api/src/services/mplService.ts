@@ -17,6 +17,7 @@ import { parseProkerDeskripsi } from "./dplService.js";
 import {
   isTestKelompok,
   isTestStudent,
+  isTestProker,
 } from "../utils/filterTestingUtils.js";
 
 // ---------------------------------------------------------------------------
@@ -126,7 +127,10 @@ export const mplService = {
 
     // Saring data testing
     const filtered = kelompokList.filter((k) => !isTestKelompok(k));
-    const totalAnggota = filtered.reduce((sum, k) => sum + k.students.length, 0);
+    const totalAnggota = filtered.reduce(
+      (sum, k) => sum + k.students.filter((s) => !isTestStudent(s)).length,
+      0
+    );
 
     return {
       kelurahan: kelurahanName ?? "Tidak Diketahui",
@@ -137,7 +141,7 @@ export const mplService = {
         name: k.name,
         kelurahan: k.kelurahan,
         cakupanRw: k.cakupanRw,
-        jumlahAnggota: k.students.length,
+        jumlahAnggota: k.students.filter((s) => !isTestStudent(s)).length,
       })),
     };
   },
@@ -192,7 +196,7 @@ export const mplService = {
       name: k.name,
       kelurahan: k.kelurahan,
       cakupanRw: k.cakupanRw,
-      jumlahAnggota: k.students.length,
+      jumlahAnggota: k.students.filter((s) => !isTestStudent(s)).length,
       mpl: k.mpl ? { id: k.mpl.id, name: k.mpl.name } : null,
       dpl: k.dpl ? { id: k.dpl.id, name: k.dpl.name, nip: k.dpl.nip } : null,
     }));
@@ -212,9 +216,9 @@ export const mplService = {
       // Validasi bahwa kelompok yang diminta memang dalam scope MPL
       const kelompokInScope = await prisma.kelompokKkn.findFirst({
         where: { AND: [{ id: filters.kelompokId }, kelompokFilter as any] },
-        select: { id: true },
+        select: { id: true, name: true },
       });
-      if (!kelompokInScope) return [];
+      if (!kelompokInScope || isTestKelompok(kelompokInScope)) return [];
       scopedKelompokIds = [filters.kelompokId];
     } else {
       const allKelompok = await prisma.kelompokKkn.findMany({
@@ -266,7 +270,7 @@ export const mplService = {
         createdAt: p.createdAt,
         updatedAt: p.updatedAt,
       };
-    });
+    }).filter((p) => !isTestProker(p) && !isTestKelompok({ name: p.kelompokName }));
   },
 
   // -------------------------------------------------------------------------
@@ -390,9 +394,9 @@ export const mplService = {
     if (kelompokId) {
       const kelompokInScope = await prisma.kelompokKkn.findFirst({
         where: { AND: [{ id: kelompokId }, kelompokFilter as any] },
-        select: { id: true },
+        select: { id: true, name: true },
       });
-      if (!kelompokInScope) return [];
+      if (!kelompokInScope || isTestKelompok(kelompokInScope)) return [];
       kelompokIds = [kelompokId];
     } else {
       const allKelompok = await prisma.kelompokKkn.findMany({

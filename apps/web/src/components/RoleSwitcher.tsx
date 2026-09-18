@@ -61,7 +61,7 @@ export const RoleSwitcher: React.FC = () => {
   const kelompokName =
     user.dplKelompok?.[0]?.name ||
     (user as any).kelompokName ||
-    "Kelompok 1 Dago";
+    "";
 
   const handleToggleRole = async (target: string) => {
     if (isSwitching) return;
@@ -71,7 +71,7 @@ export const RoleSwitcher: React.FC = () => {
       if (ok) {
         setIsOpen(false);
         if (target === "DPL") {
-          showToast.success(`Beralih ke peran DPL (${kelompokName})`);
+          showToast.success(`Beralih ke peran DPL${kelompokName ? ` (${kelompokName})` : ""}`);
           navigate("/pelaksanaan/kelompok");
         } else {
           showToast.success("Beralih ke peran Pimpinan Eksekutif");
@@ -108,7 +108,7 @@ export const RoleSwitcher: React.FC = () => {
           Peran:
         </span>
         <span className="text-[11px] font-black max-w-[130px] truncate">
-          {isPimpinan ? "Pimpinan Eksekutif" : `DPL (${kelompokName})`}
+          {isPimpinan ? "Pimpinan Eksekutif" : kelompokName ? `DPL (${kelompokName})` : "DPL"}
         </span>
         <ChevronDown size={12} className={`transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
       </button>
@@ -174,7 +174,7 @@ export const RoleSwitcher: React.FC = () => {
                 </div>
                 <div className="flex flex-col min-w-0">
                   <span className="truncate font-bold">DPL (Dosen Pembimbing)</span>
-                  <span className="text-[10px] text-slate-400 truncate">{kelompokName}</span>
+                  <span className="text-[10px] text-slate-400 truncate">{kelompokName || "Bimbingan KKN"}</span>
                 </div>
               </div>
               {isDpl && (
