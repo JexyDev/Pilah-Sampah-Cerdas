@@ -931,6 +931,15 @@ if (isPrimaryWorker) {
       );`,
       'CREATE INDEX IF NOT EXISTS "logbook_dpl_id_dpl_pekan_idx" ON "logbook_dpl"("id_dpl", "pekan_ke");',
       'CREATE INDEX IF NOT EXISTS "lokasi_mahasiswa_id_mahasiswa_direkam_pada_idx" ON "lokasi_mahasiswa"("id_mahasiswa", "direkam_pada" DESC);',
+      `DO $$ BEGIN
+        CREATE TYPE "FacilityOwnership" AS ENUM ('MILIK_RW', 'PRIBADI');
+      EXCEPTION
+        WHEN duplicate_object THEN null;
+      END $$;`,
+      'ALTER TABLE "fasilitas" ADD COLUMN IF NOT EXISTS "kepemilikan" "FacilityOwnership" NOT NULL DEFAULT \'PRIBADI\';',
+      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "id_komunitas" TEXT;',
+      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "is_test_account" BOOLEAN NOT NULL DEFAULT false;',
+      'CREATE INDEX IF NOT EXISTS "pengguna_is_test_account_idx" ON "pengguna"("is_test_account");',
     ];
 
     await Promise.allSettled(alterStatements.map((stmt) => prisma.$executeRawUnsafe(stmt)));

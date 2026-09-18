@@ -203,6 +203,7 @@ export const LaporanPresensiPage: React.FC = () => {
   const [limit] = useState<number>(20);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [totalCount, setTotalCount] = useState<number>(0);
+  const [includeTestAccounts, setIncludeTestAccounts] = useState<boolean>(false);
 
   // Debounce search input to avoid lag and spamming API on every keystroke
   useEffect(() => {
@@ -237,6 +238,9 @@ export const LaporanPresensiPage: React.FC = () => {
       };
       if (selectedKelompok && selectedKelompok !== "ALL") {
         params.kelompokId = selectedKelompok;
+      }
+      if (isDeveloper && includeTestAccounts) {
+        params.includeTestAccounts = "true";
       }
       const res = await api.get("/laporan-rekap", { params });
       if (res.data?.success && res.data?.data) {
@@ -647,6 +651,9 @@ export const LaporanPresensiPage: React.FC = () => {
       if (debouncedSearchQuery.trim()) {
         params.search = debouncedSearchQuery.trim();
       }
+      if (isDeveloper && includeTestAccounts) {
+        params.includeTestAccounts = "true";
+      }
 
       const res = await api.get("/laporan-rekap", { params });
       if (res.data?.success && res.data?.data) {
@@ -671,7 +678,7 @@ export const LaporanPresensiPage: React.FC = () => {
     } finally {
       if (!silent) setLoading(false);
     }
-  }, [page, limit, selectedKelompok, selectedKelurahan, selectedRw, selectedStatus, startDate, endDate, debouncedSearchQuery]);
+  }, [page, limit, selectedKelompok, selectedKelurahan, selectedRw, selectedStatus, startDate, endDate, debouncedSearchQuery, includeTestAccounts]);
 
   const fetchLaporanRef = useRef(fetchLaporan);
   useEffect(() => {
@@ -753,6 +760,7 @@ export const LaporanPresensiPage: React.FC = () => {
     setStartDate(todayStr);
     setEndDate(todayStr);
     setSearchQuery("");
+    setIncludeTestAccounts(false);
     setPage(1);
     if (!isDpl && typeof window !== "undefined") {
       try {
@@ -1385,6 +1393,23 @@ export const LaporanPresensiPage: React.FC = () => {
 
           {/* 6. Actions: Reset & Ekspor */}
           <div className="flex items-end gap-2 shrink-0">
+            {isDeveloper && (
+              <label
+                className="h-10 px-3 text-xs font-bold rounded-xl border border-amber-300 dark:border-amber-700/60 bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs select-none shrink-0"
+                title="Khusus Developer/Super User: Tampilkan akun pengujian di rekap laporan"
+              >
+                <input
+                  type="checkbox"
+                  checked={includeTestAccounts}
+                  onChange={(e) => {
+                    setIncludeTestAccounts(e.target.checked);
+                    setPage(1);
+                  }}
+                  className="rounded text-amber-600 focus:ring-amber-500 w-3.5 h-3.5 cursor-pointer"
+                />
+                <span className="text-[11px] font-extrabold whitespace-nowrap">Data Test</span>
+              </label>
+            )}
             <button
               type="button"
               onClick={handleResetFilter}

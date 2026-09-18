@@ -276,6 +276,7 @@ const ManajemenPengguna: React.FC = () => {
     petugasKelurahan: "",
     dplId: "",
     sks: 0,
+    isTestAccount: false,
   });
 
 
@@ -612,6 +613,7 @@ const ManajemenPengguna: React.FC = () => {
       petugasResiduId: "",
       dplId: "",
       sks: 0,
+      isTestAccount: false,
     });
     setShowPassword(false);
     setIsModalOpen(true);
@@ -702,6 +704,7 @@ const ManajemenPengguna: React.FC = () => {
       petugasKelurahan: u.petugasProfile?.kelurahan || (u as any).kelurahan || "",
       dplId: u.studentProfile?.kelompok?.dplId || u.studentProfile?.kelompok?.dpl?.id || u.dplId || "",
       sks: u.studentProfile?.sks !== undefined && u.studentProfile?.sks !== null ? Number(u.studentProfile.sks) : (u.sks !== undefined && u.sks !== null ? Number(u.sks) : 0),
+      isTestAccount: Boolean(u.isTestAccount),
     });
 
     setShowPassword(false);
@@ -780,6 +783,7 @@ const ManajemenPengguna: React.FC = () => {
         rwId: parsedAreaId,
         provinsi: formData.provinsi,
         kabupaten: formData.kabupaten,
+        isTestAccount: Boolean(formData.isTestAccount),
       };
 
       if (formData.password) {
@@ -1750,16 +1754,23 @@ const ManajemenPengguna: React.FC = () => {
                     )}
 
                     <td className="py-3 px-4 text-center">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
-                        (u.status === "Aktif" || u.status === "ACTIVE" || !u.status)
-                          ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80"
-                          : "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/80"
-                      }`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${
-                          (u.status === "Aktif" || u.status === "ACTIVE" || !u.status) ? "bg-emerald-500" : "bg-rose-500"
-                        }`} />
-                        {u.status || "Aktif"}
-                      </span>
+                      <div className="flex flex-col items-center gap-1">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
+                          (u.status === "Aktif" || u.status === "ACTIVE" || !u.status)
+                            ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80"
+                            : "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/80"
+                        }`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${
+                            (u.status === "Aktif" || u.status === "ACTIVE" || !u.status) ? "bg-emerald-500" : "bg-rose-500"
+                          }`} />
+                          {u.status || "Aktif"}
+                        </span>
+                        {Boolean(u.isTestAccount) && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60">
+                            TEST
+                          </span>
+                        )}
+                      </div>
                     </td>
 
                     {!isReadOnly && (
@@ -1898,13 +1909,20 @@ const ManajemenPengguna: React.FC = () => {
                     </div>
                   </div>
 
-                  <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-extrabold uppercase ${
-                    (u.status === "Aktif" || u.status === "ACTIVE" || !u.status)
-                      ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80"
-                      : "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/80"
-                  }`}>
-                    {u.status || "Aktif"}
-                  </span>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-extrabold uppercase ${
+                      (u.status === "Aktif" || u.status === "ACTIVE" || !u.status)
+                        ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80"
+                        : "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/80"
+                    }`}>
+                      {u.status || "Aktif"}
+                    </span>
+                    {Boolean(u.isTestAccount) && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-black uppercase bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60">
+                        TEST
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Details Info Grid */}
@@ -2961,6 +2979,24 @@ const ManajemenPengguna: React.FC = () => {
                                 <AlertTriangle size={13} className="shrink-0 text-amber-500" />
                                 <span>Ini adalah akun Anda yang sedang login. Status akun tidak dapat dinonaktifkan demi keamanan.</span>
                               </p>
+                            )}
+
+                            {(user?.peran === "DEVELOPER" || user?.peran === "SUPER_USER") && (
+                              <div className="bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 p-3 rounded-2xl flex items-center justify-between mt-3 shadow-2xs">
+                                <div className="pr-3">
+                                  <p className="text-xs font-bold text-amber-900 dark:text-amber-200">Tandai Akun Pengujian (Test Dev)</p>
+                                  <p className="text-[10.5px] text-amber-700/90 dark:text-amber-400">Akun pengujian akan otomatis disembunyikan dari output monitoring atasan (presensi, peta GIS, rekap excel, KPI).</p>
+                                </div>
+                                <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                                  <input
+                                    type="checkbox"
+                                    checked={Boolean((formData as any).isTestAccount)}
+                                    onChange={(e) => setFormData({ ...formData, isTestAccount: e.target.checked } as any)}
+                                    className="sr-only peer"
+                                  />
+                                  <div className="w-10 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-amber-600"></div>
+                                </label>
+                              </div>
                             )}
                           </>
                         );
