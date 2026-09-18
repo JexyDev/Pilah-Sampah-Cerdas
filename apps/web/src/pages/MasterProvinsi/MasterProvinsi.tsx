@@ -25,6 +25,8 @@ import { useAuthStore } from "../../store/useAuthStore";
 export interface ProvinsiData {
   id: string;
   nama: string;
+  code?: string | null;
+  kode?: string | null;
   kodeIso?: string;
   ibuKota?: string;
   status: "Aktif" | "Non-Aktif";
@@ -50,6 +52,7 @@ const MasterProvinsi: React.FC = () => {
 
   const [formData, setFormData] = useState({
     nama: "",
+    kode: "",
     kodeIso: "",
     ibuKota: "",
     status: "Aktif" as "Aktif" | "Non-Aktif",
@@ -68,6 +71,8 @@ const MasterProvinsi: React.FC = () => {
       const list = (res.data?.data || []).map((p: any) => ({
         id: String(p.id),
         nama: p.name || p.nama || "Jawa Barat",
+        code: p.code || p.kode || null,
+        kode: p.code || p.kode || null,
         kodeIso: p.kodeIso || `ID-${(p.name || "JB").substring(0, 2).toUpperCase()}`,
         ibuKota: p.ibuKota || "Bandung",
         status: "Aktif",
@@ -92,6 +97,7 @@ const MasterProvinsi: React.FC = () => {
     return provinsiList.filter((p) => {
       return (
         p.nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (p.kode || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
         (p.kodeIso || "").toLowerCase().includes(searchTerm.toLowerCase())
       );
     });
@@ -108,6 +114,7 @@ const MasterProvinsi: React.FC = () => {
     setSelectedProv(null);
     setFormData({
       nama: "",
+      kode: "",
       kodeIso: "ID-",
       ibuKota: "",
       status: "Aktif",
@@ -120,6 +127,7 @@ const MasterProvinsi: React.FC = () => {
     setSelectedProv(prov);
     setFormData({
       nama: prov.nama,
+      kode: prov.kode || prov.code || "",
       kodeIso: prov.kodeIso || "",
       ibuKota: prov.ibuKota || "",
       status: prov.status,
@@ -137,10 +145,16 @@ const MasterProvinsi: React.FC = () => {
     setIsSubmitting(true);
     try {
       if (modalType === "add") {
-        await api.post("/areas/provinsi", { name: formData.nama.trim() });
+        await api.post("/areas/provinsi", {
+          name: formData.nama.trim(),
+          code: formData.kode.trim() || undefined,
+        });
         toast.success(`Provinsi "${formData.nama.trim()}" berhasil ditambahkan ke database!`);
       } else if (selectedProv) {
-        await api.put(`/areas/provinsi/${selectedProv.id}`, { name: formData.nama.trim() });
+        await api.put(`/areas/provinsi/${selectedProv.id}`, {
+          name: formData.nama.trim(),
+          code: formData.kode.trim() || undefined,
+        });
         toast.success(`Provinsi "${formData.nama.trim()}" berhasil diperbarui!`);
       }
       setIsModalOpen(false);
@@ -238,6 +252,7 @@ const MasterProvinsi: React.FC = () => {
             <thead>
               <tr className="bg-slate-50/80 dark:bg-slate-800/80 text-[10.5px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-800">
                 <th className="py-3.5 px-4 text-center w-16 whitespace-nowrap">NO</th>
+                <th className="py-3.5 px-4 w-28 whitespace-nowrap">KODE</th>
                 <th className="py-3.5 px-4 whitespace-nowrap">PROVINSI</th>
                 {!isReadOnly && <th className="py-3.5 px-4 text-center w-32 whitespace-nowrap">AKSI</th>}
               </tr>
@@ -245,7 +260,7 @@ const MasterProvinsi: React.FC = () => {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {loading ? (
                 <tr>
-                  <td colSpan={3} className="py-16 text-center">
+                  <td colSpan={isReadOnly ? 3 : 4} className="py-16 text-center">
                     <div className="flex flex-col items-center justify-center gap-3">
                       <div className="w-10 h-10 rounded-2xl bg-[#009966]/10 text-[#009966] flex items-center justify-center border border-[#009966]/20">
                         <Loader2 className="animate-spin text-[#009966]" size={22} />
@@ -256,7 +271,7 @@ const MasterProvinsi: React.FC = () => {
                 </tr>
               ) : error ? (
                 <tr>
-                  <td colSpan={3} className="py-12 text-center text-rose-600 font-bold text-xs">
+                  <td colSpan={isReadOnly ? 3 : 4} className="py-12 text-center text-rose-600 font-bold text-xs">
                     <div className="flex flex-col items-center gap-2">
                       <AlertTriangle size={24} className="text-rose-500" />
                       <p>{error}</p>
@@ -283,16 +298,18 @@ const MasterProvinsi: React.FC = () => {
                         {itemNumber}
                       </td>
 
+                      {/* KODE */}
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <span className="px-2.5 py-1 rounded-lg bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border border-teal-200/80 dark:border-teal-800 font-mono font-bold text-xs shadow-2xs">
+                          {prov.kode || "32"}
+                        </span>
+                      </td>
+
                       {/* PROVINSI */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-full bg-teal-50 text-teal-700 border border-teal-200/80 flex items-center justify-center shrink-0 shadow-2xs">
-                            <Globe2 size={15} />
-                          </div>
-                          <span className="font-extrabold text-slate-900 dark:text-slate-100 text-xs">
-                            {prov.nama}
-                          </span>
-                        </div>
+                        <span className="font-extrabold text-slate-900 dark:text-slate-100 text-xs">
+                          {prov.nama}
+                        </span>
                       </td>
 
                       {/* AKSI (Soft Squircle Icon Buttons persis Gambar Referensi User) */}
@@ -326,7 +343,7 @@ const MasterProvinsi: React.FC = () => {
                 })
               ) : (
                 <EmptyTableState
-                  colSpan={3}
+                  colSpan={isReadOnly ? 3 : 4}
                   entityName="Provinsi"
                   isSearch={!!searchTerm}
                   searchQuery={searchTerm}
@@ -384,6 +401,20 @@ const MasterProvinsi: React.FC = () => {
                   value={formData.nama}
                   onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
                   className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-[#009966] focus:bg-white transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-extrabold text-slate-700 dark:text-slate-300 block mb-1">
+                  Kode Provinsi (Kemendagri)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Contoh: 32"
+                  value={formData.kode}
+                  onChange={(e) => setFormData({ ...formData, kode: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-[#009966] focus:bg-white transition-all font-mono"
+                  maxLength={10}
                 />
               </div>
 

@@ -10,7 +10,35 @@ export interface MasterKelurahanItem {
   id: string;
   name: string;
   nama: string;
+  code?: string | null;
+  kode?: string | null;
   kecamatanId?: number | null;
+}
+
+export interface MasterKecamatanItem {
+  id: number;
+  name: string;
+  nama?: string;
+  code?: string | null;
+  kode?: string | null;
+  kabupatenId?: number | null;
+}
+
+export interface MasterKabupatenItem {
+  id: number;
+  name: string;
+  nama?: string;
+  code?: string | null;
+  kode?: string | null;
+  provinsiId?: number | null;
+}
+
+export interface MasterProvinsiItem {
+  id: number;
+  name: string;
+  nama?: string;
+  code?: string | null;
+  kode?: string | null;
 }
 
 export interface MasterRwItem {
@@ -31,6 +59,9 @@ export interface KelompokItemLike {
 
 // Runtime object exports so Vite bundler never complains if imported as value
 export const MasterKelurahanItem = {};
+export const MasterKecamatanItem = {};
+export const MasterKabupatenItem = {};
+export const MasterProvinsiItem = {};
 export const MasterRwItem = {};
 export const KelompokItemLike = {};
 

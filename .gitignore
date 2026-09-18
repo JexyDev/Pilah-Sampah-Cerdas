@@ -32,6 +32,7 @@ service-account*.json
 # Database & Data Dumps (STRICTLY FORBIDDEN FROM GIT / NEVER COMMIT / NEVER PUSH)
 *.sql
 !apps/api/prisma/migrations/**/*.sql
+!apps/api/prisma/sync_kode_wilayah.sql
 *.sqlite
 *.sqlite3
 *.db

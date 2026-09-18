@@ -1462,26 +1462,46 @@ export class UserService {
   }
 
   async registerKomunitas(userId: string) {
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        rw: {
+          include: {
+            kelurahan: {
+              include: {
+                kecamatan: {
+                  include: {
+                    kabupaten: {
+                      include: {
+                        provinsi: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
     if (!user) throw new Error("USER_NOT_FOUND");
-    
-    if (user.komunitasId) {
+
+    if (user.komunitasId && !user.komunitasId.startsWith("KOM-")) {
       return user.komunitasId;
     }
 
-    const { generateKomunitasId } = await import("../utils/komunitasHelper.js");
-    let newId = "";
-    let isUnique = false;
-    
-    while (!isUnique) {
-      newId = generateKomunitasId();
-      const existing = await prisma.user.findUnique({ where: { komunitasId: newId } });
-      if (!existing) isUnique = true;
-    }
+    const { generateUniqueWargaBersekaId } = await import("../utils/komunitasHelper.js");
+    const newId = await generateUniqueWargaBersekaId(prisma, user.phone, user.rw);
 
     await prisma.user.update({
       where: { id: userId },
-      data: { komunitasId: newId },
+      data: {
+        komunitasId: newId,
+        lifecycleState:
+          user.lifecycleState === "REGISTERED"
+            ? "COMMUNITY_ACTIVE_NO_BIN"
+            : user.lifecycleState,
+      },
     });
 
     return newId;

@@ -63,6 +63,7 @@ model UserRole {
 
 model Provinsi {
   id         Int         @id @default(autoincrement())
+  code       String?     @unique @map("kode") @db.VarChar(10)
   name       String      @unique @map("nama")
   createdAt  DateTime    @default(now()) @map("dibuat_pada")
   updatedAt  DateTime    @updatedAt @map("diperbarui_pada")
@@ -74,6 +75,7 @@ model Provinsi {
 model Kabupaten {
   id         Int         @id @default(autoincrement())
   provinsiId Int         @map("id_provinsi")
+  code       String?     @map("kode") @db.VarChar(10)
   name       String      @map("nama")
   createdAt  DateTime    @default(now()) @map("dibuat_pada")
   updatedAt  DateTime    @updatedAt @map("diperbarui_pada")
@@ -81,12 +83,14 @@ model Kabupaten {
   kecamatans Kecamatan[]
 
   @@unique([provinsiId, name])
+  @@index([code])
   @@map("kabupaten")
 }
 
 model Kecamatan {
   id          Int         @id @default(autoincrement())
   kabupatenId Int         @map("id_kabupaten")
+  code        String?     @map("kode") @db.VarChar(10)
   name        String      @map("nama")
   createdAt   DateTime    @default(now()) @map("dibuat_pada")
   updatedAt   DateTime    @updatedAt @map("diperbarui_pada")
@@ -94,12 +98,14 @@ model Kecamatan {
   kelurahans  Kelurahan[]
 
   @@unique([kabupatenId, name])
+  @@index([code])
   @@map("kecamatan")
 }
 
 model Kelurahan {
   id          String     @id @default(uuid())
   kecamatanId Int?       @map("id_kecamatan")
+  code        String?     @map("kode") @db.VarChar(20)
   name        String     @unique @map("nama")
   createdAt   DateTime   @default(now()) @map("dibuat_pada")
   updatedAt   DateTime   @updatedAt @map("diperbarui_pada")
@@ -107,6 +113,7 @@ model Kelurahan {
   bins        Bin[]
   rws         Rw[]
 
+  @@index([code])
   @@map("kelurahan")
 }
 

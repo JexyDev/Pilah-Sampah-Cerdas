@@ -39,7 +39,7 @@ export class HouseholdRepository {
    * Get all households for a user.
    */
   async findHouseholdsByUserId(userId: string): Promise<any[]> {
-    return prisma.household.findMany({
+    const direct = await prisma.household.findMany({
       where: { userId },
       include: {
         rw: {
@@ -55,6 +55,47 @@ export class HouseholdRepository {
         },
       },
     });
+
+    if (direct.length > 0) {
+      return direct;
+    }
+
+    // Jika akun adalah anggota keluarga, cari household via kepemilikan bin bersama
+    const userBinOwnerships = await prisma.binOwnership.findMany({
+      where: { userId },
+      select: { binId: true },
+    });
+
+    if (userBinOwnerships.length > 0) {
+      const primaryOwner = await prisma.binOwnership.findFirst({
+        where: {
+          binId: { in: userBinOwnerships.map((b) => b.binId) },
+          type: "UTAMA",
+        },
+        select: { userId: true },
+      });
+
+      if (primaryOwner && primaryOwner.userId !== userId) {
+        return prisma.household.findMany({
+          where: { userId: primaryOwner.userId },
+          include: {
+            rw: {
+              include: { kelurahan: true },
+            },
+            user: {
+              select: {
+                id: true,
+                name: true,
+                phone: true,
+                jumlahAnggotaKeluarga: true,
+              },
+            },
+          },
+        });
+      }
+    }
+
+    return [];
   }
 
   /**
