@@ -1540,12 +1540,22 @@ const KpiCard: React.FC<KpiCardProps> = ({
   linkTo,
   onClick,
 }) => {
+  const { user, can } = useAuthStore();
   const styles = KPI_COLOR_STYLES[color];
-  const isClickable = Boolean(linkTo || onClick);
+
+  // Pastikan linkTo hanya aktif jika rute tersebut dapat diakses pada menu sidebar pengguna saat ini
+  const isAccessible = linkTo ? canAccessSidebarRoute(linkTo, user, can) : false;
+  const effectiveLinkTo = isAccessible ? linkTo : undefined;
+  const isClickable = Boolean(effectiveLinkTo || onClick);
+
   const content = (
     <div
-      onClick={!linkTo ? onClick : undefined}
-      className={`bg-white dark:bg-slate-900 shadow-xs rounded-2xl p-5 border border-slate-200 dark:border-slate-800 border-t-4 ${styles.border} flex flex-col justify-between h-full hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group ${isClickable ? "cursor-pointer" : ""}`}
+      onClick={!effectiveLinkTo ? onClick : undefined}
+      className={`bg-white dark:bg-slate-900 shadow-xs rounded-2xl p-5 border border-slate-200 dark:border-slate-800 border-t-4 ${styles.border} flex flex-col justify-between h-full transition-all duration-300 group ${
+        isClickable
+          ? "cursor-pointer hover:shadow-md hover:-translate-y-0.5"
+          : "cursor-default"
+      }`}
     >
       <div className="flex items-center gap-3">
         <div
@@ -1584,9 +1594,9 @@ const KpiCard: React.FC<KpiCardProps> = ({
     </div>
   );
 
-  if (linkTo) {
+  if (effectiveLinkTo) {
     return (
-      <Link to={linkTo} onClick={onClick} className="block h-full">
+      <Link to={effectiveLinkTo} onClick={onClick} className="block h-full">
         {content}
       </Link>
     );
@@ -1596,7 +1606,7 @@ const KpiCard: React.FC<KpiCardProps> = ({
 
 // ========== Main Executive Dashboard ==========
 const Dashboard: React.FC = () => {
-  const { user, updateWilayah } = useAuthStore();
+  const { user, can, updateWilayah } = useAuthStore();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
