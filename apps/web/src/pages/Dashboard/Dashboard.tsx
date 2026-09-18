@@ -1914,34 +1914,23 @@ const Dashboard: React.FC = () => {
       return;
     }
 
+    // Jika tab aktif KKN atau GIS, hentikan fetching stats sampah (modul KKN dan GIS punya loader independen)
+    if (activeSubTab === "kkn" || activeSubTab === "gis") {
+      setLoading(false);
+      return;
+    }
+
     fetchStats(false);
     const interval = setInterval(() => fetchStats(true), 30_000);
     return () => clearInterval(interval);
   }, [user, weeks, timeFilter, startDate, endDate, selectedWilayah, activeSubTab]);
 
-  if (user?.peran === "WARGA") return <WargaDashboard />;
-  if (user?.peran === "RW") return <RwDashboard />;
-  if (user?.peran === "MAHASISWA_KKN") return <KknDashboard />;
-  if (user?.peran === "PETUGAS_RESIDU") return <ResiduDashboard />;
-  if (
-    user?.peran === "DPL" ||
-    user?.peran === "DOSEN_PEMBIMBING" ||
-    (user?.peran as string) === "DOSEN_PENDAMPING" ||
-    isMpl
-  ) {
-    return <DplDashboardPage />;
-  }
+  const renderTabSwitcher = () => {
+    if (!canAccessTabs) return null;
 
-  if (user?.peran === "PANITIA_TASKFORCE") {
-    return <TaskforceDashboardPage />;
-  }
-
-  // Khusus Pimpinan (atau Super User/Dev) jika sub-dashboard KKN aktif
-  if (canAccessKknSub && activeSubTab === "kkn") {
     return (
-      <div className="w-full space-y-6 font-sans">
-        {/* Executive Sub-Dashboard Tab Switcher */}
-        <div className="bg-slate-100/90 dark:bg-slate-800/90 p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 flex items-center gap-1.5 w-fit shadow-2xs">
+      <div className="bg-slate-100/90 dark:bg-slate-800/90 p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 flex items-center gap-1.5 w-fit shadow-2xs">
+        {canAccessKknSub && (
           <button
             type="button"
             onClick={() => setSearchParams({ tab: "kkn" })}
@@ -1954,21 +1943,73 @@ const Dashboard: React.FC = () => {
             <GraduationCap size={15} className={activeSubTab === "kkn" ? "text-[#009966] dark:text-emerald-400" : "text-slate-400"} />
             <span>Kuliah Kerja Nyata</span>
           </button>
+        )}
+        <button
+          type="button"
+          onClick={() => setSearchParams({ tab: "tata-kelola-sampah" })}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
+            activeSubTab === "tata-kelola-sampah"
+              ? "bg-white dark:bg-slate-900 text-[#009966] dark:text-emerald-400 shadow-xs border border-slate-200/80 dark:border-slate-700 font-black"
+              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-white/60 dark:hover:bg-slate-700/60"
+          }`}
+        >
+          <Recycle size={15} className={activeSubTab === "tata-kelola-sampah" ? "text-[#009966] dark:text-emerald-400" : "text-slate-400"} />
+          <span>Tata Kelola Sampah</span>
+        </button>
+        {canAccessGisSub && (
           <button
             type="button"
-            onClick={() => setSearchParams({ tab: "tata-kelola-sampah", view: activeWasteView })}
+            onClick={() => setSearchParams({ tab: "gis" })}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
-              activeSubTab !== "kkn"
+              activeSubTab === "gis"
                 ? "bg-white dark:bg-slate-900 text-[#009966] dark:text-emerald-400 shadow-xs border border-slate-200/80 dark:border-slate-700 font-black"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-white/60 dark:hover:bg-slate-700/60"
             }`}
           >
-            <Recycle size={15} className={activeSubTab !== "kkn" ? "text-[#009966] dark:text-emerald-400" : "text-slate-400"} />
-            <span>Tata Kelola Sampah</span>
+            <MapPin size={15} className={activeSubTab === "gis" ? "text-[#009966] dark:text-emerald-400" : "text-slate-400"} />
+            <span>GIS Eksekutif</span>
           </button>
-        </div>
+        )}
+      </div>
+    );
+  };
 
+  if (user?.peran === "WARGA") return <WargaDashboard />;
+  if (user?.peran === "RW") return <RwDashboard />;
+  if (user?.peran === "MAHASISWA_KKN") return <KknDashboard />;
+  if (user?.peran === "PETUGAS_RESIDU") return <ResiduDashboard />;
+  if (
+    user?.peran === "DPL" ||
+    user?.peran === "DOSEN_PEMBIMBING" ||
+    (user?.peran as string) === "DOSEN_PENDAMPING"
+  ) {
+    return <DplDashboardPage />;
+  }
+
+  if (isMpl) {
+    return <MplDashboardPage />;
+  }
+
+  if (user?.peran === "PANITIA_TASKFORCE") {
+    return <TaskforceDashboardPage />;
+  }
+
+  // Khusus Pimpinan (atau Super User/Dev) jika sub-dashboard KKN aktif
+  if (canAccessKknSub && activeSubTab === "kkn") {
+    return (
+      <div className="w-full space-y-6 font-sans">
+        {renderTabSwitcher()}
         <DashboardEksekutifKkn />
+      </div>
+    );
+  }
+
+  // Khusus tab GIS Eksekutif (Peta GIS Fasilitas Pengelolaan Sampah)
+  if (canAccessGisSub && activeSubTab === "gis") {
+    return (
+      <div className="w-full space-y-6 pb-12 font-sans text-slate-800 dark:text-slate-100 relative">
+        {renderTabSwitcher()}
+        <GisMapTab />
       </div>
     );
   }
@@ -2088,90 +2129,10 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="w-full space-y-6 pb-12 text-slate-800 dark:text-slate-100 font-sans relative">
-      {canAccessKknSub && (
-        <div className="bg-slate-100/90 dark:bg-slate-800/90 p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 flex items-center gap-1.5 w-fit shadow-2xs">
-          <button
-            type="button"
-            onClick={() => setSearchParams({ tab: "kkn" })}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
-              activeSubTab === "kkn"
-                ? "bg-white dark:bg-slate-900 text-[#009966] dark:text-emerald-400 shadow-xs border border-slate-200/80 dark:border-slate-700 font-black"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-white/60 dark:hover:bg-slate-700/60"
-            }`}
-          >
-            <GraduationCap size={15} className={activeSubTab === "kkn" ? "text-[#009966] dark:text-emerald-400" : "text-slate-400"} />
-            <span>Kuliah Kerja Nyata</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setSearchParams({ tab: "tata-kelola-sampah", view: activeWasteView })}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
-              activeSubTab !== "kkn"
-                ? "bg-white dark:bg-slate-900 text-[#009966] dark:text-emerald-400 shadow-xs border border-slate-200/80 dark:border-slate-700 font-black"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-white/60 dark:hover:bg-slate-700/60"
-            }`}
-          >
-            <Recycle size={15} className={activeSubTab !== "kkn" ? "text-[#009966] dark:text-emerald-400" : "text-slate-400"} />
-            <span>Tata Kelola Sampah</span>
-          </button>
-        </div>
-      )}
+      {renderTabSwitcher()}
 
-      {/* Sub-Tab Selector Tata Kelola Sampah: Ringkasan & Metrik | Peta GIS Fasilitas | Tempat Sampah Teraktivasi */}
-      <div className="bg-white dark:bg-slate-900 p-2 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
-          <button
-            type="button"
-            onClick={() => setSearchParams({ tab: "tata-kelola-sampah", view: "ringkasan" })}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              activeWasteView === "ringkasan"
-                ? "bg-white dark:bg-slate-900 text-[#009966] dark:text-emerald-400 shadow-xs border border-slate-200/60 dark:border-slate-700 font-black"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
-            }`}
-          >
-            <BarChart size={14} className={activeWasteView === "ringkasan" ? "text-[#009966] dark:text-emerald-400" : "text-slate-400"} />
-            <span>Ringkasan & Metrik</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setSearchParams({ tab: "tata-kelola-sampah", view: "gis" })}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              activeWasteView === "gis"
-                ? "bg-white dark:bg-slate-900 text-[#009966] dark:text-emerald-400 shadow-xs border border-slate-200/60 dark:border-slate-700 font-black"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
-            }`}
-          >
-            <MapPin size={14} className={activeWasteView === "gis" ? "text-[#009966] dark:text-emerald-400" : "text-slate-400"} />
-            <span>Peta GIS Fasilitas</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setSearchParams({ tab: "tata-kelola-sampah", view: "bins" })}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              activeWasteView === "bins"
-                ? "bg-white dark:bg-slate-900 text-[#009966] dark:text-emerald-400 shadow-xs border border-slate-200/60 dark:border-slate-700 font-black"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
-            }`}
-          >
-            <Trash2 size={14} className={activeWasteView === "bins" ? "text-[#009966] dark:text-emerald-400" : "text-slate-400"} />
-            <span>Tempat Sampah Teraktivasi</span>
-          </button>
-        </div>
-
-        <div className="px-3 py-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse" />
-          <span>Wilayah: Kecamatan Coblong</span>
-        </div>
-      </div>
-
-      {activeWasteView === "gis" ? (
-        <GisMapTab />
-      ) : activeWasteView === "bins" ? (
-        <TempatSampahAktifPage />
-      ) : (
-        <>
-          {/* 1. Header Bar (Clean Multi-Tier Executive UI - Konsisten dengan Analisis Sistem) */}
-          <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-4">
+      {/* 1. Header Bar (Clean Multi-Tier Executive UI - Konsisten dengan Analisis Sistem) */}
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-4">
         {/* Top Tier: Title & Live Badge */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -2321,11 +2282,7 @@ const Dashboard: React.FC = () => {
           trend={stats?.tempatSampahAktif?.trend}
           trendLabel={stats?.tempatSampahAktif?.trendLabel}
           trendUp={stats?.tempatSampahAktif?.trendUp}
-          linkTo="/dasbor?tab=tata-kelola-sampah&view=bins"
-          onClick={() => {
-            setSearchParams({ tab: "tata-kelola-sampah", view: "bins" });
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          }}
+          linkTo="/monitoring-pengelolaan/tempat-sampah?tab=teraktivasi"
         />
         <KpiCard
           iconName="location_on"
@@ -3660,8 +3617,6 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
         </div>
-      )}
-        </>
       )}
 
       <ConfirmModal
