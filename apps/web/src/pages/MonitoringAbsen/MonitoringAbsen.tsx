@@ -585,6 +585,7 @@ const MonitoringAbsen: React.FC = () => {
   ).toUpperCase();
   const isDpl = userRole === "DPL" || userRole === "DOSEN_PEMBIMBING";
   const isDeveloper = userRole === "DEVELOPER" || userRole === "SUPER_USER" || userRole === "DEV";
+  const isStrictDeveloper = userRole === "DEVELOPER" || userRole === "DEV";
   const [includeTestAccounts, setIncludeTestAccounts] = useState<boolean>(false);
 
   const [selectedKelompokId, setSelectedKelompokId] = useState<string>(() => {
@@ -1329,7 +1330,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     withTest: boolean = includeTestAccounts
   ) => {
     try {
-      const testParam = (isDeveloper && withTest) ? "true" : undefined;
+      const testParam = (isStrictDeveloper && withTest) ? "true" : undefined;
       if (scheduleId === "ALL_TODAY") {
         // Ambil data agregat absensi seluruh kelompok hari ini secara paralel
         const nowWib = new Date(Date.now() + 7 * 60 * 60 * 1000);
@@ -2591,10 +2592,10 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               )}
 
               {/* Dev Only: Toggle Akun Test */}
-              {isDeveloper && (
+              {isStrictDeveloper && (
                 <label
                   className="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-700/60 px-2.5 py-1 rounded-xl cursor-pointer text-amber-900 dark:text-amber-200 select-none shadow-2xs shrink-0"
-                  title="Khusus Developer/Super User: Tampilkan akun pengujian di peta dan daftar presensi"
+                  title="Khusus Developer: Tampilkan akun pengujian di peta dan daftar presensi"
                 >
                   <input
                     type="checkbox"

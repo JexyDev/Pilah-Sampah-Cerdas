@@ -92,8 +92,8 @@ export const dashboardController = {
         }
       }
 
-      const isDevOrSuper = user?.role === "DEVELOPER" || user?.role === "SUPER_USER";
-      const includeTestAccounts = req.query.includeTestAccounts === "true" && isDevOrSuper;
+      const isDevOnly = user?.role === "DEVELOPER";
+      const includeTestAccounts = req.query.includeTestAccounts === "true" && isDevOnly;
 
       const kpi = await dashboardService.getKpi(
         wilayah as string,
@@ -116,8 +116,8 @@ export const dashboardController = {
     try {
       let { wilayah } = req.query;
       const user = req.user;
-      const isDevOrSuper = user?.role === "DEVELOPER" || user?.role === "SUPER_USER";
-      const includeTestAccounts = req.query.includeTestAccounts === "true" && isDevOrSuper;
+      const isDevOnly = user?.role === "DEVELOPER";
+      const includeTestAccounts = req.query.includeTestAccounts === "true" && isDevOnly;
 
       if (user && (user.role === "DPL" || user.role === "DOSEN_PEMBIMBING")) {
         const dplGroups = await prisma.kelompokKkn.findMany({
@@ -265,8 +265,8 @@ export const dashboardController = {
     try {
       const { kelurahan, rw, periode, kelompok } = req.query;
       const user = req.user;
-      const isDevOrSuper = user?.role === "DEVELOPER" || user?.role === "SUPER_USER";
-      const includeTestAccounts = req.query.includeTestAccounts === "true" && isDevOrSuper;
+      const isDevOnly = user?.role === "DEVELOPER";
+      const includeTestAccounts = req.query.includeTestAccounts === "true" && isDevOnly;
 
       const data = await kknExecutiveService.getExecutiveDashboard({
         kelurahan: kelurahan as string,
