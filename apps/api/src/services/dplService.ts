@@ -2,7 +2,7 @@ import { prisma } from "../lib/prisma.js";
 import { configService } from "./configService.js";
 import { normalizeProkerKategori } from "./kknService.js";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
-import { isTestKelompok, isTestStudent, isTestUser } from "../utils/filterTestingUtils.js";
+import { isTestKelompok, isTestStudent, isTestUser, isTestProker } from "../utils/filterTestingUtils.js";
 import {
   calculateValidIndividualPoints,
   calculateValidIndividualPointsForUsers,
@@ -3260,7 +3260,7 @@ export const dplService = {
         evaluasiDpl: p.evaluasiDpl,
         createdAt: p.createdAt,
       };
-    });
+    }).filter((item) => !isTestProker(item) && !isTestKelompok({ name: item.kelompokName, dplNamaMentah: item.dplName }));
   },
 
   /**

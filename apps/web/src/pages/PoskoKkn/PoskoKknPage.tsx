@@ -64,6 +64,7 @@ import {
   type MasterRwItem,
 } from "../../utils/areaFilterUtils";
 import { formatWilayahName } from "../../utils/textFormatter";
+import { isTestPosko, isTestKelompok } from "../../utils/filterTestingUtils";
 
 export interface PoskoItem {
   id: string;
@@ -320,7 +321,11 @@ export const PoskoKknPage: React.FC = () => {
     setLoading(true);
     try {
       const res = await api.get("/kkn/posko");
-      setItems(res.data.data || []);
+      const rawList = res.data.data || [];
+      const sanitized = rawList.filter(
+        (p: any) => !isTestPosko(p) && !isTestKelompok({ name: p.kelompokName, dplNamaMentah: p.dplName })
+      );
+      setItems(sanitized);
     } catch (err: any) {
       showToast.error(err.response?.data?.message || "Gagal memuat data Posko KKN");
     } finally {
@@ -342,7 +347,8 @@ export const PoskoKknPage: React.FC = () => {
       const res = await api.get("/kelompok?limit=0");
       const list = res.data?.groups || res.data?.data || res.data?.kelompoks || (Array.isArray(res.data) ? res.data : []);
       if (Array.isArray(list)) {
-        setKelompokList(sortKelompokList(list, (k: any) => k.name || ""));
+        const sanitized = list.filter((k: any) => !isTestKelompok(k));
+        setKelompokList(sortKelompokList(sanitized, (k: any) => k.name || ""));
       }
     } catch (err) {
       console.warn("Gagal memuat kelompok list:", err);
@@ -460,6 +466,9 @@ export const PoskoKknPage: React.FC = () => {
   // Filtered Items
   const filteredItems = useMemo(() => {
     const result = items.filter((item) => {
+      if (isTestPosko(item) || isTestKelompok({ name: item.kelompokName, dplNamaMentah: item.dplName })) {
+        return false;
+      }
       const q = searchQuery.toLowerCase().trim();
       const matchSearch =
         !q ||
