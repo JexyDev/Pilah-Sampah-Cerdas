@@ -15,7 +15,7 @@
  * - Salin QR Code, Navigasi Google Maps, dan Cetak Poster Resmi BERSEKA
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useDeferredValue } from "react";
 import {
   RefreshCw,
   AlertCircle,
@@ -73,6 +73,15 @@ export interface ActivatedBin {
   pemilikPhone?: string | null;
   pendaftarNama?: string | null;
   kapasitasLiter?: number | null;
+}
+
+// ── Tipe Data Enriched Tempat Sampah (High-Performance In-Memory Structure) ───
+export interface EnrichedBin extends ActivatedBin {
+  categoryInfo: CategoryInfo;
+  dateInfo: { tanggal: string; jam: string };
+  timestamp: number;
+  rwNumber: number;
+  searchTokens: string;
 }
 
 type SortField = "tanggal" | "qrCode" | "kelurahan" | "rw" | "status" | "kategori";
@@ -153,14 +162,23 @@ const getBinCategoryInfo = (qrCode: string, kategoriNama?: string | null): Categ
   };
 };
 
-// ── Format Tanggal & Jam Indonesia ────────────────────────────────────────────
+// ── Format Tanggal & Jam Indonesia dengan Fast Memory Cache ──────────────────
+const dateCache = new Map<string, { tanggal: string; jam: string }>();
+
 const formatTanggalLengkap = (isoDate?: string | null): { tanggal: string; jam: string } => {
   if (!isoDate || isoDate === "-" || isoDate === "null") {
     return { tanggal: "-", jam: "" };
   }
+  const cached = dateCache.get(isoDate);
+  if (cached) return cached;
+
   try {
     const d = new Date(isoDate);
-    if (isNaN(d.getTime())) return { tanggal: isoDate, jam: "" };
+    if (isNaN(d.getTime())) {
+      const fallback = { tanggal: isoDate, jam: "" };
+      dateCache.set(isoDate, fallback);
+      return fallback;
+    }
 
     const tanggal = d.toLocaleDateString("id-ID", {
       day: "2-digit",
@@ -168,14 +186,19 @@ const formatTanggalLengkap = (isoDate?: string | null): { tanggal: string; jam: 
       year: "numeric",
     });
 
-    const jam = d.toLocaleTimeString("id-ID", {
-      hour: "2-digit",
-      minute: "2-digit",
-    }) + " WIB";
+    const jam =
+      d.toLocaleTimeString("id-ID", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }) + " WIB";
 
-    return { tanggal, jam };
+    const formatted = { tanggal, jam };
+    dateCache.set(isoDate, formatted);
+    return formatted;
   } catch {
-    return { tanggal: isoDate, jam: "" };
+    const fallback = { tanggal: isoDate, jam: "" };
+    dateCache.set(isoDate, fallback);
+    return fallback;
   }
 };
 
@@ -194,11 +217,181 @@ const getStatusLabel = (status: string): string => {
   return status || "-";
 };
 
+// ── Baris Tabel Termemoize (High-Performance Subcomponent) ────────────────────
+interface BinTableRowProps {
+  bin: EnrichedBin;
+  rowNumber: number;
+  copiedQrId: string | null;
+  onCopyQr: (id: string, qr: string) => void;
+  onPreview: (bin: EnrichedBin) => void;
+}
+
+const BinTableRow = React.memo<BinTableRowProps>(({
+  bin,
+  rowNumber,
+  copiedQrId,
+  onCopyQr,
+  onPreview,
+}) => {
+  const latNum = bin.latitude ? Number(bin.latitude) : null;
+  const lngNum = bin.longitude ? Number(bin.longitude) : null;
+  const hasCoords = latNum !== null && lngNum !== null && latNum !== 0 && lngNum !== 0;
+  const { tanggal, jam } = bin.dateInfo;
+  const catInfo = bin.categoryInfo;
+
+  return (
+    <tr className="hover:bg-slate-50/90 dark:hover:bg-slate-800/50 transition-colors group">
+      {/* 1. Nomor Urut */}
+      <td className="p-3.5 pl-5 text-slate-400 font-mono font-semibold">
+        <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[11px] text-slate-600 dark:text-slate-400">
+          #{rowNumber}
+        </span>
+      </td>
+
+      {/* 2. QR Code dengan Icon Visual Interaktif */}
+      <td className="p-3.5">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => onPreview(bin)}
+            title="Klik untuk Pratinjau & Cetak Poster QR"
+            className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border transition-all duration-200 cursor-pointer shadow-xs group-hover:scale-105 ${
+              catInfo.isOrganik
+                ? "bg-emerald-50 dark:bg-emerald-950/70 border-emerald-300/80 dark:border-emerald-700/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100"
+                : catInfo.isAnorganik
+                ? "bg-amber-50 dark:bg-amber-950/70 border-amber-300/80 dark:border-amber-700/60 text-amber-700 dark:text-amber-300 hover:bg-amber-100"
+                : "bg-blue-50 dark:bg-blue-950/70 border-blue-300/80 dark:border-blue-700/60 text-blue-700 dark:text-blue-300 hover:bg-blue-100"
+            }`}
+          >
+            <QrCode size={19} />
+          </button>
+
+          <div>
+            <div className="flex items-center gap-1.5">
+              <span className="font-mono font-black text-slate-900 dark:text-slate-100 text-xs md:text-[13px] tracking-tight">
+                {bin.qrCode || "-"}
+              </span>
+              {bin.qrCode && (
+                <button
+                  type="button"
+                  onClick={() => onCopyQr(bin.id, bin.qrCode)}
+                  className="p-1 rounded-md text-slate-400 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                  title="Salin QR Code"
+                >
+                  {copiedQrId === bin.id ? (
+                    <Check size={13} className="text-emerald-600" />
+                  ) : (
+                    <Copy size={13} />
+                  )}
+                </button>
+              )}
+            </div>
+            <div className="text-[10px] text-slate-400 dark:text-slate-500 font-medium mt-0.5 flex items-center gap-1">
+              <span>ID Unit: {bin.id.slice(0, 8)}...</span>
+              {bin.pemilikNama && (
+                <span className="text-slate-600 dark:text-slate-400">
+                  • Warga: {bin.pemilikNama}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </td>
+
+      {/* 3. Jenis Wadah (Organik vs Anorganik) */}
+      <td className="p-3.5">
+        <span
+          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10.5px] font-extrabold border ${catInfo.badgeClass}`}
+        >
+          {catInfo.icon}
+          <span>{catInfo.label}</span>
+        </span>
+      </td>
+
+      {/* 4. Wilayah (Kelurahan & RW) */}
+      <td className="p-3.5">
+        <div className="flex flex-col gap-0.5">
+          <div className="flex items-center gap-1.5">
+            <span className="font-bold text-slate-800 dark:text-slate-200">
+              {bin.kelurahan || "Coblong"}
+            </span>
+          </div>
+          <div>
+            <span className="inline-block px-2 py-0.2 rounded-md text-[10.5px] font-extrabold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+              {bin.rwNama && bin.rwNama !== "-" ? bin.rwNama : "RW -"}
+            </span>
+          </div>
+        </div>
+      </td>
+
+      {/* 5. Status Operasional */}
+      <td className="p-3.5">
+        <div className="flex flex-col gap-1">
+          <span
+            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold w-fit ${getStatusBadge(bin.status)}`}
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${
+                (bin.status || "").includes("ACTIVE")
+                  ? "bg-emerald-500 animate-pulse ring-2 ring-emerald-500/20"
+                  : "bg-blue-500"
+              }`}
+            />
+            <span>{getStatusLabel(bin.status)}</span>
+          </span>
+          <span className="text-[10px] text-slate-400 dark:text-slate-500 pl-1">
+            Siap Operasi &amp; Pemilahan
+          </span>
+        </div>
+      </td>
+
+      {/* 6. Tanggal & Jam Aktivasi */}
+      <td className="p-3.5">
+        <div className="flex flex-col gap-0.5">
+          <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200">
+            <Calendar size={12} className="text-slate-400 shrink-0" />
+            <span>{tanggal}</span>
+          </div>
+          {jam && (
+            <span className="text-[10.5px] text-slate-400 dark:text-slate-500 pl-4 font-mono">
+              {jam}
+            </span>
+          )}
+        </div>
+      </td>
+
+      {/* 7. Navigasi Peta Google Maps */}
+      <td className="p-3.5 pr-5 text-right">
+        {hasCoords ? (
+          <a
+            href={`https://www.google.com/maps/search/?api=1&query=${latNum},${lngNum}`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-600 dark:text-blue-300 text-[11px] font-bold transition cursor-pointer border border-blue-200 dark:border-blue-800/60"
+            title={`Buka Titik Koordinat di Google Maps (${latNum}, ${lngNum})`}
+          >
+            <ExternalLink size={12} />
+            <span>Peta</span>
+          </a>
+        ) : (
+          <span className="text-slate-400 dark:text-slate-600 text-[10.5px] italic px-2">
+            Tanpa GPS
+          </span>
+        )}
+      </td>
+    </tr>
+  );
+});
+
+BinTableRow.displayName = "BinTableRow";
+
 // ── Komponen Utama ────────────────────────────────────────────────────────────
 export const TempatSampahAktifPage: React.FC = () => {
   const [selectedKelurahan, setSelectedKelurahan] = useState("Semua Kelurahan");
   const [rwInput, setRwInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const deferredSearchQuery = useDeferredValue(searchQuery);
+
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [kategoriFilter, setKategoriFilter] = useState<string>("ALL");
 
@@ -218,7 +411,7 @@ export const TempatSampahAktifPage: React.FC = () => {
   const [copiedQrId, setCopiedQrId] = useState<string | null>(null);
 
   // Modal QR Code Visual Preview
-  const [previewBin, setPreviewBin] = useState<ActivatedBin | null>(null);
+  const [previewBin, setPreviewBin] = useState<EnrichedBin | ActivatedBin | null>(null);
 
   // ── Fetch Data dari Server ──────────────────────────────────────────────────
   const fetchData = useCallback(async () => {
@@ -257,9 +450,43 @@ export const TempatSampahAktifPage: React.FC = () => {
     setPage(1);
   }, [fetchData]);
 
-  // ── Filter & Sorting di Sisi Klien ──────────────────────────────────────────
+  // ── High-Performance Precomputed Enriched Bins ──────────────────────────────
+  const enrichedBins = useMemo<EnrichedBin[]>(() => {
+    return bins.map((b) => {
+      const categoryInfo = getBinCategoryInfo(b.qrCode, b.kategoriNama);
+      const iso = b.tanggalAktivasi || b.createdAt || "";
+      const dateInfo = formatTanggalLengkap(iso);
+      const timestamp = iso ? new Date(iso).getTime() || 0 : 0;
+      const rwNumber = parseInt((b.rwNama || "").replace(/\D/g, ""), 10) || 0;
+      const searchTokens = [
+        b.qrCode,
+        b.rwNama,
+        b.kelurahan,
+        b.pemilikNama,
+        b.pendaftarNama,
+        b.kategoriNama,
+        categoryInfo.label,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return {
+        ...b,
+        categoryInfo,
+        dateInfo,
+        timestamp,
+        rwNumber,
+        searchTokens,
+      };
+    });
+  }, [bins]);
+
+  // ── Filter & Sorting di Sisi Klien (O(1) Comparators) ──────────────────────
   const filteredAndSortedBins = useMemo(() => {
-    let result = bins.filter((bin) => {
+    const query = deferredSearchQuery.trim().toLowerCase();
+
+    let result = enrichedBins.filter((bin) => {
       // Filter Status
       if (statusFilter !== "ALL") {
         const s = (bin.status || "").toUpperCase();
@@ -268,64 +495,41 @@ export const TempatSampahAktifPage: React.FC = () => {
 
       // Filter Kategori (Organik vs Anorganik)
       if (kategoriFilter !== "ALL") {
-        const catInfo = getBinCategoryInfo(bin.qrCode, bin.kategoriNama);
-        if (kategoriFilter === "ORGANIK" && !catInfo.isOrganik) return false;
-        if (kategoriFilter === "ANORGANIK" && !catInfo.isAnorganik) return false;
+        if (kategoriFilter === "ORGANIK" && !bin.categoryInfo.isOrganik) return false;
+        if (kategoriFilter === "ANORGANIK" && !bin.categoryInfo.isAnorganik) return false;
       }
 
-      // Filter Search
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const qr = (bin.qrCode || "").toLowerCase();
-        const rw = (bin.rwNama || "").toLowerCase();
-        const kel = (bin.kelurahan || "").toLowerCase();
-        const owner = (bin.pemilikNama || "").toLowerCase();
-        const registrant = (bin.pendaftarNama || "").toLowerCase();
-        const cat = (bin.kategoriNama || "").toLowerCase();
-        const catLabel = getBinCategoryInfo(bin.qrCode, bin.kategoriNama).label.toLowerCase();
-        return (
-          qr.includes(q) ||
-          rw.includes(q) ||
-          kel.includes(q) ||
-          owner.includes(q) ||
-          registrant.includes(q) ||
-          cat.includes(q) ||
-          catLabel.includes(q)
-        );
+      // Filter Search (pre-indexed token match)
+      if (query) {
+        if (!bin.searchTokens.includes(query)) return false;
       }
 
       return true;
     });
 
-    // Urutkan (Sorting)
+    // Urutkan (Sorting) dengan perbandingan nilai primitif
     result = [...result].sort((a, b) => {
       let comparison = 0;
 
       if (sortField === "tanggal") {
-        const dateA = new Date(a.tanggalAktivasi || a.createdAt || 0).getTime();
-        const dateB = new Date(b.tanggalAktivasi || b.createdAt || 0).getTime();
-        comparison = dateA - dateB;
+        comparison = a.timestamp - b.timestamp;
       } else if (sortField === "qrCode") {
         comparison = (a.qrCode || "").localeCompare(b.qrCode || "");
       } else if (sortField === "kelurahan") {
         comparison = (a.kelurahan || "").localeCompare(b.kelurahan || "");
       } else if (sortField === "rw") {
-        const numA = parseInt((a.rwNama || "").replace(/\D/g, ""), 10) || 0;
-        const numB = parseInt((b.rwNama || "").replace(/\D/g, ""), 10) || 0;
-        comparison = numA - numB;
+        comparison = a.rwNumber - b.rwNumber;
       } else if (sortField === "status") {
         comparison = (a.status || "").localeCompare(b.status || "");
       } else if (sortField === "kategori") {
-        const catA = getBinCategoryInfo(a.qrCode, a.kategoriNama).label;
-        const catB = getBinCategoryInfo(b.qrCode, b.kategoriNama).label;
-        comparison = catA.localeCompare(catB);
+        comparison = a.categoryInfo.label.localeCompare(b.categoryInfo.label);
       }
 
       return sortOrder === "asc" ? comparison : -comparison;
     });
 
     return result;
-  }, [bins, statusFilter, kategoriFilter, searchQuery, sortField, sortOrder]);
+  }, [enrichedBins, statusFilter, kategoriFilter, deferredSearchQuery, sortField, sortOrder]);
 
   // ── Statistik Metrik Eksekutif ──────────────────────────────────────────────
   const metrics = useMemo(() => {
@@ -335,27 +539,32 @@ export const TempatSampahAktifPage: React.FC = () => {
     const uniqueKelurahan = new Set<string>();
     const uniqueRw = new Set<string>();
 
-    bins.forEach((b) => {
+    enrichedBins.forEach((b) => {
       const s = (b.status || "").toUpperCase();
       if (s === "ACTIVE_BOUND" || s.includes("ACTIVE")) activeBound++;
 
-      const catInfo = getBinCategoryInfo(b.qrCode, b.kategoriNama);
-      if (catInfo.isOrganik) organikCount++;
-      if (catInfo.isAnorganik) anorganikCount++;
+      if (b.categoryInfo.isOrganik) organikCount++;
+      if (b.categoryInfo.isAnorganik) anorganikCount++;
 
       if (b.kelurahan) uniqueKelurahan.add(b.kelurahan.trim());
       if (b.rwNama && b.rwNama !== "-") uniqueRw.add(`${b.kelurahan || ""}_${b.rwNama}`);
     });
 
+    const totalCount = enrichedBins.length;
+    const organikPercent = totalCount > 0 ? Math.round((organikCount / totalCount) * 100) : 0;
+    const anorganikPercent = totalCount > 0 ? Math.round((anorganikCount / totalCount) * 100) : 0;
+
     return {
-      total: bins.length,
+      total: totalCount,
       activeBound,
       organikCount,
       anorganikCount,
+      organikPercent,
+      anorganikPercent,
       kelurahanCount: uniqueKelurahan.size,
       rwCount: uniqueRw.size,
     };
-  }, [bins]);
+  }, [enrichedBins]);
 
   // ── Pagination View ─────────────────────────────────────────────────────────
   const effectivePageSize = pageSize === "ALL" ? filteredAndSortedBins.length || 1 : pageSize;
@@ -367,25 +576,32 @@ export const TempatSampahAktifPage: React.FC = () => {
     return filteredAndSortedBins.slice(startIndex, startIndex + effectivePageSize);
   }, [filteredAndSortedBins, page, pageSize, effectivePageSize]);
 
-  // ── Handlers ────────────────────────────────────────────────────────────────
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
-    } else {
-      setSortField(field);
-      setSortOrder(field === "tanggal" ? "desc" : "asc");
-    }
+  // ── Handlers (Stabilized with useCallback) ──────────────────────────────────
+  const handleSort = useCallback((field: SortField) => {
+    setSortField((prevField) => {
+      if (prevField === field) {
+        setSortOrder((prevOrder) => (prevOrder === "asc" ? "desc" : "asc"));
+        return prevField;
+      } else {
+        setSortOrder(field === "tanggal" ? "desc" : "asc");
+        return field;
+      }
+    });
     setPage(1);
-  };
+  }, []);
 
-  const handleCopyQr = (id: string, qr: string) => {
+  const handleCopyQr = useCallback((id: string, qr: string) => {
     navigator.clipboard.writeText(qr);
     setCopiedQrId(id);
     showToast.success(`QR Code disalin: ${qr}`);
     setTimeout(() => setCopiedQrId(null), 2500);
-  };
+  }, []);
 
-  const handlePrintPoster = (bin: ActivatedBin) => {
+  const handlePreviewBin = useCallback((bin: EnrichedBin | ActivatedBin) => {
+    setPreviewBin(bin);
+  }, []);
+
+  const handlePrintPoster = useCallback((bin: ActivatedBin) => {
     const catInfo = getBinCategoryInfo(bin.qrCode, bin.kategoriNama);
     const stickerItem = {
       id: bin.id,
@@ -409,7 +625,7 @@ export const TempatSampahAktifPage: React.FC = () => {
         printWindow.print();
       };
     }
-  };
+  }, []);
 
   return (
     <div className="space-y-6 text-slate-800 dark:text-slate-100">
@@ -568,11 +784,11 @@ export const TempatSampahAktifPage: React.FC = () => {
 
       {/* ── 3 KPI Summary Cards ──────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Card 1: Total Teraktivasi */}
+        {/* Card 1: Total Wadah Aktif */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs flex flex-col justify-between hover:border-blue-400/60 transition-colors">
           <div className="flex items-center justify-between w-full mb-3">
             <span className="text-[10.5px] font-extrabold uppercase tracking-wider text-blue-700 dark:text-blue-400">
-              Total Teraktivasi
+              Total Wadah Aktif
             </span>
             <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400">
               <Trash2 size={18} />
@@ -589,22 +805,77 @@ export const TempatSampahAktifPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Card 2: Aktif & Terikat */}
+        {/* Card 2: Proporsi Kategori Wadah Terpilah (Komposisi Pemilahan) */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs flex flex-col justify-between hover:border-emerald-400/60 transition-colors">
           <div className="flex items-center justify-between w-full mb-3">
             <span className="text-[10.5px] font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
-              Aktif &amp; Terikat
+              Komposisi Pemilahan
             </span>
-            <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">
-              <CheckCircle2 size={18} />
+            <div className="flex items-center gap-1.5 p-1.5 px-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/50">
+              <Leaf size={15} className="text-emerald-600 dark:text-emerald-400" />
+              <span className="text-xs text-slate-300 dark:text-slate-600 font-light select-none">•</span>
+              <Recycle size={15} className="text-amber-600 dark:text-amber-400" />
             </div>
           </div>
           <div>
-            <div className="text-3xl font-black tracking-tight text-emerald-600 dark:text-emerald-400">
-              {loading ? "..." : metrics.activeBound.toLocaleString("id-ID")}
+            <div className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white flex items-baseline gap-2">
+              {loading ? (
+                "..."
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setKategoriFilter((prev) => (prev === "ORGANIK" ? "ALL" : "ORGANIK"));
+                      setPage(1);
+                    }}
+                    title="Klik untuk filter Wadah Organik"
+                    className="inline-flex items-baseline text-emerald-600 dark:text-emerald-400 font-black hover:opacity-80 transition cursor-pointer"
+                  >
+                    <span>{metrics.organikCount}</span>
+                    <span className="text-xs font-semibold ml-1 text-emerald-700/80 dark:text-emerald-300"> Org</span>
+                  </button>
+                  <span className="text-slate-300 dark:text-slate-600 font-light select-none">/</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setKategoriFilter((prev) => (prev === "ANORGANIK" ? "ALL" : "ANORGANIK"));
+                      setPage(1);
+                    }}
+                    title="Klik untuk filter Wadah Anorganik"
+                    className="inline-flex items-baseline text-amber-600 dark:text-amber-400 font-black hover:opacity-80 transition cursor-pointer"
+                  >
+                    <span>{metrics.anorganikCount}</span>
+                    <span className="text-xs font-semibold ml-1 text-amber-700/80 dark:text-amber-300"> Anorg</span>
+                  </button>
+                </>
+              )}
             </div>
+
+            {/* Mini Visual Composition Bar */}
+            {!loading && metrics.total > 0 && (
+              <div className="mt-2.5 w-full">
+                <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex">
+                  <div
+                    style={{ width: `${metrics.organikPercent}%` }}
+                    className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-500"
+                    title={`Organik: ${metrics.organikCount} (${metrics.organikPercent}%)`}
+                  />
+                  <div
+                    style={{ width: `${metrics.anorganikPercent}%` }}
+                    className="h-full bg-gradient-to-r from-amber-400 to-amber-500 transition-all duration-500"
+                    title={`Anorganik: ${metrics.anorganikCount} (${metrics.anorganikPercent}%)`}
+                  />
+                </div>
+                <div className="flex items-center justify-between text-[10px] font-semibold text-slate-400 dark:text-slate-500 mt-1">
+                  <span>{metrics.organikPercent}% Organik</span>
+                  <span>{metrics.anorganikPercent}% Anorganik</span>
+                </div>
+              </div>
+            )}
+
             <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1 truncate">
-              Telah Terpasang di Warga
+              Wadah Organik &amp; Anorganik Terdata
             </p>
           </div>
         </div>
@@ -638,10 +909,11 @@ export const TempatSampahAktifPage: React.FC = () => {
             type="button"
             onClick={() => {
               setStatusFilter("ALL");
+              setKategoriFilter("ALL");
               setPage(1);
             }}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shrink-0 ${
-              statusFilter === "ALL"
+              statusFilter === "ALL" && kategoriFilter === "ALL"
                 ? "bg-emerald-600 text-white shadow-xs"
                 : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
             }`}
@@ -683,7 +955,7 @@ export const TempatSampahAktifPage: React.FC = () => {
             }}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
               kategoriFilter === "ORGANIK"
-                ? "bg-emerald-700 text-white shadow-xs"
+                ? "bg-emerald-700 text-white shadow-xs ring-2 ring-emerald-500/30"
                 : "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100"
             }`}
           >
@@ -699,7 +971,7 @@ export const TempatSampahAktifPage: React.FC = () => {
             }}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
               kategoriFilter === "ANORGANIK"
-                ? "bg-amber-700 text-white shadow-xs"
+                ? "bg-amber-700 text-white shadow-xs ring-2 ring-amber-500/30"
                 : "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 hover:bg-amber-100"
             }`}
           >
@@ -899,158 +1171,16 @@ export const TempatSampahAktifPage: React.FC = () => {
                     </tr>
                   ) : (
                     paginatedBins.map((bin, idx) => {
-                      const latNum = bin.latitude ? Number(bin.latitude) : null;
-                      const lngNum = bin.longitude ? Number(bin.longitude) : null;
-                      const hasCoords = latNum !== null && lngNum !== null && latNum !== 0 && lngNum !== 0;
-                      const { tanggal, jam } = formatTanggalLengkap(bin.tanggalAktivasi || bin.createdAt);
-                      const catInfo = getBinCategoryInfo(bin.qrCode, bin.kategoriNama);
                       const rowNumber = pageSize === "ALL" ? idx + 1 : (page - 1) * (pageSize as number) + idx + 1;
-
                       return (
-                        <tr
+                        <BinTableRow
                           key={bin.id}
-                          className="hover:bg-slate-50/90 dark:hover:bg-slate-800/50 transition-colors group"
-                        >
-                          {/* 1. Nomor Urut */}
-                          <td className="p-3.5 pl-5 text-slate-400 font-mono font-semibold">
-                            <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[11px] text-slate-600 dark:text-slate-400">
-                              #{rowNumber}
-                            </span>
-                          </td>
-
-                          {/* 2. QR Code dengan Icon Visual Interaktif */}
-                          <td className="p-3.5">
-                            <div className="flex items-center gap-3">
-                              {/* Icon QR Interaktif (Klik untuk Preview) */}
-                              <button
-                                type="button"
-                                onClick={() => setPreviewBin(bin)}
-                                title="Klik untuk Pratinjau & Cetak Poster QR"
-                                className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border transition-all duration-200 cursor-pointer shadow-xs group-hover:scale-105 ${
-                                  catInfo.isOrganik
-                                    ? "bg-emerald-50 dark:bg-emerald-950/70 border-emerald-300/80 dark:border-emerald-700/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100"
-                                    : catInfo.isAnorganik
-                                    ? "bg-amber-50 dark:bg-amber-950/70 border-amber-300/80 dark:border-amber-700/60 text-amber-700 dark:text-amber-300 hover:bg-amber-100"
-                                    : "bg-blue-50 dark:bg-blue-950/70 border-blue-300/80 dark:border-blue-700/60 text-blue-700 dark:text-blue-300 hover:bg-blue-100"
-                                }`}
-                              >
-                                <QrCode size={19} />
-                              </button>
-
-                              <div>
-                                <div className="flex items-center gap-1.5">
-                                  <span className="font-mono font-black text-slate-900 dark:text-slate-100 text-xs md:text-[13px] tracking-tight">
-                                    {bin.qrCode || "-"}
-                                  </span>
-                                  {bin.qrCode && (
-                                    <button
-                                      type="button"
-                                      onClick={() => handleCopyQr(bin.id, bin.qrCode)}
-                                      className="p-1 rounded-md text-slate-400 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
-                                      title="Salin QR Code"
-                                    >
-                                      {copiedQrId === bin.id ? (
-                                        <Check size={13} className="text-emerald-600" />
-                                      ) : (
-                                        <Copy size={13} />
-                                      )}
-                                    </button>
-                                  )}
-                                </div>
-                                <div className="text-[10px] text-slate-400 dark:text-slate-500 font-medium mt-0.5 flex items-center gap-1">
-                                  <span>ID Unit: {bin.id.slice(0, 8)}...</span>
-                                  {bin.pemilikNama && (
-                                    <span className="text-slate-600 dark:text-slate-400">
-                                      • Warga: {bin.pemilikNama}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-
-                          {/* 3. Jenis Wadah (Organik vs Anorganik) */}
-                          <td className="p-3.5">
-                            <span
-                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10.5px] font-extrabold border ${catInfo.badgeClass}`}
-                            >
-                              {catInfo.icon}
-                              <span>{catInfo.label}</span>
-                            </span>
-                          </td>
-
-                          {/* 4. Wilayah (Kelurahan & RW) */}
-                          <td className="p-3.5">
-                            <div className="flex flex-col gap-0.5">
-                              <div className="flex items-center gap-1.5">
-                                <span className="font-bold text-slate-800 dark:text-slate-200">
-                                  {bin.kelurahan || "Coblong"}
-                                </span>
-                              </div>
-                              <div>
-                                <span className="inline-block px-2 py-0.2 rounded-md text-[10.5px] font-extrabold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                                  {bin.rwNama && bin.rwNama !== "-" ? bin.rwNama : "RW -"}
-                                </span>
-                              </div>
-                            </div>
-                          </td>
-
-                          {/* 5. Status Operasional */}
-                          <td className="p-3.5">
-                            <div className="flex flex-col gap-1">
-                              <span
-                                className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold w-fit ${getStatusBadge(bin.status)}`}
-                              >
-                                <span
-                                  className={`w-2 h-2 rounded-full ${
-                                    (bin.status || "").includes("ACTIVE")
-                                      ? "bg-emerald-500 animate-pulse ring-2 ring-emerald-500/20"
-                                      : "bg-blue-500"
-                                  }`}
-                                />
-                                <span>{getStatusLabel(bin.status)}</span>
-                              </span>
-                              <span className="text-[10px] text-slate-400 dark:text-slate-500 pl-1">
-                                Siap Operasi &amp; Pemilahan
-                              </span>
-                            </div>
-                          </td>
-
-                          {/* 6. Tanggal & Jam Aktivasi */}
-                          <td className="p-3.5">
-                            <div className="flex flex-col gap-0.5">
-                              <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200">
-                                <Calendar size={12} className="text-slate-400 shrink-0" />
-                                <span>{tanggal}</span>
-                              </div>
-                              {jam && (
-                                <span className="text-[10.5px] text-slate-400 dark:text-slate-500 pl-4 font-mono">
-                                  {jam}
-                                </span>
-                              )}
-                            </div>
-                          </td>
-
-                          {/* 7. Navigasi Peta Google Maps */}
-                          <td className="p-3.5 pr-5 text-right">
-                            {hasCoords ? (
-                              <a
-                                href={`https://www.google.com/maps/search/?api=1&query=${latNum},${lngNum}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-600 dark:text-blue-300 text-[11px] font-bold transition cursor-pointer border border-blue-200 dark:border-blue-800/60"
-                                title={`Buka Titik Koordinat di Google Maps (${latNum}, ${lngNum})`}
-                              >
-                                <ExternalLink size={12} />
-                                <span>Peta</span>
-                              </a>
-                            ) : (
-                              <span className="text-slate-400 dark:text-slate-600 text-[10.5px] italic px-2">
-                                Tanpa GPS
-                              </span>
-                            )}
-                          </td>
-                        </tr>
+                          bin={bin}
+                          rowNumber={rowNumber}
+                          copiedQrId={copiedQrId}
+                          onCopyQr={handleCopyQr}
+                          onPreview={handlePreviewBin}
+                        />
                       );
                     })
                   )}
