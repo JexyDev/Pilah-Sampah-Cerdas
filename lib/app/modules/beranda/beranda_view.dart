@@ -1117,7 +1117,10 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                         ? wilayahList.join(' • ')
                         : 'Wilayah Warga');
 
-              final displayAddress = locState.address;
+              final registeredAddress = (user?.address ?? '').trim();
+              final displayAddress = (locState.address != null && locState.address!.isNotEmpty)
+                  ? locState.address
+                  : (registeredAddress.isNotEmpty ? registeredAddress : null);
 
               return UserLocationCard(
                 title: 'Titik Alamat Anda Sekarang',
