@@ -147,9 +147,13 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
       try {
         final kegiatanAktif = await kknRepo.getKegiatanAktif();
         for (final data in kegiatanAktif) {
+          final attStatus = data['attendanceStatus']?.toString() ?? '';
           if (data['status'] == 'SELESAI' ||
-              data['attendanceStatus'] == 'HADIR' ||
-              data['attendanceStatus'] == 'SELESAI') {
+              attStatus == 'HADIR' ||
+              attStatus == 'SELESAI' ||
+              attStatus == 'HADIR_MEMENUHI' ||
+              attStatus == 'HADIR_TIDAK_MEMENUHI' ||
+              attStatus == 'SELESAI_TELAT') {
             final title =
                 data['nama']?.toString() ??
                 data['namaKegiatan']?.toString() ??

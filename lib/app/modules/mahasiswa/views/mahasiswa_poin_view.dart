@@ -473,7 +473,7 @@ class _PoinHistoryItem extends StatelessWidget {
         : (isPenalty ? AppColors.dangerRed : AppColors.primaryGreen);
 
     String title = InputSanitizer.cleanSystemMessage(item.description);
-    title = title.replaceAll('Poin durasi harian terpenuhi', 'Poin kehadiran KKN (Check-Out)');
+    
     IconData icon = isPenalty
         ? Icons.warning_amber_rounded
         : Icons.check_circle_outline_rounded;
@@ -481,25 +481,20 @@ class _PoinHistoryItem extends StatelessWidget {
         ? AppColors.textSecondary
         : (isPenalty ? AppColors.dangerRed : AppColors.primaryGreen);
 
-    if (title.toLowerCase().contains('program kerja') || item.kategori == 'KKN_PROKER') {
+    if (item.kategori == 'KKN_PROKER' || title.toLowerCase().contains('program kerja')) {
       icon = Icons.emoji_events_rounded;
       iconColor = AppColors.primaryBlue;
     } else if (title.toLowerCase().contains('aktivasi')) {
-      title = 'Aktivasi Tempat Sampah Warga';
       icon = Icons.qr_code_scanner_rounded;
     } else if (title.toLowerCase().contains('pemanfaatan')) {
-      if (!title.toLowerCase().startsWith('laporan')) {
-        title = 'Laporan Pemanfaatan Sampah: $title';
-      }
       icon = Icons.recycling_rounded;
-    } else if (title.toLowerCase().contains('check-in') || title.toLowerCase().contains('kehadiran')) {
-      title = 'Poin Kehadiran KKN (Check-In)';
-      icon = Icons.login_rounded;
-    } else if (title.toLowerCase().contains('check-out') || title.toLowerCase().contains('durasi')) {
-      title = 'Poin Kehadiran Durasi (Check-Out)';
+    } else if (item.kategori == 'KKN_DURASI_MEMENUHI' || title.toLowerCase().contains('check-out') || title.toLowerCase().contains('durasi')) {
       icon = Icons.logout_rounded;
-    } else if (title.toLowerCase().contains('registrasi')) {
-      title = 'Bonus Registrasi Akun Mahasiswa KKN';
+    } else if (item.kategori == 'KKN_PRESENSI_HADIR' || title.toLowerCase().contains('check-in') || title.toLowerCase().contains('kehadiran')) {
+      icon = Icons.login_rounded;
+    } else if (item.kategori == 'KKN_LOGBOOK_HARIAN') {
+      icon = Icons.menu_book_rounded;
+    } else if (item.kategori == 'BONUS_LOGIN_PERTAMA' || title.toLowerCase().contains('registrasi')) {
       icon = Icons.card_giftcard_rounded;
     }
 
