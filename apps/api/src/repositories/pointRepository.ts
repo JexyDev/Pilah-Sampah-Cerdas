@@ -39,7 +39,11 @@ export class PointRepository {
    */
   async getHistoryByUserId(userId: string): Promise<PointHistory[]> {
     return db.pointHistory.findMany({
-      where: { userId },
+      where: {
+        userId,
+        kategori: { notIn: ["KKN_PROKER"] },
+        NOT: { description: { contains: "[ProkerID:" } },
+      },
       orderBy: { createdAt: "desc" },
     });
   }
