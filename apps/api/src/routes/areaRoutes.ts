@@ -52,8 +52,9 @@ router.get("/provinsi", async (req, res) => {
 
 router.post("/provinsi", async (req, res) => {
   try {
-    const { name, nama } = req.body;
+    const { name, nama, code, kode } = req.body;
     const provName = (name || nama || "").trim();
+    const provCode = (code || kode || "").trim() || undefined;
     if (!provName) {
       return res.status(400).json({ success: false, message: "Nama provinsi tidak boleh kosong" });
     }
@@ -64,7 +65,7 @@ router.post("/provinsi", async (req, res) => {
       return res.status(400).json({ success: false, message: `Provinsi "${provName}" sudah ada` });
     }
     const data = await prisma.provinsi.create({
-      data: { name: provName },
+      data: { name: provName, code: provCode },
     });
     res.json({ success: true, message: `Berhasil menambahkan provinsi ${provName}`, data });
   } catch (err: any) {
@@ -75,14 +76,17 @@ router.post("/provinsi", async (req, res) => {
 router.put("/provinsi/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, nama } = req.body;
+    const { name, nama, code, kode } = req.body;
     const provName = (name || nama || "").trim();
-    if (!provName) {
-      return res.status(400).json({ success: false, message: "Nama provinsi tidak boleh kosong" });
+    const updateData: any = {};
+    if (provName) updateData.name = provName;
+    if (code !== undefined || kode !== undefined) updateData.code = (code || kode || "").trim() || null;
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ success: false, message: "Tidak ada data yang diperbarui" });
     }
     const data = await prisma.provinsi.update({
       where: { id: Number(id) },
-      data: { name: provName },
+      data: updateData,
     });
     res.json({ success: true, message: "Provinsi berhasil diperbarui", data });
   } catch (err: any) {
@@ -124,7 +128,7 @@ router.get("/kabupaten", async (req, res) => {
     if (provinsiId) where.provinsiId = Number(provinsiId);
     let data = await prisma.kabupaten.findMany({
       where,
-      include: { provinsi: { select: { id: true, name: true } } },
+      include: { provinsi: { select: { id: true, name: true, code: true } } },
       orderBy: { name: "asc" },
     });
     if (data.length === 0) {
@@ -142,7 +146,7 @@ router.get("/kabupaten", async (req, res) => {
       });
       data = await prisma.kabupaten.findMany({
         where,
-        include: { provinsi: { select: { id: true, name: true } } },
+        include: { provinsi: { select: { id: true, name: true, code: true } } },
         orderBy: { name: "asc" },
       });
     }
@@ -154,8 +158,9 @@ router.get("/kabupaten", async (req, res) => {
 
 router.post("/kabupaten", async (req, res) => {
   try {
-    const { name, nama, provinsiId, id_provinsi } = req.body;
+    const { name, nama, provinsiId, id_provinsi, code, kode } = req.body;
     const kabName = (name || nama || "").trim();
+    const kabCode = (code || kode || "").trim() || undefined;
     const pId = Number(provinsiId || id_provinsi);
     if (!kabName) {
       return res
@@ -187,8 +192,9 @@ router.post("/kabupaten", async (req, res) => {
       data: {
         name: kabName,
         provinsiId: targetProvId,
+        code: kabCode,
       },
-      include: { provinsi: { select: { id: true, name: true } } },
+      include: { provinsi: { select: { id: true, name: true, code: true } } },
     });
     res.json({ success: true, message: `Berhasil menambahkan ${kabName}`, data });
   } catch (err: any) {
@@ -199,15 +205,16 @@ router.post("/kabupaten", async (req, res) => {
 router.put("/kabupaten/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, nama, provinsiId, id_provinsi } = req.body;
+    const { name, nama, provinsiId, id_provinsi, code, kode } = req.body;
     const kabName = (name || nama || "").trim();
     const updateData: any = {};
     if (kabName) updateData.name = kabName;
     if (provinsiId || id_provinsi) updateData.provinsiId = Number(provinsiId || id_provinsi);
+    if (code !== undefined || kode !== undefined) updateData.code = (code || kode || "").trim() || null;
     const data = await prisma.kabupaten.update({
       where: { id: Number(id) },
       data: updateData,
-      include: { provinsi: { select: { id: true, name: true } } },
+      include: { provinsi: { select: { id: true, name: true, code: true } } },
     });
     res.json({ success: true, message: "Kota/Kabupaten berhasil diperbarui", data });
   } catch (err: any) {
@@ -275,7 +282,7 @@ router.get("/kecamatan", async (req, res) => {
       include: {
         kabupaten: {
           include: {
-            provinsi: { select: { id: true, name: true } },
+            provinsi: { select: { id: true, name: true, code: true } },
           },
         },
         kelurahans: {
@@ -316,8 +323,9 @@ router.get("/kecamatan", async (req, res) => {
 
 router.post("/kecamatan", async (req, res) => {
   try {
-    const { name, nama, kabupatenId, id_kabupaten } = req.body;
+    const { name, nama, kabupatenId, id_kabupaten, code, kode } = req.body;
     const kecName = (name || nama || "").trim();
+    const kecCode = (code || kode || "").trim() || undefined;
     const kId = Number(kabupatenId || id_kabupaten);
     if (!kecName) {
       return res.status(400).json({ success: false, message: "Nama Kecamatan tidak boleh kosong" });
@@ -356,10 +364,11 @@ router.post("/kecamatan", async (req, res) => {
       data: {
         name: kecName,
         kabupatenId: targetKabId,
+        code: kecCode,
       },
       include: {
         kabupaten: {
-          include: { provinsi: { select: { id: true, name: true } } },
+          include: { provinsi: { select: { id: true, name: true, code: true } } },
         },
       },
     });
@@ -372,18 +381,19 @@ router.post("/kecamatan", async (req, res) => {
 router.put("/kecamatan/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, nama, kabupatenId, id_kabupaten } = req.body;
+    const { name, nama, kabupatenId, id_kabupaten, code, kode } = req.body;
     const kecName = (name || nama || "").trim();
     const updateData: any = {};
     if (kecName) updateData.name = kecName;
     if (kabupatenId || id_kabupaten) updateData.kabupatenId = Number(kabupatenId || id_kabupaten);
+    if (code !== undefined || kode !== undefined) updateData.code = (code || kode || "").trim() || null;
 
     const data = await prisma.kecamatan.update({
       where: { id: Number(id) },
       data: updateData,
       include: {
         kabupaten: {
-          include: { provinsi: { select: { id: true, name: true } } },
+          include: { provinsi: { select: { id: true, name: true, code: true } } },
         },
       },
     });
@@ -483,7 +493,7 @@ router.get("/kelurahan", async (req, res) => {
         kecamatan: {
           include: {
             kabupaten: {
-              include: { provinsi: { select: { id: true, name: true } } },
+              include: { provinsi: { select: { id: true, name: true, code: true } } },
             },
           },
         },
@@ -498,7 +508,7 @@ router.get("/kelurahan", async (req, res) => {
         include: {
           kabupaten: {
             include: {
-              provinsi: { select: { id: true, name: true } },
+              provinsi: { select: { id: true, name: true, code: true } },
             },
           },
         },
@@ -550,8 +560,9 @@ router.get("/kelurahan", async (req, res) => {
 
 router.post("/kelurahan", async (req, res) => {
   try {
-    const { name, nama, kecamatanId, id_kecamatan } = req.body;
+    const { name, nama, kecamatanId, id_kecamatan, code, kode } = req.body;
     const kelName = (name || nama || "").trim();
+    const kelCode = (code || kode || "").trim() || undefined;
     const kId = Number(kecamatanId || id_kecamatan);
     if (!kelName) {
       return res.status(400).json({ success: false, message: "Nama Kelurahan tidak boleh kosong" });
@@ -600,12 +611,13 @@ router.post("/kelurahan", async (req, res) => {
       data: {
         name: kelName,
         kecamatanId: targetKecId,
+        code: kelCode,
       },
       include: {
         kecamatan: {
           include: {
             kabupaten: {
-              include: { provinsi: { select: { id: true, name: true } } },
+              include: { provinsi: { select: { id: true, name: true, code: true } } },
             },
           },
         },
@@ -620,11 +632,12 @@ router.post("/kelurahan", async (req, res) => {
 router.put("/kelurahan/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, nama, kecamatanId, id_kecamatan } = req.body;
+    const { name, nama, kecamatanId, id_kecamatan, code, kode } = req.body;
     const kelName = (name || nama || "").trim();
     const updateData: any = {};
     if (kelName) updateData.name = kelName;
     if (kecamatanId || id_kecamatan) updateData.kecamatanId = Number(kecamatanId || id_kecamatan);
+    if (code !== undefined || kode !== undefined) updateData.code = (code || kode || "").trim() || null;
 
     const data = await prisma.kelurahan.update({
       where: { id: String(id) },
@@ -633,7 +646,7 @@ router.put("/kelurahan/:id", async (req, res) => {
         kecamatan: {
           include: {
             kabupaten: {
-              include: { provinsi: { select: { id: true, name: true } } },
+              include: { provinsi: { select: { id: true, name: true, code: true } } },
             },
           },
         },
@@ -818,7 +831,7 @@ router.post("/rw", async (req, res) => {
               kecamatan: {
                 include: {
                   kabupaten: {
-                    include: { provinsi: { select: { id: true, name: true } } },
+                    include: { provinsi: { select: { id: true, name: true, code: true } } },
                   },
                 },
               },
