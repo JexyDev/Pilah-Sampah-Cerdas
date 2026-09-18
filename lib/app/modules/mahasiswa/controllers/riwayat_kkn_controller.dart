@@ -364,7 +364,7 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
           if (kat == 'KKN_PRESENSI_HADIR' || kat == 'KKN_DURASI_MEMENUHI') {
             final isCheckIn = kat == 'KKN_PRESENSI_HADIR';
             // Hindari duplikasi teks "Poin" di tab non-poin
-            final title = log.description.replaceAll(RegExp(r'(?i)Poin '), ''); 
+            final title = log.description.replaceAll(RegExp(r'Poin ', caseSensitive: false), ''); 
             parsedLogs.add(
               KknHistoryLog(
                 title: title,
