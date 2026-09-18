@@ -170,23 +170,7 @@ export class KknService {
     });
 
     if (!student && !isSuperOrAdmin) {
-      if (user) {
-        student = await prisma.studentKkn.create({
-          data: {
-            userId,
-            nim: "1012" + Math.floor(1000 + Math.random() * 9000).toString(),
-            jurusan: "Teknik Lingkungan",
-            fakultas: "FTSL",
-            noWa: user.phone || "-",
-            startDate: new Date(),
-            endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-            whitelistStatus: "APPROVED",
-          },
-          include: { assignedRw: true },
-        });
-      } else {
-        throw new Error("STUDENT_NOT_FOUND");
-      }
+      throw new Error("STUDENT_NOT_FOUND");
     }
 
     // Total registered bins
