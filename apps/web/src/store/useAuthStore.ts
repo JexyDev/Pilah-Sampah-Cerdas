@@ -258,6 +258,21 @@ const getInitialUser = (): User | null => {
       }
     }
 
+    // Bersihkan availableRoles liar jika ada cache lama dari sesi sebelumnya
+    if (user && user.peran) {
+      const normPeran = normalizeRole(user.peran);
+      const isPimpinanOrDpl = normPeran === "PIMPINAN" || normPeran === "DPL";
+      if (!isPimpinanOrDpl) {
+        if (
+          user.availableRoles &&
+          (user.availableRoles.length > 1 || user.availableRoles[0] !== normPeran)
+        ) {
+          user.availableRoles = [normPeran];
+          modified = true;
+        }
+      }
+    }
+
     if (modified) {
       const storage = getActiveStorage();
       storage.setItem("psc_user", JSON.stringify(user));
@@ -351,7 +366,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         phone: backendUser.phone,
         address: backendUser.address,
         rtRwId: backendUser.rtRwId,
-        availableRoles: backendUser.availableRoles || [normalizedRole],
+        availableRoles:
+          normalizedRole === "PIMPINAN" || normalizedRole === "DPL"
+            ? (backendUser.availableRoles || [normalizedRole])
+            : [normalizedRole],
         ...avatarConfig,
       };
 
@@ -431,6 +449,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         phone: backendUser.phone,
         address: backendUser.address,
         rtRwId: backendUser.rtRwId,
+        availableRoles:
+          normalizedRole === "PIMPINAN" || normalizedRole === "DPL"
+            ? (backendUser.availableRoles || [normalizedRole])
+            : [normalizedRole],
         ...avatarConfig,
       };
 

@@ -47,7 +47,13 @@ export const RoleSwitcher: React.FC = () => {
   const hasPimpinanRole = availableRoles.some((r: string) => ["PIMPINAN", "PEMIMPIN"].includes(r));
   const hasDplRole = availableRoles.some((r: string) => ["DPL", "DOSEN_PEMBIMBING"].includes(r));
 
-  // Jika akun bukan peran ganda Pimpinan & DPL, jangan tampilkan switcher
+  // 1. Guard Mutlak: Peran aktif saat ini HARUS Pimpinan atau DPL.
+  // Akun Developer, Super User, RW, Warga, Mahasiswa, dsb. dilarang keras melihat tombol ini.
+  if (!isPimpinan && !isDpl) {
+    return null;
+  }
+
+  // 2. Akun harus memiliki kedua peran (Pimpinan & DPL)
   if (!(hasPimpinanRole && hasDplRole)) {
     return null;
   }
