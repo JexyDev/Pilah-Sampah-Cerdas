@@ -1932,6 +1932,24 @@ export class KknAttendanceService {
       })
       .catch((err) => console.warn("[Audit] Presensi masuk log error:", err));
 
+    if (!isAutoAlpa) {
+      const nowWib = new Date(Date.now() + 7 * 60 * 60 * 1000);
+      const timeStr = `${String(nowWib.getUTCHours()).padStart(2, "0")}:${String(nowWib.getUTCMinutes()).padStart(2, "0")}`;
+      notificationIntegrationService
+        .sendToUser({
+          userId: studentId,
+          title: "Check-In Berhasil! 📍",
+          message: `Presensi masuk KKN (${actLoc?.title || scheduleId}) berhasil dicatat pada pukul ${timeStr} WIB. Anda mendapatkan +4 PTS.`,
+          triggerType: "CHECKIN_HADIR",
+          dataPayload: {
+            attendanceId: attendance.id,
+            scheduleId,
+            click_action: "FLUTTER_NOTIFICATION_CLICK",
+          },
+        })
+        .catch((err) => console.warn("[FCM] Gagal mengirim notif checkin:", err));
+    }
+
     return {
       ...attendance,
       namaMahasiswa: finalNama,
@@ -2352,6 +2370,21 @@ export class KknAttendanceService {
           },
         });
       }
+
+      // Broadcast Notifikasi Lonceng & Push FCM ke Mahasiswa
+      notificationIntegrationService
+        .sendToUser({
+          userId: studentId,
+          title: "Pemenuhan Waktu Tercatat! ⏱️",
+          message: `Durasi kerja harian terpenuhi (${Math.floor(durationMinutes)} menit). Anda mendapatkan +3 PTS.`,
+          triggerType: "CHECKOUT_MEMENUHI",
+          dataPayload: {
+            attendanceId: updated.id,
+            scheduleId: updated.scheduleId,
+            click_action: "FLUTTER_NOTIFICATION_CLICK",
+          },
+        })
+        .catch((err) => console.warn("[FCM] Gagal mengirim notif checkout:", err));
     }
     websocketService.broadcastStudentCheckout({
       attendanceId: updated.id,
@@ -4457,6 +4490,23 @@ export class KknAttendanceService {
           nim: student.nim,
         })
         .catch((err) => console.warn("[Audit] Presensi masuk log error:", err));
+
+      // Broadcast Notifikasi Lonceng & Push FCM ke Mahasiswa
+      const nowWib = new Date(Date.now() + 7 * 60 * 60 * 1000);
+      const timeStr = `${String(nowWib.getUTCHours()).padStart(2, "0")}:${String(nowWib.getUTCMinutes()).padStart(2, "0")}`;
+      notificationIntegrationService
+        .sendToUser({
+          userId: studentUserId,
+          title: "Check-In Berhasil! 📍",
+          message: `Presensi masuk KKN (${schedule.title || "Kegiatan"}) berhasil dicatat pada pukul ${timeStr} WIB. Anda mendapatkan +4 PTS.`,
+          triggerType: "CHECKIN_HADIR",
+          dataPayload: {
+            attendanceId: attendance.id,
+            scheduleId: schedule.id,
+            click_action: "FLUTTER_NOTIFICATION_CLICK",
+          },
+        })
+        .catch((err) => console.warn("[FCM] Gagal mengirim notif checkin:", err));
     }
 
     // Notifikasi khusus ke Web DPL jika mahasiswa presensi di PRESENSI POSKO UNIKOM (Strict by DPL ID)
