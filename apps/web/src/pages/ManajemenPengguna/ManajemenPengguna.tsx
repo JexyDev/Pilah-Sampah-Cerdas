@@ -1765,7 +1765,7 @@ const ManajemenPengguna: React.FC = () => {
                           }`} />
                           {u.status || "Aktif"}
                         </span>
-                        {Boolean(u.isTestAccount) && (
+                        {user?.peran === "DEVELOPER" && Boolean(u.isTestAccount) && (
                           <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60">
                             TEST
                           </span>
@@ -1917,7 +1917,7 @@ const ManajemenPengguna: React.FC = () => {
                     }`}>
                       {u.status || "Aktif"}
                     </span>
-                    {Boolean(u.isTestAccount) && (
+                    {user?.peran === "DEVELOPER" && Boolean(u.isTestAccount) && (
                       <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-black uppercase bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60">
                         TEST
                       </span>
@@ -2981,7 +2981,7 @@ const ManajemenPengguna: React.FC = () => {
                               </p>
                             )}
 
-                            {(user?.peran === "DEVELOPER" || user?.peran === "SUPER_USER") && (
+                            {user?.peran === "DEVELOPER" && (
                               <div className="bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 p-3 rounded-2xl flex items-center justify-between mt-3 shadow-2xs">
                                 <div className="pr-3">
                                   <p className="text-xs font-bold text-amber-900 dark:text-amber-200">Tandai Akun Pengujian (Test Dev)</p>
