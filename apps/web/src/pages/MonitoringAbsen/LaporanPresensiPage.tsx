@@ -151,6 +151,7 @@ export const LaporanPresensiPage: React.FC = () => {
   const isDpl = roleName === "DPL" || roleName === "DOSEN_PEMBIMBING";
   const isMpl = roleName === "MPL" || roleName.includes("MITRA");
   const isDeveloper = roleName === "DEVELOPER" || roleName === "SUPER_USER";
+  const isStrictDeveloper = roleName === "DEVELOPER" || roleName === "DEV";
 
   // Tab View Mode: Rekap Mahasiswa (Total Akumulasi) vs Log Presensi Detail
   const [activeTab, setActiveTab] = useState<"REKAP_MAHASISWA" | "LOG_DETAIL">("REKAP_MAHASISWA");
@@ -239,7 +240,7 @@ export const LaporanPresensiPage: React.FC = () => {
       if (selectedKelompok && selectedKelompok !== "ALL") {
         params.kelompokId = selectedKelompok;
       }
-      if (isDeveloper && includeTestAccounts) {
+      if (isStrictDeveloper && includeTestAccounts) {
         params.includeTestAccounts = "true";
       }
       const res = await api.get("/laporan-rekap", { params });
@@ -651,7 +652,7 @@ export const LaporanPresensiPage: React.FC = () => {
       if (debouncedSearchQuery.trim()) {
         params.search = debouncedSearchQuery.trim();
       }
-      if (isDeveloper && includeTestAccounts) {
+      if (isStrictDeveloper && includeTestAccounts) {
         params.includeTestAccounts = "true";
       }
 
@@ -1393,10 +1394,10 @@ export const LaporanPresensiPage: React.FC = () => {
 
           {/* 6. Actions: Reset & Ekspor */}
           <div className="flex items-end gap-2 shrink-0">
-            {isDeveloper && (
+            {isStrictDeveloper && (
               <label
                 className="h-10 px-3 text-xs font-bold rounded-xl border border-amber-300 dark:border-amber-700/60 bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs select-none shrink-0"
-                title="Khusus Developer/Super User: Tampilkan akun pengujian di rekap laporan"
+                title="Khusus Developer: Tampilkan akun pengujian di rekap laporan"
               >
                 <input
                   type="checkbox"
