@@ -2,11 +2,13 @@ import { describe, it, expect } from "vitest";
 import {
   isTestOrDummyString,
   isTestUser,
+  isTestDpl,
   isTestKelompok,
   isTestStudent,
   isTestPosko,
   isTestProker,
   filterNonTestUsers,
+  filterNonTestDpl,
   filterNonTestKelompok,
   filterNonTestStudents,
   filterNonTestPosko,
@@ -47,6 +49,20 @@ describe("filterTestingUtils (Default Active Anti-Test Governance)", () => {
     it("should return false for real users", () => {
       expect(isTestUser({ name: "Muhammad Aksan Ipaenin, S.T. M.Sc", email: "aksan@berseka.id", phone: "+628122334455" })).toBe(false);
       expect(isTestUser(null)).toBe(false);
+    });
+  });
+
+  describe("isTestDpl", () => {
+    it("should detect test DPL by various field names and dummy phones", () => {
+      expect(isTestDpl({ dplName: "Dpl Test" })).toBe(true);
+      expect(isTestDpl({ nama: "Dosen Penguji (Testing)" })).toBe(true);
+      expect(isTestDpl({ phone: "0812345678900" })).toBe(true);
+      expect(isTestDpl({ isTestAccount: true })).toBe(true);
+    });
+
+    it("should allow legitimate real DPL", () => {
+      expect(isTestDpl({ name: "Dr. Budi Santoso, M.T.", email: "budi@unikom.ac.id" })).toBe(false);
+      expect(isTestDpl(null)).toBe(false);
     });
   });
 
