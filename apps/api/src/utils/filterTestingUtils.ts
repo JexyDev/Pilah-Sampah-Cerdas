@@ -87,6 +87,33 @@ export function isTestUser(
 }
 
 /**
+ * Memeriksa apakah data DPL (Dosen Pembimbing Lapangan) merupakan akun uji coba/dummy
+ */
+export function isTestDpl(
+  dpl?:
+    | {
+        id?: string | null;
+        name?: string | null;
+        nama?: string | null;
+        dplName?: string | null;
+        dplNama?: string | null;
+        email?: string | null;
+        nip?: string | null;
+        phone?: string | null;
+        isTestAccount?: boolean | null;
+      }
+    | string
+    | null
+): boolean {
+  if (!dpl) return false;
+  if (typeof dpl === "string") return isTestOrDummyString(dpl);
+  if (dpl.isTestAccount) return true;
+  if (isTestUser(dpl)) return true;
+  if (isTestOrDummyString(dpl.nama || dpl.name || dpl.dplNama || dpl.dplName)) return true;
+  return false;
+}
+
+/**
  * Memeriksa apakah data Kelompok KKN merupakan kelompok uji coba/dummy
  */
 export function isTestKelompok(
@@ -239,6 +266,15 @@ export function filterNonTestUsers<T extends { name?: string | null; email?: str
   list: T[]
 ): T[] {
   return list.filter((u) => !isTestUser(u));
+}
+
+/**
+ * Helper array filter untuk DPL
+ */
+export function filterNonTestDpl<T extends { name?: string | null; nama?: string | null; email?: string | null; nip?: string | null }>(
+  list: T[]
+): T[] {
+  return list.filter((d) => !isTestDpl(d));
 }
 
 /**

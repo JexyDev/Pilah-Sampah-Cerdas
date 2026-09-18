@@ -172,8 +172,8 @@ const ProtectedRoute: React.FC<{
           ((user.peran === "DOSEN_PEMBIMBING" || user.peran === "DPL") &&
             (allowedRoles.includes("DPL") || (allowedRoles as any).includes("DOSEN_PEMBIMBING"))) ||
           ((user.peran === "MPL" ||
-            user.peran === "MITRA_PEMBIMBING_LAPANGAN" ||
-            user.peran === "MITRA_PENDAMPING_LAPANGAN" ||
+            (user.peran as string) === "MITRA_PEMBIMBING_LAPANGAN" ||
+            (user.peran as string) === "MITRA_PENDAMPING_LAPANGAN" ||
             (user.peran as string) === "MITRA") &&
             (allowedRoles.includes("MPL") ||
               (allowedRoles as any).includes("MITRA_PEMBIMBING_LAPANGAN") ||
@@ -203,8 +203,8 @@ const ProtectedRoute: React.FC<{
     ) &&
     !(
       (user.peran === "MPL" ||
-        user.peran === "MITRA_PEMBIMBING_LAPANGAN" ||
-        user.peran === "MITRA_PENDAMPING_LAPANGAN" ||
+        (user.peran as string) === "MITRA_PEMBIMBING_LAPANGAN" ||
+        (user.peran as string) === "MITRA_PENDAMPING_LAPANGAN" ||
         (user.peran as string) === "MITRA") &&
       (allowedRoles.includes("MPL") ||
         (allowedRoles as any).includes("MITRA_PEMBIMBING_LAPANGAN") ||
@@ -1182,11 +1182,8 @@ const AppRoutes: React.FC = () => {
                 "DOSEN_PEMBIMBING",
                 "DOSEN_PENDAMPING",
                 "MPL",
-                "MITRA_PEMBIMBING_LAPANGAN",
-                "MITRA_PENDAMPING_LAPANGAN",
-                "MITRA",
                 "WARGA",
-              ]}
+              ] as UserRole[]}
             >
               <Pengaturan />
             </ProtectedRoute>
