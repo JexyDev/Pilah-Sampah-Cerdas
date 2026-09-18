@@ -1450,6 +1450,32 @@ export class UserService {
       onboardingComplete,
     };
   }
+
+  async registerKomunitas(userId: string) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new Error("USER_NOT_FOUND");
+    
+    if (user.komunitasId) {
+      return user.komunitasId;
+    }
+
+    const { generateKomunitasId } = await import("../utils/komunitasHelper.js");
+    let newId = "";
+    let isUnique = false;
+    
+    while (!isUnique) {
+      newId = generateKomunitasId();
+      const existing = await prisma.user.findUnique({ where: { komunitasId: newId } });
+      if (!existing) isUnique = true;
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { komunitasId: newId },
+    });
+
+    return newId;
+  }
 }
 
 export const userService = new UserService();
