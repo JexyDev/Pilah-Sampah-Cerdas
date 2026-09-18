@@ -257,9 +257,17 @@ export class AuthService {
           anyUser.petugasProfile?.assignedZone ||
           (rwName ? `${rwName}, Kel. ${kelurahanName || "Coblong"}` : "Kecamatan Coblong"),
         availableRoles: (() => {
+          const isPimpinanOrDpl =
+            ["PIMPINAN", "PEMIMPIN", "DPL", "DOSEN_PEMBIMBING"].includes(userRoleName);
+          if (!isPimpinanOrDpl) {
+            return [userRoleName];
+          }
           const userRoleNames = (anyUser.userRoles || []).map((ur: any) => ur.role?.name).filter(Boolean);
           const roleSet = new Set<string>([userRoleName, ...userRoleNames].filter(Boolean));
-          return Array.from(roleSet);
+          const validSwitchRoles = Array.from(roleSet).filter((r) =>
+            ["PIMPINAN", "PEMIMPIN", "DPL", "DOSEN_PEMBIMBING"].includes(r)
+          );
+          return validSwitchRoles.length > 0 ? validSwitchRoles : [userRoleName];
         })(),
       },
     };
@@ -756,9 +764,17 @@ export class AuthService {
       pendamping,
       pendampingName: pendamping?.name || null,
       availableRoles: (() => {
+        const isPimpinanOrDpl =
+          ["PIMPINAN", "PEMIMPIN", "DPL", "DOSEN_PEMBIMBING"].includes(roleName);
+        if (!isPimpinanOrDpl) {
+          return [roleName];
+        }
         const userRoleNames = ((user as any).userRoles || []).map((ur: any) => ur.role?.name).filter(Boolean);
         const roleSet = new Set<string>([user.role?.name, ...userRoleNames].filter(Boolean));
-        return Array.from(roleSet);
+        const validSwitchRoles = Array.from(roleSet).filter((r) =>
+          ["PIMPINAN", "PEMIMPIN", "DPL", "DOSEN_PEMBIMBING"].includes(r)
+        );
+        return validSwitchRoles.length > 0 ? validSwitchRoles : [roleName];
       })(),
     };
   }
@@ -1340,6 +1356,16 @@ export class AuthService {
     }
 
     // 2. Validasi apakah pengguna berhak beralih ke peran tersebut
+    // Switch role HANYA diizinkan antar Pimpinan dan DPL (tidak untuk role lain)
+    const isTargetPimpinanOrDpl = ["PIMPINAN", "PEMIMPIN", "DPL", "DOSEN_PEMBIMBING"].includes(cleanTargetRole);
+    const isCurrentPimpinanOrDpl = ["PIMPINAN", "PEMIMPIN", "DPL", "DOSEN_PEMBIMBING"].includes(
+      currentPrimaryRole?.toUpperCase() || ""
+    );
+
+    if (!isTargetPimpinanOrDpl || !isCurrentPimpinanOrDpl) {
+      throw new Error("ROLE_NOT_PERMITTED");
+    }
+
     const userSecondaryRoleNames = ((user as any).userRoles || []).map((ur: any) =>
       String(ur.role?.name || "").toUpperCase()
     );
