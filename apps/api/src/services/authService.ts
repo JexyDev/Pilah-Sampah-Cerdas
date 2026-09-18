@@ -222,7 +222,7 @@ export class AuthService {
     // Mahasiswa KKN tidak lagi mendapatkan poin pada saat login pertama kali.
 
     // Aggregate user points via centralized anti-leak function (SSOT)
-    const totalPoints = await calculateValidIndividualPoints(user.id);
+    const totalPoints = await calculateValidIndividualPoints(user.id, userRoleName);
 
     const lifecycleState = (user as any).lifecycleState || "REGISTERED";
     const isRegisteredWarga = userRoleName === "WARGA" && lifecycleState === "REGISTERED";
@@ -690,7 +690,7 @@ export class AuthService {
       "Coblong";
 
     // Aggregate user points via centralized anti-leak function (SSOT)
-    const totalPoints = await calculateValidIndividualPoints(user.id);
+    const totalPoints = await calculateValidIndividualPoints(user.id, roleName);
 
     const resolvedKelurahan = kelurahanName || "";
     const resolvedRw =
