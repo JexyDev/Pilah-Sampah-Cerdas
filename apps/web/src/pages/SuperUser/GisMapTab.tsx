@@ -37,7 +37,6 @@ import {
   Trash2,
   Leaf,
   Phone,
-  BarChart3,
 } from "lucide-react";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
@@ -82,14 +81,6 @@ export interface GisFacility {
   foto?: string | null;
 }
 
-export interface ComplianceData {
-  kelurahan: string;
-  totalBin: number;
-  binAktif: number;
-  persentaseAktif: number;
-  tingkat: "TINGGI" | "SEDANG" | "RENDAH";
-  warna: string;
-}
 
 // ── Helper Format WhatsApp ───────────────────────────────────────────────────
 const formatWhatsAppUrl = (phone?: string | null): string => {
@@ -143,7 +134,6 @@ export const GisMapTab: React.FC = () => {
   const [selectedJenis, setSelectedJenis] = useState<string>("ALL");
 
   const [facilities, setFacilities] = useState<GisFacility[]>([]);
-  const [compliance, setCompliance] = useState<ComplianceData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -170,21 +160,11 @@ export const GisMapTab: React.FC = () => {
         params.rw = rwInput.trim();
       }
 
-      const [facilRes, compRes] = await Promise.allSettled([
-        api.get("/dashboard/kkn-executive/gis/facilities", { params }),
-        api.get("/dashboard/kkn-executive/gis/compliance-overlay", { params }),
-      ]);
-
-      if (facilRes.status === "fulfilled" && facilRes.value.data?.success) {
-        setFacilities(facilRes.value.data.data || []);
+      const res = await api.get("/dashboard/kkn-executive/gis/facilities", { params });
+      if (res.data?.success) {
+        setFacilities(res.data.data || []);
       } else {
         setFacilities([]);
-      }
-
-      if (compRes.status === "fulfilled" && compRes.value.data?.success) {
-        setCompliance(compRes.value.data.data || []);
-      } else {
-        setCompliance([]);
       }
     } catch (err: unknown) {
       console.error("GIS fetch error:", err);
@@ -958,92 +938,7 @@ export const GisMapTab: React.FC = () => {
         </div>
       </div>
 
-      {/* ── PANEL TINGKAT KEPATUHAN PER KELURAHAN ───────────────────────────── */}
-      {compliance.length > 0 && (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-xs space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950 text-indigo-600 flex items-center justify-center">
-                <BarChart3 size={17} />
-              </div>
-              <div>
-                <h3 className="text-sm font-black text-slate-900 dark:text-slate-100">
-                  Tingkat Kepatuhan Aktivasi Tempat Sampah per Kelurahan
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Perbandingan tempat sampah teraktivasi terhadap total unit di setiap kelurahan
-                </p>
-              </div>
-            </div>
-            <span className="text-[11px] font-bold text-slate-500">
-              Cakupan {compliance.length} Kelurahan
-            </span>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-            {compliance.map((row) => {
-              const persentase = Math.min(100, Math.max(0, row.persentaseAktif));
-              const isTinggi = row.tingkat === "TINGGI";
-              const isSedang = row.tingkat === "SEDANG";
-
-              const borderClass = isTinggi
-                ? "border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/20 dark:bg-emerald-950/10"
-                : isSedang
-                ? "border-amber-200 dark:border-amber-800/60 bg-amber-50/20 dark:bg-amber-950/10"
-                : "border-rose-200 dark:border-rose-800/60 bg-rose-50/20 dark:bg-rose-950/10";
-
-              const badgeClass = isTinggi
-                ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300"
-                : isSedang
-                ? "bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300"
-                : "bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300";
-
-              const barColor = isTinggi ? "bg-emerald-500" : isSedang ? "bg-amber-500" : "bg-rose-500";
-
-              return (
-                <div
-                  key={row.kelurahan}
-                  className={`p-4 rounded-2xl border ${borderClass} transition hover:shadow-xs flex flex-col justify-between`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-extrabold text-sm text-slate-900 dark:text-slate-100">
-                      Kel. {row.kelurahan}
-                    </span>
-                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${badgeClass}`}>
-                      {row.tingkat}
-                    </span>
-                  </div>
-
-                  {/* Progress Bar */}
-                  <div className="space-y-1.5 my-2">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-slate-500 font-medium">Tingkat Aktivasi</span>
-                      <span className="font-black text-slate-900 dark:text-slate-100">
-                        {persentase.toFixed(1)}%
-                      </span>
-                    </div>
-                    <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-500 ${barColor}`}
-                        style={{ width: `${persentase}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500">
-                    <span>
-                      Aktif: <strong className="text-slate-800 dark:text-slate-200">{row.binAktif}</strong>
-                    </span>
-                    <span>
-                      Total: <strong className="text-slate-800 dark:text-slate-200">{row.totalBin}</strong> unit
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {/* ── Photo Preview Modal ──────────────────────────────────────────────── */}
       {previewPhoto && (
