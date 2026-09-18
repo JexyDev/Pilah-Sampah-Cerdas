@@ -31,6 +31,18 @@ export function isTestOrDummyString(str?: string | null): boolean {
   return TEST_KEYWORDS.some((kw) => lower.includes(kw));
 }
 
+const TEST_PHONES = [
+  "+628111111111",
+  "+628111111112",
+  "+628111111113",
+  "+628111111114",
+  "+628111111115",
+  "+628111111116",
+  "+628111111117",
+  "+628111111118",
+  "+62812001001",
+];
+
 /**
  * Memeriksa apakah data User (DPL, Mahasiswa, Warga, Petugas) merupakan akun uji coba/dummy
  */
@@ -42,12 +54,15 @@ export function isTestUser(
         email?: string | null;
         nip?: string | null;
         phone?: string | null;
+        isTestAccount?: boolean | null;
       }
     | string
     | null
 ): boolean {
   if (!user) return false;
   if (typeof user === "string") return isTestOrDummyString(user);
+  if (user.isTestAccount) return true;
+  if (user.phone && TEST_PHONES.includes(user.phone)) return true;
   if (isTestOrDummyString(user.name)) return true;
   if (isTestOrDummyString(user.email)) return true;
   if (isTestOrDummyString(user.nip)) return true;
@@ -127,4 +142,20 @@ export function filterNonTestStudents<T extends { nim?: string | null; name?: st
   list: T[]
 ): T[] {
   return list.filter((s) => !isTestStudent(s));
+}
+
+/**
+ * Helper Prisma where clause untuk mengecualikan akun testing
+ */
+export function getNonTestUserWhere(includeTestAccounts?: boolean) {
+  if (includeTestAccounts) return {};
+  return { isTestAccount: false };
+}
+
+/**
+ * Helper Prisma where clause untuk StudentKkn mengecualikan akun testing
+ */
+export function getNonTestStudentWhere(includeTestAccounts?: boolean) {
+  if (includeTestAccounts) return {};
+  return { user: { isTestAccount: false } };
 }

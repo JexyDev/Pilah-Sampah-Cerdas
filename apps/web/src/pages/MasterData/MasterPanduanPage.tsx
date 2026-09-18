@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import api from "../../services/api";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { Pagination } from "../../components/common/Pagination";
+import { sortChronologicalList } from "../../utils/sortUtils";
 
 export interface PanduanItem {
   id: string;
@@ -63,7 +64,7 @@ export const MasterPanduanPage: React.FC = () => {
         params: selectedRoleFilter !== "ALL" ? { kategoriRole: selectedRoleFilter } : undefined,
       });
       if (res.data?.success && Array.isArray(res.data.data)) {
-        setPanduanList(res.data.data);
+        setPanduanList(sortChronologicalList(res.data.data, (item) => item.createdAt, "desc"));
       }
     } catch (err: any) {
       console.error("Gagal memuat buku panduan:", err);
@@ -78,12 +79,13 @@ export const MasterPanduanPage: React.FC = () => {
   }, [selectedRoleFilter]);
 
   const filteredData = useMemo(() => {
-    return panduanList.filter((item) => {
+    const list = panduanList.filter((item) => {
       const matchSearch =
         item.judul.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (item.deskripsi && item.deskripsi.toLowerCase().includes(searchTerm.toLowerCase()));
       return matchSearch;
     });
+    return sortChronologicalList(list, (item) => item.createdAt, "desc");
   }, [panduanList, searchTerm]);
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);

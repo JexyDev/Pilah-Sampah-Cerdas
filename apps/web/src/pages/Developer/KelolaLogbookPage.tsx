@@ -39,6 +39,7 @@ import { dplService, type GroupSummary } from "../../services/dplService";
 import { resolveImageUrl } from "../../utils/imageUrl";
 import { downloadImageFile } from "../../utils/photoUtils";
 import { PageHeader } from "../../components/common/PageHeader";
+import { sortChronologicalList } from "../../utils/sortUtils";
 
 interface StudentOption {
   userId: string;
@@ -134,14 +135,24 @@ export const KelolaLogbookPage: React.FC = () => {
         dplService.getGroupSummary(),
       ]);
 
-      setLogbooks(Array.isArray(logbookRes) ? logbookRes : []);
+      setLogbooks(
+        sortChronologicalList(
+          Array.isArray(logbookRes) ? logbookRes : [],
+          (l) => l.tanggalKegiatan || (l as any).createdAt,
+          "desc"
+        )
+      );
       setGroups(Array.isArray(groupRes) ? groupRes : []);
 
       // Ambil daftar mahasiswa
       try {
         const studentRes = await api.get("/admin/mahasiswa?limit=1500");
-        if (studentRes.data?.data && Array.isArray(studentRes.data.data)) {
-          const mapped: StudentOption[] = studentRes.data.data.map((u: any) => ({
+        const rawList =
+          studentRes.data?.users ||
+          studentRes.data?.data?.users ||
+          (Array.isArray(studentRes.data?.data) ? studentRes.data.data : []);
+        if (Array.isArray(rawList) && rawList.length > 0) {
+          const mapped: StudentOption[] = rawList.map((u: any) => ({
             userId: u.id,
             name: u.name || "Mahasiswa",
             nim: u.studentProfile?.nim || u.nim || "-",
@@ -180,7 +191,7 @@ export const KelolaLogbookPage: React.FC = () => {
 
   // Filter Data
   const filteredLogbooks = useMemo(() => {
-    return logbooks.filter((item) => {
+    const list = logbooks.filter((item) => {
       if (selectedGroup !== "ALL" && item.kelompokId !== selectedGroup) return false;
       if (selectedStatus !== "ALL" && item.statusApproval !== selectedStatus) return false;
       if (selectedTipe !== "ALL" && item.tipeAktivitas !== selectedTipe) return false;
@@ -200,6 +211,7 @@ export const KelolaLogbookPage: React.FC = () => {
       }
       return true;
     });
+    return sortChronologicalList(list, (item) => item.tanggalKegiatan || (item as any).createdAt, "desc");
   }, [
     logbooks,
     selectedGroup,

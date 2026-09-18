@@ -38,6 +38,7 @@ import {
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
 import * as XLSX from "xlsx";
+import { sortChronologicalList } from "../../utils/sortUtils";
 
 interface UserPointItem {
   id: string;
@@ -251,7 +252,13 @@ export const KelolaPoinPengguna: React.FC = () => {
       });
 
       if (res.data?.success) {
-        setLedgerFeed(res.data.data.transactions);
+        setLedgerFeed(
+          sortChronologicalList(
+            res.data.data.transactions || [],
+            (t: any) => t.createdAt,
+            "desc"
+          )
+        );
         setLedgerTotalPages(res.data.data.pagination.totalPages);
         setLedgerTotalRecords(res.data.data.pagination.total);
       }
@@ -302,7 +309,15 @@ export const KelolaPoinPengguna: React.FC = () => {
     try {
       const res = await api.get(`/points/admin/user/${item.id}`);
       if (res.data?.success) {
-        setUserDetailLedger(res.data.data);
+        const data = res.data.data;
+        if (data && Array.isArray(data.transactions)) {
+          data.transactions = sortChronologicalList(
+            data.transactions,
+            (t: any) => t.createdAt,
+            "desc"
+          );
+        }
+        setUserDetailLedger(data);
       }
     } catch (err) {
       showToast.error("Gagal memuat detail buku besar user");

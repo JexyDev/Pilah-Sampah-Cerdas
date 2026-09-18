@@ -1907,14 +1907,6 @@ export class KknService {
       take: 50,
     });
 
-    const pointLogs = await prisma.pointHistory.findMany({
-      where: {
-        userId: kknUserId,
-      },
-      orderBy: { createdAt: "desc" },
-      take: 100,
-    });
-
     const combined = [
       ...auditLogs.map((log: any) => ({
         id: log.id,
@@ -1923,14 +1915,6 @@ export class KknService {
         timestamp: log.timestamp,
         type: "aktivasi",
         points: null,
-      })),
-      ...pointLogs.map((log) => ({
-        id: log.id,
-        title: log.description,
-        subtitle: log.points > 0 ? `Mendapatkan +${log.points} poin` : `${log.points} poin`,
-        timestamp: log.createdAt,
-        type: "laporan",
-        points: log.points,
       })),
     ];
 
@@ -4752,7 +4736,7 @@ export class KknService {
         reviewedBy: { select: { id: true, name: true } },
         _count: { select: { logbooks: true } },
       },
-      orderBy: [{ nomor: "asc" }, { createdAt: "desc" }],
+      orderBy: [{ createdAt: "desc" }, { nomor: "desc" }],
     });
 
     return list.map((item, index) => {
@@ -5412,6 +5396,15 @@ export class KknService {
       }
     }
 
+    const isPreviousRejectedOrRevisi =
+      proker.statusUsulan === "DITOLAK" ||
+      proker.statusUsulan === "PERLU_REVISI_DPL" ||
+      proker.status === "DITOLAK";
+
+    if (isPreviousRejectedOrRevisi && targetUsulan === undefined) {
+      targetUsulan = "BELUM_DISETUJUI";
+    }
+
     if (targetUsulan !== undefined) {
       let normU = String(targetUsulan).toUpperCase();
       if (normU === "DITERIMA") normU = "DISETUJUI";
@@ -5440,6 +5433,8 @@ export class KknService {
       updateData.status = "DITERIMA";
     } else if (effectiveUsulan === "DITOLAK") {
       updateData.status = "DITOLAK";
+    } else if (effectiveUsulan === "BELUM_DISETUJUI") {
+      updateData.status = "BELUM_DISETUJUI";
     } else if (status !== undefined) {
       updateData.status = status;
     }
@@ -5463,6 +5458,39 @@ export class KknService {
       effectivePelaksanaan,
       parsedJudul
     );
+
+    // Notifikasi ke DPL jika ini adalah Pengajuan Ulang (Re-submission)
+    if (
+      effectiveUsulan === "BELUM_DISETUJUI" &&
+      isPreviousRejectedOrRevisi
+    ) {
+      try {
+        const kelompok = await prisma.kelompokKkn.findUnique({
+          where: { id: proker.kelompokId },
+          select: { id: true, name: true, dplId: true },
+        });
+        const dplUserId = kelompok?.dplId;
+        if (dplUserId) {
+          await notificationIntegrationService.sendToUsers({
+            userIds: [dplUserId],
+            title: "Pengajuan Ulang Program Kerja 📝",
+            message: `Program kerja "${parsedJudul}" untuk kelompok ${kelompok?.name || ""} telah diajukan ulang oleh mahasiswa dan menunggu persetujuan DPL.`,
+            triggerType: "PROKER_RESUBMITTED",
+            dataPayload: {
+              event: "REFRESH_PROKER_DPL",
+              type: "PROKER_RESUBMITTED",
+              entityId: id,
+              prokerId: id,
+              kelompokId: proker.kelompokId,
+              status: "BELUM_DISETUJUI",
+              click_action: "FLUTTER_NOTIFICATION_CLICK",
+            },
+          });
+        }
+      } catch (err: any) {
+        console.warn("[kknService.updateProgramKerja] Push notification to DPL error:", err?.message);
+      }
+    }
 
     if (statusUsulan === "DISETUJUI" && proker.statusUsulan !== "DISETUJUI") {
       try {

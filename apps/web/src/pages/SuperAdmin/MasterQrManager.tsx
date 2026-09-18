@@ -12,6 +12,7 @@ import toast from "react-hot-toast";
 import { Badge } from "../../components/common/Badge";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { printQrStickers } from "../../utils/printQrStickers";
+import { sortChronologicalList } from "../../utils/sortUtils";
 
 interface BinQr {
   id: string;
@@ -67,9 +68,9 @@ export const MasterQrManager: React.FC = () => {
         api.get("/super-admin/approvals/bins"),
         api.get("/super-admin/approvals/petugas"),
       ]);
-      if (qrsRes.data.success) setQrs(qrsRes.data.data);
-      if (inactiveRes.data.success) setInactiveBins(inactiveRes.data.data || []);
-      if (pendingPetugasRes.data.success) setPendingPetugas(pendingPetugasRes.data.data);
+      if (qrsRes.data.success) setQrs(sortChronologicalList(qrsRes.data.data || [], (q: any) => q.createdAt, "desc"));
+      if (inactiveRes.data.success) setInactiveBins(sortChronologicalList(inactiveRes.data.data || [], (b: any) => b.lastActivity || b.createdAt, "desc"));
+      if (pendingPetugasRes.data.success) setPendingPetugas(sortChronologicalList(pendingPetugasRes.data.data || [], (p: any) => p.createdAt || p.user?.createdAt, "desc"));
     } catch (e) {
       console.error("Gagal mengambil data QR & Persetujuan:", e);
       toast.error("Gagal memuat database QR");
@@ -363,12 +364,10 @@ export const MasterQrManager: React.FC = () => {
                 className="px-3 py-1.5 border border-gray-300 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-primary shadow-sm"
               >
                 <option value="">Semua Status</option>
-                <option value="PRINTED">PRINTED</option>
-                <option value="ASSIGNED_TO_PIC">ASSIGNED_TO_PIC</option>
-                <option value="PENDING_APPROVAL">PENDING_APPROVAL</option>
-                <option value="ACTIVE_BOUND">ACTIVE_BOUND</option>
-                <option value="BROKEN">BROKEN</option>
-                <option value="INACTIVE">INACTIVE</option>
+                <option value="ACTIVE_BOUND">Aktif</option>
+                <option value="PRINTED">Belum Digunakan</option>
+                <option value="INACTIVE">Tidak Aktif</option>
+                <option value="BROKEN">Rusak</option>
               </select>
             </div>
           </div>

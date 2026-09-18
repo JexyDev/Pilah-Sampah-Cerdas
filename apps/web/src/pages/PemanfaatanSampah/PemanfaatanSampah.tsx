@@ -39,6 +39,7 @@ import PageHeader from "../../components/common/PageHeader";
 import { ThemeTileLayer, GOOGLE_SATELLITE_URL } from "../../components/common/ThemeTileLayer";
 import { createFacilityIcon, KELURAHAN_GEODATA } from "../../constants/coblongGeoData";
 import { resolveImageUrl } from "../../utils/imageUrl";
+import { sortChronologicalList } from "../../utils/sortUtils";
 import {
   formatRwLabel,
   isKelurahanMatching,
@@ -326,7 +327,7 @@ export const PemanfaatanSampah: React.FC = () => {
   };
 
   const filteredItems = useMemo(() => {
-    return items.filter((item) => {
+    const result = items.filter((item) => {
       const q = searchQuery.toLowerCase().trim();
       const rwName = item?.rw?.name || "";
       const picInfo = getDisplayPic(item);
@@ -377,6 +378,8 @@ export const PemanfaatanSampah: React.FC = () => {
 
       return matchSearch && matchJenis && matchKelurahan && matchRw && matchKelompok;
     });
+
+    return sortChronologicalList(result, (item) => item.createdAt || (item as any).updatedAt, "desc");
   }, [items, searchQuery, selectedJenis, selectedKelurahan, selectedRwId, selectedKelompokId, masterRwList]);
 
   // Reset pagination on search / filter

@@ -10,6 +10,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import api from "../../utils/api";
 import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
+import { sortChronologicalList } from "../../utils/sortUtils";
 import {
   MapContainer,
   Marker,
@@ -174,9 +175,9 @@ export const RwFacilityInput: React.FC = () => {
       const ideData = Array.isArray(ideRes.data) ? ideRes.data : ideRes.data?.data || [];
       const pendFacData = Array.isArray(pendFacRes.data) ? pendFacRes.data : pendFacRes.data?.data || [];
 
-      setFacilities(facData);
-      setPendingIde(ideData);
-      setPendingFacilities(pendFacData);
+      setFacilities(sortChronologicalList(facData, (f: any) => f.createdAt || f.updatedAt, "desc"));
+      setPendingIde(sortChronologicalList(ideData, (i: any) => i.createdAt || i.updatedAt, "desc"));
+      setPendingFacilities(sortChronologicalList(pendFacData, (f: any) => f.createdAt || f.updatedAt, "desc"));
 
       if (facData.length > 0 && !selectedFacilityId) {
         setSelectedFacilityId(facData[0].id);

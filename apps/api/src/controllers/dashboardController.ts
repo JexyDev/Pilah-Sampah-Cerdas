@@ -92,11 +92,15 @@ export const dashboardController = {
         }
       }
 
+      const isDevOrSuper = user?.role === "DEVELOPER" || user?.role === "SUPER_USER";
+      const includeTestAccounts = req.query.includeTestAccounts === "true" && isDevOrSuper;
+
       const kpi = await dashboardService.getKpi(
         wilayah as string,
         period as string,
         startDate as string,
-        endDate as string
+        endDate as string,
+        includeTestAccounts
       );
       res.status(200).json({
         success: true,
@@ -112,6 +116,8 @@ export const dashboardController = {
     try {
       let { wilayah } = req.query;
       const user = req.user;
+      const isDevOrSuper = user?.role === "DEVELOPER" || user?.role === "SUPER_USER";
+      const includeTestAccounts = req.query.includeTestAccounts === "true" && isDevOrSuper;
 
       if (user && (user.role === "DPL" || user.role === "DOSEN_PEMBIMBING")) {
         const dplGroups = await prisma.kelompokKkn.findMany({
@@ -142,7 +148,7 @@ export const dashboardController = {
         }
       }
 
-      const transactions = await dashboardService.getRecentTransactions(wilayah as string);
+      const transactions = await dashboardService.getRecentTransactions(wilayah as string, includeTestAccounts);
       res.status(200).json({
         success: true,
         data: transactions,
@@ -258,11 +264,16 @@ export const dashboardController = {
   getKknExecutiveDashboard: async (req: Request, res: Response) => {
     try {
       const { kelurahan, rw, periode, kelompok } = req.query;
+      const user = req.user;
+      const isDevOrSuper = user?.role === "DEVELOPER" || user?.role === "SUPER_USER";
+      const includeTestAccounts = req.query.includeTestAccounts === "true" && isDevOrSuper;
+
       const data = await kknExecutiveService.getExecutiveDashboard({
         kelurahan: kelurahan as string,
         rw: rw as string,
         periode: periode as string,
         kelompok: kelompok as string,
+        includeTestAccounts,
       });
       res.status(200).json({
         success: true,

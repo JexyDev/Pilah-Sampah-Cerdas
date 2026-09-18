@@ -81,6 +81,9 @@ interface KknExecutiveData {
   sebaranProdi: Array<{ name: string; count: number }>;
   distribusiSks: {
     totalMahasiswa: number;
+    totalMahasiswaSemua?: number;
+    totalMahasiswaDenganSks?: number;
+    belumTerdataCount?: number;
     breakdown: Array<{
       sks: number;
       label: string;
@@ -1265,7 +1268,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <RechartsPieChart>
                   <Pie
-                    data={data?.distribusiSks?.breakdown || []}
+                    data={(data?.distribusiSks?.breakdown || []).filter((item) => item.sks > 0)}
                     cx="50%"
                     cy="50%"
                     innerRadius={50}
@@ -1273,9 +1276,11 @@ export const DashboardEksekutifKkn: React.FC = () => {
                     paddingAngle={2}
                     dataKey="count"
                   >
-                    {(data?.distribusiSks?.breakdown || []).map((entry, idx) => (
-                      <Cell key={`sks-cell-${idx}`} fill={entry.color} />
-                    ))}
+                    {(data?.distribusiSks?.breakdown || [])
+                      .filter((item) => item.sks > 0)
+                      .map((entry, idx) => (
+                        <Cell key={`sks-cell-${idx}`} fill={entry.color} />
+                      ))}
                   </Pie>
                   <RechartsTooltip
                     content={({ active, payload }) => {
@@ -1299,7 +1304,9 @@ export const DashboardEksekutifKkn: React.FC = () => {
               {/* Inner Center Text */}
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                 <span className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight leading-none">
-                  {data?.distribusiSks?.totalMahasiswa ?? 0}
+                  {data?.distribusiSks?.totalMahasiswaDenganSks ??
+                    data?.distribusiSks?.totalMahasiswa ??
+                    (data?.distribusiSks?.breakdown || []).filter((item) => item.sks > 0).reduce((acc, curr) => acc + curr.count, 0)}
                 </span>
                 <span className="text-[10px] text-slate-400 font-medium mt-0.5">
                   Mahasiswa
@@ -1309,23 +1316,32 @@ export const DashboardEksekutifKkn: React.FC = () => {
 
             {/* Legend Grid 2 Kolom Rapi */}
             <div className="sm:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-x-2.5 gap-y-2 text-[11px] font-bold">
-              {(data?.distribusiSks?.breakdown || []).map((item, idx) => (
-                <div key={idx} className="flex items-center gap-1.5 min-w-0">
-                  <span
-                    className="w-2.5 h-2.5 rounded-full inline-block shrink-0"
-                    style={{ backgroundColor: item.color }}
-                  />
-                  <span className="text-slate-700 dark:text-slate-300 truncate text-[10.5px]">
-                    {item.label} {item.percentage}% ({item.count})
-                  </span>
-                </div>
-              ))}
+              {(data?.distribusiSks?.breakdown || [])
+                .filter((item) => item.sks > 0)
+                .map((item, idx) => (
+                  <div key={idx} className="flex items-center gap-1.5 min-w-0">
+                    <span
+                      className="w-2.5 h-2.5 rounded-full inline-block shrink-0"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <span className="text-slate-700 dark:text-slate-300 truncate text-[10.5px]">
+                      {item.label} {item.percentage}% ({item.count})
+                    </span>
+                  </div>
+                ))}
             </div>
           </div>
 
-          <p className="text-center text-[10.5px] text-slate-400 font-medium mt-1">
-            Persentase dan Jumlah Mahasiswa per Beban SKS
-          </p>
+          <div className="mt-1 text-center">
+            <p className="text-[10.5px] text-slate-400 font-medium">
+              Persentase dan Jumlah Mahasiswa per Beban SKS
+            </p>
+            {Boolean(data?.distribusiSks?.belumTerdataCount && data.distribusiSks.belumTerdataCount > 0) && (
+              <p className="text-[9.5px] text-amber-600 dark:text-amber-400 font-semibold mt-0.5">
+                *{data.distribusiSks.belumTerdataCount} mahasiswa belum terdata beban SKS di master data
+              </p>
+            )}
+          </div>
         </div>
       </div>
 

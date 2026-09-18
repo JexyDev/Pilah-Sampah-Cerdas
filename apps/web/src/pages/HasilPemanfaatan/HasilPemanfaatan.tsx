@@ -35,6 +35,7 @@ import { useAuthStore } from "../../store/useAuthStore";
 import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
 import PageHeader from "../../components/common/PageHeader";
+import { sortChronologicalList } from "../../utils/sortUtils";
 
 const COBLONG_KELURAHANS = [
   "Cipaganti",
@@ -141,7 +142,7 @@ export const HasilPemanfaatan: React.FC = () => {
 
   // Filtered Programs Calculation
   const filteredPrograms = useMemo(() => {
-    return programs.filter((p) => {
+    const result = programs.filter((p) => {
       const q = (searchQuery || "").toLowerCase().trim();
       const rwName = p?.rw?.name || (p?.rwId ? `RW ${p.rwId}` : "");
       const kelName = p?.rw?.kelurahan?.name || "";
@@ -206,6 +207,8 @@ export const HasilPemanfaatan: React.FC = () => {
 
       return true;
     });
+
+    return sortChronologicalList(result, (p: any) => p.tanggalPencatatan || p.createdAt, "desc");
   }, [programs, searchQuery, filterKelurahan, filterRw, filterKategori, filterLuaran]);
 
   // Reset pagination when filters change

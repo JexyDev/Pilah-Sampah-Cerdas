@@ -161,7 +161,13 @@ async function resolveAreaContext(wilayah?: string): Promise<ResolvedAreaContext
 }
 
 export const dashboardService = {
-  getKpi: async (wilayah?: string, period?: string, startDate?: string, endDate?: string) => {
+  getKpi: async (
+    wilayah?: string,
+    period?: string,
+    startDate?: string,
+    endDate?: string,
+    includeTestAccounts?: boolean
+  ) => {
     const areaCtx = await resolveAreaContext(wilayah);
     const { isFiltered, rwIds, kelurahanIds, kelurahanNames } = areaCtx;
 
@@ -237,6 +243,9 @@ export const dashboardService = {
 
     // 1. Total Warga Aktif
     const wargaWhere: any = { role: { name: "WARGA" } };
+    if (!includeTestAccounts) {
+      wargaWhere.isTestAccount = false;
+    }
     if (isFiltered && rtRwMatch) {
       wargaWhere.OR = [{ rw: rtRwMatch }, { households: { some: { rw: rtRwMatch } } }];
     }
@@ -255,6 +264,9 @@ export const dashboardService = {
 
     // Total Users
     const usersWhere: any = {};
+    if (!includeTestAccounts) {
+      usersWhere.isTestAccount = false;
+    }
     if (isFiltered && rtRwMatch) {
       usersWhere.OR = [{ rw: rtRwMatch }, { households: { some: { rw: rtRwMatch } } }];
     }
@@ -266,6 +278,9 @@ export const dashboardService = {
 
     // 2. Sampah Terkumpul (Kg)
     const wasteLogsWhere: any = {};
+    if (!includeTestAccounts) {
+      wasteLogsWhere.warga = { isTestAccount: false };
+    }
     if (isFiltered) {
       const orWaste: any[] = [];
       if (rtRwMatch) orWaste.push({ warga: { rw: rtRwMatch } });
@@ -284,8 +299,12 @@ export const dashboardService = {
 
     // 3. Rata-rata Akurasi AI
     const aiWhere: any = {};
+    if (!includeTestAccounts) {
+      aiWhere.user = { isTestAccount: false };
+    }
     if (isFiltered && rtRwMatch) {
       aiWhere.user = {
+        ...(aiWhere.user || {}),
         OR: [{ rw: rtRwMatch }, { households: { some: { rw: rtRwMatch } } }],
       };
     }
@@ -372,6 +391,7 @@ export const dashboardService = {
         role: {
           name: { in: ["WARGA", "PETUGAS_RESIDU", "PENGANGKUT"] },
         },
+        ...(!includeTestAccounts ? { isTestAccount: false } : {}),
       },
     };
     if (isFiltered && rtRwMatch) {
@@ -395,6 +415,9 @@ export const dashboardService = {
     });
 
     const residuWhere: any = {};
+    if (!includeTestAccounts) {
+      residuWhere.petugas = { isTestAccount: false };
+    }
     if (isFiltered && rtRwMatch) {
       residuWhere.OR = [{ rw: rtRwMatch }, { petugas: { rw: rtRwMatch } }];
     }
@@ -465,6 +488,7 @@ export const dashboardService = {
       });
 
       const activeUsers = activeUsersRaw.filter((u) => {
+        if (!includeTestAccounts && u.isTestAccount) return false;
         const name = (u.name || "").toLowerCase();
         const email = (u.email || "").toLowerCase();
         return !name.includes("test") && !name.includes("dummy") && !email.includes("test") && !email.includes("dummy");
@@ -873,7 +897,7 @@ export const dashboardService = {
     };
   },
 
-  getRecentTransactions: async (wilayah?: string) => {
+  getRecentTransactions: async (wilayah?: string, includeTestAccounts?: boolean) => {
     const areaCtx = await resolveAreaContext(wilayah);
     const { isFiltered, rwIds, kelurahanIds, kelurahanNames } = areaCtx;
 
@@ -910,6 +934,9 @@ export const dashboardService = {
         : undefined;
 
     const transactionsWhere: any = {};
+    if (!includeTestAccounts) {
+      transactionsWhere.warga = { isTestAccount: false };
+    }
     if (isFiltered) {
       const orConditions: any[] = [];
       if (rwFilter) orConditions.push({ warga: { rw: rwFilter } });
@@ -918,7 +945,7 @@ export const dashboardService = {
     }
 
     const transactions = await prisma.setoranOtomatis.findMany({
-      where: isFiltered ? transactionsWhere : undefined,
+      where: Object.keys(transactionsWhere).length > 0 ? transactionsWhere : undefined,
       take: 10,
       orderBy: {
         createdAt: "desc",

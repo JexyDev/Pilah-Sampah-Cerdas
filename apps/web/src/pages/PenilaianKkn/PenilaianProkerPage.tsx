@@ -38,6 +38,7 @@ import {
 } from "../../services/dplService";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
 import { getMediaPhotoUrl, formatGoogleDriveUrl } from "../../utils/photoUtils";
+import { sortChronologicalList } from "../../utils/sortUtils";
 import { useAuthStore } from "../../store/useAuthStore";
 import { isTestProker, isTestKelompok } from "../../utils/filterTestingUtils";
 
@@ -222,6 +223,7 @@ export const PenilaianProkerPage: React.FC = () => {
       }
       return true;
     });
+    return sortChronologicalList(filtered, (p) => p.createdAt || p.updatedAt, "desc");
   }, [prokerList, searchQuery, kategoriFilter, statusPenilaianFilter]);
 
   // Sync Form State when selected proker changes

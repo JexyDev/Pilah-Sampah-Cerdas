@@ -5,6 +5,7 @@ import api from "../../utils/api";
 import { useAuthStore } from "../../store/useAuthStore";
 import PageHeader from "../../components/common/PageHeader";
 import { Lightbulb } from "lucide-react";
+import { sortChronologicalList } from "../../utils/sortUtils";
 
 interface IdeDaurUlang {
   id: string;
@@ -48,7 +49,7 @@ const IdeDaurUlang: React.FC = () => {
 
       const res = await api.get(`/ide-daur-ulang?${query.toString()}`);
       if (res.data.success) {
-        setIdes(res.data.data);
+        setIdes(sortChronologicalList(res.data.data || [], (i: any) => i.createdAt, "desc"));
       }
     } catch (err) {
       toast.error("Gagal memuat ide daur ulang");

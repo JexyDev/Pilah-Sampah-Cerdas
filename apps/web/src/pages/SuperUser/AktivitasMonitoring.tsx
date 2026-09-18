@@ -44,6 +44,7 @@ import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
 import PageHeader from "../../components/common/PageHeader";
 import { useAuthStore } from "../../store/useAuthStore";
+import { sortChronologicalList } from "../../utils/sortUtils";
 
 interface TransactionItem {
   id: string;
@@ -167,10 +168,11 @@ export const AktivitasMonitoring: React.FC = () => {
 
   // Filtered Transactions
   const filteredTransactions = useMemo(() => {
-    return transactions.filter((t) => {
+    const list = transactions.filter((t) => {
       const q = searchQuery.toLowerCase().trim();
       return !q || t.nama.toLowerCase().includes(q) || t.tipe.toLowerCase().includes(q);
     });
+    return sortChronologicalList(list, (t: any) => t.waktu || t.createdAt, "desc");
   }, [transactions, searchQuery]);
 
   const totalPages = Math.max(1, Math.ceil(filteredTransactions.length / itemsPerPage));

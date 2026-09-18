@@ -27,6 +27,7 @@ import {
 import toast from "react-hot-toast";
 import { beritaService, type BeritaItem, type BeritaStatus, type BeritaKategori } from "../../services/beritaService";
 import { useAuthStore } from "../../store/useAuthStore";
+import { sortChronologicalList } from "../../utils/sortUtils";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 type FormMode = "create" | "edit";
@@ -92,7 +93,8 @@ export const ManajemenBeritaPage: React.FC = () => {
         kategori: filterKategori === "ALL" ? undefined : filterKategori,
         search: search.trim() || undefined,
       });
-      setBeritaList(res.data || []);
+      const rawData = (res as any)?.data || (res as any)?.items || [];
+      setBeritaList(sortChronologicalList(Array.isArray(rawData) ? rawData : [], (b) => b.publishedAt || b.createdAt, "desc"));
       setTotal(res.total || 0);
     } catch (err: any) {
       toast.error("Gagal memuat data berita");

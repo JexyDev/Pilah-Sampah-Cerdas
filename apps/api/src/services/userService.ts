@@ -540,6 +540,7 @@ export class UserService {
         nim: u.studentProfile?.nim || null,
         role: u.role.name,
         status: u.status,
+        isTestAccount: Boolean(u.isTestAccount),
         binStatus,
         activeBinsCount,
         provinsi: u.provinsi || provinsiName || "Jawa Barat",
@@ -868,6 +869,7 @@ export class UserService {
             jumlahAnggotaKeluarga !== undefined && jumlahAnggotaKeluarga !== null
               ? Number(jumlahAnggotaKeluarga)
               : null,
+          isTestAccount: data.isTestAccount !== undefined ? Boolean(data.isTestAccount) : false,
         },
         include: { role: { select: { name: true } } },
       });
@@ -1162,6 +1164,9 @@ export class UserService {
       updateData.jumlahAnggotaKeluarga =
         jumlahAnggotaKeluarga !== null ? Number(jumlahAnggotaKeluarga) : null;
     if (fotoProfil !== undefined) updateData.fotoProfil = fotoProfil || null;
+    if (data.isTestAccount !== undefined) {
+      updateData.isTestAccount = Boolean(data.isTestAccount);
+    }
 
     const updatedUser = await prisma.$transaction(async (tx) => {
       const u = await tx.user.update({
@@ -1449,6 +1454,32 @@ export class UserService {
       hasNonOrganik,
       onboardingComplete,
     };
+  }
+
+  async registerKomunitas(userId: string) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new Error("USER_NOT_FOUND");
+    
+    if (user.komunitasId) {
+      return user.komunitasId;
+    }
+
+    const { generateKomunitasId } = await import("../utils/komunitasHelper.js");
+    let newId = "";
+    let isUnique = false;
+    
+    while (!isUnique) {
+      newId = generateKomunitasId();
+      const existing = await prisma.user.findUnique({ where: { komunitasId: newId } });
+      if (!existing) isUnique = true;
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { komunitasId: newId },
+    });
+
+    return newId;
   }
 }
 

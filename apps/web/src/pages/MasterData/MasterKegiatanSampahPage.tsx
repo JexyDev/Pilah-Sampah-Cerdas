@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import api from "../../services/api";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { Pagination } from "../../components/common/Pagination";
+import { sortChronologicalList } from "../../utils/sortUtils";
 
 export interface KegiatanSampahItem {
   id: string;
@@ -62,7 +63,7 @@ export const MasterKegiatanSampahPage: React.FC = () => {
         params: selectedKategoriFilter !== "ALL" ? { kategori: selectedKategoriFilter } : undefined,
       });
       if (res.data?.success && Array.isArray(res.data.data)) {
-        setKegiatanList(res.data.data);
+        setKegiatanList(sortChronologicalList(res.data.data, (item) => item.createdAt, "desc"));
       }
     } catch (err: any) {
       console.error("Gagal memuat master kegiatan sampah:", err);
@@ -77,12 +78,13 @@ export const MasterKegiatanSampahPage: React.FC = () => {
   }, [selectedKategoriFilter]);
 
   const filteredData = useMemo(() => {
-    return kegiatanList.filter((item) => {
+    const list = kegiatanList.filter((item) => {
       const matchSearch =
         item.nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (item.deskripsi && item.deskripsi.toLowerCase().includes(searchTerm.toLowerCase()));
       return matchSearch;
     });
+    return sortChronologicalList(list, (item) => item.createdAt, "desc");
   }, [kegiatanList, searchTerm]);
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);

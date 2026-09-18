@@ -8,25 +8,12 @@
 import axios from "axios";
 
 export const getApiBaseUrl = (): string => {
-  // Jika di browser dan bukan localhost/127.0.0.1, selalu gunakan path relatif reverse proxy (/api/v1)
-  if (typeof window !== "undefined") {
-    const { hostname } = window.location;
-    if (hostname && hostname !== "localhost" && hostname !== "127.0.0.1") {
-      return "/api/v1";
-    }
-  }
-
   if (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_BASE_URL) {
     return import.meta.env.VITE_API_BASE_URL;
   }
 
-  if (typeof window !== "undefined") {
-    const { hostname } = window.location;
-    if (hostname === "localhost" || hostname === "127.0.0.1") {
-      return `http://${hostname}:3000/api/v1`;
-    }
-  }
-
+  // Gunakan path relatif /api/v1 agar selalu melewati reverse proxy (Vite di lokal & Nginx di produksi)
+  // Menghilangkan delay CORS preflight OPTIONS dan masalah timeout IPv6 localhost
   return "/api/v1";
 };
 
