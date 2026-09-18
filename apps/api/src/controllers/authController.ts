@@ -591,7 +591,7 @@ export class AuthController {
         return;
       }
 
-      const user = await authService.getCurrentUser(req.user.userId);
+      const user = await authService.getCurrentUser(req.user.userId, req.user.role);
       const fSize = (user as any).jumlahAnggotaKeluarga || (user as any).familySize || 1;
 
       const formattedUser = {
