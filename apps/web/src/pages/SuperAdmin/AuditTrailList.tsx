@@ -8,6 +8,7 @@
 import React, { useEffect, useState } from "react";
 import api from "../../utils/api";
 import toast from "react-hot-toast";
+import { sortChronologicalList } from "../../utils/sortUtils";
 
 interface AuditTrail {
   id: string;
@@ -42,7 +43,7 @@ export const AuditTrailList: React.FC = () => {
         },
       });
       if (res.data.success) {
-        setLogs(res.data.data);
+        setLogs(sortChronologicalList(res.data.data || [], (l) => l.timestamp, "desc"));
       }
     } catch (error) {
       console.error("Gagal memuat log audit:", error);

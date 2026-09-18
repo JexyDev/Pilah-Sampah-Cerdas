@@ -390,8 +390,10 @@ export const kknAttendanceController = {
       const dplUserId = isDpl ? (req as any).user?.userId || (req as any).user?.id : undefined;
       const mplUserId = isMpl ? (req as any).user?.userId || (req as any).user?.id : undefined;
       const kelompokId = (req.query.kelompokId as string) || undefined;
+      const isDevOnly = roleName === "DEVELOPER";
+      const includeTestAccounts = req.query.includeTestAccounts === "true" && isDevOnly;
 
-      const result = await kknAttendanceService.getActiveStudentsLocations(dplUserId, kelompokId, mplUserId);
+      const result = await kknAttendanceService.getActiveStudentsLocations(dplUserId, kelompokId, mplUserId, includeTestAccounts);
       res.status(200).json({
         success: true,
         data: result,
@@ -478,6 +480,8 @@ export const kknAttendanceController = {
       const mplUserId = isMpl ? currentUserId : undefined;
       const startDate = req.query.startDate as string | undefined;
       const endDate = req.query.endDate as string | undefined;
+      const isDevOnly = roleName === "DEVELOPER";
+      const includeTestAccounts = req.query.includeTestAccounts === "true" && isDevOnly;
 
       const result = await kknAttendanceService.getTimesheetSummary({
         kelompokId,
@@ -486,6 +490,7 @@ export const kknAttendanceController = {
         mplUserId,
         startDate,
         endDate,
+        includeTestAccounts,
       });
 
       res.status(200).json({
@@ -535,6 +540,8 @@ export const kknAttendanceController = {
       const search = req.query.search as string | undefined;
       const page = req.query.page ? parseInt(req.query.page as string, 10) : 1;
       const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 20;
+      const isDevOnly = roleName === "DEVELOPER";
+      const includeTestAccounts = req.query.includeTestAccounts === "true" && isDevOnly;
 
       const result = await kknAttendanceService.getLaporanPresensi({
         kelompokId,
@@ -548,6 +555,7 @@ export const kknAttendanceController = {
         search,
         page,
         limit,
+        includeTestAccounts,
       });
 
       res.status(200).json({

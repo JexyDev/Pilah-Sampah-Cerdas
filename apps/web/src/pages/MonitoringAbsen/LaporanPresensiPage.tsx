@@ -50,6 +50,7 @@ import {
   formatProdiName,
 } from "../../utils/textFormatter";
 import { sortKelompokList, sortStudentsRoster } from "../../utils/sortUtils";
+import { isTestKelompok, isTestStudent } from "../../utils/filterTestingUtils";
 import {
   formatRwLabel,
   isKelurahanMatching,
@@ -151,6 +152,7 @@ export const LaporanPresensiPage: React.FC = () => {
   const isDpl = roleName === "DPL" || roleName === "DOSEN_PEMBIMBING";
   const isMpl = roleName === "MPL" || roleName.includes("MITRA");
   const isDeveloper = roleName === "DEVELOPER" || roleName === "SUPER_USER";
+  const isStrictDeveloper = roleName === "DEVELOPER" || roleName === "DEV";
 
   // Tab View Mode: Rekap Mahasiswa (Total Akumulasi) vs Log Presensi Detail
   const [activeTab, setActiveTab] = useState<"REKAP_MAHASISWA" | "LOG_DETAIL">("REKAP_MAHASISWA");
@@ -172,6 +174,7 @@ export const LaporanPresensiPage: React.FC = () => {
   });
   const [loading, setLoading] = useState<boolean>(true);
   const [groups, setGroups] = useState<any[]>([]);
+  const [hasAssignedDplGroup, setHasAssignedDplGroup] = useState<boolean>(true);
 
   // Filter states
   const [selectedKelompok, setSelectedKelompok] = useState<string>(() => {
@@ -203,6 +206,7 @@ export const LaporanPresensiPage: React.FC = () => {
   const [limit] = useState<number>(20);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [totalCount, setTotalCount] = useState<number>(0);
+  const [includeTestAccounts, setIncludeTestAccounts] = useState<boolean>(false);
 
   // Debounce search input to avoid lag and spamming API on every keystroke
   useEffect(() => {
@@ -237,6 +241,9 @@ export const LaporanPresensiPage: React.FC = () => {
       };
       if (selectedKelompok && selectedKelompok !== "ALL") {
         params.kelompokId = selectedKelompok;
+      }
+      if (isStrictDeveloper && includeTestAccounts) {
+        params.includeTestAccounts = "true";
       }
       const res = await api.get("/laporan-rekap", { params });
       if (res.data?.success && res.data?.data) {
@@ -572,7 +579,8 @@ export const LaporanPresensiPage: React.FC = () => {
     try {
       const res = await api.get("/kelompok");
       const list = Array.isArray(res.data) ? res.data : res.data?.data || [];
-      const sortedList = sortKelompokList(list, (g: any) => g.name || "");
+      const nonTestList = list.filter((g: any) => !isTestKelompok(g));
+      const sortedList = sortKelompokList(nonTestList, (g: any) => g.name || "");
       if (isDpl && user?.id) {
         // Strict scope to DPL's assigned groups
         const dplGroups = sortedList.filter((g: any) => 
@@ -581,6 +589,7 @@ export const LaporanPresensiPage: React.FC = () => {
           g.dpl?.userId === user.id || 
           (user.email && g.dpl?.email === user.email)
         );
+        setHasAssignedDplGroup(dplGroups.length > 0);
         setGroups(dplGroups.length > 0 ? dplGroups : sortedList);
       } else if (isMpl && user) {
         // Strict scope to MPL's assigned Kelurahan and kelompok
@@ -647,12 +656,32 @@ export const LaporanPresensiPage: React.FC = () => {
       if (debouncedSearchQuery.trim()) {
         params.search = debouncedSearchQuery.trim();
       }
+      if (isStrictDeveloper && includeTestAccounts) {
+        params.includeTestAccounts = "true";
+      }
 
       const res = await api.get("/laporan-rekap", { params });
       if (res.data?.success && res.data?.data) {
         const data = res.data.data;
-        setItems(data.items || []);
-        setStudentAggregates(data.studentAggregates || []);
+        const allowTest = isStrictDeveloper && includeTestAccounts;
+        const rawItems = data.items || [];
+        const rawAggs = data.studentAggregates || [];
+        const cleanItems = allowTest
+          ? rawItems
+          : rawItems.filter(
+              (it: any) =>
+                !isTestStudent({ nim: it.nim, nama: it.namaMahasiswa, name: it.namaMahasiswa, phone: it.noWa }) &&
+                !isTestKelompok({ name: it.kelompokName, dplNamaMentah: it.dplName })
+            );
+        const cleanAggs = allowTest
+          ? rawAggs
+          : rawAggs.filter(
+              (ag: any) =>
+                !isTestStudent({ nim: ag.nim, nama: ag.namaMahasiswa, name: ag.namaMahasiswa, phone: ag.phone }) &&
+                !isTestKelompok({ name: ag.kelompokName, dplNamaMentah: ag.dplName })
+            );
+        setItems(cleanItems);
+        setStudentAggregates(cleanAggs);
         if (data.summary) {
           setSummary(data.summary);
         }
@@ -671,7 +700,7 @@ export const LaporanPresensiPage: React.FC = () => {
     } finally {
       if (!silent) setLoading(false);
     }
-  }, [page, limit, selectedKelompok, selectedKelurahan, selectedRw, selectedStatus, startDate, endDate, debouncedSearchQuery]);
+  }, [page, limit, selectedKelompok, selectedKelurahan, selectedRw, selectedStatus, startDate, endDate, debouncedSearchQuery, includeTestAccounts]);
 
   const fetchLaporanRef = useRef(fetchLaporan);
   useEffect(() => {
@@ -753,6 +782,7 @@ export const LaporanPresensiPage: React.FC = () => {
     setStartDate(todayStr);
     setEndDate(todayStr);
     setSearchQuery("");
+    setIncludeTestAccounts(false);
     setPage(1);
     if (!isDpl && typeof window !== "undefined") {
       try {
@@ -1385,6 +1415,23 @@ export const LaporanPresensiPage: React.FC = () => {
 
           {/* 6. Actions: Reset & Ekspor */}
           <div className="flex items-end gap-2 shrink-0">
+            {isStrictDeveloper && (
+              <label
+                className="h-10 px-3 text-xs font-bold rounded-xl border border-amber-300 dark:border-amber-700/60 bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs select-none shrink-0"
+                title="Khusus Developer: Tampilkan akun pengujian di rekap laporan"
+              >
+                <input
+                  type="checkbox"
+                  checked={includeTestAccounts}
+                  onChange={(e) => {
+                    setIncludeTestAccounts(e.target.checked);
+                    setPage(1);
+                  }}
+                  className="rounded text-amber-600 focus:ring-amber-500 w-3.5 h-3.5 cursor-pointer"
+                />
+                <span className="text-[11px] font-extrabold whitespace-nowrap">Data Test</span>
+              </label>
+            )}
             <button
               type="button"
               onClick={handleResetFilter}
@@ -1410,6 +1457,15 @@ export const LaporanPresensiPage: React.FC = () => {
 
       {/* Main Table Card with Dual-Tab Switcher */}
       <div className="bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs overflow-hidden mb-6">
+        {isDpl && !hasAssignedDplGroup && (
+          <div className="p-4 bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-800/60 flex items-start gap-3 text-amber-900 dark:text-amber-200">
+            <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div className="text-xs">
+              <span className="font-bold">Peran DPL Aktif Tanpa Kelompok Bimbingan:</span> Akun Anda saat ini aktif dalam peran DPL, namun belum terhubung secara resmi ke kelompok bimbingan KKN di sistem. Laporan presensi DPL dibatasi khusus untuk mahasiswa kelompok bimbingan Anda. Silakan beralih kembali ke peran <strong>Pimpinan Eksekutif</strong> di menu navigasi atas untuk memantau seluruh kelompok.
+            </div>
+          </div>
+        )}
+
         {/* Table Toolbar & View Switcher */}
         <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-3.5 bg-slate-50/70 dark:bg-slate-800/50">
           {/* Single Tab (Log Presensi Detail Hidden) */}
@@ -1471,10 +1527,28 @@ export const LaporanPresensiPage: React.FC = () => {
                 ) : filteredStudentAggregates.length === 0 ? (
                   <tr>
                     <td colSpan={10} className="py-12">
-                      <EmptyTableState
-                        title="Tidak Ada Data Akumulasi Mahasiswa"
-                        description="Tidak ditemukan riwayat kehadiran mahasiswa untuk filter yang dipilih."
-                      />
+                      <div className="flex flex-col items-center justify-center text-center p-6">
+                        <EmptyTableState
+                          title="Tidak Ada Data Akumulasi Mahasiswa"
+                          description={
+                            isDpl && !hasAssignedDplGroup
+                              ? "Akun Anda belum memiliki kelompok bimbingan KKN aktif sehingga tidak ada data mahasiswa bimbingan yang dapat ditampilkan."
+                              : datePreset === "TODAY"
+                              ? "Belum ada aktivitas presensi mahasiswa pada hari ini. Ubah rentang waktu ke 'Semua Waktu' untuk melihat seluruh akumulasi kehadiran KKN."
+                              : "Tidak ditemukan riwayat kehadiran mahasiswa untuk filter yang dipilih."
+                          }
+                        />
+                        {datePreset === "TODAY" && (
+                          <button
+                            type="button"
+                            onClick={() => handleDatePreset("ALL")}
+                            className="mt-4 px-4 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all cursor-pointer inline-flex items-center gap-2"
+                          >
+                            <Calendar size={14} />
+                            <span>Lihat Semua Waktu (Target 200 Jam)</span>
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ) : (

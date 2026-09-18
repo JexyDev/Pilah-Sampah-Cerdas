@@ -258,6 +258,21 @@ const getInitialUser = (): User | null => {
       }
     }
 
+    // Bersihkan availableRoles liar jika ada cache lama dari sesi sebelumnya
+    if (user && user.peran) {
+      const normPeran = normalizeRole(user.peran);
+      const isPimpinanOrDpl = normPeran === "PIMPINAN" || normPeran === "DPL";
+      if (!isPimpinanOrDpl) {
+        if (
+          user.availableRoles &&
+          (user.availableRoles.length > 1 || user.availableRoles[0] !== normPeran)
+        ) {
+          user.availableRoles = [normPeran];
+          modified = true;
+        }
+      }
+    }
+
     if (modified) {
       const storage = getActiveStorage();
       storage.setItem("psc_user", JSON.stringify(user));
@@ -351,7 +366,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         phone: backendUser.phone,
         address: backendUser.address,
         rtRwId: backendUser.rtRwId,
-        availableRoles: backendUser.availableRoles || [normalizedRole],
+        availableRoles:
+          normalizedRole === "PIMPINAN" || normalizedRole === "DPL"
+            ? (backendUser.availableRoles || [normalizedRole])
+            : [normalizedRole],
         ...avatarConfig,
       };
 
@@ -431,6 +449,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         phone: backendUser.phone,
         address: backendUser.address,
         rtRwId: backendUser.rtRwId,
+        availableRoles:
+          normalizedRole === "PIMPINAN" || normalizedRole === "DPL"
+            ? (backendUser.availableRoles || [normalizedRole])
+            : [normalizedRole],
         ...avatarConfig,
       };
 
@@ -478,6 +500,60 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       setStoredItem("psc_user", JSON.stringify(updatedUser), remember);
       return { user: updatedUser };
     });
+  },
+
+  switchRole: async (targetRole: string) => {
+    try {
+      const response = await api.post("/auth/switch-role", { role: targetRole });
+      const payload = response.data?.data ?? response.data;
+      if (!payload?.accessToken || !payload?.user) {
+        return false;
+      }
+
+      const { accessToken, user: backendUser } = payload;
+      const normalizedRole = normalizeRole(backendUser.role || targetRole);
+
+      const remember = localStorage.getItem("psc_remember_me") === "1";
+      setStoredItem("psc_access_token", accessToken, remember);
+
+      const avatarConfig = getAvatarConfig(normalizedRole);
+      const updatedUser: User = {
+        id: backendUser.id,
+        name: backendUser.name,
+        email: backendUser.email,
+        peran: normalizedRole,
+        role: backendUser.role,
+        wilayah:
+          ["PIMPINAN", "DEVELOPER", "SUPER_USER", "ADMIN_DLH"].includes(normalizedRole)
+            ? "Semua Wilayah"
+            : backendUser.wilayah ||
+              getWilayahByRole(
+                normalizedRole,
+                backendUser.kelurahan,
+                backendUser.kecamatan,
+                backendUser.rw
+              ),
+        kelurahan: backendUser.kelurahan,
+        kecamatan: backendUser.kecamatan || "",
+        rw: backendUser.rw,
+        dplKelompok: backendUser.dplKelompok,
+        avatar: computeAvatarInitials(backendUser.name),
+        fotoProfil: backendUser.fotoProfil,
+        phone: backendUser.phone,
+        address: backendUser.address,
+        rtRwId: backendUser.rtRwId,
+        availableRoles: backendUser.availableRoles || [normalizedRole],
+        ...avatarConfig,
+      };
+
+      setStoredItem("psc_user", JSON.stringify(updatedUser), remember);
+      set({ user: updatedUser });
+      get().fetchPermissions().catch(() => {});
+      return true;
+    } catch (err: any) {
+      console.error("[useAuthStore] Gagal switch role:", err);
+      return false;
+    }
   },
 
   fetchPermissions: async () => {

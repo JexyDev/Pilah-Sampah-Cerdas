@@ -15,7 +15,7 @@ export class FacilityController {
    */
   async createFacility(req: Request, res: Response): Promise<void> {
     try {
-      let { jenis, nama, pic, foto, kontak, kapasitas, latitude, longitude, alamat, rwId } =
+      let { jenis, nama, pic, foto, kontak, kapasitas, latitude, longitude, alamat, rwId, kepemilikan } =
         req.body;
       if (req.file) {
         foto = `/uploads/${req.file.filename}`;
@@ -110,6 +110,8 @@ export class FacilityController {
       const safeLng =
         longitude !== undefined && !isNaN(Number(longitude)) ? Number(longitude) : 0.0;
 
+      const safeKepemilikan = (kepemilikan === "MILIK_RW" || kepemilikan === "PRIBADI") ? kepemilikan : "PRIBADI";
+
       const facility = await facilityService.createFacility(
         jenis,
         nama,
@@ -123,7 +125,8 @@ export class FacilityController {
         kelompokId,
         alamat,
         targetRwId,
-        "APPROVED"
+        "APPROVED",
+        safeKepemilikan
       );
       res.status(201).json({ success: true, message: "Fasilitas berhasil dibuat", data: facility });
     } catch (error: any) {

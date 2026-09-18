@@ -289,7 +289,12 @@ export const DplDashboardPage: React.FC = () => {
       const cleanGroups = (groupsData || []).filter((g: any) => !isTestKelompok(g));
       const cleanProkers = (prokersData || []).filter(
         (p: any) =>
-          !isTestProker(p) && !isTestKelompok({ name: p.kelompokName, dplNamaMentah: p.dplNama })
+          !isTestProker(p) &&
+          !isTestKelompok({
+            name: p.kelompokName || p.namaKelompok || p.kelompok?.name,
+            dplNamaMentah: p.dplNama || p.dplName,
+            dplName: p.dplNama || p.dplName,
+          })
       );
 
       setGroups(cleanGroups);
@@ -350,8 +355,19 @@ export const DplDashboardPage: React.FC = () => {
   }, [selectedGroupForDetail]);
 
   const effectiveProkers = useMemo(() => {
-    if (prokers && prokers.length > 0) return prokers;
-    return groups.flatMap((g: any) => g.programKerja || []);
+    const list =
+      prokers && prokers.length > 0
+        ? prokers
+        : groups.flatMap((g: any) => g.programKerja || []);
+    return list.filter(
+      (p: any) =>
+        !isTestProker(p) &&
+        !isTestKelompok({
+          name: p.kelompokName || p.namaKelompok || p.kelompok?.name,
+          dplNamaMentah: p.dplNama || p.dplName,
+          dplName: p.dplNama || p.dplName,
+        })
+    );
   }, [prokers, groups]);
 
   const handleDecideLeave = async (
@@ -1814,18 +1830,33 @@ export const DplDashboardPage: React.FC = () => {
           <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition shrink-0" />
         </Link>
 
-        <Link
-          to="/monitoring-absen"
-          className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3.5 sm:p-4 rounded-2xl hover:border-amber-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 rounded-xl group-hover:bg-amber-600 group-hover:text-white transition shrink-0">
-              <ClipboardCheck size={20} />
+        {isMpl ? (
+          <Link
+            to="/pelaksanaan/posko"
+            className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3.5 sm:p-4 rounded-2xl hover:border-amber-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 rounded-xl group-hover:bg-amber-600 group-hover:text-white transition shrink-0">
+                <MapPin size={20} />
+              </div>
+              <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">Posko KKN</h4>
             </div>
-            <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">Presensi</h4>
-          </div>
-          <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition shrink-0" />
-        </Link>
+            <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition shrink-0" />
+          </Link>
+        ) : (
+          <Link
+            to="/monitoring-absen"
+            className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3.5 sm:p-4 rounded-2xl hover:border-amber-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 rounded-xl group-hover:bg-amber-600 group-hover:text-white transition shrink-0">
+                <ClipboardCheck size={20} />
+              </div>
+              <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">Presensi</h4>
+            </div>
+            <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition shrink-0" />
+          </Link>
+        )}
 
         <Link
           to="/program-kerja-kkn"
@@ -1855,76 +1886,78 @@ export const DplDashboardPage: React.FC = () => {
       </div>
 
       {/* Metrik Agregat Presensi & Program Kerja */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Left: Metrik Presensi Mahasiswa - Aktif untuk semua termasuk MPL */}
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-            <div>
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
-                Presensi Lapangan
-              </span>
-              <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100 mt-0.5">
-                Tingkat Presensi Mahasiswa
-              </h3>
-            </div>
-            <Link
-              to="/monitoring-absen"
-              className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 flex items-center gap-1 group"
-              title="Buka Halaman Presensi"
-            >
-              <span>Presensi</span>
-              <ChevronRight size={14} className="group-hover:translate-x-0.5 transition" />
-            </Link>
-          </div>
-
-          <Link
-            to="/monitoring-absen"
-            className="flex items-center justify-between gap-4 bg-emerald-50/70 hover:bg-emerald-100/80 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-700/40 p-4 rounded-xl transition group cursor-pointer"
-            title="Lihat Detail Presensi Lapangan"
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-emerald-600 group-hover:bg-emerald-700 text-white flex items-center justify-center font-extrabold shadow-sm shrink-0 transition">
-                <CalendarCheck size={24} />
-              </div>
+      <div className={isMpl ? "w-full" : "grid grid-cols-1 lg:grid-cols-3 gap-4"}>
+        {/* Left: Metrik Presensi Mahasiswa - Disembunyikan khusus untuk role MPL */}
+        {!isMpl && (
+          <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div>
-                <span className="text-2xl font-black text-emerald-900 dark:text-emerald-300">
-                  {groups.length > 0 ? avgOverallAttendance : 0}%
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
+                  Presensi Lapangan
                 </span>
-                <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-bold">Rerata Presensi Kelompok</p>
+                <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100 mt-0.5">
+                  Tingkat Presensi Mahasiswa
+                </h3>
               </div>
+              <Link
+                to="/monitoring-absen"
+                className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 flex items-center gap-1 group"
+                title="Buka Halaman Presensi"
+              >
+                <span>Presensi</span>
+                <ChevronRight size={14} className="group-hover:translate-x-0.5 transition" />
+              </Link>
             </div>
-            <ChevronRight size={18} className="text-emerald-600 dark:text-emerald-400 group-hover:translate-x-1 transition shrink-0" />
-          </Link>
 
-          <div className="bg-slate-50 dark:bg-slate-800 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-700 flex flex-wrap items-center justify-around gap-1 text-xs font-medium">
-            <Link
-              to="/monitoring-kegiatan/pengajuan-izin"
-              className="text-blue-700 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline font-bold px-2 py-1 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/50 transition cursor-pointer flex items-center gap-1"
-              title="Buka Halaman Pengajuan Izin/Sakit (Filter Sakit)"
-            >
-              <span>{gradeDistribution.totalSakit} Sakit</span>
-            </Link>
-            <span className="text-slate-300 dark:text-slate-600">•</span>
-            <Link
-              to="/monitoring-kegiatan/pengajuan-izin"
-              className="text-purple-700 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 hover:underline font-bold px-2 py-1 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-950/50 transition cursor-pointer flex items-center gap-1"
-              title="Buka Halaman Pengajuan Izin/Sakit (Filter Izin)"
-            >
-              <span>{gradeDistribution.totalIzin} Izin</span>
-            </Link>
-            <span className="text-slate-300 dark:text-slate-600">•</span>
             <Link
               to="/monitoring-absen"
-              className="text-rose-700 dark:text-rose-400 hover:text-rose-800 dark:hover:text-rose-300 hover:underline font-bold px-2 py-1 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/50 transition cursor-pointer flex items-center gap-1"
-              title="Buka Halaman Presensi (Tanpa Keterangan)"
+              className="flex items-center justify-between gap-4 bg-emerald-50/70 hover:bg-emerald-100/80 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-700/40 p-4 rounded-xl transition group cursor-pointer"
+              title="Lihat Detail Presensi Lapangan"
             >
-              <span>{gradeDistribution.totalAlpha} Tanpa Keterangan</span>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-emerald-600 group-hover:bg-emerald-700 text-white flex items-center justify-center font-extrabold shadow-sm shrink-0 transition">
+                  <CalendarCheck size={24} />
+                </div>
+                <div>
+                  <span className="text-2xl font-black text-emerald-900 dark:text-emerald-300">
+                    {groups.length > 0 ? avgOverallAttendance : 0}%
+                  </span>
+                  <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-bold">Rerata Presensi Kelompok</p>
+                </div>
+              </div>
+              <ChevronRight size={18} className="text-emerald-600 dark:text-emerald-400 group-hover:translate-x-1 transition shrink-0" />
             </Link>
-          </div>
-        </div>
 
-        {/* Right: Program Kerja yang Diusulkan */}
-        <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-4">
+            <div className="bg-slate-50 dark:bg-slate-800 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-700 flex flex-wrap items-center justify-around gap-1 text-xs font-medium">
+              <Link
+                to="/monitoring-kegiatan/pengajuan-izin"
+                className="text-blue-700 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline font-bold px-2 py-1 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/50 transition cursor-pointer flex items-center gap-1"
+                title="Buka Halaman Pengajuan Izin/Sakit (Filter Sakit)"
+              >
+                <span>{gradeDistribution.totalSakit} Sakit</span>
+              </Link>
+              <span className="text-slate-300 dark:text-slate-600">•</span>
+              <Link
+                to="/monitoring-kegiatan/pengajuan-izin"
+                className="text-purple-700 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 hover:underline font-bold px-2 py-1 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-950/50 transition cursor-pointer flex items-center gap-1"
+                title="Buka Halaman Pengajuan Izin/Sakit (Filter Izin)"
+              >
+                <span>{gradeDistribution.totalIzin} Izin</span>
+              </Link>
+              <span className="text-slate-300 dark:text-slate-600">•</span>
+              <Link
+                to="/monitoring-absen"
+                className="text-rose-700 dark:text-rose-400 hover:text-rose-800 dark:hover:text-rose-300 hover:underline font-bold px-2 py-1 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/50 transition cursor-pointer flex items-center gap-1"
+                title="Buka Halaman Presensi (Tanpa Keterangan)"
+              >
+                <span>{gradeDistribution.totalAlpha} Tanpa Keterangan</span>
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* Right: Program Kerja yang Diusulkan (Lebar Penuh jika MPL, 2 Kolom jika DPL/Pimpinan) */}
+        <div className={`${isMpl ? "w-full" : "lg:col-span-2"} bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-4`}>
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
             <div>
               <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
@@ -1951,18 +1984,18 @@ export const DplDashboardPage: React.FC = () => {
               <div className="p-6 text-center text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 text-xs">
                 Belum ada program kerja yang diusulkan oleh mahasiswa di kelompok dampingan.
               </div>
-            ) : effectiveProkers.filter((p: any) => normalizeStatusUsulan(p.statusUsulan, p.status) === "DISETUJUI").length === 0 ? (
+            ) : effectiveProkers.filter((p: any) => normalizeStatusUsulan(p.statusUsulan, p.status) === "DISETUJUI" && !isTestProker(p) && !isTestKelompok({ name: p.kelompokName || p.namaKelompok || p.kelompok?.name })).length === 0 ? (
               <div className="p-6 text-center text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 text-xs">
                 Belum ada program kerja disetujui.{" "}
-                {effectiveProkers.filter((p: any) => normalizeStatusUsulan(p.statusUsulan, p.status) === "BELUM_DISETUJUI").length > 0 && (
+                {effectiveProkers.filter((p: any) => normalizeStatusUsulan(p.statusUsulan, p.status) === "BELUM_DISETUJUI" && !isTestProker(p) && !isTestKelompok({ name: p.kelompokName || p.namaKelompok || p.kelompok?.name })).length > 0 && (
                   <Link to="/program-kerja-kkn?statusUsulan=BELUM_DISETUJUI" className="text-amber-600 dark:text-amber-400 font-semibold hover:underline">
-                    {effectiveProkers.filter((p: any) => normalizeStatusUsulan(p.statusUsulan, p.status) === "BELUM_DISETUJUI").length} proker menunggu persetujuan DPL →
+                    {effectiveProkers.filter((p: any) => normalizeStatusUsulan(p.statusUsulan, p.status) === "BELUM_DISETUJUI" && !isTestProker(p) && !isTestKelompok({ name: p.kelompokName || p.namaKelompok || p.kelompok?.name })).length} proker menunggu persetujuan DPL →
                   </Link>
                 )}
               </div>
             ) : (
               effectiveProkers
-                .filter((p: any) => normalizeStatusUsulan(p.statusUsulan, p.status) === "DISETUJUI")
+                .filter((p: any) => normalizeStatusUsulan(p.statusUsulan, p.status) === "DISETUJUI" && !isTestProker(p) && !isTestKelompok({ name: p.kelompokName || p.namaKelompok || p.kelompok?.name }))
                 .slice(0, 4).map((p: any) => {
 
                 const normU = normalizeStatusUsulan(p.statusUsulan, p.status);
@@ -2114,8 +2147,8 @@ export const DplDashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Action Callout if pending approvals exist (Hanya untuk DPL / Non-Pimpinan) */}
-      {!isPimpinan && alerts?.pendingRequests && alerts.pendingRequests.length > 0 && (
+      {/* Action Callout if pending approvals exist (Hanya untuk DPL / Non-Pimpinan / Non-MPL) */}
+      {!isReadOnlyRole && alerts?.pendingRequests && alerts.pendingRequests.length > 0 && (
         <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-700/40 rounded-2xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-xs">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 rounded-xl">

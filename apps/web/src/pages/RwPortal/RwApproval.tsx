@@ -3,6 +3,7 @@ import api from "../../utils/api";
 import toast from "react-hot-toast";
 import { Badge } from "../../components/common/Badge";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
+import { sortChronologicalList } from "../../utils/sortUtils";
 
 export const RwApproval = () => {
   const [pendingPetugas, setPendingPetugas] = useState<any[]>([]);
@@ -19,8 +20,10 @@ export const RwApproval = () => {
         api.get("/rw/bins/inactive").catch(() => ({ data: { data: [] } })),
       ]);
 
-      setPendingPetugas(petugasRes.data?.data || petugasRes.data || []);
-      setInactiveBins(inactiveRes.data?.data || inactiveRes.data || []);
+      const rawPetugas = petugasRes.data?.data || petugasRes.data || [];
+      const rawInactive = inactiveRes.data?.data || inactiveRes.data || [];
+      setPendingPetugas(sortChronologicalList(rawPetugas, (p: any) => p.createdAt || p.user?.createdAt, "desc"));
+      setInactiveBins(sortChronologicalList(rawInactive, (b: any) => b.createdAt || b.updatedAt, "desc"));
     } catch (error) {
       console.error("Failed to fetch RW approval data", error);
     } finally {

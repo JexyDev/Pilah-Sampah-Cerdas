@@ -194,7 +194,10 @@ export const presensiMandiriController = {
   getLiveMap: async (req: Request, res: Response): Promise<void> => {
     try {
       const kelompokId = req.query.kelompokId as string | undefined;
-      const result = await presensiMandiriService.getLiveMap({ kelompokId });
+      const userRole = req.user?.role;
+      const isDevOnly = userRole === "DEVELOPER";
+      const includeTestAccounts = req.query.includeTestAccounts === "true" && isDevOnly;
+      const result = await presensiMandiriService.getLiveMap({ kelompokId, includeTestAccounts });
       res.status(200).json({ success: true, data: result });
     } catch (error: any) {
       res
@@ -209,6 +212,9 @@ export const presensiMandiriController = {
   getAll: async (req: Request, res: Response): Promise<void> => {
     try {
       const { kelompokId, tanggalMulai, tanggalAkhir, status, page, limit } = req.query;
+      const userRole = req.user?.role;
+      const isDevOnly = userRole === "DEVELOPER";
+      const includeTestAccounts = req.query.includeTestAccounts === "true" && isDevOnly;
       const result = await presensiMandiriService.getAll({
         kelompokId: kelompokId as string,
         tanggalMulai: tanggalMulai as string,
@@ -216,6 +222,7 @@ export const presensiMandiriController = {
         status: status as string,
         page: page ? parseInt(page as string) : undefined,
         limit: limit ? parseInt(limit as string) : undefined,
+        includeTestAccounts,
       });
       res.status(200).json({ success: true, data: result });
     } catch (error: any) {

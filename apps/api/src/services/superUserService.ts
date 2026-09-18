@@ -73,7 +73,7 @@ export class SuperUserService {
 
     const inactiveBins = bins.filter((b: any) => this.getBinDynamicStatus(b) === "INACTIVE");
 
-    return inactiveBins.map((b: any) => {
+    const mapped = inactiveBins.map((b: any) => {
       const lastLog =
         b.setoranOtomatis && b.setoranOtomatis.length > 0 ? b.setoranOtomatis[0].createdAt : null;
       const latestRequest =
@@ -90,6 +90,10 @@ export class SuperUserService {
         status: "INACTIVE",
       };
     });
+
+    return mapped.sort(
+      (a: any, b: any) => new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime()
+    );
   }
 
   /**
@@ -1115,6 +1119,7 @@ export class SuperUserService {
         whitelistStatus: "PENDING",
       },
       include: { user: true },
+      orderBy: { createdAt: "desc" },
     });
   }
 

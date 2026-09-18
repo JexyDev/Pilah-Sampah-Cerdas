@@ -273,9 +273,11 @@ const ManajemenPengguna: React.FC = () => {
     kecamatan: "Kecamatan Terdaftar",
     petugasResiduId: "",
     namaDisplay: "",
+    namaAsli: "",
     petugasKelurahan: "",
     dplId: "",
     sks: 0,
+    isTestAccount: false,
   });
 
 
@@ -612,6 +614,7 @@ const ManajemenPengguna: React.FC = () => {
       petugasResiduId: "",
       dplId: "",
       sks: 0,
+      isTestAccount: false,
     });
     setShowPassword(false);
     setIsModalOpen(true);
@@ -699,9 +702,11 @@ const ManajemenPengguna: React.FC = () => {
       kecamatan: u.kecamatan || u.rw?.kelurahan?.kecamatan?.name || kecamatanList[0]?.name || "Kecamatan Terdaftar",
       petugasResiduId: u.petugasResidu?.id || "",
       namaDisplay: u.petugasProfile?.namaDisplay || (u as any).namaDisplay || "",
+      namaAsli: u.petugasProfile?.nama || (u as any).namaAsli || "",
       petugasKelurahan: u.petugasProfile?.kelurahan || (u as any).kelurahan || "",
       dplId: u.studentProfile?.kelompok?.dplId || u.studentProfile?.kelompok?.dpl?.id || u.dplId || "",
       sks: u.studentProfile?.sks !== undefined && u.studentProfile?.sks !== null ? Number(u.studentProfile.sks) : (u.sks !== undefined && u.sks !== null ? Number(u.sks) : 0),
+      isTestAccount: Boolean(u.isTestAccount),
     });
 
     setShowPassword(false);
@@ -780,6 +785,7 @@ const ManajemenPengguna: React.FC = () => {
         rwId: parsedAreaId,
         provinsi: formData.provinsi,
         kabupaten: formData.kabupaten,
+        isTestAccount: Boolean(formData.isTestAccount),
       };
 
       if (formData.password) {
@@ -848,7 +854,8 @@ const ManajemenPengguna: React.FC = () => {
         payload.petugasResiduId = formData.petugasResiduId || null;
       }
       if (formData.roleName === "PETUGAS_RESIDU") {
-        payload.namaDisplay = formData.namaDisplay || null;
+        payload.namaDisplay = formData.namaDisplay || formData.name || null;
+        payload.namaAsli = formData.namaAsli || null;
         payload.kelurahan = formData.petugasKelurahan || (modalKelurahan ? modalKelurahan.replace(/^Kel\.\s*/i, "").trim() : null);
       }
       if (formData.roleName === "MPL") {
@@ -1469,7 +1476,7 @@ const ManajemenPengguna: React.FC = () => {
                   </>
                 ) : selectedRole === "PETUGAS_RESIDU" ? (
                   <>
-                    <th className="py-3 px-4">NAMA LENGKAP</th>
+                    <th className="py-3 px-4">NAMA PETUGAS WILAYAH</th>
                     <th className="py-3 px-4">NO. HP</th>
                     <th className="py-3 px-4">KECAMATAN</th>
                     <th className="py-3 px-4">KELURAHAN</th>
@@ -1530,7 +1537,15 @@ const ManajemenPengguna: React.FC = () => {
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-3">
                         {renderAvatar(u)}
-                        <span className="font-bold text-slate-800 dark:text-slate-100 text-xs">{u.name}</span>
+                        <div>
+                          <span className="font-bold text-slate-800 dark:text-slate-100 text-xs block">{u.name}</span>
+                          {(selectedRole === "PETUGAS_RESIDU" || u.role === "PETUGAS_RESIDU") && (u.namaAsli || u.petugasProfile?.nama) && (u.namaAsli || u.petugasProfile?.nama) !== u.name && (
+                            <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800/80 shadow-2xs">
+                              <span className="text-emerald-500">👤 Personil:</span>
+                              <span className="font-extrabold">{u.namaAsli || u.petugasProfile?.nama}</span>
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </td>
 
@@ -1750,16 +1765,23 @@ const ManajemenPengguna: React.FC = () => {
                     )}
 
                     <td className="py-3 px-4 text-center">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
-                        (u.status === "Aktif" || u.status === "ACTIVE" || !u.status)
-                          ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80"
-                          : "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/80"
-                      }`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${
-                          (u.status === "Aktif" || u.status === "ACTIVE" || !u.status) ? "bg-emerald-500" : "bg-rose-500"
-                        }`} />
-                        {u.status || "Aktif"}
-                      </span>
+                      <div className="flex flex-col items-center gap-1">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
+                          (u.status === "Aktif" || u.status === "ACTIVE" || !u.status)
+                            ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80"
+                            : "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/80"
+                        }`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${
+                            (u.status === "Aktif" || u.status === "ACTIVE" || !u.status) ? "bg-emerald-500" : "bg-rose-500"
+                          }`} />
+                          {u.status || "Aktif"}
+                        </span>
+                        {user?.peran === "DEVELOPER" && Boolean(u.isTestAccount) && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60">
+                            TEST
+                          </span>
+                        )}
+                      </div>
                     </td>
 
                     {!isReadOnly && (
@@ -1898,13 +1920,20 @@ const ManajemenPengguna: React.FC = () => {
                     </div>
                   </div>
 
-                  <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-extrabold uppercase ${
-                    (u.status === "Aktif" || u.status === "ACTIVE" || !u.status)
-                      ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80"
-                      : "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/80"
-                  }`}>
-                    {u.status || "Aktif"}
-                  </span>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-extrabold uppercase ${
+                      (u.status === "Aktif" || u.status === "ACTIVE" || !u.status)
+                        ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80"
+                        : "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/80"
+                    }`}>
+                      {u.status || "Aktif"}
+                    </span>
+                    {user?.peran === "DEVELOPER" && Boolean(u.isTestAccount) && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-black uppercase bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60">
+                        TEST
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Details Info Grid */}
@@ -2110,8 +2139,29 @@ const ManajemenPengguna: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Nama Lengkap <span className="text-rose-500">*</span></label>
-                      <input type="text" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Masukkan nama lengkap" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
+                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                        {formData.roleName === "PETUGAS_RESIDU" ? "Nama Akun / Petugas Wilayah" : "Nama Lengkap"} <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.name}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setFormData((prev) => ({
+                            ...prev,
+                            name: val,
+                            namaDisplay: prev.roleName === "PETUGAS_RESIDU" && (!prev.namaDisplay || prev.namaDisplay === prev.name) ? val : prev.namaDisplay,
+                          }));
+                        }}
+                        placeholder={formData.roleName === "PETUGAS_RESIDU" ? "Contoh: Petugas Sadang Serang 01" : "Masukkan nama lengkap"}
+                        className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none"
+                      />
+                      {formData.roleName === "PETUGAS_RESIDU" && (
+                        <p className="text-[10px] text-slate-400 mt-1">
+                          Nama ini akan menjadi identitas utama di sistem, akun login, dan dasbor monitoring wilayah.
+                        </p>
+                      )}
                     </div>
 
                     <div>
@@ -2684,22 +2734,37 @@ const ManajemenPengguna: React.FC = () => {
                         </div>
                       )}
 
-                      {/* PETUGAS_RESIDU Wilayah Penugasan & Nama Display Daerah */}
+                      {/* PETUGAS_RESIDU Wilayah Penugasan, Nama Asli Personil & Nama Display Daerah */}
                       {formData.roleName === "PETUGAS_RESIDU" && (
                         <>
                           <div>
                             <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
-                              Nama Tampilan Publik (Sesuai Daerah)
+                              Nama Asli Petugas Pemilah (Personil Lapangan)
+                            </label>
+                            <input
+                              type="text"
+                              value={formData.namaAsli}
+                              onChange={(e) => setFormData({ ...formData, namaAsli: e.target.value })}
+                              placeholder="Contoh: Bapak Asep Supriatna (opsional)"
+                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none"
+                            />
+                            <p className="text-[10px] text-slate-400 mt-1">
+                              Nama bapak/ibu personil riil yang bertugas di lapangan. Jika dikosongkan, data akan otomatis mengikuti Nama Petugas Wilayah.
+                            </p>
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                              Nama Tampilan Wilayah (Monitoring & Leaderboard)
                             </label>
                             <input
                               type="text"
                               value={formData.namaDisplay}
                               onChange={(e) => setFormData({ ...formData, namaDisplay: e.target.value })}
-                              placeholder="Contoh: Petugas Kelurahan Dago 01"
+                              placeholder="Contoh: Petugas Sadang Serang 01"
                               className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none"
                             />
                             <p className="text-[10px] text-slate-400 mt-1">
-                              Nama ini yang akan muncul di Peringkat/Leaderboard dan laporan wilayah operasional.
+                              Nama wilayah operasional ini yang akan muncul di Peringkat/Leaderboard dan monitoring publik.
                             </p>
                           </div>
                           <div>
@@ -2961,6 +3026,24 @@ const ManajemenPengguna: React.FC = () => {
                                 <AlertTriangle size={13} className="shrink-0 text-amber-500" />
                                 <span>Ini adalah akun Anda yang sedang login. Status akun tidak dapat dinonaktifkan demi keamanan.</span>
                               </p>
+                            )}
+
+                            {user?.peran === "DEVELOPER" && (
+                              <div className="bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 p-3 rounded-2xl flex items-center justify-between mt-3 shadow-2xs">
+                                <div className="pr-3">
+                                  <p className="text-xs font-bold text-amber-900 dark:text-amber-200">Tandai Akun Pengujian (Test Dev)</p>
+                                  <p className="text-[10.5px] text-amber-700/90 dark:text-amber-400">Akun pengujian akan otomatis disembunyikan dari output monitoring atasan (presensi, peta GIS, rekap excel, KPI).</p>
+                                </div>
+                                <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                                  <input
+                                    type="checkbox"
+                                    checked={Boolean((formData as any).isTestAccount)}
+                                    onChange={(e) => setFormData({ ...formData, isTestAccount: e.target.checked } as any)}
+                                    className="sr-only peer"
+                                  />
+                                  <div className="w-10 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-amber-600"></div>
+                                </label>
+                              </div>
                             )}
                           </>
                         );

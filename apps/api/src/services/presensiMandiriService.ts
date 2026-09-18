@@ -508,11 +508,16 @@ export class PresensiMandiriService {
     };
   }
 
-  async getLiveMap(params: { kelompokId?: string }) {
-    const { kelompokId } = params;
+  async getLiveMap(params: { kelompokId?: string; includeTestAccounts?: boolean }) {
+    const { kelompokId, includeTestAccounts } = params;
     const db = prisma as any;
+    const mandiriWhere: any = { status: "AKTIF", ...(kelompokId ? { kelompokId } : {}) };
+    if (!includeTestAccounts) {
+      mandiriWhere.student = { isTestAccount: false };
+    }
+
     const mandiriAktif = await db.presensiMandiri.findMany({
-      where: { status: "AKTIF", ...(kelompokId ? { kelompokId } : {}) },
+      where: mandiriWhere,
       include: {
         student: {
           select: {
@@ -529,11 +534,20 @@ export class PresensiMandiriService {
         kelompok: { select: { id: true, name: true, kelurahan: true } },
       },
     });
+
+    const resmiWhere: any = {
+      status: "BERLANGSUNG",
+      ...(kelompokId ? { student: { studentProfile: { kelompokId } } } : {}),
+    };
+    if (!includeTestAccounts) {
+      resmiWhere.student = {
+        ...(resmiWhere.student || {}),
+        isTestAccount: false,
+      };
+    }
+
     const resmiAktif = await prisma.activityAttendance.findMany({
-      where: {
-        status: "BERLANGSUNG",
-        ...(kelompokId ? { student: { studentProfile: { kelompokId } } } : {}),
-      },
+      where: resmiWhere,
       include: {
         student: {
           select: {
@@ -625,6 +639,7 @@ export class PresensiMandiriService {
     status?: string;
     page?: number;
     limit?: number;
+    includeTestAccounts?: boolean;
   }) {
     const page = Math.max(1, params.page ?? 1);
     const limit = Math.min(100, Math.max(1, params.limit ?? 20));
@@ -632,6 +647,9 @@ export class PresensiMandiriService {
     const where: any = {};
     if (params.kelompokId) where.kelompokId = params.kelompokId;
     if (params.status) where.status = params.status;
+    if (!params.includeTestAccounts) {
+      where.student = { isTestAccount: false };
+    }
     if (params.tanggalMulai || params.tanggalAkhir) {
       where.checkInAt = {};
       if (params.tanggalMulai) where.checkInAt.gte = new Date(params.tanggalMulai);

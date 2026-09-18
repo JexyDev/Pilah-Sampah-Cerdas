@@ -136,6 +136,9 @@ describe("UserService", () => {
         dplKelompok: [],
         petugasResidu: null,
         petugasProfile: null,
+        namaAsli: null,
+        namaDisplay: null,
+        isTestAccount: false,
       });
     });
 

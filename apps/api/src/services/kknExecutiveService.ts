@@ -7,6 +7,7 @@ export interface KknExecutiveFilters {
   rw?: string;
   periode?: string;
   kelompok?: string;
+  includeTestAccounts?: boolean;
 }
 
 export const kknExecutiveService = {
@@ -48,11 +49,15 @@ export const kknExecutiveService = {
         kelurahan: true,
         cakupanRw: true,
         dplId: true,
+        dplNamaMentah: true,
+        dpl: { select: { id: true, name: true, phone: true, nip: true, isTestAccount: true } },
       },
     });
 
     // 100% Data Aktual: Filter kelompok testing/dummy
-    kelompokList = kelompokList.filter((k) => !isTestKelompok(k));
+    if (!filters.includeTestAccounts) {
+      kelompokList = kelompokList.filter((k) => !isTestKelompok(k));
+    }
 
     // Filter RW di memori jika ada filter RW
     if (isFilteredRw) {
@@ -122,13 +127,23 @@ export const kknExecutiveService = {
             name: true,
             phone: true,
             email: true,
+            isTestAccount: true,
+          },
+        },
+        kelompok: {
+          select: {
+            id: true,
+            name: true,
+            kelurahan: true,
           },
         },
       },
     });
 
     // 100% Data Aktual: Filter akun mahasiswa testing / dummy
-    const students = studentsRaw.filter((s) => !isTestStudent(s));
+    const students = filters.includeTestAccounts
+      ? studentsRaw
+      : studentsRaw.filter((s) => !isTestStudent(s));
 
     const totalMahasiswa = students.length;
     const realStudentIds = students.map((s) => s.id);
@@ -218,10 +233,10 @@ export const kknExecutiveService = {
     }
 
     // 7. Distribusi Beban SKS Dinamis & Real-time (100% Zero Hardcode)
+    // Mahasiswa dengan beban 0 SKS / null disembunyikan dari chart distribusi beban karena merupakan data belum lengkap dari Excel
     const sksCounts: Record<string, { sks: number; count: number; label: string }> = {};
 
     const COLOR_PALETTE: Record<number, string> = {
-      0: "#94a3b8",  // Slate - Non-Konversi / Reguler
       6: "#f59e0b",  // Amber
       11: "#0ea5e9", // Sky Blue
       12: "#3b82f6", // Blue
@@ -233,14 +248,23 @@ export const kknExecutiveService = {
       20: "#059669", // Dark Emerald / MBKM Penuh
     };
 
+    let totalMahasiswaDenganSks = 0;
+    let belumTerdataCount = 0;
+
     students.forEach((s: any) => {
-      const sksVal = s.sks && s.sks > 0 ? Number(s.sks) : 0;
+      const sksVal = s.sks && Number(s.sks) > 0 ? Number(s.sks) : 0;
+      if (sksVal <= 0) {
+        belumTerdataCount++;
+        return; // Sembunyikan 0 SKS / belum terdata dari distribusi beban SKS
+      }
+
+      totalMahasiswaDenganSks++;
       const key = String(sksVal);
       if (!sksCounts[key]) {
         sksCounts[key] = {
           sks: sksVal,
           count: 0,
-          label: sksVal > 0 ? `${sksVal} SKS` : "Reguler (0 SKS)",
+          label: `${sksVal} SKS`,
         };
       }
       sksCounts[key].count++;
@@ -252,12 +276,15 @@ export const kknExecutiveService = {
         sks: item.sks,
         label: item.label,
         count: item.count,
-        percentage: totalMahasiswa > 0 ? Math.round((item.count / totalMahasiswa) * 100) : 0,
+        percentage: totalMahasiswaDenganSks > 0 ? Math.round((item.count / totalMahasiswaDenganSks) * 100) : 0,
         color: COLOR_PALETTE[item.sks] || "#0284c7",
       }));
 
     const distribusiSks = {
-      totalMahasiswa,
+      totalMahasiswa: totalMahasiswaDenganSks, // Total mahasiswa dengan konversi SKS valid untuk angka di tengah donut chart
+      totalMahasiswaSemua: totalMahasiswa,
+      totalMahasiswaDenganSks,
+      belumTerdataCount,
       breakdown,
     };
 
@@ -877,7 +904,7 @@ export const kknExecutiveService = {
     const kelompokMap = new Map(kelompokList.map((k) => [k.id, k]));
 
     const criticalAlpaStudents = students
-      .filter((s) => criticalAlpaMap.has(s.userId))
+      .filter((s) => criticalAlpaMap.has(s.userId) && !isTestStudent(s))
       .map((s) => {
         const k = kelompokMap.get(s.kelompokId || "");
         const d = k?.dplId ? realDplMap.get(k.dplId) : null;
@@ -896,6 +923,7 @@ export const kknExecutiveService = {
           alpaCount: criticalAlpaMap.get(s.userId) || 0,
         };
       })
+      .filter((s) => !isTestKelompok({ name: s.kelompokName, dplNamaMentah: s.dplName }))
       .sort((a, b) => b.alpaCount - a.alpaCount);
 
     const countCriticalAlpaStudents = criticalAlpaStudents.length;

@@ -401,16 +401,16 @@ describe("KKN Gamification Logic & Fixes", () => {
 
       const res = await calculateGroupPoints("kel-1", [], ["u1", "u2", "u3", "u4"]);
 
-      // 1. Verifikasi formula baru (Rerata Anggota dihitung dari total saldo dinamis 253 PTS / 4 = 63.3 PTS)
+      // 1. Verifikasi formula baru (Rerata Anggota dihitung dari total saldo dinamis 253 PTS / 4 = 63.25 PTS)
       expect(res.totalCumulativeMemberPoints).toBe(253);
       expect(res.totalCumulativeMemberPointsWithNormalization).toBe(253);
-      expect(res.rataRataPoinAnggota).toBe(63.3); // 253 / 4 = 63.25 -> 63.3
-      // Rumus: (0 * 0.6) + (63.3 * 0.4) = 25.32 -> 25.3
+      expect(res.rataRataPoinAnggota).toBe(63.25); // 253 / 4 = 63.25
+      // Rumus: (0 * 0.6) + (63.25 * 0.4) = 25.3
       expect(res.totalGroupPoints).toBe(25.3);
 
       // 2. Verifikasi arsip poin murni presensi harian tetap tersimpan (audit akademik)
       expect(res.pureTotalCumulativeMemberPoints).toBe(57);
-      expect(res.pureRataRataPoinAnggota).toBe(14.3); // 57 / 4 = 14.25 -> 14.3
+      expect(res.pureRataRataPoinAnggota).toBe(14.25); // 57 / 4 = 14.25
 
       // 3. Verifikasi bonus normalisasi
       expect(res.totalNormalizationBonus).toBe(196); // 49 * 4
@@ -419,7 +419,7 @@ describe("KKN Gamification Logic & Fixes", () => {
       // 4. Verifikasi sifat idempoten & anti-rekursi (panggilan berulang tidak memicu point explosion)
       const resSecondCall = await calculateGroupPoints("kel-1", [], ["u1", "u2", "u3", "u4"]);
       expect(resSecondCall.totalCumulativeMemberPoints).toBe(253);
-      expect(resSecondCall.rataRataPoinAnggota).toBe(63.3);
+      expect(resSecondCall.rataRataPoinAnggota).toBe(63.25);
       expect(resSecondCall.totalGroupPoints).toBe(25.3);
       expect(resSecondCall.pureTotalCumulativeMemberPoints).toBe(57);
     });

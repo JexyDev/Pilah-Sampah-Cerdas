@@ -540,6 +540,7 @@ export class UserService {
         nim: u.studentProfile?.nim || null,
         role: u.role.name,
         status: u.status,
+        isTestAccount: Boolean(u.isTestAccount),
         binStatus,
         activeBinsCount,
         provinsi: u.provinsi || provinsiName || "Jawa Barat",
@@ -607,7 +608,6 @@ export class UserService {
             }
           : null,
         petugasProfile: u.petugasProfile
-
           ? {
               id: u.petugasProfile.id,
               nama: u.petugasProfile.nama,
@@ -617,6 +617,8 @@ export class UserService {
               kpiScore: u.petugasProfile.kpiScore ? Number(u.petugasProfile.kpiScore) : 100,
             }
           : null,
+        namaAsli: u.petugasProfile?.nama || null,
+        namaDisplay: u.petugasProfile?.namaDisplay || null,
       };
     });
 
@@ -663,6 +665,10 @@ export class UserService {
           mhsKelompok,
           lurahRws,
           u.petugasResidu?.name,
+          u.namaAsli,
+          u.namaDisplay,
+          u.petugasProfile?.nama,
+          u.petugasProfile?.namaDisplay,
         ]
           .filter(Boolean)
           .join(" ")
@@ -868,6 +874,7 @@ export class UserService {
             jumlahAnggotaKeluarga !== undefined && jumlahAnggotaKeluarga !== null
               ? Number(jumlahAnggotaKeluarga)
               : null,
+          isTestAccount: data.isTestAccount !== undefined ? Boolean(data.isTestAccount) : false,
         },
         include: { role: { select: { name: true } } },
       });
@@ -971,8 +978,8 @@ export class UserService {
           await tx.petugasResidu.create({
             data: {
               userId: u.id,
-              nama: u.name,
-              namaDisplay: data.namaDisplay || null,
+              nama: data.namaAsli || u.name,
+              namaDisplay: data.namaDisplay || u.name,
               kelurahan: data.kelurahan || null,
               noWa: u.phone || "-",
               whitelistStatus: "APPROVED",
@@ -1162,6 +1169,9 @@ export class UserService {
       updateData.jumlahAnggotaKeluarga =
         jumlahAnggotaKeluarga !== null ? Number(jumlahAnggotaKeluarga) : null;
     if (fotoProfil !== undefined) updateData.fotoProfil = fotoProfil || null;
+    if (data.isTestAccount !== undefined) {
+      updateData.isTestAccount = Boolean(data.isTestAccount);
+    }
 
     const updatedUser = await prisma.$transaction(async (tx) => {
       const u = await tx.user.update({
@@ -1355,8 +1365,8 @@ export class UserService {
           await tx.petugasResidu.update({
             where: { userId: u.id },
             data: {
-              nama: u.name,
-              namaDisplay: data.namaDisplay !== undefined ? data.namaDisplay : existingProfile.namaDisplay,
+              nama: data.namaAsli !== undefined ? (data.namaAsli || u.name) : (existingProfile.nama || u.name),
+              namaDisplay: data.namaDisplay !== undefined ? (data.namaDisplay || u.name) : (existingProfile.namaDisplay || u.name),
               kelurahan: data.kelurahan !== undefined ? data.kelurahan : existingProfile.kelurahan,
               noWa: u.phone || existingProfile.noWa,
               assignedZone: data.wilayah !== undefined ? data.wilayah : existingProfile.assignedZone,
@@ -1366,8 +1376,8 @@ export class UserService {
           await tx.petugasResidu.create({
             data: {
               userId: u.id,
-              nama: u.name,
-              namaDisplay: data.namaDisplay || null,
+              nama: data.namaAsli || u.name,
+              namaDisplay: data.namaDisplay || u.name,
               kelurahan: data.kelurahan || null,
               noWa: u.phone || "-",
               whitelistStatus: "APPROVED",
@@ -1449,6 +1459,32 @@ export class UserService {
       hasNonOrganik,
       onboardingComplete,
     };
+  }
+
+  async registerKomunitas(userId: string) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new Error("USER_NOT_FOUND");
+    
+    if (user.komunitasId) {
+      return user.komunitasId;
+    }
+
+    const { generateKomunitasId } = await import("../utils/komunitasHelper.js");
+    let newId = "";
+    let isUnique = false;
+    
+    while (!isUnique) {
+      newId = generateKomunitasId();
+      const existing = await prisma.user.findUnique({ where: { komunitasId: newId } });
+      if (!existing) isUnique = true;
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { komunitasId: newId },
+    });
+
+    return newId;
   }
 }
 

@@ -13,6 +13,7 @@ import api from "../../services/api";
 import showToast from "../../utils/showToast";
 import { useAuthStore } from "../../store/useAuthStore";
 import { wsClient } from "../../utils/websocket";
+import { sortChronologicalList } from "../../utils/sortUtils";
 import {
   Scale,
   Sparkles,
@@ -208,7 +209,7 @@ export default function SetorSampah() {
 
   // Filtered dataset
   const filteredLogs = useMemo(() => {
-    return logs.filter((log) => {
+    const list = logs.filter((log) => {
       // 1. Search Query
       if (searchQuery.trim() !== "") {
         const q = searchQuery.toLowerCase().trim();
@@ -264,6 +265,8 @@ export default function SetorSampah() {
 
       return true;
     });
+
+    return sortChronologicalList(list, (l) => l.waktu || (l as any).createdAt, "desc");
   }, [logs, searchQuery, filterKelurahan, filterRw, filterCategory, filterPeriode, startDate, endDate, isLurah, userKelurahan]);
 
   // Reset pagination on filter change

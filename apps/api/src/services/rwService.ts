@@ -88,6 +88,7 @@ export const rwService = {
           include: { assignedPic: true },
         },
       },
+      orderBy: { createdAt: "desc" },
     });
   },
 
@@ -183,6 +184,7 @@ export const rwService = {
         user: { rwId: { in: areaIds } },
       },
       include: { user: true },
+      orderBy: { createdAt: "desc" },
     });
   },
 
@@ -244,6 +246,7 @@ export const rwService = {
     return prisma.bin.findMany({
       where: { rwId: { in: areaIds }, status: "INACTIVE" },
       include: { user: true, category: true },
+      orderBy: { createdAt: "desc" },
     });
   },
 
@@ -278,6 +281,7 @@ export const rwService = {
         user: { rwId: { in: areaIds } },
       },
       include: { user: true },
+      orderBy: { createdAt: "desc" },
     });
   },
 
@@ -348,6 +352,7 @@ export const rwService = {
           },
         },
       },
+      orderBy: { createdAt: "desc" },
     });
   },
 
@@ -438,6 +443,7 @@ export const rwService = {
           },
         },
       },
+      orderBy: { createdAt: "desc" },
     });
   },
 

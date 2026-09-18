@@ -272,6 +272,9 @@ export const formatStatusName = (status: string | undefined | null): string => {
     case "AKTIF":
     case "ACTIVE_BOUND":
       return "Aktif";
+    case "PRINTED":
+    case "BELUM_DIGUNAKAN":
+      return "Belum Digunakan";
     case "INACTIVE":
     case "NONAKTIF":
     case "NON_AKTIF":

@@ -585,6 +585,8 @@ const MonitoringAbsen: React.FC = () => {
   ).toUpperCase();
   const isDpl = userRole === "DPL" || userRole === "DOSEN_PEMBIMBING";
   const isDeveloper = userRole === "DEVELOPER" || userRole === "SUPER_USER" || userRole === "DEV";
+  const isStrictDeveloper = userRole === "DEVELOPER" || userRole === "DEV";
+  const [includeTestAccounts, setIncludeTestAccounts] = useState<boolean>(false);
 
   const [selectedKelompokId, setSelectedKelompokId] = useState<string>(() => {
     if (typeof window !== "undefined") {
@@ -1324,9 +1326,11 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
   const fetchAttendanceAndLocations = async (
     scheduleId?: string,
-    kelompokId?: string
+    kelompokId?: string,
+    withTest: boolean = includeTestAccounts
   ) => {
     try {
+      const testParam = (isStrictDeveloper && withTest) ? "true" : undefined;
       if (scheduleId === "ALL_TODAY") {
         // Ambil data agregat absensi seluruh kelompok hari ini secara paralel
         const nowWib = new Date(Date.now() + 7 * 60 * 60 * 1000);
@@ -1346,7 +1350,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
         if (todaySchedules.length > 0) {
           const results = await Promise.allSettled(
-            todaySchedules.map((s) => api.get(`/kegiatan/${s.id}/absen`))
+            todaySchedules.map((s) => api.get(`/kegiatan/${s.id}/absen`, { params: { includeTestAccounts: testParam } }))
           );
           const combinedAtt: AttendanceRecord[] = [];
           results.forEach((res) => {
@@ -1360,12 +1364,14 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             return;
           }
         }
-        const tsRes = await api.get("/timesheet/summary");
+        const tsRes = await api.get("/timesheet/summary", {
+          params: { includeTestAccounts: testParam },
+        });
         const studentList = tsRes.data?.data?.students || [];
         setAttendance(mapTimesheetToAttendance(studentList));
       } else if (scheduleId) {
         const [attRes, locDetailRes] = await Promise.all([
-          api.get(`/kegiatan/${scheduleId}/absen`),
+          api.get(`/kegiatan/${scheduleId}/absen`, { params: { includeTestAccounts: testParam } }),
           api.get(`/kegiatan/${scheduleId}/lokasi`).catch(() => null)
         ]);
         setAttendance(attRes.data.data || []);
@@ -1377,7 +1383,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       } else {
         try {
           const tsRes = await api.get("/timesheet/summary", {
-            params: { kelompokId: kelompokId || undefined },
+            params: { kelompokId: kelompokId || undefined, includeTestAccounts: testParam },
           });
           const studentList = tsRes.data?.data?.students || [];
           if (studentList.length > 0) {
@@ -1392,7 +1398,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
       // Fetch live GPS markers (filtered by kelompok if selected)
       const locRes = await api.get("/mahasiswa/lokasi-aktif", {
-        params: { kelompokId: kelompokId || undefined },
+        params: { kelompokId: kelompokId || undefined, includeTestAccounts: testParam },
       });
       setStudentLocations(locRes.data.data || []);
     } catch (err: any) {
@@ -1491,8 +1497,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   }, [selectedKelompokId, visibleSchedules, isDpl, userRole]);
 
   useEffect(() => {
-    fetchAttendanceAndLocations(selectedScheduleId, selectedKelompokId);
-  }, [selectedScheduleId, selectedKelompokId]);
+    fetchAttendanceAndLocations(selectedScheduleId, selectedKelompokId, includeTestAccounts);
+  }, [selectedScheduleId, selectedKelompokId, includeTestAccounts]);
 
   useEffect(() => {
     // Untuk role non-developer (misal DPL): sinkronkan center ke kegiatan atau posko
@@ -2583,6 +2589,22 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 >
                   Reset
                 </button>
+              )}
+
+              {/* Dev Only: Toggle Akun Test */}
+              {isStrictDeveloper && (
+                <label
+                  className="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-700/60 px-2.5 py-1 rounded-xl cursor-pointer text-amber-900 dark:text-amber-200 select-none shadow-2xs shrink-0"
+                  title="Khusus Developer: Tampilkan akun pengujian di peta dan daftar presensi"
+                >
+                  <input
+                    type="checkbox"
+                    checked={includeTestAccounts}
+                    onChange={(e) => setIncludeTestAccounts(e.target.checked)}
+                    className="rounded text-amber-600 focus:ring-amber-500 w-3.5 h-3.5 cursor-pointer"
+                  />
+                  <span className="text-[10.5px] font-black whitespace-nowrap">Sertakan Data Test</span>
+                </label>
               )}
             </div>
           ) : (

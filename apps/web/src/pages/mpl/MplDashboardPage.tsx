@@ -36,6 +36,7 @@ import {
 import { useAuthStore } from "../../store/useAuthStore";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
+import { isTestKelompok, isTestStudent, isTestProker } from "../../utils/filterTestingUtils";
 
 // ── Tipe Data ─────────────────────────────────────────────────────────────────
 interface MplDashboardData {
@@ -188,7 +189,14 @@ const MplDashboardPage: React.FC = () => {
     try {
       const res = await api.get("/mpl/dashboard");
       if (res.data?.success || res.data?.data) {
-        setDashData(res.data.data ?? res.data);
+        const raw = res.data.data ?? res.data;
+        const cleanKelompokList = (raw.kelompokList || []).filter((k: any) => !isTestKelompok(k));
+        setDashData({
+          ...raw,
+          totalKelompok: cleanKelompokList.length,
+          totalAnggota: cleanKelompokList.reduce((acc: number, k: any) => acc + (k.jumlahAnggota || 0), 0),
+          kelompokList: cleanKelompokList,
+        });
       } else {
         setDashData(null);
       }
@@ -215,7 +223,8 @@ const MplDashboardPage: React.FC = () => {
       if (pelRw.trim()) params.rw = pelRw.trim();
       const res = await api.get("/mpl/groups", { params });
       if (res.data?.success || Array.isArray(res.data?.data)) {
-        setKelompokList(res.data.data ?? []);
+        const list = res.data.data ?? [];
+        setKelompokList(list.filter((k: any) => !isTestKelompok(k)));
       }
     } catch {
       setKelompokList([]);
@@ -231,7 +240,14 @@ const MplDashboardPage: React.FC = () => {
       if (pelRw.trim()) params.rw = pelRw.trim();
       const res = await api.get("/mpl/program-kerja", { params });
       if (res.data?.success || Array.isArray(res.data?.data)) {
-        setProkerList(res.data.data ?? []);
+        const list = res.data.data ?? [];
+        setProkerList(
+          list.filter(
+            (p: any) =>
+              !isTestProker(p) &&
+              !isTestKelompok({ name: p.kelompokName || p.kelompok?.name })
+          )
+        );
       } else {
         setProkerList([]);
       }
@@ -257,7 +273,8 @@ const MplDashboardPage: React.FC = () => {
       if (monKelurahan !== "Semua Kelurahan") params.kelurahan = monKelurahan;
       const res = await api.get("/mpl/monitoring", { params });
       if (res.data?.success || Array.isArray(res.data?.data)) {
-        setMonData(res.data.data ?? []);
+        const list = res.data.data ?? [];
+        setMonData(list.filter((m: any) => !isTestKelompok({ name: m.kelompokName })));
       } else {
         setMonData([]);
       }
@@ -293,7 +310,14 @@ const MplDashboardPage: React.FC = () => {
     try {
       const res = await api.get(`/mpl/penilaian`, { params: { kelompokId: nilaiKelompokId } });
       if (res.data?.success || Array.isArray(res.data?.data)) {
-        setMahasiswaList(res.data.data ?? []);
+        const list = res.data.data ?? [];
+        setMahasiswaList(
+          list.filter(
+            (m: any) =>
+              !isTestStudent(m) &&
+              !isTestKelompok({ name: m.kelompokName })
+          )
+        );
       } else {
         setMahasiswaList([]);
       }

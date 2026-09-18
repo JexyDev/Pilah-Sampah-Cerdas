@@ -9,6 +9,7 @@ import { QrCode, AlertTriangle, PlayCircle, Download, RefreshCw, Trash2, Plus, S
 import { printQrStickers } from "../../utils/printQrStickers";
 import { exportToXlsx } from "../../utils/exportXlsx";
 import { KelompokQrDistributionTab } from "./components/KelompokQrDistributionTab";
+import { sortChronologicalList } from "../../utils/sortUtils";
 
 import { useAuthStore } from "../../store/useAuthStore";
 
@@ -138,9 +139,9 @@ export const MasterQrManager: React.FC = () => {
         api.get("/super-user/bins/inactive"),
         api.get("/super-user/approvals/petugas"),
       ]);
-      if (qrsRes.data?.success) setQrs(qrsRes.data.data || []);
-      if (inactiveRes.data?.success) setInactiveBins(inactiveRes.data.data || []);
-      if (pendingPetugasRes.data?.success) setPendingPetugas(pendingPetugasRes.data.data || []);
+      if (qrsRes.data?.success) setQrs(sortChronologicalList(qrsRes.data.data || [], (q: any) => q.createdAt, "desc"));
+      if (inactiveRes.data?.success) setInactiveBins(sortChronologicalList(inactiveRes.data.data || [], (b: any) => b.lastActivity || b.createdAt, "desc"));
+      if (pendingPetugasRes.data?.success) setPendingPetugas(sortChronologicalList(pendingPetugasRes.data.data || [], (p: any) => p.createdAt || p.user?.createdAt, "desc"));
     } catch (e) {
       console.error("Gagal mengambil data QR & Persetujuan:", e);
       toast.error("Gagal memuat database QR");
@@ -486,12 +487,11 @@ export const MasterQrManager: React.FC = () => {
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-xs bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-medium text-slate-700 dark:text-slate-200 cursor-pointer"
               >
-                <option value="" className="dark:bg-slate-800">Semua Status Tempat Sampah</option>
-                <option value="ACTIVE_BOUND" className="dark:bg-slate-800">ACTIVE_BOUND (Aktif)</option>
-                <option value="PRINTED" className="dark:bg-slate-800">PRINTED (Belum Dipakai)</option>
-                <option value="ASSIGNED_TO_PIC" className="dark:bg-slate-800">ASSIGNED_TO_PIC (Mahasiswa KKN)</option>
-                <option value="INACTIVE" className="dark:bg-slate-800">INACTIVE (Tidak Aktif 30 Hari)</option>
-                <option value="BROKEN" className="dark:bg-slate-800">BROKEN (Rusak Fisik)</option>
+                <option value="" className="dark:bg-slate-800">Semua Status</option>
+                <option value="ACTIVE_BOUND" className="dark:bg-slate-800">Aktif</option>
+                <option value="PRINTED" className="dark:bg-slate-800">Belum Digunakan</option>
+                <option value="INACTIVE" className="dark:bg-slate-800">Tidak Aktif</option>
+                <option value="BROKEN" className="dark:bg-slate-800">Rusak</option>
               </select>
             </div>
           </div>
@@ -569,11 +569,13 @@ export const MasterQrManager: React.FC = () => {
                               onChange={(e) => handleUpdateStatus(q.id, e.target.value)}
                               className="px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 cursor-pointer"
                             >
-                              <option value="ACTIVE_BOUND" className="dark:bg-slate-800">ACTIVE_BOUND</option>
-                              <option value="PRINTED" className="dark:bg-slate-800">PRINTED</option>
-                              <option value="ASSIGNED_TO_PIC" className="dark:bg-slate-800">ASSIGNED_TO_PIC</option>
-                              <option value="INACTIVE" className="dark:bg-slate-800">INACTIVE</option>
-                              <option value="BROKEN" className="dark:bg-slate-800">BROKEN</option>
+                              <option value="ACTIVE_BOUND" className="dark:bg-slate-800">Aktif</option>
+                              <option value="PRINTED" className="dark:bg-slate-800">Belum Digunakan</option>
+                              {q.status === "ASSIGNED_TO_PIC" && (
+                                <option value="ASSIGNED_TO_PIC" className="dark:bg-slate-800" disabled>Ditugaskan ke PIC (Nonaktif)</option>
+                              )}
+                              <option value="INACTIVE" className="dark:bg-slate-800">Tidak Aktif</option>
+                              <option value="BROKEN" className="dark:bg-slate-800">Rusak</option>
                             </select>
                           </td>
                         )}
@@ -981,11 +983,13 @@ export const MasterQrManager: React.FC = () => {
                   onChange={(e) => setEditStatus(e.target.value)}
                   className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:outline-none"
                 >
-                  <option value="PRINTED" className="dark:bg-slate-800">PRINTED (Belum Dipakai)</option>
-                  <option value="ACTIVE_BOUND" className="dark:bg-slate-800">ACTIVE_BOUND (Aktif Terikat)</option>
-                  <option value="ASSIGNED_TO_PIC" className="dark:bg-slate-800">ASSIGNED_TO_PIC (Mahasiswa KKN)</option>
-                  <option value="INACTIVE" className="dark:bg-slate-800">INACTIVE (Tidak Aktif)</option>
-                  <option value="BROKEN" className="dark:bg-slate-800">BROKEN (Rusak Fisik)</option>
+                  <option value="PRINTED" className="dark:bg-slate-800">Belum Digunakan</option>
+                  <option value="ACTIVE_BOUND" className="dark:bg-slate-800">Aktif</option>
+                  {editStatus === "ASSIGNED_TO_PIC" && (
+                    <option value="ASSIGNED_TO_PIC" className="dark:bg-slate-800" disabled>Ditugaskan ke PIC (Nonaktif)</option>
+                  )}
+                  <option value="INACTIVE" className="dark:bg-slate-800">Tidak Aktif</option>
+                  <option value="BROKEN" className="dark:bg-slate-800">Rusak</option>
                 </select>
               </div>
             </div>

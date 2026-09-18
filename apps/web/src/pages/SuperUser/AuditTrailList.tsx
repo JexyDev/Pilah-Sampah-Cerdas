@@ -39,6 +39,7 @@ import {
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { getProfilePhotoUrl, handleAvatarError } from "../../utils/photoUtils";
+import { sortChronologicalList } from "../../utils/sortUtils";
 
 interface AuditTrail {
   id: string;
@@ -93,7 +94,7 @@ export const AuditTrailList: React.FC = () => {
         },
       });
       if (res.data.success) {
-        setLogs(res.data.data || []);
+        setLogs(sortChronologicalList(res.data.data || [], (l) => l.timestamp, "desc"));
       } else {
         setLogs([]);
       }
@@ -326,11 +327,12 @@ export const AuditTrailList: React.FC = () => {
 
   // Filter logs by Category Tab
   const filteredLogs = useMemo(() => {
-    return logs.filter((l) => {
+    const list = logs.filter((l) => {
       if (categoryTab === "SEMUA") return true;
       const meta = getActionMeta(l.action);
       return meta.category === categoryTab;
     });
+    return sortChronologicalList(list, (l) => l.timestamp, "desc");
   }, [logs, categoryTab]);
 
   const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
