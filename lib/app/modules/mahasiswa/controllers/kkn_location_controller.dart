@@ -14,6 +14,8 @@ import '../../../data/models/user_entity.dart';
 import 'mahasiswa_controller.dart';
 import 'location_ping_controller.dart';
 import 'mahasiswa_notifikasi_controller.dart';
+import '../../riwayat/controllers/riwayat_controller.dart'
+    show pointHistoryProvider;
 import '../../../data/services/notification_engine.dart';
 import '../../../core/utils/network_exception_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -50,7 +52,8 @@ class KknLocationState {
 
   /// Format String Jam Kerja (misal: "7 Jam 30 Menit")
   String get formattedWorkDuration {
-    final mins = totalWorkMinutes;
+    // Note: inZoneDurationSeconds actually stores minutes (mapped from _backendDurationMinutes)
+    final mins = inZoneDurationSeconds;
     if (mins <= 0) return '0 Menit';
     final hours = mins ~/ 60;
     final remainingMins = mins % 60;
@@ -77,7 +80,7 @@ class KknLocationState {
     this.zoneResetWarning,
     this.checkInTime,
     this.checkOutTime,
-    this.targetDurationMinutes = 60,
+    this.targetDurationMinutes = 240,
     this.attendanceId,
     this.alpaDurationMinutes,
     this.kegiatanList = const [],
@@ -575,7 +578,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       }
 
       final durasiWajib =
-          (int.tryParse(response['durasiWajibMenit']?.toString() ?? '') ?? 120)
+          (int.tryParse(response['durasiWajibMenit']?.toString() ?? '') ?? 240)
               .clamp(1, 480);
 
       final updatedKegiatanList = state.kegiatanList.map((k) {
@@ -613,6 +616,12 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       // Karena state sudah berisi attendanceStatus=BERLANGSUNG, semua gate akan terbuka
       await startTracking(null, true);
       ref.read(locationPingControllerProvider.notifier).startTracking();
+
+      // Segarkan data dashboard (Poin +4 PTS) & Notifikasi seketika setelah presensi masuk (Check-In)
+      ref.read(mahasiswaControllerProvider.notifier).fetchDashboardData();
+      ref.invalidate(pointHistoryProvider);
+      ref.invalidate(mahasiswaNotificationsProvider);
+
       return null;
     } catch (e) {
       state = state.copyWith(isLoadingKegiatan: false);
@@ -729,6 +738,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       isSuccess = true;
       // Segarkan data dashboard (Poin) & Notifikasi
       ref.read(mahasiswaControllerProvider.notifier).fetchDashboardData();
+      ref.invalidate(pointHistoryProvider);
       ref.invalidate(mahasiswaNotificationsProvider);
     } catch (e) {
       debugPrint('[KKN] selesaiKegiatan error: $e');
@@ -1368,15 +1378,15 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       mergedData['geofenceBufferMeters'] ??= 15.0;
       mergedData['invalidationHours'] ??= 2.0;
 
-      int duration = 120;
+      int duration = 240;
       if (mergedData['targetDurationMinutes'] != null) {
         duration =
             (int.tryParse(mergedData['targetDurationMinutes'].toString()) ??
-                    120)
+                    240)
                 .clamp(1, 480);
       } else if (mergedData['durationMinutes'] != null) {
         duration =
-            (int.tryParse(mergedData['durationMinutes'].toString()) ?? 120)
+            (int.tryParse(mergedData['durationMinutes'].toString()) ?? 240)
                 .clamp(1, 480);
       }
 
@@ -1715,27 +1725,28 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
           await FirebaseNotificationService().saveNotification(
             userId: user.id,
             role: user.role.name,
-            title: 'Absensi KKN Berhasil 📍',
+            title: 'Selesai Kegiatan KKN Berhasil 📍',
             desc:
-                'Presensi Geofence KKN di $kelurahan ($rw) berhasil tercatat (+4 PTS).',
+                'Presensi Selesai Kegiatan di $kelurahan ($rw) berhasil tercatat (+3 PTS).',
             type: 'PRESENSI_KKN_SUKSES',
           );
           LocalNotificationCacheService().addNotification(
             userId: user.id,
             role: user.role.name,
-            title: 'Absensi KKN Berhasil ✅',
+            title: 'Selesai Kegiatan KKN Berhasil ✅',
             desc:
-                'Presensi Geofence KKN di $kelurahan ($rw) berhasil tercatat (+4 PTS).',
+                'Presensi Selesai Kegiatan di $kelurahan ($rw) berhasil tercatat (+3 PTS).',
             type: 'PRESENSI_KKN_SUKSES',
           );
           NotificationEngine().showGenericNotification(
             id: DateTime.now().millisecondsSinceEpoch.remainder(10000),
-            title: 'Absensi KKN Berhasil ✅',
+            title: 'Selesai Kegiatan KKN Berhasil ✅',
             body:
-                'Presensi Geofence KKN di $kelurahan ($rw) berhasil tercatat (+4 PTS).',
+                'Presensi Selesai Kegiatan di $kelurahan ($rw) berhasil tercatat (+3 PTS).',
           );
         }
         ref.invalidate(mahasiswaNotificationsProvider);
+        ref.invalidate(pointHistoryProvider);
         // Segarkan dasbor Poin Mahasiswa secara reaktif
         ref.read(mahasiswaControllerProvider.notifier).fetchDashboardData();
 

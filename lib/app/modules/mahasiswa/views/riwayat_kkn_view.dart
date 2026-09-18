@@ -7,7 +7,7 @@ import '../../../routes/app_routes.dart';
 import '../controllers/riwayat_kkn_controller.dart';
 
 // Model
-enum KknHistoryType { aktivasi, gps, izin, laporan }
+enum KknHistoryType { aktivasi, gps, izin, laporan, proker }
 
 class KknHistoryLog {
   final String title;
@@ -65,9 +65,8 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
     return logs
         .where(
           (log) =>
-              log.points == null ||
-              log.points == 0 ||
-              log.type == KknHistoryType.gps,
+              (log.points == null || log.points == 0) &&
+              log.type != KknHistoryType.proker,
         )
         .toList();
   }
@@ -103,7 +102,7 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${state.logs.length} Aktivitas',
+                        '${filteredLogs.length} Aktivitas',
                         style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -206,8 +205,6 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
   }
 
   Widget _buildLogCard(KknHistoryLog log) {
-    final hasPoints = log.points != null;
-
     IconData iconData;
     Color iconColor;
     Color bgColor;
@@ -239,18 +236,36 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
         iconColor = AppColors.primaryGreen;
         bgColor = AppColors.primaryGreen.withValues(alpha: 0.1);
       }
-    } else {
-      iconData = Icons.assignment_rounded;
-      if (log.isGpsActive == true) {
-        // approved
-        iconColor = AppColors.success;
-        bgColor = AppColors.success.withValues(alpha: 0.1);
+    } else if (log.type == KknHistoryType.proker) {
+      iconData = Icons.rocket_launch_rounded;
+      if (log.points != null && log.points! >= 4) {
+        iconColor = AppColors.primaryGreen;
+        bgColor = AppColors.primaryGreen.withValues(alpha: 0.1);
+      } else if (log.points != null) {
+        iconColor = AppColors.primaryBlue;
+        bgColor = AppColors.primaryBlue.withValues(alpha: 0.1);
       } else if (log.isGpsActive == false) {
-        // rejected
         iconColor = AppColors.dangerRed;
         bgColor = AppColors.dangerRed.withValues(alpha: 0.1);
       } else {
-        // pending
+        iconColor = AppColors.warningOrange;
+        bgColor = AppColors.warningOrange.withValues(alpha: 0.1);
+      }
+    } else {
+      // Tipe izin / sakit (Aktivitas Non-Poin)
+      if (log.isGpsActive == true) {
+        // Disetujui (ACC)
+        iconData = Icons.check_circle_rounded;
+        iconColor = AppColors.success;
+        bgColor = AppColors.success.withValues(alpha: 0.1);
+      } else if (log.isGpsActive == false) {
+        // Ditolak
+        iconData = Icons.cancel_rounded;
+        iconColor = AppColors.dangerRed;
+        bgColor = AppColors.dangerRed.withValues(alpha: 0.1);
+      } else {
+        // Menunggu review DPL
+        iconData = Icons.assignment_rounded;
         iconColor = AppColors.warningOrange;
         bgColor = AppColors.warningOrange.withValues(alpha: 0.1);
       }
@@ -455,36 +470,6 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
                 ],
               ),
             ),
-            if (hasPoints)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.warningOrange.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.stars_rounded,
-                      color: AppColors.warningOrange,
-                      size: 14,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '+${log.points}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.warningOrange,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
           ],
         ),
       ),

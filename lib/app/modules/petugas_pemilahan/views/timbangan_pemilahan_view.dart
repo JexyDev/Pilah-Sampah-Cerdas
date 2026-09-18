@@ -39,6 +39,7 @@ class _TimbanganPemilahanViewState
   final _weightController = TextEditingController();
 
   String? _photoPath;
+  String? _photoTimbanganPath;
   Position? _currentLocation;
   String? _locationAddress;
   String _selectedClassification = 'Organik';
@@ -50,7 +51,7 @@ class _TimbanganPemilahanViewState
 
   bool get _canSubmit {
     final weight = double.tryParse(_weightController.text.trim().replaceAll(',', '.')) ?? 0.0;
-    return _photoPath != null && weight > 0 && !_isSubmitting && !_isScanningAi;
+    return _photoPath != null && _photoTimbanganPath != null && weight > 0 && !_isSubmitting && !_isScanningAi;
   }
 
   final List<String> _classifications = [
@@ -71,21 +72,8 @@ class _TimbanganPemilahanViewState
 
   Future<void> _loadDraft() async {
     _prefs = await SharedPreferences.getInstance();
-    final weight = _prefs?.getString('draft_weight_pemilahan');
-    final classification = _prefs?.getString('draft_class_pemilahan');
-    final photo = _prefs?.getString('draft_photo_pemilahan');
-
-    if (mounted) {
-      setState(() {
-        if (weight != null) _weightController.text = weight;
-        if (classification != null &&
-            _classifications.contains(classification)) {
-          _selectedClassification = classification;
-        }
-        if (photo != null && File(photo).existsSync()) _photoPath = photo;
-        _calculatePoints();
-      });
-    }
+    // ponytail: always start fresh - clear any stale draft from previous session
+    await _clearDraft();
   }
 
   void _saveDraft() {
@@ -96,12 +84,19 @@ class _TimbanganPemilahanViewState
     } else {
       _prefs?.remove('draft_photo_pemilahan');
     }
+    if (_photoTimbanganPath != null) {
+      _prefs?.setString('draft_photo_timbangan_pemilahan', _photoTimbanganPath!);
+    } else {
+      _prefs?.remove('draft_photo_timbangan_pemilahan');
+    }
   }
 
-  void _clearDraft() {
-    _prefs?.remove('draft_weight_pemilahan');
-    _prefs?.remove('draft_class_pemilahan');
-    _prefs?.remove('draft_photo_pemilahan');
+  Future<void> _clearDraft() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('draft_weight_pemilahan');
+    await prefs.remove('draft_class_pemilahan');
+    await prefs.remove('draft_photo_pemilahan');
+    await prefs.remove('draft_photo_timbangan_pemilahan');
   }
 
   @override
@@ -119,7 +114,7 @@ class _TimbanganPemilahanViewState
     int points = weight.round() * 2;
 
     // Bonus kehadiran & foto bukti di titik kumpul (+10)
-    if (weight > 0 && _photoPath != null) {
+    if (weight > 0 && _photoPath != null && _photoTimbanganPath != null) {
       points += 10;
     }
 
@@ -200,9 +195,27 @@ class _TimbanganPemilahanViewState
     }
   }
 
+  Future<void> _takePhotoTimbangan() async {
+    try {
+      final picker = ImagePicker();
+      final file = await picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 80,
+      );
+      if (file != null) {
+        setState(() {
+          _photoTimbanganPath = file.path;
+        });
+        _calculatePoints();
+      }
+    } catch (e) {
+      debugPrint('Error taking photo timbangan: $e');
+    }
+  }
+
   Future<void> _submitLog() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_photoPath == null) {
+    if (_photoPath == null || _photoTimbanganPath == null) {
       ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -249,6 +262,7 @@ class _TimbanganPemilahanViewState
           actualWeightKg: weight,
           classification: _selectedClassification,
           photoPath: _photoPath!,
+          photoTimbanganPath: _photoTimbanganPath!,
           latitude: _currentLocation?.latitude,
           longitude: _currentLocation?.longitude,
         );
@@ -258,13 +272,16 @@ class _TimbanganPemilahanViewState
     if (success && mounted) {
       await _showSuccessDialog(weight);
       if (mounted) {
-        _clearDraft();
-        _weightController.clear();
+        await _clearDraft(); // ponytail: clear BEFORE setState to prevent stale prefs if page is re-opened before async completes
+        _weightController.removeListener(_calculatePoints);
         setState(() {
           _photoPath = null;
+          _photoTimbanganPath = null;
           _selectedClassification = _classifications.first;
           _estimatedPoints = 0;
         });
+        _weightController.clear();
+        _weightController.addListener(_calculatePoints);
 
         if (!mounted) return;
         if (Navigator.of(context).canPop()) {
@@ -739,6 +756,9 @@ class _TimbanganPemilahanViewState
                   prefixIcon: Icon(Icons.scale_outlined, color: AppColors.primaryGreen),
                   suffixText: 'Kg',
                   suffixStyle: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
+                  helperText: '* Angka terisi otomatis dari AI, namun dapat disesuaikan manual jika terjadi ketidaksesuaian.',
+                  helperMaxLines: 2,
+                  helperStyle: TextStyle(color: AppColors.primaryBlue, fontStyle: FontStyle.italic),
                 ),
                 validator: (v) {
                   if (v == null || v.trim().isEmpty) return 'Berat timbangan wajib diisi';
@@ -758,6 +778,9 @@ class _TimbanganPemilahanViewState
                 initialValue: _selectedClassification,
                 decoration: const InputDecoration(
                   prefixIcon: Icon(Icons.category_outlined, color: AppColors.primaryGreen),
+                  helperText: '* Kategori akan dideteksi otomatis saat Anda mengambil foto sampah, namun dapat dipilih manual.',
+                  helperMaxLines: 2,
+                  helperStyle: TextStyle(color: AppColors.primaryBlue, fontStyle: FontStyle.italic),
                 ),
                 items: _classifications
                     .map((c) => DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontSize: 14))))
@@ -771,13 +794,13 @@ class _TimbanganPemilahanViewState
               ),
               const SizedBox(height: AppDimensions.lg),
 
-              // 4. Foto Bukti Timbangan Fisik
-              const Text('Foto Bukti Timbangan Fisik', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              // 4. Foto Bukti Sampah
+              const Text('Foto Bukti Sampah', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
               const SizedBox(height: 8),
               GestureDetector(
                 onTap: _isScanningAi ? null : _takePhoto,
                 child: Container(
-                  height: 200, // Make camera area taller for better view
+                  height: 260, // Increased height so photo is not aggressively cropped
                   width: double.infinity,
                   decoration: BoxDecoration(
                     color: Colors.grey[100],
@@ -873,13 +896,65 @@ class _TimbanganPemilahanViewState
                           : const Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.camera_alt_rounded, size: 48, color: AppColors.primaryGreen),
+                                Icon(Icons.delete_outline_rounded, size: 40, color: AppColors.primaryGreen),
                                 SizedBox(height: 8),
-                                Text('Ambil Foto Bukti Timbangan Fisik', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryGreen)),
+                                Text('Ambil Foto Bukti Sampah', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryGreen)),
                                 SizedBox(height: 4),
-                                Text('Foto timbangan & sampah terpilah sebagai bukti audit', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                                Text('Pastikan sampah terlihat jelas', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
                               ],
                             ),
+                ),
+              ),
+              const SizedBox(height: AppDimensions.lg),
+
+              // 5. Foto Bukti Penimbangan
+              const Text('Foto Proses Penimbangan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              const SizedBox(height: 8),
+              GestureDetector(
+                onTap: _takePhotoTimbangan,
+                child: Container(
+                  height: 260, // Increased height so photo is not aggressively cropped
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: _photoTimbanganPath == null ? Colors.grey[300]! : AppColors.primaryBlue,
+                      width: 2,
+                    ),
+                  ),
+                  child: _photoTimbanganPath != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Image.file(File(_photoTimbanganPath!), fit: BoxFit.cover),
+                              Positioned(
+                                right: 12,
+                                top: 12,
+                                child: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.black54,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(Icons.edit, color: Colors.white, size: 20),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : const Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.scale_rounded, size: 40, color: AppColors.primaryBlue),
+                            SizedBox(height: 8),
+                            Text('Ambil Foto Penimbangan', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryBlue)),
+                            SizedBox(height: 4),
+                            Text('Foto angka pada alat timbangan fisik', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                          ],
+                        ),
                 ),
               ),
             ],

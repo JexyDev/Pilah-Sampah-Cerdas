@@ -49,9 +49,11 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
-        backgroundColor: AppColors.primaryGreen,
-        foregroundColor: Colors.white,
-        elevation: 0,
+        backgroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: AppColors.primaryGreen),
+        shadowColor: Colors.black12,
+        foregroundColor: AppColors.primaryGreen,
+        elevation: 1,
         leadingWidth: 40,
         titleSpacing: 0,
         title: const FittedBox(
@@ -59,7 +61,7 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
           alignment: Alignment.centerLeft,
           child: Text(
             'Notifikasi Warga',
-            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: AppColors.primaryGreen),
           ),
         ),
         actions: [
@@ -67,7 +69,7 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
             visualDensity: VisualDensity.compact,
             padding: const EdgeInsets.all(6),
             constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-            icon: const Icon(Icons.delete_sweep_rounded, color: Colors.white),
+            icon: const Icon(Icons.delete_sweep_rounded, color: AppColors.primaryGreen),
             tooltip: 'Hapus Semua Notifikasi',
             onPressed: markState.isLoading
                 ? null
@@ -101,7 +103,7 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
             visualDensity: VisualDensity.compact,
             padding: const EdgeInsets.all(6),
             constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-            icon: const Icon(Icons.done_all_rounded, color: Colors.white),
+            icon: const Icon(Icons.done_all_rounded, color: AppColors.primaryGreen),
             tooltip: 'Tandai Semua Dibaca',
             onPressed: markState.isLoading
                 ? null
@@ -114,7 +116,7 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
             visualDensity: VisualDensity.compact,
             padding: const EdgeInsets.all(6),
             constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-            icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+            icon: const Icon(Icons.refresh_rounded, color: AppColors.primaryGreen),
             onPressed: () => ref.invalidate(wargaNotificationsProvider),
           ),
           const SizedBox(width: 4),
@@ -133,24 +135,44 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
                   final isSel = _selectedFilter == filter;
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
-                    child: ChoiceChip(
-                      showCheckmark: false,
-                      visualDensity: VisualDensity.compact,
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      label: Text(
-                        filter,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
-                          color: isSel ? Colors.white : AppColors.textPrimary,
+                    child: GestureDetector(
+                      onTap: () => setState(() => _selectedFilter = filter),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 7,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isSel ? AppColors.primaryGreen : Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isSel
+                                ? AppColors.primaryGreen
+                                : AppColors.border,
+                          ),
+                          boxShadow: isSel
+                              ? [
+                                  BoxShadow(
+                                    color: AppColors.primaryGreen.withValues(
+                                      alpha: 0.25,
+                                    ),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ]
+                              : null,
+                        ),
+                        child: Text(
+                          filter,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: isSel
+                                ? Colors.white
+                                : AppColors.textSecondary,
+                          ),
                         ),
                       ),
-                      selected: isSel,
-                      selectedColor: AppColors.primaryGreen,
-                      backgroundColor: AppColors.backgroundCanvas,
-                      onSelected: (val) {
-                        if (val) setState(() => _selectedFilter = filter);
-                      },
                     ),
                   );
                 }).toList(),

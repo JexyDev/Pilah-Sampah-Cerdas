@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -27,13 +28,28 @@ class ProfilView extends ConsumerStatefulWidget {
 class _ProfilViewState extends ConsumerState<ProfilView> {
   File? _profileImage;
   final ImagePicker _picker = ImagePicker();
+  Map<String, dynamic>? _householdData;
 
   @override
   void initState() {
     super.initState();
     Future.microtask(() {
       ref.read(authProvider.notifier).fetchProfile();
+      _loadHouseholdData();
     });
+  }
+
+  Future<void> _loadHouseholdData() async {
+    final user = ref.read(authProvider).user;
+    if (user?.role == UserRole.warga &&
+        user?.lifecycleState != WargaLifecycle.registered) {
+      final data = await ref.read(authProvider.notifier).getMyHousehold();
+      if (mounted) {
+        setState(() {
+          _householdData = data;
+        });
+      }
+    }
   }
 
   void _showAvatarOptions() {
@@ -389,8 +405,8 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
     final user = userAsync.user;
     final binsAsync = ref.watch(binsProvider);
     final isUnjoined = (user?.role == UserRole.warga || user?.role == UserRole.unknown) &&
-        (user?.lifecycleState == WargaLifecycle.registered ||
-            (user?.householdId ?? '').isEmpty);
+        user?.lifecycleState == WargaLifecycle.registered &&
+        (user?.householdId ?? '').isEmpty;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
@@ -469,28 +485,28 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                       fontWeight: FontWeight.w800,
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryGreen.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.25)),
-                    ),
-                    child: Text(
-                      user?.role == UserRole.mahasiswaKkn
-                          ? 'MAHASISWA KKN • ${user?.kelompokName.isNotEmpty == true ? user!.kelompokName : (user?.rw.isNotEmpty == true ? "RW ${user!.rw}" : "Aktif")}'
-                          : (user?.formattedRw.isNotEmpty == true && user?.formattedRw != '-'
-                              ? 'WARGA • RW ${user!.formattedRw}'
-                              : 'WARGA BERSEKA'),
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primaryGreen,
-                        letterSpacing: 0.5,
+                  if (user?.role == UserRole.mahasiswaKkn || !isUnjoined) ...[
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.25)),
+                      ),
+                      child: Text(
+                        user?.role == UserRole.mahasiswaKkn
+                            ? 'MAHASISWA KKN • ${user?.kelompokName.isNotEmpty == true ? user!.kelompokName : (user?.rw.isNotEmpty == true ? "RW ${user!.rw}" : "Aktif")}'
+                            : 'WARGA BERSEKA',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primaryGreen,
+                          letterSpacing: 0.5,
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),
@@ -500,6 +516,7 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  _buildHouseholdAccessCard(user),
                   // ─── Data Rumah Tangga ──────────────────────────────
                   _sectionLabel(
                     user?.role == UserRole.mahasiswaKkn
@@ -895,6 +912,226 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildHouseholdAccessCard(UserEntity? user) {
+    if (user?.role != UserRole.warga ||
+        user?.lifecycleState == WargaLifecycle.registered) {
+      return const SizedBox.shrink();
+    }
+
+    final isTambahan = _householdData?['myOwnershipType'] == 'TAMBAHAN';
+    final sharePhone = _householdData?['sharePhone']?.toString() ?? user?.phone ?? '-';
+    final members = _householdData?['members'] as List<dynamic>?;
+    final headMember = members?.firstWhere(
+      (m) => (m is Map) && m['ownershipType'] == 'UTAMA',
+      orElse: () => null,
+    );
+    final headName = _householdData?['headName']?.toString() ??
+        (headMember != null && headMember is Map
+            ? headMember['name']?.toString()
+            : 'Kepala Keluarga');
+
+    if (isTambahan) {
+      return Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.primaryGreen.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: AppColors.primaryGreen.withValues(alpha: 0.25),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.primaryGreen.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.family_restroom_rounded,
+                color: AppColors.primaryGreen,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Terhubung ke Rumah Tangga',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Bpk./Ibu $headName • Anggota Keluarga',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.primaryGreen,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                'AKTIF',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Pemilik UTAMA (Kepala Keluarga)
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF16A34A), Color(0xFF15803D)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryGreen.withValues(alpha: 0.28),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text('👨‍👩‍👧‍👦', style: TextStyle(fontSize: 22)),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'Bagikan Akses Keluarga',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  'KEPALA KELUARGA',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Keluarga di rumah cukup mendaftar dan memasukkan nomor HP Anda ini untuk langsung terhubung ke Tempat Sampah rumah.',
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 12,
+              height: 1.45,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.phone_iphone_rounded,
+                  color: AppColors.primaryGreen,
+                  size: 20,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    sharePhone,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+                InkWell(
+                  onTap: () {
+                    Clipboard.setData(ClipboardData(text: sharePhone));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Nomor HP berhasil disalin ke clipboard!'),
+                        backgroundColor: AppColors.primaryGreen,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  },
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.copy_rounded,
+                            size: 14, color: AppColors.primaryGreen),
+                        SizedBox(width: 4),
+                        Text(
+                          'Salin',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primaryGreen,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

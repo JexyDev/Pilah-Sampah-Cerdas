@@ -170,6 +170,12 @@ class _EditProgramKerjaViewState extends ConsumerState<EditProgramKerjaView> {
               _tanggalSelesaiCtrl.text.isNotEmpty
           ? '${_tanggalMulaiCtrl.text} s/d ${_tanggalSelesaiCtrl.text}'
           : _tanggalMulaiCtrl.text;
+      final prevUsulan =
+          _prokerData?['statusUsulan']?.toString().toUpperCase() ?? '';
+      final isRevisiOrDitolak = prevUsulan == 'DITOLAK' ||
+          prevUsulan == 'PERLU_REVISI_DPL' ||
+          prevUsulan == 'TIDAK_DISETUJUI';
+
       final payload = <String, dynamic>{
         'judul': _judulCtrl.text.trim(),
         'kategori': _kategori,
@@ -178,6 +184,8 @@ class _EditProgramKerjaViewState extends ConsumerState<EditProgramKerjaView> {
             ? _anggaranCtrl.text.trim()
             : null,
         'targetTanggal': waktu,
+        'statusUsulan': 'BELUM_DISETUJUI',
+        'status': 'BELUM_DISETUJUI',
         if (_linkDriveCtrl.text.trim().isNotEmpty)
           'linkGoogleDrive': _linkDriveCtrl.text.trim(),
         if (_attachmentFile != null) 'filePdfPath': _attachmentFile!.path,
@@ -186,8 +194,12 @@ class _EditProgramKerjaViewState extends ConsumerState<EditProgramKerjaView> {
       if (!mounted) return;
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Program kerja berhasil diperbarui!'),
+          SnackBar(
+            content: Text(
+              isRevisiOrDitolak
+                  ? 'Program kerja berhasil diajukan ulang ke DPL!'
+                  : 'Program kerja berhasil diperbarui!',
+            ),
             backgroundColor: AppColors.primaryGreen,
           ),
         );

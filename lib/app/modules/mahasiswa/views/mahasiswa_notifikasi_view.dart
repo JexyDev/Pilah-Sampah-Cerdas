@@ -26,7 +26,7 @@ class _MahasiswaNotifikasiViewState
     'Semua',
     'Poin KKN',
     'Pengajuan Izin',
-    'Ping Lokasi Posko',
+    'Presensi & Kehadiran',
     'Tempat Sampah Warga',
     'Laporan Pemanfaatan & Ide Program',
   ];
@@ -133,31 +133,50 @@ class _MahasiswaNotifikasiViewState
                   final isSel = _selectedFilter == filter;
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
-                    child: ChoiceChip(
-                      showCheckmark: false,
-                      visualDensity: VisualDensity.compact,
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      label: Text(
-                        filter,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
-                          color: isSel ? Colors.white : AppColors.textPrimary,
+                    child: GestureDetector(
+                      onTap: () => setState(() => _selectedFilter = filter),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 7,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isSel ? AppColors.primaryGreen : Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isSel
+                                ? AppColors.primaryGreen
+                                : AppColors.border,
+                          ),
+                          boxShadow: isSel
+                              ? [
+                                  BoxShadow(
+                                    color: AppColors.primaryGreen.withValues(
+                                      alpha: 0.25,
+                                    ),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ]
+                              : null,
+                        ),
+                        child: Text(
+                          filter,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: isSel
+                                ? Colors.white
+                                : AppColors.textSecondary,
+                          ),
                         ),
                       ),
-                      selected: isSel,
-                      selectedColor: AppColors.primaryGreen,
-                      backgroundColor: AppColors.backgroundCanvas,
-                      onSelected: (val) {
-                        if (val) setState(() => _selectedFilter = filter);
-                      },
                     ),
                   );
                 }).toList(),
               ),
             ),
           ),
-          const Divider(height: 1),
 
           // ─── Body List Notifikasi ──────────────────────────────────────────
           Expanded(
@@ -182,8 +201,10 @@ class _MahasiswaNotifikasiViewState
                       return typeUpper.contains('IZIN') ||
                           titleLower.contains('dpl');
                     }
-                    if (_selectedFilter == 'Ping Lokasi Posko') {
+                    if (_selectedFilter == 'Presensi & Kehadiran') {
                       return typeUpper.contains('PRESENSI') ||
+                          typeUpper.contains('CHECKIN') ||
+                          typeUpper.contains('CHECKOUT') ||
                           typeUpper.contains('GPS');
                     }
                     if (_selectedFilter == 'Tempat Sampah Warga') {
@@ -275,24 +296,42 @@ class _MahasiswaNotifikasiViewState
                           }
                           if (context.mounted) {
                             final typeU = item.type.toUpperCase();
-                            // ponytail: route by domain type; upgrade if backend provides dedicated deeplink uri in NotificationEntity.
-                            if (typeU == 'POIN_KKN' || typeU == 'PUNISHMENT') {
+                            final titleL = item.title.toLowerCase();
+                            final descL = item.desc.toLowerCase();
+                            // Route by domain type so mahasiswa lands on relevant page
+                            if (typeU.contains('POIN') || typeU == 'PUNISHMENT' || titleL.contains('poin') || titleL.contains('pts') || descL.contains('pts') || descL.contains('poin')) {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (_) => const MahasiswaPoinView(),
                                 ),
                               );
+                            } else if (typeU.contains('PROKER') ||
+                                typeU.contains('PROGRAM') ||
+                                titleL.contains('proker') || 
+                                titleL.contains('program kerja')) {
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.dataProker,
+                              );
                             } else if (typeU.contains('KEGIATAN') ||
-                                typeU.contains('LOGBOOK')) {
+                                typeU.contains('LOGBOOK') ||
+                                titleL.contains('logbook') ||
+                                titleL.contains('kegiatan')) {
                               Navigator.pushNamed(
                                 context,
                                 AppRoutes.dataLogbookHarian,
                               );
-                            } else if (typeU.contains('PROKER')) {
+                            } else if (typeU.contains('IZIN')) {
                               Navigator.pushNamed(
                                 context,
-                                AppRoutes.dataProker,
+                                AppRoutes.pengajuanIzin,
+                              );
+                            } else if (typeU.contains('PEMANFAATAN') ||
+                                typeU.contains('PANEN')) {
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.riwayatPemanfaatan,
                               );
                             } else {
                               Navigator.pushNamed(

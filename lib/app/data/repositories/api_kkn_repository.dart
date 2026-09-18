@@ -120,10 +120,18 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<List<WargaDampingan>> getWargaDampingan() async {
+  Future<List<WargaDampingan>> getWargaDampingan({int? rwId}) async {
     List<dynamic> rawList = [];
     try {
-      final response = await apiClient.dio.get(ApiEndpoints.kknWarga);
+      final Map<String, dynamic> queryParams = {};
+      if (rwId != null) {
+        queryParams['rwId'] = rwId;
+      }
+
+      final response = await apiClient.dio.get(
+        ApiEndpoints.kknWargaDampingan,
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+      );
       if (response.statusCode == 200) {
         if (response.data is Map<String, dynamic>) {
           rawList =
@@ -1298,7 +1306,7 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<bool> submitLogbookHarian(
+  Future<Map<String, dynamic>> submitLogbookHarian(
     Map<String, dynamic> data, {
     String? imagePath,
     List<String>? imagePaths,
@@ -1340,7 +1348,10 @@ class ApiKknRepository implements KknRepository {
         ApiEndpoints.logbookMahasiswa,
         data: requestData,
       );
-      return response.statusCode == 200 || response.statusCode == 201;
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return response.data as Map<String, dynamic>;
+      }
+      return {'success': false, 'message': 'Unknown error'};
     } catch (e) {
       if (e is DioException) {
         final rawData = e.response?.data?.toString() ?? 'null';

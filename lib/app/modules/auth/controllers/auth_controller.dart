@@ -163,10 +163,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
       await _restoreNotificationSyncState(user);
 
       state = state.copyWith(user: user, isLoading: false);
+      
+      // Ambil data profil lengkap (termasuk household) dari server SEBELUM return
+      // untuk menjamin status komunitas sinkron 100% saat masuk Beranda
+      await fetchProfile();
+
       // Daftarkan FCM token setelah login berhasil
       _registerFcmToken();
       NotificationEngine().scheduleRoleBasedNotifications(user.role.apiValue);
       return true;
+
     } on AuthException catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -195,9 +201,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
       await _restoreNotificationSyncState(user);
 
       state = state.copyWith(user: user, isLoading: false);
-      // Daftarkan FCM token setelah register berhasil
+      
+      // Ambil data profil lengkap (termasuk household) dari server SEBELUM return
+      // untuk menjamin status komunitas sinkron 100% saat masuk Beranda
+      await fetchProfile();
+
+      // Daftarkan FCM token setelah login berhasil
       _registerFcmToken();
+      NotificationEngine().scheduleRoleBasedNotifications(user.role.apiValue);
       return true;
+
     } on AuthException catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -252,8 +265,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
       await _restoreNotificationSyncState(user);
 
       state = state.copyWith(user: user, isLoading: false);
+      
+      // Ambil data profil lengkap (termasuk household) dari server SEBELUM return
+      // untuk menjamin status komunitas sinkron 100% saat masuk Beranda
+      await fetchProfile();
+
+      // Daftarkan FCM token setelah login berhasil
       _registerFcmToken();
+      NotificationEngine().scheduleRoleBasedNotifications(user.role.apiValue);
       return true;
+
     } on AuthException catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -348,7 +369,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
         for (final key in keys) {
           if (key.startsWith('read_notifs_') ||
               key.startsWith('fcm_notifs_') ||
-              key.startsWith('mark_all_notifs_')) {
+              key.startsWith('mark_all_notifs_') ||
+              key.startsWith('delete_all_notifs_') ||
+              key.startsWith('notif_store_v2_') ||
+              key.startsWith('kkn_')) {
             await prefs.remove(key);
           }
         }
@@ -398,6 +422,66 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(user: user);
     } catch (_) {
       // Abaikan jika gagal, tetap gunakan data cache
+    }
+  }
+
+  /// Mendaftarkan komunitas (generate komunitas_id unik).
+  Future<bool> registerKomunitas() async {
+    try {
+      final komunitasId = await _authRepository.registerKomunitas();
+      if (state.user != null) {
+        state = state.copyWith(
+          user: state.user!.copyWith(komunitasId: komunitasId),
+        );
+      }
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Bergabung ke Rumah Tangga Kepala Keluarga (Secondary Owner / Household Sharing)
+  Future<Map<String, dynamic>> joinHousehold(String headPhone) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final data = await _authRepository.joinHousehold(headPhone: headPhone);
+      final household = data['household'] as Map<String, dynamic>? ?? {};
+      final householdId = household['id']?.toString() ?? '';
+
+      if (state.user != null) {
+        state = state.copyWith(
+          isLoading: false,
+          user: state.user!.copyWith(
+            householdId: householdId.isNotEmpty ? householdId : state.user!.householdId,
+            lifecycleState: WargaLifecycle.fullyActive,
+            address: household['address']?.toString() ?? state.user!.address,
+            rw: household['rw']?.toString() ?? state.user!.rw,
+            kelurahan: household['kelurahan']?.toString() ?? state.user!.kelurahan,
+            kecamatan: household['kecamatan']?.toString() ?? state.user!.kecamatan,
+          ),
+        );
+      } else {
+        state = state.copyWith(isLoading: false);
+      }
+
+      // Sinkronisasi ulang profil lengkap
+      await fetchProfile();
+      return data;
+    } on AuthException catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.message);
+      rethrow;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      rethrow;
+    }
+  }
+
+  /// Ambil data detail rumah tangga aktif saat ini
+  Future<Map<String, dynamic>?> getMyHousehold() async {
+    try {
+      return await _authRepository.getMyHousehold();
+    } catch (_) {
+      return null;
     }
   }
 

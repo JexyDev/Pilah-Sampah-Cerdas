@@ -150,12 +150,14 @@ void main() async {
   //
   // Saat ini, inisialisasi dibungkus try-catch agar app tidak crash
   // jika Firebase belum dikonfigurasi.
-  try {
-    // Daftarkan background handler
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-    debugPrint('[FCM] Firebase Messaging ready');
-  } catch (e) {
-    debugPrint('[FCM] Firebase not configured yet: $e');
+  if (PlatformUtils.supportsFcm) {
+    try {
+      // Daftarkan background handler
+      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+      debugPrint('[FCM] Firebase Messaging ready');
+    } catch (e) {
+      debugPrint('[FCM] Firebase not configured yet: $e');
+    }
   }
 
   // Inisialisasi Local Notification & Jadwalkan Reminders
@@ -188,6 +190,7 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
   }
 
   void _setupFCMForeground() {
+    if (!PlatformUtils.supportsFcm) return;
     try {
       FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
         final title =
@@ -222,7 +225,10 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
             ref.invalidate(riwayatKknControllerProvider);
             ref.invalidate(logbookListProvider);
             ref.invalidate(mahasiswaNotificationsProvider);
-            debugPrint('-> Mahasiswa kegiatan providers invalidated.');
+            ref.invalidate(totalPointsProvider);
+            ref.invalidate(pointHistoryProvider);
+            ref.invalidate(dailyPointsProvider);
+            debugPrint('-> Mahasiswa kegiatan & poin providers invalidated.');
           } else if (event == 'REFRESH_PROKER_MAHASISWA') {
             ref.invalidate(prokerDataListProvider);
             ref.invalidate(mahasiswaNotificationsProvider);
@@ -230,6 +236,9 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
           } else if (event == 'REFRESH_IZIN_MAHASISWA' ||
               event == 'REFRESH_POIN_MAHASISWA' ||
               event == 'REFRESH_PRESENSI_MAHASISWA') {
+            ref.invalidate(totalPointsProvider);
+            ref.invalidate(pointHistoryProvider);
+            ref.invalidate(dailyPointsProvider);
             ref.invalidate(mahasiswaNotificationsProvider);
             debugPrint('-> Mahasiswa providers refresh event received: $event');
           } else if (event == 'MULTI_POSKO_UPDATED') {
@@ -297,7 +306,10 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
         }
 
         final isPoin = type.contains('POIN') || titleUpper.contains('POIN');
-        final payloadRoute = isPoin ? 'ROUTE_POIN' : 'ROUTE_NOTIF';
+        final isHistory = type.contains('LEAVE_') || type.contains('PROKER_') || type.contains('KEGIATAN_');
+        final payloadRoute = isPoin 
+            ? 'ROUTE_POIN' 
+            : (isHistory ? 'ROUTE_HISTORY' : 'ROUTE_NOTIF');
 
         // Tampilkan notifikasi sistem di luar aplikasi (system notification tray)
         NotificationEngine().showGenericNotification(
@@ -328,6 +340,9 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
           ref.invalidate(riwayatKknControllerProvider);
           ref.invalidate(logbookListProvider);
           ref.invalidate(mahasiswaNotificationsProvider);
+          ref.invalidate(totalPointsProvider);
+          ref.invalidate(pointHistoryProvider);
+          ref.invalidate(dailyPointsProvider);
         } else if (event == 'REFRESH_PROKER_MAHASISWA') {
           ref.invalidate(prokerDataListProvider);
           ref.invalidate(mahasiswaNotificationsProvider);

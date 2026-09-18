@@ -5,6 +5,7 @@ import '../../../core/values/app_colors.dart';
 import '../../../core/utils/input_sanitizer.dart';
 
 import '../../../data/providers/repository_providers.dart';
+import '../../../data/repositories/auth_repository.dart';
 import '../../../routes/app_routes.dart';
 import '../../auth/controllers/auth_controller.dart';
 
@@ -20,6 +21,8 @@ class KomunitasOnboardingView extends ConsumerStatefulWidget {
 
 class _KomunitasOnboardingViewState
     extends ConsumerState<KomunitasOnboardingView> {
+  int _selectedTab = 0; // 0: Gabung Rumah Tangga (Default & Simple), 1: Daftarkan Rumah Baru
+  final _headPhoneController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   final _alamatController = TextEditingController();
   final _familySizeController = TextEditingController(text: '1');
@@ -104,6 +107,7 @@ class _KomunitasOnboardingViewState
 
   @override
   void dispose() {
+    _headPhoneController.dispose();
     _alamatController.dispose();
     _familySizeController.dispose();
     _provinsiController.dispose();
@@ -272,12 +276,76 @@ class _KomunitasOnboardingViewState
           );
 
       if (ok && mounted) {
-        // Refresh profil untuk mendapatkan householdId terbaru
+        // Daftar ke komunitas untuk generate komunitas_id
+        final isRegistered = await ref.read(authProvider.notifier).registerKomunitas();
+        if (!isRegistered && mounted) {
+           _showError('Berhasil update profil tapi gagal auto-generate ID komunitas.');
+           // Tetap lanjut karena profile sudah sukses
+        }
+
+        // Refresh profil untuk mendapatkan householdId terbaru dan data lain
+        // Refresh profil untuk mendapatkan householdId terbaru dan data lain
         await ref.read(authProvider.notifier).fetchProfile();
 
         if (mounted) {
-          Navigator.of(context).pushReplacementNamed(AppRoutes.ukurKapasitas);
+          await showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (ctx) => AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: const Column(
+                children: [
+                  Icon(Icons.check_circle_rounded, color: AppColors.primaryGreen, size: 56),
+                  SizedBox(height: 16),
+                  Text(
+                    'Berhasil Bergabung!',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+              content: const Text(
+                'Selamat! Data Anda telah tersimpan dan Anda resmi tergabung di Komunitas Berseka.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                  height: 1.4,
+                ),
+              ),
+              actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+              actions: [
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryGreen,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('Menuju Beranda', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                  ),
+                ),
+              ],
+            ),
+          );
+
+          if (mounted) {
+            Navigator.of(context).pushReplacementNamed(AppRoutes.main);
+          }
         }
+
       } else if (mounted) {
         _showError('Gagal memperbarui data. Silakan coba lagi.');
       }
@@ -286,6 +354,93 @@ class _KomunitasOnboardingViewState
     }
 
     if (mounted) setState(() => _isLoading = false);
+  }
+
+  Future<void> _onJoinHousehold() async {
+    final phone = _headPhoneController.text.trim();
+    if (phone.isEmpty) {
+      _showError('Nomor HP Kepala Keluarga wajib diisi');
+      return;
+    }
+    if (phone.length < 9) {
+      _showError('Nomor HP minimal 9 digit');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      final res = await ref.read(authProvider.notifier).joinHousehold(phone);
+      final household = res['household'] as Map<String, dynamic>? ?? {};
+      final headName = household['headName']?.toString() ?? 'Keluarga';
+
+      if (mounted) {
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: const Column(
+              children: [
+                Icon(Icons.check_circle_rounded,
+                    color: AppColors.primaryGreen, size: 56),
+                SizedBox(height: 16),
+                Text(
+                  'Berhasil Terhubung!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+            content: Text(
+              'Selamat! Anda resmi terhubung ke Rumah Tangga Bpk./Ibu $headName.\n\nTempat Sampah cerdas di rumah Anda kini aktif dan siap digunakan bersama untuk memilah sampah.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppColors.textSecondary,
+                height: 1.4,
+              ),
+            ),
+            actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+            actions: [
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryGreen,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    Navigator.of(context).pushReplacementNamed(AppRoutes.main);
+                  },
+                  child: const Text(
+                    'Menuju Beranda',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+    } on AuthException catch (e) {
+      if (mounted) _showError(e.message ?? 'Gagal terhubung ke rumah tangga');
+    } catch (e) {
+      if (mounted) _showError('Terjadi kesalahan: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   void _showError(String msg) {
@@ -299,6 +454,261 @@ class _KomunitasOnboardingViewState
       ));
   }
 
+  Widget _buildTabSelector() {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFE2E8F0),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      padding: const EdgeInsets.all(4),
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: () => setState(() => _selectedTab = 0),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: _selectedTab == 0 ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: _selectedTab == 0
+                      ? [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.06),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : [],
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  'Gabung Rumah Tangga',
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: _selectedTab == 0
+                        ? FontWeight.bold
+                        : FontWeight.w600,
+                    color: _selectedTab == 0
+                        ? AppColors.primaryGreen
+                        : AppColors.textSecondary,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => setState(() => _selectedTab = 1),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: _selectedTab == 1 ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: _selectedTab == 1
+                      ? [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.06),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : [],
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  'Daftar Rumah Baru',
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: _selectedTab == 1
+                        ? FontWeight.bold
+                        : FontWeight.w600,
+                    color: _selectedTab == 1
+                        ? AppColors.primaryGreen
+                        : AppColors.textSecondary,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildJoinHouseholdSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Info card edukatif
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.primaryGreen.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppColors.primaryGreen.withValues(alpha: 0.25),
+            ),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryGreen.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.family_restroom_rounded,
+                  color: AppColors.primaryGreen,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Gabung Rumah Tangga',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Jika anggota keluarga di rumah sudah mendaftarkan Tempat Sampah Berseka, cukup masukkan nomor HP Kepala Keluarga untuk langsung terhubung tanpa perlu mendaftarkan wilayah lagi.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                        height: 1.45,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        _buildLabel('Nomor HP Kepala Keluarga'),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: _headPhoneController,
+          keyboardType: TextInputType.phone,
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'[\d+]')),
+          ],
+          decoration: InputDecoration(
+            hintText: 'Contoh: 081234567890',
+            hintStyle: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 14,
+            ),
+            prefixIcon: const Icon(
+              Icons.phone_iphone_rounded,
+              color: AppColors.primaryGreen,
+              size: 20,
+            ),
+            filled: true,
+            fillColor: const Color(0xFFF8FAFC),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide:
+                  const BorderSide(color: AppColors.primaryGreen, width: 1.5),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        const Text(
+          '💡 Nomor HP Kepala Keluarga dapat dilihat di menu Profil pada aplikasi akun Kepala Keluarga.',
+          style: TextStyle(
+            fontSize: 11,
+            color: AppColors.textSecondary,
+            height: 1.4,
+          ),
+        ),
+        const SizedBox(height: 32),
+
+        // Tombol Hubungkan
+        SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: ElevatedButton(
+            onPressed: _isLoading ? null : _onJoinHousehold,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryGreen,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              elevation: 2,
+            ),
+            child: _isLoading
+                ? const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.link_rounded, size: 20),
+                      SizedBox(width: 8),
+                      Text(
+                        'Gabung Rumah Tangga',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
+        ),
+
+        const SizedBox(height: 24),
+        Center(
+          child: TextButton(
+            onPressed: () => setState(() => _selectedTab = 1),
+            child: const Text(
+              'Belum ada yang mendaftarkan rumah? Daftarkan Rumah Baru',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.primaryGreen,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -306,47 +716,67 @@ class _KomunitasOnboardingViewState
       appBar: AppBar(
         backgroundColor: Colors.white,
         foregroundColor: AppColors.textPrimary,
-        title: Image.asset('assets/logo/BersekaNew-logo-text-bg-transparent.png', height: 32),
+        title: Image.asset(
+          'assets/logo/BersekaNew-logo-text-bg-transparent.png',
+          height: 32,
+        ),
         centerTitle: true,
         elevation: 0,
       ),
-      body: _isLoadingTerritories
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Info card
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryGreen.withValues(alpha: 0.06),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color:
-                              AppColors.primaryGreen.withValues(alpha: 0.2),
-                        ),
-                      ),
-                      child: const Row(
-                        children: [
-                          Icon(Icons.info_rounded,
-                              color: AppColors.primaryGreen, size: 20),
-                          SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              'Lengkapi data wilayah Anda untuk bergabung komunitas Berseka dan mulai aktivasi Tempat Sampah.',
-                              style: TextStyle(
-                                  fontSize: 13,
-                                  color: AppColors.primaryGreen),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildTabSelector(),
+            const SizedBox(height: 20),
+            if (_selectedTab == 0)
+              _buildJoinHouseholdSection()
+            else if (_isLoadingTerritories)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 60),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else
+              _buildRegisterHouseSection(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRegisterHouseSection() {
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Info card
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.primaryGreen.withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: AppColors.primaryGreen.withValues(alpha: 0.2),
+              ),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.info_rounded,
+                    color: AppColors.primaryGreen, size: 20),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Lengkapi data wilayah Anda untuk mendaftarkan rumah dan mulai aktivasi Tempat Sampah.',
+                    style: TextStyle(
+                        fontSize: 13, color: AppColors.primaryGreen),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
 
                     // ─── Data Wilayah ───
                     const Text(
@@ -361,7 +791,11 @@ class _KomunitasOnboardingViewState
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
                       initialValue: _provinsiController.text.isEmpty ? null : _provinsiController.text,
+                      
                       isExpanded: true,
+                      borderRadius: BorderRadius.circular(12),
+                      dropdownColor: Colors.white,
+                      menuMaxHeight: 200,
                       decoration: _dropdownDecoration(),
                       hint: const Text('Pilih Provinsi', style: TextStyle(fontSize: 14)),
                       items: _provinsiList
@@ -385,7 +819,11 @@ class _KomunitasOnboardingViewState
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
                       initialValue: _kotaController.text.isEmpty ? null : _kotaController.text,
+                      
                       isExpanded: true,
+                      borderRadius: BorderRadius.circular(12),
+                      dropdownColor: Colors.white,
+                      menuMaxHeight: 200,
                       decoration: _dropdownDecoration(),
                       hint: const Text('Pilih Kota / Kabupaten', style: TextStyle(fontSize: 14)),
                       items: _availableKotaList
@@ -408,7 +846,11 @@ class _KomunitasOnboardingViewState
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
                       initialValue: _kecamatanController.text.isEmpty ? null : _kecamatanController.text,
+                      
                       isExpanded: true,
+                      borderRadius: BorderRadius.circular(12),
+                      dropdownColor: Colors.white,
+                      menuMaxHeight: 200,
                       decoration: _dropdownDecoration(),
                       hint: const Text('Pilih Kecamatan', style: TextStyle(fontSize: 14)),
                       items: _availableKecamatanList
@@ -430,7 +872,11 @@ class _KomunitasOnboardingViewState
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
                       initialValue: _selectedKelurahan,
+                      
                       isExpanded: true,
+                      borderRadius: BorderRadius.circular(12),
+                      dropdownColor: Colors.white,
+                      menuMaxHeight: 200,
                       decoration: _dropdownDecoration(),
                       hint: const Text('Pilih Kelurahan',
                           style: TextStyle(fontSize: 14)),
@@ -454,7 +900,11 @@ class _KomunitasOnboardingViewState
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
                       initialValue: _selectedRw,
+                      
                       isExpanded: true,
+                      borderRadius: BorderRadius.circular(12),
+                      dropdownColor: Colors.white,
+                      menuMaxHeight: 200,
                       decoration: _dropdownDecoration(),
                       hint: const Text('Pilih RW',
                           style: TextStyle(fontSize: 14)),
@@ -491,12 +941,12 @@ class _KomunitasOnboardingViewState
                         border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12)),
                         enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12),
                           borderSide:
                               const BorderSide(color: Color(0xFFE2E8F0)),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(
                               color: AppColors.primaryGreen, width: 1.5),
                         ),
@@ -524,12 +974,12 @@ class _KomunitasOnboardingViewState
                         border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12)),
                         enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12),
                           borderSide:
                               const BorderSide(color: Color(0xFFE2E8F0)),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(
                               color: AppColors.primaryGreen, width: 1.5),
                         ),
@@ -581,14 +1031,27 @@ class _KomunitasOnboardingViewState
                                   ],
                                 ),
                               ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    Center(
+                      child: TextButton(
+                        onPressed: () => setState(() => _selectedTab = 0),
+                        child: const Text(
+                          'Anggota keluarga sudah punya Tempat Sampah? Gabung Rumah Tangga',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primaryGreen,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 40),
                   ],
                 ),
-              ),
-            ),
-    );
+              );
   }
 
   Widget _buildLabel(String text) {
@@ -609,11 +1072,11 @@ class _KomunitasOnboardingViewState
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12),
         borderSide:
             const BorderSide(color: AppColors.primaryGreen, width: 1.5),
       ),

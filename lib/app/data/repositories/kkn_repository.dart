@@ -19,7 +19,7 @@ abstract class KknRepository {
   Future<ActiveTimelineResponse> getActiveTimeline();
 
   Future<List<WargaDampingan>?> getCachedWargaDampingan();
-  Future<List<WargaDampingan>> getWargaDampingan();
+  Future<List<WargaDampingan>> getWargaDampingan({int? rwId});
 
   /// Mendaftarkan warga baru melalui akun mahasiswa.
   /// Backend otomatis melakukan binding mahasiswa ↔ warga.
@@ -275,7 +275,7 @@ abstract class KknRepository {
   Future<bool> deleteLogbookPemanfaatan(String id);
 
   /// Input Logbook Harian (Umum) oleh Mahasiswa
-  Future<bool> submitLogbookHarian(
+  Future<Map<String, dynamic>> submitLogbookHarian(
     Map<String, dynamic> data, {
     String? imagePath,
     List<String>? imagePaths,
