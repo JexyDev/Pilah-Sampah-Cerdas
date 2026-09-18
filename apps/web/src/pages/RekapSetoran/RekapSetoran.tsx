@@ -37,6 +37,7 @@ import * as XLSX from "xlsx";
 import { getProfilePhotoUrl, handleAvatarError } from "../../utils/photoUtils";
 import PageHeader from "../../components/common/PageHeader";
 import { useAuthStore } from "../../store/useAuthStore";
+import { sortChronologicalList } from "../../utils/sortUtils";
 
 export default function RekapSetoran() {
   const { user } = useAuthStore();
@@ -81,7 +82,7 @@ export default function RekapSetoran() {
   }, []);
 
   const filteredDeposits = useMemo(() => {
-    return deposits.filter((d) => {
+    const list = deposits.filter((d) => {
       // 1. Filter Kategori
       if (filterKategori !== "ALL") {
         const catUpper = (d.jenis || "").toUpperCase();
@@ -135,6 +136,8 @@ export default function RekapSetoran() {
 
       return true;
     });
+
+    return sortChronologicalList(list, (d) => d.waktu || d.createdAt, "desc");
   }, [deposits, filterKategori, filterRw, filterPeriode, startDate, endDate]);
 
   // Reset pagination on filter change

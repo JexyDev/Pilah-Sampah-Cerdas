@@ -19,6 +19,7 @@ import { EmptyTableState } from "../../components/common/EmptyTableState";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import PageHeader from "../../components/common/PageHeader";
 import SegmentedTabs from "../../components/common/SegmentedTabs";
+import { sortChronologicalList } from "../../utils/sortUtils";
 import { 
   Loader2, 
   Pencil, 
@@ -158,7 +159,7 @@ export const ManajemenPengangkutan: React.FC = () => {
 
       const res = await api.get(`/pengangkutan?${query.toString()}`);
       if (res.data && res.data.success && Array.isArray(res.data.data)) {
-        setTasks(res.data.data);
+        setTasks(sortChronologicalList(res.data.data, (t) => t.createdAt || t.updatedAt, "desc"));
       } else {
         setTasks([]);
       }
@@ -176,7 +177,7 @@ export const ManajemenPengangkutan: React.FC = () => {
       if (!silent) setLoadingRequests(true);
       const res = await api.get(`/bins/reset-requests`);
       if (res.data && res.data.success && Array.isArray(res.data.data)) {
-        setRequests(res.data.data);
+        setRequests(sortChronologicalList(res.data.data, (r) => r.createdAt || r.updatedAt, "desc"));
       } else {
         setRequests([]);
       }
@@ -395,7 +396,7 @@ export const ManajemenPengangkutan: React.FC = () => {
 
   // Filter Tasks by Search Query
   const filteredTasks = useMemo(() => {
-    return tasks.filter((t) => {
+    const list = tasks.filter((t) => {
       if (!searchQuery.trim()) return true;
       const q = searchQuery.toLowerCase().trim();
       const idMatch = t.id.toLowerCase().includes(q);
@@ -404,6 +405,7 @@ export const ManajemenPengangkutan: React.FC = () => {
       const officerMatch = (t.claimedByUser?.name || "").toLowerCase().includes(q);
       return idMatch || qrMatch || rwMatch || officerMatch;
     });
+    return sortChronologicalList(list, (t) => t.createdAt || t.updatedAt, "desc");
   }, [tasks, searchQuery]);
 
   // Paginate Tasks
@@ -415,15 +417,18 @@ export const ManajemenPengangkutan: React.FC = () => {
 
   // Filter Requests by Search Query
   const filteredRequests = useMemo(() => {
-    return requests.filter((r) => {
+    const list = requests.filter((r) => {
       if (!searchQuery.trim()) return true;
       const q = searchQuery.toLowerCase().trim();
-      const userMatch = r.user.name.toLowerCase().includes(q) || r.user.email.toLowerCase().includes(q);
-      const qrMatch = r.bin.qrCode.toLowerCase().includes(q);
-      const areaMatch = (r.bin.rtRw?.name || "").toLowerCase().includes(q);
-      const statusMatch = r.status.toLowerCase().includes(q);
+      const userMatch =
+        (r.user?.name || "").toLowerCase().includes(q) ||
+        (r.user?.email || "").toLowerCase().includes(q);
+      const qrMatch = (r.bin?.qrCode || "").toLowerCase().includes(q);
+      const areaMatch = (r.bin?.rtRw?.name || "").toLowerCase().includes(q);
+      const statusMatch = (r.status || "").toLowerCase().includes(q);
       return userMatch || qrMatch || areaMatch || statusMatch;
     });
+    return sortChronologicalList(list, (r) => r.createdAt || r.updatedAt, "desc");
   }, [requests, searchQuery]);
 
   // Paginate Requests

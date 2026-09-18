@@ -53,6 +53,7 @@ import { dplService, type GroupSummary, type ProgramKerjaItem } from "../../serv
 import { resolveImageUrl } from "../../utils/imageUrl";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { Pagination } from "../../components/common/Pagination";
+import { sortChronologicalList } from "../../utils/sortUtils";
 
 // Helper Inisial Profil
 const getInitials = (name: string): string => {
@@ -285,7 +286,7 @@ export const LogAktivitasDpl: React.FC = () => {
         limit: pageSize,
       });
 
-      setLogs(res.items || []);
+      setLogs(sortChronologicalList(res.items || [], (l) => l.tanggal || l.createdAt, "desc"));
       setStats(
         res.stats || {
           totalAktivitas: 0,

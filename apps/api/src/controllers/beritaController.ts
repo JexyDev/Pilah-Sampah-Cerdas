@@ -28,7 +28,7 @@ export const beritaController = {
         search: search as string,
       });
 
-      res.json({ success: true, ...data });
+      res.json({ success: true, data: data.items, items: data.items, total: data.total });
     } catch (error: any) {
       console.error("[beritaController.getPublishedList]", error);
       res.status(500).json({ success: false, message: error.message });
@@ -70,7 +70,7 @@ export const beritaController = {
         search: search as string,
       });
 
-      res.json({ success: true, ...data });
+      res.json({ success: true, data: data.items, items: data.items, total: data.total });
     } catch (error: any) {
       res.status(500).json({ success: false, message: error.message });
     }

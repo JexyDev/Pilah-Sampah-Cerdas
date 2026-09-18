@@ -26,11 +26,11 @@ import TaskforceDashboardPage from "../taskforce/TaskforceDashboardPage";
 import DashboardEksekutifKkn from "./DashboardEksekutifKkn";
 import GisMapTab from "../SuperUser/GisMapTab";
 import TempatSampahAktifPage from "../SuperUser/TempatSampahAktifPage";
-import MplDashboardPage from "../mpl/MplDashboardPage";
 import { getPortalLoadingText } from "../../utils/portalLoading";
 import LeaderboardWidget from "../../components/LeaderboardWidget";
 import { CustomSelect, type SelectOption } from "../../components/common/CustomSelect";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
+import { canAccessSidebarRoute } from "../../utils/sidebarAccess";
 
 export interface KelurahanBaselineData {
   id: string;
@@ -1986,13 +1986,10 @@ const Dashboard: React.FC = () => {
   if (
     user?.peran === "DPL" ||
     user?.peran === "DOSEN_PEMBIMBING" ||
-    (user?.peran as string) === "DOSEN_PENDAMPING"
+    (user?.peran as string) === "DOSEN_PENDAMPING" ||
+    isMpl
   ) {
     return <DplDashboardPage />;
-  }
-
-  if (isMpl) {
-    return <MplDashboardPage />;
   }
 
   if (user?.peran === "PANITIA_TASKFORCE") {
@@ -2287,7 +2284,11 @@ const Dashboard: React.FC = () => {
           trend={stats?.tempatSampahAktif?.trend}
           trendLabel={stats?.tempatSampahAktif?.trendLabel}
           trendUp={stats?.tempatSampahAktif?.trendUp}
-          linkTo="/monitoring-pengelolaan/tempat-sampah?tab=teraktivasi"
+          linkTo={
+            canAccessSidebarRoute("/monitoring-pengelolaan/tempat-sampah", user, can)
+              ? "/monitoring-pengelolaan/tempat-sampah?tab=teraktivasi"
+              : undefined
+          }
         />
         <KpiCard
           iconName="location_on"
@@ -2297,7 +2298,11 @@ const Dashboard: React.FC = () => {
           trend={stats?.lokasiTerdaftar?.trend}
           trendLabel={stats?.lokasiTerdaftar?.trendLabel}
           trendUp={stats?.lokasiTerdaftar?.trendUp}
-          linkTo="/wilayah/rw"
+          linkTo={
+            canAccessSidebarRoute("/wilayah/rw", user, can)
+              ? "/wilayah/rw"
+              : undefined
+          }
         />
         <KpiCard
           iconName="shopping_bag"
@@ -2314,7 +2319,11 @@ const Dashboard: React.FC = () => {
           trend={stats?.setoranHariIni?.trend}
           trendLabel={stats?.setoranHariIni?.trendLabel}
           trendUp={stats?.setoranHariIni?.trendUp}
-          linkTo="/monitoring-pemilahan/rekapitulasi-setoran"
+          linkTo={
+            canAccessSidebarRoute("/monitoring-pemilahan/rekapitulasi-setoran", user, can)
+              ? "/monitoring-pemilahan/rekapitulasi-setoran"
+              : undefined
+          }
         />
         <KpiCard
           iconName="stars"
@@ -2324,7 +2333,11 @@ const Dashboard: React.FC = () => {
           trend={stats?.totalPoin?.trend}
           trendLabel={stats?.totalPoin?.trendLabel}
           trendUp={stats?.totalPoin?.trendUp}
-          linkTo="/peringkat?system=system1&tab=citizens"
+          linkTo={
+            canAccessSidebarRoute("/peringkat", user, can)
+              ? "/peringkat?system=system1&tab=citizens"
+              : undefined
+          }
         />
       </div>
 

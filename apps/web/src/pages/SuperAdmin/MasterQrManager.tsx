@@ -12,6 +12,7 @@ import toast from "react-hot-toast";
 import { Badge } from "../../components/common/Badge";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { printQrStickers } from "../../utils/printQrStickers";
+import { sortChronologicalList } from "../../utils/sortUtils";
 
 interface BinQr {
   id: string;
@@ -67,9 +68,9 @@ export const MasterQrManager: React.FC = () => {
         api.get("/super-admin/approvals/bins"),
         api.get("/super-admin/approvals/petugas"),
       ]);
-      if (qrsRes.data.success) setQrs(qrsRes.data.data);
-      if (inactiveRes.data.success) setInactiveBins(inactiveRes.data.data || []);
-      if (pendingPetugasRes.data.success) setPendingPetugas(pendingPetugasRes.data.data);
+      if (qrsRes.data.success) setQrs(sortChronologicalList(qrsRes.data.data || [], (q: any) => q.createdAt, "desc"));
+      if (inactiveRes.data.success) setInactiveBins(sortChronologicalList(inactiveRes.data.data || [], (b: any) => b.lastActivity || b.createdAt, "desc"));
+      if (pendingPetugasRes.data.success) setPendingPetugas(sortChronologicalList(pendingPetugasRes.data.data || [], (p: any) => p.createdAt || p.user?.createdAt, "desc"));
     } catch (e) {
       console.error("Gagal mengambil data QR & Persetujuan:", e);
       toast.error("Gagal memuat database QR");

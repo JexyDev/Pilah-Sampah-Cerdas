@@ -1115,7 +1115,7 @@ export async function calculateGroupPoints(
       );
       pureRataRataPoinAnggota =
         studentUserIds.length > 0
-          ? Math.round((pureTotalCumulativeMemberPoints / studentUserIds.length) * 10) / 10
+          ? Math.round((pureTotalCumulativeMemberPoints / studentUserIds.length) * 100) / 100
           : 0;
 
       // 2. Ambil poin normalisasi (POIN_KKN_FINAL) secara terpisah
@@ -1142,7 +1142,7 @@ export async function calculateGroupPoints(
       );
       averageNormalizationBonus =
         studentUserIds.length > 0
-          ? Math.round((totalNormalizationBonus / studentUserIds.length) * 10) / 10
+          ? Math.round((totalNormalizationBonus / studentUserIds.length) * 100) / 100
           : 0;
 
       // 3. Ambil bonus login anggota (BONUS_LOGIN_PERTAMA)
@@ -1185,12 +1185,12 @@ export async function calculateGroupPoints(
 
       // Safety Guardrail & Asimtot Limit (Maksimal 1000 PTS untuk mencegah anomali data / infinite loop)
       const MAX_AVERAGE_CAP = 1000;
-      rataRataPoinAnggota = Math.round(Math.min(rawRataRata, MAX_AVERAGE_CAP) * 10) / 10;
+      rataRataPoinAnggota = Math.round(Math.min(rawRataRata, MAX_AVERAGE_CAP) * 100) / 100;
     }
 
     // Formula Poin Kelompok Resmi KKN: (Poin Proker * 0.6) + (Rata-rata Saldo Kumulatif Anggota * 0.4)
     const totalGroupPoints =
-      Math.round((poinProker * 0.6 + rataRataPoinAnggota * 0.4) * 10) / 10;
+      Math.round((poinProker * 0.6 + rataRataPoinAnggota * 0.4) * 100) / 100;
 
     return {
       totalGroupPoints,
@@ -1273,7 +1273,7 @@ export async function calculateDplPoints(
     // - Jika logbook DPL tersedia: 6 poin
     // - Jika tidak tersedia: 0 poin
     const poinLogbookDpl = hasLogbookDpl ? 6 : 0;
-    const poinDpl = Math.round((poinLogbookDpl * 0.5 + poinKelompok * 0.5) * 10) / 10;
+    const poinDpl = Math.round((poinLogbookDpl * 0.5 + poinKelompok * 0.5) * 100) / 100;
 
     return {
       poinDpl,

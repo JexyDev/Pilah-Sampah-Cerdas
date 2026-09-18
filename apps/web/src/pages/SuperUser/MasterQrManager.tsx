@@ -9,6 +9,7 @@ import { QrCode, AlertTriangle, PlayCircle, Download, RefreshCw, Trash2, Plus, S
 import { printQrStickers } from "../../utils/printQrStickers";
 import { exportToXlsx } from "../../utils/exportXlsx";
 import { KelompokQrDistributionTab } from "./components/KelompokQrDistributionTab";
+import { sortChronologicalList } from "../../utils/sortUtils";
 
 import { useAuthStore } from "../../store/useAuthStore";
 
@@ -138,9 +139,9 @@ export const MasterQrManager: React.FC = () => {
         api.get("/super-user/bins/inactive"),
         api.get("/super-user/approvals/petugas"),
       ]);
-      if (qrsRes.data?.success) setQrs(qrsRes.data.data || []);
-      if (inactiveRes.data?.success) setInactiveBins(inactiveRes.data.data || []);
-      if (pendingPetugasRes.data?.success) setPendingPetugas(pendingPetugasRes.data.data || []);
+      if (qrsRes.data?.success) setQrs(sortChronologicalList(qrsRes.data.data || [], (q: any) => q.createdAt, "desc"));
+      if (inactiveRes.data?.success) setInactiveBins(sortChronologicalList(inactiveRes.data.data || [], (b: any) => b.lastActivity || b.createdAt, "desc"));
+      if (pendingPetugasRes.data?.success) setPendingPetugas(sortChronologicalList(pendingPetugasRes.data.data || [], (p: any) => p.createdAt || p.user?.createdAt, "desc"));
     } catch (e) {
       console.error("Gagal mengambil data QR & Persetujuan:", e);
       toast.error("Gagal memuat database QR");
