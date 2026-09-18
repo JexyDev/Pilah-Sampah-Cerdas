@@ -29,7 +29,10 @@ class NotificationEngine {
           AndroidInitializationSettings('@mipmap/ic_launcher');
 
       const InitializationSettings initializationSettings =
-          InitializationSettings(android: initializationSettingsAndroid);
+          InitializationSettings(
+            android: initializationSettingsAndroid,
+            linux: LinuxInitializationSettings(defaultActionName: 'Open'),
+          );
 
       await _flutterLocalNotificationsPlugin.initialize(
         settings: initializationSettings,

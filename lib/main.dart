@@ -150,12 +150,14 @@ void main() async {
   //
   // Saat ini, inisialisasi dibungkus try-catch agar app tidak crash
   // jika Firebase belum dikonfigurasi.
-  try {
-    // Daftarkan background handler
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-    debugPrint('[FCM] Firebase Messaging ready');
-  } catch (e) {
-    debugPrint('[FCM] Firebase not configured yet: $e');
+  if (PlatformUtils.supportsFcm) {
+    try {
+      // Daftarkan background handler
+      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+      debugPrint('[FCM] Firebase Messaging ready');
+    } catch (e) {
+      debugPrint('[FCM] Firebase not configured yet: $e');
+    }
   }
 
   // Inisialisasi Local Notification & Jadwalkan Reminders
@@ -188,6 +190,7 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
   }
 
   void _setupFCMForeground() {
+    if (!PlatformUtils.supportsFcm) return;
     try {
       FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
         final title =

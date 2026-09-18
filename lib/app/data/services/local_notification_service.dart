@@ -32,6 +32,7 @@ class LocalNotificationService {
         requestBadgePermission: true,
         requestSoundPermission: true,
       ),
+      linux: LinuxInitializationSettings(defaultActionName: 'Open'),
     );
 
     await _notificationsPlugin.initialize(
