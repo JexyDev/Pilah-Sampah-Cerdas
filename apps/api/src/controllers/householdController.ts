@@ -72,18 +72,19 @@ export class HouseholdController {
         where: { id: userId },
         select: { jumlahAnggotaKeluarga: true },
       });
-      const familySize = user?.jumlahAnggotaKeluarga || 1;
       const households = await householdService.getHouseholdsByUser(userId);
+      const effectiveFamilySize =
+        households[0]?.familySize ?? households[0]?.jumlahAnggotaKeluarga ?? user?.jumlahAnggotaKeluarga ?? 1;
 
       res.status(200).json({
         success: true,
         message: "Berhasil mengambil data",
-        familySize,
-        jumlahAnggotaKeluarga: familySize,
+        familySize: effectiveFamilySize,
+        jumlahAnggotaKeluarga: effectiveFamilySize,
         data: households,
         user: {
-          familySize,
-          jumlahAnggotaKeluarga: familySize,
+          familySize: effectiveFamilySize,
+          jumlahAnggotaKeluarga: effectiveFamilySize,
         },
       });
     } catch (error) {
@@ -133,6 +134,54 @@ export class HouseholdController {
         success: false,
         error: "INTERNAL_SERVER_ERROR",
         message: "Gagal mengambil ringkasan tempat sampah",
+      });
+    }
+  }
+
+  async joinHousehold(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.user!.userId;
+      const { headPhone } = req.body;
+
+      if (!headPhone || typeof headPhone !== "string" || !headPhone.trim()) {
+        res.status(400).json({
+          success: false,
+          error: "VALIDATION_ERROR",
+          message: "Nomor HP Kepala Keluarga wajib diisi",
+        });
+        return;
+      }
+
+      const result = await householdService.joinHousehold(userId, headPhone.trim());
+      res.status(200).json({
+        success: true,
+        message: "Berhasil terhubung ke Rumah Tangga",
+        data: result,
+      });
+    } catch (error: any) {
+      const status = error.status || 500;
+      res.status(status).json({
+        success: false,
+        error: error.code || "INTERNAL_SERVER_ERROR",
+        message: error.message || "Gagal bergabung ke Rumah Tangga",
+      });
+    }
+  }
+
+  async getMyHousehold(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.user!.userId;
+      const data = await householdService.getMyHouseholdDetail(userId);
+      res.status(200).json({
+        success: true,
+        data,
+      });
+    } catch (error: any) {
+      const status = error.status || 500;
+      res.status(status).json({
+        success: false,
+        error: error.code || "INTERNAL_SERVER_ERROR",
+        message: error.message || "Gagal mengambil data rumah tangga",
       });
     }
   }

@@ -8,7 +8,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Loader2, MapPin, Search, Download, CheckCircle, Map, FileSpreadsheet } from "lucide-react";
 import * as XLSX from "xlsx";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import { Pagination } from "../../components/common/Pagination";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -21,6 +21,7 @@ const TAB_LABEL_MAP: Record<string, string> = {
 };
 
 const MasterWilayah: React.FC = () => {
+  const navigate = useNavigate();
   const { user } = useAuthStore();
   const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "RT", "PEMIMPIN", "PIMPINAN"].includes(user?.peran || "");
 
@@ -67,6 +68,8 @@ const MasterWilayah: React.FC = () => {
     return data.filter((item) => {
       return (
         item.name?.toLowerCase().includes(q) ||
+        item.code?.toLowerCase().includes(q) ||
+        item.kode?.toLowerCase().includes(q) ||
         item.id?.toString().toLowerCase().includes(q) ||
         item.kelurahan?.name?.toLowerCase().includes(q) ||
         item.rw?.name?.toLowerCase().includes(q)
@@ -90,10 +93,11 @@ const MasterWilayah: React.FC = () => {
       return;
     }
 
-    const headers = ["No", "ID", "Nama Wilayah", "Kelurahan", "RW", "Kategori"];
+    const headers = ["No", "ID", "Kode Wilayah", "Nama Wilayah", "Kelurahan", "RW", "Kategori"];
     const rows = filteredData.map((item, idx) => [
       idx + 1,
       item.id || "-",
+      item.code || item.kode || "-",
       item.name || "-",
       item.kelurahan?.name || item.kelurahanNama || "-",
       item.rw?.name || item.rwNama || "-",
@@ -103,6 +107,7 @@ const MasterWilayah: React.FC = () => {
     const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
     ws["!cols"] = [
       { wch: 6 },
+      { wch: 15 },
       { wch: 15 },
       { wch: 25 },
       { wch: 25 },
@@ -121,10 +126,11 @@ const MasterWilayah: React.FC = () => {
       return;
     }
 
-    const headers = ["No", "ID", "Nama Wilayah", "Kelurahan", "RW", "Kategori"];
+    const headers = ["No", "ID", "Kode Wilayah", "Nama Wilayah", "Kelurahan", "RW", "Kategori"];
     const rows = filteredData.map((item, idx) => [
       idx + 1,
       `"${item.id || "-"}"`,
+      `"${item.code || item.kode || "-"}"`,
       `"${(item.name || "").replace(/"/g, '""')}"`,
       `"${(item.kelurahan?.name || item.kelurahanNama || "-").replace(/"/g, '""')}"`,
       `"${(item.rw?.name || item.rwNama || "-").replace(/"/g, '""')}"`,
@@ -290,6 +296,7 @@ const MasterWilayah: React.FC = () => {
               {activeTab === "kecamatan" ? (
                 <tr className="bg-slate-50 dark:bg-slate-800/60 text-[11px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-800">
                   <th className="py-3.5 px-4 w-12 text-center">No</th>
+                  <th className="py-3.5 px-4 w-28">Kode</th>
                   <th className="py-3.5 px-4">Nama Kecamatan</th>
                   <th className="py-3.5 px-4">Total Kelurahan</th>
                   <th className="py-3.5 px-4 text-center">Status</th>
@@ -297,6 +304,7 @@ const MasterWilayah: React.FC = () => {
               ) : activeTab === "kelurahan" ? (
                 <tr className="bg-slate-50 dark:bg-slate-800/60 text-[11px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-800">
                   <th className="py-3.5 px-4 w-12 text-center">No</th>
+                  <th className="py-3.5 px-4 w-28">Kode</th>
                   <th className="py-3.5 px-4">Nama Kelurahan</th>
                   <th className="py-3.5 px-4">Dibuat Pada</th>
                   <th className="py-3.5 px-4 text-center">Status</th>
@@ -313,7 +321,7 @@ const MasterWilayah: React.FC = () => {
             <tbody className="text-xs">
               {isLoading ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-slate-400">
+                  <td colSpan={activeTab === "rw" ? 4 : 5} className="px-6 py-12 text-center text-slate-400">
                     <div className="flex flex-col items-center justify-center gap-3">
                       <Loader2 className="animate-spin text-blue-600" size={28} />
                       <p className="font-semibold text-xs">Memuat data wilayah...</p>
@@ -322,7 +330,7 @@ const MasterWilayah: React.FC = () => {
                 </tr>
               ) : error ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-rose-600 font-medium">
+                  <td colSpan={activeTab === "rw" ? 4 : 5} className="px-6 py-8 text-center text-rose-600 font-medium">
                     {error}
                   </td>
                 </tr>
@@ -332,6 +340,17 @@ const MasterWilayah: React.FC = () => {
                     <td className="py-3.5 px-4 text-center font-bold text-slate-400">
                       {(currentPage - 1) * rowsPerPage + idx + 1}
                     </td>
+                    {activeTab !== "rw" && (
+                      <td className="py-3.5 px-4 font-mono font-bold text-slate-700 dark:text-slate-300">
+                        {item.code || item.kode ? (
+                          <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800 text-[11px]">
+                            {item.code || item.kode}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 text-xs italic">-</span>
+                        )}
+                      </td>
+                    )}
                     <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-slate-100">{item.name}</td>
                     
                     {activeTab === "kecamatan" && (
@@ -367,7 +386,7 @@ const MasterWilayah: React.FC = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={4} className="px-6 py-10 text-center text-slate-500 font-medium">
+                  <td colSpan={activeTab === "rw" ? 4 : 5} className="px-6 py-10 text-center text-slate-500 font-medium">
                     Tidak ada data wilayah yang ditemukan.
                   </td>
                 </tr>
