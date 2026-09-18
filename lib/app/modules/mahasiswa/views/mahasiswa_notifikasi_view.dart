@@ -26,7 +26,7 @@ class _MahasiswaNotifikasiViewState
     'Semua',
     'Poin KKN',
     'Pengajuan Izin',
-    'Ping Lokasi Posko',
+    'Presensi & Kehadiran',
     'Tempat Sampah Warga',
     'Laporan Pemanfaatan & Ide Program',
   ];
@@ -201,8 +201,10 @@ class _MahasiswaNotifikasiViewState
                       return typeUpper.contains('IZIN') ||
                           titleLower.contains('dpl');
                     }
-                    if (_selectedFilter == 'Ping Lokasi Posko') {
+                    if (_selectedFilter == 'Presensi & Kehadiran') {
                       return typeUpper.contains('PRESENSI') ||
+                          typeUpper.contains('CHECKIN') ||
+                          typeUpper.contains('CHECKOUT') ||
                           typeUpper.contains('GPS');
                     }
                     if (_selectedFilter == 'Tempat Sampah Warga') {

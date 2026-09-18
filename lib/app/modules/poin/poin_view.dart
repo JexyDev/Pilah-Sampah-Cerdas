@@ -599,6 +599,8 @@ class _PoinHistoryItem extends StatelessWidget {
     String title = item.description.isNotEmpty 
         ? InputSanitizer.cleanSystemMessage(item.description)
         : (isOrganic ? 'Setor Sampah Organik' : 'Poin Aktivitas');
+    
+    title = title.replaceAll('Poin durasi harian terpenuhi', 'Poin kehadiran KKN (Check-Out)');
 
     return Container(
       padding: const EdgeInsets.all(16),

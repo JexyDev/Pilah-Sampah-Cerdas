@@ -387,7 +387,14 @@ class MahasiswaPoinView extends ConsumerWidget {
       data: (history) {
         final List<PointHistoryEntity> pointLogs = history.where((log) {
           final kat = (log.kategori ?? '').toUpperCase();
+          final desc = log.description.toLowerCase();
+          
           if (kat == 'REDUKSI_TONASE') return false; // Pemanfaatan/Panen dipindah ke Riwayat non-poin
+          if (kat == 'KKN_PROKER') return false; // Proker adalah poin kelompok, bukan individu
+          
+          // Sembunyikan riwayat usang (legacy) dari aturan poin yang sudah dinonaktifkan di backend
+          if (desc.contains('mengklaim') || desc.contains('warga mandiri')) return false;
+          
           return true;
         }).toList();
         
@@ -466,6 +473,7 @@ class _PoinHistoryItem extends StatelessWidget {
         : (isPenalty ? AppColors.dangerRed : AppColors.primaryGreen);
 
     String title = InputSanitizer.cleanSystemMessage(item.description);
+    title = title.replaceAll('Poin durasi harian terpenuhi', 'Poin kehadiran KKN (Check-Out)');
     IconData icon = isPenalty
         ? Icons.warning_amber_rounded
         : Icons.check_circle_outline_rounded;
@@ -484,10 +492,12 @@ class _PoinHistoryItem extends StatelessWidget {
         title = 'Laporan Pemanfaatan Sampah: $title';
       }
       icon = Icons.recycling_rounded;
-    } else if (title.toLowerCase().contains('geofence') ||
-        title.toLowerCase().contains('presensi')) {
-      title = 'Ping Lokasi Posko / Presensi';
-      icon = Icons.location_on_rounded;
+    } else if (title.toLowerCase().contains('check-in') || title.toLowerCase().contains('kehadiran')) {
+      title = 'Poin Kehadiran KKN (Check-In)';
+      icon = Icons.login_rounded;
+    } else if (title.toLowerCase().contains('check-out') || title.toLowerCase().contains('durasi')) {
+      title = 'Poin Kehadiran Durasi (Check-Out)';
+      icon = Icons.logout_rounded;
     } else if (title.toLowerCase().contains('registrasi')) {
       title = 'Bonus Registrasi Akun Mahasiswa KKN';
       icon = Icons.card_giftcard_rounded;

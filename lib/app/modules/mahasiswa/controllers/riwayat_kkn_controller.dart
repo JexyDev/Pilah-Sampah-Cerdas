@@ -101,6 +101,7 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
           final Map<String, dynamic> data = e as Map<String, dynamic>;
 
           final typeStr = data['type']?.toString().toLowerCase() ?? '';
+
           KknHistoryType type;
           if (typeStr == 'gps' || typeStr == 'location') {
             type = KknHistoryType.gps;
@@ -140,61 +141,7 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
         }
       } catch (_) {}
 
-      // 3. Ambil data Riwayat Kegiatan
-      try {
-        final historyData = await kknRepo.getKknHistory();
-        for (final e in historyData) {
-          final Map<String, dynamic> data = e as Map<String, dynamic>;
-
-          final typeStr = data['type']?.toString().toLowerCase() ?? '';
-          final type = (typeStr == 'aktivasi')
-              ? KknHistoryType.aktivasi
-              : KknHistoryType.gps;
-
-          String title = data['title']?.toString() ?? 'Riwayat Kegiatan';
-          if (data['kegiatan'] != null && data['kegiatan'] is Map) {
-            title = data['kegiatan']['name']?.toString() ?? title;
-          }
-
-          parsedLogs.add(
-            KknHistoryLog(
-              title: title,
-              subtitle:
-                  data['subtitle']?.toString() ??
-                  data['statusKehadiran']?.toString() ??
-                  'Presensi KKN',
-              timestamp:
-                  (DateTime.tryParse(
-                            data['timestamp']?.toString() ??
-                                data['createdAt']?.toString() ??
-                                '',
-                          ) ??
-                          DateTime.now())
-                      .toLocal(),
-              type: type,
-              points: null, // Murni Non-Poin di Riwayat Aktivitas
-              isGpsActive: data['isGpsActive'] as bool?,
-              statusKehadiran:
-                  data['statusKehadiran']?.toString() ??
-                  data['status']?.toString(),
-              durationFormatted:
-                  data['durationFormatted']?.toString() ??
-                  data['durasiFormatted']?.toString(),
-              scheduleId:
-                  data['scheduleId']?.toString() ??
-                  data['kegiatanId']?.toString() ??
-                  data['id']?.toString(),
-              isMemenuhiDurasi: data['isMemenuhiDurasi'] as bool?,
-              statusDisplay: data['statusDisplay']?.toString(),
-              durasiAktualMenit: data['durasiAktualMenit'] as int?,
-              durasiTargetMenit: data['durasiTargetMenit'] as int?,
-              rawData: data,
-            ),
-          );
-        }
-      } catch (e) {
-        // Abaikan jika error / endpoint belum siap
-      }
+      // 3. (Dihapus) getKknHistory redundan karena endpoint /history dan /activity-log di-mapping ke fungsi yang sama di backend.
 
       // 4. Ambil data Kegiatan Aktif (karena kegiatan selesai masih direturn di sini)
       try {
@@ -265,9 +212,10 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
           const title = 'Logbook Harian';
           final desc =
               lb['deskripsi']?.toString() ?? 'Laporan aktivitas harian';
+          // Prioritaskan createdAt agar jam submission aktual muncul (sama seperti di Riwayat Poin)
           final dateStr =
-              lb['tanggalKegiatan']?.toString() ??
               lb['createdAt']?.toString() ??
+              lb['tanggalKegiatan']?.toString() ??
               '';
           final timestamp =
               DateTime.tryParse(dateStr)?.toLocal() ?? DateTime.now();
@@ -405,6 +353,33 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
           }
         }
       } catch (_) {}
+
+      // 7. Ambil Data Presensi dari PointHistory
+      // Karena backend sudah menghapus data presensi dari /activity-log, kita ambil manual dari endpoint poin
+      try {
+        final pointRepo = ref.read(wasteLogRepositoryProvider);
+        final pointHistory = await pointRepo.getPointHistoryByUser('me');
+        for (final log in pointHistory) {
+          final kat = (log.kategori ?? '').toUpperCase();
+          if (kat == 'KKN_PRESENSI_HADIR' || kat == 'KKN_DURASI_MEMENUHI') {
+            final isCheckIn = kat == 'KKN_PRESENSI_HADIR';
+            // Hindari duplikasi teks "Poin" di tab non-poin
+            final title = log.description.replaceAll(RegExp(r'(?i)Poin '), ''); 
+            parsedLogs.add(
+              KknHistoryLog(
+                title: title,
+                subtitle: isCheckIn ? 'Telah melakukan check-in presensi lokasi' : 'Telah menyelesaikan durasi target harian',
+                timestamp: log.createdAt.toLocal(),
+                type: KknHistoryType.gps, // Agar icon lokasi/presensi sinkron
+                points: null, // Tab non-poin tidak perlu nampilin poinnya
+                isGpsActive: true,
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        debugPrint('[RiwayatKknNotifier] getPointHistory error: $e');
+      }
 
       // Sort by descending timestamp
       parsedLogs.sort((a, b) => b.timestamp.compareTo(a.timestamp));

@@ -143,6 +143,10 @@ class _DataProkerViewState extends ConsumerState<DataProkerView> {
       color = Colors.orange;
       label = 'Perlu Revisi';
       icon = Icons.rate_review_rounded;
+    } else if (u == 'KADALUARSA_OTOMATIS' || u == 'BATAL_OTOMATIS' || u == 'BATAL') {
+      color = AppColors.dangerRed;
+      label = 'Batal Otomatis';
+      icon = Icons.event_busy_rounded;
     } else {
       color = AppColors.warningYellow;
       label = 'Menunggu';
