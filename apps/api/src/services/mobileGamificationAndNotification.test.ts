@@ -203,7 +203,7 @@ describe("Mobile Gamification & Personal Point Calculation", () => {
       by: ["userId"],
       where: {
         userId: { in: ["user-habik", "user-temen"] },
-        kategori: { notIn: ["KKN_PROKER"] },
+        kategori: { notIn: ["KKN_PROKER", "REDUKSI_TONASE", "BONUS_LOGIN_PERTAMA"] },
         NOT: {
           description: { contains: "[ProkerID:" },
         },
