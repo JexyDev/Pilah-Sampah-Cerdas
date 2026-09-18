@@ -1907,14 +1907,6 @@ export class KknService {
       take: 50,
     });
 
-    const pointLogs = await prisma.pointHistory.findMany({
-      where: {
-        userId: kknUserId,
-      },
-      orderBy: { createdAt: "desc" },
-      take: 100,
-    });
-
     const combined = [
       ...auditLogs.map((log: any) => ({
         id: log.id,
@@ -1923,14 +1915,6 @@ export class KknService {
         timestamp: log.timestamp,
         type: "aktivasi",
         points: null,
-      })),
-      ...pointLogs.map((log) => ({
-        id: log.id,
-        title: log.description,
-        subtitle: log.points > 0 ? `Mendapatkan +${log.points} poin` : `${log.points} poin`,
-        timestamp: log.createdAt,
-        type: "laporan",
-        points: log.points,
       })),
     ];
 
@@ -4752,7 +4736,7 @@ export class KknService {
         reviewedBy: { select: { id: true, name: true } },
         _count: { select: { logbooks: true } },
       },
-      orderBy: [{ nomor: "asc" }, { createdAt: "desc" }],
+      orderBy: [{ createdAt: "desc" }, { nomor: "desc" }],
     });
 
     return list.map((item, index) => {

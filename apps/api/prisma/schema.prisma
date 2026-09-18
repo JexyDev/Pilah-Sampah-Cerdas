@@ -193,6 +193,7 @@ model User {
   jumlahAnggotaKeluarga Int?                     @map("jumlah_anggota_keluarga")
   defaultPetugasId      String?                  @map("id_petugas_tetap")
   lifecycleState        WargaLifecycle           @default(REGISTERED)
+  isTestAccount         Boolean                  @default(false) @map("is_test_account")
   bankSampahLedger      BankSampahLedger?
   aiRequestLogs         AiRequestLog[]
   picBatches            QrBatch[]                @relation("PicBatches")
@@ -249,6 +250,7 @@ model User {
   @@index([roleId])
   @@index([rwId])
   @@index([rtId])
+  @@index([isTestAccount])
   @@map("pengguna")
 }
 

@@ -26,7 +26,7 @@ import * as XLSX from "xlsx";
 import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
 import Sidebar from "../../components/layout/Sidebar/Sidebar";
-import { sortKelompokList } from "../../utils/sortUtils";
+import { sortKelompokList, sortChronologicalList } from "../../utils/sortUtils";
 import {
   fetchMasterWilayah,
   formatRwLabel,
@@ -112,7 +112,8 @@ const ManajemenMahasiswa: React.FC = () => {
     setLoading(true);
     try {
       const res = await api.get("/admin/mahasiswa?limit=0");
-      setMahasiswas(res.data?.data?.users || res.data?.users || res.data?.data || []);
+      const raw = res.data?.data?.users || res.data?.users || res.data?.data || [];
+      setMahasiswas(sortChronologicalList(raw, (m: any) => m.createdAt || m.studentProfile?.createdAt, "desc"));
       setError("");
     } catch (err) {
       setError("Gagal memuat data mahasiswa");
@@ -217,6 +218,8 @@ const ManajemenMahasiswa: React.FC = () => {
 
       return matchesSearch && matchesStatus && matchesKelurahan && matchesRw && matchesKelompok && matchesDate;
     });
+
+    return sortChronologicalList(list, (m: any) => m.createdAt || m.studentProfile?.createdAt, "desc");
   }, [mahasiswas, searchTerm, kelurahanFilter, rwFilter, statusFilter, kelompokFilter, startDateFilter, endDateFilter]);
 
   // Selected Kelompok Object in Form

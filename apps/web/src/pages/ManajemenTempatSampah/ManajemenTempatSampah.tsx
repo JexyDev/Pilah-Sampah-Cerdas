@@ -1587,7 +1587,6 @@ const ManajemenTempatSampah: React.FC = () => {
                     "Semua Status",
                     "Teraktivasi Warga",
                     "Stiker Belum Terikat",
-                    "Ditugaskan ke PIC",
                     "Aman (<70%)",
                     "Sedang (70-89%)",
                     "Penuh (≥90%)",
@@ -1777,7 +1776,7 @@ const ManajemenTempatSampah: React.FC = () => {
                       {bin.wargaName || bin.user?.name || bin.status === "ACTIVE_BOUND" ? (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/50">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                          Teraktivasi Warga (Real Bin)
+                          Aktif
                         </span>
                       ) : bin.status === "ASSIGNED_TO_PIC" ? (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700/50">
@@ -1787,7 +1786,7 @@ const ManajemenTempatSampah: React.FC = () => {
                       ) : (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700/50">
                           <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                          Stiker Belum Terikat (PRINTED)
+                          Belum Digunakan
                         </span>
                       )}
                     </td>

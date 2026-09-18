@@ -2524,7 +2524,12 @@ export class KknAttendanceService {
    * Get all active student locations recorded in the last TTL minutes (default 5 minutes).
    * If dplUserId is provided, filters to students in DPL's assigned kelompok.
    */
-  async getActiveStudentsLocations(dplUserId?: string, kelompokId?: string, mplUserId?: string) {
+  async getActiveStudentsLocations(
+    dplUserId?: string,
+    kelompokId?: string,
+    mplUserId?: string,
+    includeTestAccounts?: boolean
+  ) {
     let ttlMinutes = 5;
     try {
       const ttlConfig = await configService.getConfig("attendance_active_location_ttl_minutes");
@@ -2617,6 +2622,7 @@ export class KknAttendanceService {
           gte: cutoff,
         },
         ...(targetStudentIds ? { studentId: { in: targetStudentIds } } : {}),
+        ...(!includeTestAccounts ? { student: { isTestAccount: false } } : {}),
       },
       orderBy: {
         recordedAt: "desc",
@@ -3298,8 +3304,9 @@ export class KknAttendanceService {
     studentId?: string;
     startDate?: string;
     endDate?: string;
+    includeTestAccounts?: boolean;
   }) {
-    const { kelompokId, dplUserId, mplUserId, studentId, startDate, endDate } = params;
+    const { kelompokId, dplUserId, mplUserId, studentId, startDate, endDate, includeTestAccounts } = params;
 
     let attendanceDateFilter: any = undefined;
     if (startDate || endDate) {
@@ -3313,6 +3320,9 @@ export class KknAttendanceService {
     }
 
     let whereStudent: any = {};
+    if (!includeTestAccounts) {
+      whereStudent.user = { isTestAccount: false };
+    }
     if (studentId) {
       whereStudent.userId = studentId;
     } else if (kelompokId && kelompokId !== "ALL") {
@@ -5221,6 +5231,7 @@ export class KknAttendanceService {
     search?: string;
     page?: number;
     limit?: number;
+    includeTestAccounts?: boolean;
   }) {
     const page = Math.max(1, params.page ?? 1);
     const limit = Math.min(100, Math.max(1, params.limit ?? 20));
@@ -5329,7 +5340,10 @@ export class KknAttendanceService {
 
     if (params.kelompokId && params.kelompokId !== "ALL") {
       const kelompokStudents = await prisma.studentKkn.findMany({
-        where: { kelompokId: params.kelompokId },
+        where: {
+          kelompokId: params.kelompokId,
+          ...(!params.includeTestAccounts ? { user: { isTestAccount: false } } : {}),
+        },
         select: { userId: true },
       });
       const ids = kelompokStudents.map((s) => s.userId);
@@ -5464,6 +5478,13 @@ export class KknAttendanceService {
       };
     }
 
+    if (!params.includeTestAccounts) {
+      where.student = {
+        ...(where.student || {}),
+        isTestAccount: false,
+      };
+    }
+
     const [total, records, allSummaryRecords] = await Promise.all([
       prisma.activityAttendance.count({ where }),
       prisma.activityAttendance.findMany({
@@ -5566,7 +5587,10 @@ export class KknAttendanceService {
     if (params.kelompokId && params.kelompokId !== "ALL") {
       try {
         const groupStudents = await prisma.studentKkn.findMany({
-          where: { kelompokId: params.kelompokId },
+          where: {
+            kelompokId: params.kelompokId,
+            ...(!params.includeTestAccounts ? { user: { isTestAccount: false } } : {}),
+          },
           include: {
             user: { select: { id: true, name: true, fotoProfil: true } },
             assignedRw: { select: { id: true, name: true } },

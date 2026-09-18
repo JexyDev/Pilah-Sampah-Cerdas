@@ -244,6 +244,8 @@ export const dplController = {
       const statusPelaksanaan = req.query.statusPelaksanaan as string | undefined;
       const statusPenilaian = req.query.statusPenilaian as string | undefined;
       const search = req.query.search as string | undefined;
+      const sortBy = req.query.sortBy as string | undefined;
+      const order = req.query.order as "asc" | "desc" | undefined;
 
       const data = await dplService.getProgramKerja(dplUserId, groupId, userRole, {
         kategori,
@@ -251,6 +253,8 @@ export const dplController = {
         statusPelaksanaan,
         statusPenilaian,
         search,
+        sortBy,
+        order,
       });
       res.json({ success: true, data });
     } catch (error: any) {

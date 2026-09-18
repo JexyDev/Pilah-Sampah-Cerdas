@@ -39,7 +39,7 @@ import { MapContainer, Marker, useMapEvents, useMap, Polygon, Polyline, Circle }
 import { ThemeTileLayer, GOOGLE_SATELLITE_URL } from "../../components/common/ThemeTileLayer";
 import L from "leaflet";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
-import { sortKelompokList } from "../../utils/sortUtils";
+import { sortKelompokList, sortChronologicalList } from "../../utils/sortUtils";
 import {
   fetchMasterWilayah,
   isKelurahanMatching,
@@ -356,7 +356,13 @@ const JadwalKegiatan: React.FC = () => {
       }
     }
 
-    setTimelineList(list);
+    setTimelineList(
+      sortChronologicalList(
+        list,
+        (item: any) => item.startDate || item.tanggal || item.createdAt,
+        "desc"
+      )
+    );
   };
 
   const fetchTimelineList = async () => {
@@ -400,7 +406,13 @@ const JadwalKegiatan: React.FC = () => {
     try {
       const response = await api.get("/schedules");
       const raw = response.data.data;
-      setSchedules(Array.isArray(raw) ? raw : []);
+      setSchedules(
+        sortChronologicalList(
+          Array.isArray(raw) ? raw : [],
+          (s: any) => s.date || s.createdAt,
+          "desc"
+        )
+      );
     } catch (err: any) {
       const errMsg =
         err.response?.data?.message ||

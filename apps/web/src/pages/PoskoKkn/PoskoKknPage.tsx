@@ -54,7 +54,7 @@ import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { ThemeTileLayer, GOOGLE_SATELLITE_URL } from "../../components/common/ThemeTileLayer";
 import { KELURAHAN_GEODATA, CoblongGeo, createFacilityIcon } from "../../constants/coblongGeoData";
 import { resolveImageUrl, handlePoskoImageError } from "../../utils/imageUrl";
-import { sortKelompokList } from "../../utils/sortUtils";
+import { sortKelompokList, sortChronologicalList } from "../../utils/sortUtils";
 import {
   formatRwLabel,
   isRwMatching,
@@ -459,7 +459,7 @@ export const PoskoKknPage: React.FC = () => {
 
   // Filtered Items
   const filteredItems = useMemo(() => {
-    return items.filter((item) => {
+    const result = items.filter((item) => {
       const q = searchQuery.toLowerCase().trim();
       const matchSearch =
         !q ||
@@ -485,6 +485,8 @@ export const PoskoKknPage: React.FC = () => {
 
       return matchSearch && matchKelurahan && matchRw;
     });
+
+    return sortChronologicalList(result, (item) => item.createdAt || item.updatedAt, "desc");
   }, [items, searchQuery, selectedKelurahan, selectedRw]);
 
   // Reset pagination on search/filter
