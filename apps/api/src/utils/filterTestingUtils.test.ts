@@ -1,34 +1,21 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect } from "vitest";
 import {
   isTestOrDummyString,
   isTestUser,
   isTestKelompok,
   isTestStudent,
+  isTestPosko,
+  isTestProker,
   filterNonTestUsers,
   filterNonTestKelompok,
   filterNonTestStudents,
+  filterNonTestPosko,
+  filterNonTestProker,
 } from "./filterTestingUtils.js";
 
-describe("filterTestingUtils", () => {
-  beforeAll(() => {
-    process.env.HIDE_TEST_DATA = "true";
-  });
-
-  afterAll(() => {
-    delete process.env.HIDE_TEST_DATA;
-  });
-
-  describe("default behavior (HIDE_TEST_DATA not true)", () => {
-    it("should not hide test data when HIDE_TEST_DATA is not true", () => {
-      delete process.env.HIDE_TEST_DATA;
-      expect(isTestOrDummyString("Kelompok TEST")).toBe(false);
-      expect(isTestKelompok({ name: "Kelompok TEST" })).toBe(false);
-      process.env.HIDE_TEST_DATA = "true";
-    });
-  });
-
+describe("filterTestingUtils (Default Active Anti-Test Governance)", () => {
   describe("isTestOrDummyString", () => {
-    it("should detect testing keywords accurately", () => {
+    it("should detect testing keywords accurately without requiring env var", () => {
       expect(isTestOrDummyString("DPL TEST")).toBe(true);
       expect(isTestOrDummyString("Kelompok Test")).toBe(true);
       expect(isTestOrDummyString("Akun Dummy")).toBe(true);
@@ -49,14 +36,16 @@ describe("filterTestingUtils", () => {
   });
 
   describe("isTestUser", () => {
-    it("should detect test users by name, email, or nip", () => {
+    it("should detect test users by name, email, nip, or dummy phone", () => {
       expect(isTestUser({ name: "Dpl Test", email: "dpl@example.com" })).toBe(true);
       expect(isTestUser({ name: "Budi", email: "test.student@gmail.com" })).toBe(true);
       expect(isTestUser({ name: "Ani", nip: "NIP-DUMMY-123" })).toBe(true);
+      expect(isTestUser({ name: "Dpl Test", phone: "+62812345678900" })).toBe(true);
+      expect(isTestUser({ name: "Dosen", isTestAccount: true })).toBe(true);
     });
 
     it("should return false for real users", () => {
-      expect(isTestUser({ name: "Muhammad Aksan Ipaenin, S.T. M.Sc", email: "aksan@berseka.id" })).toBe(false);
+      expect(isTestUser({ name: "Muhammad Aksan Ipaenin, S.T. M.Sc", email: "aksan@berseka.id", phone: "+628122334455" })).toBe(false);
       expect(isTestUser(null)).toBe(false);
     });
   });
@@ -76,6 +65,8 @@ describe("filterTestingUtils", () => {
 
   describe("isTestStudent", () => {
     it("should detect test students by nim, name, user, or kelompok", () => {
+      expect(isTestStudent({ nim: "111222333", name: "Fajar bahari" })).toBe(true);
+      expect(isTestStudent({ nim: "12345678", name: "Acef Testing" })).toBe(true);
       expect(isTestStudent({ nim: "NIM-TEST-001" })).toBe(true);
       expect(isTestStudent({ name: "Mahasiswa Testing" })).toBe(true);
       expect(isTestStudent({ user: { name: "Tester Mahasiswa" } })).toBe(true);
@@ -85,6 +76,41 @@ describe("filterTestingUtils", () => {
     it("should return false for real students", () => {
       expect(isTestStudent({ nim: "10121001", name: "Ahmad Fauzi", user: { name: "Ahmad Fauzi" } })).toBe(false);
       expect(isTestStudent(null)).toBe(false);
+    });
+  });
+
+  describe("isTestPosko", () => {
+    it("should detect test posko by posko name or linked kelompok", () => {
+      expect(isTestPosko({ nama: "Posko KKN Kelompok TEST" })).toBe(true);
+      expect(isTestPosko({ nama: "Posko Testing" })).toBe(true);
+      expect(isTestPosko({ nama: "Posko Utama", kelompok: { name: "Kelompok TEST" } })).toBe(true);
+      expect(isTestPosko({ nama: "Posko Utama", kelompokName: "Kelompok TEST" })).toBe(true);
+    });
+
+    it("should return false for real posko", () => {
+      expect(isTestPosko({ nama: "Posko Kelompok 1 Dago", kelompok: { name: "Kelompok 1 Dago" } })).toBe(false);
+      expect(isTestPosko(null)).toBe(false);
+    });
+  });
+
+  describe("isTestProker", () => {
+    it("should detect test proker by title, description, or test kelompok", () => {
+      expect(isTestProker({ judul: "[Test Mahasiswa 3] Test Bad Logika" })).toBe(true);
+      expect(isTestProker({ judul: "Edukasi", kelompokName: "Kelompok TEST" })).toBe(true);
+      expect(isTestProker({ judul: "Program Kerja Testing" })).toBe(true);
+      expect(isTestProker({ deskripsi: "percobaan program kerja" })).toBe(true);
+    });
+
+    it("should detect prokers with arbitrary titles if kelompokName or namaKelompok belongs to Kelompok TEST", () => {
+      expect(isTestProker({ judul: "99", kelompokName: "Kelompok TEST" })).toBe(true);
+      expect(isTestProker({ deskripsi: "Ididuel", kelompokName: "Kelompok TEST" })).toBe(true);
+      expect(isTestProker({ namaProker: "hyyy", namaKelompok: "Kelompok TEST" })).toBe(true);
+      expect(isTestProker({ deskripsi: "gajx", kelompok: { name: "Kelompok TEST" } })).toBe(true);
+    });
+
+    it("should return false for real proker", () => {
+      expect(isTestProker({ judul: "Sosialisasi Pemilahan Sampah Organik", kelompokName: "Kelompok 1 Sadang Serang" })).toBe(false);
+      expect(isTestProker(null)).toBe(false);
     });
   });
 
@@ -105,9 +131,21 @@ describe("filterTestingUtils", () => {
 
       const students = [
         { nim: "10121001", name: "Ahmad" },
-        { nim: "TEST001", name: "Tester" },
+        { nim: "111222333", name: "Fajar bahari" },
       ];
       expect(filterNonTestStudents(students)).toHaveLength(1);
+
+      const poskos = [
+        { nama: "Posko Kelompok 1 Dago" },
+        { nama: "Posko KKN Kelompok TEST" },
+      ];
+      expect(filterNonTestPosko(poskos)).toHaveLength(1);
+
+      const prokers = [
+        { judul: "Sosialisasi Pengolahan Kompos", kelompokName: "Kelompok 2 Dago" },
+        { judul: "Edukasi", kelompokName: "Kelompok TEST" },
+      ];
+      expect(filterNonTestProker(prokers)).toHaveLength(1);
     });
   });
 });

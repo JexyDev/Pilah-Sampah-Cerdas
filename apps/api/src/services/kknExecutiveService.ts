@@ -49,6 +49,8 @@ export const kknExecutiveService = {
         kelurahan: true,
         cakupanRw: true,
         dplId: true,
+        dplNamaMentah: true,
+        dpl: { select: { id: true, name: true, phone: true, nip: true, isTestAccount: true } },
       },
     });
 
@@ -125,6 +127,14 @@ export const kknExecutiveService = {
             name: true,
             phone: true,
             email: true,
+            isTestAccount: true,
+          },
+        },
+        kelompok: {
+          select: {
+            id: true,
+            name: true,
+            kelurahan: true,
           },
         },
       },
@@ -894,7 +904,7 @@ export const kknExecutiveService = {
     const kelompokMap = new Map(kelompokList.map((k) => [k.id, k]));
 
     const criticalAlpaStudents = students
-      .filter((s) => criticalAlpaMap.has(s.userId))
+      .filter((s) => criticalAlpaMap.has(s.userId) && !isTestStudent(s))
       .map((s) => {
         const k = kelompokMap.get(s.kelompokId || "");
         const d = k?.dplId ? realDplMap.get(k.dplId) : null;
@@ -913,6 +923,7 @@ export const kknExecutiveService = {
           alpaCount: criticalAlpaMap.get(s.userId) || 0,
         };
       })
+      .filter((s) => !isTestKelompok({ name: s.kelompokName, dplNamaMentah: s.dplName }))
       .sort((a, b) => b.alpaCount - a.alpaCount);
 
     const countCriticalAlpaStudents = criticalAlpaStudents.length;

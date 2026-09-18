@@ -6,6 +6,7 @@
 
 import { prisma } from "../lib/prisma.js";
 import { calculateDistance } from "./kknAttendanceService.js";
+import { isTestPosko } from "../utils/filterTestingUtils.js";
 
 export class PoskoKknService {
   /**
@@ -537,7 +538,7 @@ export class PoskoKknService {
       }),
     ];
 
-    return allPoskos;
+    return allPoskos.filter((p) => !isTestPosko(p));
   }
 
   async getPoskoByKelompok(kelompokId: string) {

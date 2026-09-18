@@ -28,6 +28,7 @@ import {
 } from "./pointService.js";
 import { calculateNilaiEkonomi } from "./pemanfaatanService.js";
 import { evaluateSortingStatus } from "../utils/sortingEvaluation.js";
+import { isTestPosko, isTestProker, isTestKelompok } from "../utils/filterTestingUtils.js";
 import {
   extractProkerEndDate,
   isProkerExpired,
@@ -2834,7 +2835,7 @@ export class KknService {
       // silent fallback
     }
 
-    return mapped;
+    return mapped.filter((p) => !isTestPosko(p));
   }
 
   async createPoskoAdmin(
@@ -4819,7 +4820,7 @@ export class KknService {
         createdAt: item.createdAt.toISOString(),
         updatedAt: item.updatedAt.toISOString(),
       };
-    });
+    }).filter((p) => !isTestProker(p) && !isTestKelompok({ name: p.kelompokName }));
   }
 
   async getProgramKerjaById(userId: string, id: string) {

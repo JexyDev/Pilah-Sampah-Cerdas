@@ -31,6 +31,7 @@ import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { sortKelompokList } from "../../utils/sortUtils";
+import { isTestKelompok, isTestDpl, isTestStudent } from "../../utils/filterTestingUtils";
 import {
   fetchMasterWilayah,
   isKelurahanMatching,
@@ -93,7 +94,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
       if (res.data?.success) {
         // backend returns role as string: { role: "MAHASISWA_KKN" }
         const students = (res.data.data || []).filter(
-          (u: any) => u.role === "MAHASISWA_KKN"
+          (u: any) => u.role === "MAHASISWA_KKN" && !isTestStudent(u)
         );
         setAllStudentsList(students);
       }
@@ -219,7 +220,13 @@ export const ManajemenEkosistemKkn: React.FC = () => {
       const res = await api.get("/kelompok?limit=0");
       if (res.data?.success) {
         const rawGroups = res.data.groups || res.data.data || (Array.isArray(res.data) ? res.data : []);
-        setKelompokList(sortKelompokList(rawGroups, (k: any) => k.name));
+        const sanitized = rawGroups
+          .filter((k: any) => !isTestKelompok(k))
+          .map((k: any) => ({
+            ...k,
+            students: (k.students || []).filter((s: any) => !isTestStudent(s)),
+          }));
+        setKelompokList(sortKelompokList(sanitized, (k: any) => k.name));
       }
     } catch (err) {
       console.error(err);
@@ -235,7 +242,9 @@ export const ManajemenEkosistemKkn: React.FC = () => {
       setLoadingDpl(true);
       const res = await api.get("/kelompok/dpls");
       if (res.data?.success) {
-        setDplList(res.data.data || []);
+        const rawDpls = res.data.data || [];
+        const sanitized = rawDpls.filter((d: any) => !isTestDpl(d));
+        setDplList(sanitized);
       }
     } catch (err) {
       console.error(err);

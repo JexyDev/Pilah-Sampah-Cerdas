@@ -289,7 +289,12 @@ export const DplDashboardPage: React.FC = () => {
       const cleanGroups = (groupsData || []).filter((g: any) => !isTestKelompok(g));
       const cleanProkers = (prokersData || []).filter(
         (p: any) =>
-          !isTestProker(p) && !isTestKelompok({ name: p.kelompokName, dplNamaMentah: p.dplNama })
+          !isTestProker(p) &&
+          !isTestKelompok({
+            name: p.kelompokName || p.namaKelompok || p.kelompok?.name,
+            dplNamaMentah: p.dplNama || p.dplName,
+            dplName: p.dplNama || p.dplName,
+          })
       );
 
       setGroups(cleanGroups);
@@ -350,8 +355,19 @@ export const DplDashboardPage: React.FC = () => {
   }, [selectedGroupForDetail]);
 
   const effectiveProkers = useMemo(() => {
-    if (prokers && prokers.length > 0) return prokers;
-    return groups.flatMap((g: any) => g.programKerja || []);
+    const list =
+      prokers && prokers.length > 0
+        ? prokers
+        : groups.flatMap((g: any) => g.programKerja || []);
+    return list.filter(
+      (p: any) =>
+        !isTestProker(p) &&
+        !isTestKelompok({
+          name: p.kelompokName || p.namaKelompok || p.kelompok?.name,
+          dplNamaMentah: p.dplNama || p.dplName,
+          dplName: p.dplNama || p.dplName,
+        })
+    );
   }, [prokers, groups]);
 
   const handleDecideLeave = async (
@@ -1968,18 +1984,18 @@ export const DplDashboardPage: React.FC = () => {
               <div className="p-6 text-center text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 text-xs">
                 Belum ada program kerja yang diusulkan oleh mahasiswa di kelompok dampingan.
               </div>
-            ) : effectiveProkers.filter((p: any) => normalizeStatusUsulan(p.statusUsulan, p.status) === "DISETUJUI").length === 0 ? (
+            ) : effectiveProkers.filter((p: any) => normalizeStatusUsulan(p.statusUsulan, p.status) === "DISETUJUI" && !isTestProker(p) && !isTestKelompok({ name: p.kelompokName || p.namaKelompok || p.kelompok?.name })).length === 0 ? (
               <div className="p-6 text-center text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 text-xs">
                 Belum ada program kerja disetujui.{" "}
-                {effectiveProkers.filter((p: any) => normalizeStatusUsulan(p.statusUsulan, p.status) === "BELUM_DISETUJUI").length > 0 && (
+                {effectiveProkers.filter((p: any) => normalizeStatusUsulan(p.statusUsulan, p.status) === "BELUM_DISETUJUI" && !isTestProker(p) && !isTestKelompok({ name: p.kelompokName || p.namaKelompok || p.kelompok?.name })).length > 0 && (
                   <Link to="/program-kerja-kkn?statusUsulan=BELUM_DISETUJUI" className="text-amber-600 dark:text-amber-400 font-semibold hover:underline">
-                    {effectiveProkers.filter((p: any) => normalizeStatusUsulan(p.statusUsulan, p.status) === "BELUM_DISETUJUI").length} proker menunggu persetujuan DPL →
+                    {effectiveProkers.filter((p: any) => normalizeStatusUsulan(p.statusUsulan, p.status) === "BELUM_DISETUJUI" && !isTestProker(p) && !isTestKelompok({ name: p.kelompokName || p.namaKelompok || p.kelompok?.name })).length} proker menunggu persetujuan DPL →
                   </Link>
                 )}
               </div>
             ) : (
               effectiveProkers
-                .filter((p: any) => normalizeStatusUsulan(p.statusUsulan, p.status) === "DISETUJUI")
+                .filter((p: any) => normalizeStatusUsulan(p.statusUsulan, p.status) === "DISETUJUI" && !isTestProker(p) && !isTestKelompok({ name: p.kelompokName || p.namaKelompok || p.kelompok?.name }))
                 .slice(0, 4).map((p: any) => {
 
                 const normU = normalizeStatusUsulan(p.statusUsulan, p.status);

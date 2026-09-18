@@ -43,6 +43,7 @@ import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
 import { sortKelompokList } from "../../utils/sortUtils";
+import { isTestProker, isTestKelompok } from "../../utils/filterTestingUtils";
 import {
   fetchMasterWilayah,
   formatRwLabel,
@@ -551,14 +552,17 @@ export const ProgramKerjaKkn: React.FC = () => {
         }
       }
 
-      const sortedGroups = sortKelompokList(groups, (g: any) => g.name || "");
+      const sortedGroups = sortKelompokList(
+        groups.filter((g: any) => !isTestKelompok(g)),
+        (g: any) => g.name || ""
+      );
       setKelompokList(sortedGroups);
 
       // Auto set default selected group for DPL if only 1 group assigned
       let activeGroupId: string | undefined = undefined;
-      if (isDpl && groups.length === 1) {
-        setSelectedKelompokId(groups[0].id);
-        activeGroupId = groups[0].id;
+      if (isDpl && sortedGroups.length === 1) {
+        setSelectedKelompokId(sortedGroups[0].id);
+        activeGroupId = sortedGroups[0].id;
       } else if (selectedKelompokId !== "ALL") {
         activeGroupId = selectedKelompokId;
       }
@@ -571,7 +575,16 @@ export const ProgramKerjaKkn: React.FC = () => {
         search: searchQuery.trim() ? searchQuery : undefined,
       });
 
-      setProkerList(prokers);
+      const sanitizedProkers = (prokers || []).filter(
+        (p: any) =>
+          !isTestProker(p) &&
+          !isTestKelompok({
+            name: p.kelompokName || p.namaKelompok || p.kelompok?.name,
+            dplNamaMentah: p.dplNama || p.dplName,
+            dplName: p.dplNama || p.dplName,
+          })
+      );
+      setProkerList(sanitizedProkers);
     } catch (err: any) {
       console.error("Gagal memuat program kerja:", err);
       toast.error("Gagal memuat data program kerja");
@@ -864,6 +877,16 @@ export const ProgramKerjaKkn: React.FC = () => {
   // Filtered proker data
   const filteredProkers = useMemo(() => {
     return prokerList.filter((item) => {
+      if (
+        isTestProker(item) ||
+        isTestKelompok({
+          name: item.kelompokName || item.namaKelompok || item.kelompok?.name,
+          dplNamaMentah: item.dplName,
+          dplName: item.dplName,
+        })
+      ) {
+        return false;
+      }
       const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
         !q ||

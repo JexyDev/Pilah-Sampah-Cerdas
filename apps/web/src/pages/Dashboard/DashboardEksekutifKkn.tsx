@@ -396,11 +396,14 @@ export const DashboardEksekutifKkn: React.FC = () => {
         const kName = k.kelurahan.toLowerCase().replace(/\s+/g, "");
         return kName.includes(targetKel) || targetKel.includes(kName);
       });
-      const names = filtered.map((k) => k.value).filter((v) => v !== "Semua Kelompok");
+      const names = filtered
+        .filter((k) => !isTestKelompok({ name: k.value }))
+        .map((k) => k.value)
+        .filter((v) => v !== "Semua Kelompok");
       return ["Semua Kelompok", ...names];
     }
     if (groups && groups.length > 0) {
-      let list = groups;
+      let list = groups.filter((g) => !isTestKelompok(g));
       if (isKelurahanSelected) {
         const targetKel = selectedKelurahan.toLowerCase().replace(/\s+/g, "");
         list = list.filter((g) => {
@@ -425,6 +428,9 @@ export const DashboardEksekutifKkn: React.FC = () => {
   const filteredCriticalAlpaStudents = useMemo(() => {
     const list = data?.criticalAlpaStudents || [];
     return list.filter((st) => {
+      if (isTestStudent(st as any) || isTestKelompok({ name: st.kelompokName, dplNamaMentah: st.dplName })) {
+        return false;
+      }
       const matchKelompok =
         criticalAlpaFilterKelompok === "ALL" ||
         st.kelompokName.toLowerCase() === criticalAlpaFilterKelompok.toLowerCase() ||
@@ -3136,7 +3142,7 @@ export const DashboardEksekutifKkn: React.FC = () => {
                       className="bg-transparent outline-none cursor-pointer text-xs font-semibold max-w-[180px] truncate"
                     >
                       <option value="ALL">Semua Kelompok</option>
-                      {Array.from(new Set((data?.criticalAlpaStudents || []).map((s) => s.kelompokName))).map((kName) => (
+                      {Array.from(new Set((filteredCriticalAlpaStudents || []).map((s) => s.kelompokName))).map((kName) => (
                         <option key={kName} value={kName}>
                           {kName}
                         </option>
