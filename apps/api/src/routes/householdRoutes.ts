@@ -69,6 +69,9 @@ router.post(
   householdController.register
 );
 
+router.post("/join", authMiddleware, householdController.joinHousehold);
+router.get("/my-household", authMiddleware, householdController.getMyHousehold);
+
 /**
  * @swagger
  * /api/v1/households/me:
