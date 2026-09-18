@@ -102,7 +102,6 @@ class PoinView extends ConsumerWidget {
                           )
                         : Column(
                             children: history
-                                .take(8)
                                 .map(
                                   (ph) => Padding(
                                     padding: const EdgeInsets.only(bottom: 8),
@@ -683,15 +682,15 @@ class _PoinHistoryItem extends StatelessWidget {
               Row(
                 children: [
                   Text(
-                    isPunishment
-                        ? '-${item.points.abs()}'
-                        : '+${item.points.abs()}',
+                    item.points == 0
+                        ? '0'
+                        : (isPunishment ? '-${item.points.abs()}' : '+${item.points.abs()}'),
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
-                      color: isPunishment
-                          ? AppColors.dangerRed
-                          : AppColors.primaryGreen,
+                      color: item.points == 0
+                          ? AppColors.textSecondary
+                          : (isPunishment ? AppColors.dangerRed : AppColors.primaryGreen),
                     ),
                   ),
                   const SizedBox(width: 2),

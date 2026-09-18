@@ -65,11 +65,6 @@ class KelompokKknView extends ConsumerWidget {
     final membersToDisplay = <KelompokMemberData>[];
 
     for (final m in uniqueMembers.values) {
-      final isUser = user != null &&
-          ((m.userId.isNotEmpty && m.userId == user.id) ||
-              (m.nim.isNotEmpty && user.nim.isNotEmpty && m.nim == user.nim) ||
-              (m.name.toLowerCase().trim() == user.name.toLowerCase().trim()));
-
       if (m.isLeader && !hasFoundLeader) {
         membersToDisplay.add(m);
         hasFoundLeader = true;

@@ -327,8 +327,8 @@ class MahasiswaPoinView extends ConsumerWidget {
           ),
           SizedBox(height: 6),
           Text(
-            '• Poin Personal: Didapat dari Presensi (+4), Durasi (+3), dan Logbook (+3). Akumulasi poin seluruh anggota menyumbang bobot 40% ke Nilai Kelompok.\n\n'
-            '• Skor Proker Kelompok: Didapat dari progres tiap proker (Disetujui: +2, Berjalan: +4, Selesai: +6). Total skor proker menyumbang bobot 60% ke Nilai Kelompok.\n\n'
+            '• Poin Personal: Didapat dari Presensi (+4), Check-Out/Durasi (+3), dan Logbook (+3). Akumulasi poin seluruh anggota menyumbang bobot 40% ke Nilai Kelompok.\n\n'
+            '• Skor Proker Kelompok: Didapat dari progres tiap proker (Disetujui: +2, Berjalan: +2, Selesai: +2). Total skor proker menyumbang bobot 60% ke Nilai Kelompok.\n\n'
             '• Formula Nilai Kelompok: (Skor Proker × 60%) + (Rata-rata Poin Personal × 40%).',
             style: TextStyle(
               fontSize: 11,
@@ -386,7 +386,6 @@ class MahasiswaPoinView extends ConsumerWidget {
       ),
       data: (history) {
         final List<PointHistoryEntity> pointLogs = history.where((log) {
-          if (log.points == 0) return false;
           final kat = (log.kategori ?? '').toUpperCase();
           if (kat == 'REDUKSI_TONASE') return false; // Pemanfaatan/Panen dipindah ke Riwayat non-poin
           return true;
@@ -459,15 +458,20 @@ class _PoinHistoryItem extends StatelessWidget {
 
     final int points = item.points;
     final bool isPenalty = points < 0;
-    final String pointsText = isPenalty ? '$points PTS' : '+$points PTS';
-    final Color badgeColor =
-        isPenalty ? AppColors.dangerRed : AppColors.primaryGreen;
+    final String pointsText = points == 0
+        ? '0 PTS'
+        : (isPenalty ? '$points PTS' : '+$points PTS');
+    final Color badgeColor = points == 0
+        ? AppColors.textSecondary
+        : (isPenalty ? AppColors.dangerRed : AppColors.primaryGreen);
 
     String title = InputSanitizer.cleanSystemMessage(item.description);
     IconData icon = isPenalty
         ? Icons.warning_amber_rounded
         : Icons.check_circle_outline_rounded;
-    Color iconColor = isPenalty ? AppColors.dangerRed : AppColors.primaryGreen;
+    Color iconColor = points == 0
+        ? AppColors.textSecondary
+        : (isPenalty ? AppColors.dangerRed : AppColors.primaryGreen);
 
     if (title.toLowerCase().contains('program kerja') || item.kategori == 'KKN_PROKER') {
       icon = Icons.emoji_events_rounded;
