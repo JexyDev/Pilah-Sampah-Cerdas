@@ -363,12 +363,10 @@ export const MasterQrManager: React.FC = () => {
                 className="px-3 py-1.5 border border-gray-300 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-primary shadow-sm"
               >
                 <option value="">Semua Status</option>
-                <option value="PRINTED">PRINTED</option>
-                <option value="ASSIGNED_TO_PIC">ASSIGNED_TO_PIC</option>
-                <option value="PENDING_APPROVAL">PENDING_APPROVAL</option>
-                <option value="ACTIVE_BOUND">ACTIVE_BOUND</option>
-                <option value="BROKEN">BROKEN</option>
-                <option value="INACTIVE">INACTIVE</option>
+                <option value="ACTIVE_BOUND">Aktif</option>
+                <option value="PRINTED">Belum Digunakan</option>
+                <option value="INACTIVE">Tidak Aktif</option>
+                <option value="BROKEN">Rusak</option>
               </select>
             </div>
           </div>

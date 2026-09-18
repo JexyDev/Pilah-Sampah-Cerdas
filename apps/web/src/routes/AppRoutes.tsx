@@ -555,7 +555,7 @@ const AppRoutes: React.FC = () => {
         />
         <Route path="/manajemen-tempat-sampah" element={<Navigate to="/monitoring-pengelolaan/tempat-sampah" replace />} />
         <Route path="/monitoring-pengelolaan/tempat-sampah-teraktivasi" element={<Navigate to="/monitoring-pengelolaan/tempat-sampah?tab=teraktivasi" replace />} />
-        <Route path="/tempat-sampah-teraktivasi" element={<Navigate to="/dasbor?tab=tata-kelola-sampah&view=bins" replace />} />
+        <Route path="/tempat-sampah-teraktivasi" element={<Navigate to="/monitoring-pengelolaan/tempat-sampah?tab=teraktivasi" replace />} />
         <Route
           path="/peraturan"
           element={
