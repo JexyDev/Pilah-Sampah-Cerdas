@@ -103,4 +103,34 @@ describe("RoleSwitcher & Multi-Role Governance (Pimpinan to DPL)", () => {
     expect(profile.availableRoles).not.toContain("PETUGAS_RESIDU");
     expect(profile.availableRoles).not.toContain("MAHASISWA_KKN");
   });
+
+  it("should return only ['DEVELOPER'] as availableRoles for developer account", async () => {
+    const mockDev: any = {
+      id: "dev-id",
+      name: "Jeremy Darrell",
+      role: { id: 1, name: "DEVELOPER" },
+      roleId: 1,
+      userRoles: [],
+    };
+    vi.mocked(authRepository.findUserById).mockResolvedValue(mockDev);
+
+    const profile = await authService.getCurrentUser("dev-id");
+    expect(profile.availableRoles).toEqual(["DEVELOPER"]);
+    expect(profile.availableRoles).not.toContain("PEMIMPIN");
+    expect(profile.availableRoles).not.toContain("DPL");
+  });
+
+  it("should forbid Developer from switching role even if target role exists", async () => {
+    const mockDev: any = {
+      id: "dev-id",
+      name: "Jeremy Darrell",
+      role: { id: 1, name: "DEVELOPER" },
+      roleId: 1,
+      userRoles: [],
+    };
+    vi.mocked(authRepository.findUserById).mockResolvedValue(mockDev);
+    vi.mocked(prisma.role.findFirst).mockResolvedValue({ id: 9, name: "DPL" } as any);
+
+    await expect(authService.switchRole("dev-id", "DPL")).rejects.toThrow("ROLE_NOT_PERMITTED");
+  });
 });
