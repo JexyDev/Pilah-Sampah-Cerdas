@@ -30,6 +30,9 @@ import {
   Play,
   Lock,
   MapPin,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
@@ -142,6 +145,21 @@ export const ProgramKerjaKkn: React.FC = () => {
   );
   const [startDateFilter, setStartDateFilter] = useState<string>("");
   const [endDateFilter, setEndDateFilter] = useState<string>("");
+
+  // Sorting State: Default Waktu Dibuat Terbaru di Atas (Newest First)
+  type ProkerSortField = "createdAt" | "nomor" | "judul" | "biaya" | "statusUsulan";
+  const [sortField, setSortField] = useState<ProkerSortField>("createdAt");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+
+  const handleSort = (field: ProkerSortField) => {
+    if (sortField === field) {
+      setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortOrder(field === "createdAt" || field === "biaya" ? "desc" : "asc");
+    }
+    setCurrentPage(1);
+  };
 
   useEffect(() => {
     const q = searchParams.get("search") || searchParams.get("q");
@@ -919,6 +937,33 @@ export const ProgramKerjaKkn: React.FC = () => {
         matchesDate
       );
     });
+
+    return [...filtered].sort((a, b) => {
+      let comp = 0;
+      if (sortField === "createdAt") {
+        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        comp = timeB - timeA;
+        return sortOrder === "asc" ? -comp : comp;
+      }
+      if (sortField === "nomor") {
+        comp = (Number(a.nomor) || 0) - (Number(b.nomor) || 0);
+        return sortOrder === "asc" ? comp : -comp;
+      }
+      if (sortField === "judul") {
+        comp = (a.judul || "").localeCompare(b.judul || "", "id", { sensitivity: "base", numeric: true });
+        return sortOrder === "asc" ? comp : -comp;
+      }
+      if (sortField === "biaya") {
+        comp = (Number(a.kebutuhanBiaya) || 0) - (Number(b.kebutuhanBiaya) || 0);
+        return sortOrder === "asc" ? comp : -comp;
+      }
+      if (sortField === "statusUsulan") {
+        comp = (a.statusUsulan || "").localeCompare(b.statusUsulan || "", "id");
+        return sortOrder === "asc" ? comp : -comp;
+      }
+      return 0;
+    });
   }, [
     prokerList,
     kelompokList,
@@ -932,6 +977,8 @@ export const ProgramKerjaKkn: React.FC = () => {
     statusPelaksanaanFilter,
     startDateFilter,
     endDateFilter,
+    sortField,
+    sortOrder,
   ]);
 
   useEffect(() => {
@@ -1592,8 +1639,46 @@ export const ProgramKerjaKkn: React.FC = () => {
               <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300 border-collapse">
                 <thead>
                   <tr className="bg-slate-50/90 dark:bg-slate-800/90 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase tracking-wider font-bold">
-                    <th className="py-3.5 px-3 w-12 text-center">No</th>
-                    <th className="py-3.5 px-3 w-36 text-center">Waktu Dibuat</th>
+                    <th
+                      onClick={() => handleSort("nomor")}
+                      className={`py-3.5 px-3 w-16 text-center cursor-pointer transition-colors select-none hover:text-emerald-600 ${
+                        sortField === "nomor" ? "text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/30" : ""
+                      }`}
+                      title="Urutkan berdasarkan nomor kegiatan"
+                    >
+                      <div className="inline-flex items-center justify-center gap-1">
+                        <span>No</span>
+                        {sortField === "nomor" ? (
+                          sortOrder === "asc" ? <ArrowUp size={12} className="text-emerald-600 dark:text-emerald-400 shrink-0" /> : <ArrowDown size={12} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                        ) : (
+                          <ArrowUpDown size={11} className="text-slate-400 opacity-60 shrink-0" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort("createdAt")}
+                      className={`py-3.5 px-3 w-40 text-center cursor-pointer transition-colors select-none hover:text-emerald-600 ${
+                        sortField === "createdAt" ? "text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/30 font-black" : ""
+                      }`}
+                      title="Urutkan berdasarkan waktu pembuatan (Terbaru/Terlama)"
+                    >
+                      <div className="inline-flex items-center justify-center gap-1.5">
+                        <span>Waktu Dibuat</span>
+                        {sortField === "createdAt" ? (
+                          sortOrder === "desc" ? (
+                            <span className="flex items-center gap-0.5 text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold bg-emerald-100/70 dark:bg-emerald-900/60 px-1 py-0.5 rounded">
+                              <ArrowDown size={11} /> Baru
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-0.5 text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold bg-emerald-100/70 dark:bg-emerald-900/60 px-1 py-0.5 rounded">
+                              <ArrowUp size={11} /> Lama
+                            </span>
+                          )
+                        ) : (
+                          <ArrowUpDown size={11} className="text-slate-400 opacity-60 shrink-0" />
+                        )}
+                      </div>
+                    </th>
                     {showKelompokInfo && (
                       <th className="py-3.5 px-3 min-w-[170px] text-left">Kelompok & Wilayah</th>
                     )}
@@ -1604,11 +1689,53 @@ export const ProgramKerjaKkn: React.FC = () => {
                     )}
                     <th className="py-3.5 px-3 w-28 text-center">Kategori</th>
                     <th className="py-3.5 px-3 w-24 text-center">Sumber</th>
-                    <th className="py-3.5 px-4 min-w-[200px]">Judul Program</th>
+                    <th
+                      onClick={() => handleSort("judul")}
+                      className={`py-3.5 px-4 min-w-[200px] cursor-pointer transition-colors select-none hover:text-emerald-600 ${
+                        sortField === "judul" ? "text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/30" : ""
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>Judul Program</span>
+                        {sortField === "judul" ? (
+                          sortOrder === "asc" ? <ArrowUp size={12} className="text-emerald-600 shrink-0" /> : <ArrowDown size={12} className="text-emerald-600 shrink-0" />
+                        ) : (
+                          <ArrowUpDown size={11} className="text-slate-400 opacity-60 shrink-0" />
+                        )}
+                      </div>
+                    </th>
                     <th className="py-3.5 px-4 min-w-[240px] max-w-xs">Deskripsi Kegiatan</th>
                     <th className="py-3.5 px-3 w-40">Waktu Pelaksanaan</th>
-                    <th className="py-3.5 px-3 w-32 font-bold">Biaya</th>
-                    <th className="py-3.5 px-3 w-36 text-center">Status Usulan</th>
+                    <th
+                      onClick={() => handleSort("biaya")}
+                      className={`py-3.5 px-3 w-32 font-bold cursor-pointer transition-colors select-none hover:text-emerald-600 ${
+                        sortField === "biaya" ? "text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/30" : ""
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>Biaya</span>
+                        {sortField === "biaya" ? (
+                          sortOrder === "asc" ? <ArrowUp size={12} className="text-emerald-600 shrink-0" /> : <ArrowDown size={12} className="text-emerald-600 shrink-0" />
+                        ) : (
+                          <ArrowUpDown size={11} className="text-slate-400 opacity-60 shrink-0" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort("statusUsulan")}
+                      className={`py-3.5 px-3 w-36 text-center cursor-pointer transition-colors select-none hover:text-emerald-600 ${
+                        sortField === "statusUsulan" ? "text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/30" : ""
+                      }`}
+                    >
+                      <div className="inline-flex items-center justify-center gap-1.5">
+                        <span>Status Usulan</span>
+                        {sortField === "statusUsulan" ? (
+                          sortOrder === "asc" ? <ArrowUp size={12} className="text-emerald-600 shrink-0" /> : <ArrowDown size={12} className="text-emerald-600 shrink-0" />
+                        ) : (
+                          <ArrowUpDown size={11} className="text-slate-400 opacity-60 shrink-0" />
+                        )}
+                      </div>
+                    </th>
                     <th className="py-3.5 px-3 w-36 text-center">Status Pelaksanaan</th>
                     <th className="py-3.5 px-3 w-28 text-center">Tindakan</th>
                     {canModifyProker && (
@@ -1797,6 +1924,36 @@ export const ProgramKerjaKkn: React.FC = () => {
 
             {/* Mobile Card View (< md) */}
             <div className="block md:hidden divide-y divide-slate-100 dark:divide-slate-800">
+              {/* Mobile View Sort Bar */}
+              <div className="px-4 py-2.5 bg-slate-50/80 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800 text-xs">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Urutan:</span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => handleSort("createdAt")}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                        sortField === "createdAt"
+                          ? "bg-emerald-600 text-white shadow-2xs"
+                          : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100"
+                      }`}
+                    >
+                      Waktu {sortField === "createdAt" ? (sortOrder === "desc" ? "↓ Terbaru" : "↑ Terlama") : ""}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSort("nomor")}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                        sortField === "nomor"
+                          ? "bg-emerald-600 text-white shadow-2xs"
+                          : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100"
+                      }`}
+                    >
+                      No {sortField === "nomor" ? (sortOrder === "asc" ? "↑ 1-10" : "↓ 10-1") : ""}
+                    </button>
+                  </div>
+                </div>
+              </div>
               {paginatedProkers.map((p, idx) => {
                 const timestampInfo = formatIndonesianTimestamp(p.createdAt);
                 const rowNumber = (currentPage - 1) * itemsPerPage + idx + 1;

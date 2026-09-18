@@ -359,9 +359,11 @@ export const scheduleService = {
       });
 
       const [poskos, multiPoskos] = await Promise.all([
-        prisma.poskoKkn.findMany(),
+        prisma.poskoKkn.findMany({
+          orderBy: { createdAt: "desc" },
+        }),
         (prisma as any).poskoKknMulti.findMany({
-          orderBy: [{ isUtama: "desc" }, { createdAt: "asc" }],
+          orderBy: [{ isUtama: "desc" }, { createdAt: "desc" }],
         }),
       ]);
 

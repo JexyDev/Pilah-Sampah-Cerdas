@@ -1609,11 +1609,16 @@ const Dashboard: React.FC = () => {
     userPeran === "MITRA_PENDAMPING_LAPANGAN" ||
     userPeran === "MITRA";
   const canAccessKknSub = isPimpinan || isSuperOrDev;
+  const canAccessGisSub = isPimpinan || isSuperOrDev || userPeran === "ADMIN" || userPeran === "SUPER_ADMIN";
+  const canAccessTabs = canAccessKknSub || canAccessGisSub;
 
   const tabParam = searchParams.get("tab");
   const isKknTab = tabParam === "kkn";
+  const isGisTab = tabParam === "gis";
   const activeSubTab = isKknTab
     ? "kkn"
+    : isGisTab && canAccessGisSub
+    ? "gis"
     : tabParam === "tata-kelola-sampah" || tabParam === "sampah"
     ? "tata-kelola-sampah"
     : isPimpinan

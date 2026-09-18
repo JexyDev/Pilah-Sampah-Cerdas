@@ -4752,7 +4752,7 @@ export class KknService {
         reviewedBy: { select: { id: true, name: true } },
         _count: { select: { logbooks: true } },
       },
-      orderBy: [{ nomor: "asc" }, { createdAt: "desc" }],
+      orderBy: [{ createdAt: "desc" }, { nomor: "desc" }],
     });
 
     return list.map((item, index) => {

@@ -2930,6 +2930,8 @@ export const dplService = {
       statusPelaksanaan?: string;
       statusPenilaian?: string;
       search?: string;
+      sortBy?: string;
+      order?: "asc" | "desc";
     }
   ) => {
     const whereGroup: any = await getKelompokWhere(dplUserId, role);
@@ -3107,7 +3109,17 @@ export const dplService = {
           },
         },
       },
-      orderBy: [{ kelompokId: "asc" }, { nomor: "asc" }, { createdAt: "asc" }],
+      orderBy: (() => {
+        const sortField = filters?.sortBy || "createdAt";
+        const sortDir = (filters?.order || "desc").toLowerCase() === "asc" ? "asc" : "desc";
+        if (sortField === "createdAt") {
+          return [{ createdAt: sortDir }, { nomor: sortDir }];
+        }
+        if (sortField === "nomor") {
+          return [{ nomor: sortDir }, { createdAt: "desc" }];
+        }
+        return [{ [sortField]: sortDir }, { createdAt: "desc" }];
+      })(),
     });
 
     return prokers.map((p) => {
