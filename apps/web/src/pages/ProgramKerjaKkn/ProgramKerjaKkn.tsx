@@ -88,8 +88,8 @@ export const ProgramKerjaKkn: React.FC = () => {
   const isPimpinan = ["PEMIMPIN", "PIMPINAN", "CAMAT", "LURAH", "KEPALA_DESA", "REKTOR"].some((r) =>
     userRole.includes(r)
   );
-  const isMpl = ["MPL", "MITRA_PEMBIMBING_LAPANGAN", "MITRA_PENDAMPING_LAPANGAN", "MITRA"].some((r) =>
-    userRole.includes(r)
+  const isMpl = ["MPL", "MITRA_PEMBIMBING_LAPANGAN", "MITRA_PENDAMPING_LAPANGAN", "MITRA"].some(
+    (r) => userRole.includes(r)
   );
   const isDpl = ["DPL", "DOSEN_PEMBIMBING"].some((r) => userRole.includes(r));
   const isDeveloper = userRole === "DEVELOPER" || userRole === "SUPER_USER";
@@ -100,7 +100,8 @@ export const ProgramKerjaKkn: React.FC = () => {
   const isKetua = Boolean(
     (user as any)?.isKetua || (user as any)?.studentProfile?.isKetua || (user as any)?.isLeader
   );
-  const canModifyProker = !isMpl && !isPimpinan && (isManagement || isDpl || (isStudent && isKetua));
+  const canModifyProker =
+    !isMpl && !isPimpinan && (isManagement || isDpl || (isStudent && isKetua));
 
   // Scoping Wilayah Binaan MPL
   const mplKelurahan = useMemo(() => {
@@ -108,7 +109,14 @@ export const ProgramKerjaKkn: React.FC = () => {
     if ((user as any)?.kelurahan) return (user as any).kelurahan;
     if (user?.address) return user.address.replace(/^Kel\.\s*/i, "").trim();
     if (user?.name) {
-      const known = ["Cipaganti", "Dago", "Lebak Gede", "Lebak Siliwangi", "Sadang Serang", "Sekeloa"];
+      const known = [
+        "Cipaganti",
+        "Dago",
+        "Lebak Gede",
+        "Lebak Siliwangi",
+        "Sadang Serang",
+        "Sekeloa",
+      ];
       const match = known.find((k) => user.name.toLowerCase().includes(k.toLowerCase()));
       if (match) return match;
     }
@@ -733,7 +741,7 @@ export const ProgramKerjaKkn: React.FC = () => {
   const handleApproveProker = async (proker: ProgramKerjaItem) => {
     try {
       await dplService.decideProgramKerja(proker.id, "DITERIMA");
-      toast.success(`Program kerja #${proker.nomor} berhasil disetujui (ACC)`);
+      toast.success(`Program kerja #${proker.nomor} berhasil disetujui`);
       fetchData();
     } catch (err: any) {
       console.error("Gagal menyetujui program kerja:", err);
@@ -974,7 +982,10 @@ export const ProgramKerjaKkn: React.FC = () => {
         return sortOrder === "asc" ? comp : -comp;
       }
       if (sortField === "judul") {
-        comp = (a.judul || "").localeCompare(b.judul || "", "id", { sensitivity: "base", numeric: true });
+        comp = (a.judul || "").localeCompare(b.judul || "", "id", {
+          sensitivity: "base",
+          numeric: true,
+        });
         return sortOrder === "asc" ? comp : -comp;
       }
       if (sortField === "biaya") {
@@ -1471,9 +1482,7 @@ export const ProgramKerjaKkn: React.FC = () => {
             </span>
             {isDpl && kelompokList.length <= 1 ? (
               <div className="w-full px-3 py-2 bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/50 rounded-xl text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center justify-between gap-1.5 shadow-2xs h-[38px]">
-                <span className="truncate">
-                  {kelompokList[0]?.name || "Kelompok Binaan Anda"}
-                </span>
+                <span className="truncate">{kelompokList[0]?.name || "Kelompok Binaan Anda"}</span>
                 <span className="text-[9.5px] uppercase font-black bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded shrink-0">
                   Binaan
                 </span>
@@ -1665,14 +1674,26 @@ export const ProgramKerjaKkn: React.FC = () => {
                     <th
                       onClick={() => handleSort("nomor")}
                       className={`py-3.5 px-3 w-16 text-center cursor-pointer transition-colors select-none hover:text-emerald-600 ${
-                        sortField === "nomor" ? "text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/30" : ""
+                        sortField === "nomor"
+                          ? "text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/30"
+                          : ""
                       }`}
                       title="Urutkan berdasarkan nomor kegiatan"
                     >
                       <div className="inline-flex items-center justify-center gap-1">
                         <span>No</span>
                         {sortField === "nomor" ? (
-                          sortOrder === "asc" ? <ArrowUp size={12} className="text-emerald-600 dark:text-emerald-400 shrink-0" /> : <ArrowDown size={12} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                          sortOrder === "asc" ? (
+                            <ArrowUp
+                              size={12}
+                              className="text-emerald-600 dark:text-emerald-400 shrink-0"
+                            />
+                          ) : (
+                            <ArrowDown
+                              size={12}
+                              className="text-emerald-600 dark:text-emerald-400 shrink-0"
+                            />
+                          )
                         ) : (
                           <ArrowUpDown size={11} className="text-slate-400 opacity-60 shrink-0" />
                         )}
@@ -1681,7 +1702,9 @@ export const ProgramKerjaKkn: React.FC = () => {
                     <th
                       onClick={() => handleSort("createdAt")}
                       className={`py-3.5 px-3 w-40 text-center cursor-pointer transition-colors select-none hover:text-emerald-600 ${
-                        sortField === "createdAt" ? "text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/30 font-black" : ""
+                        sortField === "createdAt"
+                          ? "text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/30 font-black"
+                          : ""
                       }`}
                       title="Urutkan berdasarkan waktu pembuatan (Terbaru/Terlama)"
                     >
@@ -1715,13 +1738,19 @@ export const ProgramKerjaKkn: React.FC = () => {
                     <th
                       onClick={() => handleSort("judul")}
                       className={`py-3.5 px-4 min-w-[200px] cursor-pointer transition-colors select-none hover:text-emerald-600 ${
-                        sortField === "judul" ? "text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/30" : ""
+                        sortField === "judul"
+                          ? "text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/30"
+                          : ""
                       }`}
                     >
                       <div className="flex items-center gap-1.5">
                         <span>Judul Program</span>
                         {sortField === "judul" ? (
-                          sortOrder === "asc" ? <ArrowUp size={12} className="text-emerald-600 shrink-0" /> : <ArrowDown size={12} className="text-emerald-600 shrink-0" />
+                          sortOrder === "asc" ? (
+                            <ArrowUp size={12} className="text-emerald-600 shrink-0" />
+                          ) : (
+                            <ArrowDown size={12} className="text-emerald-600 shrink-0" />
+                          )
                         ) : (
                           <ArrowUpDown size={11} className="text-slate-400 opacity-60 shrink-0" />
                         )}
@@ -1732,13 +1761,19 @@ export const ProgramKerjaKkn: React.FC = () => {
                     <th
                       onClick={() => handleSort("biaya")}
                       className={`py-3.5 px-3 w-32 font-bold cursor-pointer transition-colors select-none hover:text-emerald-600 ${
-                        sortField === "biaya" ? "text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/30" : ""
+                        sortField === "biaya"
+                          ? "text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/30"
+                          : ""
                       }`}
                     >
                       <div className="flex items-center gap-1.5">
                         <span>Biaya</span>
                         {sortField === "biaya" ? (
-                          sortOrder === "asc" ? <ArrowUp size={12} className="text-emerald-600 shrink-0" /> : <ArrowDown size={12} className="text-emerald-600 shrink-0" />
+                          sortOrder === "asc" ? (
+                            <ArrowUp size={12} className="text-emerald-600 shrink-0" />
+                          ) : (
+                            <ArrowDown size={12} className="text-emerald-600 shrink-0" />
+                          )
                         ) : (
                           <ArrowUpDown size={11} className="text-slate-400 opacity-60 shrink-0" />
                         )}
@@ -1747,13 +1782,19 @@ export const ProgramKerjaKkn: React.FC = () => {
                     <th
                       onClick={() => handleSort("statusUsulan")}
                       className={`py-3.5 px-3 w-36 text-center cursor-pointer transition-colors select-none hover:text-emerald-600 ${
-                        sortField === "statusUsulan" ? "text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/30" : ""
+                        sortField === "statusUsulan"
+                          ? "text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/30"
+                          : ""
                       }`}
                     >
                       <div className="inline-flex items-center justify-center gap-1.5">
                         <span>Status Usulan</span>
                         {sortField === "statusUsulan" ? (
-                          sortOrder === "asc" ? <ArrowUp size={12} className="text-emerald-600 shrink-0" /> : <ArrowDown size={12} className="text-emerald-600 shrink-0" />
+                          sortOrder === "asc" ? (
+                            <ArrowUp size={12} className="text-emerald-600 shrink-0" />
+                          ) : (
+                            <ArrowDown size={12} className="text-emerald-600 shrink-0" />
+                          )
                         ) : (
                           <ArrowUpDown size={11} className="text-slate-400 opacity-60 shrink-0" />
                         )}
@@ -1761,9 +1802,7 @@ export const ProgramKerjaKkn: React.FC = () => {
                     </th>
                     <th className="py-3.5 px-3 w-36 text-center">Status Pelaksanaan</th>
                     <th className="py-3.5 px-3 w-28 text-center">Tindakan</th>
-                    {canModifyProker && (
-                      <th className="py-3.5 px-4 w-32 text-center">Aksi</th>
-                    )}
+                    {canModifyProker && <th className="py-3.5 px-4 w-32 text-center">Aksi</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
@@ -1937,7 +1976,6 @@ export const ProgramKerjaKkn: React.FC = () => {
                             </div>
                           </td>
                         )}
-
                       </tr>
                     );
                   })}
@@ -1950,7 +1988,9 @@ export const ProgramKerjaKkn: React.FC = () => {
               {/* Mobile View Sort Bar */}
               <div className="px-4 py-2.5 bg-slate-50/80 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800 text-xs">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Urutan:</span>
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                    Urutan:
+                  </span>
                   <div className="flex items-center gap-1.5">
                     <button
                       type="button"
@@ -1961,7 +2001,12 @@ export const ProgramKerjaKkn: React.FC = () => {
                           : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100"
                       }`}
                     >
-                      Waktu {sortField === "createdAt" ? (sortOrder === "desc" ? "↓ Terbaru" : "↑ Terlama") : ""}
+                      Waktu{" "}
+                      {sortField === "createdAt"
+                        ? sortOrder === "desc"
+                          ? "↓ Terbaru"
+                          : "↑ Terlama"
+                        : ""}
                     </button>
                     <button
                       type="button"
@@ -2122,8 +2167,6 @@ export const ProgramKerjaKkn: React.FC = () => {
                         </div>
                       )}
                     </div>
-
-
                   </div>
                 );
               })}
@@ -2276,7 +2319,8 @@ export const ProgramKerjaKkn: React.FC = () => {
                         <input
                           type="date"
                           min={
-                            formStartDate || (formMode === "add" ? getTomorrowDateString() : undefined)
+                            formStartDate ||
+                            (formMode === "add" ? getTomorrowDateString() : undefined)
                           }
                           value={formEndDate}
                           onChange={(e) => handleDateChange(formStartDate, e.target.value)}
@@ -2285,14 +2329,16 @@ export const ProgramKerjaKkn: React.FC = () => {
                       </div>
                     </div>
                     <p className="text-[10.5px] text-amber-600 dark:text-amber-400 font-medium mb-1.5">
-                      *Rencana kegiatan baru wajib H+1 (mulai esok hari, tidak dapat memilih hari ini
-                      atau masa lampau).
+                      *Rencana kegiatan baru wajib H+1 (mulai esok hari, tidak dapat memilih hari
+                      ini atau masa lampau).
                     </p>
                     <input
                       type="text"
                       placeholder="Contoh: 19 – 20 Agustus 2026"
                       value={formData.waktuPelaksanaan}
-                      onChange={(e) => setFormData({ ...formData, waktuPelaksanaan: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, waktuPelaksanaan: e.target.value })
+                      }
                       className="w-full px-3.5 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-semibold focus:ring-2 focus:ring-emerald-500"
                     />
                   </div>
@@ -2337,7 +2383,9 @@ export const ProgramKerjaKkn: React.FC = () => {
                       type="url"
                       placeholder="https://drive.google.com/drive/folders/..."
                       value={formData.linkGoogleDrive}
-                      onChange={(e) => setFormData({ ...formData, linkGoogleDrive: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, linkGoogleDrive: e.target.value })
+                      }
                       className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500"
                     />
                   </div>
@@ -2897,7 +2945,7 @@ export const ProgramKerjaKkn: React.FC = () => {
                                 handleApproveProker(p);
                                 setDetailModal({ isOpen: false, proker: null });
                               }}
-                              title="Setujui (ACC) Program Kerja"
+                              title="Setujui Program Kerja"
                               className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-2xs transition-all cursor-pointer"
                             >
                               <Check size={13} strokeWidth={3} />

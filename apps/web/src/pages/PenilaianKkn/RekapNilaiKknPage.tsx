@@ -91,9 +91,7 @@ export const RekapNilaiKknPage: React.FC = () => {
                   : (s.skorProkerKelompok ?? null);
 
           const laporan =
-            s.laporanScore !== undefined && s.laporanScore !== null
-              ? s.laporanScore
-              : null;
+            s.laporanScore !== undefined && s.laporanScore !== null ? s.laporanScore : null;
 
           let nAkhir: number | null = s.nilaiAkhir ?? null;
           let pred: string | null = s.predikat ?? null;
@@ -141,7 +139,8 @@ export const RekapNilaiKknPage: React.FC = () => {
           };
         });
         const cleanFormatted = formatted.filter(
-          (s) => !isTestStudent(s) && !isTestKelompok({ name: s.kelompokName || (s as any).kelompok })
+          (s) =>
+            !isTestStudent(s) && !isTestKelompok({ name: s.kelompokName || (s as any).kelompok })
         );
         setStudents(cleanFormatted);
       } else {
@@ -228,7 +227,9 @@ export const RekapNilaiKknPage: React.FC = () => {
     const lengkap = filteredStudents.filter((s) => s.status === "Lengkap").length;
     const menungguMpl = filteredStudents.filter((s) => s.status === "Menunggu MPL").length;
     const menungguDpl = filteredStudents.filter((s) => s.status === "Menunggu DPL").length;
-    const menungguLaporan = filteredStudents.filter((s) => s.status === "Menunggu Laporan Akhir").length;
+    const menungguLaporan = filteredStudents.filter(
+      (s) => s.status === "Menunggu Laporan Akhir"
+    ).length;
 
     const completedScores = filteredStudents
       .map((s) => s.nilaiAkhir)
@@ -567,7 +568,8 @@ export const RekapNilaiKknPage: React.FC = () => {
           <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-900/60 px-3 py-1.5 rounded-xl text-slate-700 dark:text-slate-300 font-medium shadow-2xs">
             <span className="w-2 h-2 rounded-full bg-[#1d4ed8] shrink-0" />
             <span>
-              <strong className="text-[#1d4ed8] font-bold">Otomatis dari Sistem:</strong> Kehadiran 25%
+              <strong className="text-[#1d4ed8] font-bold">Otomatis dari Sistem:</strong> Kehadiran
+              25%
             </span>
           </div>
 
@@ -591,7 +593,8 @@ export const RekapNilaiKknPage: React.FC = () => {
           <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-900/60 px-3 py-1.5 rounded-xl text-slate-700 dark:text-slate-300 font-medium shadow-2xs">
             <span className="w-2 h-2 rounded-full bg-[#6366f1] shrink-0" />
             <span>
-              <strong className="text-[#6366f1] font-bold">Telaah Laporan:</strong> Laporan Akhir 25%
+              <strong className="text-[#6366f1] font-bold">Telaah Laporan:</strong> Laporan Akhir
+              25%
             </span>
           </div>
         </div>
@@ -599,7 +602,9 @@ export const RekapNilaiKknPage: React.FC = () => {
         {/* Badge 5: Info Komposisi */}
         <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-xl text-slate-600 dark:text-slate-400 font-medium shadow-2xs">
           <Info size={13} className="text-slate-500 shrink-0" />
-          <span>Formula Resmi: Kehadiran 25% • Personal 25% • Kelompok 25% • Laporan Akhir 25%</span>
+          <span>
+            Formula Resmi: Kehadiran 25% • Personal 25% • Kelompok 25% • Laporan Akhir 25%
+          </span>
         </div>
       </div>
 
@@ -649,25 +654,33 @@ export const RekapNilaiKknPage: React.FC = () => {
                   {/* Kehadiran Sistem Pillar (25%) */}
                   <th className="py-2.5 px-3 bg-[#f0f7ff] dark:bg-blue-950/50 text-[#1e40af] dark:text-blue-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[11.5px] min-w-[120px]">
                     <div>Kehadiran Sistem</div>
-                    <span className="text-[10px] font-normal text-blue-600 dark:text-blue-400">Bobot 25%</span>
+                    <span className="text-[10px] font-normal text-blue-600 dark:text-blue-400">
+                      Bobot 25%
+                    </span>
                   </th>
 
                   {/* Nilai Personal Pillar (25%) */}
                   <th className="py-2.5 px-3 bg-[#f0fdf4] dark:bg-emerald-950/50 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[11.5px] min-w-[120px]">
                     <div>Nilai Personal</div>
-                    <span className="text-[10px] font-normal text-emerald-600 dark:text-emerald-400">Bobot 25%</span>
+                    <span className="text-[10px] font-normal text-emerald-600 dark:text-emerald-400">
+                      Bobot 25%
+                    </span>
                   </th>
 
-                  {/* Nilai Kelompok Pillar (25%) */}
-                  <th className="py-2.5 px-3 bg-[#fffbeb] dark:bg-amber-950/50 text-[#b45309] dark:text-amber-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[11.5px] min-w-[120px]">
-                    <div>Nilai Kelompok</div>
-                    <span className="text-[10px] font-normal text-amber-600 dark:text-amber-400">Bobot 25%</span>
+                  {/* Nilai Kelompok / Proker Pillar (25%) */}
+                  <th className="py-2.5 px-3 bg-[#fffbeb] dark:bg-amber-950/50 text-[#b45309] dark:text-amber-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[11.5px] min-w-[130px]">
+                    <div>Nilai Kelompok (Proker)</div>
+                    <span className="text-[10px] font-normal text-amber-600 dark:text-amber-400">
+                      Rerata Proker &rarr; Bobot 25%
+                    </span>
                   </th>
 
                   {/* Laporan Akhir Pillar (25%) */}
                   <th className="py-2.5 px-3 bg-[#f5f3ff] dark:bg-indigo-950/50 text-[#4338ca] dark:text-indigo-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[11.5px] min-w-[130px]">
                     <div>Laporan Akhir</div>
-                    <span className="text-[10px] font-normal text-indigo-600 dark:text-indigo-400">Bobot 25%</span>
+                    <span className="text-[10px] font-normal text-indigo-600 dark:text-indigo-400">
+                      Bobot 25%
+                    </span>
                   </th>
 
                   {/* Nilai Akhir */}
@@ -682,9 +695,7 @@ export const RekapNilaiKknPage: React.FC = () => {
                   </th>
 
                   {/* Status */}
-                  <th className="py-3 px-4 w-36 font-bold">
-                    Status
-                  </th>
+                  <th className="py-3 px-4 w-36 font-bold">Status</th>
                 </tr>
               </thead>
 
@@ -699,7 +710,10 @@ export const RekapNilaiKknPage: React.FC = () => {
                   const keh = st.kehadiran ?? 0;
                   const personal = st.personalScore ?? st.dplScore ?? st.individuDpl ?? null;
                   const kelompok = st.kelompokScore ?? st.prokerDpl ?? st.kelompokDpl ?? null;
-                  const lap = st.laporanScore !== null && st.laporanScore !== undefined ? st.laporanScore : null;
+                  const lap =
+                    st.laporanScore !== null && st.laporanScore !== undefined
+                      ? st.laporanScore
+                      : null;
 
                   return (
                     <tr
@@ -879,7 +893,8 @@ export const RekapNilaiKknPage: React.FC = () => {
               <span>Kehadiran Sistem (25%)</span>
             </div>
             <p className="text-[12px] text-slate-600 dark:text-slate-400 leading-relaxed">
-              Kehadiran (bobot 25%) diperoleh langsung dari catatan presensi dan logbook aktivitas mahasiswa yang tervalidasi otomatis pada sistem.
+              Kehadiran (bobot 25%) diperoleh langsung dari catatan presensi dan logbook aktivitas
+              mahasiswa yang tervalidasi otomatis pada sistem.
             </p>
           </div>
 
@@ -892,7 +907,8 @@ export const RekapNilaiKknPage: React.FC = () => {
               <span>Nilai Personal (25%)</span>
             </div>
             <p className="text-[12px] text-slate-600 dark:text-slate-400 leading-relaxed">
-              Evaluasi individual mahasiswa oleh DPL (skala 0–100) mencakup keaktifan, dedikasi, etika kerja, dan kontribusi nyata pada wilayah KKN.
+              Evaluasi individual mahasiswa oleh DPL (skala 0–100) mencakup keaktifan, dedikasi,
+              etika kerja, dan kontribusi nyata pada wilayah KKN.
             </p>
           </div>
 
@@ -905,7 +921,8 @@ export const RekapNilaiKknPage: React.FC = () => {
               <span>Nilai Kelompok (25%)</span>
             </div>
             <p className="text-[12px] text-slate-600 dark:text-slate-400 leading-relaxed">
-              Kinerja pelaksanaan program kerja kelompok KKN (skala 0–100) yang dievaluasi dari keberhasilan eksekusi proker dan tata kelola tim.
+              Kinerja pelaksanaan program kerja kelompok KKN (skala 0–100) yang dievaluasi dari
+              keberhasilan eksekusi proker dan tata kelola tim.
             </p>
           </div>
 
@@ -918,7 +935,8 @@ export const RekapNilaiKknPage: React.FC = () => {
               <span>Laporan Akhir (25%)</span>
             </div>
             <p className="text-[12px] text-slate-600 dark:text-slate-400 leading-relaxed">
-              Penilaian telaah laporan akhir program kerja kelompok dan refleksi esai KKN (skala 0–100) yang divalidasi oleh DPL pada modul Telaah Laporan Akhir.
+              Penilaian telaah laporan akhir program kerja kelompok dan refleksi esai KKN (skala
+              0–100) yang divalidasi oleh DPL pada modul Telaah Laporan Akhir.
             </p>
             <div className="text-[11px] font-mono text-slate-700 dark:text-slate-300 pt-1 space-y-0.5 font-medium">
               <p>Nilai Akhir = (25% × Kehadiran) + (25% × Personal)</p>
@@ -931,7 +949,8 @@ export const RekapNilaiKknPage: React.FC = () => {
         <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center gap-2 text-[11.5px] text-slate-500 dark:text-slate-400 font-medium">
           <Info size={14} className="shrink-0 text-slate-400" />
           <span>
-            Total bobot komponen nilai akhir = 100% (4 pilar berimbang masing-masing 25% sesuai ketetapan Warek 1 dan DPL). Nilai disajikan dengan pembulatan 1 desimal.
+            Total bobot komponen nilai akhir = 100% (4 pilar berimbang masing-masing 25% sesuai
+            ketetapan Warek 1 dan DPL). Nilai disajikan dengan pembulatan 1 desimal.
           </span>
         </div>
       </div>

@@ -4143,11 +4143,30 @@ export const dplService = {
     for (const grp of groups) {
       grp.students = grp.students.filter((s) => !isTestStudent(s));
       const totalSchedules = await getEligiblePastSchedulesCount(grp.id);
-      const prokerCount = grp.programKerja.length;
+
+      // Saring hanya program kerja yang telah disetujui
+      const approvedProkers = grp.programKerja.filter((p: any) => {
+        const u =
+          p.statusUsulan ||
+          (p.status === "DISETUJUI" || p.status === "SEDANG_BERJALAN" || p.status === "SELESAI"
+            ? "DISETUJUI"
+            : "");
+        const norm = String(u || "").toUpperCase();
+        return norm === "DISETUJUI" || norm === "DITERIMA";
+      });
+      const prokerCount = approvedProkers.length; // n = banyaknya proker yang disetujui (dinamis)
+      const scoredProkers = approvedProkers.filter(
+        (p) => p.skorPenilaian !== null && p.skorPenilaian !== undefined
+      );
+      const totalNilaiProker = scoredProkers.reduce(
+        (acc, p) => acc + Number(p.skorPenilaian || 0),
+        0
+      );
+      // Rerata nilai program kerja kelompok = Total Nilai Proker ÷ n (banyaknya proker yang disetujui)
       const prokerAvgScore =
-        prokerCount > 0
-          ? grp.programKerja.reduce((acc, p) => acc + Number(p.skorPenilaian || 0), 0) / prokerCount
-          : 0;
+        prokerCount > 0 && scoredProkers.length > 0
+          ? Math.round((totalNilaiProker / prokerCount) * 10) / 10
+          : null;
 
       for (const st of grp.students) {
         const rawPoints = await calculateValidIndividualPoints(st.userId);
@@ -4192,12 +4211,7 @@ export const dplService = {
 
         // Bobot Komposisi Resmi: 4 Pilar Berimbang masing-masing 25% (Sesuai Kesepakatan Warek 1 & DPL)
         const personalScore = dplScore;
-        const kelompokScore =
-          prokerAvgScore > 0
-            ? Math.round(prokerAvgScore * 10) / 10
-            : dplScore !== null
-              ? dplScore
-              : null;
+        const kelompokScore = prokerAvgScore;
         const effectiveKehadiran = attRate > 0 ? attRate : 0;
         const effectivePoin = poinDampinganScore > 0 ? poinDampinganScore : 0;
 
@@ -4261,25 +4275,19 @@ export const dplService = {
             dplScore !== null && mplScore !== null
               ? Math.round(((dplScore + mplScore) / 2) * 10) / 10
               : null,
-          prokerDpl: dplScore,
+          prokerDpl: kelompokScore,
           prokerMpl: mplScore,
-          prokerGabungan:
-            dplScore !== null && mplScore !== null
-              ? Math.round(((dplScore + mplScore) / 2) * 10) / 10
-              : null,
-          kelompokDpl: dplScore,
+          prokerGabungan: kelompokScore,
+          kelompokDpl: kelompokScore,
           kelompokMpl: mplScore,
-          kelompokGabungan:
-            dplScore !== null && mplScore !== null
-              ? Math.round(((dplScore + mplScore) / 2) * 10) / 10
-              : null,
+          kelompokGabungan: kelompokScore,
           nilaiAkhir: finalScore,
           predikat: gradeLetter,
           status: statusStr,
           // Compatibility fields
           skorIndividu: dplScore || 0,
           catatanIndividu: st.assessmentNote || "",
-          skorProkerKelompok: Math.round(prokerAvgScore * 100) / 100,
+          skorProkerKelompok: kelompokScore !== null ? kelompokScore : 0,
           tingkatKehadiran: effectiveKehadiran,
           hurufMutu: gradeLetter || "-",
           statusLulus: finalScore && finalScore >= 65 ? "LULUS" : "BELUM LULUS",
