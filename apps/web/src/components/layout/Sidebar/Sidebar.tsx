@@ -1163,7 +1163,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             },
             {
               to: "/penilaian/program-kerja",
-              label: "Program Kerja",
+              label: "Program Kerja (Kelompok)",
               allowed: [
                 "DEVELOPER",
                 "DPL",

@@ -168,7 +168,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
         return ["Penilaian", "Mahasiswa"];
       case "/penilaian/program-kerja":
       case "/penilaian-kkn/program-kerja":
-        return ["Penilaian", "Program Kerja"];
+        return ["Penilaian", "Program Kerja (Kelompok)"];
       case "/penilaian/laporan-akhir":
       case "/penilaian-kkn/laporan-akhir":
         return ["Penilaian", "Laporan Akhir"];

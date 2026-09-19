@@ -410,19 +410,14 @@ export const dplService = {
       search?: string;
     }
   ): Promise<ProgramKerjaItem[]> => {
-    try {
-      const res = await api.get("/dpl/program-kerja", {
-        params: {
-          groupId,
-          ...filters,
-        },
-      });
-      if (res.data.success && Array.isArray(res.data.data)) return res.data.data;
-      return [];
-    } catch (err) {
-      console.error("[dplService.getProgramKerja] failed:", err);
-      return [];
-    }
+    const res = await api.get("/dpl/program-kerja", {
+      params: {
+        groupId,
+        ...filters,
+      },
+    });
+    if (res.data.success && Array.isArray(res.data.data)) return res.data.data;
+    return [];
   },
 
   createProgramKerja: async (data: {
