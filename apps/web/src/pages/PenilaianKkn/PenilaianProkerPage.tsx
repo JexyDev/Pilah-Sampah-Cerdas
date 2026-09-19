@@ -586,7 +586,7 @@ export const PenilaianProkerPage: React.FC = () => {
       else u = "BELUM_DISETUJUI";
     }
     if (u !== "DISETUJUI" && u !== "DITERIMA") {
-      toast.error("Hanya program kerja yang telah disetujui (ACC) yang dapat dinilai");
+      toast.error("Hanya program kerja yang telah disetujui yang dapat dinilai");
       return;
     }
 
@@ -902,8 +902,8 @@ export const PenilaianProkerPage: React.FC = () => {
                 Penilaian Program Kerja (Kelompok)
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-                Evaluasi capaian program kerja kelompok KKN (ACC), akumulasi total nilai, dan nilai
-                rerata program kerja (Total Nilai ÷ n)
+                Evaluasi capaian program kerja kelompok KKN yang disetujui, akumulasi total nilai,
+                dan nilai rerata program kerja (Total Nilai ÷ n)
               </p>
             </div>
           </div>
@@ -972,7 +972,7 @@ export const PenilaianProkerPage: React.FC = () => {
         <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center justify-between">
           <div>
             <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-              Total Proker Disetujui (ACC)
+              Total Proker Disetujui
             </span>
             <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">
               {displayStats.totalProkers}
@@ -1542,7 +1542,7 @@ export const PenilaianProkerPage: React.FC = () => {
             ) : filteredProkers.length === 0 ? (
               <div className="p-8">
                 <EmptyTableState
-                  entityName="Program Kerja Disetujui (ACC)"
+                  entityName="Program Kerja Disetujui"
                   isSearch={
                     !!(
                       searchQuery ||
@@ -1749,7 +1749,7 @@ export const PenilaianProkerPage: React.FC = () => {
                   {/* Baris Atas Footer: Keterangan n */}
                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
                     <span className="text-xs text-slate-500 dark:text-slate-400">
-                      n = jumlah program kerja yang disetujui (ACC).
+                      n = jumlah program kerja yang disetujui.
                     </span>
                   </div>
 
