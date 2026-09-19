@@ -89,10 +89,14 @@ export const RekapNilaiKknPage: React.FC = () => {
                 : null))
             : null;
 
-          // Nilai sementara jika MPL belum mengisi: murni (0.5 * DPL)
-          const personalSementara = !hasPersonalComplete
+          // Nilai sementara jika salah satu belum mengisi: proporsional 50%
+          const personalScoreSementara = !hasPersonalComplete
             ? (s.personalScoreSementara ??
-              (hasDpl ? Number((Number(s.dplScore) * 0.5).toFixed(1)) : null))
+              (hasDpl
+                ? Number((Number(s.dplScore) * 0.5).toFixed(1))
+                : hasMpl
+                  ? Number((Number(s.mplScore) * 0.5).toFixed(1))
+                  : null))
             : null;
 
           const kelompok =
@@ -336,7 +340,7 @@ export const RekapNilaiKknPage: React.FC = () => {
           personal !== null
             ? personal.toFixed(1)
             : personalSementara !== null
-              ? `${personalSementara.toFixed(1)} (Menunggu MPL)`
+              ? `${personalSementara.toFixed(1)} (${s.status === "Menunggu DPL" ? "Menunggu DPL" : "Menunggu MPL"})`
               : "—",
           personal !== null ? (personal * 0.25).toFixed(1) : "—",
           kelompok !== null ? kelompok.toFixed(1) : "—",
@@ -795,7 +799,7 @@ export const RekapNilaiKknPage: React.FC = () => {
                               {personalSementara.toFixed(1)}
                             </span>
                             <span className="text-[9.5px] text-amber-600 dark:text-amber-400 font-medium">
-                              (Menunggu MPL)
+                              ({st.status === "Menunggu DPL" ? "Menunggu DPL" : "Menunggu MPL"})
                             </span>
                           </div>
                         ) : (
