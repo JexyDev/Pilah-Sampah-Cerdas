@@ -2,7 +2,12 @@ import { prisma } from "../lib/prisma.js";
 import { configService } from "./configService.js";
 import { normalizeProkerKategori } from "./kknService.js";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
-import { isTestKelompok, isTestStudent, isTestUser, isTestProker } from "../utils/filterTestingUtils.js";
+import {
+  isTestKelompok,
+  isTestStudent,
+  isTestUser,
+  isTestProker,
+} from "../utils/filterTestingUtils.js";
 import {
   calculateValidIndividualPoints,
   calculateValidIndividualPointsForUsers,
@@ -746,10 +751,7 @@ export async function calculatePersonalPoints(userId: string): Promise<{
       lowerDesc.includes("durasi kkn")
     ) {
       rawPemenuhanWaktu += val;
-    } else if (
-      p.kategori === "KKN_LOGBOOK_HARIAN" ||
-      lowerDesc.includes("logbook")
-    ) {
+    } else if (p.kategori === "KKN_LOGBOOK_HARIAN" || lowerDesc.includes("logbook")) {
       rawLogAktivitas += val;
     } else if (
       p.kategori === "KKN_PROKER" ||
@@ -1101,7 +1103,9 @@ export async function calculateGroupPoints(
         personalPoints = await prisma.pointHistory.findMany({
           where: {
             userId: { in: studentUserIds },
-            kategori: { notIn: ["KKN_PROKER", "BONUS_LOGIN_PERTAMA", "REDUKSI_TONASE", "POIN_KKN_FINAL"] },
+            kategori: {
+              notIn: ["KKN_PROKER", "BONUS_LOGIN_PERTAMA", "REDUKSI_TONASE", "POIN_KKN_FINAL"],
+            },
             description: { not: { contains: "[ProkerID:" } },
           },
           select: { userId: true, points: true, createdAt: true },
@@ -1179,9 +1183,7 @@ export async function calculateGroupPoints(
       // Sesuai Tiket Perubahan Logika Bisnis PO 17 Sep 2026:
       // Menggunakan total saldo seluruh anggota bernilai ratusan agar pembagian di UI Mobile cocok 100% secara matematika.
       const rawRataRata =
-        studentUserIds.length > 0
-          ? totalCumulativeMemberPoints / studentUserIds.length
-          : 0;
+        studentUserIds.length > 0 ? totalCumulativeMemberPoints / studentUserIds.length : 0;
 
       // Safety Guardrail & Asimtot Limit (Maksimal 1000 PTS untuk mencegah anomali data / infinite loop)
       const MAX_AVERAGE_CAP = 1000;
@@ -1189,8 +1191,7 @@ export async function calculateGroupPoints(
     }
 
     // Formula Poin Kelompok Resmi KKN: (Poin Proker * 0.6) + (Rata-rata Saldo Kumulatif Anggota * 0.4)
-    const totalGroupPoints =
-      Math.round((poinProker * 0.6 + rataRataPoinAnggota * 0.4) * 100) / 100;
+    const totalGroupPoints = Math.round((poinProker * 0.6 + rataRataPoinAnggota * 0.4) * 100) / 100;
 
     return {
       totalGroupPoints,
@@ -3004,7 +3005,11 @@ export const dplService = {
       if (u === "DISETUJUI" || u === "DITERIMA") {
         andConditions.push({
           OR: [
-            { statusUsulan: { in: ["DISETUJUI", "DITERIMA"] } },
+            {
+              statusUsulan: {
+                in: ["DISETUJUI", "DITERIMA", "disetujui", "diterima", "Disetujui", "Diterima"],
+              },
+            },
             { status: { in: ["DITERIMA", "SEDANG_BERJALAN", "SELESAI"] } },
           ],
         });
@@ -3122,145 +3127,151 @@ export const dplService = {
       })(),
     });
 
-    return prokers.map((p) => {
-      const skorNum = p.skorPenilaian !== null ? Number(p.skorPenilaian) : null;
-      let calculatedPredikat: string | null = null;
-      if (skorNum !== null) {
-        if (skorNum >= 85) calculatedPredikat = "Sangat Baik";
-        else if (skorNum >= 70) calculatedPredikat = "Baik";
-        else if (skorNum >= 60) calculatedPredikat = "Cukup";
-        else calculatedPredikat = "Kurang";
-      }
-
-      // Standarisasi Status Usulan (DISETUJUI / DITOLAK / BELUM_DISETUJUI)
-      let resolvedStatusUsulan = (p as any).statusUsulan;
-      const legacySt = String(p.status || "").toUpperCase();
-      if (!resolvedStatusUsulan) {
-        if (
-          legacySt === "DITERIMA" ||
-          legacySt === "DISETUJUI" ||
-          legacySt === "SEDANG_BERJALAN" ||
-          legacySt === "SELESAI"
-        ) {
-          resolvedStatusUsulan = "DISETUJUI";
-        } else if (legacySt === "DITOLAK" || legacySt === "TIDAK_DISETUJUI") {
-          resolvedStatusUsulan = "DITOLAK";
-        } else {
-          resolvedStatusUsulan = "BELUM_DISETUJUI";
+    return prokers
+      .map((p) => {
+        const skorNum = p.skorPenilaian !== null ? Number(p.skorPenilaian) : null;
+        let calculatedPredikat: string | null = null;
+        if (skorNum !== null) {
+          if (skorNum >= 85) calculatedPredikat = "Sangat Baik";
+          else if (skorNum >= 70) calculatedPredikat = "Baik";
+          else if (skorNum >= 60) calculatedPredikat = "Cukup";
+          else calculatedPredikat = "Kurang";
         }
-      }
 
-      // Standarisasi Status Pelaksanaan (BELUM_MULAI / SEDANG_BERJALAN / SELESAI)
-      let resolvedStatusPelaksanaan = (p as any).statusPelaksanaan;
-      if (!resolvedStatusPelaksanaan) {
-        if (legacySt === "SELESAI") {
-          resolvedStatusPelaksanaan = "SELESAI";
-        } else if (legacySt === "SEDANG_BERJALAN" || legacySt === "SEDANG_DILAKSANAKAN") {
-          resolvedStatusPelaksanaan = "SEDANG_BERJALAN";
-        } else {
-          resolvedStatusPelaksanaan = "BELUM_MULAI";
+        // Standarisasi Status Usulan (DISETUJUI / DITOLAK / BELUM_DISETUJUI)
+        let resolvedStatusUsulan = (p as any).statusUsulan;
+        const legacySt = String(p.status || "").toUpperCase();
+        if (!resolvedStatusUsulan) {
+          if (
+            legacySt === "DITERIMA" ||
+            legacySt === "DISETUJUI" ||
+            legacySt === "SEDANG_BERJALAN" ||
+            legacySt === "SELESAI"
+          ) {
+            resolvedStatusUsulan = "DISETUJUI";
+          } else if (legacySt === "DITOLAK" || legacySt === "TIDAK_DISETUJUI") {
+            resolvedStatusUsulan = "DITOLAK";
+          } else {
+            resolvedStatusUsulan = "BELUM_DISETUJUI";
+          }
         }
-      }
 
-      const parsedDesc = parseProkerDeskripsi(p.deskripsi);
-      const grp = groupMap.get(p.kelompokId) as any;
-      const mhsList = (grp?.students || []).map((s: any) => ({
-        id: s.id,
-        nama: s.user?.name || "-",
-        nim: s.nim || "-",
-        prodi: s.jurusan || s.prodi || "-",
-        isKetua: s.isKetua || false,
-        phone: s.user?.phone || s.noWa || "-",
-      }));
-      const ketuaMhs = grp?.students?.find((s: any) => s.isKetua);
+        // Standarisasi Status Pelaksanaan (BELUM_MULAI / SEDANG_BERJALAN / SELESAI)
+        let resolvedStatusPelaksanaan = (p as any).statusPelaksanaan;
+        if (!resolvedStatusPelaksanaan) {
+          if (legacySt === "SELESAI") {
+            resolvedStatusPelaksanaan = "SELESAI";
+          } else if (legacySt === "SEDANG_BERJALAN" || legacySt === "SEDANG_DILAKSANAKAN") {
+            resolvedStatusPelaksanaan = "SEDANG_BERJALAN";
+          } else {
+            resolvedStatusPelaksanaan = "BELUM_MULAI";
+          }
+        }
 
-      // Tentukan Penginput / Pengusul Proker
-      let penginputInfo: any = null;
-      const sumberUpper = String(p.sumber || "").toUpperCase();
-      if (sumberUpper === "DPL") {
-        penginputInfo = {
-          nama: grp?.dpl?.name || "Dosen Pembimbing Lapangan",
-          role: "DPL",
-          nim: null,
-          prodi: null,
-          telepon: grp?.dpl?.phone || null,
-        };
-      } else {
-        // Sumber Mahasiswa
-        if (p.student) {
+        const parsedDesc = parseProkerDeskripsi(p.deskripsi);
+        const grp = groupMap.get(p.kelompokId) as any;
+        const mhsList = (grp?.students || []).map((s: any) => ({
+          id: s.id,
+          nama: s.user?.name || "-",
+          nim: s.nim || "-",
+          prodi: s.jurusan || s.prodi || "-",
+          isKetua: s.isKetua || false,
+          phone: s.user?.phone || s.noWa || "-",
+        }));
+        const ketuaMhs = grp?.students?.find((s: any) => s.isKetua);
+
+        // Tentukan Penginput / Pengusul Proker
+        let penginputInfo: any = null;
+        const sumberUpper = String(p.sumber || "").toUpperCase();
+        if (sumberUpper === "DPL") {
           penginputInfo = {
-            id: p.student.id,
-            nama: p.student.user?.name || "Mahasiswa",
-            nim: p.student.nim || null,
-            prodi: (p.student as any).jurusan || (p.student as any).prodi || null,
-            role: "MAHASISWA",
-            isKetua: p.student.isKetua || false,
-            telepon: p.student.user?.phone || p.student.noWa || null,
-          };
-        } else if (ketuaMhs) {
-          penginputInfo = {
-            id: ketuaMhs.id,
-            nama: ketuaMhs.user?.name ? `${ketuaMhs.user.name} (Ketua)` : "Mahasiswa (Ketua)",
-            nim: ketuaMhs.nim || null,
-            prodi: (ketuaMhs as any).jurusan || (ketuaMhs as any).prodi || null,
-            role: "MAHASISWA",
-            isKetua: true,
-            telepon: ketuaMhs.user?.phone || ketuaMhs.noWa || null,
-          };
-        } else if (mhsList.length > 0) {
-          penginputInfo = {
-            id: mhsList[0].id,
-            nama: mhsList[0].nama,
-            nim: mhsList[0].nim,
-            prodi: mhsList[0].prodi,
-            role: "MAHASISWA",
-            isKetua: false,
-            telepon: mhsList[0].phone,
-          };
-        } else {
-          penginputInfo = {
-            nama: "Mahasiswa Kelompok",
-            role: "MAHASISWA",
+            nama: grp?.dpl?.name || "Dosen Pembimbing Lapangan",
+            role: "DPL",
             nim: null,
             prodi: null,
-            telepon: null,
+            telepon: grp?.dpl?.phone || null,
           };
+        } else {
+          // Sumber Mahasiswa
+          if (p.student) {
+            penginputInfo = {
+              id: p.student.id,
+              nama: p.student.user?.name || "Mahasiswa",
+              nim: p.student.nim || null,
+              prodi: (p.student as any).jurusan || (p.student as any).prodi || null,
+              role: "MAHASISWA",
+              isKetua: p.student.isKetua || false,
+              telepon: p.student.user?.phone || p.student.noWa || null,
+            };
+          } else if (ketuaMhs) {
+            penginputInfo = {
+              id: ketuaMhs.id,
+              nama: ketuaMhs.user?.name ? `${ketuaMhs.user.name} (Ketua)` : "Mahasiswa (Ketua)",
+              nim: ketuaMhs.nim || null,
+              prodi: (ketuaMhs as any).jurusan || (ketuaMhs as any).prodi || null,
+              role: "MAHASISWA",
+              isKetua: true,
+              telepon: ketuaMhs.user?.phone || ketuaMhs.noWa || null,
+            };
+          } else if (mhsList.length > 0) {
+            penginputInfo = {
+              id: mhsList[0].id,
+              nama: mhsList[0].nama,
+              nim: mhsList[0].nim,
+              prodi: mhsList[0].prodi,
+              role: "MAHASISWA",
+              isKetua: false,
+              telepon: mhsList[0].phone,
+            };
+          } else {
+            penginputInfo = {
+              nama: "Mahasiswa Kelompok",
+              role: "MAHASISWA",
+              nim: null,
+              prodi: null,
+              telepon: null,
+            };
+          }
         }
-      }
 
-      return {
-        id: p.id,
-        kelompokId: p.kelompokId,
-        kelompokName: grp?.name || "-",
-        kelurahan: grp?.kelurahan || "-",
-        cakupanRw: grp?.cakupanRw || [],
-        dplName: grp?.dpl?.name || "-",
-        totalMahasiswa: mhsList.length,
-        penginput: penginputInfo,
-        mahasiswaList: mhsList,
-        nomor: p.nomor || 1,
-        judul: parsedDesc.judul,
-        deskripsi: parsedDesc.deskripsi,
-        kategori: normalizeProkerKategori(p.kategori),
-        sumber: p.sumber || "MAHASISWA",
-        waktuPelaksanaan: p.waktuPelaksanaan || null,
-        linkGoogleDrive: p.linkGoogleDrive || null,
-        kebutuhanBiaya: Number(p.kebutuhanBiaya || 0),
-        status: p.status,
-        statusUsulan: resolvedStatusUsulan,
-        statusPelaksanaan: resolvedStatusPelaksanaan,
-        catatanDpl: p.catatanDpl,
-        reviewedByName: p.reviewedBy?.name || null,
-        reviewedAt: p.reviewedAt,
-        skorPenilaian: skorNum,
-        predikat: (p as any).predikat || calculatedPredikat,
-        statusPenilaian:
-          (p as any).statusPenilaian || (skorNum !== null ? "SUDAH_DINILAI" : "BELUM_DINILAI"),
-        aspekPenilaian: (p as any).aspekPenilaian || null,
-        evaluasiDpl: p.evaluasiDpl,
-        createdAt: p.createdAt,
-      };
-    }).filter((item) => !isTestProker(item) && !isTestKelompok({ name: item.kelompokName, dplNamaMentah: item.dplName }));
+        return {
+          id: p.id,
+          kelompokId: p.kelompokId,
+          kelompokName: grp?.name || "-",
+          kelurahan: grp?.kelurahan || "-",
+          cakupanRw: grp?.cakupanRw || [],
+          dplName: grp?.dpl?.name || "-",
+          totalMahasiswa: mhsList.length,
+          penginput: penginputInfo,
+          mahasiswaList: mhsList,
+          nomor: p.nomor || 1,
+          judul: parsedDesc.judul,
+          deskripsi: parsedDesc.deskripsi,
+          kategori: normalizeProkerKategori(p.kategori),
+          sumber: p.sumber || "MAHASISWA",
+          waktuPelaksanaan: p.waktuPelaksanaan || null,
+          linkGoogleDrive: p.linkGoogleDrive || null,
+          kebutuhanBiaya: Number(p.kebutuhanBiaya || 0),
+          status: p.status,
+          statusUsulan: resolvedStatusUsulan,
+          statusPelaksanaan: resolvedStatusPelaksanaan,
+          catatanDpl: p.catatanDpl,
+          reviewedByName: p.reviewedBy?.name || null,
+          reviewedAt: p.reviewedAt,
+          skorPenilaian: skorNum,
+          predikat: (p as any).predikat || calculatedPredikat,
+          statusPenilaian:
+            (p as any).statusPenilaian || (skorNum !== null ? "SUDAH_DINILAI" : "BELUM_DINILAI"),
+          aspekPenilaian: (p as any).aspekPenilaian || null,
+          evaluasiDpl: p.evaluasiDpl,
+          createdAt: p.createdAt,
+        };
+      })
+      .filter(
+        (item) =>
+          !isTestProker(item) &&
+          !isTestKelompok({ name: item.kelompokName, dplNamaMentah: item.dplName })
+      );
   },
 
   /**
@@ -3807,8 +3818,8 @@ export const dplService = {
       throw new Error("PROKER_NOT_APPROVED");
     }
 
-    // Validasi status pelaksanaan: Proker belum mulai tidak dapat dinilai
-    const statusPelaksanaanStr = String(
+    // Validasi status pelaksanaan: Proker belum mulai tidak dapat dinilai (hanya aktif jika sedang berlangsung atau selesai)
+    const rawPelaksanaan = String(
       (prokerExisting as any).statusPelaksanaan ||
         (prokerExisting.status === "SELESAI"
           ? "SELESAI"
@@ -3816,25 +3827,17 @@ export const dplService = {
             ? "SEDANG_BERJALAN"
             : "BELUM_MULAI")
     ).toUpperCase();
-    if (statusPelaksanaanStr === "BELUM_MULAI" || statusPelaksanaanStr === "BELUM") {
+
+    const isOngoingOrDone =
+      rawPelaksanaan === "SELESAI" ||
+      rawPelaksanaan.includes("SELESAI") ||
+      rawPelaksanaan === "SEDANG_BERJALAN" ||
+      rawPelaksanaan.includes("BERJALAN") ||
+      rawPelaksanaan.includes("BERLANGSUNG") ||
+      rawPelaksanaan.includes("DILAKSANAKAN");
+
+    if (!isOngoingOrDone) {
       throw new Error("PROKER_NOT_STARTED");
-    }
-
-    // Evaluasi 26-08-2026: Proker bisa dinilai sejak awal kegiatan, namun WAJIB memiliki lampiran file
-    // Belum ada file = Belum bisa dinilai (penilaian disabled/locked)
-    const hasFile = Boolean(
-      (prokerExisting as any).attachmentFile ||
-      (prokerExisting as any).hasAttachment ||
-      prokerExisting.linkGoogleDrive ||
-      ((prokerExisting as any).attachmentUrls &&
-        Array.isArray((prokerExisting as any).attachmentUrls) &&
-        (prokerExisting as any).attachmentUrls.length > 0)
-    );
-
-    if (!hasFile) {
-      throw new Error(
-        "PROKER_ATTACHMENT_REQUIRED: File lampiran bukti program kerja belum diunggah oleh ketua kelompok. Penilaian belum dapat dilakukan."
-      );
     }
 
     const groups = await prisma.kelompokKkn.findMany({
@@ -4254,13 +4257,22 @@ export const dplService = {
           laporanScore,
           individuDpl: dplScore,
           individuMpl: mplScore,
-          individuGabungan: dplScore !== null && mplScore !== null ? Math.round(((dplScore + mplScore) / 2) * 10) / 10 : null,
+          individuGabungan:
+            dplScore !== null && mplScore !== null
+              ? Math.round(((dplScore + mplScore) / 2) * 10) / 10
+              : null,
           prokerDpl: dplScore,
           prokerMpl: mplScore,
-          prokerGabungan: dplScore !== null && mplScore !== null ? Math.round(((dplScore + mplScore) / 2) * 10) / 10 : null,
+          prokerGabungan:
+            dplScore !== null && mplScore !== null
+              ? Math.round(((dplScore + mplScore) / 2) * 10) / 10
+              : null,
           kelompokDpl: dplScore,
           kelompokMpl: mplScore,
-          kelompokGabungan: dplScore !== null && mplScore !== null ? Math.round(((dplScore + mplScore) / 2) * 10) / 10 : null,
+          kelompokGabungan:
+            dplScore !== null && mplScore !== null
+              ? Math.round(((dplScore + mplScore) / 2) * 10) / 10
+              : null,
           nilaiAkhir: finalScore,
           predikat: gradeLetter,
           status: statusStr,

@@ -161,7 +161,13 @@ export const dplController = {
         return;
       }
 
-      const data = await dplService.decideLeaveRequest(dplUserId, requestId, status, note, userRole);
+      const data = await dplService.decideLeaveRequest(
+        dplUserId,
+        requestId,
+        status,
+        note,
+        userRole
+      );
       res.json({ success: true, data });
     } catch (error: any) {
       console.error("[dplController.decideLeaveRequest] error:", error);
@@ -211,7 +217,13 @@ export const dplController = {
         return;
       }
 
-      const data = await dplService.decideCancelLeaveRequest(dplUserId, requestId, action, note, userRole);
+      const data = await dplService.decideCancelLeaveRequest(
+        dplUserId,
+        requestId,
+        action,
+        note,
+        userRole
+      );
       res.json({
         success: true,
         message:
@@ -284,7 +296,10 @@ export const dplController = {
       if (!deskripsi && !judul) {
         res
           .status(400)
-          .json({ error: "BAD_REQUEST", message: "Judul atau deskripsi program kerja wajib diisi" });
+          .json({
+            error: "BAD_REQUEST",
+            message: "Judul atau deskripsi program kerja wajib diisi",
+          });
         return;
       }
       const data = await dplService.createProgramKerja(dplUserId, userRole, {
@@ -481,6 +496,27 @@ export const dplController = {
         return;
       }
       if (error.message?.startsWith("PROKER_ATTACHMENT_REQUIRED")) {
+        res.status(400).json({
+          error: "BAD_REQUEST",
+          message: error.message,
+        });
+        return;
+      }
+      if (error.message?.includes("tidak ditemukan")) {
+        res.status(404).json({
+          error: "NOT_FOUND",
+          message: error.message || "Program kerja tidak ditemukan",
+        });
+        return;
+      }
+      if (error.message?.includes("FORBIDDEN_ROLE")) {
+        res.status(403).json({
+          error: "FORBIDDEN",
+          message: error.message,
+        });
+        return;
+      }
+      if (error.message?.includes("rentang 0-100")) {
         res.status(400).json({
           error: "BAD_REQUEST",
           message: error.message,
