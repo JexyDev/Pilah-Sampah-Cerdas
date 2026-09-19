@@ -71,33 +71,36 @@ export const RekapNilaiKknPage: React.FC = () => {
 
       if (res && res.students && res.students.length > 0) {
         const formatted = res.students.map((s) => {
-          const dplScore =
-            s.dplScore !== undefined && s.dplScore !== null
-              ? s.dplScore
-              : s.individuDpl !== undefined && s.individuDpl !== null
-                ? s.individuDpl
-                : (s.skorIndividu ?? null);
+          const keh = s.kehadiran ?? s.tingkatKehadiran ?? 0;
+          const personal =
+            s.personalScore !== undefined && s.personalScore !== null
+              ? s.personalScore
+              : s.dplScore !== undefined && s.dplScore !== null
+                ? s.dplScore
+                : s.individuDpl !== undefined && s.individuDpl !== null
+                  ? s.individuDpl
+                  : (s.skorIndividu ?? null);
 
-          const mplScore =
-            s.mplScore !== undefined && s.mplScore !== null
-              ? s.mplScore
-              : s.individuMpl !== undefined && s.individuMpl !== null
-                ? s.individuMpl
-                : null;
+          const kelompok =
+            s.kelompokScore !== undefined && s.kelompokScore !== null
+              ? s.kelompokScore
+              : s.prokerDpl !== undefined && s.prokerDpl !== null
+                ? s.prokerDpl
+                : s.kelompokDpl !== undefined && s.kelompokDpl !== null
+                  ? s.kelompokDpl
+                  : (s.skorProkerKelompok ?? null);
 
-          const laporanScore =
+          const laporan =
             s.laporanScore !== undefined && s.laporanScore !== null
               ? s.laporanScore
               : null;
-
-          const keh = s.kehadiran ?? s.tingkatKehadiran ?? 0;
 
           let nAkhir: number | null = s.nilaiAkhir ?? null;
           let pred: string | null = s.predikat ?? null;
           let stat = s.status || "Menunggu Penilaian";
 
-          if (dplScore !== null && mplScore !== null && laporanScore !== null) {
-            const rawScore = 0.4 * dplScore + 0.4 * mplScore + 0.2 * laporanScore;
+          if (personal !== null && kelompok !== null && laporan !== null) {
+            const rawScore = 0.25 * keh + 0.25 * personal + 0.25 * kelompok + 0.25 * laporan;
             nAkhir = Math.round(rawScore * 10) / 10;
             pred =
               nAkhir >= 80
@@ -110,39 +113,28 @@ export const RekapNilaiKknPage: React.FC = () => {
                       ? "D"
                       : "E";
             stat = "Lengkap";
-          } else if (dplScore !== null && mplScore !== null) {
-            // Normalisasi sementara jika DPL dan MPL sudah menilai tapi Laporan Akhir belum selesai telaah
-            const rawScore = (dplScore + mplScore) / 2;
-            nAkhir = Math.round(rawScore * 10) / 10;
-            pred =
-              nAkhir >= 80
-                ? "A"
-                : nAkhir >= 70
-                  ? "B"
-                  : nAkhir >= 60
-                    ? "C"
-                    : nAkhir >= 50
-                      ? "D"
-                      : "E";
-            stat = "Menunggu Laporan Akhir";
           } else {
             nAkhir = null;
             pred = null;
-            if (dplScore === null && mplScore === null) {
-              stat = "Menunggu DPL & MPL";
-            } else if (dplScore === null) {
-              stat = "Menunggu DPL";
-            } else if (mplScore === null) {
-              stat = "Menunggu MPL";
+            if (personal === null && kelompok === null && laporan === null) {
+              stat = "Menunggu Penilaian";
+            } else if (personal === null) {
+              stat = "Menunggu Nilai Personal";
+            } else if (kelompok === null) {
+              stat = "Menunggu Nilai Kelompok";
+            } else if (laporan === null) {
+              stat = "Menunggu Laporan Akhir";
             }
           }
 
           return {
             ...s,
             kehadiran: keh,
-            dplScore,
-            mplScore,
-            laporanScore,
+            personalScore: personal,
+            kelompokScore: kelompok,
+            dplScore: personal,
+            mplScore: null,
+            laporanScore: laporan,
             nilaiAkhir: nAkhir,
             predikat: pred,
             status: stat,
@@ -182,10 +174,11 @@ export const RekapNilaiKknPage: React.FC = () => {
     if (typeof s.nilaiAkhir === "number" && !isNaN(s.nilaiAkhir)) {
       return s.nilaiAkhir;
     }
-    const dpl = s.dplScore ?? 0;
-    const mpl = s.mplScore ?? 0;
+    const keh = s.kehadiran ?? s.tingkatKehadiran ?? 0;
+    const personal = s.personalScore ?? s.dplScore ?? s.individuDpl ?? 0;
+    const kelompok = s.kelompokScore ?? s.prokerDpl ?? s.kelompokDpl ?? 0;
     const lap = s.laporanScore ?? 0;
-    return 0.4 * dpl + 0.4 * mpl + 0.2 * lap;
+    return 0.25 * keh + 0.25 * personal + 0.25 * kelompok + 0.25 * lap;
   };
 
   // Filtered & Sorted Students
@@ -287,20 +280,23 @@ export const RekapNilaiKknPage: React.FC = () => {
         "NIM",
         "Nama Mahasiswa",
         "Kelompok",
-        "Nilai DPL (0-100)",
-        "Kontribusi DPL (40%)",
-        "Nilai MPL (0-100)",
-        "Kontribusi MPL (40%)",
+        "Kehadiran Sistem (0-100)",
+        "Kontribusi Kehadiran (25%)",
+        "Nilai Personal (0-100)",
+        "Kontribusi Personal (25%)",
+        "Nilai Kelompok (0-100)",
+        "Kontribusi Kelompok (25%)",
         "Laporan Akhir (0-100)",
-        "Kontribusi Laporan (20%)",
-        "Nilai Akhir",
+        "Kontribusi Laporan (25%)",
+        "Nilai Akhir (100%)",
         "Predikat",
         "Status",
       ];
 
       const dataRows = filteredStudents.map((s, idx) => {
-        const dpl = s.dplScore !== null && s.dplScore !== undefined ? s.dplScore : null;
-        const mpl = s.mplScore !== null && s.mplScore !== undefined ? s.mplScore : null;
+        const keh = s.kehadiran ?? 0;
+        const personal = s.personalScore ?? s.dplScore ?? s.individuDpl ?? null;
+        const kelompok = s.kelompokScore ?? s.prokerDpl ?? s.kelompokDpl ?? null;
         const lap = s.laporanScore !== null && s.laporanScore !== undefined ? s.laporanScore : null;
 
         return [
@@ -308,12 +304,14 @@ export const RekapNilaiKknPage: React.FC = () => {
           s.nim,
           s.name,
           s.kelompokName,
-          dpl !== null ? dpl.toFixed(1) : "—",
-          dpl !== null ? (dpl * 0.4).toFixed(1) : "—",
-          mpl !== null ? mpl.toFixed(1) : "—",
-          mpl !== null ? (mpl * 0.4).toFixed(1) : "—",
+          keh.toFixed(1),
+          (keh * 0.25).toFixed(1),
+          personal !== null ? personal.toFixed(1) : "—",
+          personal !== null ? (personal * 0.25).toFixed(1) : "—",
+          kelompok !== null ? kelompok.toFixed(1) : "—",
+          kelompok !== null ? (kelompok * 0.25).toFixed(1) : "—",
           lap !== null ? lap.toFixed(1) : "—",
-          lap !== null ? (lap * 0.2).toFixed(1) : "—",
+          lap !== null ? (lap * 0.25).toFixed(1) : "—",
           s.nilaiAkhir !== null && s.nilaiAkhir !== undefined ? s.nilaiAkhir.toFixed(1) : "—",
           s.predikat ?? "—",
           s.status ?? "—",
@@ -565,35 +563,43 @@ export const RekapNilaiKknPage: React.FC = () => {
       {/* Legend & Info Bar - Responsive Wrap */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 text-xs w-full min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          {/* Badge 1: DPL 40% */}
+          {/* Badge 1: Kehadiran 25% */}
+          <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-900/60 px-3 py-1.5 rounded-xl text-slate-700 dark:text-slate-300 font-medium shadow-2xs">
+            <span className="w-2 h-2 rounded-full bg-[#1d4ed8] shrink-0" />
+            <span>
+              <strong className="text-[#1d4ed8] font-bold">Otomatis dari Sistem:</strong> Kehadiran 25%
+            </span>
+          </div>
+
+          {/* Badge 2: Nilai Personal 25% */}
           <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-900/60 px-3 py-1.5 rounded-xl text-slate-700 dark:text-slate-300 font-medium shadow-2xs">
             <span className="w-2 h-2 rounded-full bg-[#009966] shrink-0" />
             <span>
-              <strong className="text-[#009966] font-bold">DPL:</strong> 40% (5 Aspek Akademik)
+              <strong className="text-[#009966] font-bold">Asesmen DPL:</strong> Nilai Personal 25%
             </span>
           </div>
 
-          {/* Badge 2: MPL 40% */}
-          <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-sky-200 dark:border-sky-900/60 px-3 py-1.5 rounded-xl text-slate-700 dark:text-slate-300 font-medium shadow-2xs">
-            <span className="w-2 h-2 rounded-full bg-[#0284c7] shrink-0" />
+          {/* Badge 3: Nilai Kelompok 25% */}
+          <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-900/60 px-3 py-1.5 rounded-xl text-slate-700 dark:text-slate-300 font-medium shadow-2xs">
+            <span className="w-2 h-2 rounded-full bg-[#d97706] shrink-0" />
             <span>
-              <strong className="text-[#0284c7] font-bold">MPL:</strong> 40% (8 Aspek Lapangan)
+              <strong className="text-[#d97706] font-bold">Kinerja Tim:</strong> Nilai Kelompok 25%
             </span>
           </div>
 
-          {/* Badge 3: Laporan Akhir 20% */}
+          {/* Badge 4: Laporan Akhir 25% */}
           <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-900/60 px-3 py-1.5 rounded-xl text-slate-700 dark:text-slate-300 font-medium shadow-2xs">
             <span className="w-2 h-2 rounded-full bg-[#6366f1] shrink-0" />
             <span>
-              <strong className="text-[#6366f1] font-bold">Laporan Akhir:</strong> 20% (Telaah Laporan KKN)
+              <strong className="text-[#6366f1] font-bold">Telaah Laporan:</strong> Laporan Akhir 25%
             </span>
           </div>
         </div>
 
-        {/* Badge 4: Info Komposisi */}
+        {/* Badge 5: Info Komposisi */}
         <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-xl text-slate-600 dark:text-slate-400 font-medium shadow-2xs">
           <Info size={13} className="text-slate-500 shrink-0" />
-          <span>Formula Resmi: DPL 40% • MPL 40% • Laporan Akhir 20%</span>
+          <span>Formula Resmi: Kehadiran 25% • Personal 25% • Kelompok 25% • Laporan Akhir 25%</span>
         </div>
       </div>
 
@@ -640,22 +646,28 @@ export const RekapNilaiKknPage: React.FC = () => {
                     Kelompok
                   </th>
 
-                  {/* DPL Pillar (40%) */}
+                  {/* Kehadiran Sistem Pillar (25%) */}
+                  <th className="py-2.5 px-3 bg-[#f0f7ff] dark:bg-blue-950/50 text-[#1e40af] dark:text-blue-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[11.5px] min-w-[120px]">
+                    <div>Kehadiran Sistem</div>
+                    <span className="text-[10px] font-normal text-blue-600 dark:text-blue-400">Bobot 25%</span>
+                  </th>
+
+                  {/* Nilai Personal Pillar (25%) */}
                   <th className="py-2.5 px-3 bg-[#f0fdf4] dark:bg-emerald-950/50 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[11.5px] min-w-[120px]">
-                    <div>Nilai DPL</div>
-                    <span className="text-[10px] font-normal text-emerald-600 dark:text-emerald-400">Bobot 40%</span>
+                    <div>Nilai Personal</div>
+                    <span className="text-[10px] font-normal text-emerald-600 dark:text-emerald-400">Bobot 25%</span>
                   </th>
 
-                  {/* MPL Pillar (40%) */}
-                  <th className="py-2.5 px-3 bg-[#f0f9ff] dark:bg-sky-950/50 text-[#0369a1] dark:text-sky-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[11.5px] min-w-[120px]">
-                    <div>Nilai MPL</div>
-                    <span className="text-[10px] font-normal text-sky-600 dark:text-sky-400">Bobot 40%</span>
+                  {/* Nilai Kelompok Pillar (25%) */}
+                  <th className="py-2.5 px-3 bg-[#fffbeb] dark:bg-amber-950/50 text-[#b45309] dark:text-amber-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[11.5px] min-w-[120px]">
+                    <div>Nilai Kelompok</div>
+                    <span className="text-[10px] font-normal text-amber-600 dark:text-amber-400">Bobot 25%</span>
                   </th>
 
-                  {/* Laporan Akhir Pillar (20%) */}
+                  {/* Laporan Akhir Pillar (25%) */}
                   <th className="py-2.5 px-3 bg-[#f5f3ff] dark:bg-indigo-950/50 text-[#4338ca] dark:text-indigo-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[11.5px] min-w-[130px]">
                     <div>Laporan Akhir</div>
-                    <span className="text-[10px] font-normal text-indigo-600 dark:text-indigo-400">Bobot 20%</span>
+                    <span className="text-[10px] font-normal text-indigo-600 dark:text-indigo-400">Bobot 25%</span>
                   </th>
 
                   {/* Nilai Akhir */}
@@ -681,11 +693,12 @@ export const RekapNilaiKknPage: React.FC = () => {
                 {paginatedStudents.map((st, idx) => {
                   const isComplete = st.status === "Lengkap";
                   const isWaitingLaporan = st.status === "Menunggu Laporan Akhir";
-                  const isWaitingMpl = st.status === "Menunggu MPL";
-                  const isWaitingDpl = st.status === "Menunggu DPL";
+                  const isWaitingPersonal = st.status?.includes("Personal");
+                  const isWaitingKelompok = st.status?.includes("Kelompok");
 
-                  const dpl = st.dplScore !== null && st.dplScore !== undefined ? st.dplScore : null;
-                  const mpl = st.mplScore !== null && st.mplScore !== undefined ? st.mplScore : null;
+                  const keh = st.kehadiran ?? 0;
+                  const personal = st.personalScore ?? st.dplScore ?? st.individuDpl ?? null;
+                  const kelompok = st.kelompokScore ?? st.prokerDpl ?? st.kelompokDpl ?? null;
                   const lap = st.laporanScore !== null && st.laporanScore !== undefined ? st.laporanScore : null;
 
                   return (
@@ -713,15 +726,27 @@ export const RekapNilaiKknPage: React.FC = () => {
                         {formatKelompokName(st.kelompokName)}
                       </td>
 
-                      {/* Nilai DPL (40%) */}
+                      {/* Kehadiran Sistem (25%) */}
                       <td className="py-3 px-3 border-r border-slate-100 dark:border-slate-800">
-                        {dpl !== null ? (
+                        <div className="flex flex-col items-center">
+                          <span className="font-bold text-slate-900 dark:text-slate-100">
+                            {keh.toFixed(1)}
+                          </span>
+                          <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 px-1.5 py-0.5 rounded mt-0.5">
+                            +{(keh * 0.25).toFixed(1)} pts
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* Nilai Personal (25%) */}
+                      <td className="py-3 px-3 border-r border-slate-100 dark:border-slate-800">
+                        {personal !== null ? (
                           <div className="flex flex-col items-center">
                             <span className="font-bold text-slate-900 dark:text-slate-100">
-                              {dpl.toFixed(1)}
+                              {personal.toFixed(1)}
                             </span>
                             <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 rounded mt-0.5">
-                              +{(dpl * 0.4).toFixed(1)} pts
+                              +{(personal * 0.25).toFixed(1)} pts
                             </span>
                           </div>
                         ) : (
@@ -729,15 +754,15 @@ export const RekapNilaiKknPage: React.FC = () => {
                         )}
                       </td>
 
-                      {/* Nilai MPL (40%) */}
+                      {/* Nilai Kelompok (25%) */}
                       <td className="py-3 px-3 border-r border-slate-100 dark:border-slate-800">
-                        {mpl !== null ? (
+                        {kelompok !== null ? (
                           <div className="flex flex-col items-center">
                             <span className="font-bold text-slate-900 dark:text-slate-100">
-                              {mpl.toFixed(1)}
+                              {kelompok.toFixed(1)}
                             </span>
-                            <span className="text-[10px] font-semibold text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/50 px-1.5 py-0.5 rounded mt-0.5">
-                              +{(mpl * 0.4).toFixed(1)} pts
+                            <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-1.5 py-0.5 rounded mt-0.5">
+                              +{(kelompok * 0.25).toFixed(1)} pts
                             </span>
                           </div>
                         ) : (
@@ -745,7 +770,7 @@ export const RekapNilaiKknPage: React.FC = () => {
                         )}
                       </td>
 
-                      {/* Laporan Akhir (20%) */}
+                      {/* Laporan Akhir (25%) */}
                       <td className="py-3 px-3 border-r border-slate-100 dark:border-slate-800">
                         {lap !== null ? (
                           <div className="flex flex-col items-center">
@@ -753,7 +778,7 @@ export const RekapNilaiKknPage: React.FC = () => {
                               {lap.toFixed(1)}
                             </span>
                             <span className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 px-1.5 py-0.5 rounded mt-0.5">
-                              +{(lap * 0.2).toFixed(1)} pts
+                              +{(lap * 0.25).toFixed(1)} pts
                             </span>
                           </div>
                         ) : (
@@ -873,61 +898,60 @@ export const RekapNilaiKknPage: React.FC = () => {
         </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 relative">
-          {/* Card 1: Penilaian Akademik DPL (40%) */}
+          {/* Card 1: Kehadiran Sistem (25%) */}
           <div className="space-y-2 lg:pr-4 lg:border-r border-slate-200/80 dark:border-slate-800">
             <div className="flex items-center gap-2 text-[#00704a] dark:text-emerald-400 font-bold text-xs">
               <span className="w-5 h-5 rounded-full border-1.5 border-[#00704a] dark:border-emerald-400 flex items-center justify-center text-[11px]">
                 1
               </span>
-              <span>Penilaian DPL (40%)</span>
+              <span>Kehadiran Sistem (25%)</span>
             </div>
             <p className="text-[12px] text-slate-600 dark:text-slate-400 leading-relaxed">
-              Evaluasi akademik oleh DPL (skala 0–100) mencakup 5 aspek berimbang (masing-masing 20%): Perencanaan, Kontribusi, Logbook, Analisis, dan Output KKN.
+              Kehadiran (bobot 25%) diperoleh langsung dari catatan presensi dan logbook aktivitas mahasiswa yang tervalidasi otomatis pada sistem.
             </p>
           </div>
 
-          {/* Card 2: Penilaian Lapangan MPL (40%) */}
+          {/* Card 2: Nilai Personal (25%) */}
           <div className="space-y-2.5 lg:px-4 lg:border-r border-slate-200/80 dark:border-slate-800">
             <div className="flex items-center gap-2 text-[#00704a] dark:text-emerald-400 font-bold text-xs">
               <span className="w-5 h-5 rounded-full border-1.5 border-[#00704a] dark:border-emerald-400 flex items-center justify-center text-[11px]">
                 2
               </span>
-              <span>Penilaian MPL (40%)</span>
+              <span>Nilai Personal (25%)</span>
             </div>
             <p className="text-[12px] text-slate-600 dark:text-slate-400 leading-relaxed">
-              Evaluasi kinerja lapangan oleh MPL (skala 0–100) mencakup 8 aspek: Kehadiran, Warga Binaan, Program Kerja, Koordinasi Kelurahan/RW, Tanggung Jawab, Bukti Kegiatan, Dampak, dan Inisiatif.
+              Evaluasi individual mahasiswa oleh DPL (skala 0–100) mencakup keaktifan, dedikasi, etika kerja, dan kontribusi nyata pada wilayah KKN.
             </p>
           </div>
 
-          {/* Card 3: Laporan Akhir (20%) */}
+          {/* Card 3: Nilai Kelompok (25%) */}
           <div className="space-y-2 lg:px-4 lg:border-r border-slate-200/80 dark:border-slate-800">
             <div className="flex items-center gap-2 text-[#00704a] dark:text-emerald-400 font-bold text-xs">
               <span className="w-5 h-5 rounded-full border-1.5 border-[#00704a] dark:border-emerald-400 flex items-center justify-center text-[11px]">
                 3
               </span>
-              <span>Laporan Akhir (20%)</span>
+              <span>Nilai Kelompok (25%)</span>
             </div>
             <p className="text-[12px] text-slate-600 dark:text-slate-400 leading-relaxed">
-              Penilaian telaah laporan akhir program kerja kelompok dan refleksi esai KKN (skala 0–100) yang divalidasi oleh DPL pada modul Telaah Laporan Akhir.
+              Kinerja pelaksanaan program kerja kelompok KKN (skala 0–100) yang dievaluasi dari keberhasilan eksekusi proker dan tata kelola tim.
             </p>
           </div>
 
-          {/* Card 4: Formula Nilai Akhir */}
+          {/* Card 4: Laporan Akhir (25%) */}
           <div className="space-y-2 lg:pl-4">
             <div className="flex items-center gap-2 text-[#00704a] dark:text-emerald-400 font-bold text-xs">
               <span className="w-5 h-5 rounded-full border-1.5 border-[#00704a] dark:border-emerald-400 flex items-center justify-center text-[11px]">
                 4
               </span>
-              <span>Formula Nilai Akhir</span>
+              <span>Laporan Akhir (25%)</span>
             </div>
-            <div className="text-[11.5px] font-mono text-slate-700 dark:text-slate-300 space-y-0.5 leading-relaxed font-medium">
-              <p>Nilai Akhir = (40% × DPL)</p>
-              <p className="pl-16">+ (40% × MPL)</p>
-              <p className="pl-16">+ (20% × Laporan)</p>
-            </div>
-            <p className="text-[11px] text-slate-500 leading-tight">
-              Huruf Mutu: A (&ge;80), B (&ge;70), C (&ge;60), D (&ge;50), E (&lt;50).
+            <p className="text-[12px] text-slate-600 dark:text-slate-400 leading-relaxed">
+              Penilaian telaah laporan akhir program kerja kelompok dan refleksi esai KKN (skala 0–100) yang divalidasi oleh DPL pada modul Telaah Laporan Akhir.
             </p>
+            <div className="text-[11px] font-mono text-slate-700 dark:text-slate-300 pt-1 space-y-0.5 font-medium">
+              <p>Nilai Akhir = (25% × Kehadiran) + (25% × Personal)</p>
+              <p className="pl-4">+ (25% × Kelompok) + (25% × Laporan)</p>
+            </div>
           </div>
         </div>
 
@@ -935,7 +959,7 @@ export const RekapNilaiKknPage: React.FC = () => {
         <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center gap-2 text-[11.5px] text-slate-500 dark:text-slate-400 font-medium">
           <Info size={14} className="shrink-0 text-slate-400" />
           <span>
-            Total bobot komponen nilai akhir = 100% (DPL 40% + MPL 40% + Laporan Akhir 20%). Jika laporan akhir belum selesai ditelaah, sistem melakukan normalisasi proporsional DPL &amp; MPL secara transparan.
+            Total bobot komponen nilai akhir = 100% (4 pilar berimbang masing-masing 25% sesuai ketetapan Warek 1 dan DPL). Nilai disajikan dengan pembulatan 1 desimal.
           </span>
         </div>
       </div>
