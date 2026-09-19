@@ -1426,11 +1426,6 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
                             ? `Nilai: ${selectedStudent.nilai ?? "-"}`
                             : "Belum Dinilai"}
                         </span>
-                        {selectedStudent.predikat && (
-                          <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 font-bold text-[10.5px]">
-                            {selectedStudent.predikat}
-                          </span>
-                        )}
                       </div>
                       <span className="text-slate-400 block text-[10.5px]">
                         Status Telaah: {selectedStudent.statusTelaah || "MENUNGGU_TELAAH"}
