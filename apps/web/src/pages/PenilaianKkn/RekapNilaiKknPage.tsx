@@ -727,60 +727,32 @@ export const RekapNilaiKknPage: React.FC = () => {
                       </td>
 
                       {/* Kehadiran Sistem (25%) */}
-                      <td className="py-3 px-3 border-r border-slate-100 dark:border-slate-800">
-                        <div className="flex flex-col items-center">
-                          <span className="font-bold text-slate-900 dark:text-slate-100">
-                            {keh.toFixed(1)}
-                          </span>
-                          <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 px-1.5 py-0.5 rounded mt-0.5">
-                            +{(keh * 0.25).toFixed(1)} pts
-                          </span>
-                        </div>
+                      <td className="py-3 px-3 border-r border-slate-100 dark:border-slate-800 text-center font-semibold text-slate-800 dark:text-slate-200">
+                        {keh.toFixed(1)}
                       </td>
 
                       {/* Nilai Personal (25%) */}
-                      <td className="py-3 px-3 border-r border-slate-100 dark:border-slate-800">
+                      <td className="py-3 px-3 border-r border-slate-100 dark:border-slate-800 text-center text-slate-700 dark:text-slate-300">
                         {personal !== null ? (
-                          <div className="flex flex-col items-center">
-                            <span className="font-bold text-slate-900 dark:text-slate-100">
-                              {personal.toFixed(1)}
-                            </span>
-                            <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 rounded mt-0.5">
-                              +{(personal * 0.25).toFixed(1)} pts
-                            </span>
-                          </div>
+                          <span className="font-semibold">{personal.toFixed(1)}</span>
                         ) : (
                           <span className="text-slate-400">—</span>
                         )}
                       </td>
 
                       {/* Nilai Kelompok (25%) */}
-                      <td className="py-3 px-3 border-r border-slate-100 dark:border-slate-800">
+                      <td className="py-3 px-3 border-r border-slate-100 dark:border-slate-800 text-center text-slate-700 dark:text-slate-300">
                         {kelompok !== null ? (
-                          <div className="flex flex-col items-center">
-                            <span className="font-bold text-slate-900 dark:text-slate-100">
-                              {kelompok.toFixed(1)}
-                            </span>
-                            <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-1.5 py-0.5 rounded mt-0.5">
-                              +{(kelompok * 0.25).toFixed(1)} pts
-                            </span>
-                          </div>
+                          <span className="font-semibold">{kelompok.toFixed(1)}</span>
                         ) : (
                           <span className="text-slate-400">—</span>
                         )}
                       </td>
 
                       {/* Laporan Akhir (25%) */}
-                      <td className="py-3 px-3 border-r border-slate-100 dark:border-slate-800">
+                      <td className="py-3 px-3 border-r border-slate-100 dark:border-slate-800 text-center text-slate-700 dark:text-slate-300">
                         {lap !== null ? (
-                          <div className="flex flex-col items-center">
-                            <span className="font-bold text-slate-900 dark:text-slate-100">
-                              {lap.toFixed(1)}
-                            </span>
-                            <span className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 px-1.5 py-0.5 rounded mt-0.5">
-                              +{(lap * 0.25).toFixed(1)} pts
-                            </span>
-                          </div>
+                          <span className="font-semibold">{lap.toFixed(1)}</span>
                         ) : (
                           <span className="text-slate-400">—</span>
                         )}
