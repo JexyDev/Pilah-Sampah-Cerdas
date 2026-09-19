@@ -192,6 +192,7 @@ router.post(
 
       const result = await mplService.assessMahasiswaByMpl({
         mplUserId: userId,
+        evaluatorRole: String((req as any).user?.peran || (req as any).user?.role || ""),
         studentId,
         skorMitraKehadiran: Number(skorMitraKehadiran ?? 0),
         skorMitraWargaBinaan: Number(skorMitraWargaBinaan ?? 0),
