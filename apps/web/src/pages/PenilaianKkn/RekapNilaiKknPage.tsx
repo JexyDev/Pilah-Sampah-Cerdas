@@ -141,7 +141,7 @@ export const RekapNilaiKknPage: React.FC = () => {
           };
         });
         const cleanFormatted = formatted.filter(
-          (s) => !isTestStudent(s) && !isTestKelompok({ name: s.kelompok })
+          (s) => !isTestStudent(s) && !isTestKelompok({ name: s.kelompokName || (s as any).kelompok })
         );
         setStudents(cleanFormatted);
       } else {
@@ -808,13 +808,13 @@ export const RekapNilaiKknPage: React.FC = () => {
                           <span className="inline-block px-2.5 py-1 rounded-md text-[11px] font-semibold bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 whitespace-nowrap">
                             Menunggu Laporan
                           </span>
-                        ) : isWaitingMpl ? (
+                        ) : isWaitingPersonal ? (
                           <span className="inline-block px-2.5 py-1 rounded-md text-[11px] font-semibold bg-[#fffbeb] dark:bg-amber-950/50 text-[#b45309] dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 whitespace-nowrap">
-                            Menunggu MPL
+                            Menunggu Personal
                           </span>
-                        ) : isWaitingDpl ? (
+                        ) : isWaitingKelompok ? (
                           <span className="inline-block px-2.5 py-1 rounded-md text-[11px] font-semibold bg-sky-50 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800/60 whitespace-nowrap">
-                            Menunggu DPL
+                            Menunggu Kelompok
                           </span>
                         ) : (
                           <span className="inline-block px-2.5 py-1 rounded-md text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 whitespace-nowrap">
