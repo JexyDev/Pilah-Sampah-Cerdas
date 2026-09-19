@@ -82,21 +82,13 @@ export const calculateCompositeScore = (
     return Number((sMitra * wMitra + sDpl * wDpl + sLap * wLap).toFixed(2));
   }
 
-  // Normalisasi Single / Partial Evaluator:
-  // Sesuai arahan Pak Agus Mulyana:
+  // Sesuai Arahan Tegas Pak Agus Mulyana:
+  // 50% dari 78 BUKAN 78.67 atau 78, melainkan murni proporsional kontribusi (0.5 * DPL) = 39.00.
   // Jika baru salah satu penilai yang mengisi (misal MPL belum mengisi),
-  // nilai sementara dihitung murni proporsional terhadap kontribusi yang sudah masuk (misal 0.5 * DPL),
+  // nilai komposit sementara adalah murni kontribusi yang sudah masuk (misal 0.5 * DPL),
   // bukan di-normalisasi atau dinaikkan ke 100%.
-  if (activeWeights > 0) {
-    const rawWeightedSum = sMitra * wMitra + sDpl * wDpl + sLap * wLap;
-    if (normalizeSingleEvaluator) {
-      return Number((rawWeightedSum / activeWeights).toFixed(2));
-    } else {
-      return Number(rawWeightedSum.toFixed(2));
-    }
-  }
-
-  return 0;
+  const rawWeightedSum = sMitra * wMitra + sDpl * wDpl + sLap * wLap;
+  return Number(rawWeightedSum.toFixed(2));
 };
 
 export const penilaianKknService = {
@@ -240,9 +232,10 @@ export const penilaianKknService = {
     const ruleConfigs = await configService.getRuleEngineConfigs().catch(() => null);
     const targetLogbook = ruleConfigs?.logbookTargetKegiatan || 24;
     const bobotLogbook = ruleConfigs?.logbookBobotPersen || 20;
-    const bobotDplPersen = ruleConfigs?.penilaianBobotDplPersen ?? 40;
-    const bobotMplPersen = ruleConfigs?.penilaianBobotMplPersen ?? 40;
-    const bobotLaporanPersen = (ruleConfigs as any)?.penilaianBobotLaporanPersen ?? 20;
+    // Sesuai Arahan Tegas Pak Agus Mulyana: Bobot Komposit Penilaian Mahasiswa adalah 50% DPL + 50% MPL
+    const bobotDplPersen = 50;
+    const bobotMplPersen = 50;
+    const bobotLaporanPersen = 0;
     const targetDailyMinutes = (ruleConfigs?.attendanceMinDurationHours || 4) * 60;
 
     const pastSchedulesCount = await prisma.schedule
@@ -447,22 +440,20 @@ export const penilaianKknService = {
     const totalNilai = calculateCompositeScore(
       subMitra,
       subDpl,
-      bobotMplPersen,
-      bobotDplPersen,
-      true,
-      assessment.skorDplLaporanAkhir || 0,
-      bobotLaporanPersen
+      50,
+      50,
+      false,
+      0,
+      0
     );
     const kategori =
       totalNilai === 0 && !existing
         ? "Belum Dinilai"
         : calculateGradeCategory(totalNilai, { isFinalized, isComplete });
 
-    const kontribusiDpl = Number((subDpl * (bobotDplPersen / 100)).toFixed(2));
-    const kontribusiMitra = Number((subMitra * (bobotMplPersen / 100)).toFixed(2));
-    const kontribusiLaporan = Number(
-      ((assessment.skorDplLaporanAkhir || 0) * (bobotLaporanPersen / 100)).toFixed(2)
-    );
+    const kontribusiDpl = Number((subDpl * 0.5).toFixed(2));
+    const kontribusiMitra = Number((subMitra * 0.5).toFixed(2));
+    const kontribusiLaporan = 0;
 
     return {
       student: {
@@ -760,11 +751,10 @@ export const penilaianKknService = {
       ).toFixed(2)
     );
 
-    // 4. Kalkulasi Nilai Akhir & Kategori (Formula Komposisi Dinamis: MPL 40% + DPL 40% + Laporan Akhir 20%)
-    const ruleConfigs = await configService.getRuleEngineConfigs().catch(() => null);
-    const bobotDplPersen = ruleConfigs?.penilaianBobotDplPersen ?? 40;
-    const bobotMplPersen = ruleConfigs?.penilaianBobotMplPersen ?? 40;
-    const bobotLaporanPersen = (ruleConfigs as any)?.penilaianBobotLaporanPersen ?? 20;
+    // 4. Kalkulasi Nilai Akhir & Kategori (Sesuai Arahan Pak Agus Mulyana: DPL 50% + MPL 50%)
+    const bobotDplPersen = 50;
+    const bobotMplPersen = 50;
+    const bobotLaporanPersen = 0;
 
     const hasDplAny =
       skorDplPerencanaan > 0 ||
@@ -790,11 +780,11 @@ export const penilaianKknService = {
     const nilaiAkhir = calculateCompositeScore(
       subtotalMitra,
       subtotalDpl,
-      bobotMplPersen,
-      bobotDplPersen,
-      true,
-      skorDplLaporanAkhir,
-      bobotLaporanPersen
+      50,
+      50,
+      false,
+      0,
+      0
     );
     const kategoriNilai = calculateGradeCategory(nilaiAkhir, {
       isFinalized: isFinal,
@@ -1641,11 +1631,11 @@ export const penilaianKknService = {
       });
     }
 
-    // Sync score to all students in this kelompok
+    // Sync score to all students in this kelompok (Sesuai Arahan Pak Agus Mulyana: 50% DPL + 50% MPL)
     const ruleConfigs = await configService.getRuleEngineConfigs().catch(() => null);
-    const bobotDplPersen = ruleConfigs?.penilaianBobotDplPersen ?? 40;
-    const bobotMplPersen = ruleConfigs?.penilaianBobotMplPersen ?? 40;
-    const bobotLaporanPersen = (ruleConfigs as any)?.penilaianBobotLaporanPersen ?? 20;
+    const bobotDplPersen = 50;
+    const bobotMplPersen = 50;
+    const bobotLaporanPersen = 0;
 
     const studentUserIds = kelompok.students.map((s) => s.userId).filter(Boolean);
     const oldGroupScore = primaryProker?.skorPenilaian ? Number(primaryProker.skorPenilaian) : 0;
@@ -1729,11 +1719,11 @@ export const penilaianKknService = {
         const nilaiAkhir = calculateCompositeScore(
           subtotalMitra,
           subtotalDpl,
-          bobotMplPersen,
-          bobotDplPersen,
-          true,
-          currentSkorDplLaporanAkhir,
-          bobotLaporanPersen
+          50,
+          50,
+          false,
+          0,
+          0
         );
         const kategoriNilai = calculateGradeCategory(nilaiAkhir, {
           isFinalized: false,
@@ -1901,10 +1891,11 @@ export const penilaianKknService = {
     const currentSkorDplOutput = existing?.skorDplOutput ?? 0;
     const currentSkorDplLaporanAkhir = finalScore;
 
+    // Sesuai Arahan Pak Agus Mulyana: Bobot Penilaian Mahasiswa 50% DPL + 50% MPL
     const ruleConfigs = await configService.getRuleEngineConfigs().catch(() => null);
-    const bobotDplPersen = ruleConfigs?.penilaianBobotDplPersen ?? 40;
-    const bobotMplPersen = ruleConfigs?.penilaianBobotMplPersen ?? 40;
-    const bobotLaporanPersen = (ruleConfigs as any)?.penilaianBobotLaporanPersen ?? 20;
+    const bobotDplPersen = 50;
+    const bobotMplPersen = 50;
+    const bobotLaporanPersen = 0;
 
     // Auto-inject capaian logbook riil mahasiswa jika belum dinilai manual
     if (currentSkorDplLogbook === 0) {
@@ -1945,11 +1936,11 @@ export const penilaianKknService = {
     const nilaiAkhir = calculateCompositeScore(
       subtotalMitra,
       subtotalDpl,
-      bobotMplPersen,
-      bobotDplPersen,
-      true,
-      currentSkorDplLaporanAkhir,
-      bobotLaporanPersen
+      50,
+      50,
+      false,
+      0,
+      0
     );
     const kategoriNilai = calculateGradeCategory(nilaiAkhir, {
       isFinalized: false,
@@ -2055,7 +2046,7 @@ export const penilaianKknService = {
         update: {},
         create: {
           key: "penilaian_bobot_mpl_persen",
-          value: "40",
+          value: "50",
           tipe: "NUMBER",
           deskripsi: "Bobot penilaian akhir Mitra Lapangan / MPL (persen)",
           diperbaruiOleh: operatorId || "SYSTEM_NORMALIZER",
@@ -2066,7 +2057,7 @@ export const penilaianKknService = {
         update: {},
         create: {
           key: "penilaian_bobot_laporan_persen",
-          value: "20",
+          value: "0",
           tipe: "NUMBER",
           deskripsi: "Bobot penilaian akhir Laporan Akhir KKN (persen)",
           diperbaruiOleh: operatorId || "SYSTEM_NORMALIZER",
@@ -2079,9 +2070,10 @@ export const penilaianKknService = {
     const ruleConfigs = await configService.getRuleEngineConfigs().catch(() => null);
     const targetLogbook = ruleConfigs?.logbookTargetKegiatan || 24;
     const targetDailyMinutes = (ruleConfigs?.attendanceMinDurationHours || 4) * 60;
-    const bobotDplPersen = ruleConfigs?.penilaianBobotDplPersen ?? 40;
-    const bobotMplPersen = ruleConfigs?.penilaianBobotMplPersen ?? 40;
-    const bobotLaporanPersen = (ruleConfigs as any)?.penilaianBobotLaporanPersen ?? 20;
+    // Sesuai Arahan Pak Agus Mulyana: Bobot Penilaian Mahasiswa 50% DPL + 50% MPL
+    const bobotDplPersen = 50;
+    const bobotMplPersen = 50;
+    const bobotLaporanPersen = 0;
 
     // 2. Ambil seluruh mahasiswa KKN riil
     const allStudentsRaw = await prisma.user.findMany({
@@ -2275,11 +2267,11 @@ export const penilaianKknService = {
       const nilaiAkhir = calculateCompositeScore(
         effectiveSubtotalMitra,
         effectiveSubtotalDpl,
-        bobotMplPersen,
-        bobotDplPersen,
-        true,
-        resolvedSkorLaporan,
-        bobotLaporanPersen
+        50,
+        50,
+        false,
+        0,
+        0
       );
 
       const kategoriNilai = calculateGradeCategory(nilaiAkhir, {

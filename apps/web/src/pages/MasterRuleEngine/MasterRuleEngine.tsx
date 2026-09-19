@@ -82,9 +82,9 @@ const DEFAULT_CONFIG: RuleEngineConfig = {
   logbookTargetKegiatan: 24,
   logbookBackdateToleranceDays: 1,
   logbookBobotPersen: 20,
-  penilaianBobotDplPersen: 40,
-  penilaianBobotMplPersen: 40,
-  penilaianBobotLaporanPersen: 20,
+  penilaianBobotDplPersen: 50,
+  penilaianBobotMplPersen: 50,
+  penilaianBobotLaporanPersen: 0,
 };
 
 const MasterRuleEngine: React.FC = () => {
@@ -992,7 +992,7 @@ const MasterRuleEngine: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 text-xs font-black text-indigo-800 dark:text-indigo-300">
                   <Sparkles size={16} />
-                  <span>Simulasi Perhitungan Nilai Akhir Komposit (40:40:20)</span>
+                  <span>Simulasi Perhitungan Nilai Akhir Komposit ({config.penilaianBobotDplPersen}:{config.penilaianBobotMplPersen})</span>
                 </div>
                 <span className="text-[11px] font-mono font-extrabold text-indigo-700 bg-indigo-100 dark:bg-indigo-950 px-2.5 py-0.5 rounded-full border border-indigo-300 dark:border-indigo-800">
                   Total Komposisi: {config.penilaianBobotDplPersen + config.penilaianBobotMplPersen + config.penilaianBobotLaporanPersen}% (100% Sah)

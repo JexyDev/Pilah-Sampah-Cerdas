@@ -225,8 +225,8 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
       const data = await penilaianKknApiService.getRekapPenilaian();
       const rawList: StudentRekapItem[] = Array.isArray(data) ? data : [];
       if (rawList.length > 0) {
-        if (rawList[0].bobotDplPersen !== undefined) setBobotDpl(rawList[0].bobotDplPersen);
-        if (rawList[0].bobotMplPersen !== undefined) setBobotMpl(rawList[0].bobotMplPersen);
+        setBobotDpl(50);
+        setBobotMpl(50);
       }
       const list = rawList.filter(
         (s) => !isTestStudent(s) && !isTestKelompok({ name: s.kelompok })
@@ -246,8 +246,8 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
 
   // Modal Open Handler
   const handleOpenModal = (student: StudentRekapItem) => {
-    if (student.bobotDplPersen !== undefined) setBobotDpl(student.bobotDplPersen);
-    if (student.bobotMplPersen !== undefined) setBobotMpl(student.bobotMplPersen);
+    setBobotDpl(50);
+    setBobotMpl(50);
     setActiveStudent(student);
     setFormScores({
       skorDplPerencanaan: student.skorDplPerencanaan || "",
@@ -427,11 +427,11 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
       (mpl1 + mpl2 + mpl3 + mpl4 + mpl5 + mpl6 + mpl7 + mpl8).toFixed(2)
     );
 
-    // Kontribusi Dinamis DPL & MPL
-    const wDpl = (Number(bobotDpl) || 50) / 100;
-    const wMpl = (Number(bobotMpl) || 50) / 100;
-    const kontribusiDpl = Number((subtotalDpl * wDpl).toFixed(2));
-    const kontribusiMitra = Number((subtotalMitra * wMpl).toFixed(2));
+    // Kontribusi Murni DPL 50% & MPL 50% (Sesuai Arahan Pak Agus Mulyana)
+    const wDpl = 0.5;
+    const wMpl = 0.5;
+    const kontribusiDpl = Number((subtotalDpl * 0.5).toFixed(2));
+    const kontribusiMitra = Number((subtotalMitra * 0.5).toFixed(2));
 
     let composite = 0;
     if (subtotalDpl > 0 && subtotalMitra > 0) {
