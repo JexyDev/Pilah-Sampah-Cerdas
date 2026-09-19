@@ -4209,8 +4209,27 @@ export const dplService = {
               : null;
         const laporanScore = laporanAkhirScoreRaw !== null ? laporanAkhirScoreRaw : null;
 
-        // Bobot Komposisi Resmi: 4 Pilar Berimbang masing-masing 25% (Sesuai Kesepakatan Warek 1 & DPL)
-        const personalScore = dplScore;
+        // Validasi DPL & MPL: KEDUANYA WAJIB LENGKAP agar Nilai Sub Mahasiswa / Personal Sah
+        const hasDpl = dplScore !== null && dplScore > 0;
+        const hasMpl = mplScore !== null && mplScore > 0;
+        const hasPersonalComplete = hasDpl && hasMpl;
+
+        // Sesuai Arahan Pak Agus Mulyana:
+        // Jika MPL belum ngisi -> nilai sub mahasiswa jangan dipindahkan dulu ke rekap sebagai nilai personal lengkap
+        // Formula lengkap: (0.5 * DPL) + (0.5 * MPL)
+        const personalScore = hasPersonalComplete
+          ? Math.round((dplScore * 0.5 + mplScore * 0.5) * 10) / 10
+          : null;
+
+        // Nilai sementara murni proporsional (0.5 * DPL) saat MPL belum mengisi
+        const personalScoreSementara = !hasPersonalComplete
+          ? hasDpl
+            ? Number((dplScore * 0.5).toFixed(1))
+            : hasMpl
+              ? Number((mplScore * 0.5).toFixed(1))
+              : null
+          : null;
+
         const kelompokScore = prokerAvgScore;
         const effectiveKehadiran = attRate > 0 ? attRate : 0;
         const effectivePoin = poinDampinganScore > 0 ? poinDampinganScore : 0;
@@ -4220,18 +4239,28 @@ export const dplService = {
         let gradeLetter: string | null = null;
         let statusStr = "Menunggu Penilaian";
 
-        if (personalScore === null && kelompokScore === null && laporanScore === null) {
+        if (!hasPersonalComplete && kelompokScore === null && laporanScore === null) {
           statusStr = "Menunggu Penilaian";
-        } else if (personalScore === null) {
-          statusStr = "Menunggu Nilai Personal";
+        } else if (!hasPersonalComplete) {
+          statusStr =
+            hasDpl && !hasMpl
+              ? "Menunggu MPL"
+              : !hasDpl && hasMpl
+                ? "Menunggu DPL"
+                : "Menunggu Nilai Personal";
         } else if (kelompokScore === null) {
           statusStr = "Menunggu Nilai Kelompok";
         } else if (laporanScore === null) {
           statusStr = "Menunggu Laporan Akhir";
         }
 
-        // Kalkulasi 100% jika semua 4 pilar terisi
-        if (personalScore !== null && kelompokScore !== null && laporanScore !== null) {
+        // Kalkulasi 100% jika SEMUA 4 pilar terisi LENGKAP (personalScore hanya sah jika DPL & MPL lengkap)
+        if (
+          hasPersonalComplete &&
+          personalScore !== null &&
+          kelompokScore !== null &&
+          laporanScore !== null
+        ) {
           const calcScore =
             0.25 * effectiveKehadiran +
             0.25 * personalScore +
@@ -4244,6 +4273,9 @@ export const dplService = {
           else if (finalScore >= 50) gradeLetter = "D";
           else gradeLetter = "E";
           statusStr = "Lengkap";
+        } else {
+          finalScore = null;
+          gradeLetter = null;
         }
 
         if (finalScore !== null) {
@@ -4264,17 +4296,16 @@ export const dplService = {
           isKetua: Boolean(st.isKetua),
           kehadiran: effectiveKehadiran,
           poinDampingan: effectivePoin,
-          personalScore: dplScore,
+          personalScore,
+          personalScoreSementara,
+          hasPersonalComplete,
           kelompokScore,
           dplScore,
           mplScore,
           laporanScore,
           individuDpl: dplScore,
           individuMpl: mplScore,
-          individuGabungan:
-            dplScore !== null && mplScore !== null
-              ? Math.round(((dplScore + mplScore) / 2) * 10) / 10
-              : null,
+          individuGabungan: hasPersonalComplete ? personalScore : personalScoreSementara,
           prokerDpl: kelompokScore,
           prokerMpl: mplScore,
           prokerGabungan: kelompokScore,
@@ -4285,7 +4316,7 @@ export const dplService = {
           predikat: gradeLetter,
           status: statusStr,
           // Compatibility fields
-          skorIndividu: dplScore || 0,
+          skorIndividu: hasPersonalComplete && personalScore !== null ? personalScore : 0,
           catatanIndividu: st.assessmentNote || "",
           skorProkerKelompok: kelompokScore !== null ? kelompokScore : 0,
           tingkatKehadiran: effectiveKehadiran,
