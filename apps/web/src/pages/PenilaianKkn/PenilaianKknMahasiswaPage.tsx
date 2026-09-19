@@ -705,22 +705,22 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                   <th className="py-3.5 px-4 w-12 text-center">No</th>
                   <th className="py-3.5 px-4 min-w-[200px]">Mahasiswa</th>
                   <th className="py-3.5 px-4 min-w-[150px]">Kelompok &amp; Wilayah</th>
-                  <th className="py-3.5 px-4 text-center min-w-[140px]">
+                  <th className="py-3.5 px-4 text-center min-w-[130px]">
                     <div>Nilai DPL (50%)</div>
                     <span className="text-[9.5px] font-normal text-slate-400 normal-case">
-                      Subtotal &rarr; Bobot 50%
+                      Skala 0–100
                     </span>
                   </th>
-                  <th className="py-3.5 px-4 text-center min-w-[140px]">
+                  <th className="py-3.5 px-4 text-center min-w-[130px]">
                     <div>Nilai MPL (50%)</div>
                     <span className="text-[9.5px] font-normal text-slate-400 normal-case">
-                      Subtotal &rarr; Bobot 50%
+                      Skala 0–100
                     </span>
                   </th>
                   <th className="py-3.5 px-4 text-center min-w-[120px]">
                     <div>Nilai Akhir</div>
                     <span className="text-[9.5px] font-normal text-slate-400 normal-case">
-                      Komposit 100%
+                      Komposit 50:50
                     </span>
                   </th>
                   <th className="py-3.5 px-4 text-center min-w-[150px]">Status Penilaian</th>
@@ -805,14 +805,9 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                       {/* 4. Nilai DPL (50%) */}
                       <td className="py-3.5 px-4 text-center">
                         {hasDpl ? (
-                          <div className="inline-flex flex-col items-center">
-                            <span className="font-mono font-bold text-slate-900 dark:text-slate-100 text-xs">
-                              {s.subtotalDpl.toFixed(2)}
-                            </span>
-                            <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded-md mt-0.5">
-                              +{dplKontribusi.toFixed(2)} pts
-                            </span>
-                          </div>
+                          <span className="font-mono font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm">
+                            {s.subtotalDpl.toFixed(2)}
+                          </span>
                         ) : (
                           <span className="text-slate-400 font-mono text-xs">—</span>
                         )}
@@ -821,14 +816,9 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                       {/* 5. Nilai MPL (50%) */}
                       <td className="py-3.5 px-4 text-center">
                         {hasMitra ? (
-                          <div className="inline-flex flex-col items-center">
-                            <span className="font-mono font-bold text-slate-900 dark:text-slate-100 text-xs">
-                              {s.subtotalMitra.toFixed(2)}
-                            </span>
-                            <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/40 px-1.5 py-0.5 rounded-md mt-0.5">
-                              +{mitraKontribusi.toFixed(2)} pts
-                            </span>
-                          </div>
+                          <span className="font-mono font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm">
+                            {s.subtotalMitra.toFixed(2)}
+                          </span>
                         ) : (
                           <span className="text-slate-400 font-mono text-xs">—</span>
                         )}
@@ -1015,9 +1005,6 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                     <span className="text-xl font-black text-slate-900 dark:text-slate-100 font-mono">
                       {computedScores.subtotalDpl.toFixed(2)}
                     </span>
-                    <span className="text-xs font-bold text-emerald-600">
-                      &rarr; +{computedScores.kontribusiDpl.toFixed(2)}
-                    </span>
                   </div>
                 </div>
 
@@ -1028,9 +1015,6 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                   <div className="flex items-baseline gap-1 mt-0.5">
                     <span className="text-xl font-black text-slate-900 dark:text-slate-100 font-mono">
                       {computedScores.subtotalMitra.toFixed(2)}
-                    </span>
-                    <span className="text-xs font-bold text-sky-600">
-                      &rarr; +{computedScores.kontribusiMitra.toFixed(2)}
                     </span>
                   </div>
                 </div>
