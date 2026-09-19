@@ -156,10 +156,10 @@ export class ConfigService {
       logbookBackdateToleranceDays: parseInt(map["logbook_backdate_tolerance_days"] || "1", 10),
       logbookBobotPersen: parseInt(map["logbook_bobot_persen"] || "20", 10),
 
-      // Rule 8: Komposisi Bobot Nilai Akhir KKN (DPL, MPL, & Laporan Akhir)
-      penilaianBobotDplPersen: parseInt(map["penilaian_bobot_dpl_persen"] || "40", 10),
-      penilaianBobotMplPersen: parseInt(map["penilaian_bobot_mpl_persen"] || "40", 10),
-      penilaianBobotLaporanPersen: parseInt(map["penilaian_bobot_laporan_persen"] || "20", 10),
+      // Rule 8: Komposisi Bobot Nilai Akhir KKN (DPL 50% & MPL 50%)
+      penilaianBobotDplPersen: parseInt(map["penilaian_bobot_dpl_persen"] || "50", 10),
+      penilaianBobotMplPersen: parseInt(map["penilaian_bobot_mpl_persen"] || "50", 10),
+      penilaianBobotLaporanPersen: parseInt(map["penilaian_bobot_laporan_persen"] || "0", 10),
     };
   }
 

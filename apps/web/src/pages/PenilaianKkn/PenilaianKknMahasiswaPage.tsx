@@ -733,10 +733,10 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
 
                   const hasDpl = s.subtotalDpl > 0;
                   const hasMitra = s.subtotalMitra > 0;
-                  const dplWeight = s.bobotDplPersen ?? bobotDpl;
-                  const mplWeight = s.bobotMplPersen ?? bobotMpl;
-                  const dplKontribusi = Number((s.subtotalDpl * (dplWeight / 100)).toFixed(2));
-                  const mitraKontribusi = Number((s.subtotalMitra * (mplWeight / 100)).toFixed(2));
+                  const dplWeight = 50;
+                  const mplWeight = 50;
+                  const dplKontribusi = Number((s.subtotalDpl * 0.5).toFixed(2));
+                  const mitraKontribusi = Number((s.subtotalMitra * 0.5).toFixed(2));
 
                   let statusBadge = (
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
@@ -837,11 +837,17 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                       {/* 6. Nilai Akhir Komposit */}
                       <td className="py-3.5 px-4 text-center">
                         <div className="font-mono font-black text-sm text-[#009966] dark:text-emerald-400">
-                          {s.nilaiAkhir > 0 ? s.nilaiAkhir.toFixed(2) : "0.00"}
+                          {hasDpl && hasMitra
+                            ? (dplKontribusi + mitraKontribusi).toFixed(2)
+                            : hasDpl
+                              ? dplKontribusi.toFixed(2)
+                              : hasMitra
+                                ? mitraKontribusi.toFixed(2)
+                                : "0.00"}
                         </div>
-                        {(!hasDpl || !hasMitra) && s.nilaiAkhir > 0 && (
+                        {(!hasDpl || !hasMitra) && (hasDpl || hasMitra) && (
                           <span className="text-[9.5px] text-amber-600 dark:text-amber-400 font-medium block">
-                            (Sementara)
+                            (Sementara {hasDpl ? "0.5×DPL" : "0.5×MPL"})
                           </span>
                         )}
                       </td>

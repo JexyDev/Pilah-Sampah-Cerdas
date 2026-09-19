@@ -131,10 +131,38 @@ export interface AssistedCitizensResponse {
 
 export interface MapCoverage {
   groups: Array<{ id: string; name: string; kelurahan: string; cakupanRw: number[] }>;
-  rwAreas: Array<{ id: number; name: string; kelurahan: string; latitude: number; longitude: number }>;
-  bins: Array<{ id: string; qrCode: string; status: string; latitude: number; longitude: number; wargaNama: string }>;
-  poskos?: Array<{ id: string; kelompokId: string; nama: string; alamat: string; latitude: number; longitude: number }>;
-  facilities?: Array<{ id: string; nama: string; jenis: string; latitude: number; longitude: number; kelompokId: string | null; statusApproval: string }>;
+  rwAreas: Array<{
+    id: number;
+    name: string;
+    kelurahan: string;
+    latitude: number;
+    longitude: number;
+  }>;
+  bins: Array<{
+    id: string;
+    qrCode: string;
+    status: string;
+    latitude: number;
+    longitude: number;
+    wargaNama: string;
+  }>;
+  poskos?: Array<{
+    id: string;
+    kelompokId: string;
+    nama: string;
+    alamat: string;
+    latitude: number;
+    longitude: number;
+  }>;
+  facilities?: Array<{
+    id: string;
+    nama: string;
+    jenis: string;
+    latitude: number;
+    longitude: number;
+    kelompokId: string | null;
+    statusApproval: string;
+  }>;
 }
 
 export interface DplAlerts {
@@ -211,7 +239,15 @@ export interface ProgramKerjaItem {
   waktuPelaksanaan?: string | null;
   linkGoogleDrive?: string | null;
   kebutuhanBiaya: number;
-  status: "BELUM_DISETUJUI" | "DITERIMA" | "DISETUJUI" | "DITOLAK" | "TIDAK_DISETUJUI" | "SEDANG_BERJALAN" | "SEDANG_DILAKSANAKAN" | "SELESAI";
+  status:
+    | "BELUM_DISETUJUI"
+    | "DITERIMA"
+    | "DISETUJUI"
+    | "DITOLAK"
+    | "TIDAK_DISETUJUI"
+    | "SEDANG_BERJALAN"
+    | "SEDANG_DILAKSANAKAN"
+    | "SELESAI";
   statusUsulan?: "BELUM_DISETUJUI" | "DISETUJUI" | "DITOLAK" | string;
   statusPelaksanaan?: "BELUM_MULAI" | "SEDANG_BERJALAN" | "SELESAI" | string;
   catatanDpl?: string | null;
@@ -239,6 +275,8 @@ export interface RekapNilaiStudent {
   kehadiran: number;
   poinDampingan?: number;
   personalScore?: number | null;
+  personalScoreSementara?: number | null;
+  hasPersonalComplete?: boolean;
   kelompokScore?: number | null;
   dplScore?: number | null;
   mplScore?: number | null;
@@ -430,7 +468,15 @@ export const dplService = {
     waktuPelaksanaan?: string;
     linkGoogleDrive?: string;
     kebutuhanBiaya?: number;
-    status?: "BELUM_DISETUJUI" | "DITERIMA" | "DISETUJUI" | "DITOLAK" | "TIDAK_DISETUJUI" | "SEDANG_BERJALAN" | "SEDANG_DILAKSANAKAN" | "SELESAI";
+    status?:
+      | "BELUM_DISETUJUI"
+      | "DITERIMA"
+      | "DISETUJUI"
+      | "DITOLAK"
+      | "TIDAK_DISETUJUI"
+      | "SEDANG_BERJALAN"
+      | "SEDANG_DILAKSANAKAN"
+      | "SELESAI";
     statusUsulan?: "BELUM_DISETUJUI" | "DISETUJUI" | "DITOLAK" | string;
     statusPelaksanaan?: "BELUM_MULAI" | "SEDANG_BERJALAN" | "SELESAI" | string;
   }) => {
@@ -449,7 +495,15 @@ export const dplService = {
       waktuPelaksanaan?: string;
       linkGoogleDrive?: string;
       kebutuhanBiaya?: number;
-      status?: "BELUM_DISETUJUI" | "DITERIMA" | "DISETUJUI" | "DITOLAK" | "TIDAK_DISETUJUI" | "SEDANG_BERJALAN" | "SEDANG_DILAKSANAKAN" | "SELESAI";
+      status?:
+        | "BELUM_DISETUJUI"
+        | "DITERIMA"
+        | "DISETUJUI"
+        | "DITOLAK"
+        | "TIDAK_DISETUJUI"
+        | "SEDANG_BERJALAN"
+        | "SEDANG_DILAKSANAKAN"
+        | "SELESAI";
       statusUsulan?: "BELUM_DISETUJUI" | "DISETUJUI" | "DITOLAK" | string;
       statusPelaksanaan?: "BELUM_MULAI" | "SEDANG_BERJALAN" | "SELESAI" | string;
       catatanDpl?: string;
@@ -466,11 +520,24 @@ export const dplService = {
 
   decideProgramKerja: async (
     id: string,
-    status: "DITERIMA" | "DISETUJUI" | "DITOLAK" | "TIDAK_DISETUJUI" | "SEDANG_BERJALAN" | "SEDANG_DILAKSANAKAN" | "SELESAI" | "BELUM_DISETUJUI",
+    status:
+      | "DITERIMA"
+      | "DISETUJUI"
+      | "DITOLAK"
+      | "TIDAK_DISETUJUI"
+      | "SEDANG_BERJALAN"
+      | "SEDANG_DILAKSANAKAN"
+      | "SELESAI"
+      | "BELUM_DISETUJUI",
     catatanDpl?: string,
     statusPelaksanaan?: string
   ) => {
-    const res = await api.patch(`/dpl/program-kerja/${id}/decision`, { status, statusUsulan: status, statusPelaksanaan, catatanDpl });
+    const res = await api.patch(`/dpl/program-kerja/${id}/decision`, {
+      status,
+      statusUsulan: status,
+      statusPelaksanaan,
+      catatanDpl,
+    });
     return res.data;
   },
 
