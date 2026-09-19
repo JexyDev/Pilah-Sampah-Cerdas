@@ -83,22 +83,31 @@ describe("Penilaian KKN - Normalisasi Formula & Anti Nilai E Prematur", () => {
       expect(composite).toBe(85.0);
     });
 
-    it("should normalize to 100% DPL basis when Mitra has not yet assessed (Single Evaluator Mode)", () => {
+    it("should calculate raw partial contribution (50% DPL) when Mitra has not yet assessed", () => {
+      const subtotalMitra = 0;
+      const subtotalDpl = 78;
+      const composite = calculateCompositeScore(subtotalMitra, subtotalDpl, 50, 50);
+      // Sesuai arahan Pak Agus: 50% dari 78 BUKAN 78.67, melainkan murni (0.5 * 78) = 39.00
+      expect(composite).toBe(39.0);
+    });
+
+    it("should calculate raw partial contribution (50% DPL) with score 85", () => {
       const subtotalMitra = 0;
       const subtotalDpl = 85;
-      const composite = calculateCompositeScore(subtotalMitra, subtotalDpl, 50, 50, true);
-      // Instead of being cut down to 42.50 (Grade E), single evaluator is normalized to 85.00 (Grade A)
-      expect(composite).toBe(85.0);
+      const composite = calculateCompositeScore(subtotalMitra, subtotalDpl, 50, 50);
+      // 85 * 0.5 = 42.50
+      expect(composite).toBe(42.5);
     });
 
-    it("should normalize to 100% Mitra basis when DPL has not yet assessed (Single Evaluator Mode)", () => {
+    it("should calculate raw partial contribution (50% Mitra) when DPL has not yet assessed", () => {
       const subtotalMitra = 92;
       const subtotalDpl = 0;
-      const composite = calculateCompositeScore(subtotalMitra, subtotalDpl, 50, 50, true);
-      expect(composite).toBe(92.0);
+      const composite = calculateCompositeScore(subtotalMitra, subtotalDpl, 50, 50);
+      // 92 * 0.5 = 46.00
+      expect(composite).toBe(46.0);
     });
 
-    it("should fallback to raw partial contribution when normalizeSingleEvaluator is false", () => {
+    it("should calculate raw partial contribution when only DPL has 80", () => {
       const subtotalMitra = 0;
       const subtotalDpl = 80;
       const composite = calculateCompositeScore(subtotalMitra, subtotalDpl, 50, 50, false);
@@ -109,18 +118,9 @@ describe("Penilaian KKN - Normalisasi Formula & Anti Nilai E Prematur", () => {
       const subtotalMitra = 80;
       const subtotalDpl = 90;
       const skorLaporanAkhir = 100;
-      const composite = calculateCompositeScore(subtotalMitra, subtotalDpl, 40, 40, true, skorLaporanAkhir, 20);
+      const composite = calculateCompositeScore(subtotalMitra, subtotalDpl, 40, 40, false, skorLaporanAkhir, 20);
       // (80 * 0.4) + (90 * 0.4) + (100 * 0.2) = 32 + 36 + 20 = 88.00
       expect(composite).toBe(88.0);
-    });
-
-    it("should normalize dynamically when only DPL and MPL (40% + 40%) are assessed but Laporan is pending", () => {
-      const subtotalMitra = 80;
-      const subtotalDpl = 90;
-      const skorLaporanAkhir = 0;
-      const composite = calculateCompositeScore(subtotalMitra, subtotalDpl, 40, 40, true, skorLaporanAkhir, 20);
-      // (80 * 0.4 + 90 * 0.4) / (0.4 + 0.4) = 68 / 0.8 = 85.00
-      expect(composite).toBe(85.0);
     });
   });
 
