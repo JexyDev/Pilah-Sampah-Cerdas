@@ -238,6 +238,8 @@ export interface RekapNilaiStudent {
   isKetua: boolean;
   kehadiran: number;
   poinDampingan?: number;
+  personalScore?: number | null;
+  kelompokScore?: number | null;
   dplScore?: number | null;
   mplScore?: number | null;
   laporanScore?: number | null;

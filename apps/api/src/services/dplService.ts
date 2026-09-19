@@ -4187,33 +4187,39 @@ export const dplService = {
               : null;
         const laporanScore = laporanAkhirScoreRaw !== null ? laporanAkhirScoreRaw : null;
 
-        // Bobot Komposisi Resmi: DPL 40% + MPL 40% + Laporan Akhir 20%
-        const wDpl = (ruleConfigs?.penilaianBobotDplPersen ?? 40) / 100;
-        const wMpl = (ruleConfigs?.penilaianBobotMplPersen ?? 40) / 100;
-        const wLap = ((ruleConfigs as any)?.penilaianBobotLaporanPersen ?? 20) / 100;
+        // Bobot Komposisi Resmi: 4 Pilar Berimbang masing-masing 25% (Sesuai Kesepakatan Warek 1 & DPL)
+        const personalScore = dplScore;
+        const kelompokScore =
+          prokerAvgScore > 0
+            ? Math.round(prokerAvgScore * 10) / 10
+            : dplScore !== null
+              ? dplScore
+              : null;
+        const effectiveKehadiran = attRate > 0 ? attRate : 0;
+        const effectivePoin = poinDampinganScore > 0 ? poinDampinganScore : 0;
 
         // Nilai Akhir & Huruf Mutu
         let finalScore: number | null = null;
         let gradeLetter: string | null = null;
         let statusStr = "Menunggu Penilaian";
 
-        if (dplScore === null && mplScore === null && laporanScore === null) {
+        if (personalScore === null && kelompokScore === null && laporanScore === null) {
           statusStr = "Menunggu Penilaian";
-        } else if (dplScore === null && mplScore === null) {
-          statusStr = "Menunggu DPL & MPL";
-        } else if (dplScore === null) {
-          statusStr = "Menunggu DPL";
-        } else if (mplScore === null) {
-          statusStr = "Menunggu MPL";
+        } else if (personalScore === null) {
+          statusStr = "Menunggu Nilai Personal";
+        } else if (kelompokScore === null) {
+          statusStr = "Menunggu Nilai Kelompok";
         } else if (laporanScore === null) {
           statusStr = "Menunggu Laporan Akhir";
         }
 
-        const effectiveKehadiran = attRate > 0 ? attRate : 0;
-        const effectivePoin = poinDampinganScore > 0 ? poinDampinganScore : 0;
-
-        if (dplScore !== null && mplScore !== null && laporanScore !== null) {
-          const calcScore = wDpl * dplScore + wMpl * mplScore + wLap * laporanScore;
+        // Kalkulasi 100% jika semua 4 pilar terisi
+        if (personalScore !== null && kelompokScore !== null && laporanScore !== null) {
+          const calcScore =
+            0.25 * effectiveKehadiran +
+            0.25 * personalScore +
+            0.25 * kelompokScore +
+            0.25 * laporanScore;
           finalScore = Math.round(calcScore * 10) / 10;
           if (finalScore >= 80) gradeLetter = "A";
           else if (finalScore >= 70) gradeLetter = "B";
@@ -4221,16 +4227,6 @@ export const dplService = {
           else if (finalScore >= 50) gradeLetter = "D";
           else gradeLetter = "E";
           statusStr = "Lengkap";
-        } else if (dplScore !== null && mplScore !== null) {
-          // Normalisasi sementara jika DPL dan MPL sudah menilai
-          const calcScore = dplScore * 0.5 + mplScore * 0.5;
-          finalScore = Math.round(calcScore * 10) / 10;
-          if (finalScore >= 80) gradeLetter = "A";
-          else if (finalScore >= 70) gradeLetter = "B";
-          else if (finalScore >= 60) gradeLetter = "C";
-          else if (finalScore >= 50) gradeLetter = "D";
-          else gradeLetter = "E";
-          statusStr = "Menunggu Laporan Akhir";
         }
 
         if (finalScore !== null) {
@@ -4251,6 +4247,8 @@ export const dplService = {
           isKetua: Boolean(st.isKetua),
           kehadiran: effectiveKehadiran,
           poinDampingan: effectivePoin,
+          personalScore: dplScore,
+          kelompokScore,
           dplScore,
           mplScore,
           laporanScore,
