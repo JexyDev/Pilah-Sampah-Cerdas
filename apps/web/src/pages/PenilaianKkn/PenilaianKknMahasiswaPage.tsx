@@ -2,7 +2,7 @@
  * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * 
+ *
  * Halaman Penilaian Individu Mahasiswa KKN (Komposisi 50% DPL + 50% MPL)
  * Desain Full Tabel dengan Form Penilaian Pop-up Modal Ringkas, Responsif & Efisien
  * 100% Real Database PostgreSQL Integration via Prisma
@@ -109,7 +109,8 @@ const ASPEK_MITRA_CONFIG = [
     no: 3,
     title: "Realisasi Program Kerja Lapangan",
     bobot: 15,
-    deskripsi: "Kinerja eksekusi kegiatan tata kelola sampah, posko, dan program kerja di tingkat RW",
+    deskripsi:
+      "Kinerja eksekusi kegiatan tata kelola sampah, posko, dan program kerja di tingkat RW",
   },
   {
     key: "skorMitraKomunikasi" as const,
@@ -144,52 +145,23 @@ const ASPEK_MITRA_CONFIG = [
     no: 8,
     title: "Inisiatif & Kreativitas Solutif",
     bobot: 10,
-    deskripsi: "Kemampuan mencari solusi kreatif dan inisiatif tanggap saat menghadapi kendala lapangan",
+    deskripsi:
+      "Kemampuan mencari solusi kreatif dan inisiatif tanggap saat menghadapi kendala lapangan",
   },
 ];
-
-// Helper Predikat Nilai (A, B, C, D, E)
-const getPredikat = (score: number): string => {
-  if (score >= 80) return "A";
-  if (score >= 70) return "B";
-  if (score >= 60) return "C";
-  if (score >= 50) return "D";
-  if (score > 0) return "E";
-  return "Belum Dinilai";
-};
-
-// Helper to normalize any existing category to A/B/C/D/E
-const normalizeCategoryToLetter = (kat?: string | null, score: number = 0): string => {
-  if (!kat || kat === "Belum Dinilai") return score > 0 ? getPredikat(score) : "Belum Dinilai";
-  const upper = kat.trim().toUpperCase();
-  if (["A", "B", "C", "D", "E"].includes(upper)) return upper;
-  return getPredikat(score);
-};
-
-// Helper Predikat Badge Color
-const getPredikatBadgeClass = (predikat: string): string => {
-  switch (predikat) {
-    case "A":
-      return "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/60";
-    case "B":
-      return "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800/60";
-    case "C":
-      return "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800/60";
-    case "D":
-      return "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-800/60";
-    case "E":
-      return "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800/60";
-    default:
-      return "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700";
-  }
-};
 
 export const PenilaianKknMahasiswaPage: React.FC = () => {
   const { user } = useAuthStore();
   const rawRole = String(user?.peran || (user as any)?.role || "").toUpperCase();
   const isPimpinan = rawRole === "PIMPINAN" || rawRole === "PEMIMPIN";
-  const isMplUser = !isPimpinan && (rawRole === "MPL" || rawRole === "MITRA_PEMBIMBING_LAPANGAN" || rawRole === "MITRA_PENDAMPING_LAPANGAN");
-  const isDplUser = !isPimpinan && (rawRole === "DPL" || rawRole === "DOSEN_PEMBIMBING" || rawRole === "DOSEN_PENDAMPING");
+  const isMplUser =
+    !isPimpinan &&
+    (rawRole === "MPL" ||
+      rawRole === "MITRA_PEMBIMBING_LAPANGAN" ||
+      rawRole === "MITRA_PENDAMPING_LAPANGAN");
+  const isDplUser =
+    !isPimpinan &&
+    (rawRole === "DPL" || rawRole === "DOSEN_PEMBIMBING" || rawRole === "DOSEN_PENDAMPING");
 
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
@@ -344,8 +316,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
     const assessedStudents = students.filter((s) => s.nilaiAkhir > 0);
     const avgScore =
       assessedStudents.length > 0
-        ? assessedStudents.reduce((acc, curr) => acc + curr.nilaiAkhir, 0) /
-          assessedStudents.length
+        ? assessedStudents.reduce((acc, curr) => acc + curr.nilaiAkhir, 0) / assessedStudents.length
         : 0;
 
     return {
@@ -376,13 +347,16 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
       let matchesStatus = true;
       if (filterStatus !== "ALL") {
         if (filterStatus === "LENGKAP") {
-          matchesStatus = s.statusPenilaian === "LENGKAP" || (s.subtotalDpl > 0 && s.subtotalMitra > 0);
+          matchesStatus =
+            s.statusPenilaian === "LENGKAP" || (s.subtotalDpl > 0 && s.subtotalMitra > 0);
         } else if (filterStatus === "MENUNGGU_MPL") {
-          matchesStatus = s.statusPenilaian === "MENUNGGU_MPL" || (s.subtotalDpl > 0 && s.subtotalMitra === 0);
+          matchesStatus =
+            s.statusPenilaian === "MENUNGGU_MPL" || (s.subtotalDpl > 0 && s.subtotalMitra === 0);
         } else if (filterStatus === "MENUNGGU_DPL") {
-          matchesStatus = s.statusPenilaian === "MENUNGGU_DPL" || (s.subtotalDpl === 0 && s.subtotalMitra > 0);
+          matchesStatus =
+            s.statusPenilaian === "MENUNGGU_DPL" || (s.subtotalDpl === 0 && s.subtotalMitra > 0);
         } else if (filterStatus === "BELUM_DINILAI") {
-          matchesStatus = (s.subtotalDpl === 0 && s.subtotalMitra === 0);
+          matchesStatus = s.subtotalDpl === 0 && s.subtotalMitra === 0;
         }
       }
 
@@ -449,7 +423,9 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
     const mpl6 = Number(((m6 * 10) / 100).toFixed(2));
     const mpl7 = Number(((m7 * 15) / 100).toFixed(2));
     const mpl8 = Number(((m8 * 10) / 100).toFixed(2));
-    const subtotalMitra = Number((mpl1 + mpl2 + mpl3 + mpl4 + mpl5 + mpl6 + mpl7 + mpl8).toFixed(2));
+    const subtotalMitra = Number(
+      (mpl1 + mpl2 + mpl3 + mpl4 + mpl5 + mpl6 + mpl7 + mpl8).toFixed(2)
+    );
 
     // Kontribusi Dinamis DPL & MPL
     const wDpl = (Number(bobotDpl) || 50) / 100;
@@ -474,7 +450,6 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
       subtotalMitra,
       kontribusiMitra,
       composite,
-      predikat: composite > 0 ? getPredikat(composite) : "Belum Dinilai",
     };
   }, [formScores, bobotDpl, bobotMpl]);
 
@@ -494,7 +469,9 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
   // Save Penilaian to Database
   const handleSave = async () => {
     if (isPimpinan) {
-      toast.error("Role Pimpinan hanya memiliki akses View-Only dan tidak dapat menyimpan penilaian");
+      toast.error(
+        "Role Pimpinan hanya memiliki akses View-Only dan tidak dapat menyimpan penilaian"
+      );
       return;
     }
 
@@ -563,7 +540,14 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
             )}
           </div>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Komposisi terintegrasi: <strong className="text-emerald-700 dark:text-emerald-400">{bobotDpl}% Dosen Pembimbing (DPL)</strong> + <strong className="text-sky-700 dark:text-sky-400">{bobotMpl}% Mitra Lapangan (MPL)</strong>
+            Komposisi terintegrasi:{" "}
+            <strong className="text-emerald-700 dark:text-emerald-400">
+              {bobotDpl}% Dosen Pembimbing (DPL)
+            </strong>{" "}
+            +{" "}
+            <strong className="text-sky-700 dark:text-sky-400">
+              {bobotMpl}% Mitra Lapangan (MPL)
+            </strong>
           </p>
         </div>
 
@@ -587,8 +571,13 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
           <div className="flex items-center gap-2.5">
             <AlertCircle size={18} className="shrink-0 text-amber-600 dark:text-amber-400" />
             <div>
-              <strong className="block font-bold text-[13px]">Mode Akses Pemantauan Eksekutif (View-Only)</strong>
-              <span>Sebagai Pimpinan, Anda memiliki hak akses pemantauan terhadap seluruh data penilaian mahasiswa KKN tanpa hak mengubah maupun menyimpan nilai.</span>
+              <strong className="block font-bold text-[13px]">
+                Mode Akses Pemantauan Eksekutif (View-Only)
+              </strong>
+              <span>
+                Sebagai Pimpinan, Anda memiliki hak akses pemantauan terhadap seluruh data penilaian
+                mahasiswa KKN tanpa hak mengubah maupun menyimpan nilai.
+              </span>
             </div>
           </div>
           <span className="px-3 py-1 rounded-full text-[11px] font-extrabold bg-amber-200/60 dark:bg-amber-900/60 text-amber-950 dark:text-amber-200 border border-amber-300 shrink-0">
@@ -600,23 +589,41 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
       {/* Metric Cards KPI */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3.5">
         <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
-          <span className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold block">Total Mahasiswa</span>
-          <p className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 mt-1">{stats.total}</p>
+          <span className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold block">
+            Total Mahasiswa
+          </span>
+          <p className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 mt-1">
+            {stats.total}
+          </p>
         </div>
         <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
-          <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold block">Lengkap (DPL & MPL)</span>
-          <p className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">{stats.lengkap}</p>
+          <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold block">
+            Lengkap (DPL & MPL)
+          </span>
+          <p className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
+            {stats.lengkap}
+          </p>
         </div>
         <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
-          <span className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold block">Menunggu MPL</span>
-          <p className="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400 mt-1">{stats.menungguMpl}</p>
+          <span className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold block">
+            Menunggu MPL
+          </span>
+          <p className="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400 mt-1">
+            {stats.menungguMpl}
+          </p>
         </div>
         <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
-          <span className="text-[11px] text-sky-600 dark:text-sky-400 font-semibold block">Menunggu DPL</span>
-          <p className="text-xl sm:text-2xl font-black text-sky-600 dark:text-sky-400 mt-1">{stats.menungguDpl}</p>
+          <span className="text-[11px] text-sky-600 dark:text-sky-400 font-semibold block">
+            Menunggu DPL
+          </span>
+          <p className="text-xl sm:text-2xl font-black text-sky-600 dark:text-sky-400 mt-1">
+            {stats.menungguDpl}
+          </p>
         </div>
         <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs col-span-2 sm:col-span-1">
-          <span className="text-[11px] text-[#009966] dark:text-emerald-400 font-semibold block">Rerata Nilai Komposit</span>
+          <span className="text-[11px] text-[#009966] dark:text-emerald-400 font-semibold block">
+            Rerata Nilai Komposit
+          </span>
           <p className="text-xl sm:text-2xl font-black text-[#009966] dark:text-emerald-400 mt-1">
             {stats.avgScore > 0 ? stats.avgScore.toFixed(2) : "—"}
           </p>
@@ -675,7 +682,9 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
         {loading ? (
           <div className="p-16 flex flex-col items-center justify-center gap-3 text-slate-400">
             <Loader2 className="animate-spin text-[#009966]" size={32} />
-            <span className="text-xs font-semibold">Memuat data rekapitulasi penilaian mahasiswa...</span>
+            <span className="text-xs font-semibold">
+              Memuat data rekapitulasi penilaian mahasiswa...
+            </span>
           </div>
         ) : filteredStudents.length === 0 ? (
           <EmptyTableState
@@ -698,17 +707,22 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                   <th className="py-3.5 px-4 min-w-[150px]">Kelompok &amp; Wilayah</th>
                   <th className="py-3.5 px-4 text-center min-w-[140px]">
                     <div>Nilai DPL (50%)</div>
-                    <span className="text-[9.5px] font-normal text-slate-400 normal-case">Subtotal &rarr; Bobot 50%</span>
+                    <span className="text-[9.5px] font-normal text-slate-400 normal-case">
+                      Subtotal &rarr; Bobot 50%
+                    </span>
                   </th>
                   <th className="py-3.5 px-4 text-center min-w-[140px]">
                     <div>Nilai MPL (50%)</div>
-                    <span className="text-[9.5px] font-normal text-slate-400 normal-case">Subtotal &rarr; Bobot 50%</span>
+                    <span className="text-[9.5px] font-normal text-slate-400 normal-case">
+                      Subtotal &rarr; Bobot 50%
+                    </span>
                   </th>
                   <th className="py-3.5 px-4 text-center min-w-[120px]">
                     <div>Nilai Akhir</div>
-                    <span className="text-[9.5px] font-normal text-slate-400 normal-case">Komposit 100%</span>
+                    <span className="text-[9.5px] font-normal text-slate-400 normal-case">
+                      Komposit 100%
+                    </span>
                   </th>
-                  <th className="py-3.5 px-4 text-center min-w-[90px]">Predikat</th>
                   <th className="py-3.5 px-4 text-center min-w-[150px]">Status Penilaian</th>
                   <th className="py-3.5 px-4 text-center min-w-[120px]">Aksi</th>
                 </tr>
@@ -716,7 +730,6 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
                 {paginatedStudents.map((s, idx) => {
                   const rowNumber = (currentPage - 1) * itemsPerPage + idx + 1;
-                  const predikatText = normalizeCategoryToLetter(s.kategori, s.nilaiAkhir);
 
                   const hasDpl = s.subtotalDpl > 0;
                   const hasMitra = s.subtotalMitra > 0;
@@ -770,7 +783,9 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                           {s.nama}
                         </div>
                         <div className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-2">
-                          <span className="font-mono text-slate-600 dark:text-slate-400">{s.nim || "-"}</span>
+                          <span className="font-mono text-slate-600 dark:text-slate-400">
+                            {s.nim || "-"}
+                          </span>
                           <span>&bull;</span>
                           <span>{s.jurusan || s.programStudi || "-"}</span>
                         </div>
@@ -782,7 +797,8 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                           {s.kelompok || "-"}
                         </div>
                         <div className="text-[11px] text-slate-400 mt-0.5">
-                          {s.kelurahan ? `${s.kelurahan}` : ""}{s.rw ? ` - RW ${s.rw}` : ""}
+                          {s.kelurahan ? `${s.kelurahan}` : ""}
+                          {s.rw ? ` - RW ${s.rw}` : ""}
                         </div>
                       </td>
 
@@ -830,21 +846,8 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                         )}
                       </td>
 
-                      {/* 7. Predikat */}
-                      <td className="py-3.5 px-4 text-center">
-                        <span
-                          className={`inline-block px-2.5 py-0.5 rounded-md text-xs font-black border ${getPredikatBadgeClass(
-                            predikatText
-                          )}`}
-                        >
-                          {predikatText}
-                        </span>
-                      </td>
-
-                      {/* 8. Status Penilaian */}
-                      <td className="py-3.5 px-4 text-center">
-                        {statusBadge}
-                      </td>
+                      {/* 7. Status Penilaian */}
+                      <td className="py-3.5 px-4 text-center">{statusBadge}</td>
 
                       {/* 9. Aksi */}
                       <td className="py-3.5 px-4 text-center">
@@ -858,7 +861,13 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                           }`}
                         >
                           {isPimpinan ? <Eye size={12} /> : <Edit3 size={12} />}
-                          <span>{isPimpinan ? "Lihat Rincian" : isMplUser ? "Nilai Lapangan" : "Beri Nilai"}</span>
+                          <span>
+                            {isPimpinan
+                              ? "Lihat Rincian"
+                              : isMplUser
+                                ? "Nilai Lapangan"
+                                : "Beri Nilai"}
+                          </span>
                         </button>
                       </td>
                     </tr>
@@ -901,7 +910,9 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                 </div>
                 <div>
                   <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">
-                    {isPimpinan ? "Rincian Penilaian Individu Mahasiswa" : "Form Penilaian Individu Mahasiswa"}
+                    {isPimpinan
+                      ? "Rincian Penilaian Individu Mahasiswa"
+                      : "Form Penilaian Individu Mahasiswa"}
                   </h2>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
                     Komposisi Transparan 50% Dosen Pembimbing Lapangan + 50% Mitra Kelurahan
@@ -942,10 +953,16 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
             <div className="overflow-y-auto p-5 sm:p-6 space-y-5">
               {isPimpinan && (
                 <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 rounded-xl flex items-start gap-2.5 text-xs text-amber-800 dark:text-amber-300">
-                  <AlertCircle size={16} className="shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+                  <AlertCircle
+                    size={16}
+                    className="shrink-0 mt-0.5 text-amber-600 dark:text-amber-400"
+                  />
                   <div>
                     <strong className="block font-bold">Mode Akses View-Only</strong>
-                    <span>Sebagai Pimpinan, Anda melihat rincian penilaian dalam mode pemantauan murni. Seluruh formulir penilaian dikunci.</span>
+                    <span>
+                      Sebagai Pimpinan, Anda melihat rincian penilaian dalam mode pemantauan murni.
+                      Seluruh formulir penilaian dikunci.
+                    </span>
                   </div>
                 </div>
               )}
@@ -961,8 +978,11 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                       {activeStudent.nama}
                     </h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
-                      NIM: <strong className="text-slate-700 dark:text-slate-300 font-mono">{activeStudent.nim || "-"}</strong> •{" "}
-                      {activeStudent.jurusan || activeStudent.programStudi || "S1 Teknik"}
+                      NIM:{" "}
+                      <strong className="text-slate-700 dark:text-slate-300 font-mono">
+                        {activeStudent.nim || "-"}
+                      </strong>{" "}
+                      • {activeStudent.jurusan || activeStudent.programStudi || "S1 Teknik"}
                     </p>
                   </div>
                 </div>
@@ -982,22 +1002,30 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
               {/* Real-Time Composite Contribution Preview Banner */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/40 rounded-2xl p-3.5">
                 <div className="flex flex-col items-center justify-center p-2 rounded-xl bg-white/80 dark:bg-slate-900/60 border border-emerald-200/60">
-                  <span className="text-[10px] font-bold uppercase text-slate-500 tracking-wider">Subtotal DPL ({bobotDpl}%)</span>
+                  <span className="text-[10px] font-bold uppercase text-slate-500 tracking-wider">
+                    Subtotal DPL ({bobotDpl}%)
+                  </span>
                   <div className="flex items-baseline gap-1 mt-0.5">
                     <span className="text-xl font-black text-slate-900 dark:text-slate-100 font-mono">
                       {computedScores.subtotalDpl.toFixed(2)}
                     </span>
-                    <span className="text-xs font-bold text-emerald-600">&rarr; +{computedScores.kontribusiDpl.toFixed(2)}</span>
+                    <span className="text-xs font-bold text-emerald-600">
+                      &rarr; +{computedScores.kontribusiDpl.toFixed(2)}
+                    </span>
                   </div>
                 </div>
 
                 <div className="flex flex-col items-center justify-center p-2 rounded-xl bg-white/80 dark:bg-slate-900/60 border border-sky-200/60">
-                  <span className="text-[10px] font-bold uppercase text-slate-500 tracking-wider">Subtotal MPL ({bobotMpl}%)</span>
+                  <span className="text-[10px] font-bold uppercase text-slate-500 tracking-wider">
+                    Subtotal MPL ({bobotMpl}%)
+                  </span>
                   <div className="flex items-baseline gap-1 mt-0.5">
                     <span className="text-xl font-black text-slate-900 dark:text-slate-100 font-mono">
                       {computedScores.subtotalMitra.toFixed(2)}
                     </span>
-                    <span className="text-xs font-bold text-sky-600">&rarr; +{computedScores.kontribusiMitra.toFixed(2)}</span>
+                    <span className="text-xs font-bold text-sky-600">
+                      &rarr; +{computedScores.kontribusiMitra.toFixed(2)}
+                    </span>
                   </div>
                 </div>
 
@@ -1008,9 +1036,6 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                   <div className="flex items-baseline gap-2 mt-0.5">
                     <span className="text-2xl font-black text-[#009966] dark:text-emerald-400 font-mono">
                       {computedScores.composite.toFixed(2)}
-                    </span>
-                    <span className={`px-2 py-0.5 rounded text-xs font-black border ${getPredikatBadgeClass(computedScores.predikat)}`}>
-                      {computedScores.predikat}
                     </span>
                   </div>
                 </div>
@@ -1026,9 +1051,13 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                         <Building2 size={14} className="text-sky-600" />
                         <span>8 Aspek Penilaian Mitra Pembimbing Lapangan (MPL)</span>
                       </h4>
-                      <p className="text-[11px] text-slate-500">Bobot akumulasi 100% (Kontribusi 50% terhadap nilai akhir mahasiswa)</p>
+                      <p className="text-[11px] text-slate-500">
+                        Bobot akumulasi 100% (Kontribusi 50% terhadap nilai akhir mahasiswa)
+                      </p>
                     </div>
-                    <span className="text-[11px] text-slate-400 font-semibold">Rentang Nilai: 0 – 100</span>
+                    <span className="text-[11px] text-slate-400 font-semibold">
+                      Rentang Nilai: 0 – 100
+                    </span>
                   </div>
 
                   <div className="border border-slate-200/80 dark:border-slate-800 rounded-2xl overflow-hidden">
@@ -1048,13 +1077,24 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                           const computedSkor = computedScores.mplScores[idx];
 
                           return (
-                            <tr key={aspek.key} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20">
-                              <td className="py-2.5 px-3 text-center font-bold text-slate-400">{aspek.no}</td>
-                              <td className="py-2.5 px-3">
-                                <div className="font-bold text-slate-800 dark:text-slate-200">{aspek.title}</div>
-                                <div className="text-[10.5px] text-slate-400 mt-0.5">{aspek.deskripsi}</div>
+                            <tr
+                              key={aspek.key}
+                              className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20"
+                            >
+                              <td className="py-2.5 px-3 text-center font-bold text-slate-400">
+                                {aspek.no}
                               </td>
-                              <td className="py-2.5 px-3 text-center text-slate-500 font-bold">{aspek.bobot}%</td>
+                              <td className="py-2.5 px-3">
+                                <div className="font-bold text-slate-800 dark:text-slate-200">
+                                  {aspek.title}
+                                </div>
+                                <div className="text-[10.5px] text-slate-400 mt-0.5">
+                                  {aspek.deskripsi}
+                                </div>
+                              </td>
+                              <td className="py-2.5 px-3 text-center text-slate-500 font-bold">
+                                {aspek.bobot}%
+                              </td>
                               <td className="py-2.5 px-3 text-center">
                                 <div className="inline-flex items-center gap-1 border rounded-xl px-2 py-1 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-2xs focus-within:ring-2 focus-within:ring-sky-500/20 focus-within:border-sky-500 transition">
                                   <input
@@ -1067,7 +1107,9 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                                     placeholder="0"
                                     className="w-10 text-center text-xs font-black text-slate-900 dark:text-slate-100 bg-transparent focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                                   />
-                                  <span className="text-[10px] text-slate-400 font-medium">/ 100</span>
+                                  <span className="text-[10px] text-slate-400 font-medium">
+                                    / 100
+                                  </span>
                                 </div>
                               </td>
                               <td className="py-2.5 px-3 text-right font-black text-slate-800 dark:text-slate-200">
@@ -1079,10 +1121,15 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
 
                         {/* Total Row */}
                         <tr className="bg-sky-50/50 dark:bg-slate-800/70 font-bold border-t border-slate-200 dark:border-slate-700">
-                          <td colSpan={2} className="py-2.5 px-3 text-slate-700 dark:text-slate-300">
+                          <td
+                            colSpan={2}
+                            className="py-2.5 px-3 text-slate-700 dark:text-slate-300"
+                          >
                             Total Bobot Penilaian MPL
                           </td>
-                          <td className="py-2.5 px-3 text-center text-sky-600 dark:text-sky-400 font-black">100%</td>
+                          <td className="py-2.5 px-3 text-center text-sky-600 dark:text-sky-400 font-black">
+                            100%
+                          </td>
                           <td className="py-2.5 px-3 text-center text-slate-500 font-semibold text-[11px]">
                             Subtotal MPL:
                           </td>
@@ -1104,7 +1151,9 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                       rows={3}
                       disabled={isPimpinan}
                       value={formScores.catatanMitra}
-                      onChange={(e) => setFormScores((prev) => ({ ...prev, catatanMitra: e.target.value }))}
+                      onChange={(e) =>
+                        setFormScores((prev) => ({ ...prev, catatanMitra: e.target.value }))
+                      }
                       placeholder="Tuliskan apresiasi, catatan keaktifan, atau masukan dari kelurahan untuk mahasiswa..."
                       className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 rounded-2xl p-3.5 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none transition resize-none disabled:opacity-60 disabled:cursor-not-allowed"
                     />
@@ -1119,9 +1168,13 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                         <GraduationCap size={14} className="text-[#009966]" />
                         <span>6 Aspek Penilaian Akademik Dosen Pembimbing Lapangan (DPL)</span>
                       </h4>
-                      <p className="text-[11px] text-slate-500">Bobot akumulasi 100% (Kontribusi 50% terhadap nilai akhir mahasiswa)</p>
+                      <p className="text-[11px] text-slate-500">
+                        Bobot akumulasi 100% (Kontribusi 50% terhadap nilai akhir mahasiswa)
+                      </p>
                     </div>
-                    <span className="text-[11px] text-slate-400 font-semibold">Rentang Nilai: 0 – 100</span>
+                    <span className="text-[11px] text-slate-400 font-semibold">
+                      Rentang Nilai: 0 – 100
+                    </span>
                   </div>
 
                   <div className="border border-slate-200/80 dark:border-slate-800 rounded-2xl overflow-hidden">
@@ -1141,13 +1194,24 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                           const computedSkor = computedScores.dplScores[idx];
 
                           return (
-                            <tr key={aspek.key} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20">
-                              <td className="py-2.5 px-3 text-center font-bold text-slate-400">{aspek.no}</td>
-                              <td className="py-2.5 px-3">
-                                <div className="font-bold text-slate-800 dark:text-slate-200">{aspek.title}</div>
-                                <div className="text-[10.5px] text-slate-400 mt-0.5">{aspek.deskripsi}</div>
+                            <tr
+                              key={aspek.key}
+                              className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20"
+                            >
+                              <td className="py-2.5 px-3 text-center font-bold text-slate-400">
+                                {aspek.no}
                               </td>
-                              <td className="py-2.5 px-3 text-center text-slate-500 font-bold">{aspek.bobot}%</td>
+                              <td className="py-2.5 px-3">
+                                <div className="font-bold text-slate-800 dark:text-slate-200">
+                                  {aspek.title}
+                                </div>
+                                <div className="text-[10.5px] text-slate-400 mt-0.5">
+                                  {aspek.deskripsi}
+                                </div>
+                              </td>
+                              <td className="py-2.5 px-3 text-center text-slate-500 font-bold">
+                                {aspek.bobot}%
+                              </td>
                               <td className="py-2.5 px-3 text-center">
                                 <div className="inline-flex items-center gap-1 border rounded-xl px-2 py-1 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-2xs focus-within:ring-2 focus-within:ring-[#009966]/20 focus-within:border-[#009966] transition">
                                   <input
@@ -1160,7 +1224,9 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                                     placeholder="0"
                                     className="w-10 text-center text-xs font-black text-slate-900 dark:text-slate-100 bg-transparent focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                                   />
-                                  <span className="text-[10px] text-slate-400 font-medium">/ 100</span>
+                                  <span className="text-[10px] text-slate-400 font-medium">
+                                    / 100
+                                  </span>
                                 </div>
                               </td>
                               <td className="py-2.5 px-3 text-right font-black text-slate-800 dark:text-slate-200">
@@ -1172,10 +1238,15 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
 
                         {/* Total Row */}
                         <tr className="bg-slate-50/70 dark:bg-slate-800/70 font-bold border-t border-slate-200 dark:border-slate-700">
-                          <td colSpan={2} className="py-2.5 px-3 text-slate-700 dark:text-slate-300">
+                          <td
+                            colSpan={2}
+                            className="py-2.5 px-3 text-slate-700 dark:text-slate-300"
+                          >
                             Total Bobot Penilaian DPL
                           </td>
-                          <td className="py-2.5 px-3 text-center text-[#009966] dark:text-emerald-400 font-black">100%</td>
+                          <td className="py-2.5 px-3 text-center text-[#009966] dark:text-emerald-400 font-black">
+                            100%
+                          </td>
                           <td className="py-2.5 px-3 text-center text-slate-500 font-semibold text-[11px]">
                             Subtotal DPL:
                           </td>
@@ -1197,7 +1268,9 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
                       rows={3}
                       disabled={isPimpinan}
                       value={formScores.catatanDpl}
-                      onChange={(e) => setFormScores((prev) => ({ ...prev, catatanDpl: e.target.value }))}
+                      onChange={(e) =>
+                        setFormScores((prev) => ({ ...prev, catatanDpl: e.target.value }))
+                      }
                       placeholder="Tuliskan catatan apresiasi, evaluasi akademik, atau rekomendasi untuk mahasiswa..."
                       className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-[#009966]/20 focus:border-[#009966] rounded-2xl p-3.5 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none transition resize-none disabled:opacity-60 disabled:cursor-not-allowed"
                     />
@@ -1210,9 +1283,19 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
             <div className="px-5 sm:px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex items-center justify-between">
               <div className="text-xs text-slate-500">
                 {isPimpinan ? (
-                  <span>Akses Pemantauan: <strong className="text-slate-800 dark:text-slate-200 font-bold">Pimpinan / Eksekutif</strong></span>
+                  <span>
+                    Akses Pemantauan:{" "}
+                    <strong className="text-slate-800 dark:text-slate-200 font-bold">
+                      Pimpinan / Eksekutif
+                    </strong>
+                  </span>
                 ) : (
-                  <span>Menyimpan nilai sebagai: <strong className="text-slate-800 dark:text-slate-200 font-bold">{evaluatorTab === "MPL" ? "Mitra Lapangan (MPL)" : "Dosen Pembimbing (DPL)"}</strong></span>
+                  <span>
+                    Menyimpan nilai sebagai:{" "}
+                    <strong className="text-slate-800 dark:text-slate-200 font-bold">
+                      {evaluatorTab === "MPL" ? "Mitra Lapangan (MPL)" : "Dosen Pembimbing (DPL)"}
+                    </strong>
+                  </span>
                 )}
               </div>
 
