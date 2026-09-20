@@ -245,8 +245,8 @@ export const RekapNilaiKknPage: React.FC = () => {
         "Kelompok",
         "Kehadiran Sistem (0-100)",
         "Kontribusi Kehadiran (25%)",
-        "Nilai Personal (0-100)",
-        "Kontribusi Personal (25%)",
+        "Nilai Individu (0-100)",
+        "Kontribusi Individu (25%)",
         "Nilai Kelompok (0-100)",
         "Kontribusi Kelompok (25%)",
         "Laporan Akhir (0-100)",
@@ -544,11 +544,11 @@ export const RekapNilaiKknPage: React.FC = () => {
             </span>
           </div>
 
-          {/* Badge 2: Nilai Personal 25% */}
+          {/* Badge 2: Nilai Individu 25% */}
           <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-900/60 px-3 py-1.5 rounded-xl text-slate-700 dark:text-slate-300 font-medium shadow-2xs">
             <span className="w-2 h-2 rounded-full bg-[#009966] shrink-0" />
             <span>
-              <strong className="text-[#009966] font-bold">Asesmen DPL:</strong> Nilai Personal 25%
+              <strong className="text-[#009966] font-bold">Asesmen DPL &amp; MPL:</strong> Nilai Individu 25%
             </span>
           </div>
 
@@ -574,7 +574,7 @@ export const RekapNilaiKknPage: React.FC = () => {
         <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-xl text-slate-600 dark:text-slate-400 font-medium shadow-2xs">
           <Info size={13} className="text-slate-500 shrink-0" />
           <span>
-            Formula Resmi: Kehadiran 25% • Personal 25% • Kelompok 25% • Laporan Akhir 25%
+            Formula Resmi: Kehadiran 25% • Individu 25% • Kelompok 25% • Laporan Akhir 25%
           </span>
         </div>
       </div>
@@ -630,9 +630,9 @@ export const RekapNilaiKknPage: React.FC = () => {
                     </span>
                   </th>
 
-                  {/* Nilai Personal Pillar (25%) */}
+                  {/* Nilai Individu Pillar (25%) */}
                   <th className="py-2.5 px-3 bg-[#f0fdf4] dark:bg-emerald-950/50 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[11.5px] min-w-[120px]">
-                    <div>Nilai Personal</div>
+                    <div>Nilai Individu</div>
                     <span className="text-[10px] font-normal text-emerald-600 dark:text-emerald-400">
                       Bobot 25%
                     </span>
@@ -725,7 +725,7 @@ export const RekapNilaiKknPage: React.FC = () => {
                         {keh.toFixed(1)}
                       </td>
 
-                      {/* Nilai Personal (25%) */}
+                      {/* Nilai Individu (25%) */}
                       <td className="py-3 px-3 border-r border-slate-100 dark:border-slate-800 text-center text-slate-700 dark:text-slate-300">
                         {personal !== null ? (
                           <span className="font-semibold">{personal.toFixed(1)}</span>
@@ -875,16 +875,16 @@ export const RekapNilaiKknPage: React.FC = () => {
             </p>
           </div>
 
-          {/* Card 2: Nilai Personal (25%) */}
+          {/* Card 2: Nilai Individu (25%) */}
           <div className="space-y-2.5 lg:px-4 lg:border-r border-slate-200/80 dark:border-slate-800">
             <div className="flex items-center gap-2 text-[#00704a] dark:text-emerald-400 font-bold text-xs">
               <span className="w-5 h-5 rounded-full border-1.5 border-[#00704a] dark:border-emerald-400 flex items-center justify-center text-[11px]">
                 2
               </span>
-              <span>Nilai Personal (25%)</span>
+              <span>Nilai Individu (25%)</span>
             </div>
             <p className="text-[12px] text-slate-600 dark:text-slate-400 leading-relaxed">
-              Evaluasi individual mahasiswa oleh DPL (skala 0–100) mencakup keaktifan, dedikasi,
+              Evaluasi individual mahasiswa gabungan DPL dan MPL (skala 0–100) mencakup keaktifan, dedikasi,
               etika kerja, dan kontribusi nyata pada wilayah KKN.
             </p>
           </div>
@@ -916,7 +916,7 @@ export const RekapNilaiKknPage: React.FC = () => {
               0–100) yang divalidasi oleh DPL pada modul Telaah Laporan Akhir.
             </p>
             <div className="text-[11px] font-mono text-slate-700 dark:text-slate-300 pt-1 space-y-0.5 font-medium">
-              <p>Nilai Akhir = (25% × Kehadiran) + (25% × Personal)</p>
+              <p>Nilai Akhir = (25% × Kehadiran) + (25% × Individu)</p>
               <p className="pl-4">+ (25% × Kelompok) + (25% × Laporan)</p>
             </div>
           </div>
