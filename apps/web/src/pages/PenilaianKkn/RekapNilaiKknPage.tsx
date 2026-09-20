@@ -71,33 +71,10 @@ export const RekapNilaiKknPage: React.FC = () => {
 
       if (res && res.students && res.students.length > 0) {
         const formatted = res.students.map((s) => {
+          // Normalisasi field alias untuk backward compatibility
+          // Single source of truth: nilaiAkhir, predikat, status, personalScore, kelompokScore
+          // semuanya berasal dari API (dplService.getRekapNilaiAkhir)
           const keh = s.kehadiran ?? s.tingkatKehadiran ?? 0;
-
-          // Sesuai Arahan Pak Agus Mulyana:
-          // Nilai Sub Mahasiswa / Personal HANYA sah dan lengkap jika DPL DAN MPL KEDUANYA LENGKAP
-          const hasDpl = s.dplScore !== null && s.dplScore !== undefined && Number(s.dplScore) > 0;
-          const hasMpl = s.mplScore !== null && s.mplScore !== undefined && Number(s.mplScore) > 0;
-          const hasPersonalComplete = Boolean(
-            s.hasPersonalComplete !== undefined ? s.hasPersonalComplete : hasDpl && hasMpl
-          );
-
-          // Formula Nilai Personal Mahasiswa: (0.5 * DPL) + (0.5 * MPL)
-          const personal = hasPersonalComplete
-            ? (s.personalScore ??
-              (hasDpl && hasMpl
-                ? Number((Number(s.dplScore) * 0.5 + Number(s.mplScore) * 0.5).toFixed(1))
-                : null))
-            : null;
-
-          // Nilai sementara jika salah satu belum mengisi: proporsional 50%
-          const personalScoreSementara = !hasPersonalComplete
-            ? (s.personalScoreSementara ??
-              (hasDpl
-                ? Number((Number(s.dplScore) * 0.5).toFixed(1))
-                : hasMpl
-                  ? Number((Number(s.mplScore) * 0.5).toFixed(1))
-                  : null))
-            : null;
 
           const kelompok =
             s.kelompokScore !== undefined && s.kelompokScore !== null
@@ -111,55 +88,20 @@ export const RekapNilaiKknPage: React.FC = () => {
           const laporan =
             s.laporanScore !== undefined && s.laporanScore !== null ? s.laporanScore : null;
 
-          let nAkhir: number | null = null;
-          let pred: string | null = null;
-          let stat = s.status || "Menunggu Penilaian";
-
-          // HANYA jika DPL & MPL LENGKAP (personal !== null) serta kelompok dan laporan terisi lengkap
-          if (hasPersonalComplete && personal !== null && kelompok !== null && laporan !== null) {
-            const rawScore = 0.25 * keh + 0.25 * personal + 0.25 * kelompok + 0.25 * laporan;
-            nAkhir = Math.round(rawScore * 10) / 10;
-            pred =
-              nAkhir >= 80
-                ? "A"
-                : nAkhir >= 70
-                  ? "B"
-                  : nAkhir >= 60
-                    ? "C"
-                    : nAkhir >= 50
-                      ? "D"
-                      : "E";
-            stat = "Lengkap";
-          } else {
-            nAkhir = null;
-            pred = null;
-            if (!hasPersonalComplete) {
-              stat =
-                hasDpl && !hasMpl
-                  ? "Menunggu MPL"
-                  : !hasDpl && hasMpl
-                    ? "Menunggu DPL"
-                    : "Menunggu Nilai Personal";
-            } else if (kelompok === null) {
-              stat = "Menunggu Nilai Kelompok";
-            } else if (laporan === null) {
-              stat = "Menunggu Laporan Akhir";
-            }
-          }
-
           return {
             ...s,
             kehadiran: keh,
-            personalScore: personal,
-            personalScoreSementara,
-            hasPersonalComplete,
+            // Gunakan nilai dari API — API adalah single source of truth
+            nilaiAkhir: s.nilaiAkhir ?? null,
+            predikat: s.predikat ?? null,
+            status: s.status ?? "Belum Lengkap",
+            personalScore: s.personalScore ?? null,
+            personalScoreSementara: s.personalScoreSementara ?? null,
+            hasPersonalComplete: s.hasPersonalComplete ?? false,
             kelompokScore: kelompok,
             dplScore: s.dplScore ?? null,
             mplScore: s.mplScore ?? null,
             laporanScore: laporan,
-            nilaiAkhir: nAkhir,
-            predikat: pred,
-            status: stat,
           };
         });
         const cleanFormatted = formatted.filter(
@@ -249,11 +191,7 @@ export const RekapNilaiKknPage: React.FC = () => {
   const kpiStats = useMemo(() => {
     const total = filteredStudents.length;
     const lengkap = filteredStudents.filter((s) => s.status === "Lengkap").length;
-    const menungguMpl = filteredStudents.filter((s) => s.status === "Menunggu MPL").length;
-    const menungguDpl = filteredStudents.filter((s) => s.status === "Menunggu DPL").length;
-    const menungguLaporan = filteredStudents.filter(
-      (s) => s.status === "Menunggu Laporan Akhir"
-    ).length;
+    const belumLengkap = filteredStudents.filter((s) => s.status === "Belum Lengkap").length;
 
     const completedScores = filteredStudents
       .map((s) => s.nilaiAkhir)
@@ -264,7 +202,7 @@ export const RekapNilaiKknPage: React.FC = () => {
         ? (completedScores.reduce((acc, c) => acc + c, 0) / completedScores.length).toFixed(1)
         : "—";
 
-    return { total, lengkap, menungguMpl, menungguDpl, menungguLaporan, avgScore };
+    return { total, lengkap, belumLengkap, avgScore };
   }, [filteredStudents]);
 
   // Smart Pagination bounds & windowing
@@ -307,8 +245,8 @@ export const RekapNilaiKknPage: React.FC = () => {
         "Kelompok",
         "Kehadiran Sistem (0-100)",
         "Kontribusi Kehadiran (25%)",
-        "Nilai Personal (0-100)",
-        "Kontribusi Personal (25%)",
+        "Nilai Individu (0-100)",
+        "Kontribusi Individu (25%)",
         "Nilai Kelompok (0-100)",
         "Kontribusi Kelompok (25%)",
         "Laporan Akhir (0-100)",
@@ -320,6 +258,8 @@ export const RekapNilaiKknPage: React.FC = () => {
 
       const dataRows = filteredStudents.map((s, idx) => {
         const keh = s.kehadiran ?? 0;
+        const hasDpl = s.dplScore !== null && s.dplScore !== undefined && Number(s.dplScore) > 0;
+        const hasMpl = s.mplScore !== null && s.mplScore !== undefined && Number(s.mplScore) > 0;
         const personal =
           s.hasPersonalComplete && s.personalScore !== null && s.personalScore !== undefined
             ? s.personalScore
@@ -340,7 +280,7 @@ export const RekapNilaiKknPage: React.FC = () => {
           personal !== null
             ? personal.toFixed(1)
             : personalSementara !== null
-              ? `${personalSementara.toFixed(1)} (${s.status === "Menunggu DPL" ? "Menunggu DPL" : "Menunggu MPL"})`
+              ? `${personalSementara.toFixed(1)} (${hasDpl && !hasMpl ? "Menunggu MPL" : !hasDpl && hasMpl ? "Menunggu DPL" : "Menunggu DPL & MPL"})`
               : "—",
           personal !== null ? (personal * 0.25).toFixed(1) : "—",
           kelompok !== null ? kelompok.toFixed(1) : "—",
@@ -448,10 +388,10 @@ export const RekapNilaiKknPage: React.FC = () => {
           </div>
           <div className="min-w-0">
             <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 truncate">
-              Menunggu Penilaian
+              Belum Lengkap
             </p>
             <p className="text-lg sm:text-xl font-black text-[#b45309] dark:text-amber-400">
-              {kpiStats.menungguMpl + kpiStats.menungguDpl}
+              {kpiStats.belumLengkap}
             </p>
           </div>
         </div>
@@ -525,10 +465,7 @@ export const RekapNilaiKknPage: React.FC = () => {
               >
                 <option value="ALL">Semua Status</option>
                 <option value="Lengkap">Lengkap</option>
-                <option value="Menunggu Laporan Akhir">Menunggu Laporan Akhir</option>
-                <option value="Menunggu MPL">Menunggu MPL</option>
-                <option value="Menunggu DPL">Menunggu DPL</option>
-                <option value="Menunggu DPL & MPL">Menunggu DPL & MPL</option>
+                <option value="Belum Lengkap">Belum Lengkap</option>
               </select>
             </div>
 
@@ -607,11 +544,11 @@ export const RekapNilaiKknPage: React.FC = () => {
             </span>
           </div>
 
-          {/* Badge 2: Nilai Personal 25% */}
+          {/* Badge 2: Nilai Individu 25% */}
           <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-900/60 px-3 py-1.5 rounded-xl text-slate-700 dark:text-slate-300 font-medium shadow-2xs">
             <span className="w-2 h-2 rounded-full bg-[#009966] shrink-0" />
             <span>
-              <strong className="text-[#009966] font-bold">Asesmen DPL:</strong> Nilai Personal 25%
+              <strong className="text-[#009966] font-bold">Asesmen DPL &amp; MPL:</strong> Nilai Individu 25%
             </span>
           </div>
 
@@ -637,7 +574,7 @@ export const RekapNilaiKknPage: React.FC = () => {
         <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-xl text-slate-600 dark:text-slate-400 font-medium shadow-2xs">
           <Info size={13} className="text-slate-500 shrink-0" />
           <span>
-            Formula Resmi: Kehadiran 25% • Personal 25% • Kelompok 25% • Laporan Akhir 25%
+            Formula Resmi: Kehadiran 25% • Individu 25% • Kelompok 25% • Laporan Akhir 25%
           </span>
         </div>
       </div>
@@ -693,9 +630,9 @@ export const RekapNilaiKknPage: React.FC = () => {
                     </span>
                   </th>
 
-                  {/* Nilai Personal Pillar (25%) */}
+                  {/* Nilai Individu Pillar (25%) */}
                   <th className="py-2.5 px-3 bg-[#f0fdf4] dark:bg-emerald-950/50 text-[#065f46] dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800 font-bold text-[11.5px] min-w-[120px]">
-                    <div>Nilai Personal</div>
+                    <div>Nilai Individu</div>
                     <span className="text-[10px] font-normal text-emerald-600 dark:text-emerald-400">
                       Bobot 25%
                     </span>
@@ -737,11 +674,10 @@ export const RekapNilaiKknPage: React.FC = () => {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
                 {paginatedStudents.map((st, idx) => {
                   const isComplete = st.status === "Lengkap";
-                  const isWaitingMpl = st.status === "Menunggu MPL";
-                  const isWaitingDpl = st.status === "Menunggu DPL";
-                  const isWaitingLaporan = st.status === "Menunggu Laporan Akhir";
-                  const isWaitingPersonal = st.status?.includes("Personal");
-                  const isWaitingKelompok = st.status?.includes("Kelompok");
+                  const hasDpl =
+                    st.dplScore !== null && st.dplScore !== undefined && Number(st.dplScore) > 0;
+                  const hasMpl =
+                    st.mplScore !== null && st.mplScore !== undefined && Number(st.mplScore) > 0;
 
                   const keh = st.kehadiran ?? 0;
                   const personal =
@@ -789,7 +725,7 @@ export const RekapNilaiKknPage: React.FC = () => {
                         {keh.toFixed(1)}
                       </td>
 
-                      {/* Nilai Personal (25%) */}
+                      {/* Nilai Individu (25%) */}
                       <td className="py-3 px-3 border-r border-slate-100 dark:border-slate-800 text-center text-slate-700 dark:text-slate-300">
                         {personal !== null ? (
                           <span className="font-semibold">{personal.toFixed(1)}</span>
@@ -799,7 +735,7 @@ export const RekapNilaiKknPage: React.FC = () => {
                               {personalSementara.toFixed(1)}
                             </span>
                             <span className="text-[9.5px] text-amber-600 dark:text-amber-400 font-medium">
-                              ({st.status === "Menunggu DPL" ? "Menunggu DPL" : "Menunggu MPL"})
+                              ({hasDpl && !hasMpl ? "Menunggu MPL" : !hasDpl && hasMpl ? "Menunggu DPL" : "Menunggu DPL & MPL"})
                             </span>
                           </div>
                         ) : (
@@ -843,25 +779,9 @@ export const RekapNilaiKknPage: React.FC = () => {
                           <span className="inline-block px-3 py-1 rounded-md text-[11px] font-semibold bg-[#e6f9f0] dark:bg-emerald-950/50 text-[#00704a] dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 whitespace-nowrap">
                             Lengkap
                           </span>
-                        ) : isWaitingMpl ? (
-                          <span className="inline-block px-2.5 py-1 rounded-md text-[11px] font-semibold bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 whitespace-nowrap">
-                            Menunggu MPL
-                          </span>
-                        ) : isWaitingDpl ? (
-                          <span className="inline-block px-2.5 py-1 rounded-md text-[11px] font-semibold bg-sky-50 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800/60 whitespace-nowrap">
-                            Menunggu DPL
-                          </span>
-                        ) : isWaitingLaporan ? (
-                          <span className="inline-block px-2.5 py-1 rounded-md text-[11px] font-semibold bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 whitespace-nowrap">
-                            Menunggu Laporan
-                          </span>
-                        ) : isWaitingKelompok ? (
-                          <span className="inline-block px-2.5 py-1 rounded-md text-[11px] font-semibold bg-sky-50 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800/60 whitespace-nowrap">
-                            Menunggu Kelompok
-                          </span>
                         ) : (
-                          <span className="inline-block px-2.5 py-1 rounded-md text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 whitespace-nowrap">
-                            {st.status || "Menunggu Penilaian"}
+                          <span className="inline-block px-2.5 py-1 rounded-md text-[11px] font-semibold bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 whitespace-nowrap">
+                            Belum Lengkap
                           </span>
                         )}
                       </td>
@@ -955,16 +875,16 @@ export const RekapNilaiKknPage: React.FC = () => {
             </p>
           </div>
 
-          {/* Card 2: Nilai Personal (25%) */}
+          {/* Card 2: Nilai Individu (25%) */}
           <div className="space-y-2.5 lg:px-4 lg:border-r border-slate-200/80 dark:border-slate-800">
             <div className="flex items-center gap-2 text-[#00704a] dark:text-emerald-400 font-bold text-xs">
               <span className="w-5 h-5 rounded-full border-1.5 border-[#00704a] dark:border-emerald-400 flex items-center justify-center text-[11px]">
                 2
               </span>
-              <span>Nilai Personal (25%)</span>
+              <span>Nilai Individu (25%)</span>
             </div>
             <p className="text-[12px] text-slate-600 dark:text-slate-400 leading-relaxed">
-              Evaluasi individual mahasiswa oleh DPL (skala 0–100) mencakup keaktifan, dedikasi,
+              Evaluasi individual mahasiswa gabungan DPL dan MPL (skala 0–100) mencakup keaktifan, dedikasi,
               etika kerja, dan kontribusi nyata pada wilayah KKN.
             </p>
           </div>
@@ -996,7 +916,7 @@ export const RekapNilaiKknPage: React.FC = () => {
               0–100) yang divalidasi oleh DPL pada modul Telaah Laporan Akhir.
             </p>
             <div className="text-[11px] font-mono text-slate-700 dark:text-slate-300 pt-1 space-y-0.5 font-medium">
-              <p>Nilai Akhir = (25% × Kehadiran) + (25% × Personal)</p>
+              <p>Nilai Akhir = (25% × Kehadiran) + (25% × Individu)</p>
               <p className="pl-4">+ (25% × Kelompok) + (25% × Laporan)</p>
             </div>
           </div>

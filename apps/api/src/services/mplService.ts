@@ -516,6 +516,7 @@ export const mplService = {
   // -------------------------------------------------------------------------
   async assessMahasiswaByMpl(opts: {
     mplUserId: string;
+    evaluatorRole?: string;
     studentId: string;
     skorMitraKehadiran: number;
     skorMitraWargaBinaan: number;
@@ -527,7 +528,7 @@ export const mplService = {
     skorMitraInisiatif: number;
     catatanMitra?: string;
   }) {
-    const { mplUserId, studentId, catatanMitra } = opts;
+    const { mplUserId, evaluatorRole, studentId, catatanMitra } = opts;
 
     // ── Ambil data mahasiswa beserta relasi kelompok ──────────────────────
     const studentUser = await prisma.user.findUnique({
@@ -579,12 +580,15 @@ export const mplService = {
     }
 
     // ── Guard 2: DPL harus sudah menilai terlebih dahulu ─────────────────
+    // T-02 fix: SUPER_USER dan DEVELOPER dapat bypass gate ini untuk situasi darurat
+    const roleUpper = String(evaluatorRole || "").toUpperCase();
+    const isSuperUser = roleUpper === "SUPER_USER" || roleUpper === "DEVELOPER";
     const existing = studentUser.penilaianKkn;
     const dplSudahMenilai = Boolean(
       existing && (Number(existing.subtotalDpl) > 0 || existing.status !== "DRAFT")
     );
 
-    if (!dplSudahMenilai) {
+    if (!isSuperUser && !dplSudahMenilai) {
       throw new Error("PENILAIAN_DPL_BELUM_SELESAI");
     }
 
