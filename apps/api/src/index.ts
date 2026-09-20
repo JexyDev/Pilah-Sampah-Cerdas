@@ -69,6 +69,7 @@ import timelineKknRouter from "./routes/timelineKknRoutes.js";
 import logbookRouter from "./routes/logbookRoutes.js";
 import beritaRouter from "./routes/beritaRoutes.js";
 import presensiMandiriRouter from "./routes/presensiMandiriRoutes.js";
+import gisEksekutifRouter from "./routes/gisEksekutifRoutes.js";
 import { systemController } from "./controllers/systemController.js";
 import { kknAttendanceController } from "./controllers/kknAttendanceController.js";
 import { kknController } from "./controllers/kknController.js";
@@ -283,6 +284,7 @@ app.use("/api/v1/timeline-kkn", timelineKknRouter);
 app.use("/api/v1/logbook", logbookRouter);
 app.use("/api/v1/berita", beritaRouter);
 app.use("/api/v1/presensi", presensiMandiriRouter);
+app.use(["/api/v1/gis-eksekutif", "/api/v1/gis"], gisEksekutifRouter);
 
 // Master API Spec Alias Mounts (Compatibility for mobile client without /v1 prefix)
 app.use("/api/v1/user", userRouter);
