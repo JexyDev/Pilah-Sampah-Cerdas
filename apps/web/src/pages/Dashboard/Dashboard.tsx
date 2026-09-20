@@ -24,7 +24,7 @@ import ResiduDashboard from "../ResiduDashboard/ResiduDashboard";
 import DplDashboardPage from "../dpl/DplDashboardPage";
 import TaskforceDashboardPage from "../taskforce/TaskforceDashboardPage";
 import DashboardEksekutifKkn from "./DashboardEksekutifKkn";
-import GisMapTab from "../SuperUser/GisMapTab";
+import GisEksekutifPage from "../GisEksekutif/GisEksekutifPage";
 import TempatSampahAktifPage from "../SuperUser/TempatSampahAktifPage";
 import { getPortalLoadingText } from "../../utils/portalLoading";
 import LeaderboardWidget from "../../components/LeaderboardWidget";
@@ -1982,7 +1982,7 @@ const Dashboard: React.FC = () => {
             }`}
           >
             <MapPin size={15} className={activeSubTab === "gis" ? "text-[#009966] dark:text-emerald-400" : "text-slate-400"} />
-            <span>GIS Eksekutif</span>
+            <span>GIS Eksekutif Tata Kelola Sampah</span>
           </button>
         )}
       </div>
@@ -2016,12 +2016,12 @@ const Dashboard: React.FC = () => {
     );
   }
 
-  // Khusus tab GIS Eksekutif (Peta GIS Fasilitas Pengelolaan Sampah)
+  // Khusus tab GIS Eksekutif Tata Kelola Sampah
   if (canAccessGisSub && activeSubTab === "gis") {
     return (
       <div className="w-full space-y-6 pb-12 font-sans text-slate-800 dark:text-slate-100 relative">
         {renderTabSwitcher()}
-        <GisMapTab />
+        <GisEksekutifPage />
       </div>
     );
   }

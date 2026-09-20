@@ -337,6 +337,12 @@ const checkRouteActive = (
 
       // Khusus menu Dasbor di sidebar: tetap aktif baik di tab kkn maupun tata-kelola-sampah jika targetnya dasbor
       if (targetPath === "/dasbor" && pathname === "/dasbor") {
+        if (targetTab === "gis") {
+          return currentParams.get("tab") === "gis";
+        }
+        if (targetTab === "kkn") {
+          return currentParams.get("tab") !== "gis";
+        }
         return true;
       }
 
@@ -1302,6 +1308,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
         {
           to: "/analisis-sistem/tata-kelola-sampah",
           icon: BarChart3,
+
           label: "Analisis Sistem",
           resource: "monitoring_sampah",
           allowed: [
