@@ -408,13 +408,15 @@ export const penilaianKknService = {
       calculateAspectScore(assessment.skorMitraDampak, 15) +
       calculateAspectScore(assessment.skorMitraInisiatif, 10);
 
-    // DPL academic 5 aspects (Total Bobot 100%: Perencanaan 20%, Kontribusi 20%, Logbook dinamis [default 20%], Analisis 20%, Output 20%)
+    // DPL academic 6 aspects (Total Bobot 100%: Perencanaan 20%, Kontribusi 10%, Logbook 20%, Analisis 20%, Output 20%, LaporanAkhir 10%)
+    // Selaras dengan ASPEK_DPL_CONFIG di frontend PenilaianKknMahasiswaPage.tsx
     const subDpl =
       calculateAspectScore(assessment.skorDplPerencanaan, 20) +
-      calculateAspectScore(assessment.skorDplKontribusi, 20) +
+      calculateAspectScore(assessment.skorDplKontribusi, 10) +
       calculateAspectScore(assessment.skorDplLogbook, bobotLogbook) +
       calculateAspectScore(assessment.skorDplAnalisis, 20) +
-      calculateAspectScore(assessment.skorDplOutput, 20);
+      calculateAspectScore(assessment.skorDplOutput, 20) +
+      calculateAspectScore(assessment.skorDplLaporanAkhir, 10);
 
     const hasDplAny =
       assessment.skorDplPerencanaan > 0 ||
@@ -740,14 +742,17 @@ export const penilaianKknService = {
       ).toFixed(2)
     );
 
-    // 3. Kalkulasi Subtotal DPL (5 aspek akademik DPL berbobot total 100%: Perencanaan 20%, Kontribusi 20%, Logbook 20%, Analisis 20%, Output 20%)
+    // 3. Kalkulasi Subtotal DPL (6 aspek akademik DPL berbobot total 100%):
+    //    Perencanaan 20%, Kontribusi 10%, Logbook 20%, Analisis 20%, Output 20%, LaporanAkhir 10%
+    //    Selaras dengan ASPEK_DPL_CONFIG di frontend PenilaianKknMahasiswaPage.tsx
     const subtotalDpl = Number(
       (
         calculateAspectScore(skorDplPerencanaan, 20) +
-        calculateAspectScore(skorDplKontribusi, 20) +
+        calculateAspectScore(skorDplKontribusi, 10) +
         calculateAspectScore(skorDplLogbook, 20) +
         calculateAspectScore(skorDplAnalisis, 20) +
-        calculateAspectScore(skorDplOutput, 20)
+        calculateAspectScore(skorDplOutput, 20) +
+        calculateAspectScore(skorDplLaporanAkhir, 10)
       ).toFixed(2)
     );
 
@@ -1061,11 +1066,13 @@ export const penilaianKknService = {
           ? Number(p.subtotalDpl)
           : Number(
               (
+                // 6 aspek DPL selaras dengan formula utama (K-01 fix)
                 calculateAspectScore(skorDplPerencanaan, 20) +
-                calculateAspectScore(skorDplKontribusi, 20) +
+                calculateAspectScore(skorDplKontribusi, 10) +
                 calculateAspectScore(skorDplLogbook, 20) +
                 calculateAspectScore(skorDplAnalisis, 20) +
-                calculateAspectScore(skorDplOutput, 20)
+                calculateAspectScore(skorDplOutput, 20) +
+                calculateAspectScore(skorDplLaporanAkhir, 10)
               ).toFixed(2)
             ) || (directScore > 0 ? directScore : 0);
 
@@ -1694,10 +1701,11 @@ export const penilaianKknService = {
 
         const aspectScores = [
           { score: currentSkorDplPerencanaan, weight: 20 },
-          { score: currentSkorDplKontribusi, weight: 20 },
+          { score: currentSkorDplKontribusi, weight: 10 },
           { score: currentSkorDplLogbook, weight: 20 },
           { score: currentSkorDplAnalisis, weight: 20 },
           { score: currentSkorDplOutput, weight: 20 },
+          { score: currentSkorDplLaporanAkhir, weight: 10 },
         ];
 
         const { rawSubtotal, normalizedSubtotal, totalAssessedWeight } =
@@ -1712,7 +1720,8 @@ export const penilaianKknService = {
           currentSkorDplKontribusi > 0 &&
           currentSkorDplLogbook > 0 &&
           currentSkorDplAnalisis > 0 &&
-          currentSkorDplOutput > 0;
+          currentSkorDplOutput > 0 &&
+          Number(currentSkorDplLaporanAkhir) > 0;
 
         const isComplete = hasDplAll && subtotalMitra > 0;
 
@@ -1913,10 +1922,11 @@ export const penilaianKknService = {
 
     const aspectScores = [
       { score: currentSkorDplPerencanaan, weight: 20 },
-      { score: currentSkorDplKontribusi, weight: 20 },
+      { score: currentSkorDplKontribusi, weight: 10 },
       { score: currentSkorDplLogbook, weight: 20 },
       { score: currentSkorDplAnalisis, weight: 20 },
       { score: currentSkorDplOutput, weight: 20 },
+      { score: currentSkorDplLaporanAkhir, weight: 10 },
     ];
 
     const { rawSubtotal, normalizedSubtotal, totalAssessedWeight } =
@@ -1929,7 +1939,8 @@ export const penilaianKknService = {
       currentSkorDplKontribusi > 0 &&
       currentSkorDplLogbook > 0 &&
       currentSkorDplAnalisis > 0 &&
-      currentSkorDplOutput > 0;
+      currentSkorDplOutput > 0 &&
+      currentSkorDplLaporanAkhir > 0;
 
     const isComplete = hasDplAll && subtotalMitra > 0;
 
@@ -2218,10 +2229,11 @@ export const penilaianKknService = {
 
       const dplAspects = [
         { score: currentSkorDplPerencanaan, weight: 20 },
-        { score: currentSkorDplKontribusi, weight: 20 },
+        { score: currentSkorDplKontribusi, weight: 10 },
         { score: resolvedSkorLogbook, weight: 20 },
         { score: currentSkorDplAnalisis, weight: 20 },
         { score: currentSkorDplOutput, weight: 20 },
+        { score: resolvedSkorLaporan, weight: 10 },
       ];
 
       const mitraAspects = [
@@ -2249,7 +2261,8 @@ export const penilaianKknService = {
         currentSkorDplKontribusi > 0 &&
         resolvedSkorLogbook > 0 &&
         currentSkorDplAnalisis > 0 &&
-        currentSkorDplOutput > 0;
+        currentSkorDplOutput > 0 &&
+        resolvedSkorLaporan > 0;
 
       const hasMitraAll =
         resolvedSkorMitraKehadiran > 0 &&

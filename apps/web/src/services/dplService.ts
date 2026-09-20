@@ -570,7 +570,9 @@ export const dplService = {
     try {
       const res = await api.get("/dpl/penilaian/rekap", { params: { groupId } });
       if (res.data.success && res.data.data) return res.data.data;
-    } catch {}
+    } catch (err: unknown) {
+      console.error("[dplService.getRekapNilaiAkhir] Gagal memuat rekap nilai dari API:", err);
+    }
     return {
       groups: [],
       students: [],
@@ -582,7 +584,9 @@ export const dplService = {
     try {
       const res = await api.get("/dpl/config-targets");
       if (res.data.success && res.data.data) return res.data.data;
-    } catch {}
+    } catch (err: unknown) {
+      console.error("[dplService.getConfigTargets] Gagal memuat config targets dari API:", err);
+    }
     return {
       targetTotalKegiatan: 2000,
       targetTotalJam: 200,

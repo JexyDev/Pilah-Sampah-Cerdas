@@ -15,6 +15,9 @@ import {
 
 export { calculateValidIndividualPoints, calculateValidIndividualPointsForUsers };
 
+/** S-05: Threshold nilai minimum untuk status LULUS (ubah di sini jika kebijakan berubah) */
+export const NILAI_LULUS_MINIMUM = 65;
+
 export function parseProkerDeskripsi(rawDeskripsi?: string | null): {
   judul: string;
   deskripsi: string;
@@ -4196,10 +4199,9 @@ export const dplService = {
         const mplScore = mplIndivRaw !== null && mplIndivRaw > 0 ? mplIndivRaw : null;
 
         // Laporan Akhir Score (dari penelaahan laporan kelompok KKN)
+        // S-04 fix: hanya exact match kategori LAPORAN_AKHIR (hapus fuzzy deskripsi match)
         const laporanAkhirProker = grp.programKerja.find(
-          (p: any) =>
-            p.kategori?.toUpperCase() === "LAPORAN_AKHIR" ||
-            p.deskripsi?.toLowerCase().includes("laporan akhir")
+          (p: any) => p.kategori?.toUpperCase() === "LAPORAN_AKHIR"
         );
         const laporanAkhirScoreRaw =
           pRecord?.skorDplLaporanAkhir && Number(pRecord.skorDplLaporanAkhir) > 0
@@ -4235,32 +4237,19 @@ export const dplService = {
         const effectivePoin = poinDampinganScore > 0 ? poinDampinganScore : 0;
 
         // Nilai Akhir & Huruf Mutu
+        // Sesuai Arahan Pak Agus Mulyana:
+        // Status HANYA "Lengkap" atau "Belum Lengkap"
+        // Belum Lengkap = if nilai personal or nilai kelompok or nilai laporan akhir = "" / null
+        const isPersonalComplete = hasPersonalComplete && personalScore !== null;
+        const isKelompokComplete = kelompokScore !== null && kelompokScore !== undefined;
+        const isLaporanComplete = laporanScore !== null && laporanScore !== undefined;
+
         let finalScore: number | null = null;
         let gradeLetter: string | null = null;
-        let statusStr = "Menunggu Penilaian";
+        let statusStr = "Belum Lengkap";
 
-        if (!hasPersonalComplete && kelompokScore === null && laporanScore === null) {
-          statusStr = "Menunggu Penilaian";
-        } else if (!hasPersonalComplete) {
-          statusStr =
-            hasDpl && !hasMpl
-              ? "Menunggu MPL"
-              : !hasDpl && hasMpl
-                ? "Menunggu DPL"
-                : "Menunggu Nilai Personal";
-        } else if (kelompokScore === null) {
-          statusStr = "Menunggu Nilai Kelompok";
-        } else if (laporanScore === null) {
-          statusStr = "Menunggu Laporan Akhir";
-        }
-
-        // Kalkulasi 100% jika SEMUA 4 pilar terisi LENGKAP (personalScore hanya sah jika DPL & MPL lengkap)
-        if (
-          hasPersonalComplete &&
-          personalScore !== null &&
-          kelompokScore !== null &&
-          laporanScore !== null
-        ) {
+        // Kalkulasi 100% jika SEMUA pilar terisi LENGKAP (personalScore sah jika DPL & MPL lengkap)
+        if (isPersonalComplete && isKelompokComplete && isLaporanComplete) {
           const calcScore =
             0.25 * effectiveKehadiran +
             0.25 * personalScore +
@@ -4276,6 +4265,7 @@ export const dplService = {
         } else {
           finalScore = null;
           gradeLetter = null;
+          statusStr = "Belum Lengkap";
         }
 
         if (finalScore !== null) {
@@ -4307,10 +4297,11 @@ export const dplService = {
           individuMpl: mplScore,
           individuGabungan: hasPersonalComplete ? personalScore : personalScoreSementara,
           prokerDpl: kelompokScore,
-          prokerMpl: mplScore,
+          // T-03 fix: prokerMpl & kelompokMpl bukan mplScore individu, tapi kelompokScore
+          prokerMpl: kelompokScore,
           prokerGabungan: kelompokScore,
           kelompokDpl: kelompokScore,
-          kelompokMpl: mplScore,
+          kelompokMpl: kelompokScore,
           kelompokGabungan: kelompokScore,
           nilaiAkhir: finalScore,
           predikat: gradeLetter,
@@ -4321,14 +4312,18 @@ export const dplService = {
           skorProkerKelompok: kelompokScore !== null ? kelompokScore : 0,
           tingkatKehadiran: effectiveKehadiran,
           hurufMutu: gradeLetter || "-",
-          statusLulus: finalScore && finalScore >= 65 ? "LULUS" : "BELUM LULUS",
+          // S-05: threshold kelulusan sebagai konstanta bernama
+          statusLulus: finalScore && finalScore >= NILAI_LULUS_MINIMUM ? "LULUS" : "BELUM LULUS",
         });
       }
     }
 
     const totalStudents = allStudentsList.length;
+    // T-04 fix: rerataNilai hanya dihitung dari mahasiswa yang sudah memiliki nilaiAkhir
+    // Mahasiswa "Belum Lengkap" (nilaiAkhir=null) tidak ikut sebagai pembagi untuk menghindari bias ke bawah
+    const studentsWithScore = allStudentsList.filter((s) => s.nilaiAkhir !== null).length;
     const rerataNilai =
-      totalStudents > 0 ? Math.round((totalScoreSum / totalStudents) * 100) / 100 : 0;
+      studentsWithScore > 0 ? Math.round((totalScoreSum / studentsWithScore) * 100) / 100 : 0;
     const rerataKehadiran =
       totalStudents > 0 ? Math.round((totalAttRateSum / totalStudents) * 100) / 100 : 0;
 
