@@ -168,11 +168,35 @@ export async function calculateValidIndividualPointsForUsers(
 export class PointService {
   /**
    * Fetch point history and calculate total points for a user
+   * Role-aware: Menyelaraskan filter kategori antara riwayat transaksi dan kalkulasi saldo
    */
   async getLedger(userId: string) {
+    let isStudent = false;
+    let roleName: string | undefined;
+
+    if (typeof prisma?.user?.findUnique === "function") {
+      try {
+        const user = await prisma.user.findUnique({
+          where: { id: userId },
+          select: {
+            role: { select: { name: true } },
+            studentProfile: { select: { id: true } },
+          },
+        });
+        roleName = user?.role?.name;
+        isStudent = user ? (user.role?.name === "MAHASISWA_KKN" || !!user.studentProfile) : true;
+      } catch {
+        isStudent = true;
+      }
+    } else {
+      isStudent = true;
+    }
+
+    const effectiveRoleName = roleName || (isStudent ? "MAHASISWA_KKN" : "WARGA");
+
     const [history, totalPoints] = await Promise.all([
-      pointRepository.getHistoryByUserId(userId),
-      calculateValidIndividualPoints(userId),
+      pointRepository.getHistoryByUserId(userId, isStudent),
+      calculateValidIndividualPoints(userId, effectiveRoleName),
     ]);
 
     return {
