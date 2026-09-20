@@ -331,11 +331,11 @@ export default function GisEksekutifPage() {
   }
 
   return (
-    <div className="gis-eksekutif-root">
+    <div className="gis-eksekutif-root" data-theme="light">
       <div className="app">
         {/* Refreshing indicator */}
         {refreshing && (
-          <div style={{ position: "fixed", top: 12, right: 12, zIndex: 9999, background: "#1e40af", color: "#fff", borderRadius: 8, padding: "6px 14px", fontSize: 13, fontWeight: 600 }}>
+          <div style={{ position: "fixed", top: 12, right: 12, zIndex: 9999, background: "#055c46", color: "#fff", borderRadius: 8, padding: "6px 14px", fontSize: 13, fontWeight: 600, boxShadow: "0 4px 12px rgba(0,0,0,0.15)" }}>
             Memperbarui data…
           </div>
         )}
@@ -347,7 +347,10 @@ export default function GisEksekutifPage() {
             <p className="sub">Kecamatan Coblong • Fasilitas, pemilahan, volume, dan pemantauan CH₄</p>
           </div>
           <div className="head-r">
-            <span className="tag" style={{ background: "#1e40af", color: "#fff" }}>LIVE • DATA REAL-TIME</span>
+            <span className="tag-live">
+              <span className="tag-live-dot" />
+              LIVE • DATA REAL-TIME
+            </span>
             <div className="filters">
               <Pill label="Kelurahan">
                 <select value={kel} onChange={(e) => changeKel(e.target.value)} aria-label="Kelurahan">

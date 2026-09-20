@@ -2019,7 +2019,7 @@ const Dashboard: React.FC = () => {
   // Khusus tab GIS Eksekutif Tata Kelola Sampah
   if (canAccessGisSub && activeSubTab === "gis") {
     return (
-      <div className="w-full space-y-6 pb-12 font-sans text-slate-800 dark:text-slate-100 relative">
+      <div className="w-full space-y-6 pb-12 font-sans text-slate-800 relative">
         {renderTabSwitcher()}
         <GisEksekutifPage />
       </div>
