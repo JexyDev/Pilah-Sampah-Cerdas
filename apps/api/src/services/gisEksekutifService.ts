@@ -3,6 +3,10 @@
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ *
+ * gisEksekutifService — 100% fetch dari PostgreSQL via Prisma.
+ * Tidak ada data hardcode / static fallback (kecuali geometri poligon kelurahan
+ * yang memang bukan data tabel, melainkan koordinat batas administratif).
  */
 
 import { prisma } from "../lib/prisma.js";
@@ -30,139 +34,98 @@ export interface GisFacilityDto {
   statusApproval?: string;
 }
 
-export interface GisSensorDto {
-  id: string;
-  label: string;
-  lokasi: string;
-  kel: string;
-  rw: string;
-  lat: number;
-  lng: number;
-  ch4Ppm: number | null;
-  status: "Online" | "Offline";
-  updatedAt: string;
-  keterangan: string;
-}
-
-// Koordinat batas kelurahan resmi Kecamatan Coblong
+// Koordinat batas kelurahan resmi Kecamatan Coblong (data GIS statis — bukan dari tabel DB)
 const KELURAHAN_GEOMETRIES: Record<string, [number, number][]> = {
   "Dago": [
-    [-6.868, 107.608],
-    [-6.864, 107.618],
-    [-6.867, 107.628],
-    [-6.874, 107.625],
-    [-6.882, 107.619],
-    [-6.878, 107.611],
+    [-6.868, 107.608], [-6.864, 107.618], [-6.867, 107.628],
+    [-6.874, 107.625], [-6.882, 107.619], [-6.878, 107.611],
   ],
   "Sekeloa": [
-    [-6.878, 107.619],
-    [-6.882, 107.626],
-    [-6.891, 107.625],
-    [-6.895, 107.617],
-    [-6.888, 107.612],
+    [-6.878, 107.619], [-6.882, 107.626], [-6.891, 107.625],
+    [-6.895, 107.617], [-6.888, 107.612],
   ],
   "Lebak Gede": [
-    [-6.888, 107.611],
-    [-6.894, 107.616],
-    [-6.903, 107.614],
-    [-6.901, 107.605],
-    [-6.892, 107.604],
+    [-6.888, 107.611], [-6.894, 107.616], [-6.903, 107.614],
+    [-6.901, 107.605], [-6.892, 107.604],
   ],
   "Cipaganti": [
-    [-6.881, 107.595],
-    [-6.879, 107.605],
-    [-6.889, 107.604],
-    [-6.895, 107.599],
-    [-6.891, 107.592],
+    [-6.881, 107.595], [-6.879, 107.605], [-6.889, 107.604],
+    [-6.895, 107.599], [-6.891, 107.592],
   ],
   "Lebak Siliwangi": [
-    [-6.888, 107.604],
-    [-6.889, 107.611],
-    [-6.896, 107.609],
-    [-6.900, 107.602],
-    [-6.894, 107.598],
+    [-6.888, 107.604], [-6.889, 107.611], [-6.896, 107.609],
+    [-6.900, 107.602], [-6.894, 107.598],
   ],
   "Sadang Serang": [
-    [-6.882, 107.626],
-    [-6.885, 107.635],
-    [-6.898, 107.633],
-    [-6.902, 107.624],
-    [-6.892, 107.624],
+    [-6.882, 107.626], [-6.885, 107.635], [-6.898, 107.633],
+    [-6.902, 107.624], [-6.892, 107.624],
   ],
 };
 
-// Pemetaan tipe fasilitas internal Prisma ke UI
-export const TIPE_FASILITAS_MAP: Record<string, string> = {
-  bank_sampah: "bank_sampah",
-  rumah_maggot: "rumah_maggot",
-  buruan_sae: "buruan_sae",
-  loseda: "loseda",
-  bata_terawang: "bata_terawang",
-  tps: "tps",
-  poc: "poc",
-};
+// Label warna kepatuhan
+function kepColor(pct: number): string {
+  if (pct >= 80) return "#15803d";
+  if (pct >= 70) return "#22c55e";
+  if (pct >= 60) return "#eab308";
+  if (pct >= 50) return "#f97316";
+  return "#ef4444";
+}
 
 export const gisEksekutifService = {
-  /**
-   * Mengambil data agregat eksekutif GIS Tata Kelola Sampah 100% dinamis dari Database
-   */
   async getOverview(filters: GisEksekutifFilters = {}) {
-    const rawKel = filters.kelurahan && filters.kelurahan !== "Semua" ? filters.kelurahan.trim() : undefined;
-    const rawRw = filters.rw && filters.rw !== "Semua" ? filters.rw.trim() : undefined;
+    const rawKel =
+      filters.kelurahan && filters.kelurahan !== "Semua"
+        ? filters.kelurahan.trim()
+        : undefined;
+    const rawRw =
+      filters.rw && filters.rw !== "Semua" ? filters.rw.trim() : undefined;
     const periode = filters.periode || "September 2026";
 
-    // 1. Ambil seluruh data kelurahan Coblong dari PostgreSQL
+    // ── 1. Daftar kelurahan dari DB (hanya Coblong) ──────────────────────────
+    // Filter hanya kelurahan yang ada Rw-nya (artinya kelurahan aktif di sistem)
     const kelurahanList = await prisma.kelurahan.findMany({
+      where: {
+        rws: { some: {} }, // hanya yang punya RW
+      },
       orderBy: { name: "asc" },
-      select: { id: true, name: true, code: true },
+      select: { id: true, name: true, code: true, rws: { select: { id: true, name: true } } },
     });
 
-    const kelurahanNames = kelurahanList.map((k) => k.name);
-
-    // 2. Ambil data RW sesuai kelurahan jika ada filter
-    const rwWhere: any = {};
+    // ── 2. Daftar RW dari DB ─────────────────────────────────────────────────
+    const rwWhere: Record<string, unknown> = {};
     if (rawKel) {
-      rwWhere.kelurahan = {
-        name: { equals: rawKel, mode: "insensitive" },
-      };
+      rwWhere["kelurahan"] = { name: { equals: rawKel, mode: "insensitive" } };
     }
-
     const rwList = await prisma.rw.findMany({
       where: rwWhere,
       orderBy: { name: "asc" },
       select: { id: true, name: true, kelurahan: { select: { name: true } } },
     });
 
-    // 3. Query Fasilitas Sampah Aktual (jenis bukan posko_kkn)
-    const facilityWhere: any = {
-      jenis: { not: "posko_kkn" },
+    // ── 3. Fasilitas aktual dari DB ──────────────────────────────────────────
+    const facilityWhere: Record<string, unknown> = {
+      jenis: { not: "posko_kkn" as const },
     };
-
     if (rawKel) {
-      facilityWhere.rw = {
-        kelurahan: {
-          name: { equals: rawKel, mode: "insensitive" },
-        },
+      facilityWhere["rw"] = {
+        kelurahan: { name: { equals: rawKel, mode: "insensitive" } },
       };
     }
-
     if (rawRw) {
       const rwNum = parseInt(rawRw.replace(/\D/g, ""), 10);
       if (!isNaN(rwNum)) {
-        facilityWhere.rw = {
-          ...(facilityWhere.rw || {}),
+        facilityWhere["rw"] = {
+          ...(facilityWhere["rw"] as object || {}),
           name: { contains: String(rwNum), mode: "insensitive" },
         };
       }
     }
-
     if (filters.jenisFasilitas && filters.jenisFasilitas !== "Semua") {
-      facilityWhere.jenis = filters.jenisFasilitas as any;
+      facilityWhere["jenis"] = filters.jenisFasilitas;
     }
-
     if (filters.search) {
-      const s = filters.search.trim().toLowerCase();
-      facilityWhere.OR = [
+      const s = filters.search.trim();
+      facilityWhere["OR"] = [
         { nama: { contains: s, mode: "insensitive" } },
         { pic: { contains: s, mode: "insensitive" } },
         { alamat: { contains: s, mode: "insensitive" } },
@@ -171,335 +134,249 @@ export const gisEksekutifService = {
 
     const facilitiesRaw = await prisma.facility.findMany({
       where: facilityWhere,
-      include: {
-        rw: {
-          include: {
-            kelurahan: true,
-          },
-        },
-      },
+      include: { rw: { include: { kelurahan: true } } },
       orderBy: [{ jenis: "asc" }, { nama: "asc" }],
     });
 
-    // Format fasilitas menjadi DTO bersih
     const facilities: GisFacilityDto[] = facilitiesRaw.map((f) => ({
       id: f.id,
       nama: f.nama,
-      tipe: TIPE_FASILITAS_MAP[f.jenis] || f.jenis,
-      lat: Number(f.latitude) || -6.885,
-      lng: Number(f.longitude) || 107.615,
-      kel: f.rw?.kelurahan?.name || "Coblong",
-      rw: f.rw?.name || "-",
-      pic: f.pic,
-      kontak: f.kontak,
+      tipe: f.jenis,
+      lat: Number(f.latitude),
+      lng: Number(f.longitude),
+      kel: f.rw?.kelurahan?.name ?? "-",
+      rw: f.rw?.name ?? "-",
+      pic: f.pic ?? null,
+      kontak: f.kontak ?? null,
       kapasitas: f.kapasitas ? Number(f.kapasitas) : null,
-      alamat: f.alamat,
+      alamat: f.alamat ?? null,
       statusApproval: f.statusApproval,
     }));
 
-    // Hitung distribusi fasilitas per jenis
-    const fasilitasCountByTipe: Record<string, number> = {};
-    facilities.forEach((f) => {
-      fasilitasCountByTipe[f.tipe] = (fasilitasCountByTipe[f.tipe] || 0) + 1;
-    });
-
-    // 4. Hitung metrik kepatuhan & volume dari data survei aktual
-    const surveiPemilahan = await prisma.surveiPemilahanSampah.findMany({
+    // ── 4. Survei Pemilahan & Volume dari DB ─────────────────────────────────
+    const surveiKelurahan = await prisma.surveiKelurahan.findMany({
       include: {
-        kelurahan: {
-          select: { namaKelurahan: true },
-        },
+        pemilahanSampah: true,
+        volumeSampah: true,
       },
     });
 
-    const surveiVolume = await prisma.surveiVolumeSampah.findMany({
-      include: {
-        kelurahan: {
-          select: { namaKelurahan: true },
-        },
-      },
+    // Fasilitas per kelurahan (nama)
+    const facCountByKel: Record<string, number> = {};
+    facilitiesRaw.forEach((f) => {
+      const kelNama = f.rw?.kelurahan?.name ?? "-";
+      facCountByKel[kelNama] = (facCountByKel[kelNama] ?? 0) + 1;
     });
 
-    // Baseline kepatuhan resmi per kelurahan (persentase)
-    const BASELINE_KEPATUHAN: Record<string, { kepatuhan: number; volume: number }> = {
-      "Dago": { kepatuhan: 85, volume: 32 },
-      "Sekeloa": { kepatuhan: 78, volume: 28 },
-      "Lebak Gede": { kepatuhan: 72, volume: 22 },
-      "Cipaganti": { kepatuhan: 68, volume: 16 },
-      "Lebak Siliwangi": { kepatuhan: 58, volume: 10 },
-      "Sadang Serang": { kepatuhan: 42, volume: 12 },
-    };
+    // Hitung kepatuhan & volume riil dari survei
+    const kelurahanNames = kelurahanList.map((k) => k.name);
 
-    // Gabungkan data kepatuhan per kelurahan
     const kepatuhanPerKelurahan = kelurahanNames.map((kelName) => {
-      const baseline = BASELINE_KEPATUHAN[kelName] || { kepatuhan: 65, volume: 15 };
-      const surveyP = surveiPemilahan.find(
-        (s) => s.kelurahan?.namaKelurahan?.toLowerCase() === kelName.toLowerCase()
-      );
-      const surveyV = surveiVolume.find(
-        (s) => s.kelurahan?.namaKelurahan?.toLowerCase() === kelName.toLowerCase()
+      const survei = surveiKelurahan.find(
+        (s) => s.namaKelurahan?.toLowerCase() === kelName.toLowerCase()
       );
 
-      // Jika ada angka persentase survei, gunakan sebagai bobot aktual
-      let persentase = baseline.kepatuhan;
-      if (surveyP?.persentasePemilahan) {
-        const num = parseFloat(String(surveyP.persentasePemilahan));
-        if (!isNaN(num) && num > 0) {
-          // Jika nilai dalam pecahan 0.xx, konversi ke persen 0-100
-          persentase = num <= 1.0 ? Math.round(num * 100) : Math.round(num);
-        }
+      // Persentase pemilahan — dari DB jika ada, kalau tidak ada = null → UI tampilkan "Belum ada data"
+      let kepatuhan: number | null = null;
+      if (survei?.pemilahanSampah?.persentasePemilahan != null) {
+        const raw = Number(survei.pemilahanSampah.persentasePemilahan);
+        // Field disimpan sebagai desimal 0.0000–1.0000 (Decimal 5,4)
+        kepatuhan = raw <= 1 ? Math.round(raw * 100) : Math.round(raw);
       }
 
-      // Hitung fasilitas riil di kelurahan tersebut
-      const totalFacKel = facilitiesRaw.filter(
-        (f) => f.rw?.kelurahan?.name?.toLowerCase() === kelName.toLowerCase()
-      ).length;
+      // Volume — dari DB jika ada (totalVolumeKgPerHari × 30 ÷ 1000 → m³/bln estimasi)
+      let volume: number | null = null;
+      if (survei?.volumeSampah?.totalVolumeKgPerHari != null) {
+        const kgPerHari = Number(survei.volumeSampah.totalVolumeKgPerHari);
+        volume = Math.round((kgPerHari * 30) / 1000 * 10) / 10;
+      }
+
+      // Komposisi organik/anorganik/residu per kelurahan (dari survei)
+      let organikKgHari = 0, anorganikKgHari = 0, residuKgHari = 0;
+      if (survei?.volumeSampah) {
+        organikKgHari = Number(survei.volumeSampah.organikKgPerHari ?? 0);
+        anorganikKgHari = Number(survei.volumeSampah.anorganikKgPerHari ?? 0);
+        residuKgHari = Number(survei.volumeSampah.residuKgPerHari ?? 0);
+      }
 
       return {
         nama: kelName,
-        kepatuhan: persentase,
-        volume: baseline.volume,
-        totalFasilitas: totalFacKel,
-        color:
-          persentase >= 80
-            ? "#15803d"
-            : persentase >= 70
-            ? "#22c55e"
-            : persentase >= 60
-            ? "#eab308"
-            : persentase >= 50
-            ? "#f97316"
-            : "#ef4444",
+        kepatuhan,
+        volume,
+        organikKgHari,
+        anorganikKgHari,
+        residuKgHari,
+        totalFasilitas: facCountByKel[kelName] ?? 0,
+        color: kepatuhan !== null ? kepColor(kepatuhan) : "#9ca3af",
+        hasData: survei != null,
       };
     });
 
-    // 5. Hitung KPI Ringkasan
+    // ── 5. KPI Ringkasan ─────────────────────────────────────────────────────
     const totalFasilitas = facilities.length;
 
-    // Rata-rata kepatuhan tertimbang
-    let totalKepatuhan = 0;
+    // Kepatuhan rata-rata (hanya dari kelurahan yang ada surveinya)
+    const kelWithKep = kepatuhanPerKelurahan.filter((k) => k.kepatuhan !== null);
+    let avgKepatuhan: number | null = null;
     if (rawKel) {
       const match = kepatuhanPerKelurahan.find(
         (k) => k.nama.toLowerCase() === rawKel.toLowerCase()
       );
-      totalKepatuhan = match ? match.kepatuhan : 68;
-    } else {
-      const sum = kepatuhanPerKelurahan.reduce((acc, curr) => acc + curr.kepatuhan, 0);
-      totalKepatuhan = kepatuhanPerKelurahan.length > 0 ? Math.round(sum / kepatuhanPerKelurahan.length) : 68;
+      avgKepatuhan = match?.kepatuhan ?? null;
+    } else if (kelWithKep.length > 0) {
+      avgKepatuhan = Math.round(
+        kelWithKep.reduce((s, k) => s + (k.kepatuhan as number), 0) / kelWithKep.length
+      );
     }
 
-    // Volume total (m3/bulan)
-    let volumeTotal = 120;
+    // Volume total m³/bln (jumlah semua kelurahan yang ada data)
+    const kelWithVol = kepatuhanPerKelurahan.filter((k) => k.volume !== null);
+    let volumeTotal: number | null = null;
     if (rawKel) {
       const match = kepatuhanPerKelurahan.find(
         (k) => k.nama.toLowerCase() === rawKel.toLowerCase()
       );
-      volumeTotal = match ? match.volume : 20;
+      volumeTotal = match?.volume ?? null;
+    } else if (kelWithVol.length > 0) {
+      volumeTotal = Math.round(
+        kelWithVol.reduce((s, k) => s + (k.volume as number), 0) * 10
+      ) / 10;
     }
 
-    // Komposisi volume
-    const komposisi = {
-      organik: { persen: 55, volumeM3: Math.round(volumeTotal * 0.55 * 10) / 10 },
-      anorganik: { persen: 30, volumeM3: Math.round(volumeTotal * 0.3 * 10) / 10 },
-      residu: { persen: 15, volumeM3: Math.round(volumeTotal * 0.15 * 10) / 10 },
-      totalM3: volumeTotal,
+    // ── 6. Komposisi Volume Agregat ──────────────────────────────────────────
+    // Ambil dari survei kelurahan yang terpilih (atau semua)
+    const surveiScope = rawKel
+      ? surveiKelurahan.filter(
+          (s) => s.namaKelurahan?.toLowerCase() === rawKel.toLowerCase()
+        )
+      : surveiKelurahan;
+
+    const totalOrganikKg = surveiScope.reduce(
+      (s, sv) => s + Number(sv.volumeSampah?.organikKgPerHari ?? 0), 0
+    );
+    const totalAnorganikKg = surveiScope.reduce(
+      (s, sv) => s + Number(sv.volumeSampah?.anorganikKgPerHari ?? 0), 0
+    );
+    const totalResiduKg = surveiScope.reduce(
+      (s, sv) => s + Number(sv.volumeSampah?.residuKgPerHari ?? 0), 0
+    );
+    const totalKg = totalOrganikKg + totalAnorganikKg + totalResiduKg;
+
+    const komposisiVolume = {
+      organik: {
+        persen: totalKg > 0 ? Math.round((totalOrganikKg / totalKg) * 100) : 0,
+        volumeM3: Math.round(((totalOrganikKg * 30) / 1000) * 10) / 10,
+      },
+      anorganik: {
+        persen: totalKg > 0 ? Math.round((totalAnorganikKg / totalKg) * 100) : 0,
+        volumeM3: Math.round(((totalAnorganikKg * 30) / 1000) * 10) / 10,
+      },
+      residu: {
+        persen: totalKg > 0 ? Math.round((totalResiduKg / totalKg) * 100) : 0,
+        volumeM3: Math.round(((totalResiduKg * 30) / 1000) * 10) / 10,
+      },
+      totalM3: volumeTotal ?? 0,
     };
 
-    // Tren volume bulanan (Jan - Sep 2026)
-    const trenBulanan = [
-      { bulan: "Jan", volume: Math.round(volumeTotal * 0.6) },
-      { bulan: "Feb", volume: Math.round(volumeTotal * 0.72) },
-      { bulan: "Mar", volume: Math.round(volumeTotal * 0.79) },
-      { bulan: "Apr", volume: Math.round(volumeTotal * 0.87) },
-      { bulan: "Mei", volume: Math.round(volumeTotal * 0.98) },
-      { bulan: "Jun", volume: Math.round(volumeTotal * 1.07) },
-      { bulan: "Jul", volume: Math.round(volumeTotal * 1.02) },
-      { bulan: "Agu", volume: Math.round(volumeTotal * 0.93) },
-      { bulan: "Sep", volume: volumeTotal },
-    ];
+    // ── 7. Tren Bulanan — dari FacilityProductionLog jika ada ───────────────
+    // Query aggregate log produksi per bulan (Sep 2025 – Sep 2026)
+    const prodLogs = await prisma.facilityProductionLog.findMany({
+      where: {
+        createdAt: { gte: new Date("2025-10-01"), lte: new Date("2026-09-30") },
+        ...(rawKel
+          ? {
+              facility: {
+                rw: { kelurahan: { name: { equals: rawKel, mode: "insensitive" } } },
+              },
+            }
+          : {}),
+      },
+      select: { createdAt: true, outputKg: true },
+    });
 
-    // 6. Data Sensor CH4 Dinamis
-    const ch4SensorsRaw: GisSensorDto[] = [
-      {
-        id: "CH4-01",
-        label: "CH₄-01",
-        lokasi: "Posko RW 07",
-        kel: "Cipaganti",
-        rw: "RW 07",
-        lat: -6.8878,
-        lng: 107.5962,
-        ch4Ppm: 2,
-        status: "Online",
-        updatedAt: "18 Sep 2026, 16.15",
-        keterangan: "Jenis: konsentrasi gas, bukan laju emisi.",
-      },
-      {
-        id: "CH4-02",
-        label: "CH₄-02",
-        lokasi: "Buruan SAE RW 03",
-        kel: "Lebak Siliwangi",
-        rw: "RW 03",
-        lat: -6.8932,
-        lng: 107.6048,
-        ch4Ppm: 12,
-        status: "Online",
-        updatedAt: "18 Sep 2026, 16.20",
-        keterangan: "Jenis: konsentrasi gas, bukan laju emisi.",
-      },
-      {
-        id: "CH4-03",
-        label: "CH₄-03",
-        lokasi: "Loseda RW 05",
-        kel: "Dago",
-        rw: "RW 05",
-        lat: -6.8715,
-        lng: 107.6212,
-        ch4Ppm: 8,
-        status: "Online",
-        updatedAt: "18 Sep 2026, 16.30",
-        keterangan: "Jenis: konsentrasi gas, bukan laju emisi.",
-      },
-      {
-        id: "CH4-04",
-        label: "CH₄-04",
-        lokasi: "TPS Sementara RW 08",
-        kel: "Sekeloa",
-        rw: "RW 08",
-        lat: -6.8862,
-        lng: 107.6185,
-        ch4Ppm: 4,
-        status: "Online",
-        updatedAt: "18 Sep 2026, 16.25",
-        keterangan: "Jenis: konsentrasi gas, bukan laju emisi.",
-      },
-      {
-        id: "CH4-05",
-        label: "CH₄-05",
-        lokasi: "Maggot BSF RW 04",
-        kel: "Lebak Gede",
-        rw: "RW 04",
-        lat: -6.8974,
-        lng: 107.6105,
-        ch4Ppm: 6,
-        status: "Online",
-        updatedAt: "18 Sep 2026, 16.10",
-        keterangan: "Jenis: konsentrasi gas, bukan laju emisi.",
-      },
-      {
-        id: "CH4-06",
-        label: "CH₄-06",
-        lokasi: "TPS Sadang Serang RW 02",
-        kel: "Sadang Serang",
-        rw: "RW 02",
-        lat: -6.8915,
-        lng: 107.6302,
-        ch4Ppm: 18,
-        status: "Online",
-        updatedAt: "18 Sep 2026, 16.28",
-        keterangan: "Jenis: konsentrasi gas, bukan laju emisi.",
-      },
-      {
-        id: "CH4-07",
-        label: "CH₄-07",
-        lokasi: "Posko RW 02",
-        kel: "Lebak Siliwangi",
-        rw: "RW 02",
-        lat: -6.8905,
-        lng: 107.6012,
-        ch4Ppm: null,
-        status: "Offline",
-        updatedAt: "18 Sep 2026, 12.00",
-        keterangan: "Sensor offline / dalam pemeliharaan.",
-      },
-      {
-        id: "CH4-08",
-        label: "CH₄-08",
-        lokasi: "Posko RW 11",
-        kel: "Sekeloa",
-        rw: "RW 11",
-        lat: -6.8901,
-        lng: 107.6238,
-        ch4Ppm: null,
-        status: "Offline",
-        updatedAt: "18 Sep 2026, 11.45",
-        keterangan: "Sensor offline / dalam pemeliharaan.",
-      },
-    ];
+    const BULAN_LABELS = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep"];
+    const trenMap: Record<number, number> = {};
+    prodLogs.forEach((log) => {
+      const month = new Date(log.createdAt).getMonth(); // 0=Jan
+      trenMap[month] = (trenMap[month] ?? 0) + Number(log.outputKg ?? 0);
+    });
 
-    // Filter sensor sesuai filter kelurahan/RW jika dipilih
-    let ch4Sensors = ch4SensorsRaw;
-    if (rawKel) {
-      ch4Sensors = ch4Sensors.filter((s) => s.kel.toLowerCase() === rawKel.toLowerCase());
-    }
-    if (rawRw) {
-      ch4Sensors = ch4Sensors.filter((s) => s.rw.toLowerCase().includes(rawRw.toLowerCase()));
-    }
+    const trenBulanan = BULAN_LABELS.map((bulan, idx) => ({
+      bulan,
+      // Konversi kg → m³ (estimasi 1 m³ ≈ 400 kg sampah campur)
+      volume: trenMap[idx] != null ? Math.round((trenMap[idx] / 400) * 10) / 10 : null,
+    }));
 
-    const sensorOnlineCount = ch4Sensors.filter((s) => s.status === "Online").length;
-    const sensorTotalCount = ch4Sensors.length;
+    // Jika TIDAK ada log sama sekali, fallback ke null semua (UI tahu ada/tidak data)
+    const hasTrendData = prodLogs.length > 0;
 
-    // Rentang ppm sensor online
-    const validPpms = ch4Sensors.map((s) => s.ch4Ppm).filter((v): v is number => v !== null);
-    const minPpm = validPpms.length > 0 ? Math.min(...validPpms) : 0;
-    const maxPpm = validPpms.length > 0 ? Math.max(...validPpms) : 0;
+    // ── 8. Sensor CH₄ — tabel BELUM ADA, kembalikan kosong + flag ──────────
+    // Ketika tabel sensor dibuat di DB, replace bagian ini dengan Prisma query.
+    const sensors: {
+      id: string; label: string; lokasi: string; kel: string; rw: string;
+      lat: number; lng: number; ch4Ppm: number | null;
+      status: "Online" | "Offline"; updatedAt: string; keterangan: string;
+    }[] = [];
+    const hasSensorData = false;
 
-    // 7. Poligon Kelurahan dengan atribut GeoJSON dinamis
+    // ── 9. Poligon Kelurahan ─────────────────────────────────────────────────
     const poligonKelurahan = kelurahanNames.map((kelName) => {
-      const kep = kepatuhanPerKelurahan.find((k) => k.nama === kelName);
+      const kd = kepatuhanPerKelurahan.find((k) => k.nama === kelName);
       return {
         nama: kelName,
-        coordinates: KELURAHAN_GEOMETRIES[kelName] || [],
-        kepatuhan: kep?.kepatuhan || 65,
-        volume: kep?.volume || 15,
-        totalFasilitas: kep?.totalFasilitas || 0,
-        color: kep?.color || "#22c55e",
+        coordinates: (KELURAHAN_GEOMETRIES[kelName] as [number, number][]) ?? [],
+        kepatuhan: kd?.kepatuhan ?? null,
+        volume: kd?.volume ?? null,
+        totalFasilitas: kd?.totalFasilitas ?? 0,
+        color: kd?.color ?? "#9ca3af",
+        hasData: kd?.hasData ?? false,
       };
     });
+
+    // ── 10. Filter Options dari DB ──────────────────────────────────────────
+    const jenisFasilitasDB: string[] = [
+      ...new Set(facilitiesRaw.map((f) => f.jenis as string)),
+    ].sort();
 
     return {
       success: true,
       meta: {
         wilayah: "Kecamatan Coblong",
         periode,
-        kelurahanFilter: rawKel || "Semua",
-        rwFilter: rawRw || "Semua",
+        kelurahanFilter: rawKel ?? "Semua",
+        rwFilter: rawRw ?? "Semua",
         timestamp: new Date().toISOString(),
+        hasSensorData,
+        hasTrendData,
       },
       filterOptions: {
         kelurahans: ["Semua", ...kelurahanNames],
         rws: ["Semua", ...Array.from(new Set(rwList.map((r) => r.name))).sort()],
-        periodes: ["September 2026", "Agustus 2026", "Juli 2026", "Juni 2026"],
-        tipeFasilitas: [
-          "Semua",
-          "bank_sampah",
-          "rumah_maggot",
-          "buruan_sae",
-          "loseda",
-          "bata_terawang",
-          "tps",
-          "poc",
-        ],
+        periodes: ["September 2026"],
+        tipeFasilitas: ["Semua", ...jenisFasilitasDB],
       },
       kpi: {
         fasilitasTerdata: totalFasilitas,
         fasilitasSubtext: rawKel ? `Kelurahan ${rawKel}` : "dari seluruh kelurahan",
         volumeTotal,
-        volumeGrowthPercent: 12,
+        volumeGrowthPercent: null, // tidak ada data periode sebelumnya untuk dibandingkan
         volumeUnit: "m³/bulan",
-        kepatuhanPemilahan: totalKepatuhan,
-        kepatuhanDeltaPoin: 8,
-        sensorCh4OnlineCount: sensorOnlineCount,
-        sensorCh4TotalCount: sensorTotalCount,
-        sensorCh4Text: `${sensorOnlineCount}/${sensorTotalCount}`,
+        kepatuhanPemilahan: avgKepatuhan,
+        kepatuhanDeltaPoin: null,
+        sensorCh4OnlineCount: 0,
+        sensorCh4TotalCount: 0,
+        sensorCh4Text: "Belum ada data",
       },
-      komposisiVolume: komposisi,
+      komposisiVolume,
       trenBulanan,
-      kepatuhanPerKelurahan,
+      kepatuhanPerKelurahan: kepatuhanPerKelurahan.map(
+        ({ organikKgHari, anorganikKgHari, residuKgHari, ...rest }) => rest
+      ),
       pemantauanCh4: {
-        rentangText: `${minPpm} – ${maxPpm} ppm`,
-        titikPengukuranCount: validPpms.length,
-        titikPengukuranText: `${validPpms.length} titik pengukuran`,
-        sensors: ch4Sensors,
+        rentangText: "Belum ada data sensor",
+        titikPengukuranCount: 0,
+        titikPengukuranText: "Tabel sensor belum tersedia",
+        sensors,
       },
       titikFasilitas: facilities,
       poligonKelurahan,
