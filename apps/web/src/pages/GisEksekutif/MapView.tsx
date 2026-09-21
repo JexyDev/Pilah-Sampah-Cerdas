@@ -38,6 +38,86 @@ export const LAYERS: LayerItem[] = [
   { id: "total", label: "Volume total" },
 ];
 
+const hexToRgb = (h: string): [number, number, number] => {
+  const clean = h.replace("#", "");
+  return [
+    parseInt(clean.slice(0, 2), 16),
+    parseInt(clean.slice(2, 4), 16),
+    parseInt(clean.slice(4, 6), 16),
+  ];
+};
+
+const mixColor = (a: string, b: string, t: number): string => {
+  const [r1, g1, b1] = hexToRgb(a);
+  const [r2, g2, b2] = hexToRgb(b);
+  const clampedT = Math.max(0, Math.min(1, t));
+  const r = Math.round(r1 + (r2 - r1) * clampedT);
+  const g = Math.round(g1 + (g2 - g1) * clampedT);
+  const bl = Math.round(b1 + (b2 - b1) * clampedT);
+  return `rgb(${r}, ${g}, ${bl})`;
+};
+
+const RAMP: Record<"org" | "ano" | "res" | "total", [string, string]> = {
+  org: ["#dcfce7", "#15803d"],   // Emerald/Green (muda -> tua)
+  ano: ["#dbeafe", "#1d4ed8"],   // Blue (muda -> tua)
+  res: ["#fee2e2", "#b91c1c"],   // Red/Rose (muda -> tua)
+  total: ["#f3e8ff", "#7e22ce"], // Purple (muda -> tua)
+};
+
+function getComplianceColor(pct: number | null | undefined): string {
+  if (pct == null) return "#9ca3af";
+  if (pct >= 80) return "#15803d"; // Hijau tua (Sangat Baik)
+  if (pct >= 70) return "#22c55e"; // Hijau (Baik)
+  if (pct >= 60) return "#eab308"; // Kuning (Cukup)
+  if (pct >= 50) return "#f97316"; // Oranye (Kurang)
+  return "#ef4444";               // Merah (Kritis)
+}
+
+function getThematicStyle(
+  row: ComplianceRow | undefined,
+  layer: "kep" | "org" | "ano" | "res" | "total" | "ch4",
+  maxVal: Record<string, number>
+) {
+  if (!row) {
+    return {
+      fillColor: "#9ca3af",
+      badgeText: "Belum ada data",
+      tooltipText: "Data belum tersedia",
+    };
+  }
+
+  const { s } = row;
+  if (layer === "kep") {
+    const kep = s.kep ?? 0;
+    const color = getComplianceColor(kep);
+    return {
+      fillColor: color,
+      badgeText: `${kep}% Kepatuhan`,
+      tooltipText: `${kep}% Kepatuhan Pemilahan`,
+    };
+  }
+
+  const valKey = layer === "total" ? "total" : layer;
+  const val = Number(s[valKey as keyof typeof s] ?? 0);
+  const max = maxVal[valKey] || 1;
+  const ratio = Math.max(0, Math.min(1, val / max));
+
+  let labelName = "Volume Total";
+  if (layer === "org") labelName = "Sampah Organik";
+  else if (layer === "ano") labelName = "Sampah Anorganik";
+  else if (layer === "res") labelName = "Sampah Residu";
+
+  const rampKey = (layer in RAMP ? layer : "total") as "org" | "ano" | "res" | "total";
+  const ramp = RAMP[rampKey];
+  const fillColor = mixColor(ramp[0], ramp[1], 0.2 + 0.8 * ratio);
+
+  return {
+    fillColor,
+    badgeText: `${fmtN(val)} m³`,
+    tooltipText: `${fmtN(val)} m³ • ${labelName}`,
+  };
+}
+
 export const TILES = {
   sat: {
     url: "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
@@ -330,7 +410,18 @@ export default function MapView({
     tileLayerRef.current = tileLayer;
   }, [sat]);
 
-  /* ---------- 3. Poligon Batas 6 Kelurahan Resmi (Sesuai Menu Fasilitas) ---------- */
+  /* ---------- 3. Poligon Batas 6 Kelurahan Resmi (Thematic Choropleth Sesuai Layer) ---------- */
+  const maxVal = useMemo(() => {
+    const m: Record<string, number> = { org: 0.1, ano: 0.1, res: 0.1, total: 0.1 };
+    kelRows.forEach((r) => {
+      (["org", "ano", "res", "total"] as const).forEach((k) => {
+        const v = Number(r?.s?.[k] ?? 0);
+        if (v > m[k]) m[k] = v;
+      });
+    });
+    return m;
+  }, [kelRows]);
+
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -346,30 +437,37 @@ export default function MapView({
       const isSelected = selectedKel === kelId;
       const isDim = selectedKel && !isSelected;
 
-      // Cari kepatuhan/volume untuk tooltip
+      // Cari kepatuhan/volume untuk tooltip dan pewarnaan tematik
       const row = kelRows.find(
         (r) => r.k.nama.toLowerCase() === kg.name.toLowerCase()
       );
-      const kepVal = row?.s.kep != null ? `${row.s.kep}% Kepatuhan` : "Data KKN";
+      const thematic = getThematicStyle(row, layer, maxVal);
 
       const baseStyle: L.PathOptions = {
-        color: kg.color,
-        weight: isSelected ? 3.5 : 2.5,
-        fillColor: kg.color,
-        fillOpacity: isSelected ? 0.28 : isDim ? 0.04 : 0.12,
+        color: isSelected ? "#0f172a" : thematic.fillColor,
+        weight: isSelected ? 3.5 : 2,
+        fillColor: thematic.fillColor,
+        fillOpacity: isSelected ? 0.45 : isDim ? 0.08 : 0.28,
         dashArray: isSelected ? undefined : "4 4",
       };
 
       const poly = L.polygon(kg.bounds as [number, number][], baseStyle);
-      poly.bindTooltip(`<b>Kel. ${kg.name}</b> • ${kepVal}`, {
-        sticky: true,
-        className: "gis-tip",
-      });
+      poly.bindTooltip(
+        `<div style="font-family:inherit;font-size:12px;line-height:1.4;">
+          <strong style="color:#0f172a;">Kel. ${kg.name}</strong><br/>
+          <span style="color:#055c46;font-weight:700;">${thematic.tooltipText}</span>
+        </div>`,
+        {
+          sticky: true,
+          className: "gis-tip",
+        }
+      );
 
       poly.on("mouseover", () => {
         poly.setStyle({
           weight: 3.5,
-          fillOpacity: Math.min(0.4, (baseStyle.fillOpacity as number) + 0.12),
+          color: "#0f172a",
+          fillOpacity: Math.min(0.55, (baseStyle.fillOpacity as number) + 0.18),
         });
       });
 
@@ -384,7 +482,7 @@ export default function MapView({
 
       gp.addLayer(poly);
 
-      // Label centroid nama kelurahan
+      // Label centroid nama kelurahan + nilai metrik dinamis
       gl.addLayer(
         L.marker(kg.centroid, {
           pane: "klabel",
@@ -394,15 +492,18 @@ export default function MapView({
             className: "kl-wrap",
             iconSize: [0, 0],
             html: `
-              <div style="background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px); color: white; border: 1.5px solid ${kg.color}; padding: 3px 8px; border-radius: 9999px; font-size: 11px; font-weight: 800; white-space: nowrap; transform: translate(-50%, -50%); box-shadow: 0 2px 8px rgba(0,0,0,0.35);">
-                ${kg.name}
+              <div style="background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(4px); color: white; border: 1.5px solid ${thematic.fillColor}; padding: 3px 8px; border-radius: 9999px; font-size: 11px; font-weight: 800; white-space: nowrap; transform: translate(-50%, -50%); box-shadow: 0 2px 8px rgba(0,0,0,0.35); display: flex; align-items: center; gap: 5px;">
+                <span>${kg.name}</span>
+                <span style="color: #6ee7b7; font-weight: 700; font-size: 10px; border-left: 1px solid rgba(255,255,255,0.25); padding-left: 5px;">
+                  ${thematic.badgeText}
+                </span>
               </div>
             `,
           }),
         })
       );
     });
-  }, [kelRows, selectedKel, onSelectKel]);
+  }, [kelRows, selectedKel, onSelectKel, layer, maxVal]);
 
   /* ---------- 4. Penanda Fasilitas Aktual (createFacilityIcon) ---------- */
   useEffect(() => {
@@ -607,7 +708,7 @@ export default function MapView({
       <div className="map-foot">
         <div className="mc-bl">
           <p className="ovl" style={{ margin: 0 }}>
-            Wilayah Kecamatan Coblong • Batas 6 Kelurahan (LapakGIS / OSM) • {facilities.length} Fasilitas
+            Wilayah Kecamatan Coblong • Lapisan: <strong style={{ color: "#055c46" }}>{LAYERS.find((l) => l.id === layer)?.label || "Kepatuhan"}</strong> • {facilities.length} Fasilitas
           </p>
         </div>
         <div className="mc-br">
