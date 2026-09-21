@@ -49,7 +49,13 @@ function createOfflineFallbackData(kelurahanFilter = "Semua"): GisOverviewApiRes
     filterOptions: {
       kelurahans: ["Semua", ...kelNames],
       rws: ["Semua"],
-      periodes: ["September 2026"],
+      periodes: [
+        "Agustus 2026",
+        "September 2026",
+        "Oktober 2026",
+        "November 2026",
+        "Desember 2026",
+      ],
       tipeFasilitas: ["Semua"],
     },
     kpi: {
@@ -70,7 +76,7 @@ function createOfflineFallbackData(kelurahanFilter = "Semua"): GisOverviewApiRes
       residu: { persen: 0, volumeM3: 0 },
       totalM3: 0,
     },
-    trenBulanan: ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep"].map((b) => ({
+    trenBulanan: ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"].map((b) => ({
       bulan: b,
       volume: 0,
     })),
@@ -272,7 +278,13 @@ export default function GisEksekutifPage() {
   }>({
     kelurahans: ["Semua"],
     rws: ["Semua"],
-    periodes: ["September 2026"],
+    periodes: [
+      "Agustus 2026",
+      "September 2026",
+      "Oktober 2026",
+      "November 2026",
+      "Desember 2026",
+    ],
     tipeFasilitas: ["Semua"],
   });
 
@@ -422,6 +434,24 @@ export default function GisEksekutifPage() {
   const scopeText = kel === "Semua"
     ? "dari seluruh kelurahan"
     : `di Kel. ${kel}${rw !== "Semua" ? ` RW ${rw}` : ""}`;
+
+  // Indeks bulan dari periode aktif untuk disorot pada grafik tren bulanan
+  const selectedMonthIndex = useMemo(() => {
+    const p = (periode || "").toLowerCase();
+    if (p.includes("jan")) return 0;
+    if (p.includes("feb")) return 1;
+    if (p.includes("mar")) return 2;
+    if (p.includes("apr")) return 3;
+    if (p.includes("mei")) return 4;
+    if (p.includes("jun")) return 5;
+    if (p.includes("jul")) return 6;
+    if (p.includes("agu")) return 7;
+    if (p.includes("sep")) return 8;
+    if (p.includes("okt")) return 9;
+    if (p.includes("nov")) return 10;
+    if (p.includes("des")) return 11;
+    return 8; // default September 2026
+  }, [periode]);
 
   // ─── Export CSV ──────────────────────────────────────────────────────────────
   const doExport = async (what: "kel" | "fac") => {
@@ -840,13 +870,9 @@ export default function GisEksekutifPage() {
                 series={
                   (data?.trenBulanan && data.trenBulanan.length > 0)
                     ? data.trenBulanan.map((t) => t.volume ?? 0)
-                    : [0, 0, 0, 0, 0, 0, 0, 0, 0]
+                    : new Array(12).fill(0)
                 }
-                pi={
-                  (data?.trenBulanan && data.trenBulanan.length > 0)
-                    ? data.trenBulanan.length - 1
-                    : 8
-                }
+                pi={selectedMonthIndex}
               />
               <Compliance
                 rows={kelRows as any}

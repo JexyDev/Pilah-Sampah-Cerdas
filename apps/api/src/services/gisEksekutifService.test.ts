@@ -107,4 +107,28 @@ describe("gisEksekutifService E2E QC", () => {
       })
     );
   });
+
+  it("should provide period options from August to December 2026 and 12-month trend array", async () => {
+    (prisma.kelurahan.findMany as any).mockResolvedValue([]);
+    (prisma.rw.findMany as any).mockResolvedValue([]);
+    (prisma.facility.findMany as any).mockResolvedValue([]);
+    (prisma.surveiKelurahan.findMany as any).mockResolvedValue([]);
+    (prisma.facilityProductionLog.findMany as any).mockResolvedValue([]);
+
+    const result = await gisEksekutifService.getOverview({ periode: "Agustus 2026" });
+
+    expect(result.filterOptions.periodes).toEqual([
+      "Agustus 2026",
+      "September 2026",
+      "Oktober 2026",
+      "November 2026",
+      "Desember 2026",
+    ]);
+    expect(result.trenBulanan).toHaveLength(12);
+    expect(result.trenBulanan[0].bulan).toBe("Jan");
+    expect(result.trenBulanan[7].bulan).toBe("Agu");
+    expect(result.trenBulanan[8].bulan).toBe("Sep");
+    expect(result.trenBulanan[11].bulan).toBe("Des");
+  });
 });
+
