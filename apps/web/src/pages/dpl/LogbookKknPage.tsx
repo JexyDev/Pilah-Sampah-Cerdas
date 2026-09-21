@@ -609,13 +609,17 @@ export const LogbookKknPage: React.FC = () => {
   };
 
   // Quick Verification from Modal
-  const handleVerifikasiDpl = async (action: "APPROVE" | "REVISI") => {
+  const handleVerifikasiDpl = async (action: "APPROVE" | "REVISI" | "TOLAK") => {
     if (!selectedItemDetail) {
       toast.error("Pilih salah satu logbook terlebih dahulu");
       return;
     }
     if (selectedItemDetail.statusApproval === "DISETUJUI_DPL" && action === "APPROVE") {
       toast.error("Logbook ini sudah disetujui sebelumnya dan tidak bisa divalidasi ulang.");
+      return;
+    }
+    if (action === "TOLAK" && !validationCatatan.trim()) {
+      toast.error("Catatan penolakan wajib diisi agar mahasiswa mengetahui alasannya.");
       return;
     }
     setIsSubmittingQuickVerif(true);
@@ -628,7 +632,9 @@ export const LogbookKknPage: React.FC = () => {
       toast.success(
         action === "APPROVE"
           ? "Aktivitas berhasil divalidasi dan disetujui DPL."
-          : "Catatan perbaikan berhasil dikirim ke mahasiswa."
+          : action === "REVISI"
+          ? "Catatan perbaikan berhasil dikirim ke mahasiswa."
+          : "Aktivitas berhasil ditolak resmi oleh DPL."
       );
       setIsDetailModalOpen(false);
       await fetchData();
@@ -796,11 +802,18 @@ export const LogbookKknPage: React.FC = () => {
           </span>
         );
       case "PERLU_REVISI_DPL":
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+            <AlertTriangle className="w-3 h-3" />
+            Perlu Perbaikan
+          </span>
+        );
+      case "DITOLAK_DPL":
       case "DITOLAK_KETUA":
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300">
             <XCircle className="w-3 h-3" />
-            Perlu Perbaikan
+            {status === "DITOLAK_DPL" ? "Ditolak DPL" : "Ditolak Ketua"}
           </span>
         );
       default:
@@ -992,6 +1005,7 @@ export const LogbookKknPage: React.FC = () => {
                   <option value="MENUNGGU_VERIFIKASI_DPL">Menunggu Validasi</option>
                   <option value="DISETUJUI_DPL">Tervalidasi</option>
                   <option value="PERLU_REVISI_DPL">Perlu Perbaikan</option>
+                  <option value="DITOLAK_DPL">Ditolak DPL</option>
                 </select>
 
                 {/* Date Range Inputs (Notulensi Item 12: Filter Tanggal) */}
@@ -1851,11 +1865,11 @@ export const LogbookKknPage: React.FC = () => {
                       <span>Hapus Logbook</span>
                     </button>
 
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2">
                       <button
                         type="button"
                         onClick={() => setIsDetailModalOpen(false)}
-                        className="py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-xs transition-all cursor-pointer"
+                        className="py-2.5 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-xs transition-all cursor-pointer"
                       >
                         Tutup
                       </button>
@@ -1864,21 +1878,31 @@ export const LogbookKknPage: React.FC = () => {
                         type="button"
                         disabled={isSubmittingQuickVerif}
                         onClick={() => handleVerifikasiDpl("REVISI")}
-                        className="py-2.5 px-4 rounded-xl border border-rose-200 dark:border-rose-900 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-700 dark:text-rose-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                        className="py-2.5 px-3.5 rounded-xl border border-amber-300 dark:border-amber-800 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-800 dark:text-amber-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
                       >
-                        <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+                        <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
                         Minta Perbaikan
                       </button>
 
                       <button
                         type="button"
                         disabled={isSubmittingQuickVerif}
+                        onClick={() => handleVerifikasiDpl("TOLAK")}
+                        className="py-2.5 px-3.5 rounded-xl border border-rose-300 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                      >
+                        <XCircle className="w-3.5 h-3.5 text-rose-600" />
+                        Tolak
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={isSubmittingQuickVerif}
                         onClick={() => handleVerifikasiDpl("APPROVE")}
-                        className="py-2.5 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                        className="py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
                       >
                         {isSubmittingQuickVerif && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
                         <CheckCircle className="w-3.5 h-3.5" />
-                        Setujui Kegiatan
+                        Setujui
                       </button>
                     </div>
                   </div>

@@ -160,7 +160,7 @@ describe("AuthService - registerWarga security", () => {
   });
 
   describe("AuthService - Login Point Bonus", () => {
-    it("should award +20 bonus points on first login for MAHASISWA_KKN", async () => {
+    it("should NOT award bonus points on first login for MAHASISWA_KKN (deprecated)", async () => {
       const mockKknUser = {
         id: "kkn-user-1",
         name: "Mahasiswa KKN Test",
@@ -171,33 +171,12 @@ describe("AuthService - registerWarga security", () => {
       };
 
       vi.mocked(authRepository.findUserByPhone).mockResolvedValue(mockKknUser as any);
-      vi.mocked(prisma.pointHistory.findFirst).mockResolvedValue(null);
       vi.mocked(prisma.pointHistory.create).mockResolvedValue({ id: "pt-1" } as any);
-      vi.mocked(prisma.pointHistory.aggregate).mockResolvedValue({ _sum: { points: 20 } } as any);
+      vi.mocked(prisma.pointHistory.aggregate).mockResolvedValue({ _sum: { points: 0 } } as any);
 
-      const result = await authService.login("081234567891", "password123");
+      await authService.login("081234567891", "password123");
 
-      expect(prisma.pointHistory.findFirst).toHaveBeenCalledWith({
-        where: {
-          userId: "kkn-user-1",
-          OR: [
-            { kategori: "BONUS_LOGIN_PERTAMA" },
-            { kategori: "BONUS_REGISTRASI" },
-            { description: { contains: "Bonus login pertama" } },
-            { description: { contains: "Bonus registrasi" } },
-          ],
-        },
-      });
-      expect(prisma.pointHistory.create).toHaveBeenCalledWith({
-        data: {
-          userId: "kkn-user-1",
-          points: 20,
-          description: "Bonus login pertama Mahasiswa KKN",
-          kategori: "BONUS_LOGIN_PERTAMA",
-          redeemable: false,
-        },
-      });
-      expect(result.user.points).toBe(20);
+      expect(prisma.pointHistory.create).not.toHaveBeenCalled();
     });
 
     it("should NOT award bonus points on subsequent login for MAHASISWA_KKN", async () => {

@@ -17,6 +17,7 @@ export interface GisFacilityDto {
   kel: string;
   rw: string;
   pic?: string | null;
+  foto?: string | null;
   kontak?: string | null;
   kapasitas?: number | null;
   alamat?: string | null;

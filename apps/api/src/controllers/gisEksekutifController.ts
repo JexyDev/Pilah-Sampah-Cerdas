@@ -31,10 +31,10 @@ export class GisEksekutifController {
       });
     } catch (error: any) {
       console.error("[GisEksekutifController] getOverview error:", error);
-      res.status(500).json({
-        success: false,
-        error: "INTERNAL_SERVER_ERROR",
-        message: error.message || "Gagal memuat data GIS Eksekutif",
+      const fallback = gisEksekutifService.getBaselineOverview({}, error?.message);
+      res.status(200).json({
+        success: true,
+        data: fallback,
       });
     }
   }

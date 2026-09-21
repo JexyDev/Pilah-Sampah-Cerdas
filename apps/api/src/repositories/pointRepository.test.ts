@@ -23,7 +23,7 @@ describe("PointRepository", () => {
   });
 
   describe("getHistoryByUserId", () => {
-    it("should exclude KKN_PROKER category and ProkerID descriptions to prevent leaks to individual UI", async () => {
+    it("should exclude KKN_PROKER category and ProkerID descriptions to prevent leaks to individual UI for default/warga", async () => {
       const mockRows = [
         {
           id: "pt-1",
@@ -43,6 +43,32 @@ describe("PointRepository", () => {
         where: {
           userId: "user-123",
           kategori: { notIn: ["KKN_PROKER"] },
+          NOT: { description: { contains: "[ProkerID:" } },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+    });
+
+    it("should exclude REDUKSI_TONASE and BONUS_LOGIN_PERTAMA along with KKN_PROKER when isStudent is true", async () => {
+      const mockRows = [
+        {
+          id: "pt-2",
+          userId: "student-1",
+          points: 4,
+          kategori: "KKN_PRESENSI_HADIR",
+          description: "Poin kehadiran KKN",
+        },
+      ];
+
+      vi.mocked(prisma.pointHistory.findMany).mockResolvedValue(mockRows as any);
+
+      const result = await repository.getHistoryByUserId("student-1", true);
+
+      expect(result).toEqual(mockRows);
+      expect(prisma.pointHistory.findMany).toHaveBeenCalledWith({
+        where: {
+          userId: "student-1",
+          kategori: { notIn: ["KKN_PROKER", "REDUKSI_TONASE", "BONUS_LOGIN_PERTAMA"] },
           NOT: { description: { contains: "[ProkerID:" } },
         },
         orderBy: { createdAt: "desc" },

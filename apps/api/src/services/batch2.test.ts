@@ -106,7 +106,7 @@ describe("Batch 2 Core Features", () => {
   });
 
   describe("cronService - KPI penalty", () => {
-    it("should deduct KPI score if petugas has not submitted any reports in the shift window", async () => {
+    it("should retain KPI score without penalty if petugas has 0 submissions (penalty disabled per governance)", async () => {
       mockFindMany.mockResolvedValue([
         { id: "p-1", userId: "u-1", nama: "Petugas 1", kpiScore: 100 },
       ]);
@@ -114,17 +114,7 @@ describe("Batch 2 Core Features", () => {
 
       await cronService.evaluateShiftPenalty("morning");
 
-      expect(mockUpdate).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { id: "p-1" },
-          data: { kpiScore: 85 },
-        })
-      );
-      expect(mockCreate).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({ action: "SYSTEM_KPI_PENALTY" }),
-        })
-      );
+      expect(mockUpdate).not.toHaveBeenCalled();
     });
   });
 

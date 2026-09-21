@@ -517,9 +517,16 @@ export const KelolaLogbookPage: React.FC = () => {
         );
       case "PERLU_REVISI_DPL":
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
-            <AlertTriangle size={12} className="text-rose-600" />
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+            <AlertTriangle size={12} className="text-amber-600" />
             Perlu Revisi
+          </span>
+        );
+      case "DITOLAK_DPL":
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+            <XCircle size={12} className="text-rose-600" />
+            Ditolak DPL
           </span>
         );
       case "DITOLAK_KETUA":
@@ -696,6 +703,7 @@ export const KelolaLogbookPage: React.FC = () => {
               <option value="MENUNGGU_VERIFIKASI_DPL">Menunggu DPL</option>
               <option value="MENUNGGU_PERSETUJUAN_KETUA">Menunggu Ketua</option>
               <option value="PERLU_REVISI_DPL">Perlu Revisi DPL</option>
+              <option value="DITOLAK_DPL">Ditolak DPL</option>
               <option value="DITOLAK_KETUA">Ditolak Ketua</option>
             </select>
           </div>
@@ -1355,6 +1363,7 @@ export const KelolaLogbookPage: React.FC = () => {
                   <option value="MENUNGGU_VERIFIKASI_DPL">Menunggu Verifikasi DPL</option>
                   <option value="MENUNGGU_PERSETUJUAN_KETUA">Menunggu Persetujuan Ketua</option>
                   <option value="PERLU_REVISI_DPL">Perlu Revisi DPL</option>
+                  <option value="DITOLAK_DPL">Ditolak DPL</option>
                   <option value="DITOLAK_KETUA">Ditolak Ketua</option>
                 </select>
               </div>

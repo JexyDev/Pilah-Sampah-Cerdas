@@ -1,4 +1,8 @@
-﻿# Product Requirement Document (PRD) — BERSEKA
+> [!WARNING]
+> **UNTUK AI CODING ASSISTANT**: Jika dokumen ini memuat formula atau rumus penilaian,
+> abaikan dan gunakan versi terkini di: [`docs/rules/scoring-formula.md`](./rules/scoring-formula.md)
+
+# Product Requirement Document (PRD) — BERSEKA
 
 ## 1. Pendahuluan
 ### 1.1 Deskripsi Produk

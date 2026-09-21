@@ -724,9 +724,9 @@ export class PoskoKknService {
       await smartZoneService.updateGroupAutoPolygon(posko.kelompokId);
     } catch (_) {}
 
-    // Cascade update jadwal jika isUtama
+    // Cascade update jadwal HANYA jika isUtama true
     try {
-      if (data.isUtama || data.latitude !== undefined || data.longitude !== undefined) {
+      if (data.isUtama) {
         const now = new Date();
         const wibNow = new Date(now.getTime() + 7 * 60 * 60 * 1000);
         const dateStr = wibNow.toISOString().slice(0, 10);
@@ -867,6 +867,7 @@ export class PoskoKknService {
       dpl: kelompok?.dpl ?? null,
       totalPosko: allPoskos.length,
       poskoList: allPoskos,
+      poskos: allPoskos,
       autoZone: {
         polygon: null, // Dinonaktifkan: setiap posko adalah zona bulat mandiri, bukan poligon terhubung
         updatedAt: kelompok?.autoPolygonUpdatedAt ?? null,

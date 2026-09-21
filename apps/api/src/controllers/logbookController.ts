@@ -305,8 +305,13 @@ export const logbookController = {
       const userRole = getUserRole(req);
       const { action, catatanDpl } = req.body;
 
-      if (!["APPROVE", "REVISI"].includes(action)) {
-        res.status(400).json({ success: false, message: "Aksi harus 'APPROVE' atau 'REVISI'" });
+      if (!["APPROVE", "REVISI", "TOLAK"].includes(action)) {
+        res.status(400).json({ success: false, message: "Aksi harus 'APPROVE', 'REVISI', atau 'TOLAK'" });
+        return;
+      }
+
+      if (action === "TOLAK" && (!catatanDpl || catatanDpl.trim() === "")) {
+        res.status(400).json({ success: false, message: "Catatan penolakan wajib diisi saat menolak logbook" });
         return;
       }
 
@@ -322,7 +327,9 @@ export const logbookController = {
         message:
           action === "APPROVE"
             ? "Logbook aktivitas berhasil diverifikasi dan disetujui resmi oleh DPL."
-            : "Logbook aktivitas ditandai perlu revisi.",
+            : action === "REVISI"
+            ? "Logbook aktivitas ditandai perlu revisi."
+            : "Logbook aktivitas ditolak resmi oleh DPL.",
         data,
       });
     } catch (error: any) {

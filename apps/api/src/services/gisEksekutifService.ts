@@ -28,6 +28,7 @@ export interface GisFacilityDto {
   kel: string;
   rw: string;
   pic?: string | null;
+  foto?: string | null;
   kontak?: string | null;
   kapasitas?: number | null;
   alamat?: string | null;
@@ -71,15 +72,116 @@ function kepColor(pct: number): string {
   return "#ef4444";
 }
 
+const BULAN_LABELS = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep"];
+
+const FACILITY_TYPE_MAP: Record<string, string> = {
+  bank: "bank_sampah",
+  bank_sampah: "bank_sampah",
+  maggot: "rumah_maggot",
+  rumah_maggot: "rumah_maggot",
+  sae: "buruan_sae",
+  buruan_sae: "buruan_sae",
+  loseda: "loseda",
+  bata: "bata_terawang",
+  bata_terawang: "bata_terawang",
+  tps: "tps",
+  tpst: "tps",
+  poc: "poc",
+  posko: "posko_kkn",
+  posko_kkn: "posko_kkn",
+};
+
+const VALID_FACILITY_TYPES = new Set([
+  "loseda",
+  "bata_terawang",
+  "rumah_maggot",
+  "bank_sampah",
+  "tps",
+  "buruan_sae",
+  "poc",
+  "posko_kkn",
+]);
+
 export const gisEksekutifService = {
-  async getOverview(filters: GisEksekutifFilters = {}) {
-    const rawKel =
-      filters.kelurahan && filters.kelurahan !== "Semua"
-        ? filters.kelurahan.trim()
-        : undefined;
-    const rawRw =
-      filters.rw && filters.rw !== "Semua" ? filters.rw.trim() : undefined;
+  getBaselineOverview(filters: GisEksekutifFilters = {}, errorMessage?: string) {
+    const kelurahanNames = ["Cipaganti", "Dago", "Lebak Gede", "Lebak Siliwangi", "Sadang Serang", "Sekeloa"];
     const periode = filters.periode || "September 2026";
+    const poligonKelurahan = kelurahanNames.map((nama) => ({
+      nama,
+      coordinates: (KELURAHAN_GEOMETRIES[nama] as [number, number][]) ?? [],
+      kepatuhan: null as number | null,
+      volume: null as number | null,
+      totalFasilitas: 0,
+      color: "#9ca3af",
+      hasData: false,
+    }));
+
+    return {
+      success: true,
+      meta: {
+        wilayah: "Kecamatan Coblong",
+        periode,
+        kelurahanFilter: filters.kelurahan ?? "Semua",
+        rwFilter: filters.rw ?? "Semua",
+        timestamp: new Date().toISOString(),
+        hasSensorData: false,
+        hasTrendData: false,
+        isDegraded: true,
+        degradedReason: errorMessage || "Layanan database sedang disinkronkan. Menampilkan data dasar geospasial.",
+      },
+      filterOptions: {
+        kelurahans: ["Semua", ...kelurahanNames],
+        rws: ["Semua"],
+        periodes: ["September 2026"],
+        tipeFasilitas: ["Semua"],
+      },
+      kpi: {
+        fasilitasTerdata: 0,
+        fasilitasSubtext: "Koneksi database dalam pemulihan",
+        volumeTotal: null as number | null,
+        volumeGrowthPercent: null as number | null,
+        volumeUnit: "m³/bulan",
+        kepatuhanPemilahan: null as number | null,
+        kepatuhanDeltaPoin: null as number | null,
+        sensorCh4OnlineCount: 0,
+        sensorCh4TotalCount: 0,
+        sensorCh4Text: "Tahap Integrasi Jaringan IoT",
+      },
+      komposisiVolume: {
+        organik: { persen: 0, volumeM3: 0 },
+        anorganik: { persen: 0, volumeM3: 0 },
+        residu: { persen: 0, volumeM3: 0 },
+        totalM3: 0,
+      },
+      trenBulanan: BULAN_LABELS.map((bulan) => ({ bulan, volume: 0 })),
+      kepatuhanPerKelurahan: kelurahanNames.map((nama) => ({
+        nama,
+        kepatuhan: null as number | null,
+        volume: null as number | null,
+        totalFasilitas: 0,
+        color: "#9ca3af",
+        hasData: false,
+      })),
+      pemantauanCh4: {
+        rentangText: "Tahap Integrasi",
+        titikPengukuranCount: 0,
+        titikPengukuranText: "Sensor CH₄ belum aktif",
+        sensors: [] as any[],
+      },
+      titikFasilitas: [] as GisFacilityDto[],
+      poligonKelurahan,
+    };
+  },
+
+  async getOverview(filters: GisEksekutifFilters = {}) {
+    try {
+      const rawKel =
+        filters.kelurahan && filters.kelurahan !== "Semua"
+          ? filters.kelurahan.trim()
+          : undefined;
+      const rawRw =
+        filters.rw && filters.rw !== "Semua" ? filters.rw.trim() : undefined;
+      const periode = filters.periode || "September 2026";
 
     // ── 1. Daftar kelurahan dari DB (hanya Coblong) ──────────────────────────
     // Filter hanya kelurahan yang ada Rw-nya (artinya kelurahan aktif di sistem)
@@ -121,7 +223,11 @@ export const gisEksekutifService = {
       }
     }
     if (filters.jenisFasilitas && filters.jenisFasilitas !== "Semua") {
-      facilityWhere["jenis"] = filters.jenisFasilitas;
+      const rawType = filters.jenisFasilitas.toLowerCase().trim();
+      const mappedType = FACILITY_TYPE_MAP[rawType] || rawType;
+      if (VALID_FACILITY_TYPES.has(mappedType)) {
+        facilityWhere["jenis"] = mappedType as any;
+      }
     }
     if (filters.search) {
       const s = filters.search.trim();
@@ -147,6 +253,7 @@ export const gisEksekutifService = {
       kel: f.rw?.kelurahan?.name ?? "-",
       rw: f.rw?.name ?? "-",
       pic: f.pic ?? null,
+      foto: f.foto ?? null,
       kontak: f.kontak ?? null,
       kapasitas: f.kapasitas ? Number(f.kapasitas) : null,
       alamat: f.alamat ?? null,
@@ -184,19 +291,22 @@ export const gisEksekutifService = {
         kepatuhan = raw <= 1 ? Math.round(raw * 100) : Math.round(raw);
       }
 
-      // Volume — dari DB jika ada (totalVolumeKgPerHari × 30 ÷ 1000 → m³/bln estimasi)
-      let volume: number | null = null;
-      if (survei?.volumeSampah?.totalVolumeKgPerHari != null) {
-        const kgPerHari = Number(survei.volumeSampah.totalVolumeKgPerHari);
-        volume = Math.round((kgPerHari * 30) / 1000 * 10) / 10;
-      }
-
       // Komposisi organik/anorganik/residu per kelurahan (dari survei)
       let organikKgHari = 0, anorganikKgHari = 0, residuKgHari = 0;
       if (survei?.volumeSampah) {
         organikKgHari = Number(survei.volumeSampah.organikKgPerHari ?? 0);
         anorganikKgHari = Number(survei.volumeSampah.anorganikKgPerHari ?? 0);
         residuKgHari = Number(survei.volumeSampah.residuKgPerHari ?? 0);
+      }
+      const sumKgHari = organikKgHari + anorganikKgHari + residuKgHari;
+
+      // Volume — dari DB (dikonversi kg/hari ke m³/bln: kg/hari × 30 / 1000)
+      let volume: number | null = null;
+      if (sumKgHari > 0) {
+        volume = Math.round(((sumKgHari * 30) / 1000) * 10) / 10;
+      } else if (survei?.volumeSampah?.totalVolumeKgPerHari != null) {
+        const kgPerHari = Number(survei.volumeSampah.totalVolumeKgPerHari);
+        volume = Math.round(((kgPerHari * 30) / 1000) * 10) / 10;
       }
 
       return {
@@ -229,20 +339,6 @@ export const gisEksekutifService = {
       );
     }
 
-    // Volume total m³/bln (jumlah semua kelurahan yang ada data)
-    const kelWithVol = kepatuhanPerKelurahan.filter((k) => k.volume !== null);
-    let volumeTotal: number | null = null;
-    if (rawKel) {
-      const match = kepatuhanPerKelurahan.find(
-        (k) => k.nama.toLowerCase() === rawKel.toLowerCase()
-      );
-      volumeTotal = match?.volume ?? null;
-    } else if (kelWithVol.length > 0) {
-      volumeTotal = Math.round(
-        kelWithVol.reduce((s, k) => s + (k.volume as number), 0) * 10
-      ) / 10;
-    }
-
     // ── 6. Komposisi Volume Agregat ──────────────────────────────────────────
     // Ambil dari survei kelurahan yang terpilih (atau semua)
     const surveiScope = rawKel
@@ -262,18 +358,39 @@ export const gisEksekutifService = {
     );
     const totalKg = totalOrganikKg + totalAnorganikKg + totalResiduKg;
 
+    const orgM3 = Math.round(((totalOrganikKg * 30) / 1000) * 10) / 10;
+    const anoM3 = Math.round(((totalAnorganikKg * 30) / 1000) * 10) / 10;
+    const resM3 = Math.round(((totalResiduKg * 30) / 1000) * 10) / 10;
+    const computedTotalM3 = Math.round((orgM3 + anoM3 + resM3) * 10) / 10;
+
+    // Volume total m³/bln (konsisten 100% dengan komponen komposisi)
+    const kelWithVol = kepatuhanPerKelurahan.filter((k) => k.volume !== null);
+    let volumeTotal: number | null = null;
+    if (rawKel) {
+      const match = kepatuhanPerKelurahan.find(
+        (k) => k.nama.toLowerCase() === rawKel.toLowerCase()
+      );
+      volumeTotal = match?.volume ?? (computedTotalM3 > 0 ? computedTotalM3 : null);
+    } else if (computedTotalM3 > 0) {
+      volumeTotal = computedTotalM3;
+    } else if (kelWithVol.length > 0) {
+      volumeTotal = Math.round(
+        kelWithVol.reduce((s, k) => s + (k.volume as number), 0) * 10
+      ) / 10;
+    }
+
     const komposisiVolume = {
       organik: {
         persen: totalKg > 0 ? Math.round((totalOrganikKg / totalKg) * 100) : 0,
-        volumeM3: Math.round(((totalOrganikKg * 30) / 1000) * 10) / 10,
+        volumeM3: orgM3,
       },
       anorganik: {
         persen: totalKg > 0 ? Math.round((totalAnorganikKg / totalKg) * 100) : 0,
-        volumeM3: Math.round(((totalAnorganikKg * 30) / 1000) * 10) / 10,
+        volumeM3: anoM3,
       },
       residu: {
         persen: totalKg > 0 ? Math.round((totalResiduKg / totalKg) * 100) : 0,
-        volumeM3: Math.round(((totalResiduKg * 30) / 1000) * 10) / 10,
+        volumeM3: resM3,
       },
       totalM3: volumeTotal ?? 0,
     };
@@ -294,7 +411,6 @@ export const gisEksekutifService = {
       select: { createdAt: true, outputKg: true },
     });
 
-    const BULAN_LABELS = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep"];
     const trenMap: Record<number, number> = {};
     prodLogs.forEach((log) => {
       const month = new Date(log.createdAt).getMonth(); // 0=Jan
@@ -381,5 +497,9 @@ export const gisEksekutifService = {
       titikFasilitas: facilities,
       poligonKelurahan,
     };
+    } catch (error: any) {
+      console.warn("[gisEksekutifService] Falling back to baseline overview due to error:", error?.message || error);
+      return gisEksekutifService.getBaselineOverview(filters, error?.message);
+    }
   },
 };
