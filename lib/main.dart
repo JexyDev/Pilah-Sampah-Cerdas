@@ -312,8 +312,10 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
             : (isHistory ? 'ROUTE_HISTORY' : 'ROUTE_NOTIF');
 
         // Tampilkan notifikasi sistem di luar aplikasi (system notification tray)
+        // Gunakan type.hashCode sebagai ID agar notifikasi dari batch yang sama (misal: Approve 20 logbook) 
+        // saling menimpa (overwrite) dan tidak melakukan spam getar/bunyi bertubi-tubi di HP.
         NotificationEngine().showGenericNotification(
-          id: message.messageId.hashCode,
+          id: type.hashCode,
           title: title,
           body: body,
           payload: payloadRoute,
