@@ -46,7 +46,7 @@ export async function calculateValidIndividualPoints(
   }
 
   const excludedCategories = isStudent
-    ? ["KKN_PROKER", "REDUKSI_TONASE", "BONUS_LOGIN_PERTAMA"]
+    ? ["KKN_PROKER", "REDUKSI_TONASE", "BONUS_LOGIN_PERTAMA", "POIN_KKN_FINAL"]
     : ["KKN_PROKER"];
 
   const pointsAgg = await prisma.pointHistory.aggregate({
@@ -112,7 +112,12 @@ export async function calculateValidIndividualPointsForUsers(
 
   userIds.forEach((id) => result.set(id, 0));
 
-  const excludedCategories = ["KKN_PROKER", "REDUKSI_TONASE", "BONUS_LOGIN_PERTAMA"];
+  const excludedCategories = [
+    "KKN_PROKER",
+    "REDUKSI_TONASE",
+    "BONUS_LOGIN_PERTAMA",
+    "POIN_KKN_FINAL",
+  ];
 
   const pointsAgg = await prisma.pointHistory.groupBy({
     by: ["userId"],

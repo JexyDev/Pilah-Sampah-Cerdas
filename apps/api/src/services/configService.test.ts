@@ -55,13 +55,13 @@ describe("configService - getRuleEngineConfigs & dynamic assessment weights", ()
     vi.clearAllMocks();
   });
 
-  it("should return default 40% for DPL and MPL, and 20% for Laporan Akhir when configs not set in database", async () => {
+  it("should return default 50% for DPL and MPL when configs not set in database", async () => {
     vi.mocked(prisma.systemConfig.findMany).mockResolvedValue([] as any);
 
     const configs = await configService.getRuleEngineConfigs();
-    expect(configs.penilaianBobotDplPersen).toBe(40);
-    expect(configs.penilaianBobotMplPersen).toBe(40);
-    expect(configs.penilaianBobotLaporanPersen).toBe(20);
+    expect(configs.penilaianBobotDplPersen).toBe(50);
+    expect(configs.penilaianBobotMplPersen).toBe(50);
+    expect(configs.penilaianBobotLaporanPersen).toBe(0);
   });
 
   it("should return configured values when set in database", async () => {

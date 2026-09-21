@@ -119,15 +119,8 @@ describe("KKN Gamification Logic & Fixes", () => {
     vi.clearAllMocks();
   });
 
-  describe("1. syncProkerGamificationPoints (3-Step Proker Points - Jalur Gamifikasi Mahasiswa)", () => {
-    it("should award +2 points on Step 1 (DISETUJUI) for all group members", async () => {
-      vi.mocked(prisma.kelompokKkn.findUnique).mockResolvedValue({
-        id: "kel-1",
-        students: [{ userId: "user-1" }, { userId: "user-2" }],
-      } as any);
-
-      vi.mocked(prisma.pointHistory.findFirst).mockResolvedValue(null);
-
+  describe("1. syncProkerGamificationPoints (Proker Points Hak Kelompok - Anti-Bocor Individu)", () => {
+    it("should never inject points to individual pointHistory on Step 1 (DISETUJUI)", async () => {
       await syncProkerGamificationPoints(
         "proker-1",
         "kel-1",
@@ -136,32 +129,10 @@ describe("KKN Gamification Logic & Fixes", () => {
         "Judul Proker"
       );
 
-      expect(prisma.pointHistory.createMany).toHaveBeenCalledWith({
-        data: [
-          {
-            userId: "user-1",
-            points: 2,
-            description: "Program Kerja Disetujui: Judul Proker [ProkerID:proker-1:DISETUJUI]",
-            kategori: "KKN_PROKER",
-          },
-          {
-            userId: "user-2",
-            points: 2,
-            description: "Program Kerja Disetujui: Judul Proker [ProkerID:proker-1:DISETUJUI]",
-            kategori: "KKN_PROKER",
-          },
-        ],
-      });
+      expect(prisma.pointHistory.createMany).not.toHaveBeenCalled();
     });
 
-    it("should award Step 2 (+2 points) when proker is SEDANG_BERJALAN", async () => {
-      vi.mocked(prisma.kelompokKkn.findUnique).mockResolvedValue({
-        id: "kel-1",
-        students: [{ userId: "user-1" }],
-      } as any);
-
-      vi.mocked(prisma.pointHistory.findFirst).mockResolvedValue(null);
-
+    it("should never inject points to individual pointHistory on Step 2 (SEDANG_BERJALAN)", async () => {
       await syncProkerGamificationPoints(
         "proker-1",
         "kel-1",
@@ -170,26 +141,10 @@ describe("KKN Gamification Logic & Fixes", () => {
         "Judul Proker"
       );
 
-      expect(prisma.pointHistory.createMany).toHaveBeenCalledWith({
-        data: [
-          {
-            userId: "user-1",
-            points: 2,
-            description: "Program Kerja Berjalan: Judul Proker [ProkerID:proker-1:BERJALAN]",
-            kategori: "KKN_PROKER",
-          },
-        ],
-      });
+      expect(prisma.pointHistory.createMany).not.toHaveBeenCalled();
     });
 
-    it("should award Step 3 (+2 points) when proker is SELESAI", async () => {
-      vi.mocked(prisma.kelompokKkn.findUnique).mockResolvedValue({
-        id: "kel-1",
-        students: [{ userId: "user-1" }],
-      } as any);
-
-      vi.mocked(prisma.pointHistory.findFirst).mockResolvedValue(null);
-
+    it("should never inject points to individual pointHistory on Step 3 (SELESAI)", async () => {
       await syncProkerGamificationPoints(
         "proker-1",
         "kel-1",
@@ -198,16 +153,7 @@ describe("KKN Gamification Logic & Fixes", () => {
         "Judul Proker"
       );
 
-      expect(prisma.pointHistory.createMany).toHaveBeenCalledWith({
-        data: [
-          {
-            userId: "user-1",
-            points: 2,
-            description: "Program Kerja Selesai: Judul Proker [ProkerID:proker-1:SELESAI]",
-            kategori: "KKN_PROKER",
-          },
-        ],
-      });
+      expect(prisma.pointHistory.createMany).not.toHaveBeenCalled();
     });
 
     it("should be idempotent and not create duplicate points if already awarded", async () => {
@@ -242,19 +188,17 @@ describe("KKN Gamification Logic & Fixes", () => {
       );
 
       expect(prisma.pointHistory.deleteMany).toHaveBeenCalledWith({
-        where: { description: { contains: "[ProkerID:proker-1" } },
+        where: {
+          OR: [
+            { description: { contains: "[ProkerID:proker-1" } },
+            { kategori: "KKN_PROKER" },
+          ],
+        },
       });
       expect(prisma.pointHistory.createMany).not.toHaveBeenCalled();
     });
 
-    it("should award Step 1 (+2 points) instantly upon submission (BELUM_DISETUJUI) before DPL approval", async () => {
-      vi.mocked(prisma.kelompokKkn.findUnique).mockResolvedValue({
-        id: "kel-1",
-        students: [{ userId: "user-1" }, { userId: "user-2" }],
-      } as any);
-
-      vi.mocked(prisma.pointHistory.findFirst).mockResolvedValue(null);
-
+    it("should never inject points upon submission (BELUM_DISETUJUI)", async () => {
       await syncProkerGamificationPoints(
         "proker-sub-1",
         "kel-1",
@@ -263,22 +207,7 @@ describe("KKN Gamification Logic & Fixes", () => {
         "Ide Proker Warga"
       );
 
-      expect(prisma.pointHistory.createMany).toHaveBeenCalledWith({
-        data: [
-          {
-            userId: "user-1",
-            points: 2,
-            description: "Pengajuan Program Kerja: Ide Proker Warga [ProkerID:proker-sub-1:PENGAJUAN]",
-            kategori: "KKN_PROKER",
-          },
-          {
-            userId: "user-2",
-            points: 2,
-            description: "Pengajuan Program Kerja: Ide Proker Warga [ProkerID:proker-sub-1:PENGAJUAN]",
-            kategori: "KKN_PROKER",
-          },
-        ],
-      });
+      expect(prisma.pointHistory.createMany).not.toHaveBeenCalled();
     });
 
     it("should not duplicate Step 1 points when DPL subsequently approves an already submitted proker", async () => {
@@ -754,11 +683,11 @@ describe("KKN Gamification Logic & Fixes", () => {
 
       const dashboard = await kknService.getDashboardStats("mhs-dash-bonus");
 
-      // Mobile APK expects personalPoints to show total balance (79)
-      expect(dashboard.personalPoints).toBe(79);
-      expect(dashboard.contributionPoints).toBe(79);
-      expect(dashboard.stats.personalPoints).toBe(79);
-      expect(dashboard.stats.contributionPoints).toBe(79);
+      // Mahasiswa KKN personal points purely from academic activities (30)
+      expect(dashboard.personalPoints).toBe(30);
+      expect(dashboard.contributionPoints).toBe(30);
+      expect(dashboard.stats.personalPoints).toBe(30);
+      expect(dashboard.stats.contributionPoints).toBe(30);
       // Pure field points preserved in purePersonalPoints
       expect(dashboard.purePersonalPoints).toBe(30);
       expect(dashboard.stats.purePersonalPoints).toBe(30);

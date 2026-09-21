@@ -780,7 +780,8 @@ export const penilaianKknService = {
       skorMitraInisiatif > 0;
 
     const isComplete = (subtotalDpl > 0 || hasDplAny) && (subtotalMitra > 0 || hasMitraAny);
-    const isFinal = Boolean(payload.isFinalizeAction);
+    // Sesuai Opsi A: Penilaian TIDAK BISA difinalisasi menjadi mutu akhir jika salah satu penilai (misal MPL) belum menilai
+    const isFinal = Boolean(payload.isFinalizeAction && isComplete);
 
     const nilaiAkhir = calculateCompositeScore(
       subtotalMitra,
@@ -791,10 +792,13 @@ export const penilaianKknService = {
       0,
       0
     );
-    const kategoriNilai = calculateGradeCategory(nilaiAkhir, {
+    let kategoriNilai = calculateGradeCategory(nilaiAkhir, {
       isFinalized: isFinal,
       isComplete,
     });
+    if (!isComplete && (subtotalDpl > 0 || hasDplAny) && subtotalMitra === 0 && !hasMitraAny) {
+      kategoriNilai = "Menunggu Penilaian Mitra";
+    }
     const statusVal: StatusPenilaianKkn = isFinal
       ? StatusPenilaianKkn.FINAL
       : StatusPenilaianKkn.TERSIMPAN;
@@ -1170,13 +1174,15 @@ export const penilaianKknService = {
         statusPenilaian = "MENUNGGU_DPL";
       }
 
-      const isFinalized = Boolean(p?.isFinalized);
+      const isFinalized = Boolean(p?.isFinalized && isComplete);
       const kategori =
         p?.kategoriNilai && isComplete && isFinalized
           ? p.kategoriNilai
-          : finalNilai > 0
-            ? calculateGradeCategory(finalNilai, { isFinalized, isComplete })
-            : "Belum Dinilai";
+          : !isComplete && (subtotalDpl > 0 || hasDplAny) && subtotalMitra === 0 && !hasMitraScores
+            ? "Menunggu Penilaian Mitra"
+            : finalNilai > 0
+              ? calculateGradeCategory(finalNilai, { isFinalized, isComplete })
+              : "Belum Dinilai";
 
       return {
         studentId: s.id,
@@ -2275,7 +2281,7 @@ export const penilaianKknService = {
         currentSkorMitraInisiatif > 0;
 
       const isComplete = hasDplAll && hasMitraAll;
-      const isFinalized = Boolean(existing?.isFinalized);
+      const isFinalized = Boolean(existing?.isFinalized && isComplete);
 
       const nilaiAkhir = calculateCompositeScore(
         effectiveSubtotalMitra,
@@ -2287,10 +2293,14 @@ export const penilaianKknService = {
         0
       );
 
-      const kategoriNilai = calculateGradeCategory(nilaiAkhir, {
+      let kategoriNilai = calculateGradeCategory(nilaiAkhir, {
         isFinalized,
         isComplete,
       });
+
+      if (!isComplete && effectiveSubtotalDpl > 0 && effectiveSubtotalMitra === 0) {
+        kategoriNilai = "Menunggu Penilaian Mitra";
+      }
 
       // Deteksi apakah ada perbaikan anomali nilai (misal dari <= 10 menjadi skor wajar)
       if (existing && Number(existing.nilaiAkhir) <= 10 && nilaiAkhir > 10) {
@@ -2333,7 +2343,7 @@ export const penilaianKknService = {
           nilaiAkhir,
           kategoriNilai,
           catatanDpl: existing?.catatanDpl || assessmentNote || "",
-          status: existing?.status || StatusPenilaianKkn.TERSIMPAN,
+          status: isComplete && isFinalized ? StatusPenilaianKkn.FINAL : StatusPenilaianKkn.TERSIMPAN,
           isFinalized,
         },
         update: {
@@ -2346,6 +2356,8 @@ export const penilaianKknService = {
           nilaiAkhir,
           kategoriNilai,
           catatanDpl: existing?.catatanDpl || assessmentNote || "",
+          status: isComplete && isFinalized ? StatusPenilaianKkn.FINAL : StatusPenilaianKkn.TERSIMPAN,
+          isFinalized,
         },
       });
 

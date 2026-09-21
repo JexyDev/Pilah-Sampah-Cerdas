@@ -51,7 +51,14 @@ describe("Centralized Anti-Leak Individual Points Architecture (SSOT)", () => {
       expect(prisma.pointHistory.aggregate).toHaveBeenCalledWith({
         where: {
           userId: "user-habik-1",
-          kategori: { notIn: ["KKN_PROKER", "REDUKSI_TONASE", "BONUS_LOGIN_PERTAMA"] },
+          kategori: {
+            notIn: [
+              "KKN_PROKER",
+              "REDUKSI_TONASE",
+              "BONUS_LOGIN_PERTAMA",
+              "POIN_KKN_FINAL",
+            ],
+          },
           NOT: {
             description: { contains: "[ProkerID:" },
           },
@@ -118,7 +125,14 @@ describe("Centralized Anti-Leak Individual Points Architecture (SSOT)", () => {
         by: ["userId"],
         where: {
           userId: { in: ["mhs-1", "mhs-2", "mhs-3"] },
-          kategori: { notIn: ["KKN_PROKER", "REDUKSI_TONASE", "BONUS_LOGIN_PERTAMA"] },
+          kategori: {
+            notIn: [
+              "KKN_PROKER",
+              "REDUKSI_TONASE",
+              "BONUS_LOGIN_PERTAMA",
+              "POIN_KKN_FINAL",
+            ],
+          },
           NOT: {
             description: { contains: "[ProkerID:" },
           },
