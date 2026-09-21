@@ -1,0 +1,619 @@
+[
+  {
+    "key": "muhammad dafa",
+    "nim": "10923004",
+    "name": "Muhammad Dafa Ikhlashul Amal",
+    "qc": {
+      "nim": "10923004",
+      "cPoin": 124,
+      "dHadir": 16,
+      "ePemenuhan": 10,
+      "fLogbook": 10,
+      "hMobile": 124,
+      "diff": 0
+    },
+    "db": {
+      "totalSSOT": 124,
+      "hadirCountFromPoints": 16,
+      "hadirPtsFromPoints": 64,
+      "pemenuhanCountFromPoints": 10,
+      "pemenuhanPtsFromPoints": 30,
+      "logbookCountFromPoints": 10,
+      "logbookPtsFromPoints": 30,
+      "totalAttendancesInDb": 17,
+      "attHadirCount": 16,
+      "attMemenuhiCount": 10,
+      "totalLogbooksInDb": 11,
+      "distinctLogbookDatesCount": 10,
+      "distinctDates": [
+        "2026-08-26",
+        "2026-08-28",
+        "2026-09-02",
+        "2026-09-07",
+        "2026-09-09",
+        "2026-09-10",
+        "2026-09-11",
+        "2026-09-14",
+        "2026-09-15",
+        "2026-09-21"
+      ]
+    },
+    "diffAnalysis": {
+      "ssotVsQcH": 0,
+      "ssotVsQcC": 0,
+      "hadirDiff": 0,
+      "pemenuhanDiff": 0,
+      "logbookDiff": 0
+    }
+  },
+  {
+    "key": "anugrah rizki",
+    "nim": "21124805",
+    "name": "Anugrah Rizky Agustian",
+    "qc": {
+      "nim": "21124805",
+      "cPoin": 151,
+      "dHadir": 16,
+      "ePemenuhan": 13,
+      "fLogbook": 16,
+      "hMobile": 154,
+      "diff": -3
+    },
+    "db": {
+      "totalSSOT": 154,
+      "hadirCountFromPoints": 16,
+      "hadirPtsFromPoints": 64,
+      "pemenuhanCountFromPoints": 14,
+      "pemenuhanPtsFromPoints": 42,
+      "logbookCountFromPoints": 16,
+      "logbookPtsFromPoints": 48,
+      "totalAttendancesInDb": 17,
+      "attHadirCount": 15,
+      "attMemenuhiCount": 14,
+      "totalLogbooksInDb": 25,
+      "distinctLogbookDatesCount": 16,
+      "distinctDates": [
+        "2026-08-27",
+        "2026-08-28",
+        "2026-08-29",
+        "2026-09-01",
+        "2026-09-02",
+        "2026-09-03",
+        "2026-09-04",
+        "2026-09-07",
+        "2026-09-08",
+        "2026-09-09",
+        "2026-09-10",
+        "2026-09-14",
+        "2026-09-15",
+        "2026-09-16",
+        "2026-09-17",
+        "2026-09-18"
+      ]
+    },
+    "diffAnalysis": {
+      "ssotVsQcH": 0,
+      "ssotVsQcC": 3,
+      "hadirDiff": 0,
+      "pemenuhanDiff": 1,
+      "logbookDiff": 0
+    }
+  },
+  {
+    "key": "asep saepul",
+    "nim": "10124324",
+    "name": "Asep Saepul",
+    "qc": {
+      "nim": "10124324",
+      "cPoin": 125,
+      "dHadir": 14,
+      "ePemenuhan": 10,
+      "fLogbook": 13,
+      "hMobile": 127,
+      "diff": -2
+    },
+    "db": {
+      "totalSSOT": 127,
+      "hadirCountFromPoints": 13,
+      "hadirPtsFromPoints": 52,
+      "pemenuhanCountFromPoints": 11,
+      "pemenuhanPtsFromPoints": 33,
+      "logbookCountFromPoints": 14,
+      "logbookPtsFromPoints": 42,
+      "totalAttendancesInDb": 17,
+      "attHadirCount": 13,
+      "attMemenuhiCount": 11,
+      "totalLogbooksInDb": 19,
+      "distinctLogbookDatesCount": 14,
+      "distinctDates": [
+        "2026-08-27",
+        "2026-08-28",
+        "2026-08-29",
+        "2026-09-01",
+        "2026-09-02",
+        "2026-09-03",
+        "2026-09-04",
+        "2026-09-07",
+        "2026-09-10",
+        "2026-09-11",
+        "2026-09-14",
+        "2026-09-15",
+        "2026-09-17",
+        "2026-09-21"
+      ]
+    },
+    "diffAnalysis": {
+      "ssotVsQcH": 0,
+      "ssotVsQcC": 2,
+      "hadirDiff": -1,
+      "pemenuhanDiff": 1,
+      "logbookDiff": 1
+    }
+  },
+  {
+    "key": "faisal syahrul",
+    "nim": "13024009",
+    "name": "Faisal Syahrul Gufron",
+    "qc": {
+      "nim": "13024009",
+      "cPoin": 182,
+      "dHadir": 20,
+      "ePemenuhan": 17,
+      "fLogbook": 17,
+      "hMobile": 182,
+      "diff": 0
+    },
+    "db": {
+      "totalSSOT": 182,
+      "hadirCountFromPoints": 20,
+      "hadirPtsFromPoints": 80,
+      "pemenuhanCountFromPoints": 17,
+      "pemenuhanPtsFromPoints": 51,
+      "logbookCountFromPoints": 17,
+      "logbookPtsFromPoints": 51,
+      "totalAttendancesInDb": 20,
+      "attHadirCount": 19,
+      "attMemenuhiCount": 17,
+      "totalLogbooksInDb": 34,
+      "distinctLogbookDatesCount": 17,
+      "distinctDates": [
+        "2026-08-20",
+        "2026-08-26",
+        "2026-08-28",
+        "2026-08-29",
+        "2026-09-01",
+        "2026-09-02",
+        "2026-09-03",
+        "2026-09-04",
+        "2026-09-07",
+        "2026-09-08",
+        "2026-09-09",
+        "2026-09-10",
+        "2026-09-11",
+        "2026-09-12",
+        "2026-09-14",
+        "2026-09-15",
+        "2026-09-16"
+      ]
+    },
+    "diffAnalysis": {
+      "ssotVsQcH": 0,
+      "ssotVsQcC": 0,
+      "hadirDiff": 0,
+      "pemenuhanDiff": 0,
+      "logbookDiff": 0
+    }
+  },
+  {
+    "key": "khairunisa",
+    "nim": "10124157",
+    "name": "Khoirunnisa Arpandi",
+    "qc": {
+      "nim": "10124157",
+      "cPoin": 130,
+      "dHadir": 13,
+      "ePemenuhan": 11,
+      "fLogbook": 15,
+      "hMobile": 133,
+      "diff": -3
+    },
+    "db": {
+      "totalSSOT": 133,
+      "hadirCountFromPoints": 13,
+      "hadirPtsFromPoints": 52,
+      "pemenuhanCountFromPoints": 11,
+      "pemenuhanPtsFromPoints": 33,
+      "logbookCountFromPoints": 16,
+      "logbookPtsFromPoints": 48,
+      "totalAttendancesInDb": 14,
+      "attHadirCount": 13,
+      "attMemenuhiCount": 11,
+      "totalLogbooksInDb": 20,
+      "distinctLogbookDatesCount": 16,
+      "distinctDates": [
+        "2026-08-28",
+        "2026-08-29",
+        "2026-09-01",
+        "2026-09-02",
+        "2026-09-03",
+        "2026-09-07",
+        "2026-09-08",
+        "2026-09-09",
+        "2026-09-10",
+        "2026-09-11",
+        "2026-09-14",
+        "2026-09-15",
+        "2026-09-16",
+        "2026-09-17",
+        "2026-09-18",
+        "2026-09-21"
+      ]
+    },
+    "diffAnalysis": {
+      "ssotVsQcH": 0,
+      "ssotVsQcC": 3,
+      "hadirDiff": 0,
+      "pemenuhanDiff": 0,
+      "logbookDiff": 1
+    }
+  },
+  {
+    "key": "malfin",
+    "nim": "10124225",
+    "name": "Malfin Jaffan Inggil Waskito",
+    "qc": {
+      "nim": "10124225",
+      "cPoin": 146,
+      "dHadir": 17,
+      "ePemenuhan": 14,
+      "fLogbook": 12,
+      "hMobile": 154,
+      "diff": -6
+    },
+    "db": {
+      "totalSSOT": 154,
+      "hadirCountFromPoints": 16,
+      "hadirPtsFromPoints": 64,
+      "pemenuhanCountFromPoints": 14,
+      "pemenuhanPtsFromPoints": 42,
+      "logbookCountFromPoints": 16,
+      "logbookPtsFromPoints": 48,
+      "totalAttendancesInDb": 18,
+      "attHadirCount": 17,
+      "attMemenuhiCount": 14,
+      "totalLogbooksInDb": 19,
+      "distinctLogbookDatesCount": 15,
+      "distinctDates": [
+        "2026-08-27",
+        "2026-08-28",
+        "2026-09-01",
+        "2026-09-02",
+        "2026-09-03",
+        "2026-09-04",
+        "2026-09-07",
+        "2026-09-08",
+        "2026-09-10",
+        "2026-09-11",
+        "2026-09-14",
+        "2026-09-15",
+        "2026-09-16",
+        "2026-09-17",
+        "2026-09-18"
+      ]
+    },
+    "diffAnalysis": {
+      "ssotVsQcH": 0,
+      "ssotVsQcC": 8,
+      "hadirDiff": -1,
+      "pemenuhanDiff": 0,
+      "logbookDiff": 4
+    }
+  },
+  {
+    "key": "miko",
+    "nim": "10422035",
+    "name": "Miko Pratama",
+    "qc": {
+      "nim": "10422035",
+      "cPoin": 68,
+      "dHadir": 8,
+      "ePemenuhan": 8,
+      "fLogbook": 4,
+      "hMobile": 71,
+      "diff": -3
+    },
+    "db": {
+      "totalSSOT": 71,
+      "hadirCountFromPoints": 8,
+      "hadirPtsFromPoints": 32,
+      "pemenuhanCountFromPoints": 8,
+      "pemenuhanPtsFromPoints": 24,
+      "logbookCountFromPoints": 5,
+      "logbookPtsFromPoints": 15,
+      "totalAttendancesInDb": 17,
+      "attHadirCount": 8,
+      "attMemenuhiCount": 8,
+      "totalLogbooksInDb": 6,
+      "distinctLogbookDatesCount": 5,
+      "distinctDates": [
+        "2026-09-15",
+        "2026-09-16",
+        "2026-09-17",
+        "2026-09-18",
+        "2026-09-21"
+      ]
+    },
+    "diffAnalysis": {
+      "ssotVsQcH": 0,
+      "ssotVsQcC": 3,
+      "hadirDiff": 0,
+      "pemenuhanDiff": 0,
+      "logbookDiff": 1
+    }
+  },
+  {
+    "key": "muhammad hafidz",
+    "nim": "10524132",
+    "name": "Muhammad Hafidz Zidan Sukri",
+    "qc": {
+      "nim": "10524132",
+      "cPoin": 185,
+      "dHadir": 20,
+      "ePemenuhan": 18,
+      "fLogbook": 17,
+      "hMobile": 188,
+      "diff": -3
+    },
+    "db": {
+      "totalSSOT": 188,
+      "hadirCountFromPoints": 20,
+      "hadirPtsFromPoints": 80,
+      "pemenuhanCountFromPoints": 18,
+      "pemenuhanPtsFromPoints": 54,
+      "logbookCountFromPoints": 18,
+      "logbookPtsFromPoints": 54,
+      "totalAttendancesInDb": 20,
+      "attHadirCount": 20,
+      "attMemenuhiCount": 17,
+      "totalLogbooksInDb": 39,
+      "distinctLogbookDatesCount": 18,
+      "distinctDates": [
+        "2026-08-26",
+        "2026-08-27",
+        "2026-08-28",
+        "2026-08-29",
+        "2026-09-01",
+        "2026-09-02",
+        "2026-09-03",
+        "2026-09-04",
+        "2026-09-07",
+        "2026-09-08",
+        "2026-09-09",
+        "2026-09-10",
+        "2026-09-11",
+        "2026-09-12",
+        "2026-09-14",
+        "2026-09-15",
+        "2026-09-16",
+        "2026-09-18"
+      ]
+    },
+    "diffAnalysis": {
+      "ssotVsQcH": 0,
+      "ssotVsQcC": 3,
+      "hadirDiff": 0,
+      "pemenuhanDiff": 0,
+      "logbookDiff": 1
+    }
+  },
+  {
+    "key": "muhammad ihsan",
+    "nim": "10124384",
+    "name": "Muhammad Ihsan",
+    "qc": {
+      "nim": "10124384",
+      "cPoin": 148,
+      "dHadir": 16,
+      "ePemenuhan": 14,
+      "fLogbook": 14,
+      "hMobile": 150,
+      "diff": -2
+    },
+    "db": {
+      "totalSSOT": 150,
+      "hadirCountFromPoints": 15,
+      "hadirPtsFromPoints": 60,
+      "pemenuhanCountFromPoints": 14,
+      "pemenuhanPtsFromPoints": 42,
+      "logbookCountFromPoints": 16,
+      "logbookPtsFromPoints": 48,
+      "totalAttendancesInDb": 17,
+      "attHadirCount": 16,
+      "attMemenuhiCount": 14,
+      "totalLogbooksInDb": 33,
+      "distinctLogbookDatesCount": 16,
+      "distinctDates": [
+        "2026-08-26",
+        "2026-08-27",
+        "2026-09-01",
+        "2026-09-02",
+        "2026-09-03",
+        "2026-09-04",
+        "2026-09-07",
+        "2026-09-08",
+        "2026-09-09",
+        "2026-09-10",
+        "2026-09-11",
+        "2026-09-12",
+        "2026-09-14",
+        "2026-09-15",
+        "2026-09-16",
+        "2026-09-18"
+      ]
+    },
+    "diffAnalysis": {
+      "ssotVsQcH": 0,
+      "ssotVsQcC": 2,
+      "hadirDiff": -1,
+      "pemenuhanDiff": 0,
+      "logbookDiff": 2
+    }
+  },
+  {
+    "key": "rizki aditia",
+    "nim": "41724012",
+    "name": "Rizki Aditia Rifaldi",
+    "qc": {
+      "nim": "41724012",
+      "cPoin": 150,
+      "dHadir": 18,
+      "ePemenuhan": 10,
+      "fLogbook": 16,
+      "hMobile": 168,
+      "diff": -18
+    },
+    "db": {
+      "totalSSOT": 168,
+      "hadirCountFromPoints": 18,
+      "hadirPtsFromPoints": 72,
+      "pemenuhanCountFromPoints": 14,
+      "pemenuhanPtsFromPoints": 42,
+      "logbookCountFromPoints": 18,
+      "logbookPtsFromPoints": 54,
+      "totalAttendancesInDb": 18,
+      "attHadirCount": 18,
+      "attMemenuhiCount": 14,
+      "totalLogbooksInDb": 27,
+      "distinctLogbookDatesCount": 18,
+      "distinctDates": [
+        "2026-08-27",
+        "2026-08-28",
+        "2026-08-29",
+        "2026-09-01",
+        "2026-09-02",
+        "2026-09-03",
+        "2026-09-04",
+        "2026-09-07",
+        "2026-09-08",
+        "2026-09-09",
+        "2026-09-10",
+        "2026-09-11",
+        "2026-09-12",
+        "2026-09-14",
+        "2026-09-15",
+        "2026-09-16",
+        "2026-09-18",
+        "2026-09-19"
+      ]
+    },
+    "diffAnalysis": {
+      "ssotVsQcH": 0,
+      "ssotVsQcC": 18,
+      "hadirDiff": 0,
+      "pemenuhanDiff": 4,
+      "logbookDiff": 2
+    }
+  },
+  {
+    "key": "rizki saputra",
+    "nim": "10324013",
+    "name": "Rizki Saputra",
+    "qc": {
+      "nim": "10324013",
+      "cPoin": 155,
+      "dHadir": 17,
+      "ePemenuhan": 13,
+      "fLogbook": 16,
+      "hMobile": 151,
+      "diff": -4
+    },
+    "db": {
+      "totalSSOT": 151,
+      "hadirCountFromPoints": 16,
+      "hadirPtsFromPoints": 64,
+      "pemenuhanCountFromPoints": 12,
+      "pemenuhanPtsFromPoints": 36,
+      "logbookCountFromPoints": 17,
+      "logbookPtsFromPoints": 51,
+      "totalAttendancesInDb": 18,
+      "attHadirCount": 17,
+      "attMemenuhiCount": 12,
+      "totalLogbooksInDb": 39,
+      "distinctLogbookDatesCount": 17,
+      "distinctDates": [
+        "2026-08-28",
+        "2026-08-29",
+        "2026-09-01",
+        "2026-09-02",
+        "2026-09-03",
+        "2026-09-04",
+        "2026-09-05",
+        "2026-09-07",
+        "2026-09-08",
+        "2026-09-09",
+        "2026-09-10",
+        "2026-09-11",
+        "2026-09-14",
+        "2026-09-15",
+        "2026-09-16",
+        "2026-09-17",
+        "2026-09-18"
+      ]
+    },
+    "diffAnalysis": {
+      "ssotVsQcH": 0,
+      "ssotVsQcC": -4,
+      "hadirDiff": -1,
+      "pemenuhanDiff": -1,
+      "logbookDiff": 1
+    }
+  },
+  {
+    "key": "zhanifa",
+    "nim": "44324071",
+    "name": "Zhanifa Meluna Fatiha",
+    "qc": {
+      "nim": "44324071",
+      "cPoin": 111,
+      "dHadir": 12,
+      "ePemenuhan": 11,
+      "fLogbook": 10,
+      "hMobile": 114,
+      "diff": -3
+    },
+    "db": {
+      "totalSSOT": 114,
+      "hadirCountFromPoints": 12,
+      "hadirPtsFromPoints": 48,
+      "pemenuhanCountFromPoints": 11,
+      "pemenuhanPtsFromPoints": 33,
+      "logbookCountFromPoints": 11,
+      "logbookPtsFromPoints": 33,
+      "totalAttendancesInDb": 13,
+      "attHadirCount": 12,
+      "attMemenuhiCount": 11,
+      "totalLogbooksInDb": 16,
+      "distinctLogbookDatesCount": 11,
+      "distinctDates": [
+        "2026-08-27",
+        "2026-08-28",
+        "2026-09-01",
+        "2026-09-03",
+        "2026-09-04",
+        "2026-09-07",
+        "2026-09-09",
+        "2026-09-10",
+        "2026-09-11",
+        "2026-09-14",
+        "2026-09-15"
+      ]
+    },
+    "diffAnalysis": {
+      "ssotVsQcH": 0,
+      "ssotVsQcC": 3,
+      "hadirDiff": 0,
+      "pemenuhanDiff": 0,
+      "logbookDiff": 1
+    }
+  }
+]
