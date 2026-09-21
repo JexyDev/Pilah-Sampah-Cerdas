@@ -172,6 +172,19 @@ jobs:
             --android-skip-build-dependency-validation
           ls -lah build/app/outputs/flutter-apk/
 
+      - name: Bypass MTU Blackhole (Fix Hang Issue)
+        run: |
+          echo "Current MTU settings:"
+          ip link show
+          DEFAULT_IF=$(ip route | grep default | awk '{print $5}')
+          if [ -n "$DEFAULT_IF" ]; then
+            echo "Default interface is $DEFAULT_IF. Lowering MTU to 1360 to bypass IDCloudHost firewall issues..."
+            sudo ip link set dev $DEFAULT_IF mtu 1360
+            ip link show $DEFAULT_IF
+          else
+            echo "Warning: Could not determine default interface."
+          fi
+
       - name: Prepare VPS Credentials and Target APK
         id: vps-creds
         run: |
