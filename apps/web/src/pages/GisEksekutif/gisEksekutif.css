@@ -1,23 +1,27 @@
-.gis-eksekutif-root {
-  --bg: #f1f5f8;
-  --card: #ffffff;
-  --ink: #0e2740;
-  --ink-2: #48607a;
-  --muted: #7b8ea2;
-  --line: #e1e9ef;
-  --field: #ffffff;
-  --accent: #0b6a78;
-  --accent-2: #0d7d88;
-  --accent-ink: #ffffff;
-  --accent-soft: #e0f3f1;
-  --amber-soft: #fdf0d2;
-  --up: #16995a;
-  --down: #d24545;
-  --shadow: 0 1px 2px rgba(14, 39, 64, .05), 0 10px 26px -14px rgba(14, 39, 64, .16);
+.gis-eksekutif-root,
+.gis-eksekutif-root[data-theme="light"],
+.gis-eksekutif-root[data-theme="dark"],
+:root[data-theme="dark"] .gis-eksekutif-root,
+.dark .gis-eksekutif-root {
+  --bg: #f8fafc !important;
+  --card: #ffffff !important;
+  --ink: #0f172a !important;
+  --ink-2: #334155 !important;
+  --muted: #64748b !important;
+  --line: #e2e8f0 !important;
+  --field: #ffffff !important;
+  --accent: #009966 !important;
+  --accent-2: #055c46 !important;
+  --accent-ink: #ffffff !important;
+  --accent-soft: #ecfdf5 !important;
+  --amber-soft: #fffbeb !important;
+  --up: #16a34a !important;
+  --down: #dc2626 !important;
+  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05) !important;
   --font: "Plus Jakarta Sans", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
-  color-scheme: light;
-  background: var(--bg);
-  color: var(--ink);
+  color-scheme: light !important;
+  background: var(--bg) !important;
+  color: var(--ink) !important;
   font-family: var(--font);
   font-size: 15px;
   line-height: 1.4;
@@ -27,21 +31,27 @@
 }
 
 @media (prefers-color-scheme: dark) {
+  .gis-eksekutif-root,
   .gis-eksekutif-root:not([data-theme="light"]) {
-    --bg: #0b1520; --card: #12222f; --ink: #e8f1f7; --ink-2: #a8bccc; --muted: #7f95a8; --line: #23394a;
-    --field: #0f1d29; --accent: #16909f; --accent-2: #4fd0da; --accent-soft: #123b41; --amber-soft: #3a3013;
-    --up: #3fd08a; --down: #ff7d7d; --shadow: 0 1px 2px rgba(0,0,0,.35), 0 10px 26px -14px rgba(0,0,0,.6);
-    color-scheme: dark;
+    --bg: #f8fafc !important;
+    --card: #ffffff !important;
+    --ink: #0f172a !important;
+    --ink-2: #334155 !important;
+    --muted: #64748b !important;
+    --line: #e2e8f0 !important;
+    --field: #ffffff !important;
+    --accent: #009966 !important;
+    --accent-2: #055c46 !important;
+    --accent-ink: #ffffff !important;
+    --accent-soft: #ecfdf5 !important;
+    --amber-soft: #fffbeb !important;
+    --up: #16a34a !important;
+    --down: #dc2626 !important;
+    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05) !important;
+    color-scheme: light !important;
+    background: var(--bg) !important;
+    color: var(--ink) !important;
   }
-}
-
-:root[data-theme="dark"] .gis-eksekutif-root,
-.dark .gis-eksekutif-root,
-.gis-eksekutif-root[data-theme="dark"] {
-  --bg: #0b1520; --card: #12222f; --ink: #e8f1f7; --ink-2: #a8bccc; --muted: #7f95a8; --line: #23394a;
-  --field: #0f1d29; --accent: #16909f; --accent-2: #4fd0da; --accent-soft: #123b41; --amber-soft: #3a3013;
-  --up: #3fd08a; --down: #ff7d7d; --shadow: 0 1px 2px rgba(0,0,0,.35), 0 10px 26px -14px rgba(0,0,0,.6);
-  color-scheme: dark;
 }
 
 .gis-eksekutif-root *,
@@ -123,8 +133,8 @@
 
 .gis-eksekutif-root .sub {
   margin-top: 8px;
-  color: var(--accent-2);
-  font-size: clamp(14px, 1.55vw, 20px);
+  color: #64748b;
+  font-size: clamp(14px, 1.55vw, 17px);
   font-weight: 500;
   letter-spacing: -.005em;
 }
@@ -136,6 +146,29 @@
   gap: 12px;
   flex: none;
   max-width: 100%;
+}
+
+.gis-eksekutif-root .tag-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  box-shadow: 0 1px 2px rgba(16, 185, 129, .1);
+}
+
+.gis-eksekutif-root .tag-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 .gis-eksekutif-root .tag {
@@ -1058,7 +1091,8 @@
 }
 
 .gis-eksekutif-root .fac-n {
-  color: var(--ink-2);
+  color: var(--ink);
+  font-weight: 600;
 }
 
 .gis-eksekutif-root .fac-d {
@@ -1067,7 +1101,8 @@
 }
 
 .gis-eksekutif-root .fac-f {
-  font-weight: 600;
+  font-weight: 500;
+  color: var(--ink-2);
 }
 
 .gis-eksekutif-root .lg-grid {

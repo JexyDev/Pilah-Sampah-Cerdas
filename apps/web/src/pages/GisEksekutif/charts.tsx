@@ -41,9 +41,9 @@ interface DonutProps {
 
 export function Donut({ org, ano, res }: DonutProps) {
   const parts = [
-    { k: "Organik", v: org, c: "#3aa64a" },
-    { k: "Anorganik", v: ano, c: "#1f7aec" },
-    { k: "Residu", v: res, c: "#7d8597" },
+    { k: "Organik", v: org, c: "#10b981" },
+    { k: "Anorganik", v: ano, c: "#f59e0b" },
+    { k: "Residu", v: res, c: "#64748b" },
   ];
   const sum = org + ano + res || 1;
   const r = 44;
@@ -108,6 +108,8 @@ export function Donut({ org, ano, res }: DonutProps) {
 
 /* ---------- Tren volume bulanan ---------- */
 function smoothPath(pts: [number, number][]): string {
+  if (!pts || pts.length === 0) return "";
+  if (pts.length === 1) return `M${pts[0][0]},${pts[0][1]}`;
   let d = `M${pts[0][0]},${pts[0][1]}`;
   for (let i = 0; i < pts.length - 1; i++) {
     const p0 = pts[i - 1] || pts[i];
@@ -130,30 +132,40 @@ export function Trend({ series, pi }: TrendProps) {
   const ref = useRef<HTMLDivElement>(null);
   const { w } = useSize(ref, { w: 420, h: 170 });
   const [hover, setHover] = useState<number | null>(null);
-  const H = 172;
-  const m = { l: 34, r: 12, t: 12, b: 24 };
-  const { step, top } = niceScale(Math.max(...series, 1));
-  const x = (i: number) => m.l + ((w - m.l - m.r) * i) / (series.length - 1);
-  const y = (v: number) => m.t + (H - m.t - m.b) * (1 - v / top);
-  const pts: [number, number][] = series.map((v, i) => [x(i), y(v)]);
+  const H = 186;
+  const m = { l: 44, r: 16, t: 26, b: 24 };
+
+  // Pastikan dataset memiliki 9 titik (Jan–Sep) agar kurva dan axis selalu stabil
+  const safeSeries = (!series || series.length === 0)
+    ? [0, 0, 0, 0, 0, 0, 0, 0, 0]
+    : series;
+
+  const { step, top } = niceScale(Math.max(...safeSeries, 1));
+  const denom = Math.max(1, safeSeries.length - 1);
+  const x = (i: number) => m.l + ((w - m.l - m.r) * i) / denom;
+  const y = (v: number) => m.t + (H - m.t - m.b) * (1 - (v ?? 0) / top);
+  const pts: [number, number][] = safeSeries.map((v, i) => [x(i), y(v)]);
   const line = smoothPath(pts);
   const base = y(0);
-  const area = `${line} L${x(series.length - 1)},${base} L${x(0)},${base} Z`;
+  const area = pts.length > 0 ? `${line} L${x(safeSeries.length - 1)},${base} L${x(0)},${base} Z` : "";
   const ticks = [0, 1, 2, 3].map((i) => i * step);
-  const active = hover ?? pi;
+
+  const safePi = Math.max(0, Math.min(safeSeries.length - 1, pi < 0 ? safeSeries.length - 1 : pi));
+  const active = hover ?? safePi;
 
   const onMove = (e: React.PointerEvent<SVGSVGElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const px = e.clientX - rect.left;
-    const i = Math.round(((px - m.l) / (w - m.l - m.r)) * (series.length - 1));
-    setHover(Math.max(0, Math.min(series.length - 1, i)));
+    const i = Math.round(((px - m.l) / (w - m.l - m.r)) * (safeSeries.length - 1));
+    setHover(Math.max(0, Math.min(safeSeries.length - 1, i)));
   };
   const tipW = 92;
-  const tipX = Math.max(m.l, Math.min(w - tipW - 4, x(active) - tipW / 2));
+  const activeX = x(active);
+  const tipX = Math.max(m.l, Math.min(w - tipW - 4, activeX - tipW / 2));
 
   return (
     <section className="card chart-card" aria-label="Tren volume bulanan">
-      <CardTitle icon="bars" right="m³/bulan">
+      <CardTitle icon="bars" right="Kec. Coblong">
         Tren volume bulanan
       </CardTitle>
       <div ref={ref} className="trend">
@@ -173,6 +185,17 @@ export function Trend({ series, pi }: TrendProps) {
               <stop offset="1" stopColor="#14b8a6" stopOpacity=".03" />
             </linearGradient>
           </defs>
+
+          {/* Indikator Satuan Sumbu Y di sisi atas */}
+          <text
+            x={m.l}
+            y={m.t - 9}
+            textAnchor="start"
+            style={{ fontSize: 11, fontWeight: 600, fill: "var(--ink-2)" }}
+          >
+            Volume (m³/bulan)
+          </text>
+
           {ticks.map((t) => (
             <g key={t}>
               <line x1={m.l} x2={w - m.r} y1={y(t)} y2={y(t)} stroke="var(--line)" strokeWidth="1" />
@@ -187,7 +210,7 @@ export function Trend({ series, pi }: TrendProps) {
             <text
               key={mo}
               x={x(i)}
-              y={H - 6}
+              y={H - 8}
               textAnchor="middle"
               className={`ax ${i === pi ? "ax-on" : ""}`}
             >
@@ -215,12 +238,12 @@ export function Trend({ series, pi }: TrendProps) {
             strokeDasharray="3 3"
           />
           <g
-            transform={`translate(${tipX} ${Math.max(2, y(series[active]) - 34)})`}
+            transform={`translate(${tipX} ${Math.max(2, y(safeSeries[active] ?? 0) - 34)})`}
             pointerEvents="none"
           >
             <rect width={tipW} height="24" rx="7" fill="var(--ink)" />
             <text x={tipW / 2} y="16" textAnchor="middle" className="tip-t">
-              {MONTHS[active]}: {fmtN(series[active])} m³
+              {MONTHS[active] ?? "Sep"}: {fmtN(safeSeries[active] ?? 0)} m³
             </text>
           </g>
         </svg>
@@ -287,6 +310,32 @@ export function Methane({ sensors }: MethaneProps) {
     : `${ppms[0]} – ${ppms[ppms.length - 1]} ppm`;
   const MAXP = 20;
 
+  if (!live.length) {
+    return (
+      <section className="card chart-card" aria-label="Pemantauan metana">
+        <CardTitle icon="activity" right="Smart City IoT">
+          Pemantauan Gas CH₄
+        </CardTitle>
+        <div style={{ padding: "14px 6px 6px", display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: "#10b981", boxShadow: "0 0 0 3px rgba(16, 185, 129, 0.2)" }} />
+            <span style={{ fontSize: 13, fontWeight: 700, color: "var(--ink)" }}>Tahap Integrasi Jaringan IoT</span>
+          </div>
+          <p style={{ margin: 0, fontSize: 12, color: "var(--muted)", lineHeight: 1.5 }}>
+            Infrastruktur telemetri sensor gas Metana (CH₄) dipersiapkan untuk pemantauan real-time emisi di titik TPS & fasilitas pengolahan sampah.
+          </p>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4, fontSize: 11, color: "var(--ink-2)", background: "var(--bg)", padding: "7px 12px", borderRadius: 8, border: "1px solid var(--line)" }}>
+            <div>Cakupan: <b>Coblong</b></div>
+            <div>•</div>
+            <div>Satuan: <b>ppm</b></div>
+            <div>•</div>
+            <div>Status: <span style={{ color: "#10b981", fontWeight: 700 }}>Hardware Ready</span></div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="card chart-card" aria-label="Pemantauan metana">
       <CardTitle icon="activity">Pemantauan CH₄</CardTitle>
@@ -318,7 +367,7 @@ export function Methane({ sensors }: MethaneProps) {
           <em className="ch4-max">{MAXP}+ ppm</em>
         </div>
         <p className="note">
-          Rentang konsentrasi terbaru
+          Rentang konsentrasi terbaru (ppm)
           <br />
           Kelas tampilan, bukan ambang keselamatan.
         </p>

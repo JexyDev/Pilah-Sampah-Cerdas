@@ -2019,7 +2019,7 @@ const Dashboard: React.FC = () => {
   // Khusus tab GIS Eksekutif Tata Kelola Sampah
   if (canAccessGisSub && activeSubTab === "gis") {
     return (
-      <div className="w-full space-y-6 pb-12 font-sans text-slate-800 dark:text-slate-100 relative">
+      <div className="w-full space-y-6 pb-12 font-sans text-slate-800 relative">
         {renderTabSwitcher()}
         <GisEksekutifPage />
       </div>
@@ -2105,6 +2105,9 @@ const Dashboard: React.FC = () => {
     trendPoints.length > 0
       ? `${trendInorganicPath} L${trendPoints[trendPoints.length - 1].x},280 L${trendPoints[0].x},280 Z`
       : "";
+
+  // Flag penonaktifan tampilan Kepatuhan Real sementara (permintaan manajemen karena data masih ambigu / tahap evaluasi)
+  const HIDE_KEPATUHAN_REAL = true;
 
   const kelurahanBaselineList: KelurahanBaselineData[] =
     stats?.baselineComparison && Array.isArray(stats.baselineComparison) && stats.baselineComparison.length > 0
@@ -2832,14 +2835,18 @@ const Dashboard: React.FC = () => {
 
       {/* 3.6 Seksi Komparasi Baseline Survey vs Endline Aktual (Agregat Kelurahan Real) */}
       <div className="px-1 pt-2 text-[10.5px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider flex items-center justify-between">
-        <span>Evaluasi Capaian: Baseline vs Kepatuhan Pemilahan Real (per Kelurahan)</span>
+        <span>
+          {HIDE_KEPATUHAN_REAL
+            ? "Evaluasi Capaian: Survei Baseline Pemilahan (per Kelurahan)"
+            : "Evaluasi Capaian: Baseline vs Kepatuhan Pemilahan Real (per Kelurahan)"}
+        </span>
         <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase">
           Agregat 6 Kelurahan Coblong
         </span>
       </div>
 
       <div className="bg-white dark:bg-slate-900 shadow-xs rounded-2xl p-6 border border-slate-200 dark:border-slate-800 relative z-10 space-y-6">
-        {/* Header Seksi & KPI Ringkasan 4 Kolom Simetris */}
+        {/* Header Seksi & KPI Ringkasan */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5">
           <div className="space-y-1 max-w-xl">
             <div className="flex items-center gap-2 flex-wrap">
@@ -2847,11 +2854,15 @@ const Dashboard: React.FC = () => {
                 <LineChart size={18} />
               </span>
               <h3 className="font-extrabold text-[17px] text-slate-900 dark:text-slate-100 tracking-tight">
-                Grafik Perbandingan: Survei Baseline vs Kepatuhan Real per Kelurahan
+                {HIDE_KEPATUHAN_REAL
+                  ? "Grafik Capaian: Survei Baseline Pemilahan Sampah per Kelurahan"
+                  : "Grafik Perbandingan: Survei Baseline vs Kepatuhan Real per Kelurahan"}
               </h3>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              Perbandingan tingkat pemilahan sampah awal sebelum pembimbingan (Survei Baseline) dengan capaian kepatuhan pemilahan aktual real-time di 6 Kelurahan Kecamatan Coblong.
+              {HIDE_KEPATUHAN_REAL
+                ? "Tingkat pemilahan sampah awal sebelum pembimbingan (Survei Baseline) di 6 Kelurahan Kecamatan Coblong."
+                : "Perbandingan tingkat pemilahan sampah awal sebelum pembimbingan (Survei Baseline) dengan capaian kepatuhan pemilahan aktual real-time di 6 Kelurahan Kecamatan Coblong."}
             </p>
             <div className="flex items-center gap-2 pt-1 text-[11px] text-slate-400 font-semibold">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -2868,8 +2879,8 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* 4 Kartu Mini Ringkasan Simetris (Termasuk Total Volume Sampah Coblong) */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 shrink-0 w-full lg:w-auto">
+          {/* Kartu Mini Ringkasan */}
+          <div className={`grid ${HIDE_KEPATUHAN_REAL ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2 sm:grid-cols-4"} gap-2.5 shrink-0 w-full lg:w-auto`}>
             <div className="bg-slate-50 dark:bg-slate-800/80 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 text-center min-w-[95px]">
               <span className="text-[10px] text-slate-400 font-bold uppercase block tracking-wider">
                 Rata-rata Baseline
@@ -2880,25 +2891,41 @@ const Dashboard: React.FC = () => {
               <span className="text-[9.5px] text-slate-400 block mt-0.5">Survei Lapangan</span>
             </div>
 
-            <div className="bg-emerald-50/70 dark:bg-emerald-950/40 p-3 rounded-2xl border border-emerald-200/70 dark:border-emerald-700/40 text-center min-w-[95px]">
-              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase block tracking-wider">
-                Kepatuhan Real
-              </span>
-              <span className="text-base font-black text-emerald-700 dark:text-emerald-300">
-                {avgEndline.toLocaleString("id-ID")}%
-              </span>
-              <span className="text-[9.5px] text-emerald-600 dark:text-emerald-400 block mt-0.5">Real-Time Terdata</span>
-            </div>
+            {!HIDE_KEPATUHAN_REAL && (
+              <>
+                <div className="bg-emerald-50/70 dark:bg-emerald-950/40 p-3 rounded-2xl border border-emerald-200/70 dark:border-emerald-700/40 text-center min-w-[95px]">
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase block tracking-wider">
+                    Kepatuhan Real
+                  </span>
+                  <span className="text-base font-black text-emerald-700 dark:text-emerald-300">
+                    {avgEndline.toLocaleString("id-ID")}%
+                  </span>
+                  <span className="text-[9.5px] text-emerald-600 dark:text-emerald-400 block mt-0.5">Real-Time Terdata</span>
+                </div>
 
-            <div className="bg-teal-50/70 dark:bg-teal-950/40 p-3 rounded-2xl border border-teal-200/70 dark:border-teal-700/40 text-center min-w-[95px]">
-              <span className="text-[10px] text-teal-600 dark:text-teal-400 font-bold uppercase block tracking-wider">
-                Kenaikan (Δ)
-              </span>
-              <span className="text-base font-black text-teal-700 dark:text-teal-300 flex items-center justify-center gap-0.5">
-                <TrendingUp size={13} /> {deltaBaseline >= 0 ? `+${deltaBaseline.toLocaleString("id-ID")}%` : `${deltaBaseline.toLocaleString("id-ID")}%`}
-              </span>
-              <span className="text-[9.5px] text-teal-600 dark:text-teal-400 block mt-0.5">Peningkatan Positif</span>
-            </div>
+                <div className="bg-teal-50/70 dark:bg-teal-950/40 p-3 rounded-2xl border border-teal-200/70 dark:border-teal-700/40 text-center min-w-[95px]">
+                  <span className="text-[10px] text-teal-600 dark:text-teal-400 font-bold uppercase block tracking-wider">
+                    Kenaikan (Δ)
+                  </span>
+                  <span className="text-base font-black text-teal-700 dark:text-teal-300 flex items-center justify-center gap-0.5">
+                    <TrendingUp size={13} /> {deltaBaseline >= 0 ? `+${deltaBaseline.toLocaleString("id-ID")}%` : `${deltaBaseline.toLocaleString("id-ID")}%`}
+                  </span>
+                  <span className="text-[9.5px] text-teal-600 dark:text-teal-400 block mt-0.5">Peningkatan Positif</span>
+                </div>
+              </>
+            )}
+
+            {HIDE_KEPATUHAN_REAL && (
+              <div className="bg-emerald-50/70 dark:bg-emerald-950/40 p-3 rounded-2xl border border-emerald-200/70 dark:border-emerald-700/40 text-center min-w-[95px]">
+                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase block tracking-wider">
+                  Cakupan Wilayah
+                </span>
+                <span className="text-base font-black text-emerald-700 dark:text-emerald-300">
+                  {kelurahanBaselineList.length} <span className="text-xs font-bold">Kelurahan</span>
+                </span>
+                <span className="text-[9.5px] text-emerald-600 dark:text-emerald-400 block mt-0.5">Kecamatan Coblong</span>
+              </div>
+            )}
 
             <div className="bg-blue-50/70 dark:bg-blue-950/40 p-3 rounded-2xl border border-blue-200/70 dark:border-blue-700/40 text-center min-w-[95px]">
               <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold uppercase block tracking-wider">
@@ -2907,7 +2934,7 @@ const Dashboard: React.FC = () => {
               <span className="text-base font-black text-blue-700 dark:text-blue-300">
                 {totalCoblongVolumeKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} <span className="text-xs font-bold">Kg</span>
               </span>
-              <span className="text-[9.5px] text-blue-600 dark:text-blue-400 block mt-0.5">Kecamatan Coblong</span>
+              <span className="text-[9.5px] text-blue-600 dark:text-blue-400 block mt-0.5">Terdata di Sistem</span>
             </div>
           </div>
         </div>
@@ -2921,12 +2948,14 @@ const Dashboard: React.FC = () => {
                 Survei Baseline (Awal)
               </span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="w-3.5 h-3.5 rounded bg-emerald-500 shadow-2xs" />
-              <span className="font-bold text-emerald-700 dark:text-emerald-400">
-                Kepatuhan Real / Endline (Waktu Nyata)
-              </span>
-            </div>
+            {!HIDE_KEPATUHAN_REAL && (
+              <div className="flex items-center gap-2">
+                <span className="w-3.5 h-3.5 rounded bg-emerald-500 shadow-2xs" />
+                <span className="font-bold text-emerald-700 dark:text-emerald-400">
+                  Kepatuhan Real / Endline (Waktu Nyata)
+                </span>
+              </div>
+            )}
             <div className="flex items-center gap-2">
               <span className="w-3.5 h-3.5 rounded-full bg-blue-100 dark:bg-blue-950/60 border border-blue-300 dark:border-blue-700 flex items-center justify-center text-[9px] font-black text-blue-700 dark:text-blue-300">
                 Kg
@@ -2937,16 +2966,18 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
           <span className="text-[11px] text-slate-400 italic">
-            *Dua bar chart per kelurahan: Kiri = Baseline, Kanan = Kepatuhan Real | Badge = Total Volume Sampah
+            {HIDE_KEPATUHAN_REAL
+              ? "*Bar chart per kelurahan: Baseline hasil survei awal pemilahan | Badge = Total Volume Sampah"
+              : "*Dua bar chart per kelurahan: Kiri = Baseline, Kanan = Kepatuhan Real | Badge = Total Volume Sampah"}
           </span>
         </div>
 
-        {/* Kanvas Grafik Dual Bar Chart dengan Padding Atas Luas (pt-40) agar Tooltip Hover Utuh Tidak Terpotong */}
-        <div className="w-full bg-slate-50/50 dark:bg-slate-800/40 rounded-2xl p-5 pt-40 border border-slate-100 dark:border-slate-800/80 overflow-x-auto">
+        {/* Kanvas Grafik Bar Chart dengan Padding & Tinggi Proporsional */}
+        <div className="w-full bg-slate-50/50 dark:bg-slate-800/40 rounded-2xl p-5 pt-28 sm:pt-32 border border-slate-100 dark:border-slate-800/80 overflow-x-auto">
           <div className="min-w-[720px] space-y-2">
             <div className="flex gap-3 items-end">
               {/* Sumbu Y (0% - 100%) */}
-              <div className="w-12 shrink-0 flex flex-col justify-between text-[10px] text-slate-400 dark:text-slate-500 font-extrabold pr-2 border-r border-slate-200 dark:border-slate-800 h-56 text-right select-none pb-4">
+              <div className="w-12 shrink-0 flex flex-col justify-between text-[10px] text-slate-400 dark:text-slate-500 font-extrabold pr-2 border-r border-slate-200 dark:border-slate-800 h-72 text-right select-none pb-2">
                 <span>100%</span>
                 <span>80%</span>
                 <span>60%</span>
@@ -2956,7 +2987,14 @@ const Dashboard: React.FC = () => {
               </div>
 
               {/* Grid Bar untuk 6 Kelurahan */}
-              <div className="flex-1 grid grid-cols-6 gap-3 sm:gap-4 items-end h-56 border-b border-slate-200 dark:border-slate-800 pb-1 relative">
+              <div className="flex-1 grid grid-cols-6 gap-3 sm:gap-4 items-end h-72 border-b border-slate-200 dark:border-slate-800 pb-1 relative">
+                {/* Garis Bantu Horizontal (Dashed Gridlines) */}
+                <div className="absolute inset-x-0 top-0 border-t border-dashed border-slate-200/60 dark:border-slate-800/80 pointer-events-none" />
+                <div className="absolute inset-x-0 top-[20%] border-t border-dashed border-slate-200/60 dark:border-slate-800/80 pointer-events-none" />
+                <div className="absolute inset-x-0 top-[40%] border-t border-dashed border-slate-200/60 dark:border-slate-800/80 pointer-events-none" />
+                <div className="absolute inset-x-0 top-[60%] border-t border-dashed border-slate-200/60 dark:border-slate-800/80 pointer-events-none" />
+                <div className="absolute inset-x-0 top-[80%] border-t border-dashed border-slate-200/60 dark:border-slate-800/80 pointer-events-none" />
+
                 {kelurahanBaselineList.map((item, idx) => {
                   const bRate = Math.min(100, Math.max(0, item.baselineRate || 0));
                   const eRate = Math.min(100, Math.max(0, item.endlineRate || 0));
@@ -2966,15 +3004,34 @@ const Dashboard: React.FC = () => {
                   return (
                     <div
                       key={item.id}
-                      className="flex flex-col items-center h-full justify-end group relative cursor-pointer"
+                      className="flex flex-col items-center h-full justify-end group relative cursor-pointer z-10"
                       onMouseEnter={() => setHoveredBaselineIndex(idx)}
                       onMouseLeave={() => setHoveredBaselineIndex(null)}
                     >
-                      {/* Tooltip Hover Popover (Posisi Aman dengan Caret Panah) */}
+                      {/* Tooltip Hover Popover - Diposisikan tepat di atas bar data agar tidak menabrak batas atas kanvas */}
                       {isHovered && (
-                        <div className="absolute bottom-[calc(100%+14px)] left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 dark:bg-slate-950/95 backdrop-blur-md text-white rounded-xl p-3 shadow-2xl border border-emerald-500/40 text-[11px] w-52 pointer-events-none transition-all duration-200 animate-in fade-in zoom-in-95">
+                        <div
+                          className={`absolute z-50 bg-slate-900/95 dark:bg-slate-950/95 backdrop-blur-md text-white rounded-xl p-3 shadow-2xl border border-emerald-500/40 text-[11px] w-52 pointer-events-none transition-all duration-200 animate-in fade-in zoom-in-95 ${
+                            idx === 0
+                              ? "left-0"
+                              : idx === kelurahanBaselineList.length - 1
+                              ? "right-0"
+                              : "left-1/2 -translate-x-1/2"
+                          }`}
+                          style={{
+                            bottom: `calc(${Math.min(bRate, 50)}% + 36px)`,
+                          }}
+                        >
                           {/* Panah Indikator Bawah (Caret) */}
-                          <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-slate-900 dark:bg-slate-950 border-r border-b border-emerald-500/40 rotate-45" />
+                          <div
+                            className={`absolute -bottom-1.5 w-3 h-3 bg-slate-900 dark:bg-slate-950 border-r border-b border-emerald-500/40 rotate-45 ${
+                              idx === 0
+                                ? "left-8"
+                                : idx === kelurahanBaselineList.length - 1
+                                ? "right-8"
+                                : "left-1/2 -translate-x-1/2"
+                            }`}
+                          />
 
                           <div className="flex items-center justify-between border-b border-slate-800 pb-1.5 mb-2">
                             <span className="font-black text-emerald-400 text-xs truncate">Kel. {item.kelurahan}</span>
@@ -2992,13 +3049,15 @@ const Dashboard: React.FC = () => {
                               <span className="font-bold text-slate-200">{bRate}%</span>
                             </div>
 
-                            <div className="flex justify-between items-center text-slate-300">
-                              <span className="flex items-center gap-1.5 text-emerald-400">
-                                <span className="w-2 h-2 rounded-xs bg-emerald-500 inline-block" />
-                                Kepatuhan Real:
-                              </span>
-                              <span className="font-black text-emerald-400">{eRate}%</span>
-                            </div>
+                            {!HIDE_KEPATUHAN_REAL && (
+                              <div className="flex justify-between items-center text-slate-300">
+                                <span className="flex items-center gap-1.5 text-emerald-400">
+                                  <span className="w-2 h-2 rounded-xs bg-emerald-500 inline-block" />
+                                  Kepatuhan Real:
+                                </span>
+                                <span className="font-black text-emerald-400">{eRate}%</span>
+                              </div>
+                            )}
 
                             <div className="flex justify-between items-center text-blue-300 pt-0.5">
                               <span className="flex items-center gap-1.5 text-blue-400">
@@ -3011,49 +3070,53 @@ const Dashboard: React.FC = () => {
                             </div>
                           </div>
 
-                          <div className="mt-2 pt-1.5 border-t border-slate-800 flex justify-between items-center text-[10px] font-bold">
-                            <span className="text-slate-400">Delta Capaian:</span>
-                            <span
-                              className={`px-1.5 py-0.5 rounded text-[10px] font-extrabold ${
-                                eRate >= bRate
-                                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                                  : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
-                              }`}
-                            >
-                              {eRate >= bRate ? "+" : ""}
-                              {(eRate - bRate).toFixed(1)}%
-                            </span>
-                          </div>
+                          {!HIDE_KEPATUHAN_REAL && (
+                            <div className="mt-2 pt-1.5 border-t border-slate-800 flex justify-between items-center text-[10px] font-bold">
+                              <span className="text-slate-400">Delta Capaian:</span>
+                              <span
+                                className={`px-1.5 py-0.5 rounded text-[10px] font-extrabold ${
+                                  eRate >= bRate
+                                    ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                                    : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                                }`}
+                              >
+                                {eRate >= bRate ? "+" : ""}
+                                {(eRate - bRate).toFixed(1)}%
+                              </span>
+                            </div>
+                          )}
                         </div>
                       )}
 
-                      {/* Sepasang Bar (Kiri: Baseline, Kanan: Real) */}
-                      <div className="w-full flex items-end justify-center gap-1.5 sm:gap-2 h-[85%] pb-1">
-                        {/* Bar 1: Baseline (Kiri - Slate) */}
-                        <div className="flex-1 flex flex-col items-center justify-end h-full">
-                          <span className="text-[10px] font-extrabold text-slate-500 dark:text-slate-400 mb-1">
+                      {/* Bar Grafik (Baseline Proporsional Mantap & Lebih Besar) */}
+                      <div className="w-full flex items-end justify-center gap-1.5 sm:gap-2 h-[88%] pb-1">
+                        {/* Bar 1: Baseline (Slate Solid, Mantap & Lebar) */}
+                        <div className={`flex flex-col items-center justify-end h-full ${HIDE_KEPATUHAN_REAL ? "w-full max-w-[85px] sm:max-w-[100px] lg:max-w-[115px]" : "flex-1"}`}>
+                          <span className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-100 mb-2 tracking-tight group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                             {bRate}%
                           </span>
-                          <div className="w-full bg-slate-200/70 dark:bg-slate-700/50 rounded-t-lg overflow-hidden h-full flex items-end">
+                          <div className="w-full bg-slate-100/60 dark:bg-slate-800/30 rounded-t-2xl overflow-hidden h-full flex items-end border-x border-t border-dashed border-slate-200/80 dark:border-slate-700/50">
                             <div
-                              className="w-full bg-gradient-to-t from-slate-500 to-slate-400 dark:from-slate-600 dark:to-slate-400 rounded-t-lg transition-all duration-500 shadow-2xs group-hover:brightness-110"
+                              className="w-full bg-gradient-to-t from-slate-700 via-slate-600 to-slate-500 dark:from-slate-600 dark:via-slate-500 dark:to-slate-300 rounded-t-2xl transition-all duration-500 shadow-md group-hover:brightness-110 group-hover:scale-[1.02]"
                               style={{ height: `${bRate}%` }}
                             />
                           </div>
                         </div>
 
-                        {/* Bar 2: Real / Endline (Kanan - Emerald) */}
-                        <div className="flex-1 flex flex-col items-center justify-end h-full">
-                          <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 mb-1">
-                            {eRate}%
-                          </span>
-                          <div className="w-full bg-emerald-100/60 dark:bg-emerald-950/40 rounded-t-lg overflow-hidden h-full flex items-end">
-                            <div
-                              className="w-full bg-gradient-to-t from-emerald-600 to-emerald-400 rounded-t-lg transition-all duration-500 shadow-2xs group-hover:brightness-110"
-                              style={{ height: `${eRate}%` }}
-                            />
+                        {/* Bar 2: Real / Endline (Kanan - Emerald) - Disembunyikan saat HIDE_KEPATUHAN_REAL */}
+                        {!HIDE_KEPATUHAN_REAL && (
+                          <div className="flex-1 flex flex-col items-center justify-end h-full">
+                            <span className="text-xs sm:text-[13px] font-black text-emerald-600 dark:text-emerald-400 mb-1.5">
+                              {eRate}%
+                            </span>
+                            <div className="w-full bg-emerald-100/60 dark:bg-emerald-950/40 rounded-t-xl overflow-hidden h-full flex items-end">
+                              <div
+                                className="w-full bg-gradient-to-t from-emerald-600 to-emerald-400 rounded-t-xl transition-all duration-500 shadow-2xs group-hover:brightness-110"
+                                style={{ height: `${eRate}%` }}
+                              />
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </div>
                     </div>
                   );
@@ -3064,22 +3127,28 @@ const Dashboard: React.FC = () => {
             {/* Label Nama Kelurahan Sumbu X & Badge Volume Terdata */}
             <div className="flex gap-3">
               <div className="w-12 shrink-0" />
-              <div className="flex-1 grid grid-cols-6 gap-3 sm:gap-4 text-center pt-1">
+              <div className="flex-1 grid grid-cols-6 gap-3 sm:gap-4 text-center pt-2">
                 {kelurahanBaselineList.map((item) => {
                   const itemKg = Number(item.totalKg || 0);
                   return (
-                    <div key={item.id} className="space-y-1">
-                      <span className="text-[10.5px] sm:text-xs font-black text-slate-700 dark:text-slate-300 block truncate" title={item.kelurahan}>
+                    <div key={item.id} className="space-y-1.5 flex flex-col items-center">
+                      <span className="text-xs sm:text-[13px] font-black text-slate-800 dark:text-slate-200 block truncate w-full" title={item.kelurahan}>
                         {item.kelurahan}
                       </span>
-                      {/* Badge Volume Sampah Riil */}
-                      <div className="inline-flex items-center justify-center gap-1 px-1.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/50 border border-blue-200/80 dark:border-blue-800/50 text-[9.5px] font-extrabold text-blue-700 dark:text-blue-300 w-full truncate">
+                      {/* Badge Volume Sampah Riil Terpusat */}
+                      <div className="inline-flex items-center justify-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/50 border border-blue-200/80 dark:border-blue-800/50 text-[10px] font-extrabold text-blue-700 dark:text-blue-300 max-w-[100px] sm:max-w-[115px] w-full truncate shadow-2xs">
                         <span>{itemKg > 0 ? `${itemKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} Kg` : "0 Kg"}</span>
                       </div>
-                      <div className="flex items-center justify-center gap-1 text-[9px] text-slate-400 font-bold">
-                        <span className="text-slate-500">Base</span>
-                        <span>vs</span>
-                        <span className="text-emerald-600 dark:text-emerald-400">Real</span>
+                      <div className="flex items-center justify-center gap-1 text-[9.5px] text-slate-400 font-bold">
+                        {HIDE_KEPATUHAN_REAL ? (
+                          <span className="text-slate-500 font-semibold">Baseline Survei</span>
+                        ) : (
+                          <>
+                            <span className="text-slate-500">Base</span>
+                            <span>vs</span>
+                            <span className="text-emerald-600 dark:text-emerald-400">Real</span>
+                          </>
+                        )}
                       </div>
                     </div>
                   );
@@ -3093,8 +3162,12 @@ const Dashboard: React.FC = () => {
             <div className="flex items-center gap-1.5 font-medium">
               <span className="font-extrabold text-slate-700 dark:text-slate-300">*Keterangan Sumber Data:</span>
               <span><strong>Baseline:</strong> Berbasis survei awal kondisi eksisting kelurahan.</span>
-              <span className="text-slate-300 dark:text-slate-700">|</span>
-              <span><strong>Aktual / Real:</strong> Berbasis sampel data transaksi setoran sampah selama giat KKN.</span>
+              {!HIDE_KEPATUHAN_REAL && (
+                <>
+                  <span className="text-slate-300 dark:text-slate-700">|</span>
+                  <span><strong>Aktual / Real:</strong> Berbasis sampel data transaksi setoran sampah selama giat KKN.</span>
+                </>
+              )}
             </div>
             <span className="text-[10.5px] italic text-slate-400 dark:text-slate-500">
               *Khusus baseline Cipaganti menggunakan estimasi survei awal 13,67% (rentang 10–20%).
@@ -3102,39 +3175,41 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Card Penjelasan Rumus & Metodologi Relasi Data Real Database */}
-        <div className="bg-emerald-50/40 dark:bg-emerald-950/20 rounded-2xl p-4 sm:p-5 border border-emerald-200/70 dark:border-emerald-800/40">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="space-y-1.5 flex-1">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <h5 className="font-extrabold text-xs sm:text-[13px] text-emerald-900 dark:text-emerald-200">
-                  Rumus & Metodologi Perhitungan Kepatuhan Real Waktu Nyata
-                </h5>
+        {/* Card Penjelasan Rumus & Metodologi Relasi Data Real Database (Hanya tampil saat Kepatuhan Real aktif) */}
+        {!HIDE_KEPATUHAN_REAL && (
+          <div className="bg-emerald-50/40 dark:bg-emerald-950/20 rounded-2xl p-4 sm:p-5 border border-emerald-200/70 dark:border-emerald-800/40">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="space-y-1.5 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <h5 className="font-extrabold text-xs sm:text-[13px] text-emerald-900 dark:text-emerald-200">
+                    Rumus & Metodologi Perhitungan Kepatuhan Real Waktu Nyata
+                  </h5>
+                </div>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Data agregat kepatuhan per kelurahan bersumber langsung dari catatan riil transaksi warga pada tabel database <code className="px-1 py-0.5 rounded bg-emerald-100/70 dark:bg-emerald-900/40 text-[10px] font-bold text-emerald-800 dark:text-emerald-300">SetoranOtomatis</code> yang berelasi ke <code className="px-1 py-0.5 rounded bg-emerald-100/70 dark:bg-emerald-900/40 text-[10px] font-bold text-emerald-800 dark:text-emerald-300">Bin → RW → Kelurahan</code>.
+                </p>
               </div>
-              <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
-                Data agregat kepatuhan per kelurahan bersumber langsung dari catatan riil transaksi warga pada tabel database <code className="px-1 py-0.5 rounded bg-emerald-100/70 dark:bg-emerald-900/40 text-[10px] font-bold text-emerald-800 dark:text-emerald-300">SetoranOtomatis</code> yang berelasi ke <code className="px-1 py-0.5 rounded bg-emerald-100/70 dark:bg-emerald-900/40 text-[10px] font-bold text-emerald-800 dark:text-emerald-300">Bin → RW → Kelurahan</code>.
-              </p>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 shrink-0 text-xs">
-              <div className="bg-white/80 dark:bg-slate-900/80 p-2.5 rounded-xl border border-emerald-200/60 dark:border-emerald-800/40">
-                <span className="text-[10px] font-bold text-slate-400 block uppercase">Formula Kepatuhan Real</span>
-                <span className="font-black text-emerald-700 dark:text-emerald-300 text-[11px] block mt-0.5">
-                  (Σ Setoran Patuh AI ÷ Total Setoran) × 100%
-                </span>
-                <span className="text-[9px] text-slate-500 dark:text-slate-400 block">Kategori AI sesuai jenis tempat sampah</span>
-              </div>
-              <div className="bg-white/80 dark:bg-slate-900/80 p-2.5 rounded-xl border border-emerald-200/60 dark:border-emerald-800/40">
-                <span className="text-[10px] font-bold text-slate-400 block uppercase">Formula Delta Capaian (Δ)</span>
-                <span className="font-black text-teal-700 dark:text-teal-300 text-[11px] block mt-0.5">
-                  Δ = Kepatuhan Real (%) − Survei Baseline (%)
-                </span>
-                <span className="text-[9px] text-slate-500 dark:text-slate-400 block">Mengukur kenaikan pasca intervensi Berseka</span>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 shrink-0 text-xs">
+                <div className="bg-white/80 dark:bg-slate-900/80 p-2.5 rounded-xl border border-emerald-200/60 dark:border-emerald-800/40">
+                  <span className="text-[10px] font-bold text-slate-400 block uppercase">Formula Kepatuhan Real</span>
+                  <span className="font-black text-emerald-700 dark:text-emerald-300 text-[11px] block mt-0.5">
+                    (Σ Setoran Patuh AI ÷ Total Setoran) × 100%
+                  </span>
+                  <span className="text-[9px] text-slate-500 dark:text-slate-400 block">Kategori AI sesuai jenis tempat sampah</span>
+                </div>
+                <div className="bg-white/80 dark:bg-slate-900/80 p-2.5 rounded-xl border border-emerald-200/60 dark:border-emerald-800/40">
+                  <span className="text-[10px] font-bold text-slate-400 block uppercase">Formula Delta Capaian (Δ)</span>
+                  <span className="font-black text-teal-700 dark:text-teal-300 text-[11px] block mt-0.5">
+                    Δ = Kepatuhan Real (%) − Survei Baseline (%)
+                  </span>
+                  <span className="text-[9px] text-slate-500 dark:text-slate-400 block">Mengukur kenaikan pasca intervensi Berseka</span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Tabel Evaluasi Kepatuhan Pemilahan & Sampah Terpilah (1:1 Match Image) */}
         <div className="space-y-4 pt-2">

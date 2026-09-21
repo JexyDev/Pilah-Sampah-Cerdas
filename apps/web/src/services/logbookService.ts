@@ -228,7 +228,7 @@ export const logbookApiService = {
    */
   verifikasiByDpl: async (
     id: string,
-    action: "APPROVE" | "REVISI",
+    action: "APPROVE" | "REVISI" | "TOLAK",
     catatanDpl?: string
   ) => {
     const res = await api.patch(`/logbook/mahasiswa/${id}/verifikasi-dpl`, {
@@ -243,7 +243,7 @@ export const logbookApiService = {
    */
   batchVerifikasiByDpl: async (
     logbookIds: string[],
-    action: "APPROVE" | "REVISI" = "APPROVE",
+    action: "APPROVE" | "REVISI" | "TOLAK" = "APPROVE",
     catatanDpl?: string
   ) => {
     const res = await api.post("/logbook/mahasiswa/batch-verifikasi-dpl", {

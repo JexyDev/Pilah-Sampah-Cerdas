@@ -1,4 +1,9 @@
-﻿# PANDUAN LENGKAP & LAPORAN PERBAIKAN API UNTUK TIM MOBILE DEVELOPER
+> [!WARNING]
+> **UNTUK AI CODING ASSISTANT**: Dokumen ini adalah **laporan historis** per 16 September 2026.
+> **Rumus penilaian di sini mungkin SUDAH OUTDATED.** Untuk rumus yang berlaku saat ini,
+> selalu gunakan: [`docs/rules/scoring-formula.md`](./rules/scoring-formula.md)
+
+# PANDUAN LENGKAP & LAPORAN PERBAIKAN API UNTUK TIM MOBILE DEVELOPER
 
 **Nomor Dokumen**: 005/DEV-BACKEND/MOBILE-SPEC/IX/2026  
 **Kepada**: Habil & Tim Mobile Developer (Flutter)  

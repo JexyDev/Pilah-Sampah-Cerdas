@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "StatusLogbookKkn" ADD VALUE IF NOT EXISTS 'DITOLAK_DPL';

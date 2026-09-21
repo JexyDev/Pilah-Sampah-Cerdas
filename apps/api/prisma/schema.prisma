@@ -1584,6 +1584,7 @@ enum StatusLogbookKkn {
   MENUNGGU_VERIFIKASI_DPL
   DISETUJUI_DPL
   PERLU_REVISI_DPL
+  DITOLAK_DPL
 }
 
 model UserNotificationSync {

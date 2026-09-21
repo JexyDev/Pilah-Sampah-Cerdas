@@ -128,10 +128,14 @@ export const ICONS: Record<string, React.ReactNode> = {
 // Ikon fasilitas → kunci ikon
 export const TIPE_ICON: Record<string, string> = {
   bank: "recycle",
+  bank_sampah: "recycle",
   maggot: "bug",
+  rumah_maggot: "bug",
   sae: "leaf",
+  buruan_sae: "leaf",
   loseda: "down",
   bata: "grid",
+  bata_terawang: "grid",
   tps: "trash",
   poc: "drop",
 };

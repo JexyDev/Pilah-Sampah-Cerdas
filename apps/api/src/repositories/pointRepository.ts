@@ -36,12 +36,17 @@ export interface GetAdminLedgerParams {
 export class PointRepository {
   /**
    * Get point history by user ID, ordered by newest
+   * Role-aware: Mahasiswa KKN mengecualikan KKN_PROKER, REDUKSI_TONASE, dan BONUS_LOGIN_PERTAMA
    */
-  async getHistoryByUserId(userId: string): Promise<PointHistory[]> {
+  async getHistoryByUserId(userId: string, isStudent: boolean = false): Promise<PointHistory[]> {
+    const excludedCategories = isStudent
+      ? ["KKN_PROKER", "REDUKSI_TONASE", "BONUS_LOGIN_PERTAMA"]
+      : ["KKN_PROKER"];
+
     return db.pointHistory.findMany({
       where: {
         userId,
-        kategori: { notIn: ["KKN_PROKER"] },
+        kategori: { notIn: excludedCategories },
         NOT: { description: { contains: "[ProkerID:" } },
       },
       orderBy: { createdAt: "desc" },
@@ -50,12 +55,17 @@ export class PointRepository {
 
   /**
    * Get total accumulated points by user ID (Protected against KKN_PROKER leak)
+   * Role-aware: Mahasiswa KKN mengecualikan KKN_PROKER, REDUKSI_TONASE, dan BONUS_LOGIN_PERTAMA
    */
-  async getTotalPoints(userId: string): Promise<number> {
+  async getTotalPoints(userId: string, isStudent: boolean = false): Promise<number> {
+    const excludedCategories = isStudent
+      ? ["KKN_PROKER", "REDUKSI_TONASE", "BONUS_LOGIN_PERTAMA"]
+      : ["KKN_PROKER"];
+
     const aggregate = await db.pointHistory.aggregate({
       where: {
         userId,
-        kategori: { notIn: ["KKN_PROKER"] },
+        kategori: { notIn: excludedCategories },
         NOT: { description: { contains: "[ProkerID:" } },
       },
       _sum: {

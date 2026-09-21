@@ -923,6 +923,9 @@ export class LogbookService {
       if (existing.statusApproval === StatusLogbookKkn.DISETUJUI_DPL) {
         throw new Error("Logbook yang telah disetujui DPL tidak dapat diubah kembali.");
       }
+      if (existing.statusApproval === StatusLogbookKkn.DITOLAK_DPL) {
+        throw new Error("Logbook yang telah ditolak mutlak oleh DPL tidak dapat diubah kembali.");
+      }
     }
 
     const updateData: any = {};
@@ -1072,15 +1075,21 @@ export class LogbookService {
       },
     });
 
+    const tglFormatted = new Date(logbook.tanggalKegiatan).toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+
     // Notifikasi & Push ke Penulis
     const notifTitleKetua =
       action === "APPROVE"
         ? "Logbook Disetujui Ketua Kelompok 👍"
-        : "Logbook Ditolak Ketua Kelompok ⚠️";
+        : "Logbook Perlu Perbaikan Ketua ⚠️";
     const notifMsgKetua =
       action === "APPROVE"
-        ? `Logbook aktivitas Anda telah disetujui Ketua Kelompok dan kini menunggu verifikasi DPL.`
-        : `Logbook aktivitas Anda ditolak oleh Ketua Kelompok: ${catatanKetua || "Perbaiki isi/bukti kegiatan."}`;
+        ? `Logbook aktivitas Anda tanggal ${tglFormatted} telah disetujui Ketua Kelompok dan kini menunggu verifikasi DPL.`
+        : `Logbook tanggal ${tglFormatted} ditolak oleh Ketua Kelompok: "${catatanKetua || "Perbaiki isi/bukti kegiatan."}". Buka menu Logbook dan gunakan tombol 'Revisi Sekarang' (jangan membuat logbook baru).`;
 
     await notificationIntegrationService.sendToUser({
       userId: logbook.penulisId,
@@ -1126,7 +1135,7 @@ export class LogbookService {
     logbookId: string,
     dplUserId: string,
     userRole: string,
-    action: "APPROVE" | "REVISI",
+    action: "APPROVE" | "REVISI" | "TOLAK",
     catatanDpl?: string
   ) {
     const logbook = await prisma.logbookKkn.findUnique({
@@ -1153,8 +1162,18 @@ export class LogbookService {
       throw new Error("Logbook ini sudah disetujui sebelumnya dan tidak bisa divalidasi ulang.");
     }
 
-    const newStatus: StatusLogbookKkn =
-      action === "APPROVE" ? StatusLogbookKkn.DISETUJUI_DPL : StatusLogbookKkn.PERLU_REVISI_DPL;
+    if (action === "TOLAK" && (!catatanDpl || catatanDpl.trim() === "")) {
+      throw new Error("Catatan penolakan wajib diisi saat menolak logbook.");
+    }
+
+    let newStatus: StatusLogbookKkn;
+    if (action === "APPROVE") {
+      newStatus = StatusLogbookKkn.DISETUJUI_DPL;
+    } else if (action === "REVISI") {
+      newStatus = StatusLogbookKkn.PERLU_REVISI_DPL;
+    } else {
+      newStatus = StatusLogbookKkn.DITOLAK_DPL;
+    }
 
     const updated = await prisma.logbookKkn.update({
       where: { id: logbookId },
@@ -1168,11 +1187,12 @@ export class LogbookService {
 
     // Aturan Tata Kelola Poin Logbook:
     // 1. Poin (+3 PTS) telah diberikan instan di awal saat mahasiswa submit logbook.
-    // 2. ACC DPL dilarang keras meng-insert row baru ke riwayat_poin.
-    // 3. Jika DPL meminta revisi (action === 'REVISI'), poin logbook untuk tanggal kegiatan tersebut ditarik (points = 0).
-    // 4. Jika logbook disetujui kembali (action === 'APPROVE') setelah revisi, pulihkan poinnya menjadi 3 PTS (tanpa duplikasi row).
+    // 2. ACC DPL dilarang keras meng-insert row baru ke riwayat_poin (mencegah duplikasi poin).
+    // 3. Status 'REVISI' TIDAK menarik poin (poin tetap utuh) demi menjaga stabilitas saldo poin dan mencegah kepanikan mahasiswa.
+    // 4. Status 'TOLAK' MENARIK poin (points: 0) karena kegiatan secara mutlak tidak diakui.
+    // 5. Jika logbook disetujui (action === 'APPROVE'), pastikan poin aktif 3 PTS (self-healing untuk record historis yang sempat 0).
     const actDateStr = logbook.tanggalKegiatan.toISOString().split("T")[0];
-    if (action === "REVISI") {
+    if (action === "TOLAK") {
       try {
         await prisma.pointHistory.updateMany({
           where: {
@@ -1186,7 +1206,7 @@ export class LogbookService {
           },
         });
       } catch (err) {
-        console.warn(`[verifikasiByDpl] Gagal menarik poin logbook revisi (${actDateStr}):`, err);
+        console.warn(`[verifikasiByDpl] Gagal menarik poin logbook ditolak (${actDateStr}):`, err);
       }
     } else if (action === "APPROVE") {
       try {
@@ -1199,7 +1219,7 @@ export class LogbookService {
         });
 
         if (existingPoint && existingPoint.points === 0) {
-          // Pulihkan poin menjadi 3 jika sebelumnya dinolkan karena status revisi
+          // Pulihkan poin menjadi 3 jika sebelumnya dinolkan karena status ditolak/revisi versi lama
           await prisma.pointHistory.update({
             where: { id: existingPoint.id },
             data: { points: 3 },
@@ -1222,27 +1242,44 @@ export class LogbookService {
       }
     }
 
+    const tglFormatted = new Date(logbook.tanggalKegiatan).toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+
     // Notifikasi in-app DB & Push Notification FCM ke Penulis
-    const notifTitleDpl =
-      action === "APPROVE" ? "Kegiatan Disetujui DPL! 🎉" : "Kegiatan Perlu Perbaikan DPL ⚠️";
-    const notifMsgDpl =
-      action === "APPROVE"
-        ? `Logbook kegiatan Anda (${logbook.deskripsi.slice(0, 50)}...) telah diverifikasi dan disetujui resmi oleh DPL.`
-        : `Logbook kegiatan Anda memerlukan perbaikan: ${catatanDpl || "Silakan periksa catatan revisi DPL di aplikasi."}`;
+    let notifTitleDpl = "Kegiatan Disetujui DPL! 🎉";
+    let notifMsgDpl = `Logbook kegiatan tanggal ${tglFormatted} (${logbook.deskripsi.slice(0, 45)}...) telah diverifikasi dan disetujui resmi oleh DPL.`;
+    let triggerType = "LOGBOOK_APPROVED";
+    let eventType = "KEGIATAN_DISETUJUI";
+
+    if (action === "REVISI") {
+      notifTitleDpl = "Kegiatan Perlu Perbaikan DPL ⚠️";
+      notifMsgDpl = `Logbook tanggal ${tglFormatted} memerlukan perbaikan: "${catatanDpl || "Silakan periksa catatan revisi DPL di aplikasi."}". Buka menu Logbook dan gunakan tombol 'Revisi Sekarang' (jangan membuat logbook baru).`;
+      triggerType = "LOGBOOK_REVISI";
+      eventType = "KEGIATAN_REVISI";
+    } else if (action === "TOLAK") {
+      notifTitleDpl = "Logbook Ditolak DPL ❌";
+      notifMsgDpl = `Logbook kegiatan tanggal ${tglFormatted} telah ditolak oleh DPL: "${catatanDpl}". Poin untuk kegiatan ini ditarik kembali.`;
+      triggerType = "LOGBOOK_REJECTED";
+      eventType = "KEGIATAN_DITOLAK";
+    }
 
     await notificationIntegrationService.sendToUser({
       userId: logbook.penulisId,
       title: notifTitleDpl,
       message: notifMsgDpl,
-      triggerType: action === "APPROVE" ? "LOGBOOK_APPROVED" : "LOGBOOK_REVISI",
+      triggerType,
       dataPayload: {
         event: "REFRESH_KEGIATAN_MAHASISWA",
-        type: action === "APPROVE" ? "KEGIATAN_DISETUJUI" : "KEGIATAN_REVISI",
+        type: eventType,
         entityId: logbook.id,
         logbookId: logbook.id,
         status: newStatus,
         catatan: catatanDpl || "",
         pekanKe: String(logbook.pekanKe || 1),
+        tanggalKegiatan: actDateStr,
         click_action: "FLUTTER_NOTIFICATION_CLICK",
       },
     });
@@ -1257,7 +1294,7 @@ export class LogbookService {
     logbookIds: string[],
     dplUserId: string,
     userRole: string,
-    action: "APPROVE" | "REVISI",
+    action: "APPROVE" | "REVISI" | "TOLAK",
     catatanDpl?: string
   ) {
     if (!Array.isArray(logbookIds) || logbookIds.length === 0) {
