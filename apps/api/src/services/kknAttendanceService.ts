@@ -640,6 +640,57 @@ export async function getScheduleTargetDurationMinutes(schedule: {
   return 240;
 }
 
+/**
+ * 🛡️ Helper Idempotensi Poin Check-In KKN (+4 PTS)
+ * Memastikan mahasiswa HANYA menerima 1x poin kehadiran check-in per jadwal / per hari WIB.
+ */
+export async function awardCheckInPointIfNotExists(
+  client: any,
+  params: {
+    userId: string;
+    scheduleId: string;
+    scheduleTitle?: string | null;
+    method?: string;
+    date?: Date;
+  }
+): Promise<boolean> {
+  const { userId, scheduleId, scheduleTitle, method, date } = params;
+  const targetDate = date || new Date();
+  const dateWib = new Date(targetDate.getTime() + 7 * 3600000);
+  const todayWibStr = dateWib.toISOString().slice(0, 10);
+  const startOfDay = new Date(`${todayWibStr}T00:00:00+07:00`);
+  const endOfDay = new Date(`${todayWibStr}T23:59:59.999+07:00`);
+
+  const existingPoint = await client.pointHistory.findFirst({
+    where: {
+      userId,
+      kategori: "KKN_PRESENSI_HADIR",
+      OR: [
+        { createdAt: { gte: startOfDay, lte: endOfDay } },
+        { description: { contains: scheduleId } },
+      ],
+    },
+  });
+
+  if (existingPoint) {
+    return false;
+  }
+
+  const titleStr = scheduleTitle || "Kegiatan KKN";
+  const methodStr = method ? ` (${method})` : "";
+  await client.pointHistory.create({
+    data: {
+      userId,
+      points: 4,
+      description: `Poin kehadiran KKN (Check-In): ${titleStr} [${scheduleId}]${methodStr}`,
+      kategori: "KKN_PRESENSI_HADIR",
+      redeemable: false,
+    },
+  });
+
+  return true;
+}
+
 export class KknAttendanceService {
   /**
    * GPS Location Ping — LOSS MODE
@@ -1728,8 +1779,8 @@ export class KknAttendanceService {
     }
 
     if (!isAutoAlpa && !isInside) {
-      console.log(
-        `[recordAttendance] Mahasiswa berada di luar radius area kegiatan kelompok - presensi tetap dicatat sesuai aturan presensi fleksibel.`
+      throw new Error(
+        `OUT_OF_GEOFENCE: Anda harus berada di dalam radius area kegiatan kelompok untuk melakukan presensi.`
       );
     }
 
@@ -1800,25 +1851,15 @@ export class KknAttendanceService {
           },
         });
 
-        // Award points if not already awarded (+4 poin kehadiran)
+        // Award points if not already awarded (+4 poin kehadiran terpadu & idempoten)
         if (!isAutoAlpa) {
-          const existingPoint = await tx.pointHistory.findFirst({
-            where: {
-              userId: studentId,
-              description: { contains: scheduleId },
-            },
+          await awardCheckInPointIfNotExists(tx, {
+            userId: studentId,
+            scheduleId,
+            scheduleTitle: actLoc?.title || scheduleId,
+            method,
+            date: updated.attendedAt || new Date(),
           });
-          if (!existingPoint) {
-            await tx.pointHistory.create({
-              data: {
-                userId: studentId,
-                points: 4,
-                description: `Poin kehadiran KKN (Check-In): ${actLoc?.title || scheduleId} (${method})`,
-                kategori: "KKN_PRESENSI_HADIR",
-                redeemable: false,
-              },
-            });
-          }
         }
 
         // Forward notification to DPL dashboard
@@ -1857,18 +1898,6 @@ export class KknAttendanceService {
         },
       });
 
-      // Award +4 points to student on Check-In if NOT ALPA
-      if (!isAutoAlpa) {
-        await tx.pointHistory.create({
-          data: {
-            userId: studentId,
-            points: 4,
-            description: `Poin kehadiran (Check-In) KKN: ${actLoc?.title || scheduleId} (${method})`,
-            kategori: "KKN_PRESENSI_HADIR",
-            redeemable: false,
-          },
-        });
-      }
       // Forward notification to DPL dashboard
       const dplUser = studentUser?.studentProfile?.kelompok?.dpl;
       if (dplUser) {
@@ -2223,13 +2252,8 @@ export class KknAttendanceService {
       actualInZoneMins = Math.min(900, liveMins);
     }
 
-    // Kebijakan Batas Maksimal 20:00 WIB:
-    // Jika diselesaikan otomatis oleh sistem (isAutoCheckout), mahasiswa yang telah hadir
-    // dipastikan berstatus HADIR_MEMENUHI (Hadir) dengan durasi minimal memenuhi target kerja.
-    if (isAutoCheckout) {
-      const minTarget = durasiWajibMenit > 0 ? durasiWajibMenit : 240;
-      actualInZoneMins = Math.max(actualInZoneMins, minTarget, 240);
-    }
+    // BUG-1 Fix: Saat auto-checkout (isAutoCheckout), durasi TIDAK BOLEH digelembungkan
+    // secara artifisial. Gunakan durasi aktual riil yang dihabiskan mahasiswa di zona.
 
     // =========================================================================
     // Validasi Minimal Jam Pulang (30 Menit dari Jam Pulang Kegiatan)
@@ -3771,7 +3795,8 @@ export class KknAttendanceService {
       // Status Kehadiran mahasiswa
       let statusKehadiran: string | null = null;
       let isMemenuhiDurasi = false;
-      const isMemenuhi = durasiWajibMenit <= 0 || actualInZoneMinutes >= durasiWajibMenit;
+      const effectiveTargetMenit = durasiWajibMenit > 0 ? durasiWajibMenit : 240;
+      const isMemenuhi = actualInZoneMinutes >= effectiveTargetMenit;
 
       if (approvedLeave) {
         statusKehadiran = approvedLeave.type.toUpperCase() === "SAKIT" ? "SAKIT" : "IZIN";
@@ -4254,8 +4279,8 @@ export class KknAttendanceService {
     if (!isInsideOnStart) {
       const distanceInt = Math.round(nearestDist);
       const allowedRadius = nearestRadius + bufferMeters;
-      console.log(
-        `[mulaiKegiatan] Mahasiswa presensi di luar zona ${nearestName} (${distanceInt}m, radius ${allowedRadius}m) - diperbolehkan oleh aturan mobile fleksibel.`
+      throw new Error(
+        `OUT_OF_GEOFENCE: Anda harus berada di dalam zona ${nearestName} untuk melakukan presensi masuk (Jarak: ${distanceInt}m, Radius: ${allowedRadius}m).`
       );
     }
 
@@ -4445,27 +4470,14 @@ export class KknAttendanceService {
       },
     });
 
-    // Award +4 points to student on Check-In (Mulai Kegiatan) if not already awarded today
-    const startOfDay = new Date(`${todayStr}T00:00:00+07:00`);
-    const existingCheckInPoint = await prisma.pointHistory.findFirst({
-      where: {
-        userId: studentUserId,
-        kategori: "KKN_PRESENSI_HADIR",
-        createdAt: { gte: startOfDay },
-      },
+    // Award +4 points to student on Check-In (Mulai Kegiatan) if not already awarded today (terpadu & idempoten)
+    await awardCheckInPointIfNotExists(prisma, {
+      userId: studentUserId,
+      scheduleId,
+      scheduleTitle: schedule.title,
+      method: "GPS_ACTIVITY",
+      date: attendance.attendedAt || new Date(),
     });
-
-    if (!existingCheckInPoint) {
-      await prisma.pointHistory.create({
-        data: {
-          userId: studentUserId,
-          points: 4,
-          description: `Poin kehadiran KKN (Check-In): ${schedule.title || scheduleId}`,
-          kategori: "KKN_PRESENSI_HADIR",
-          redeemable: false,
-        },
-      });
-    }
 
     // Record into system history / audit trail
     const isResumeSession = existingSession?.status === "TERJEDA";
