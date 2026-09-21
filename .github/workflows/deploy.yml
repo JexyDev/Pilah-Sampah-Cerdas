@@ -206,6 +206,7 @@ jobs:
           echo "Uploading $APK_FILE to $VPS_HOST as /tmp/$APK_NAME..."
           
           export SSHPASS="$VPS_PASS"
+<<<<<<< Updated upstream
           SSH_OPTS="-o StrictHostKeyChecking=no -o ConnectTimeout=60 -o LogLevel=ERROR"
           
           if ! sshpass -e scp -O $SSH_OPTS "$APK_FILE" "$VPS_USER@$VPS_HOST:/tmp/$APK_NAME"; then
@@ -214,6 +215,22 @@ jobs:
           fi
 
           sshpass -e ssh -T $SSH_OPTS "$VPS_USER@$VPS_HOST" "VPS_PASS='$VPS_PASS' APK_NAME='$APK_NAME' DEST_DIR='$DEST_DIR' APP_VERSION='${{ env.APP_VERSION }}' RUN_NUMBER='${{ github.run_number }}' bash -s" << 'EOF'
+=======
+          # Kita gunakan -v (verbose) untuk melacak persis di mana nyangkutnya
+          SSH_OPTS="-o StrictHostKeyChecking=no -o ConnectTimeout=30 -v"
+          
+          echo "Memulai transfer SCP (dengan batas waktu 1 menit)..."
+          if ! timeout 60s sshpass -e scp -O $SSH_OPTS "$APK_FILE" "$VPS_USER@$VPS_HOST:/tmp/$APK_NAME"; then
+            echo "SCP gagal atau timeout! Mencoba direct SSH stream..."
+            if ! timeout 60s sshpass -e ssh $SSH_OPTS "$VPS_USER@$VPS_HOST" "cat > /tmp/$APK_NAME" < "$APK_FILE"; then
+                echo "Direct SSH juga gagal! Silakan cek log di atas untuk melihat respon asli VPS."
+                exit 1
+            fi
+          fi
+
+          echo "Transfer selesai. Memulai eksekusi script di VPS..."
+          timeout 60s sshpass -e ssh -T $SSH_OPTS "$VPS_USER@$VPS_HOST" "VPS_PASS='$VPS_PASS' APK_NAME='$APK_NAME' DEST_DIR='$DEST_DIR' APP_VERSION='${{ env.APP_VERSION }}' RUN_NUMBER='${{ github.run_number }}' bash -s" << 'EOF'
+>>>>>>> Stashed changes
             set -e
             TMP_APK="/tmp/$APK_NAME"
             if [ ! -f "$TMP_APK" ] && [ -f "$HOME/$APK_NAME" ]; then
