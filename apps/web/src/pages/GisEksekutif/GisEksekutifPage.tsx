@@ -128,10 +128,16 @@ function toFacilityForMap(f: GisFacilityDto): FacilityForMap {
     id: f.id,
     tipe: f.tipe,
     kel: f.kel,
-    rw: parseInt(f.rw.replace(/\D/g, ""), 10) || 1,
-    x: 0, y: 0,
+    rw: f.rw,
+    x: 0,
+    y: 0,
     nama: f.nama,
     ll: [f.lat, f.lng],
+    pic: f.pic,
+    kontak: f.kontak,
+    foto: f.foto,
+    alamat: f.alamat,
+    kapasitas: f.kapasitas,
   };
 }
 
@@ -160,9 +166,7 @@ export default function GisEksekutifPage() {
 
   // ─── UI state ───────────────────────────────────────────────────────────────
   const [layer, setLayer] = useState<"kep" | "org" | "ano" | "res" | "total" | "ch4">("kep");
-  const [showSensor, setShowSensor] = useState(true);
-  const [opacity, setOpacity] = useState(45);
-  const [base, setBase] = useState<"peta" | "sat">("peta");
+  const [base, setBase] = useState<"peta" | "sat">("sat"); // Default Satelit Google (sesuai menu Fasilitas)
   const [active, setActive] = useState<ActiveTarget>(null);
   const [toast, setToast] = useState("");
 
@@ -420,9 +424,17 @@ export default function GisEksekutifPage() {
               <div className="card kpi">
                 <span className="kpi-ico k-teal"><Icon name="signal" size={30} /></span>
                 <div>
-                  <div className="kpi-l">Sensor CH₄ online</div>
-                  <div className="kpi-v">{data?.kpi.sensorCh4Text ?? "Belum ada data"}</div>
-                  <div className="kpi-s">titik terhubung</div>
+                  <div className="kpi-l">Telemetri IoT CH₄</div>
+                  <div className="kpi-v">
+                    {onlineCount > 0 ? (
+                      <>{onlineCount} <small>titik online</small></>
+                    ) : (
+                      <span style={{ fontSize: 18, fontWeight: 800, color: "#10b981" }}>Tahap Integrasi</span>
+                    )}
+                  </div>
+                  <div className="kpi-s">
+                    {onlineCount > 0 ? "dari jaringan sensor aktif" : "infrastruktur sedang disiapkan"}
+                  </div>
                 </div>
                 <span className={`kpi-dot ${onlineCount > 0 ? "" : "off"}`} aria-hidden="true" />
               </div>
@@ -493,22 +505,6 @@ export default function GisEksekutifPage() {
                 aria-pressed={layer === l.id} onClick={() => setLayer(l.id)}>{l.label}</button>
             ))}
           </div>
-          <div className="sw">
-            <span>Titik sensor CH₄:</span>
-            <button type="button" role="switch" aria-checked={showSensor}
-              className={`switch ${showSensor ? "on" : ""}`} onClick={() => setShowSensor((v) => !v)}>
-              <i />
-            </button>
-            <b>{showSensor ? "Aktif" : "Nonaktif"}</b>
-          </div>
-          {data?.meta.hasSensorData === false && (
-            <span className="hint" style={{ color: "#f59e0b" }}>
-              ⚠ Tabel sensor CH₄ belum tersedia di database
-            </span>
-          )}
-          {data?.meta.hasSensorData !== false && (
-            <span className="hint">Satu overlay aktif • Sensor berupa titik terukur</span>
-          )}
         </section>
 
         {/* Peta + Legenda */}
@@ -517,14 +513,10 @@ export default function GisEksekutifPage() {
             <MapView
               kelRows={kelRows as any}
               layer={layer}
-              opacity={opacity}
-              setOpacity={setOpacity}
               base={base}
               setBase={setBase}
-              showSensor={showSensor}
               facilities={visibleFac as any}
               allCount={facilities.length}
-              sensors={sensors as any}
               selectedKel={kel !== "Semua" ? kel.toLowerCase().replace(/\s+/g, "-") : null}
               onSelectKel={(id: string) => {
                 const kelName = (data?.poligonKelurahan ?? []).find(
@@ -536,6 +528,7 @@ export default function GisEksekutifPage() {
               setActive={setActive}
               onClearFilters={clearFilters}
               filtered={filtered}
+              searchQuery={query}
             />
             <aside className="card side" aria-label="Legenda">
               <div className="side-sec">
