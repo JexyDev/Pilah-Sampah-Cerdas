@@ -131,7 +131,7 @@ export function Trend({ series, pi }: TrendProps) {
   const { w } = useSize(ref, { w: 420, h: 170 });
   const [hover, setHover] = useState<number | null>(null);
   const H = 186;
-  const m = { l: 46, r: 16, t: 26, b: 36 };
+  const m = { l: 44, r: 16, t: 26, b: 24 };
   const { step, top } = niceScale(Math.max(...series, 1));
   const x = (i: number) => m.l + ((w - m.l - m.r) * i) / (series.length - 1);
   const y = (v: number) => m.t + (H - m.t - m.b) * (1 - v / top);
@@ -153,7 +153,7 @@ export function Trend({ series, pi }: TrendProps) {
 
   return (
     <section className="card chart-card" aria-label="Tren volume bulanan">
-      <CardTitle icon="bars" right="Satuan: m³/bulan">
+      <CardTitle icon="bars" right="Kec. Coblong">
         Tren volume bulanan
       </CardTitle>
       <div ref={ref} className="trend">
@@ -174,15 +174,14 @@ export function Trend({ series, pi }: TrendProps) {
             </linearGradient>
           </defs>
 
-          {/* Label Nama Sumbu Y */}
+          {/* Indikator Satuan Sumbu Y di sisi atas */}
           <text
             x={m.l}
-            y={m.t - 10}
+            y={m.t - 9}
             textAnchor="start"
-            className="ax"
-            style={{ fontSize: 10, fontWeight: 700, fill: "var(--ink-2)" }}
+            style={{ fontSize: 11, fontWeight: 600, fill: "var(--ink-2)" }}
           >
-            Sumbu Y: Volume (m³/bulan)
+            Volume (m³/bulan)
           </text>
 
           {ticks.map((t) => (
@@ -199,24 +198,13 @@ export function Trend({ series, pi }: TrendProps) {
             <text
               key={mo}
               x={x(i)}
-              y={H - 20}
+              y={H - 8}
               textAnchor="middle"
               className={`ax ${i === pi ? "ax-on" : ""}`}
             >
               {mo}
             </text>
           ))}
-
-          {/* Label Nama Sumbu X */}
-          <text
-            x={m.l + (w - m.l - m.r) / 2}
-            y={H - 4}
-            textAnchor="middle"
-            className="ax"
-            style={{ fontSize: 10, fontWeight: 700, fill: "var(--ink-2)" }}
-          >
-            Sumbu X: Bulan / Periode
-          </text>
           {pts.map((p, i) => (
             <circle
               key={i}
