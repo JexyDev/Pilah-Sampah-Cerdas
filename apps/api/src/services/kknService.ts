@@ -4081,15 +4081,17 @@ export class KknService {
         });
 
         if (autoCheckoutResult) {
-          attendanceStatus = "hadir_memenuhi";
-          isMemenuhiDurasi = true;
+          const resData = (autoCheckoutResult as any)?.data || autoCheckoutResult;
+          const statusResult = resData?.status || "HADIR_TIDAK_MEMENUHI";
+          attendanceStatus = statusResult.toLowerCase();
+          isMemenuhiDurasi = Boolean(resData?.isMemenuhiDurasi);
           // Refresh local reference agar response payload konsisten
-          attendanceForActiveSchedule.status = "HADIR_MEMENUHI";
+          attendanceForActiveSchedule.status = statusResult;
           attendanceForActiveSchedule.checkOutAt = checkoutTime;
           attendanceForActiveSchedule.actualInZoneMinutes =
-            (autoCheckoutResult as any)?.actualInZoneMinutes ??
-            (autoCheckoutResult as any)?.data?.actualInZoneMinutes ??
-            targetDurationMinutes;
+            resData?.actualInZoneMinutes ??
+            attendanceForActiveSchedule.actualInZoneMinutes ??
+            0;
         }
       } catch (checkoutErr) {
         console.error(
