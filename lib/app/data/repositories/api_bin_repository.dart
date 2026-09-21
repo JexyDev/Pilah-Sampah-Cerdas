@@ -69,7 +69,7 @@ class ApiBinRepository implements BinRepository {
 
         final List<BinEntity> parsedBins = data.map((json) {
           final bin = _mapMyBin(json as Map<String, dynamic>);
-          if (pendingBinIds.contains(bin.id)) {
+          if (pendingBinIds.contains(bin.id) && bin.currentVolumeL >= 0.05) {
             return bin.copyWith(isResetPending: true);
           }
           return bin;
