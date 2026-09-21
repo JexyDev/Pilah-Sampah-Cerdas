@@ -70,7 +70,10 @@ function createOfflineFallbackData(kelurahanFilter = "Semua"): GisOverviewApiRes
       residu: { persen: 0, volumeM3: 0 },
       totalM3: 0,
     },
-    trenBulanan: [],
+    trenBulanan: ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep"].map((b) => ({
+      bulan: b,
+      volume: 0,
+    })),
     kepatuhanPerKelurahan: kelNames.map((nama) => ({
       nama,
       kepatuhan: 0,
@@ -348,7 +351,9 @@ export default function GisEksekutifPage() {
     return (data.poligonKelurahan ?? []).map((pk) => {
       const kd = data.kepatuhanPerKelurahan.find((k) => k.nama === pk.nama);
       const facCount = (data.titikFasilitas ?? []).filter((f) => f.kel === pk.nama).length;
-      const ringCoords = (pk.coordinates as [number, number][]);
+      const ringCoords = Array.isArray(pk.coordinates) ? (pk.coordinates as [number, number][]) : [];
+      const defaultLL: [number, number] = [-6.885, 107.615];
+      const labelLL = (ringCoords.length > 0 && Array.isArray(ringCoords[0])) ? ringCoords[0] : defaultLL;
       // Pseudo KelurahanData shape for MapView compatibility
       const kShape = {
         id: pk.nama.toLowerCase().replace(/\s+/g, "-"),
@@ -360,9 +365,9 @@ export default function GisEksekutifPage() {
         rw: 0,
         fac: facCount,
         label: [0, 0] as [number, number],
-        labelLL: ringCoords[0] ?? ([-6.885, 107.615] as [number, number]),
-        poly: ringCoords,
-        ring: ringCoords,
+        labelLL,
+        poly: ringCoords.length > 0 ? ringCoords : [defaultLL],
+        ring: ringCoords.length > 0 ? ringCoords : [defaultLL],
       };
       const sShape = {
         kep: kd?.kepatuhan ?? 0,
@@ -812,8 +817,16 @@ export default function GisEksekutifPage() {
                 res={data?.komposisiVolume.residu.volumeM3 ?? 0}
               />
               <Trend
-                series={(data?.trenBulanan ?? []).map((t) => t.volume ?? 0)}
-                pi={(data?.trenBulanan ?? []).length - 1}
+                series={
+                  (data?.trenBulanan && data.trenBulanan.length > 0)
+                    ? data.trenBulanan.map((t) => t.volume ?? 0)
+                    : [0, 0, 0, 0, 0, 0, 0, 0, 0]
+                }
+                pi={
+                  (data?.trenBulanan && data.trenBulanan.length > 0)
+                    ? data.trenBulanan.length - 1
+                    : 8
+                }
               />
               <Compliance
                 rows={kelRows as any}

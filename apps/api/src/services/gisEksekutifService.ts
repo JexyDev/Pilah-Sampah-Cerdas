@@ -72,6 +72,8 @@ function kepColor(pct: number): string {
   return "#ef4444";
 }
 
+const BULAN_LABELS = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep"];
+
 export const gisEksekutifService = {
   getBaselineOverview(filters: GisEksekutifFilters = {}, errorMessage?: string) {
     const kelurahanNames = ["Cipaganti", "Dago", "Lebak Gede", "Lebak Siliwangi", "Sadang Serang", "Sekeloa"];
@@ -123,7 +125,7 @@ export const gisEksekutifService = {
         residu: { persen: 0, volumeM3: 0 },
         totalM3: 0,
       },
-      trenBulanan: [] as Array<{ bulan: string; volume: number }>,
+      trenBulanan: BULAN_LABELS.map((bulan) => ({ bulan, volume: 0 })),
       kepatuhanPerKelurahan: kelurahanNames.map((nama) => ({
         nama,
         kepatuhan: null as number | null,
@@ -377,7 +379,6 @@ export const gisEksekutifService = {
       select: { createdAt: true, outputKg: true },
     });
 
-    const BULAN_LABELS = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep"];
     const trenMap: Record<number, number> = {};
     prodLogs.forEach((log) => {
       const month = new Date(log.createdAt).getMonth(); // 0=Jan

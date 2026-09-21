@@ -168,7 +168,9 @@ function createPopupHtml(f: FacilityForMap, onPreview?: (url: string) => void): 
   }
 
   // Hyperlink Google Maps Navigation
-  const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${f.ll[0]},${f.ll[1]}`;
+  const lat = (f.ll && typeof f.ll[0] === "number") ? f.ll[0] : -6.885;
+  const lng = (f.ll && typeof f.ll[1] === "number") ? f.ll[1] : 107.615;
+  const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
 
   return `
     <div style="font-family: inherit; font-size: 13px; color: #0f172a; line-height: 1.45; min-width: 230px; max-width: 290px; padding: 4px 2px;">
@@ -188,7 +190,7 @@ function createPopupHtml(f: FacilityForMap, onPreview?: (url: string) => void): 
         ${f.alamat ? `<div><strong style="color:#0f172a;">Alamat:</strong> ${esc(f.alamat)}</div>` : ""}
         ${kontakHtml}
         <div style="font-family: monospace; font-size: 10px; color: #94a3b8; margin-top: 4px;">
-          📍 ${f.ll[0].toFixed(5)}, ${f.ll[1].toFixed(5)}
+          📍 ${lat.toFixed(5)}, ${lng.toFixed(5)}
         </div>
       </div>
       <a href="${googleMapsUrl}" target="_blank" rel="noopener noreferrer"
@@ -492,12 +494,19 @@ export default function MapView({
     if (matchingFacs.length === 1) {
       // 1 fasilitas ditemukan persis -> Zoom in tajam & buka popup
       const target = matchingFacs[0];
-      map.flyTo(target.ll, 18, { duration: 1.2 });
-      setActive({ kind: "fac", id: target.id });
+      if (target?.ll && typeof target.ll[0] === "number" && typeof target.ll[1] === "number") {
+        map.flyTo(target.ll, 18, { duration: 1.2 });
+        setActive({ kind: "fac", id: target.id });
+      }
     } else if (matchingFacs.length > 1) {
       // Beberapa fasilitas cocok -> Zoom menyesuaikan seluruh hasil
-      const bounds = L.latLngBounds(matchingFacs.map((f) => L.latLng(f.ll[0], f.ll[1])));
-      map.fitBounds(bounds.pad(0.18), { maxZoom: 17, animate: true, duration: 1.2 });
+      const validFacs = matchingFacs.filter(
+        (f) => f.ll && typeof f.ll[0] === "number" && typeof f.ll[1] === "number"
+      );
+      if (validFacs.length > 0) {
+        const bounds = L.latLngBounds(validFacs.map((f) => L.latLng(f.ll[0], f.ll[1])));
+        map.fitBounds(bounds.pad(0.18), { maxZoom: 17, animate: true, duration: 1.2 });
+      }
     }
   }, [searchQuery, facilities, setActive]);
 

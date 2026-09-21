@@ -108,6 +108,8 @@ export function Donut({ org, ano, res }: DonutProps) {
 
 /* ---------- Tren volume bulanan ---------- */
 function smoothPath(pts: [number, number][]): string {
+  if (!pts || pts.length === 0) return "";
+  if (pts.length === 1) return `M${pts[0][0]},${pts[0][1]}`;
   let d = `M${pts[0][0]},${pts[0][1]}`;
   for (let i = 0; i < pts.length - 1; i++) {
     const p0 = pts[i - 1] || pts[i];
@@ -132,24 +134,34 @@ export function Trend({ series, pi }: TrendProps) {
   const [hover, setHover] = useState<number | null>(null);
   const H = 186;
   const m = { l: 44, r: 16, t: 26, b: 24 };
-  const { step, top } = niceScale(Math.max(...series, 1));
-  const x = (i: number) => m.l + ((w - m.l - m.r) * i) / (series.length - 1);
-  const y = (v: number) => m.t + (H - m.t - m.b) * (1 - v / top);
-  const pts: [number, number][] = series.map((v, i) => [x(i), y(v)]);
+
+  // Pastikan dataset memiliki 9 titik (Jan–Sep) agar kurva dan axis selalu stabil
+  const safeSeries = (!series || series.length === 0)
+    ? [0, 0, 0, 0, 0, 0, 0, 0, 0]
+    : series;
+
+  const { step, top } = niceScale(Math.max(...safeSeries, 1));
+  const denom = Math.max(1, safeSeries.length - 1);
+  const x = (i: number) => m.l + ((w - m.l - m.r) * i) / denom;
+  const y = (v: number) => m.t + (H - m.t - m.b) * (1 - (v ?? 0) / top);
+  const pts: [number, number][] = safeSeries.map((v, i) => [x(i), y(v)]);
   const line = smoothPath(pts);
   const base = y(0);
-  const area = `${line} L${x(series.length - 1)},${base} L${x(0)},${base} Z`;
+  const area = pts.length > 0 ? `${line} L${x(safeSeries.length - 1)},${base} L${x(0)},${base} Z` : "";
   const ticks = [0, 1, 2, 3].map((i) => i * step);
-  const active = hover ?? pi;
+
+  const safePi = Math.max(0, Math.min(safeSeries.length - 1, pi < 0 ? safeSeries.length - 1 : pi));
+  const active = hover ?? safePi;
 
   const onMove = (e: React.PointerEvent<SVGSVGElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const px = e.clientX - rect.left;
-    const i = Math.round(((px - m.l) / (w - m.l - m.r)) * (series.length - 1));
-    setHover(Math.max(0, Math.min(series.length - 1, i)));
+    const i = Math.round(((px - m.l) / (w - m.l - m.r)) * (safeSeries.length - 1));
+    setHover(Math.max(0, Math.min(safeSeries.length - 1, i)));
   };
   const tipW = 92;
-  const tipX = Math.max(m.l, Math.min(w - tipW - 4, x(active) - tipW / 2));
+  const activeX = x(active);
+  const tipX = Math.max(m.l, Math.min(w - tipW - 4, activeX - tipW / 2));
 
   return (
     <section className="card chart-card" aria-label="Tren volume bulanan">
@@ -226,12 +238,12 @@ export function Trend({ series, pi }: TrendProps) {
             strokeDasharray="3 3"
           />
           <g
-            transform={`translate(${tipX} ${Math.max(2, y(series[active]) - 34)})`}
+            transform={`translate(${tipX} ${Math.max(2, y(safeSeries[active] ?? 0) - 34)})`}
             pointerEvents="none"
           >
             <rect width={tipW} height="24" rx="7" fill="var(--ink)" />
             <text x={tipW / 2} y="16" textAnchor="middle" className="tip-t">
-              {MONTHS[active]}: {fmtN(series[active])} m³
+              {MONTHS[active] ?? "Sep"}: {fmtN(safeSeries[active] ?? 0)} m³
             </text>
           </g>
         </svg>
