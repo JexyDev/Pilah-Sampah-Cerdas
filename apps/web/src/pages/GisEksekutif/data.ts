@@ -165,18 +165,23 @@ export const KEL_BY_ID: Record<string, KelurahanData> = Object.fromEntries(
 );
 
 export const TIPE: FacilityType[] = [
-  { id: "bank", nama: "Bank Sampah", fungsi: "Daur ulang", warna: "#1f7aec", jumlah: 14 },
-  { id: "maggot", nama: "Maggot BSF", fungsi: "Biokonversi", warna: "#7c3aed", jumlah: 8 },
-  { id: "sae", nama: "Buruan SAE", fungsi: "Urban farm", warna: "#3f9b3f", jumlah: 18 },
+  { id: "bank_sampah", nama: "Bank Sampah", fungsi: "Daur ulang", warna: "#1f7aec", jumlah: 14 },
+  { id: "rumah_maggot", nama: "Maggot BSF", fungsi: "Biokonversi", warna: "#7c3aed", jumlah: 8 },
+  { id: "buruan_sae", nama: "Buruan SAE", fungsi: "Urban farm", warna: "#3f9b3f", jumlah: 18 },
   { id: "loseda", nama: "Loseda", fungsi: "Resapan organik", warna: "#0f8f8a", jumlah: 12 },
-  { id: "bata", nama: "Bata Terawang", fungsi: "Kompos bata", warna: "#ef8a17", jumlah: 9 },
+  { id: "bata_terawang", nama: "Bata Terawang", fungsi: "Kompos bata", warna: "#ef8a17", jumlah: 9 },
   { id: "tps", nama: "TPS / TPST", fungsi: "Penampungan", warna: "#5b6b7c", jumlah: 14 },
   { id: "poc", nama: "POC", fungsi: "Pupuk organik cair", warna: "#0aa7cc", jumlah: 8 },
 ];
 
-export const TIPE_BY_ID: Record<string, FacilityType> = Object.fromEntries(
-  TIPE.map((t) => [t.id, t])
-);
+const _entries = Object.fromEntries(TIPE.map((t) => [t.id, t]));
+export const TIPE_BY_ID: Record<string, FacilityType> = {
+  ..._entries,
+  bank: _entries["bank_sampah"]!,
+  maggot: _entries["rumah_maggot"]!,
+  sae: _entries["buruan_sae"]!,
+  bata: _entries["bata_terawang"]!,
+};
 
 // Sensor CH₄ (ppm). ppm = null → offline.
 const RAW_SENSORS: Array<{

@@ -211,6 +211,24 @@ function toFacilityForMap(f: GisFacilityDto): FacilityForMap {
   };
 }
 
+function normalizeFacilityType(t?: string | null): string {
+  if (!t) return "";
+  const map: Record<string, string> = {
+    bank: "bank_sampah",
+    bank_sampah: "bank_sampah",
+    maggot: "rumah_maggot",
+    rumah_maggot: "rumah_maggot",
+    sae: "buruan_sae",
+    buruan_sae: "buruan_sae",
+    loseda: "loseda",
+    bata: "bata_terawang",
+    bata_terawang: "bata_terawang",
+    tps: "tps",
+    poc: "poc",
+  };
+  return map[t.toLowerCase()] || t.toLowerCase();
+}
+
 /* ---------- Adapter: GisSensorDto → SensorForMap ---------- */
 function toSensorForMap(s: GisSensorDto): SensorForMap {
   return {
@@ -387,7 +405,9 @@ export default function GisEksekutifPage() {
   const visibleFac = useMemo<FacilityForMap[]>(() => {
     const q = query.trim().toLowerCase();
     return facilities.filter((f) => {
-      if (facType !== "Semua" && f.tipe !== facType) return false;
+      if (facType !== "Semua" && normalizeFacilityType(f.tipe) !== normalizeFacilityType(facType)) {
+        return false;
+      }
       if (!q) return true;
       const hay = `${f.nama} ${f.kel} rw ${f.rw} ${TIPE_BY_ID[f.tipe]?.fungsi ?? ""}`.toLowerCase();
       return q.split(/\s+/).every((tok) => hay.includes(tok));
@@ -861,8 +881,9 @@ export default function GisEksekutifPage() {
             <span className="pill-s">
               <select value={facType} onChange={(e) => setFacType(e.target.value)} aria-label="Jenis fasilitas">
                 {filterOptions.tipeFasilitas.map((t) => {
-                  const tipeInfo = TIPE_BY_ID[t];
-                  return <option key={t} value={t}>{tipeInfo?.nama ?? t}</option>;
+                  const tipeInfo = TIPE_BY_ID[t] || TIPE_BY_ID[normalizeFacilityType(t)];
+                  const label = t === "Semua" ? "Semua Fasilitas" : (tipeInfo?.nama ?? t.replace(/_/g, " ").toUpperCase());
+                  return <option key={t} value={t}>{label}</option>;
                 })}
               </select>
               <Icon name="chevron" size={15} className="pill-c" />
@@ -903,21 +924,24 @@ export default function GisEksekutifPage() {
               <div className="side-sec">
                 <h4 className="side-h">Fasilitas dan fungsi</h4>
                 <ul className="fac-list">
-                  {TIPE.map((t) => (
-                    <li key={t.id}>
-                      <button type="button"
-                        className={facType === t.id ? "on" : ""} aria-pressed={facType === t.id}
-                        onClick={() => setFacType(facType === t.id ? "Semua" : t.id)}
-                        title="Klik untuk menyaring jenis ini">
-                        <span className="fac-ico" style={{ background: t.warna }}>
-                          <Icon name={TIPE_ICON[t.id]} size={17} stroke={2.2} />
-                        </span>
-                        <span className="fac-n">{t.nama}</span>
-                        <span className="fac-d">—</span>
-                        <span className="fac-f">{t.fungsi}</span>
-                      </button>
-                    </li>
-                  ))}
+                  {TIPE.map((t) => {
+                    const isOn = normalizeFacilityType(facType) === normalizeFacilityType(t.id);
+                    return (
+                      <li key={t.id}>
+                        <button type="button"
+                          className={isOn ? "on" : ""} aria-pressed={isOn}
+                          onClick={() => setFacType(isOn ? "Semua" : t.id)}
+                          title="Klik untuk menyaring jenis ini">
+                          <span className="fac-ico" style={{ background: t.warna }}>
+                            <Icon name={TIPE_ICON[t.id]} size={17} stroke={2.2} />
+                          </span>
+                          <span className="fac-n">{t.nama}</span>
+                          <span className="fac-d">—</span>
+                          <span className="fac-f">{t.fungsi}</span>
+                        </button>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
               <div className="side-sec">

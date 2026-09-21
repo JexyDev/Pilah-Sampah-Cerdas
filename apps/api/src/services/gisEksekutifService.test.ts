@@ -89,4 +89,22 @@ describe("gisEksekutifService E2E QC", () => {
     expect(result.komposisiVolume.totalM3).toBe(expectedSum);
     expect(result.kpi.volumeTotal).toBe(expectedSum);
   });
+
+  it("should normalize shorthand facility type 'maggot' to valid Prisma enum 'rumah_maggot'", async () => {
+    (prisma.kelurahan.findMany as any).mockResolvedValue([]);
+    (prisma.rw.findMany as any).mockResolvedValue([]);
+    (prisma.facility.findMany as any).mockResolvedValue([]);
+    (prisma.surveiKelurahan.findMany as any).mockResolvedValue([]);
+    (prisma.facilityProductionLog.findMany as any).mockResolvedValue([]);
+
+    await gisEksekutifService.getOverview({ jenisFasilitas: "maggot" });
+
+    expect(prisma.facility.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          jenis: "rumah_maggot",
+        }),
+      })
+    );
+  });
 });

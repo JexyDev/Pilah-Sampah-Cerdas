@@ -74,6 +74,34 @@ function kepColor(pct: number): string {
 
 const BULAN_LABELS = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep"];
 
+const FACILITY_TYPE_MAP: Record<string, string> = {
+  bank: "bank_sampah",
+  bank_sampah: "bank_sampah",
+  maggot: "rumah_maggot",
+  rumah_maggot: "rumah_maggot",
+  sae: "buruan_sae",
+  buruan_sae: "buruan_sae",
+  loseda: "loseda",
+  bata: "bata_terawang",
+  bata_terawang: "bata_terawang",
+  tps: "tps",
+  tpst: "tps",
+  poc: "poc",
+  posko: "posko_kkn",
+  posko_kkn: "posko_kkn",
+};
+
+const VALID_FACILITY_TYPES = new Set([
+  "loseda",
+  "bata_terawang",
+  "rumah_maggot",
+  "bank_sampah",
+  "tps",
+  "buruan_sae",
+  "poc",
+  "posko_kkn",
+]);
+
 export const gisEksekutifService = {
   getBaselineOverview(filters: GisEksekutifFilters = {}, errorMessage?: string) {
     const kelurahanNames = ["Cipaganti", "Dago", "Lebak Gede", "Lebak Siliwangi", "Sadang Serang", "Sekeloa"];
@@ -195,7 +223,11 @@ export const gisEksekutifService = {
       }
     }
     if (filters.jenisFasilitas && filters.jenisFasilitas !== "Semua") {
-      facilityWhere["jenis"] = filters.jenisFasilitas;
+      const rawType = filters.jenisFasilitas.toLowerCase().trim();
+      const mappedType = FACILITY_TYPE_MAP[rawType] || rawType;
+      if (VALID_FACILITY_TYPES.has(mappedType)) {
+        facilityWhere["jenis"] = mappedType as any;
+      }
     }
     if (filters.search) {
       const s = filters.search.trim();
