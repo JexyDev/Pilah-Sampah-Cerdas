@@ -624,7 +624,7 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       expect(result.data.isMemenuhiDurasi).toBe(false);
     });
 
-    it("should guarantee status HADIR_MEMENUHI and min duration when isAutoCheckout is true", async () => {
+    it("should record HADIR_TIDAK_MEMENUHI and real duration when isAutoCheckout is true and duration is insufficient", async () => {
       vi.mocked(prisma.activityAttendance.findFirst).mockResolvedValue({
         id: "att-rec-auto",
         studentId,
@@ -655,10 +655,10 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       });
 
       expect(result.success).toBe(true);
-      expect(result.data.status).toBe("HADIR_MEMENUHI");
-      expect(result.data.statusDisplay).toBe("Hadir & Memenuhi");
-      expect(result.data.isMemenuhiDurasi).toBe(true);
-      expect(result.data.actualInZoneMinutes).toBeGreaterThanOrEqual(240);
+      expect(result.data.status).toBe("HADIR_TIDAK_MEMENUHI");
+      expect(result.data.statusDisplay).toBe("Hadir & Tidak Memenuhi");
+      expect(result.data.isMemenuhiDurasi).toBe(false);
+      expect(result.data.actualInZoneMinutes).toBe(30);
     });
   });
 
@@ -1605,7 +1605,7 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       expect(prisma.activityAttendance.upsert).toHaveBeenCalled();
     });
 
-    it("should allow check-in when student is outside primary posko under flexible mobile rule", async () => {
+    it("should reject check-in with OUT_OF_GEOFENCE when student is outside posko and smart zone", async () => {
       const farLat = -6.99;
       const farLng = 107.75;
 
@@ -1620,13 +1620,12 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
         autoPolygonActive: false,
       });
 
-      const result = await service.mulaiKegiatan(studentUserId, scheduleId, {
-        latitude: farLat,
-        longitude: farLng,
-      });
-
-      expect(result.attendanceStatus).toBe("BERLANGSUNG");
-      expect(prisma.activityAttendance.upsert).toHaveBeenCalled();
+      await expect(
+        service.mulaiKegiatan(studentUserId, scheduleId, {
+          latitude: farLat,
+          longitude: farLng,
+        })
+      ).rejects.toThrow("OUT_OF_GEOFENCE");
     });
   });
 
@@ -2090,7 +2089,66 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       });
 
       expect(res.success).toBe(true);
+      // Because attended duration is only 10 mins, status is properly HADIR_TIDAK_MEMENUHI
+      expect(res.data.status).toBe("HADIR_TIDAK_MEMENUHI");
+      expect(res.data.isMemenuhiDurasi).toBe(false);
+    });
+
+    it("should set HADIR_MEMENUHI when isAutoCheckout is true and duration >= target", async () => {
+      vi.mocked(prisma.schedule.findUnique).mockResolvedValue({
+        id: scheduleId,
+        title: "Kegiatan KKN Auto Full",
+        time: "08:00 - 16:00",
+        date: new Date("2026-09-03"),
+      } as any);
+
+      vi.mocked(prisma.activityAttendance.findFirst).mockResolvedValue({
+        id: "att-auto-full",
+        studentId,
+        scheduleId,
+        status: "BERLANGSUNG",
+        attendedAt: new Date("2026-09-03T01:00:00.000Z"), // 08:00 WIB
+        actualInZoneMinutes: 480,
+        checkOutAt: null,
+      } as any);
+
+      // Mock 8 hours (480 mins) of in-zone pings
+      vi.mocked(prisma.studentLocation.findMany).mockResolvedValue([
+        { studentId, latitude: -6.89, longitude: 107.61, recordedAt: new Date("2026-09-03T01:00:00.000Z") },
+        { studentId, latitude: -6.89, longitude: 107.61, recordedAt: new Date("2026-09-03T09:00:00.000Z") },
+      ] as any);
+
+      (prisma.activityAttendance.update as any).mockImplementation(async ({ data }: any) => {
+        return {
+          id: "att-auto-full",
+          studentId,
+          scheduleId,
+          status: data.status,
+          attendedAt: new Date("2026-09-03T01:00:00.000Z"),
+          checkOutAt: new Date("2026-09-03T09:00:00.000Z"),
+          schedule: { id: scheduleId, title: "Kegiatan KKN Auto Full" },
+          student: { id: studentId, name: "Mahasiswa Rajin", studentProfile: { nim: "10120099" } },
+        } as any;
+      });
+
+      const res = await service.checkOutAttendance({
+        studentId,
+        scheduleId,
+        isAutoCheckout: true,
+        checkOutTime: new Date("2026-09-03T09:00:00.000Z"),
+      });
+
+      expect(res.success).toBe(true);
       expect(res.data.status).toBe("HADIR_MEMENUHI");
+      expect(res.data.isMemenuhiDurasi).toBe(true);
+    });
+  });
+
+  describe("EDGE CASE: durasiWajibMenit <= 0 fallback", () => {
+    it("should NOT treat 0 minutes as fulfilling target even when durasiWajibMenit <= 0", async () => {
+      // Test getScheduleTargetDurationMinutes fallback
+      const duration = await getScheduleTargetDurationMinutes({ time: null });
+      expect(duration).toBeGreaterThanOrEqual(240);
     });
   });
 });
