@@ -73,14 +73,85 @@ function kepColor(pct: number): string {
 }
 
 export const gisEksekutifService = {
-  async getOverview(filters: GisEksekutifFilters = {}) {
-    const rawKel =
-      filters.kelurahan && filters.kelurahan !== "Semua"
-        ? filters.kelurahan.trim()
-        : undefined;
-    const rawRw =
-      filters.rw && filters.rw !== "Semua" ? filters.rw.trim() : undefined;
+  getBaselineOverview(filters: GisEksekutifFilters = {}, errorMessage?: string) {
+    const kelurahanNames = ["Cipaganti", "Dago", "Lebak Gede", "Lebak Siliwangi", "Sadang Serang", "Sekeloa"];
     const periode = filters.periode || "September 2026";
+    const poligonKelurahan = kelurahanNames.map((nama) => ({
+      nama,
+      coordinates: (KELURAHAN_GEOMETRIES[nama] as [number, number][]) ?? [],
+      kepatuhan: null as number | null,
+      volume: null as number | null,
+      totalFasilitas: 0,
+      color: "#9ca3af",
+      hasData: false,
+    }));
+
+    return {
+      success: true,
+      meta: {
+        wilayah: "Kecamatan Coblong",
+        periode,
+        kelurahanFilter: filters.kelurahan ?? "Semua",
+        rwFilter: filters.rw ?? "Semua",
+        timestamp: new Date().toISOString(),
+        hasSensorData: false,
+        hasTrendData: false,
+        isDegraded: true,
+        degradedReason: errorMessage || "Layanan database sedang disinkronkan. Menampilkan data dasar geospasial.",
+      },
+      filterOptions: {
+        kelurahans: ["Semua", ...kelurahanNames],
+        rws: ["Semua"],
+        periodes: ["September 2026"],
+        tipeFasilitas: ["Semua"],
+      },
+      kpi: {
+        fasilitasTerdata: 0,
+        fasilitasSubtext: "Koneksi database dalam pemulihan",
+        volumeTotal: null as number | null,
+        volumeGrowthPercent: null as number | null,
+        volumeUnit: "m³/bulan",
+        kepatuhanPemilahan: null as number | null,
+        kepatuhanDeltaPoin: null as number | null,
+        sensorCh4OnlineCount: 0,
+        sensorCh4TotalCount: 0,
+        sensorCh4Text: "Tahap Integrasi Jaringan IoT",
+      },
+      komposisiVolume: {
+        organik: { persen: 0, volumeM3: 0 },
+        anorganik: { persen: 0, volumeM3: 0 },
+        residu: { persen: 0, volumeM3: 0 },
+        totalM3: 0,
+      },
+      trenBulanan: [] as Array<{ bulan: string; volume: number }>,
+      kepatuhanPerKelurahan: kelurahanNames.map((nama) => ({
+        nama,
+        kepatuhan: null as number | null,
+        volume: null as number | null,
+        totalFasilitas: 0,
+        color: "#9ca3af",
+        hasData: false,
+      })),
+      pemantauanCh4: {
+        rentangText: "Tahap Integrasi",
+        titikPengukuranCount: 0,
+        titikPengukuranText: "Sensor CH₄ belum aktif",
+        sensors: [] as any[],
+      },
+      titikFasilitas: [] as GisFacilityDto[],
+      poligonKelurahan,
+    };
+  },
+
+  async getOverview(filters: GisEksekutifFilters = {}) {
+    try {
+      const rawKel =
+        filters.kelurahan && filters.kelurahan !== "Semua"
+          ? filters.kelurahan.trim()
+          : undefined;
+      const rawRw =
+        filters.rw && filters.rw !== "Semua" ? filters.rw.trim() : undefined;
+      const periode = filters.periode || "September 2026";
 
     // ── 1. Daftar kelurahan dari DB (hanya Coblong) ──────────────────────────
     // Filter hanya kelurahan yang ada Rw-nya (artinya kelurahan aktif di sistem)
@@ -393,5 +464,9 @@ export const gisEksekutifService = {
       titikFasilitas: facilities,
       poligonKelurahan,
     };
+    } catch (error: any) {
+      console.warn("[gisEksekutifService] Falling back to baseline overview due to error:", error?.message || error);
+      return gisEksekutifService.getBaselineOverview(filters, error?.message);
+    }
   },
 };

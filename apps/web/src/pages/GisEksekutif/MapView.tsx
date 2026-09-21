@@ -122,23 +122,61 @@ function createPopupHtml(f: FacilityForMap, onPreview?: (url: string) => void): 
   const resolvedFoto = f.foto ? resolveImageUrl(f.foto) : null;
   const rwStr = typeof f.rw === "number" ? `RW ${String(f.rw).padStart(2, "0")}` : String(f.rw || "-");
 
-  let fotoHtml = "";
+  let fotoHtml = `
+    <div style="margin: 8px 0; padding: 10px 8px; text-align: center; color: #94a3b8; font-size: 11px; background: #f8fafc; border: 1px dashed #e2e8f0; border-radius: 8px;">
+      <span>📷 Foto fasilitas belum diunggah</span>
+    </div>
+  `;
+
   if (resolvedFoto) {
     fotoHtml = `
-      <div style="margin: 8px 0; border-radius: 8px; overflow: hidden; position: relative; max-height: 120px;">
+      <div style="margin: 8px 0; border-radius: 8px; overflow: hidden; position: relative; max-height: 120px; background: #f1f5f9; border: 1px solid #e2e8f0;">
         <img src="${esc(resolvedFoto)}" alt="${esc(f.nama)}" 
-          style="width: 100%; height: 110px; object-fit: cover; border-radius: 8px; display: block;" 
-          onerror="this.style.display='none'" />
+          style="width: 100%; height: 115px; object-fit: cover; border-radius: 7px; display: block;" 
+          onerror="this.onerror=null; this.parentElement.innerHTML='<div style=\\'padding:12px;text-align:center;color:#64748b;font-size:11px;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:6px;\\'>📷 Gagal memuat foto fasilitas</div>';" />
       </div>
     `;
   }
 
+  // Kontak PIC: Format link WhatsApp & Call secara interaktif
+  const cleanDigits = f.kontak ? String(f.kontak).replace(/\D/g, "") : "";
+  const hasValidPhone = cleanDigits.length >= 8;
+  const waNumber = cleanDigits.startsWith("0") ? "62" + cleanDigits.slice(1) : cleanDigits;
+
+  let kontakHtml = `
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px; font-size: 11px; color: #94a3b8; padding: 3px 0;">
+      <span><strong style="color: #475569;">Kontak PIC:</strong> Belum terdaftar</span>
+    </div>
+  `;
+
+  if (hasValidPhone) {
+    kontakHtml = `
+      <div style="margin-top: 4px; padding-top: 4px; border-top: 1px dashed #e2e8f0;">
+        <div style="font-size: 11px; margin-bottom: 4px;"><strong style="color: #0f172a;">Kontak:</strong> ${esc(f.kontak || "-")}</div>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+          <a href="https://wa.me/${waNumber}" target="_blank" rel="noopener noreferrer"
+            style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px; font-size: 10.5px; font-weight: 700; background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; text-decoration: none; cursor: pointer;">
+            <span>💬 WhatsApp</span>
+          </a>
+          <a href="tel:${cleanDigits}"
+            style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px; font-size: 10.5px; font-weight: 700; background: #f8fafc; color: #334155; border: 1px solid #cbd5e1; text-decoration: none; cursor: pointer;">
+            <span>📞 Hubungi</span>
+          </a>
+        </div>
+      </div>
+    `;
+  }
+
+  // Hyperlink Google Maps Navigation
+  const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${f.ll[0]},${f.ll[1]}`;
+
   return `
-    <div style="font-family: inherit; font-size: 13px; color: #0f172a; line-height: 1.45; min-width: 220px; max-width: 280px; padding: 2px;">
-      <div style="margin-bottom: 6px;">
+    <div style="font-family: inherit; font-size: 13px; color: #0f172a; line-height: 1.45; min-width: 230px; max-width: 290px; padding: 4px 2px;">
+      <div style="margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
         <span style="display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; background: ${badge.bg}; color: ${badge.text}; border: 1px solid ${badge.border};">
           ${esc(label)}
         </span>
+        <span style="font-size: 10.5px; color: #64748b; font-weight: 600;">${esc(rwStr)}</span>
       </div>
       <h3 style="margin: 0 0 6px 0; font-size: 14px; font-weight: 800; color: #0f172a; line-height: 1.3;">
         ${esc(f.nama)}
@@ -146,13 +184,17 @@ function createPopupHtml(f: FacilityForMap, onPreview?: (url: string) => void): 
       ${fotoHtml}
       <div style="border-top: 1px solid #e2e8f0; padding-top: 6px; display: flex; flex-direction: column; gap: 3px; font-size: 11.5px; color: #334155;">
         ${f.pic ? `<div><strong style="color:#0f172a;">PIC:</strong> ${esc(f.pic)}</div>` : ""}
-        ${f.kontak && f.kontak !== "-" ? `<div><strong style="color:#0f172a;">Kontak:</strong> ${esc(f.kontak)}</div>` : ""}
-        <div><strong style="color:#0f172a;">Wilayah:</strong> Kel. ${esc(f.kel)} • ${esc(rwStr)}</div>
+        <div><strong style="color:#0f172a;">Wilayah:</strong> Kel. ${esc(f.kel)}</div>
         ${f.alamat ? `<div><strong style="color:#0f172a;">Alamat:</strong> ${esc(f.alamat)}</div>` : ""}
-        <div style="font-family: monospace; font-size: 10.5px; color: #64748b; margin-top: 2px;">
-          ${f.ll[0].toFixed(5)}, ${f.ll[1].toFixed(5)}
+        ${kontakHtml}
+        <div style="font-family: monospace; font-size: 10px; color: #94a3b8; margin-top: 4px;">
+          📍 ${f.ll[0].toFixed(5)}, ${f.ll[1].toFixed(5)}
         </div>
       </div>
+      <a href="${googleMapsUrl}" target="_blank" rel="noopener noreferrer"
+        style="margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 12px; background: #055c46; color: #ffffff; border-radius: 6px; font-size: 11px; font-weight: 700; text-decoration: none; text-align: center; box-shadow: 0 1px 3px rgba(5,92,70,0.2);">
+        <span>Buka Rute di Google Maps ↗</span>
+      </a>
     </div>
   `;
 }

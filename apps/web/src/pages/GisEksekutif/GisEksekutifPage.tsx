@@ -15,12 +15,79 @@ import { Icon, TIPE_ICON } from "./ui";
 import { Donut, Trend, Compliance, Methane, fmtN } from "./charts";
 import MapView, { LAYERS } from "./MapView";
 import { CH4_CLASSES, KEP_CLASSES, TIPE, TIPE_BY_ID, pad2 } from "./data";
+import { KELURAHAN_GEODATA } from "../../constants/coblongGeoData";
 import {
   gisEksekutifApi,
   type GisOverviewApiResponse,
   type GisFacilityDto,
   type GisSensorDto,
 } from "./gisEksekutifApi";
+
+function createOfflineFallbackData(kelurahanFilter = "Semua"): GisOverviewApiResponse {
+  const kelNames = ["Cipaganti", "Dago", "Lebak Gede", "Lebak Siliwangi", "Sadang Serang", "Sekeloa"];
+  const poligonKelurahan = kelNames.map((nama) => ({
+    nama,
+    coordinates: (KELURAHAN_GEODATA[nama as keyof typeof KELURAHAN_GEODATA]?.bounds || []) as [number, number][],
+    kepatuhan: 0,
+    volume: 0,
+    totalFasilitas: 0,
+    color: "#9ca3af",
+    hasData: false,
+  }));
+
+  return {
+    success: true,
+    meta: {
+      wilayah: "Kecamatan Coblong",
+      periode: "September 2026",
+      kelurahanFilter,
+      rwFilter: "Semua",
+      timestamp: new Date().toISOString(),
+      isDegraded: true,
+      degradedReason: "Mode visualisasi peta dasar aktif (menunggu sinkronisasi data server)",
+    },
+    filterOptions: {
+      kelurahans: ["Semua", ...kelNames],
+      rws: ["Semua"],
+      periodes: ["September 2026"],
+      tipeFasilitas: ["Semua"],
+    },
+    kpi: {
+      fasilitasTerdata: 0,
+      fasilitasSubtext: "Mode Peta Dasar Aktif",
+      volumeTotal: 0,
+      volumeGrowthPercent: 0,
+      volumeUnit: "m³/bulan",
+      kepatuhanPemilahan: 0,
+      kepatuhanDeltaPoin: 0,
+      sensorCh4OnlineCount: 0,
+      sensorCh4TotalCount: 0,
+      sensorCh4Text: "Tahap Integrasi Jaringan IoT",
+    },
+    komposisiVolume: {
+      organik: { persen: 0, volumeM3: 0 },
+      anorganik: { persen: 0, volumeM3: 0 },
+      residu: { persen: 0, volumeM3: 0 },
+      totalM3: 0,
+    },
+    trenBulanan: [],
+    kepatuhanPerKelurahan: kelNames.map((nama) => ({
+      nama,
+      kepatuhan: 0,
+      volume: 0,
+      totalFasilitas: 0,
+      color: "#9ca3af",
+    })),
+    pemantauanCh4: {
+      rentangText: "Tahap Integrasi",
+      titikPengukuranCount: 0,
+      titikPengukuranText: "Sensor CH₄ belum aktif",
+      sensors: [],
+    },
+    titikFasilitas: [],
+    poligonKelurahan,
+  };
+}
 
 /* ---------- Tipe lokal compat MapView/charts ---------- */
 // MapView & charts masih pakai shape lama dari data.ts → adapter di bawah
@@ -175,6 +242,10 @@ export default function GisEksekutifPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [useOfflineMode, setUseOfflineMode] = useState(false);
+  const [autoRetryCountdown, setAutoRetryCountdown] = useState(5);
+  const [isAutoRetryPaused, setIsAutoRetryPaused] = useState(false);
+  const [showTechnicalDetails, setShowTechnicalDetails] = useState(false);
   const [filterOptions, setFilterOptions] = useState<{
     kelurahans: string[]; rws: string[]; periodes: string[]; tipeFasilitas: string[];
   }>({
@@ -197,6 +268,8 @@ export default function GisEksekutifPage() {
         search: query || undefined,
       });
       setData(res);
+      setError(null);
+      setUseOfflineMode(false);
       // Update filter options dari API (dinamis dari DB)
       if (res.filterOptions) {
         setFilterOptions(res.filterOptions);
@@ -204,6 +277,8 @@ export default function GisEksekutifPage() {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Gagal memuat data GIS";
       setError(msg);
+      // Jika mode offline belum diaktifkan, siapkan countdown auto-retry
+      setAutoRetryCountdown(5);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -219,6 +294,20 @@ export default function GisEksekutifPage() {
     fetchData(false);
   }, [kel, rw, periode, facType, query]);
 
+  // Auto-retry effect saat terjadi error
+  useEffect(() => {
+    if (!error || useOfflineMode || isAutoRetryPaused) return;
+    if (autoRetryCountdown <= 0) {
+      fetchData(true);
+      setAutoRetryCountdown(5);
+      return;
+    }
+    const timer = setInterval(() => {
+      setAutoRetryCountdown((c) => (c > 0 ? c - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [error, useOfflineMode, isAutoRetryPaused, autoRetryCountdown, fetchData]);
+
   // Toast auto-dismiss
   useEffect(() => {
     if (!toast) return;
@@ -228,8 +317,20 @@ export default function GisEksekutifPage() {
 
   // ─── Filter handlers ─────────────────────────────────────────────────────────
   const changeKel = (v: string) => { setKel(v); setRw("Semua"); };
-  const submitSearch = () => setQuery(input);
+  const submitSearch = () => {
+    setQuery(input);
+    if (input.trim()) {
+      setToast(`Mencari fasilitas "${input}"...`);
+    }
+  };
   const clearFilters = () => { setFacType("Semua"); setInput(""); setQuery(""); };
+
+  const activateOfflineMode = () => {
+    setUseOfflineMode(true);
+    setError(null);
+    setData(createOfflineFallbackData(kel));
+    setToast("Mode peta dasar aktif. Menampilkan geometri administratif 6 kelurahan.");
+  };
 
   // ─── Derived data → adapter ke format MapView/charts ─────────────────────────
   const facilities = useMemo<FacilityForMap[]>(
@@ -299,36 +400,216 @@ export default function GisEksekutifPage() {
 
   // ─── Export CSV ──────────────────────────────────────────────────────────────
   const doExport = async (what: "kel" | "fac") => {
-    if (!data) return;
-    let rows: Array<Array<string | number | null>>;
-    let name: string;
-    if (what === "kel") {
-      rows = [["Kelurahan", "Periode", "Fasilitas", "Kepatuhan (%)", "Volume m³/bln", "Sensor Online"]];
-      data.kepatuhanPerKelurahan.forEach((k) => {
-        rows.push([k.nama, periode, k.totalFasilitas, k.kepatuhan, k.volume, 0]);
-      });
-      name = `ringkasan-kelurahan-${periode.toLowerCase().replace(/\s+/g, "-")}.csv`;
-    } else {
-      rows = [["ID", "Nama Fasilitas", "Tipe", "Kelurahan", "RW", "Lat", "Lng", "PIC"]];
-      (data.titikFasilitas ?? []).forEach((f) =>
-        rows.push([f.id, f.nama, f.tipe, f.kel, f.rw, f.lat, f.lng, f.pic ?? ""])
-      );
-      name = "daftar-fasilitas.csv";
+    if (!data || (what === "fac" && (data.titikFasilitas ?? []).length === 0)) {
+      setToast("Data fasilitas belum tersedia untuk diekspor. Silakan tunggu sinkronisasi selesai.");
+      return;
     }
-    setToast(await saveFileCsv(name, toCsv(rows)));
+    try {
+      setToast("Menyiapkan berkas CSV...");
+      let rows: Array<Array<string | number | null>>;
+      let name: string;
+      if (what === "kel") {
+        rows = [["Kelurahan", "Periode", "Fasilitas", "Kepatuhan (%)", "Volume m³/bln", "Sensor Online"]];
+        data.kepatuhanPerKelurahan.forEach((k) => {
+          rows.push([k.nama, periode, k.totalFasilitas, k.kepatuhan, k.volume, 0]);
+        });
+        name = `ringkasan-kelurahan-${periode.toLowerCase().replace(/\s+/g, "-")}.csv`;
+      } else {
+        rows = [["ID", "Nama Fasilitas", "Tipe", "Kelurahan", "RW", "Lat", "Lng", "PIC"]];
+        (data.titikFasilitas ?? []).forEach((f) =>
+          rows.push([f.id, f.nama, f.tipe, f.kel, f.rw, f.lat, f.lng, f.pic ?? ""])
+        );
+        name = "daftar-fasilitas.csv";
+      }
+      const msg = await saveFileCsv(name, toCsv(rows));
+      setToast(msg);
+    } catch (exportErr: any) {
+      setToast(`Gagal mengekspor data: ${exportErr?.message || "Kesalahan tidak dikenal"}`);
+    }
   };
 
-  // ─── Render ──────────────────────────────────────────────────────────────────
-  if (error) {
+  // ─── Render: Professional Error & Reconnect State ─────────────────────────────
+  if (error && !useOfflineMode) {
     return (
-      <div className="gis-eksekutif-root">
-        <div className="app" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 400, gap: 16 }}>
-          <Icon name="signal" size={48} style={{ opacity: 0.3 }} />
-          <h2 style={{ margin: 0, color: "#ef4444" }}>Gagal memuat data GIS</h2>
-          <p style={{ color: "#6b7280", margin: 0 }}>{error}</p>
-          <button type="button" className="btn-primary" onClick={() => fetchData(true)}>
-            Coba Lagi
-          </button>
+      <div className="gis-eksekutif-root" data-theme="light">
+        <div className="app" style={{ minHeight: 480, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 16px" }}>
+          <div style={{
+            maxWidth: 560,
+            width: "100%",
+            background: "#ffffff",
+            borderRadius: 16,
+            border: "1px solid #e2e8f0",
+            boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04)",
+            padding: "36px 28px",
+            textAlign: "center",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 16,
+          }}>
+            {/* Status Pill Badge */}
+            <div style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "4px 14px",
+              borderRadius: 9999,
+              background: "#fffbeb",
+              border: "1px solid #fde68a",
+              color: "#b45309",
+              fontSize: 12,
+              fontWeight: 700,
+              letterSpacing: "0.04em",
+              textTransform: "uppercase",
+            }}>
+              <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#f59e0b", display: "inline-block" }} />
+              Sinkronisasi Geospasial Berseka
+            </div>
+
+            {/* Radar / Server Icon */}
+            <div style={{
+              width: 64,
+              height: 64,
+              borderRadius: "50%",
+              background: "#ecfdf5",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#055c46",
+              boxShadow: "0 0 0 8px rgba(5, 92, 70, 0.06)",
+              marginTop: 4,
+            }}>
+              <Icon name="signal" size={32} />
+            </div>
+
+            {/* Title & Description */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#0f172a" }}>
+                Penyelarasan Data Geospasial Sedang Berlangsung
+              </h2>
+              <p style={{ margin: 0, fontSize: 13.5, color: "#64748b", lineHeight: 1.5, maxWidth: 460 }}>
+                Layanan sedang menyinkronkan data fasilitas dan persampahan dari server basis data. Sistem dilengkapi proteksi pemulihan otomatis.
+              </p>
+            </div>
+
+            {/* Auto-Retry Countdown Badge */}
+            <div style={{
+              background: "#f8fafc",
+              border: "1px solid #e2e8f0",
+              borderRadius: 8,
+              padding: "8px 16px",
+              fontSize: 12.5,
+              color: "#475569",
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+            }}>
+              <span>⏱️ Mencoba menghubungkan otomatis dalam <b>{autoRetryCountdown}s</b></span>
+              <button
+                type="button"
+                onClick={() => setIsAutoRetryPaused((p) => !p)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "#055c46",
+                  fontWeight: 700,
+                  fontSize: 12,
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                  padding: 0,
+                }}
+              >
+                {isAutoRetryPaused ? "Lanjutkan" : "Jeda"}
+              </button>
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center", width: "100%", marginTop: 4 }}>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => fetchData(true)}
+                disabled={loading}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "10px 22px",
+                  borderRadius: 8,
+                  fontWeight: 700,
+                  fontSize: 13.5,
+                  cursor: loading ? "not-allowed" : "pointer",
+                  opacity: loading ? 0.7 : 1,
+                }}
+              >
+                {loading ? "Menghubungkan..." : "Hubungkan Kembali Sekarang"}
+              </button>
+
+              <button
+                type="button"
+                onClick={activateOfflineMode}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "10px 18px",
+                  borderRadius: 8,
+                  fontWeight: 700,
+                  fontSize: 13.5,
+                  background: "#f1f5f9",
+                  color: "#334155",
+                  border: "1px solid #cbd5e1",
+                  cursor: "pointer",
+                }}
+              >
+                <span>🗺️ Buka Peta Dasar Coblong</span>
+              </button>
+            </div>
+
+            {/* Diagnostic Information (Collapsible) */}
+            <div style={{ width: "100%", marginTop: 8, borderTop: "1px solid #f1f5f9", paddingTop: 12, textAlign: "left" }}>
+              <button
+                type="button"
+                onClick={() => setShowTechnicalDetails((v) => !v)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "#64748b",
+                  fontSize: 11.5,
+                  fontWeight: 600,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                  cursor: "pointer",
+                  padding: 0,
+                }}
+              >
+                <span>{showTechnicalDetails ? "▼ Sembunyikan" : "▶ Lihat"} Rincian Diagnostik Sistem</span>
+              </button>
+
+              {showTechnicalDetails && (
+                <div style={{
+                  marginTop: 8,
+                  padding: 12,
+                  background: "#f8fafc",
+                  borderRadius: 8,
+                  border: "1px solid #e2e8f0",
+                  fontSize: 11.5,
+                  color: "#334155",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 4,
+                }}>
+                  <div><strong>Kode Kesalahan:</strong> <code>{error}</code></div>
+                  <div><strong>Target Endpoint:</strong> <code>/api/v1/gis-eksekutif/overview</code></div>
+                  <div><strong>Waktu Deteksi:</strong> {new Date().toLocaleTimeString()} WIB</div>
+                  <div style={{ marginTop: 4, color: "#64748b", fontSize: 11 }}>
+                    Saran Pemulihan: Pastikan server API aktif (`npm run dev:all`) dan database PostgreSQL terhubung. Klik 'Buka Peta Dasar Coblong' untuk tetap melihat visualisasi batas wilayah.
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -341,6 +622,81 @@ export default function GisEksekutifPage() {
         {refreshing && (
           <div style={{ position: "fixed", top: 12, right: 12, zIndex: 9999, background: "#055c46", color: "#fff", borderRadius: 8, padding: "6px 14px", fontSize: 13, fontWeight: 600, boxShadow: "0 4px 12px rgba(0,0,0,0.15)" }}>
             Memperbarui data…
+          </div>
+        )}
+
+        {/* Informational Banner saat mode offline atau data terdegradasi */}
+        {(useOfflineMode || data?.meta?.isDegraded) && (
+          <div style={{
+            background: "#fffbeb",
+            border: "1px solid #fde68a",
+            borderRadius: 10,
+            padding: "10px 16px",
+            margin: "0 0 16px 0",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: 12,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ fontSize: 18 }}>ℹ️</span>
+              <span style={{ fontSize: 13, color: "#92400e", fontWeight: 600 }}>
+                {data?.meta?.degradedReason || "Mode Peta Dasar Aktif: Menampilkan batas administratif 6 kelurahan Coblong. Menunggu sinkronisasi data live server..."}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => { setUseOfflineMode(false); fetchData(true); }}
+              disabled={loading}
+              style={{
+                background: "#055c46",
+                color: "#ffffff",
+                border: "none",
+                borderRadius: 6,
+                padding: "6px 14px",
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: loading ? "not-allowed" : "pointer",
+              }}
+            >
+              {loading ? "Menghubungkan..." : "Sinkronkan Live Data"}
+            </button>
+          </div>
+        )}
+
+        {/* Banner informasi jika filter menghasilkan 0 fasilitas */}
+        {filtered && visibleFac.length === 0 && (
+          <div style={{
+            background: "#f8fafc",
+            border: "1px dashed #cbd5e1",
+            borderRadius: 8,
+            padding: "10px 16px",
+            margin: "0 0 16px 0",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+          }}>
+            <span style={{ fontSize: 12.5, color: "#475569" }}>
+              Tidak ada fasilitas yang sesuai dengan filter Kelurahan/RW/Tipe/Pencarian saat ini.
+            </span>
+            <button
+              type="button"
+              onClick={clearFilters}
+              style={{
+                background: "#ffffff",
+                border: "1px solid #cbd5e1",
+                borderRadius: 6,
+                padding: "4px 12px",
+                fontSize: 12,
+                fontWeight: 600,
+                color: "#0f172a",
+                cursor: "pointer",
+              }}
+            >
+              Reset Filter
+            </button>
           </div>
         )}
 
