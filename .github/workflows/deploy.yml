@@ -209,31 +209,28 @@ jobs:
           cp "$APK_FILE" "$APK_NAME"
           echo "apk_name=$APK_NAME" >> $GITHUB_OUTPUT
 
-      - name: Upload APK via SFTP (Reliable Action)
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ steps.vps-creds.outputs.host }}
-          username: ${{ steps.vps-creds.outputs.user }}
-          password: ${{ steps.vps-creds.outputs.pass }}
-          source: ${{ steps.vps-creds.outputs.apk_name }}
-          target: "/tmp"
-          timeout: "5m"
-          overwrite: true
-
-      - name: Execute Remote Deployment Script
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Upload APK & Execute Deployment
         env:
+          VPS_HOST: ${{ steps.vps-creds.outputs.host }}
+          VPS_USER: ${{ steps.vps-creds.outputs.user }}
+          VPS_PASS: ${{ steps.vps-creds.outputs.pass }}
           APK_NAME: ${{ steps.set-env.outputs.apk_name }}
           DEST_DIR: ${{ steps.set-env.outputs.dest_dir }}
           APP_VERSION: ${{ env.APP_VERSION }}
           RUN_NUMBER: ${{ github.run_number }}
-          VPS_PASS: ${{ steps.vps-creds.outputs.pass }}
-        with:
-          host: ${{ steps.vps-creds.outputs.host }}
-          username: ${{ steps.vps-creds.outputs.user }}
-          password: ${{ steps.vps-creds.outputs.pass }}
-          envs: APK_NAME,DEST_DIR,APP_VERSION,RUN_NUMBER,VPS_PASS
-          script: |
+        run: |
+          # Install sshpass and rsync
+          sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends sshpass rsync
+          
+          echo "Memulai transfer menggunakan Rsync (Compressed)..."
+          export SSHPASS="$VPS_PASS"
+          SSH_OPTS="-o StrictHostKeyChecking=no -o ConnectTimeout=30 -o LogLevel=ERROR"
+          
+          # Gunakan Rsync dengan kompresi (-z) untuk memperkecil ukuran dan menghindari blokir firewall/MTU
+          timeout 5m sshpass -e rsync -avz --progress -e "ssh $SSH_OPTS" "$APK_NAME" "$VPS_USER@$VPS_HOST:/tmp/$APK_NAME"
+          
+          echo "Transfer selesai. Memulai eksekusi script di VPS..."
+          timeout 2m sshpass -e ssh -T $SSH_OPTS "$VPS_USER@$VPS_HOST" "VPS_PASS='$VPS_PASS' APK_NAME='$APK_NAME' DEST_DIR='$DEST_DIR' APP_VERSION='$APP_VERSION' RUN_NUMBER='$RUN_NUMBER' bash -s" << 'EOF'
             set -e
             TMP_APK="/tmp/$APK_NAME"
             
@@ -273,3 +270,4 @@ jobs:
               }" || echo "Warning: Failed to notify backend API of new release"
 
             echo "=== Mobile APK Release Sync Completed ==="
+          EOF
