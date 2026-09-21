@@ -172,54 +172,73 @@ jobs:
             --android-skip-build-dependency-validation
           ls -lah build/app/outputs/flutter-apk/
 
-      - name: Install sshpass
+      - name: Bypass MTU Blackhole (Fix Hang Issue)
         run: |
-          sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends sshpass
+          echo "Current MTU settings:"
+          ip link show
+          DEFAULT_IF=$(ip route | grep default | awk '{print $5}')
+          if [ -n "$DEFAULT_IF" ]; then
+            echo "Default interface is $DEFAULT_IF. Lowering MTU to 1360 to bypass IDCloudHost firewall issues..."
+            sudo ip link set dev $DEFAULT_IF mtu 1360
+            ip link show $DEFAULT_IF
+          else
+            echo "Warning: Could not determine default interface."
+          fi
 
-      - name: Deploy APK to VPS & Update Web Download Page
-        env:
-          TARGET_ENV: ${{ steps.set-env.outputs.target }}
-          PROD_HOST: ${{ secrets.VPS_HOST }}
-          PROD_USER: ${{ secrets.VPS_USERNAME }}
-          PROD_PASS: ${{ secrets.VPS_PASSWORD }}
-          STG_HOST: ${{ secrets.STAGING_VPS_HOST }}
-          STG_USER: ${{ secrets.STAGING_VPS_USERNAME }}
-          STG_PASS: ${{ secrets.STAGING_VPS_PASSWORD }}
-          APK_NAME: ${{ steps.set-env.outputs.apk_name }}
-          DEST_DIR: ${{ steps.set-env.outputs.dest_dir }}
+      - name: Prepare VPS Credentials and Target APK
+        id: vps-creds
         run: |
+          if [ "${{ steps.set-env.outputs.target }}" = "staging" ]; then
+            echo "host=${{ secrets.STAGING_VPS_HOST }}" >> $GITHUB_OUTPUT
+            echo "user=${{ secrets.STAGING_VPS_USERNAME }}" >> $GITHUB_OUTPUT
+            echo "pass=${{ secrets.STAGING_VPS_PASSWORD }}" >> $GITHUB_OUTPUT
+          else
+            echo "host=${{ secrets.VPS_HOST }}" >> $GITHUB_OUTPUT
+            echo "user=${{ secrets.VPS_USERNAME }}" >> $GITHUB_OUTPUT
+            echo "pass=${{ secrets.VPS_PASSWORD }}" >> $GITHUB_OUTPUT
+          fi
+          
+          # Prepare the APK file to upload
           APK_FILE="build/app/outputs/flutter-apk/app-release.apk"
           if [ ! -f "$APK_FILE" ]; then
             APK_FILE=$(find build/app/outputs/flutter-apk/ -name "*.apk" | head -n 1)
           fi
+          
+          # Rename it locally so appleboy/scp-action uploads it directly with the correct name
+          APK_NAME="${{ steps.set-env.outputs.apk_name }}"
+          cp "$APK_FILE" "$APK_NAME"
+          echo "apk_name=$APK_NAME" >> $GITHUB_OUTPUT
 
-          if [ "$TARGET_ENV" = "staging" ]; then
-            VPS_HOST="$STG_HOST"
-            VPS_USER="$STG_USER"
-            VPS_PASS="$STG_PASS"
-          else
-            VPS_HOST="$PROD_HOST"
-            VPS_USER="$PROD_USER"
-            VPS_PASS="$PROD_PASS"
-          fi
+      - name: Upload APK via SFTP (Reliable Action)
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ steps.vps-creds.outputs.host }}
+          username: ${{ steps.vps-creds.outputs.user }}
+          password: ${{ steps.vps-creds.outputs.pass }}
+          source: ${{ steps.vps-creds.outputs.apk_name }}
+          target: "/tmp"
+          timeout: "5m"
+          overwrite: true
 
-          echo "Uploading $APK_FILE to $VPS_HOST as /tmp/$APK_NAME..."
-          if ! sshpass -p "$VPS_PASS" scp -O -o StrictHostKeyChecking=no -o ConnectTimeout=60 "$APK_FILE" "$VPS_USER@$VPS_HOST:/tmp/$APK_NAME"; then
-            echo "SCP failed, trying direct SSH stream..."
-            sshpass -p "$VPS_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=60 "$VPS_USER@$VPS_HOST" "cat > /tmp/$APK_NAME" < "$APK_FILE"
-          fi
-
-          sshpass -p "$VPS_PASS" ssh -T -o StrictHostKeyChecking=no -o ConnectTimeout=30 "$VPS_USER@$VPS_HOST" "VPS_PASS='$VPS_PASS' APK_NAME='$APK_NAME' DEST_DIR='$DEST_DIR' APP_VERSION='${{ env.APP_VERSION }}' RUN_NUMBER='${{ github.run_number }}' bash -s" << 'EOF'
+      - name: Execute Remote Deployment Script
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          APK_NAME: ${{ steps.set-env.outputs.apk_name }}
+          DEST_DIR: ${{ steps.set-env.outputs.dest_dir }}
+          APP_VERSION: ${{ env.APP_VERSION }}
+          RUN_NUMBER: ${{ github.run_number }}
+          VPS_PASS: ${{ steps.vps-creds.outputs.pass }}
+        with:
+          host: ${{ steps.vps-creds.outputs.host }}
+          username: ${{ steps.vps-creds.outputs.user }}
+          password: ${{ steps.vps-creds.outputs.pass }}
+          envs: APK_NAME,DEST_DIR,APP_VERSION,RUN_NUMBER,VPS_PASS
+          script: |
             set -e
             TMP_APK="/tmp/$APK_NAME"
-            if [ ! -f "$TMP_APK" ] && [ -f "$HOME/$APK_NAME" ]; then
-              TMP_APK="$HOME/$APK_NAME"
-            fi
-
+            
             if [ ! -f "$TMP_APK" ]; then
-              echo "Error: APK file not found at /tmp/$APK_NAME or $HOME/$APK_NAME"
-              ls -la /tmp/ 2>/dev/null | grep -i apk || true
-              ls -la "$HOME" 2>/dev/null | grep -i apk || true
+              echo "Error: APK file not found at $TMP_APK"
               exit 1
             fi
 
@@ -254,4 +273,3 @@ jobs:
               }" || echo "Warning: Failed to notify backend API of new release"
 
             echo "=== Mobile APK Release Sync Completed ==="
-          EOF
