@@ -178,8 +178,8 @@ jobs:
           ip link show
           DEFAULT_IF=$(ip route | grep default | awk '{print $5}')
           if [ -n "$DEFAULT_IF" ]; then
-            echo "Default interface is $DEFAULT_IF. Lowering MTU to 1360 to bypass IDCloudHost firewall issues..."
-            sudo ip link set dev $DEFAULT_IF mtu 1360
+            echo "Default interface is $DEFAULT_IF. Lowering MTU to 1200 to bypass IDCloudHost firewall issues..."
+            sudo ip link set dev $DEFAULT_IF mtu 1200
             ip link show $DEFAULT_IF
           else
             echo "Warning: Could not determine default interface."
@@ -224,10 +224,10 @@ jobs:
           
           echo "Memulai transfer menggunakan Rsync (Compressed)..."
           export SSHPASS="$VPS_PASS"
-          SSH_OPTS="-o StrictHostKeyChecking=no -o ConnectTimeout=30 -o LogLevel=ERROR"
+          SSH_OPTS="-o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=3 -o LogLevel=ERROR"
           
           # Gunakan Rsync dengan kompresi (-z) untuk memperkecil ukuran dan menghindari blokir firewall/MTU
-          timeout 5m sshpass -e rsync -avz --progress -e "ssh $SSH_OPTS" "$APK_NAME" "$VPS_USER@$VPS_HOST:/tmp/$APK_NAME"
+          timeout 10m sshpass -e rsync -avz --progress -e "ssh $SSH_OPTS" "$APK_NAME" "$VPS_USER@$VPS_HOST:/tmp/$APK_NAME"
           
           echo "Transfer selesai. Memulai eksekusi script di VPS..."
           timeout 2m sshpass -e ssh -T $SSH_OPTS "$VPS_USER@$VPS_HOST" "VPS_PASS='$VPS_PASS' APK_NAME='$APK_NAME' DEST_DIR='$DEST_DIR' APP_VERSION='$APP_VERSION' RUN_NUMBER='$RUN_NUMBER' bash -s" << 'EOF'
