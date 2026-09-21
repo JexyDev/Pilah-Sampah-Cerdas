@@ -135,10 +135,12 @@ export function Trend({ series, pi }: TrendProps) {
   const H = 186;
   const m = { l: 44, r: 16, t: 26, b: 24 };
 
-  // Pastikan dataset memiliki 9 titik (Jan–Sep) agar kurva dan axis selalu stabil
+  // Pastikan dataset memiliki 12 titik (Jan–Des) agar kurva dan axis selalu stabil
   const safeSeries = (!series || series.length === 0)
-    ? [0, 0, 0, 0, 0, 0, 0, 0, 0]
-    : series;
+    ? new Array(MONTHS.length).fill(0)
+    : (series.length < MONTHS.length
+        ? [...series, ...new Array(MONTHS.length - series.length).fill(0)]
+        : series);
 
   const { step, top } = niceScale(Math.max(...safeSeries, 1));
   const denom = Math.max(1, safeSeries.length - 1);

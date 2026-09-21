@@ -72,7 +72,15 @@ function kepColor(pct: number): string {
   return "#ef4444";
 }
 
-const BULAN_LABELS = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep"];
+const BULAN_LABELS = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+
+export const AVAILABLE_PERIODES = [
+  "Agustus 2026",
+  "September 2026",
+  "Oktober 2026",
+  "November 2026",
+  "Desember 2026",
+];
 
 const FACILITY_TYPE_MAP: Record<string, string> = {
   bank: "bank_sampah",
@@ -132,7 +140,7 @@ export const gisEksekutifService = {
       filterOptions: {
         kelurahans: ["Semua", ...kelurahanNames],
         rws: ["Semua"],
-        periodes: ["September 2026"],
+        periodes: [...AVAILABLE_PERIODES],
         tipeFasilitas: ["Semua"],
       },
       kpi: {
@@ -261,12 +269,43 @@ export const gisEksekutifService = {
     }));
 
     // ── 4. Survei Pemilahan & Volume dari DB ─────────────────────────────────
-    const surveiKelurahan = await prisma.surveiKelurahan.findMany({
+    let surveiKelurahan = await prisma.surveiKelurahan.findMany({
       include: {
         pemilahanSampah: true,
         volumeSampah: true,
       },
     });
+
+    // Jika periode memilih bulan evaluasi akhir KKN (Oktober - Desember 2026),
+    // cek apakah ada data evaluasi Endline untuk kelurahan bersangkutan
+    const isEndlinePeriod = /oktober|november|desember/i.test(periode);
+    if (isEndlinePeriod) {
+      try {
+        const endlineSurvei = await prisma.endlineSurveiKelurahan.findMany({
+          include: {
+            pemilahanSampah: true,
+            volumeSampah: true,
+          },
+        });
+        if (endlineSurvei && endlineSurvei.length > 0) {
+          surveiKelurahan = surveiKelurahan.map((s) => {
+            const matchedEndline = endlineSurvei.find(
+              (e) => e.namaKelurahan?.toLowerCase() === s.namaKelurahan?.toLowerCase()
+            );
+            if (matchedEndline && (matchedEndline.pemilahanSampah || matchedEndline.volumeSampah)) {
+              return {
+                ...s,
+                pemilahanSampah: (matchedEndline.pemilahanSampah as any) || s.pemilahanSampah,
+                volumeSampah: (matchedEndline.volumeSampah as any) || s.volumeSampah,
+              };
+            }
+            return s;
+          });
+        }
+      } catch (err) {
+        console.warn("[gisEksekutifService] Fallback ke baseline survei:", err);
+      }
+    }
 
     // Fasilitas per kelurahan (nama)
     const facCountByKel: Record<string, number> = {};
@@ -396,10 +435,10 @@ export const gisEksekutifService = {
     };
 
     // ── 7. Tren Bulanan — dari FacilityProductionLog jika ada ───────────────
-    // Query aggregate log produksi per bulan (Sep 2025 – Sep 2026)
+    // Query aggregate log produksi per bulan sepanjang tahun 2026 (Januari – Desember 2026)
     const prodLogs = await prisma.facilityProductionLog.findMany({
       where: {
-        createdAt: { gte: new Date("2025-10-01"), lte: new Date("2026-09-30") },
+        createdAt: { gte: new Date("2026-01-01T00:00:00.000Z"), lte: new Date("2026-12-31T23:59:59.999Z") },
         ...(rawKel
           ? {
               facility: {
@@ -468,7 +507,7 @@ export const gisEksekutifService = {
       filterOptions: {
         kelurahans: ["Semua", ...kelurahanNames],
         rws: ["Semua", ...Array.from(new Set(rwList.map((r) => r.name))).sort()],
-        periodes: ["September 2026"],
+        periodes: [...AVAILABLE_PERIODES],
         tipeFasilitas: ["Semua", ...jenisFasilitasDB],
       },
       kpi: {

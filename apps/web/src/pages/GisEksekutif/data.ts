@@ -98,15 +98,15 @@ export function toLL([x, y]: [number, number]): [number, number] {
   return [LAT0 - dy / 110.574, LNG0 + dx / (111.32 * Math.cos((LAT0 * Math.PI) / 180))];
 }
 
-export const MONTHS = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep"];
+export const MONTHS = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
 export const MONTH_LONG = [
-  "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September",
+  "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember",
 ];
 
 // Total volume bulanan (m³) seluruh kelurahan, dan selisih kepatuhan terhadap September.
-export const MONTHLY_TOTAL = [72, 96, 105, 122, 142, 145, 128, 107, 120];
-export const KEP_OFFSET = [-22, -18, -15, -11, -6, -4, -9, -8, 0];
-export const CURRENT = MONTHLY_TOTAL.length - 1;
+export const MONTHLY_TOTAL = [72, 96, 105, 122, 142, 145, 128, 107, 120, 124, 128, 135];
+export const KEP_OFFSET = [-22, -18, -15, -11, -6, -4, -9, -8, 0, 2, 4, 5];
+export const CURRENT = 8; // September (indeks ke-8)
 export const YEAR = 2026;
 
 const V: Record<string, [number, number]> = {

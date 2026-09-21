@@ -49,7 +49,13 @@ function createOfflineFallbackData(kelurahanFilter = "Semua"): GisOverviewApiRes
     filterOptions: {
       kelurahans: ["Semua", ...kelNames],
       rws: ["Semua"],
-      periodes: ["September 2026"],
+      periodes: [
+        "Agustus 2026",
+        "September 2026",
+        "Oktober 2026",
+        "November 2026",
+        "Desember 2026",
+      ],
       tipeFasilitas: ["Semua"],
     },
     kpi: {
@@ -70,7 +76,7 @@ function createOfflineFallbackData(kelurahanFilter = "Semua"): GisOverviewApiRes
       residu: { persen: 0, volumeM3: 0 },
       totalM3: 0,
     },
-    trenBulanan: ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep"].map((b) => ({
+    trenBulanan: ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"].map((b) => ({
       bulan: b,
       volume: 0,
     })),
@@ -272,7 +278,13 @@ export default function GisEksekutifPage() {
   }>({
     kelurahans: ["Semua"],
     rws: ["Semua"],
-    periodes: ["September 2026"],
+    periodes: [
+      "Agustus 2026",
+      "September 2026",
+      "Oktober 2026",
+      "November 2026",
+      "Desember 2026",
+    ],
     tipeFasilitas: ["Semua"],
   });
 
@@ -372,14 +384,27 @@ export default function GisEksekutifPage() {
       const ringCoords = Array.isArray(pk.coordinates) ? (pk.coordinates as [number, number][]) : [];
       const defaultLL: [number, number] = [-6.885, 107.615];
       const labelLL = (ringCoords.length > 0 && Array.isArray(ringCoords[0])) ? ringCoords[0] : defaultLL;
+
+      // Hitung volume spesifik per kelurahan dari data survei
+      const orgM3 = kd?.organikKgHari != null
+        ? Math.round(((Number(kd.organikKgHari) * 30) / 1000) * 10) / 10
+        : (kd?.volume != null ? Math.round(Number(kd.volume) * 0.21 * 10) / 10 : 0);
+      const anoM3 = kd?.anorganikKgHari != null
+        ? Math.round(((Number(kd.anorganikKgHari) * 30) / 1000) * 10) / 10
+        : (kd?.volume != null ? Math.round(Number(kd.volume) * 0.74 * 10) / 10 : 0);
+      const resM3 = kd?.residuKgHari != null
+        ? Math.round(((Number(kd.residuKgHari) * 30) / 1000) * 10) / 10
+        : (kd?.volume != null ? Math.round(Number(kd.volume) * 0.05 * 10) / 10 : 0);
+      const totalM3 = kd?.volume != null ? Number(kd.volume) : Math.round((orgM3 + anoM3 + resM3) * 10) / 10;
+
       // Pseudo KelurahanData shape for MapView compatibility
       const kShape = {
         id: pk.nama.toLowerCase().replace(/\s+/g, "-"),
         nama: pk.nama,
         kep: kd?.kepatuhan ?? 0,
-        org: data.komposisiVolume.organik.volumeM3,
-        ano: data.komposisiVolume.anorganik.volumeM3,
-        res: data.komposisiVolume.residu.volumeM3,
+        org: orgM3,
+        ano: anoM3,
+        res: resM3,
         rw: 0,
         fac: facCount,
         label: [0, 0] as [number, number],
@@ -389,10 +414,10 @@ export default function GisEksekutifPage() {
       };
       const sShape = {
         kep: kd?.kepatuhan ?? 0,
-        org: data.komposisiVolume.organik.volumeM3,
-        ano: data.komposisiVolume.anorganik.volumeM3,
-        res: data.komposisiVolume.residu.volumeM3,
-        total: data.komposisiVolume.totalM3,
+        org: orgM3,
+        ano: anoM3,
+        res: resM3,
+        total: totalM3,
         fac: facCount,
         sensors: sensors.filter((s) => s.kel === pk.nama),
         share: 1,
@@ -400,6 +425,19 @@ export default function GisEksekutifPage() {
       return { k: kShape, s: sShape };
     });
   }, [data, sensors]);
+
+  // Nilai maksimum untuk legenda gradasi volume aktif
+  const maxLayerVolume = useMemo(() => {
+    if (!kelRows || kelRows.length === 0) return 1;
+    const vals = kelRows.map((r) => {
+      if (layer === "org") return r.s.org;
+      if (layer === "ano") return r.s.ano;
+      if (layer === "res") return r.s.res;
+      if (layer === "total") return r.s.total;
+      return 0;
+    });
+    return Math.max(...vals, 0.1);
+  }, [kelRows, layer]);
 
   // Fasilitas visible setelah search/facType filter (client-side karena sudah difilter API)
   const visibleFac = useMemo<FacilityForMap[]>(() => {
@@ -422,6 +460,24 @@ export default function GisEksekutifPage() {
   const scopeText = kel === "Semua"
     ? "dari seluruh kelurahan"
     : `di Kel. ${kel}${rw !== "Semua" ? ` RW ${rw}` : ""}`;
+
+  // Indeks bulan dari periode aktif untuk disorot pada grafik tren bulanan
+  const selectedMonthIndex = useMemo(() => {
+    const p = (periode || "").toLowerCase();
+    if (p.includes("jan")) return 0;
+    if (p.includes("feb")) return 1;
+    if (p.includes("mar")) return 2;
+    if (p.includes("apr")) return 3;
+    if (p.includes("mei")) return 4;
+    if (p.includes("jun")) return 5;
+    if (p.includes("jul")) return 6;
+    if (p.includes("agu")) return 7;
+    if (p.includes("sep")) return 8;
+    if (p.includes("okt")) return 9;
+    if (p.includes("nov")) return 10;
+    if (p.includes("des")) return 11;
+    return 8; // default September 2026
+  }, [periode]);
 
   // ─── Export CSV ──────────────────────────────────────────────────────────────
   const doExport = async (what: "kel" | "fac") => {
@@ -840,13 +896,9 @@ export default function GisEksekutifPage() {
                 series={
                   (data?.trenBulanan && data.trenBulanan.length > 0)
                     ? data.trenBulanan.map((t) => t.volume ?? 0)
-                    : [0, 0, 0, 0, 0, 0, 0, 0, 0]
+                    : new Array(12).fill(0)
                 }
-                pi={
-                  (data?.trenBulanan && data.trenBulanan.length > 0)
-                    ? data.trenBulanan.length - 1
-                    : 8
-                }
+                pi={selectedMonthIndex}
               />
               <Compliance
                 rows={kelRows as any}
@@ -945,13 +997,43 @@ export default function GisEksekutifPage() {
                 </ul>
               </div>
               <div className="side-sec">
-                <h4 className="side-h">Kepatuhan (%)</h4>
-                <ul className="lg-grid">
-                  {KEP_CLASSES.map((c) => (
-                    <li key={c.label}><i style={{ background: c.warna }} /><span>{c.label}</span><em>{c.ket}</em></li>
-                  ))}
-                  <li><i className="hatch" /><span>Belum ada data</span></li>
-                </ul>
+                <h4 className="side-h">
+                  {layer === "kep" && "Kepatuhan Pemilahan (%)"}
+                  {layer === "org" && "Intensitas Sampah Organik (m³)"}
+                  {layer === "ano" && "Intensitas Sampah Anorganik (m³)"}
+                  {layer === "res" && "Intensitas Sampah Residu (m³)"}
+                  {layer === "total" && "Intensitas Volume Total (m³)"}
+                </h4>
+                {layer === "kep" ? (
+                  <ul className="lg-grid">
+                    {KEP_CLASSES.map((c) => (
+                      <li key={c.label}><i style={{ background: c.warna }} /><span>{c.label}</span><em>{c.ket}</em></li>
+                    ))}
+                    <li><i className="hatch" /><span>Belum ada data</span></li>
+                  </ul>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 11.5, color: "#475569", marginTop: 4 }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontWeight: 600 }}>
+                      <span>Rendah</span>
+                      <span>Tinggi</span>
+                    </div>
+                    <div style={{
+                      height: 10,
+                      borderRadius: 6,
+                      background: layer === "org"
+                        ? "linear-gradient(to right, #dcfce7, #15803d)"
+                        : layer === "ano"
+                        ? "linear-gradient(to right, #dbeafe, #1d4ed8)"
+                        : layer === "res"
+                        ? "linear-gradient(to right, #fee2e2, #b91c1c)"
+                        : "linear-gradient(to right, #f3e8ff, #7e22ce)"
+                    }} />
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10.5, color: "#64748b" }}>
+                      <span>0 m³</span>
+                      <span>Maks: {fmtN(Math.round(maxLayerVolume * 10) / 10)} m³</span>
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="side-sec">
                 <h4 className="side-h">Metana CH₄ (ppm)</h4>
