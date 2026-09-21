@@ -1,25 +1,32 @@
+/**
+ * Project: BERSEKA
+ * Developed by: PT Makerindo
+ * Copyright (c) 2026 PT Makerindo. All rights reserved.
+ *
+ * MapView — Komponen Peta GIS Interaktif Tata Kelola Sampah
+ * Diadopsi dari arsitektur Menu Fasilitas Persampahan (PemanfaatanSampah.tsx):
+ * - Citra Satelit Google Hybrid resolusi tinggi (GOOGLE_SATELLITE_URL) + opsi Peta OSM
+ * - Batas poligon resmi 6 Kelurahan Kecamatan Coblong (KELURAHAN_GEODATA)
+ * - Pin icon fasilitas terstandarisasi (createFacilityIcon)
+ * - Interaktif zoom: scroll roda mouse (scrollWheelZoom: true)
+ * - Search auto zoom-in: kamera peta terbang (flyTo / fitBounds) ke fasilitas/wilayah yang dicari
+ * - Popup fasilitas lengkap: Badge jenis, Nama, Foto, PIC, Kontak, Alamat, dan Koordinat
+ */
+
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Icon, TIPE_ICON, iconMarkup } from "./ui";
+import { Icon, TIPE_ICON } from "./ui";
 import {
-  BASE_LINES,
-  KEL_BY_ID,
-  KELURAHAN,
-  KEP_CLASSES,
-  PLACES,
-  TIPE_BY_ID,
-  ch4Class,
-  clamp,
-  kepClass,
-  pad2,
-  type FacilityItem,
-  type SensorItem,
-} from "./data";
+  KELURAHAN_GEODATA,
+  createFacilityIcon,
+  CoblongGeo,
+} from "../../constants/coblongGeoData";
+import { resolveImageUrl } from "../../utils/imageUrl";
 import { fmtN, type ComplianceRow } from "./charts";
 
 export interface LayerItem {
-  id: "kep" | "org" | "ano" | "res" | "total" | "ch4";
+  id: "kep" | "org" | "ano" | "res" | "total";
   label: string;
 }
 
@@ -29,46 +36,52 @@ export const LAYERS: LayerItem[] = [
   { id: "ano", label: "Anorganik" },
   { id: "res", label: "Residu" },
   { id: "total", label: "Volume total" },
-  { id: "ch4", label: "Metana CH₄" },
 ];
 
-const RAMP: Record<"org" | "ano" | "res" | "total", [string, string]> = {
-  org: ["#c4ebc9", "#1f8f3d"],
-  ano: ["#c3dcff", "#1a68dc"],
-  res: ["#d8dce3", "#535e6c"],
-  total: ["#e0d3fc", "#7434e8"],
-};
-
 export const TILES = {
+  sat: {
+    url: "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
+    attr: '&copy; <a href="https://maps.google.com" target="_blank" rel="noopener">Google Maps</a> Citra Satelit Hybrid',
+  },
   peta: {
     url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
     attr: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>',
   },
-  sat: {
-    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-    attr: 'Citra &copy; <a href="https://www.esri.com" target="_blank" rel="noopener">Esri</a>',
-  },
 };
 
-const ALL_BOUNDS = L.latLngBounds(
-  KELURAHAN.flatMap((k) => k.ring.map(([lat, lng]) => L.latLng(lat, lng)))
+// Hitung batas terluar 6 kelurahan Coblong dari KELURAHAN_GEODATA
+const ALL_COBLONG_POINTS = Object.values(KELURAHAN_GEODATA).flatMap((kg) =>
+  kg.bounds.map(([lat, lng]) => L.latLng(lat, lng))
 );
+const ALL_BOUNDS = L.latLngBounds(ALL_COBLONG_POINTS);
+
 const KEL_BOUNDS = Object.fromEntries(
-  KELURAHAN.map((k) => [
-    k.id,
-    L.latLngBounds(k.ring.map(([lat, lng]) => L.latLng(lat, lng))),
+  Object.values(KELURAHAN_GEODATA).map((kg) => [
+    kg.name.toLowerCase().replace(/\s+/g, "-"),
+    L.latLngBounds(kg.bounds.map(([lat, lng]) => L.latLng(lat, lng))),
   ])
 );
-const COMPACT_ZOOM = 14.35; // zoom awal di layar sempit
 
-const hex = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
-const mix = (a: string, b: string, t: number) => {
-  const [A, B] = [hex(a), hex(b)];
-  return `rgb(${A.map((v, i) => Math.round(v + (B[i] - v) * t)).join(",")})`;
-};
+export interface FacilityForMap {
+  id: string;
+  tipe: string;
+  kel: string;
+  rw: number | string;
+  x?: number;
+  y?: number;
+  nama: string;
+  ll: [number, number];
+  pic?: string | null;
+  kontak?: string | null;
+  foto?: string | null;
+  alamat?: string | null;
+  kapasitas?: number | null;
+}
+
+export type ActiveTarget = { kind: "fac"; id: string } | null;
 
 const esc = (s: string | number) =>
-  String(s).replace(
+  String(s ?? "").replace(
     /[&<>"]/g,
     (c) =>
       (({
@@ -79,480 +92,326 @@ const esc = (s: string | number) =>
       })[c] || c)
   );
 
-function pinSize(map: L.Map) {
-  const mpp =
-    (156543.03392 * Math.cos((map.getCenter().lat * Math.PI) / 180)) / 2 ** map.getZoom();
-  return clamp(Math.round((34 * (1000 / mpp)) / 205), 18, 27);
+function formatFacilityLabel(jenis: string): string {
+  const t = (jenis || "").toLowerCase();
+  if (t === "bank_sampah") return "Bank Sampah";
+  if (t === "rumah_maggot") return "Rumah Maggot";
+  if (t === "buruan_sae") return "Buruan Sae";
+  if (t === "loseda") return "Loseda";
+  if (t === "bata_terawang") return "Bata Terawang";
+  if (t === "poc") return "POC / Pupuk Organik";
+  if (t === "posko_kkn" || t === "posko") return "Posko KKN";
+  if (t === "tps") return "TPS";
+  return jenis ? jenis.replace(/_/g, " ").toUpperCase() : "Fasilitas";
 }
 
-export type ActiveTarget =
-  | { kind: "sensor"; id: string }
-  | { kind: "fac"; id: string }
-  | null;
-
-interface ActiveSensorObj {
-  kind: "sensor";
-  z: SensorItem;
+function getFacilityBadgeColor(jenis: string): { bg: string; text: string; border: string } {
+  const t = (jenis || "").toLowerCase();
+  if (t === "bank_sampah") return { bg: "#eff6ff", text: "#1d4ed8", border: "#bfdbfe" };
+  if (t === "rumah_maggot") return { bg: "#faf5ff", text: "#7e22ce", border: "#e9d5ff" };
+  if (t === "buruan_sae") return { bg: "#f7fee7", text: "#4d7c0f", border: "#d9f99d" };
+  if (t === "loseda") return { bg: "#f0fdfa", text: "#0f766e", border: "#99f6e4" };
+  if (t === "bata_terawang") return { bg: "#fffbeb", text: "#b45309", border: "#fde68a" };
+  if (t === "tps") return { bg: "#f8fafc", text: "#334155", border: "#cbd5e1" };
+  return { bg: "#ecfdf5", text: "#047857", border: "#a7f3d0" };
 }
 
-interface ActiveFacObj {
-  kind: "fac";
-  f: FacilityItem;
-}
+function createPopupHtml(f: FacilityForMap, onPreview?: (url: string) => void): string {
+  const badge = getFacilityBadgeColor(f.tipe);
+  const label = formatFacilityLabel(f.tipe);
+  const resolvedFoto = f.foto ? resolveImageUrl(f.foto) : null;
+  const rwStr = typeof f.rw === "number" ? `RW ${String(f.rw).padStart(2, "0")}` : String(f.rw || "-");
 
-type ActiveObject = ActiveSensorObj | ActiveFacObj;
-
-function popupHtml(o: ActiveObject) {
-  if (o.kind === "sensor") {
-    const z = o.z;
-    const status =
-      z.ppm === null
-        ? '<span class="dot dot--off"></span> Offline • tidak ada pembacaan'
-        : `CH₄ <b>${z.ppm} ppm</b> <span class="dot"></span> Online`;
-    return `<b class="popup-t">${esc(z.id)} • ${esc(z.lokasi)} RW ${pad2(z.rw)}</b>
-      <div class="popup-r">${status}</div>
-      <div class="popup-m">${
-        z.ppm === null
-          ? "Terakhir terhubung: 16 Sep 2026, 09.10"
-          : "Terakhir: 18 Sep 2026, 16.30"
-      }</div>
-      <div class="popup-m">Kel. ${esc(KEL_BY_ID[z.kel]?.nama || z.kel)}</div>
-      <div class="popup-m">Jenis: konsentrasi gas, bukan laju emisi.</div>`;
+  let fotoHtml = "";
+  if (resolvedFoto) {
+    fotoHtml = `
+      <div style="margin: 8px 0; border-radius: 8px; overflow: hidden; position: relative; max-height: 120px;">
+        <img src="${esc(resolvedFoto)}" alt="${esc(f.nama)}" 
+          style="width: 100%; height: 110px; object-fit: cover; border-radius: 8px; display: block;" 
+          onerror="this.style.display='none'" />
+      </div>
+    `;
   }
-  const f = o.f;
-  return `<b class="popup-t">${esc(f.nama)}</b>
-    <div class="popup-r">${esc(TIPE_BY_ID[f.tipe]?.fungsi || f.tipe)}</div>
-    <div class="popup-m">Kel. ${esc(KEL_BY_ID[f.kel]?.nama || f.kel)} • RW ${pad2(f.rw)}</div>
-    <div class="popup-m">ID fasilitas: ${esc(f.id)}</div>`;
+
+  return `
+    <div style="font-family: inherit; font-size: 13px; color: #0f172a; line-height: 1.45; min-width: 220px; max-width: 280px; padding: 2px;">
+      <div style="margin-bottom: 6px;">
+        <span style="display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; background: ${badge.bg}; color: ${badge.text}; border: 1px solid ${badge.border};">
+          ${esc(label)}
+        </span>
+      </div>
+      <h3 style="margin: 0 0 6px 0; font-size: 14px; font-weight: 800; color: #0f172a; line-height: 1.3;">
+        ${esc(f.nama)}
+      </h3>
+      ${fotoHtml}
+      <div style="border-top: 1px solid #e2e8f0; padding-top: 6px; display: flex; flex-direction: column; gap: 3px; font-size: 11.5px; color: #334155;">
+        ${f.pic ? `<div><strong style="color:#0f172a;">PIC:</strong> ${esc(f.pic)}</div>` : ""}
+        ${f.kontak && f.kontak !== "-" ? `<div><strong style="color:#0f172a;">Kontak:</strong> ${esc(f.kontak)}</div>` : ""}
+        <div><strong style="color:#0f172a;">Wilayah:</strong> Kel. ${esc(f.kel)} • ${esc(rwStr)}</div>
+        ${f.alamat ? `<div><strong style="color:#0f172a;">Alamat:</strong> ${esc(f.alamat)}</div>` : ""}
+        <div style="font-family: monospace; font-size: 10.5px; color: #64748b; margin-top: 2px;">
+          ${f.ll[0].toFixed(5)}, ${f.ll[1].toFixed(5)}
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 interface MapViewProps {
   kelRows: ComplianceRow[];
   layer: "kep" | "org" | "ano" | "res" | "total" | "ch4";
-  opacity: number;
-  setOpacity: (v: number) => void;
   base: "peta" | "sat";
   setBase: (v: "peta" | "sat") => void;
-  showSensor: boolean;
-  facilities: FacilityItem[];
+  facilities: FacilityForMap[];
   allCount: number;
-  sensors: SensorItem[];
   selectedKel: string | null;
   onSelectKel: (id: string) => void;
   active: ActiveTarget;
   setActive: (v: ActiveTarget) => void;
   onClearFilters: () => void;
   filtered: boolean;
+  searchQuery?: string;
+  onPreviewImage?: (img: { url: string; title: string; subtitle?: string }) => void;
+  opacity?: number;
+  setOpacity?: (v: number) => void;
+  showSensor?: boolean;
+  sensors?: any[];
 }
 
 export default function MapView({
   kelRows,
   layer,
-  opacity,
-  setOpacity,
-  base,
+  base = "sat",
   setBase,
-  showSensor,
   facilities,
   allCount,
-  sensors,
   selectedKel,
   onSelectKel,
   active,
   setActive,
   onClearFilters,
   filtered,
+  searchQuery = "",
 }: MapViewProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
+  const tileLayerRef = useRef<L.TileLayer | null>(null);
   const groups = useRef<Record<string, L.LayerGroup>>({});
+  const markerMap = useRef<Record<string, L.Marker>>({});
   const popRef = useRef<L.Popup | null>(null);
   const closing = useRef(false);
-  const firstOpen = useRef(true);
-  const cb = useRef<{
-    onSelectKel: (id: string) => void;
-    setActive: (v: ActiveTarget) => void;
-    selectedKel: string | null;
-  }>({ onSelectKel, setActive, selectedKel });
-  cb.current = { onSelectKel, setActive, selectedKel };
 
-  const [zoom, setZoom] = useState(0);
-  const [minZ, setMinZ] = useState(0);
-  const [maxZ, setMaxZ] = useState(19);
+  const [zoom, setZoom] = useState(CoblongGeo.DEFAULT_ZOOM);
   const [full, setFull] = useState(false);
-  const [tiles, setTiles] = useState<"unknown" | "ok" | "fail">("unknown");
   const sat = base === "sat";
 
-  /* ---------- Inisialisasi peta (sekali) ---------- */
+  /* ---------- 1. Inisialisasi Peta (Leaflet Vanilla dengan Scroll Interaktif) ---------- */
   useEffect(() => {
     const host = hostRef.current;
     if (!host) return;
 
+    // Aktifkan scrollWheelZoom interaktif
     const map = L.map(host, {
       zoomControl: false,
       attributionControl: false,
       zoomSnap: 0.25,
       zoomDelta: 0.5,
-      wheelPxPerZoomLevel: 90,
-      maxZoom: 19,
-      scrollWheelZoom: false,
+      wheelPxPerZoomLevel: 60,
+      maxZoom: 20,
+      minZoom: 12,
+      scrollWheelZoom: true, // Interaktif scroll zoom in & out
+      touchZoom: true,
+      doubleClickZoom: true,
     });
     mapRef.current = map;
     (host as any)._map = map;
 
-    ["vec:150", "place:640", "klabel:650"].forEach((s) => {
+    // Panes untuk layering teratur
+    ["poly:200", "klabel:300", "fac:400"].forEach((s) => {
       const [n, z] = s.split(":");
       const pane = map.createPane(n);
       pane.style.zIndex = z;
     });
-    const placePane = map.getPane("place");
-    if (placePane) placePane.style.pointerEvents = "none";
+
     const klabelPane = map.getPane("klabel");
     if (klabelPane) klabelPane.style.pointerEvents = "none";
 
-    ["vec", "poly", "klabel", "fac", "sens", "place"].forEach((k) => {
+    ["poly", "klabel", "fac"].forEach((k) => {
       groups.current[k] = L.layerGroup().addTo(map);
     });
 
     L.control
       .attribution({
         prefix: '<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>',
+        position: "bottomright",
       })
       .addTo(map);
     L.control.scale({ position: "bottomright", imperial: false, maxWidth: 110 }).addTo(map);
 
-    map.setView(ALL_BOUNDS.getCenter(), 18, { animate: false });
-    const applyBounds = () => {
-      map.invalidateSize({ pan: false });
-      const fitZ = map.getBoundsZoom(ALL_BOUNDS.pad(0.08));
-      map.setMinZoom(fitZ);
-      setMinZ(fitZ);
-      setMaxZ(map.getMaxZoom());
-      host.style.setProperty("--pin", `${pinSize(map)}px`);
-      return fitZ;
-    };
-    const fitZ = applyBounds();
-    const compact = host.clientWidth < 700;
-    map.setView(
-      ALL_BOUNDS.getCenter(),
-      compact ? Math.max(fitZ, COMPACT_ZOOM) : fitZ,
-      { animate: false }
-    );
-    map.setMaxBounds(ALL_BOUNDS.pad(0.6));
+    // Initial View ke Kecamatan Coblong
+    map.fitBounds(ALL_BOUNDS.pad(0.06), { animate: false });
     setZoom(map.getZoom());
 
     map.on("zoomend", () => {
       setZoom(map.getZoom());
-      host.style.setProperty("--pin", `${pinSize(map)}px`);
     });
-    map.on("popupclose", (e) => {
-      if (e.popup === popRef.current && !closing.current) cb.current.setActive(null);
-    });
-    map.on("click", () => map.scrollWheelZoom.enable());
-    map.on("mouseout blur", () => map.scrollWheelZoom.disable());
-    host.setAttribute("role", "application");
-    host.setAttribute("aria-label", "Peta Kecamatan Coblong");
 
-    const ro =
-      typeof ResizeObserver !== "undefined"
-        ? new ResizeObserver(() => applyBounds())
-        : null;
-    if (ro) ro.observe(host);
+    map.on("popupclose", (e) => {
+      if (e.popup === popRef.current && !closing.current) {
+        setActive(null);
+      }
+    });
 
     return () => {
-      if (ro) ro.disconnect();
       map.remove();
       mapRef.current = null;
     };
   }, []);
 
-  /* ---------- Peta dasar: tile daring + cadangan vektor ---------- */
+  /* ---------- 2. Tile Layer: Google Satellite Hybrid (Acuan Fasilitas) / OSM ---------- */
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return undefined;
-    const cfg = TILES[base];
-    let loaded = 0;
-    let errors = 0;
-    setTiles("unknown");
+    if (!map) return;
 
-    const layerT = L.tileLayer(cfg.url, {
-      attribution: cfg.attr,
-      maxZoom: 19,
-      maxNativeZoom: 19,
-    });
-    layerT.on("tileload", () => {
-      loaded++;
-      setTiles("ok");
-    });
-    layerT.on("tileerror", () => {
-      errors++;
-      if (!loaded && errors >= 3) setTiles("fail");
-    });
-    layerT.addTo(map);
+    if (tileLayerRef.current) {
+      map.removeLayer(tileLayerRef.current);
+    }
 
-    const timer = setTimeout(() => {
-      if (!loaded) setTiles("fail");
-    }, 6000);
+    const tileCfg = sat ? TILES.sat : TILES.peta;
+    const tileLayer = L.tileLayer(tileCfg.url, {
+      attribution: tileCfg.attr,
+      maxZoom: 20,
+    }).addTo(map);
 
-    return () => {
-      clearTimeout(timer);
-      map.removeLayer(layerT);
-    };
-  }, [base]);
-
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !hostRef.current) return;
-    const gv = groups.current.vec;
-    if (!gv) return;
-    gv.clearLayers();
-    hostRef.current.classList.toggle("is-sat", sat);
-    const o: L.PolylineOptions = {
-      pane: "vec",
-      interactive: false,
-      lineCap: "round",
-      lineJoin: "round",
-    };
-    gv.addLayer(
-      L.polyline(BASE_LINES.river as [number, number][], {
-        ...o,
-        color: sat ? "#1e3a4a" : "#cfe4f1",
-        weight: 16,
-      })
-    );
-    BASE_LINES.minor.forEach((l) =>
-      gv.addLayer(
-        L.polyline(l as [number, number][], {
-          ...o,
-          color: sat ? "rgba(255,255,255,.12)" : "#ffffff",
-          weight: 3,
-        })
-      )
-    );
-    BASE_LINES.major.forEach((l) =>
-      gv.addLayer(
-        L.polyline(l as [number, number][], {
-          ...o,
-          color: sat ? "rgba(255,240,200,.28)" : "#f5e28f",
-          weight: 6,
-        })
-      )
-    );
+    tileLayerRef.current = tileLayer;
   }, [sat]);
 
-  useEffect(() => {
-    const gp = groups.current.place;
-    if (!gp) return;
-    gp.clearLayers();
-    if (tiles === "ok") return;
-
-    PLACES.forEach((p) =>
-      gp.addLayer(
-        L.marker(p.ll, {
-          pane: "place",
-          interactive: false,
-          keyboard: false,
-          icon: L.divIcon({
-            className: "pl-wrap",
-            iconSize: [0, 0],
-            html: `<div class="pl ${p.nama.startsWith("←") ? "pl--b" : ""}">${esc(
-              p.nama
-            )}</div>`,
-          }),
-        })
-      )
-    );
-  }, [tiles, sat]);
-
-  /* ---------- Warna & label lapisan ---------- */
-  const maxVal = useMemo(() => {
-    const m: Record<string, number> = {};
-    (["org", "ano", "res", "total"] as const).forEach((k) => {
-      m[k] = Math.max(...kelRows.map((r) => r.s[k]), 0.0001);
-    });
-    return m;
-  }, [kelRows]);
-
-  const styleFor = (row: ComplianceRow) => {
-    const { k, s: st } = row;
-    if (layer === "kep") return { fill: kepClass(st.kep).warna, text: `${st.kep}%` };
-    if (layer === "ch4") {
-      const live = sensors.filter((z) => z.kel === k.id && z.ppm !== null);
-      if (!live.length) return { fill: "#cbd5e1", text: "—" };
-      const mx = Math.max(...live.map((z) => z.ppm as number));
-      return { fill: ch4Class(mx).area, text: `${mx} ppm` };
-    }
-    const t = st[layer] / maxVal[layer];
-    return {
-      fill: mix(RAMP[layer][0], RAMP[layer][1], 0.15 + 0.85 * t),
-      text: `${fmtN(st[layer])} m³`,
-    };
-  };
-
-  /* ---------- Poligon kelurahan + label ---------- */
+  /* ---------- 3. Poligon Batas 6 Kelurahan Resmi (Sesuai Menu Fasilitas) ---------- */
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
     const gp = groups.current.poly;
     const gl = groups.current.klabel;
     if (!gp || !gl) return;
+
     gp.clearLayers();
     gl.clearLayers();
 
-    kelRows.forEach((row) => {
-      const { k } = row;
-      const st = styleFor(row);
-      const dim = selectedKel && selectedKel !== k.id;
-      const on = selectedKel === k.id;
+    Object.values(KELURAHAN_GEODATA).forEach((kg) => {
+      const kelId = kg.name.toLowerCase().replace(/\s+/g, "-");
+      const isSelected = selectedKel === kelId;
+      const isDim = selectedKel && !isSelected;
+
+      // Cari kepatuhan/volume untuk tooltip
+      const row = kelRows.find(
+        (r) => r.k.nama.toLowerCase() === kg.name.toLowerCase()
+      );
+      const kepVal = row?.s.kep != null ? `${row.s.kep}% Kepatuhan` : "Data KKN";
+
       const baseStyle: L.PathOptions = {
-        color: "#17324f",
-        weight: on ? 2.6 : 1.5,
-        dashArray: on ? undefined : "6 4",
-        lineJoin: "round",
-        fillColor: st.fill,
-        fillOpacity: (opacity / 100) * (dim ? 0.45 : 1),
+        color: kg.color,
+        weight: isSelected ? 3.5 : 2.5,
+        fillColor: kg.color,
+        fillOpacity: isSelected ? 0.28 : isDim ? 0.04 : 0.12,
+        dashArray: isSelected ? undefined : "4 4",
       };
-      const poly = L.polygon(k.ring as [number, number][], baseStyle);
-      poly.bindTooltip(`${k.nama} — ${st.text}. Klik untuk memfokuskan.`, {
+
+      const poly = L.polygon(kg.bounds as [number, number][], baseStyle);
+      poly.bindTooltip(`<b>Kel. ${kg.name}</b> • ${kepVal}`, {
         sticky: true,
         className: "gis-tip",
       });
-      poly.on("mouseover", () =>
+
+      poly.on("mouseover", () => {
         poly.setStyle({
-          weight: 2.6,
-          dashArray: undefined,
-          fillOpacity: Math.min(1, (baseStyle.fillOpacity || 0.45) + 0.1),
-        })
-      );
-      poly.on("mouseout", () => poly.setStyle(baseStyle));
+          weight: 3.5,
+          fillOpacity: Math.min(0.4, (baseStyle.fillOpacity as number) + 0.12),
+        });
+      });
+
+      poly.on("mouseout", () => {
+        poly.setStyle(baseStyle);
+      });
+
       poly.on("click", (e) => {
         L.DomEvent.stopPropagation(e);
-        cb.current.onSelectKel(k.id);
+        onSelectKel(kelId);
       });
+
       gp.addLayer(poly);
 
+      // Label centroid nama kelurahan
       gl.addLayer(
-        L.marker(k.labelLL, {
+        L.marker(kg.centroid, {
           pane: "klabel",
           interactive: false,
           keyboard: false,
           icon: L.divIcon({
             className: "kl-wrap",
             iconSize: [0, 0],
-            html: `<div class="kl ${dim ? "kl--dim" : ""}"><b>${esc(k.nama)}</b><span>${esc(
-              st.text
-            )}</span></div>`,
+            html: `
+              <div style="background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px); color: white; border: 1.5px solid ${kg.color}; padding: 3px 8px; border-radius: 9999px; font-size: 11px; font-weight: 800; white-space: nowrap; transform: translate(-50%, -50%); box-shadow: 0 2px 8px rgba(0,0,0,0.35);">
+                ${kg.name}
+              </div>
+            `,
           }),
         })
       );
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [kelRows, layer, opacity, selectedKel, maxVal, sensors]);
+  }, [kelRows, selectedKel, onSelectKel]);
 
-  /* ---------- Penanda fasilitas ---------- */
+  /* ---------- 4. Penanda Fasilitas Aktual (createFacilityIcon) ---------- */
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
     const gf = groups.current.fac;
     if (!gf) return;
+
     gf.clearLayers();
+    markerMap.current = {};
 
     facilities.forEach((f) => {
-      const t = TIPE_BY_ID[f.tipe];
+      if (!f.ll || !f.ll[0] || !f.ll[1]) return;
       const isA = active && active.kind === "fac" && active.id === f.id;
-      const m = L.marker(f.ll, {
+
+      const icon = createFacilityIcon(f.tipe, f.nama);
+      const marker = L.marker(f.ll, {
         title: f.nama,
         alt: f.nama,
-        keyboard: true,
-        icon: L.divIcon({
-          className: `fw ${isA ? "is-active" : ""}`,
-          iconSize: [0, 0],
-          html: `<div class="fpin" style="background:${t ? t.warna : "#0b6a78"}">${iconMarkup(
-            TIPE_ICON[f.tipe] || "trash"
-          )}</div>`,
-        }),
+        icon,
+        zIndexOffset: isA ? 1000 : 100,
       });
-      const open = () => cb.current.setActive({ kind: "fac", id: f.id });
-      m.on("click", open);
-      m.on("keypress", (e: any) => {
-        if (e.originalEvent.keyCode === 13) open();
-      });
-      gf.addLayer(m);
-    });
-  }, [facilities, active]);
 
-  /* ---------- Penanda sensor ---------- */
+      const openPopup = () => {
+        setActive({ kind: "fac", id: f.id });
+      };
+
+      marker.on("click", openPopup);
+      gf.addLayer(marker);
+      markerMap.current[f.id] = marker;
+    });
+  }, [facilities, active, setActive]);
+
+  /* ---------- 5. Popup Interaktif Fasilitas ---------- */
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
-    const gs = groups.current.sens;
-    if (!gs) return;
-    gs.clearLayers();
-    if (!showSensor) return;
+    if (!map || !active || active.kind !== "fac") return;
 
-    sensors.forEach((z) => {
-      const off = z.ppm === null;
-      const c = off ? null : ch4Class(z.ppm as number);
-      const label = off ? "Offline" : `${z.ppm} ppm`;
-      const isA = active && active.kind === "sensor" && active.id === z.id;
-      const fill = off ? "#e5e7eb" : c!.fill;
-      const stroke = off ? "#6b7280" : c!.stroke;
-      const inner =
-        !off && c!.min >= 5
-          ? `<i class="dia-in" style="background:${stroke}"></i>`
-          : "";
-      const m = L.marker(z.ll, {
-        title: `${z.id} — ${label}`,
-        alt: `Sensor ${z.id}, ${label}`,
-        keyboard: true,
-        zIndexOffset: 500,
-        icon: L.divIcon({
-          className: `sn ${isA ? "is-active" : ""}`,
-          iconSize: [0, 0],
-          html: `<div class="spin"><i class="dia" style="background:${fill};border-color:${stroke}"></i>${inner}<span class="ppm-pill ${
-            off ? "is-off" : ""
-          }">${label}</span></div>`,
-        }),
-      });
-      const open = () => cb.current.setActive({ kind: "sensor", id: z.id });
-      m.on("click", open);
-      m.on("keypress", (e: any) => {
-        if (e.originalEvent.keyCode === 13) open();
-      });
-      gs.addLayer(m);
-    });
-  }, [sensors, showSensor, active]);
+    const f = facilities.find((item) => item.id === active.id);
+    if (!f || !f.ll) return;
 
-  /* ---------- Popup ---------- */
-  const activeObj = useMemo<ActiveObject | null>(() => {
-    if (!active) return null;
-    if (active.kind === "sensor") {
-      const z = sensors.find((q) => q.id === active.id);
-      return z && showSensor ? { kind: "sensor", z } : null;
-    }
-    const f = facilities.find((q) => q.id === active.id);
-    return f ? { kind: "fac", f } : null;
-  }, [active, sensors, facilities, showSensor]);
-
-  const popKey = activeObj ? `${activeObj.kind}:${active?.id}` : "";
-
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !activeObj) return undefined;
-    const ll = activeObj.kind === "sensor" ? activeObj.z.ll : activeObj.f.ll;
     const popup = L.popup({
       className: "gis-popup",
-      maxWidth: 250,
-      minWidth: 210,
+      maxWidth: 290,
+      minWidth: 230,
       closeButton: true,
-      offset: [0, activeObj.kind === "sensor" ? -10 : -14],
-      autoPan: !firstOpen.current,
+      offset: [0, -12],
+      autoPan: true,
       autoPanPadding: [24, 24],
     })
-      .setLatLng(ll)
-      .setContent(popupHtml(activeObj));
+      .setLatLng(f.ll)
+      .setContent(createPopupHtml(f));
 
-    firstOpen.current = false;
     closing.current = false;
     popRef.current = popup;
     popup.openOn(map);
@@ -561,159 +420,143 @@ export default function MapView({
       closing.current = true;
       if (map.hasLayer(popup)) map.closePopup(popup);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [popKey]);
+  }, [active, facilities]);
 
-  /* ---------- Fokus otomatis ke kelurahan ---------- */
-  const goHome = (targetKelId: string | null, animate = true) => {
+  /* ---------- 6. Search Auto Zoom-In (Fit / FlyTo saat user mencari query) ---------- */
+  useEffect(() => {
     const map = mapRef.current;
-    if (!map || !hostRef.current) return;
-    if (targetKelId && KEL_BOUNDS[targetKelId]) {
-      map.fitBounds(KEL_BOUNDS[targetKelId], {
-        padding: [56, 56],
-        maxZoom: 17,
-        animate,
+    if (!map) return;
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return;
+
+    // Cek apakah query cocok dengan nama kelurahan
+    const matchedKelKey = Object.keys(KELURAHAN_GEODATA).find((k) =>
+      KELURAHAN_GEODATA[k].name.toLowerCase().includes(q)
+    );
+
+    if (matchedKelKey) {
+      const kg = KELURAHAN_GEODATA[matchedKelKey];
+      const bounds = L.latLngBounds(kg.bounds.map(([lat, lng]) => L.latLng(lat, lng)));
+      map.fitBounds(bounds.pad(0.08), { maxZoom: 16, animate: true, duration: 1.2 });
+      return;
+    }
+
+    // Cek kecocokan fasilitas
+    const matchingFacs = facilities.filter((f) => {
+      const hay = `${f.nama} ${f.kel} ${f.rw} ${formatFacilityLabel(f.tipe)} ${f.alamat || ""}`.toLowerCase();
+      return q.split(/\s+/).every((tok) => hay.includes(tok));
+    });
+
+    if (matchingFacs.length === 1) {
+      // 1 fasilitas ditemukan persis -> Zoom in tajam & buka popup
+      const target = matchingFacs[0];
+      map.flyTo(target.ll, 18, { duration: 1.2 });
+      setActive({ kind: "fac", id: target.id });
+    } else if (matchingFacs.length > 1) {
+      // Beberapa fasilitas cocok -> Zoom menyesuaikan seluruh hasil
+      const bounds = L.latLngBounds(matchingFacs.map((f) => L.latLng(f.ll[0], f.ll[1])));
+      map.fitBounds(bounds.pad(0.18), { maxZoom: 17, animate: true, duration: 1.2 });
+    }
+  }, [searchQuery, facilities, setActive]);
+
+  /* ---------- 7. Fokus Otomatis saat Kelurahan Dipilih dari Filter Dropdown ---------- */
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    if (selectedKel && KEL_BOUNDS[selectedKel]) {
+      map.fitBounds(KEL_BOUNDS[selectedKel].pad(0.06), {
+        maxZoom: 16.5,
+        animate: true,
+        duration: 1,
       });
+    }
+  }, [selectedKel]);
+
+  /* ---------- Kontrol Tombol Zoom & Reset ---------- */
+  const handleZoomIn = () => mapRef.current?.zoomIn();
+  const handleZoomOut = () => mapRef.current?.zoomOut();
+  const handleResetView = () => {
+    if (selectedKel && KEL_BOUNDS[selectedKel]) {
+      mapRef.current?.fitBounds(KEL_BOUNDS[selectedKel].pad(0.06), { animate: true, duration: 1 });
     } else {
-      const compact = hostRef.current.clientWidth < 700;
-      const fitZ = map.getBoundsZoom(ALL_BOUNDS.pad(0.08));
-      map.setView(
-        ALL_BOUNDS.getCenter(),
-        compact ? Math.max(fitZ, COMPACT_ZOOM) : fitZ,
-        { animate }
-      );
+      mapRef.current?.fitBounds(ALL_BOUNDS.pad(0.06), { animate: true, duration: 1 });
     }
   };
 
-  const firstFocus = useRef(true);
-  useEffect(() => {
-    if (firstFocus.current) {
-      firstFocus.current = false;
-      return;
+  const toggleFullScreen = () => {
+    const el = hostRef.current;
+    if (!el) return;
+    if (!document.fullscreenElement) {
+      el.requestFullscreen?.().then(() => setFull(true)).catch(() => {});
+    } else {
+      document.exitFullscreen?.().then(() => setFull(false)).catch(() => {});
     }
-    goHome(selectedKel);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedKel]);
-
-  useEffect(() => {
-    if (!full) return undefined;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setFull(false);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [full]);
-
-  useEffect(() => {
-    const t = setTimeout(() => mapRef.current && mapRef.current.invalidateSize(), 80);
-    return () => clearTimeout(t);
-  }, [full]);
-
-  const currentLayerObj = LAYERS.find((l) => l.id === layer);
-  const layerLabel = currentLayerObj ? currentLayerObj.label : "Kepatuhan";
+  };
 
   return (
-    <div className={`card map ${full ? "map--full" : ""} ${sat ? "map--sat" : ""}`}>
-      <div className="map-stage" data-layer={layerLabel}>
-        <div ref={hostRef} className="leaflet-host" />
-
-        {tiles === "fail" ? (
-          <div className="map-note" role="status">
-            Peta dasar daring tidak dapat dimuat — memakai peta vektor ilustratif.
-          </div>
-        ) : null}
-
-        <div className="mc mc--tl">
-          <div className="mc-group">
-            <button
-              type="button"
-              aria-label="Perbesar"
-              onClick={() => mapRef.current && mapRef.current.zoomIn(1)}
-              disabled={zoom >= maxZ - 0.01}
-            >
-              <Icon name="plus" size={20} />
-            </button>
-            <button
-              type="button"
-              aria-label="Perkecil"
-              onClick={() => mapRef.current && mapRef.current.zoomOut(1)}
-              disabled={zoom <= minZ + 0.01}
-            >
-              <Icon name="minus" size={20} />
-            </button>
-          </div>
+    <div
+      ref={hostRef}
+      className={`card map ${full ? "map--full" : ""}`}
+      role="region"
+      aria-label="Peta interaktif GIS Fasilitas Coblong"
+    >
+      {/* Kontrol Navigasi Peta (Floating Kiri Atas) */}
+      <div className="mc mc--tl">
+        <div className="mc-group" role="group" aria-label="Kontrol zoom">
           <button
             type="button"
-            className="mc-single"
-            aria-label="Kembali ke tampilan awal (utara di atas)"
-            title="Reset tampilan"
-            onClick={() => goHome(selectedKel)}
+            title="Perbesar (Zoom In)"
+            aria-label="Perbesar"
+            onClick={handleZoomIn}
           >
-            <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
-              <text
-                x="12"
-                y="9"
-                textAnchor="middle"
-                fontSize="9"
-                fontWeight="800"
-                fill="#10263f"
-              >
-                N
-              </text>
-              <path d="M12 11 8 21l4-2.4 4 2.4z" fill="#10263f" />
-            </svg>
+            <Icon name="plus" size={17} />
           </button>
           <button
             type="button"
-            className="mc-single"
-            aria-label={full ? "Keluar layar penuh" : "Layar penuh"}
-            onClick={() => setFull((v) => !v)}
+            title="Perkecil (Zoom Out)"
+            aria-label="Perkecil"
+            onClick={handleZoomOut}
           >
-            <Icon name={full ? "shrink" : "expand"} size={20} />
+            <Icon name="minus" size={17} />
+          </button>
+          <button
+            type="button"
+            title="Pusatkan Peta Coblong"
+            aria-label="Pusatkan peta"
+            onClick={handleResetView}
+          >
+            <Icon name="home" size={17} />
           </button>
         </div>
-
-        {filtered ? (
-          <div className="map-badge">
-            <span>
-              {facilities.length} dari {allCount} fasilitas
-            </span>
-            <button type="button" onClick={onClearFilters}>
-              Hapus filter
-            </button>
-          </div>
-        ) : null}
+        <button
+          type="button"
+          className="mc-single"
+          title={full ? "Keluar layar penuh" : "Layar penuh"}
+          aria-label="Layar penuh"
+          onClick={toggleFullScreen}
+        >
+          <Icon name={full ? "shrink" : "expand"} size={17} />
+        </button>
       </div>
 
+      {/* Floating Info Wilayah & Filter Aktif (Kiri Atas sebelah kontrol zoom) */}
+      {filtered && (
+        <div className="map-badge">
+          <span>
+            Menampilkan <b>{facilities.length}</b> dari {allCount} fasilitas
+          </span>
+          <button type="button" onClick={onClearFilters}>
+            Reset
+          </button>
+        </div>
+      )}
+
+      {/* Footer Peta: Keterangan Wilayah & Switcher Tipe Peta (Tanpa Slider Opasitas) */}
       <div className="map-foot">
         <div className="mc-bl">
-          <label className="opacity">
-            <span>
-              Opasitas overlay: <b>{opacity}%</b>
-            </span>
-            <input
-              type="range"
-              min="10"
-              max="90"
-              step="5"
-              value={opacity}
-              onChange={(e) => setOpacity(Number(e.target.value))}
-              aria-label="Opasitas overlay"
-            />
-          </label>
-          <p className="ovl">
-            {layer === "kep" ? (
-              <>Overlay kepatuhan: {KEP_CLASSES.map((c) => c.ket.toLowerCase()).join(" • ")}</>
-            ) : layer === "ch4" ? (
-              <>Overlay metana: konsentrasi tertinggi per kelurahan (ppm)</>
-            ) : (
-              <>
-                Overlay volume: <span className="c-g">hijau organik</span> •{" "}
-                <span className="c-b">biru anorganik</span> •{" "}
-                <span className="c-k">abu residu</span> •{" "}
-                <span className="c-p">ungu total</span> (m³/bulan)
-              </>
-            )}
+          <p className="ovl" style={{ margin: 0 }}>
+            Wilayah Kecamatan Coblong • Batas 6 Kelurahan (LapakGIS / OSM) • {facilities.length} Fasilitas
           </p>
         </div>
         <div className="mc-br">
@@ -724,7 +567,7 @@ export default function MapView({
               aria-pressed={!sat}
               onClick={() => setBase("peta")}
             >
-              Peta
+              Peta Jalan
             </button>
             <button
               type="button"
@@ -732,7 +575,7 @@ export default function MapView({
               aria-pressed={sat}
               onClick={() => setBase("sat")}
             >
-              Satelit
+              Satelit Google
             </button>
           </div>
         </div>

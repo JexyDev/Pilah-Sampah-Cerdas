@@ -28,6 +28,7 @@ export interface GisFacilityDto {
   kel: string;
   rw: string;
   pic?: string | null;
+  foto?: string | null;
   kontak?: string | null;
   kapasitas?: number | null;
   alamat?: string | null;
@@ -147,6 +148,7 @@ export const gisEksekutifService = {
       kel: f.rw?.kelurahan?.name ?? "-",
       rw: f.rw?.name ?? "-",
       pic: f.pic ?? null,
+      foto: f.foto ?? null,
       kontak: f.kontak ?? null,
       kapasitas: f.kapasitas ? Number(f.kapasitas) : null,
       alamat: f.alamat ?? null,
@@ -184,19 +186,22 @@ export const gisEksekutifService = {
         kepatuhan = raw <= 1 ? Math.round(raw * 100) : Math.round(raw);
       }
 
-      // Volume — dari DB jika ada (totalVolumeKgPerHari × 30 ÷ 1000 → m³/bln estimasi)
-      let volume: number | null = null;
-      if (survei?.volumeSampah?.totalVolumeKgPerHari != null) {
-        const kgPerHari = Number(survei.volumeSampah.totalVolumeKgPerHari);
-        volume = Math.round((kgPerHari * 30) / 1000 * 10) / 10;
-      }
-
       // Komposisi organik/anorganik/residu per kelurahan (dari survei)
       let organikKgHari = 0, anorganikKgHari = 0, residuKgHari = 0;
       if (survei?.volumeSampah) {
         organikKgHari = Number(survei.volumeSampah.organikKgPerHari ?? 0);
         anorganikKgHari = Number(survei.volumeSampah.anorganikKgPerHari ?? 0);
         residuKgHari = Number(survei.volumeSampah.residuKgPerHari ?? 0);
+      }
+      const sumKgHari = organikKgHari + anorganikKgHari + residuKgHari;
+
+      // Volume — dari DB (dikonversi kg/hari ke m³/bln: kg/hari × 30 / 1000)
+      let volume: number | null = null;
+      if (sumKgHari > 0) {
+        volume = Math.round(((sumKgHari * 30) / 1000) * 10) / 10;
+      } else if (survei?.volumeSampah?.totalVolumeKgPerHari != null) {
+        const kgPerHari = Number(survei.volumeSampah.totalVolumeKgPerHari);
+        volume = Math.round(((kgPerHari * 30) / 1000) * 10) / 10;
       }
 
       return {
@@ -229,20 +234,6 @@ export const gisEksekutifService = {
       );
     }
 
-    // Volume total m³/bln (jumlah semua kelurahan yang ada data)
-    const kelWithVol = kepatuhanPerKelurahan.filter((k) => k.volume !== null);
-    let volumeTotal: number | null = null;
-    if (rawKel) {
-      const match = kepatuhanPerKelurahan.find(
-        (k) => k.nama.toLowerCase() === rawKel.toLowerCase()
-      );
-      volumeTotal = match?.volume ?? null;
-    } else if (kelWithVol.length > 0) {
-      volumeTotal = Math.round(
-        kelWithVol.reduce((s, k) => s + (k.volume as number), 0) * 10
-      ) / 10;
-    }
-
     // ── 6. Komposisi Volume Agregat ──────────────────────────────────────────
     // Ambil dari survei kelurahan yang terpilih (atau semua)
     const surveiScope = rawKel
@@ -262,18 +253,39 @@ export const gisEksekutifService = {
     );
     const totalKg = totalOrganikKg + totalAnorganikKg + totalResiduKg;
 
+    const orgM3 = Math.round(((totalOrganikKg * 30) / 1000) * 10) / 10;
+    const anoM3 = Math.round(((totalAnorganikKg * 30) / 1000) * 10) / 10;
+    const resM3 = Math.round(((totalResiduKg * 30) / 1000) * 10) / 10;
+    const computedTotalM3 = Math.round((orgM3 + anoM3 + resM3) * 10) / 10;
+
+    // Volume total m³/bln (konsisten 100% dengan komponen komposisi)
+    const kelWithVol = kepatuhanPerKelurahan.filter((k) => k.volume !== null);
+    let volumeTotal: number | null = null;
+    if (rawKel) {
+      const match = kepatuhanPerKelurahan.find(
+        (k) => k.nama.toLowerCase() === rawKel.toLowerCase()
+      );
+      volumeTotal = match?.volume ?? (computedTotalM3 > 0 ? computedTotalM3 : null);
+    } else if (computedTotalM3 > 0) {
+      volumeTotal = computedTotalM3;
+    } else if (kelWithVol.length > 0) {
+      volumeTotal = Math.round(
+        kelWithVol.reduce((s, k) => s + (k.volume as number), 0) * 10
+      ) / 10;
+    }
+
     const komposisiVolume = {
       organik: {
         persen: totalKg > 0 ? Math.round((totalOrganikKg / totalKg) * 100) : 0,
-        volumeM3: Math.round(((totalOrganikKg * 30) / 1000) * 10) / 10,
+        volumeM3: orgM3,
       },
       anorganik: {
         persen: totalKg > 0 ? Math.round((totalAnorganikKg / totalKg) * 100) : 0,
-        volumeM3: Math.round(((totalAnorganikKg * 30) / 1000) * 10) / 10,
+        volumeM3: anoM3,
       },
       residu: {
         persen: totalKg > 0 ? Math.round((totalResiduKg / totalKg) * 100) : 0,
-        volumeM3: Math.round(((totalResiduKg * 30) / 1000) * 10) / 10,
+        volumeM3: resM3,
       },
       totalM3: volumeTotal ?? 0,
     };
