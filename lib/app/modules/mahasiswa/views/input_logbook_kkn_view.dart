@@ -13,6 +13,7 @@ import '../controllers/mahasiswa_notifikasi_controller.dart';
 import '../controllers/mahasiswa_controller.dart';
 import '../../riwayat/controllers/riwayat_controller.dart'
     show pointHistoryProvider, totalPointsProvider;
+import 'data_logbook_harian_view.dart';
 import 'riwayat_program_kerja_view.dart'; // import provider untuk dropdown program kerja
 
 final fasilitasWargaListProvider =
@@ -376,6 +377,7 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
         }
 
         ref.invalidate(riwayatKknControllerProvider);
+        ref.invalidate(logbookListProvider); // <-- ADDED THIS
         ref.invalidate(mahasiswaNotificationsProvider);
         ref.read(mahasiswaControllerProvider.notifier).fetchDashboardData();
         ref.invalidate(pointHistoryProvider);
@@ -416,6 +418,7 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
   @override
   Widget build(BuildContext context) {
     final prokerState = ref.watch(programKerjaListProvider);
+    final logbookListAsync = ref.watch(logbookListProvider);
 
     bool hasUnsavedChanges() {
       return _waktuMulaiCtrl.text.isNotEmpty ||
@@ -507,7 +510,7 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _buildHeaderBanner(),
+                _buildHeaderBanner(logbookListAsync),
                 const SizedBox(height: 16),
 
                 Container(
@@ -1089,12 +1092,74 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
     );
   }
 
-  Widget _buildHeaderBanner() {
+  Widget _buildHeaderBanner(AsyncValue<List<Map<String, dynamic>>> logbookListAsync) {
     final isEdit = widget.initialData != null;
     final statusApproval =
         widget.initialData?['statusApproval']?.toString().toUpperCase() ?? '';
     final catatanDpl = widget.initialData?['catatanDpl']?.toString() ?? '';
     final catatanKetua = widget.initialData?['catatanKetua']?.toString() ?? '';
+
+    // DATE GUARD: If not edit, check if there's already a logbook on this date that needs revision
+    if (!isEdit && _tanggalCtrl.text.isNotEmpty && logbookListAsync.hasValue) {
+      final logs = logbookListAsync.value!;
+      final existingRevisi = logs.where((l) => 
+          (l['tanggalKegiatan']?.toString().contains(_tanggalCtrl.text) ?? false) && 
+          l['statusApproval'] == 'PERLU_REVISI_DPL'
+      ).toList();
+      
+      if (existingRevisi.isNotEmpty) {
+        final logbookId = existingRevisi.first['id'];
+        return Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.red.shade50,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.red.shade300),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.warning_amber_rounded, color: Colors.red.shade700, size: 22),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Peringatan Duplikasi Logbook',
+                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red.shade800),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Anda memiliki logbook yang berstatus PERLU REVISI pada tanggal ini. Harap tidak membuat logbook baru, melainkan perbaiki logbook yang sudah ada.',
+                style: TextStyle(fontSize: 13, color: Colors.black87),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.edit, size: 18),
+                  label: const Text('Edit Logbook yang Sudah Ada'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange.shade600,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () {
+                    Navigator.pushReplacementNamed(
+                      context,
+                      '/mahasiswa/logbook-kkn/edit', // AppRoutes.editLogbookKkn
+                      arguments: {'id': logbookId},
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+    }
 
     // Mode edit: PERLU_REVISI_DPL — banner oranye dengan catatan DPL
     if (isEdit && statusApproval == 'PERLU_REVISI_DPL') {
@@ -1762,3 +1827,4 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
     );
   }
 }
+
