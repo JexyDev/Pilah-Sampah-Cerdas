@@ -79,6 +79,9 @@ export interface GisOverviewApiResponse {
     volume: number;
     totalFasilitas: number;
     color: string;
+    organikKgHari?: number;
+    anorganikKgHari?: number;
+    residuKgHari?: number;
   }>;
   pemantauanCh4: {
     rentangText: string;
