@@ -204,12 +204,16 @@ jobs:
           fi
 
           echo "Uploading $APK_FILE to $VPS_HOST as /tmp/$APK_NAME..."
-          if ! sshpass -p "$VPS_PASS" scp -O -o StrictHostKeyChecking=no -o ConnectTimeout=60 "$APK_FILE" "$VPS_USER@$VPS_HOST:/tmp/$APK_NAME"; then
+          
+          export SSHPASS="$VPS_PASS"
+          SSH_OPTS="-o StrictHostKeyChecking=no -o ConnectTimeout=60 -o LogLevel=ERROR"
+          
+          if ! sshpass -e scp -O $SSH_OPTS "$APK_FILE" "$VPS_USER@$VPS_HOST:/tmp/$APK_NAME"; then
             echo "SCP failed, trying direct SSH stream..."
-            sshpass -p "$VPS_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=60 "$VPS_USER@$VPS_HOST" "cat > /tmp/$APK_NAME" < "$APK_FILE"
+            sshpass -e ssh $SSH_OPTS "$VPS_USER@$VPS_HOST" "cat > /tmp/$APK_NAME" < "$APK_FILE"
           fi
 
-          sshpass -p "$VPS_PASS" ssh -T -o StrictHostKeyChecking=no -o ConnectTimeout=30 "$VPS_USER@$VPS_HOST" "VPS_PASS='$VPS_PASS' APK_NAME='$APK_NAME' DEST_DIR='$DEST_DIR' APP_VERSION='${{ env.APP_VERSION }}' RUN_NUMBER='${{ github.run_number }}' bash -s" << 'EOF'
+          sshpass -e ssh -T $SSH_OPTS "$VPS_USER@$VPS_HOST" "VPS_PASS='$VPS_PASS' APK_NAME='$APK_NAME' DEST_DIR='$DEST_DIR' APP_VERSION='${{ env.APP_VERSION }}' RUN_NUMBER='${{ github.run_number }}' bash -s" << 'EOF'
             set -e
             TMP_APK="/tmp/$APK_NAME"
             if [ ! -f "$TMP_APK" ] && [ -f "$HOME/$APK_NAME" ]; then
