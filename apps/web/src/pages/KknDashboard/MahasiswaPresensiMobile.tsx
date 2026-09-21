@@ -400,8 +400,9 @@ export const MahasiswaPresensiMobile: React.FC = () => {
     try {
       const res = await api.get("/posko-kkn/me/all-zones");
       const data = res.data?.data;
-      if (data && Array.isArray(data.poskos) && data.poskos.length > 0) {
-        const mapped = data.poskos.map((p: any) => ({
+      const rawList = data?.poskoList || data?.poskos || (Array.isArray(data) ? data : []);
+      if (Array.isArray(rawList) && rawList.length > 0) {
+        const mapped = rawList.map((p: any) => ({
           id: p.id,
           name: p.nama || p.name || "Posko KKN",
           lat: Number(p.latitude),
@@ -411,6 +412,29 @@ export const MahasiswaPresensiMobile: React.FC = () => {
         setAllGroupPoskos(mapped);
         setPosko(mapped[0]);
         return;
+      }
+    } catch {
+      // Fallback
+    }
+
+    try {
+      const res = await api.get("/posko-kkn/unified-zones");
+      const list = res.data?.data;
+      if (Array.isArray(list) && list.length > 0) {
+        const myGroup = list[0]; // Endpoint otomatis filter kelompok jika role MAHASISWA_KKN
+        const rawPoskos = myGroup?.poskoList || [];
+        if (Array.isArray(rawPoskos) && rawPoskos.length > 0) {
+          const mapped = rawPoskos.map((p: any) => ({
+            id: p.id,
+            name: p.nama || p.name || "Posko KKN",
+            lat: Number(p.latitude),
+            lng: Number(p.longitude),
+            radius: Number(p.radius) || 500,
+          }));
+          setAllGroupPoskos(mapped);
+          setPosko(mapped[0]);
+          return;
+        }
       }
     } catch {
       // Fallback
@@ -449,8 +473,18 @@ export const MahasiswaPresensiMobile: React.FC = () => {
       if (safeList.length > 0) {
         const primary = safeList[0];
 
-        // Sinkronkan titik posko dari jadwal aktif jika data multi-posko belum termuat
-        if (primary.lokasi?.latitude && primary.lokasi?.longitude) {
+        // Sinkronkan daftar multi-posko langsung dari kegiatan aktif jika tersedia
+        if (Array.isArray(primary.poskoList) && primary.poskoList.length > 0) {
+          const mappedGroupPoskos = primary.poskoList.map((p: any) => ({
+            id: p.id,
+            name: p.nama || p.name || "Posko KKN",
+            lat: Number(p.latitude),
+            lng: Number(p.longitude),
+            radius: Number(p.radius) || 500,
+          }));
+          setAllGroupPoskos(mappedGroupPoskos);
+          setPosko(mappedGroupPoskos[0]);
+        } else if (primary.lokasi?.latitude && primary.lokasi?.longitude) {
           const schedPosko = {
             id: primary.id,
             name: primary.lokasi.alamat || primary.namaKegiatan || "Posko KKN",
