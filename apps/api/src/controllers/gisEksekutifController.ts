@@ -31,10 +31,10 @@ export class GisEksekutifController {
       });
     } catch (error: any) {
       console.error("[GisEksekutifController] getOverview error:", error);
-      const fallback = gisEksekutifService.getBaselineOverview({}, error?.message);
-      res.status(200).json({
-        success: true,
-        data: fallback,
+      res.status(500).json({
+        success: false,
+        error: "INTERNAL_SERVER_ERROR",
+        message: error?.message || "Gagal memuat data ringkasan GIS eksekutif",
       });
     }
   }
@@ -105,10 +105,12 @@ export class GisEksekutifController {
         const headers = ["Kelurahan", "Kepatuhan (%)", "Volume Sampah (m3/bln)", "Total Fasilitas Terdata", "Status"];
         const rows = overview.kepatuhanPerKelurahan.map((k) => [
           `"${k.nama}"`,
-          k.kepatuhan,
-          k.volume,
+          k.kepatuhan != null ? k.kepatuhan : "",
+          k.volume != null ? k.volume : "",
           k.totalFasilitas,
-          k.kepatuhan >= 70 ? "Baik" : k.kepatuhan >= 60 ? "Sedang" : "Perlu Perhatian",
+          k.kepatuhan != null
+            ? (k.kepatuhan >= 70 ? "Baik" : k.kepatuhan >= 60 ? "Sedang" : "Perlu Perhatian")
+            : "Belum Ada Data Survei",
         ]);
         csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
       }
