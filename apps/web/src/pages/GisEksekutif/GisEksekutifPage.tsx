@@ -28,8 +28,8 @@ function createOfflineFallbackData(kelurahanFilter = "Semua"): GisOverviewApiRes
   const poligonKelurahan = kelNames.map((nama) => ({
     nama,
     coordinates: (KELURAHAN_GEODATA[nama as keyof typeof KELURAHAN_GEODATA]?.bounds || []) as [number, number][],
-    kepatuhan: 0,
-    volume: 0,
+    kepatuhan: null,
+    volume: null,
     totalFasilitas: 0,
     color: "#9ca3af",
     hasData: false,
@@ -43,8 +43,6 @@ function createOfflineFallbackData(kelurahanFilter = "Semua"): GisOverviewApiRes
       kelurahanFilter,
       rwFilter: "Semua",
       timestamp: new Date().toISOString(),
-      isDegraded: true,
-      degradedReason: "Mode visualisasi peta dasar aktif (menunggu sinkronisasi data server)",
     },
     filterOptions: {
       kelurahans: ["Semua", ...kelNames],
@@ -61,20 +59,22 @@ function createOfflineFallbackData(kelurahanFilter = "Semua"): GisOverviewApiRes
     kpi: {
       fasilitasTerdata: 0,
       fasilitasSubtext: "Mode Peta Dasar Aktif",
-      volumeTotal: 0,
-      volumeGrowthPercent: 0,
+      volumeTotal: null,
+      volumeGrowthPercent: null,
       volumeUnit: "m³/bulan",
-      kepatuhanPemilahan: 0,
+      kepatuhanPemilahan: null,
       kepatuhanDeltaPoin: 0,
       sensorCh4OnlineCount: 0,
       sensorCh4TotalCount: 0,
       sensorCh4Text: "Tahap Integrasi Jaringan IoT",
+      sensorCh4ProgressPercent: 0,
     },
     komposisiVolume: {
       organik: { persen: 0, volumeM3: 0 },
       anorganik: { persen: 0, volumeM3: 0 },
       residu: { persen: 0, volumeM3: 0 },
       totalM3: 0,
+      hasData: false,
     },
     trenBulanan: ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"].map((b) => ({
       bulan: b,
@@ -82,15 +82,25 @@ function createOfflineFallbackData(kelurahanFilter = "Semua"): GisOverviewApiRes
     })),
     kepatuhanPerKelurahan: kelNames.map((nama) => ({
       nama,
-      kepatuhan: 0,
-      volume: 0,
+      kepatuhan: null,
+      volume: null,
       totalFasilitas: 0,
       color: "#9ca3af",
+      hasData: false,
     })),
     pemantauanCh4: {
       rentangText: "Tahap Integrasi",
       titikPengukuranCount: 0,
       titikPengukuranText: "Sensor CH₄ belum aktif",
+      status: "Tahap Integrasi Jaringan IoT",
+      statusDeskripsi: "Telemetri belum aktif. Belum ada sensor IoT yang terhubung ke database.",
+      cakupan: "Coblong",
+      satuan: "ppm",
+      sensorOnline: "0/0",
+      placeholderVal: "— ppm",
+      placeholderStatus: "Belum ada data",
+      placeholderSub: "Sensor IoT belum terpasang",
+      progressPercent: 0,
       sensors: [],
     },
     titikFasilitas: [],
@@ -152,31 +162,97 @@ function Pill({ label, icon, children, disabled }: {
 }
 
 /* ---------- Export Menu ---------- */
-function ExportMenu({ onExport }: { onExport: (what: "kel" | "fac") => void }) {
+interface ExportMenuProps {
+  onExport: (what: "kel-all" | "kel-single" | "fac") => void;
+  selectedKel?: string;
+  periode?: string;
+}
+
+function ExportMenu({ onExport, selectedKel, periode }: ExportMenuProps) {
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (!open) return;
-    const close = (e: MouseEvent) => { if (box.current && !box.current.contains(e.target as Node)) setOpen(false); };
-    const esc = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    const close = (e: MouseEvent) => {
+      if (box.current && !box.current.contains(e.target as Node)) setOpen(false);
+    };
+    const esc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
     document.addEventListener("pointerdown", close);
     document.addEventListener("keydown", esc);
-    return () => { document.removeEventListener("pointerdown", close); document.removeEventListener("keydown", esc); };
+    return () => {
+      document.removeEventListener("pointerdown", close);
+      document.removeEventListener("keydown", esc);
+    };
   }, [open]);
+
+  const hasSpecificKel = Boolean(selectedKel && selectedKel !== "Semua");
+
   return (
-    <div className="export" ref={box}>
-      <button type="button" className="btn-primary" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
+    <div className="export" ref={box} title="Ekspor data CSV">
+      <button
+        type="button"
+        className="btn-primary"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+      >
         <Icon name="download" size={15} /> Ekspor <Icon name="chevron" size={13} />
       </button>
       {open && (
         <div className="menu" role="menu">
-          <button type="button" role="menuitem" onClick={() => { setOpen(false); onExport("kel"); }}>
+          {/* Opsi 1: Ringkasan Semua Kelurahan */}
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              onExport("kel-all");
+            }}
+          >
             <Icon name="table" size={15} />
-            <span>Ringkasan kelurahan<small>CSV • periode terpilih</small></span>
+            <span>
+              Ringkasan Semua Kelurahan
+              <small>CSV • 6 Kelurahan (Kec. Coblong)</small>
+            </span>
           </button>
-          <button type="button" role="menuitem" onClick={() => { setOpen(false); onExport("fac"); }}>
+
+          {/* Opsi 2: Ringkasan Kelurahan Spesifik jika sedang memilih kelurahan */}
+          {hasSpecificKel && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                onExport("kel-single");
+              }}
+            >
+              <Icon name="mapPin" size={15} />
+              <span>
+                Ringkasan Kel. {selectedKel}
+                <small>CSV • Khusus wilayah terpilih</small>
+              </span>
+            </button>
+          )}
+
+          {/* Opsi 3: Daftar Fasilitas */}
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              onExport("fac");
+            }}
+          >
             <Icon name="file" size={15} />
-            <span>Daftar fasilitas<small>CSV • sesuai filter aktif</small></span>
+            <span>
+              Daftar Fasilitas
+              <small>
+                CSV • {hasSpecificKel ? `Khusus Kel. ${selectedKel}` : "Seluruh titik di Coblong"}
+              </small>
+            </span>
           </button>
         </div>
       )}
@@ -187,12 +263,12 @@ function ExportMenu({ onExport }: { onExport: (what: "kel" | "fac") => void }) {
 /* ---------- Loading Skeleton ---------- */
 function KpiSkeleton() {
   return (
-    <div className="card kpi" style={{ animation: "pulse 1.5s ease-in-out infinite" }}>
-      <span className="kpi-ico k-teal" style={{ opacity: 0.3 }}><Icon name="building" size={20} /></span>
-      <div>
-        <div className="kpi-l" style={{ background: "#e5e7eb", borderRadius: 4, height: 12, width: 90, marginBottom: 6 }} />
-        <div className="kpi-v" style={{ background: "#e5e7eb", borderRadius: 4, height: 22, width: 70, marginBottom: 4 }} />
-        <div className="kpi-s" style={{ background: "#e5e7eb", borderRadius: 4, height: 11, width: 130 }} />
+    <div className="kpi-card-qc" style={{ animation: "pulse 1.5s ease-in-out infinite" }}>
+      <div className="kpi-circle-icon mint" style={{ opacity: 0.3 }} />
+      <div className="kpi-qc-content">
+        <div style={{ background: "#e5e7eb", borderRadius: 4, height: 12, width: 90, marginBottom: 6 }} />
+        <div style={{ background: "#e5e7eb", borderRadius: 4, height: 26, width: 80, marginBottom: 6 }} />
+        <div style={{ background: "#e5e7eb", borderRadius: 4, height: 11, width: 120 }} />
       </div>
     </div>
   );
@@ -413,7 +489,7 @@ export default function GisEksekutifPage() {
         ring: ringCoords.length > 0 ? ringCoords : [defaultLL],
       };
       const sShape = {
-        kep: kd?.kepatuhan ?? 0,
+        kep: kd?.kepatuhan ?? (null as any),
         org: orgM3,
         ano: anoM3,
         res: resM3,
@@ -421,6 +497,7 @@ export default function GisEksekutifPage() {
         fac: facCount,
         sensors: sensors.filter((s) => s.kel === pk.nama),
         share: 1,
+        hasData: Boolean(kd?.hasData),
       };
       return { k: kShape, s: sShape };
     });
@@ -479,29 +556,71 @@ export default function GisEksekutifPage() {
     return 8; // default September 2026
   }, [periode]);
 
+  // Format timestamp data diperbarui
+  const formattedTimestamp = useMemo(() => {
+    if (!data?.meta?.timestamp) return "21 Sep 2026, 09:41";
+    try {
+      const d = new Date(data.meta.timestamp);
+      if (isNaN(d.getTime())) return "21 Sep 2026, 09:41";
+      const day = d.getDate();
+      const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+      const month = months[d.getMonth()];
+      const year = d.getFullYear();
+      const hours = String(d.getHours()).padStart(2, "0");
+      const mins = String(d.getMinutes()).padStart(2, "0");
+      return `${day} ${month} ${year}, ${hours}:${mins}`;
+    } catch {
+      return "21 Sep 2026, 09:41";
+    }
+  }, [data?.meta?.timestamp]);
+
   // ─── Export CSV ──────────────────────────────────────────────────────────────
-  const doExport = async (what: "kel" | "fac") => {
-    if (!data || (what === "fac" && (data.titikFasilitas ?? []).length === 0)) {
+  const doExport = async (what: "kel-all" | "kel-single" | "fac") => {
+    if (!data) {
+      setToast("Data belum siap diekspor. Silakan tunggu pemuatan selesai.");
+      return;
+    }
+    if (what === "fac" && (data.titikFasilitas ?? []).length === 0) {
       setToast("Data fasilitas belum tersedia untuk diekspor. Silakan tunggu sinkronisasi selesai.");
       return;
     }
+
     try {
       setToast("Menyiapkan berkas CSV...");
       let rows: Array<Array<string | number | null>>;
       let name: string;
-      if (what === "kel") {
+      const periodeSlug = periode.toLowerCase().replace(/\s+/g, "-");
+
+      if (what === "kel-all") {
         rows = [["Kelurahan", "Periode", "Fasilitas", "Kepatuhan (%)", "Volume m³/bln", "Sensor Online"]];
         data.kepatuhanPerKelurahan.forEach((k) => {
           rows.push([k.nama, periode, k.totalFasilitas, k.kepatuhan, k.volume, 0]);
         });
-        name = `ringkasan-kelurahan-${periode.toLowerCase().replace(/\s+/g, "-")}.csv`;
+        name = `ringkasan-semua-kelurahan-coblong-${periodeSlug}.csv`;
+      } else if (what === "kel-single") {
+        const targetKel = kel !== "Semua" ? kel : "Coblong";
+        const kelSlug = targetKel.toLowerCase().replace(/\s+/g, "-");
+        rows = [["Kelurahan", "Periode", "Fasilitas", "Kepatuhan (%)", "Volume m³/bln", "Sensor Online"]];
+        const targetKels = data.kepatuhanPerKelurahan.filter(
+          (k) => k.nama.toLowerCase() === targetKel.toLowerCase()
+        );
+        (targetKels.length > 0 ? targetKels : data.kepatuhanPerKelurahan).forEach((k) => {
+          rows.push([k.nama, periode, k.totalFasilitas, k.kepatuhan, k.volume, 0]);
+        });
+        name = `ringkasan-kelurahan-${kelSlug}-${periodeSlug}.csv`;
       } else {
+        const isSpecific = kel !== "Semua";
+        const kelSlug = isSpecific ? `-${kel.toLowerCase().replace(/\s+/g, "-")}` : "-coblong";
         rows = [["ID", "Nama Fasilitas", "Tipe", "Kelurahan", "RW", "Lat", "Lng", "PIC"]];
-        (data.titikFasilitas ?? []).forEach((f) =>
+        const targetFacs = isSpecific
+          ? (data.titikFasilitas ?? []).filter((f) => f.kel.toLowerCase() === kel.toLowerCase())
+          : (data.titikFasilitas ?? []);
+        targetFacs.forEach((f) =>
           rows.push([f.id, f.nama, f.tipe, f.kel, f.rw, f.lat, f.lng, f.pic ?? ""])
         );
-        name = "daftar-fasilitas.csv";
+        name = `daftar-fasilitas${kelSlug}.csv`;
       }
+
       const msg = await saveFileCsv(name, toCsv(rows));
       setToast(msg);
     } catch (exportErr: any) {
@@ -784,96 +903,174 @@ export default function GisEksekutifPage() {
         {/* Header */}
         <header className="head">
           <div className="head-l">
-            <h1>GIS Eksekutif Tata Kelola Sampah</h1>
-            <p className="sub">Kecamatan Coblong • Fasilitas, pemilahan, volume, dan pemantauan CH₄</p>
+            <h1>Dashboard Lingkungan & Persampahan</h1>
+            <p className="sub">Monitoring data persampahan, pemilahan, dan emisi gas untuk Kecamatan Coblong</p>
           </div>
           <div className="head-r">
-            <span className="tag-live">
-              <span className="tag-live-dot" />
-              LIVE • DATA REAL-TIME
-            </span>
-            <div className="filters">
-              <Pill label="Kelurahan">
-                <select value={kel} onChange={(e) => changeKel(e.target.value)} aria-label="Kelurahan">
+            <div className="qc-filters-row">
+              <div className="qc-pill-dropdown">
+                <Icon name="home" size={15} style={{ color: "#64748b" }} />
+                <select
+                  aria-label="Kecamatan"
+                  value="Coblong"
+                  disabled
+                  style={{ cursor: "default" }}
+                >
+                  <option value="Coblong">Kecamatan: Coblong</option>
+                </select>
+                <Icon name="chevron" size={13} className="qc-chevron" />
+              </div>
+
+              <div className="qc-pill-dropdown">
+                <Icon name="mapPin" size={15} style={{ color: "#64748b" }} />
+                <select
+                  aria-label="Kelurahan"
+                  value={kel}
+                  onChange={(e) => changeKel(e.target.value)}
+                >
                   {filterOptions.kelurahans.map((k) => (
-                    <option key={k} value={k}>{k}</option>
+                    <option key={k} value={k}>
+                      {k === "Semua" ? "Kelurahan: Semua" : `Kelurahan: ${k}`}
+                    </option>
                   ))}
                 </select>
-              </Pill>
-              <Pill label="RW" disabled={kel === "Semua"}>
-                <select value={rw} onChange={(e) => setRw(e.target.value)} disabled={kel === "Semua"} aria-label="RW"
-                  title={kel === "Semua" ? "Pilih kelurahan terlebih dahulu" : ""}>
-                  {filterOptions.rws.map((r) => (
-                    <option key={r} value={r}>{r}</option>
-                  ))}
-                </select>
-              </Pill>
-              <Pill label="Periode" icon="calendar">
-                <select value={periode} onChange={(e) => setPeriode(e.target.value)} aria-label="Periode">
+                <Icon name="chevron" size={13} className="qc-chevron" />
+              </div>
+
+              <div className="qc-pill-dropdown">
+                <Icon name="calendar" size={15} style={{ color: "#64748b" }} />
+                <select
+                  aria-label="Periode"
+                  value={periode}
+                  onChange={(e) => setPeriode(e.target.value)}
+                >
                   {filterOptions.periodes.map((p) => (
-                    <option key={p} value={p}>{p}</option>
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
                   ))}
                 </select>
-              </Pill>
-              <ExportMenu onExport={doExport} />
+                <Icon name="chevron" size={13} className="qc-chevron" />
+              </div>
+
+              <ExportMenu
+                onExport={doExport}
+                selectedKel={kel}
+                periode={periode}
+              />
+            </div>
+
+            <div className="qc-timestamp">
+              Data diperbarui: {formattedTimestamp}
             </div>
           </div>
         </header>
 
         {/* KPI */}
-        <section className="kpis" aria-label="Indikator utama">
+        <section className="kpis-qc" aria-label="Indikator utama">
           {loading ? (
             <><KpiSkeleton /><KpiSkeleton /><KpiSkeleton /><KpiSkeleton /></>
           ) : (
             <>
-              <div className="card kpi">
-                <span className="kpi-ico k-teal"><Icon name="building" size={20} /></span>
-                <div>
-                  <div className="kpi-l">Fasilitas terdata</div>
-                  <div className="kpi-v">{data?.kpi.fasilitasTerdata ?? 0}</div>
-                  <div className="kpi-s">{scopeText}</div>
+              {/* Card 1: Fasilitas terdata */}
+              <div className="kpi-card-qc">
+                <div className="kpi-circle-icon mint">
+                  <Icon name="home" size={22} />
                 </div>
-              </div>
-              <div className="card kpi">
-                <span className="kpi-ico k-teal"><Icon name="bars" size={20} stroke={2.5} /></span>
-                <div>
-                  <div className="kpi-l">Volume</div>
-                  <div className="kpi-v">
-                    {data?.kpi.volumeTotal != null
-                      ? <>{fmtN(data.kpi.volumeTotal)} <small>m³/bulan</small></>
-                      : <span style={{ fontSize: 12, color: "#9ca3af" }}>Belum ada data survei</span>}
+                <div className="kpi-qc-content">
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+                    <span className="kpi-qc-label">Fasilitas terdata</span>
+                    <span className="kpi-ch4-prep-badge">
+                      {kel !== "Semua" ? kel : (data?.meta?.wilayah ? data.meta.wilayah.replace("Kecamatan ", "") : "Coblong")}
+                    </span>
                   </div>
-                  <div className="kpi-s">dari survei KKN terkini</div>
-                </div>
-              </div>
-              <div className="card kpi">
-                <span className="kpi-ico k-amber"><Icon name="pie" size={20} /></span>
-                <div>
-                  <div className="kpi-l">Kepatuhan pemilahan</div>
-                  <div className="kpi-v">
-                    {data?.kpi.kepatuhanPemilahan != null
-                      ? `${data.kpi.kepatuhanPemilahan}%`
-                      : <span style={{ fontSize: 12, color: "#9ca3af" }}>Belum ada data survei</span>}
+                  <div className="kpi-qc-val">{data?.kpi?.fasilitasTerdata ?? 0}</div>
+                  <div className="kpi-qc-subtext">
+                    {kel !== "Semua"
+                      ? `Terdata di Kel. ${kel}`
+                      : (data?.kpi?.fasilitasSubtext ? `Tersebar di ${data.kpi.fasilitasSubtext}` : "Tersebar di 6 kelurahan")}
                   </div>
-                  <div className="kpi-s">rata-rata lintas kelurahan</div>
                 </div>
               </div>
-              <div className="card kpi">
-                <span className="kpi-ico k-teal"><Icon name="signal" size={20} /></span>
-                <div>
-                  <div className="kpi-l">Telemetri IoT CH₄</div>
-                  <div className="kpi-v">
-                    {onlineCount > 0 ? (
-                      <>{onlineCount} <small>titik online</small></>
-                    ) : (
-                      <span style={{ fontSize: 14, fontWeight: 800, color: "#10b981" }}>Tahap Integrasi</span>
+
+              {/* Card 2: Volume sampah bulanan */}
+              <div className="kpi-card-qc">
+                <div className="kpi-circle-icon mint">
+                  <Icon name="bars" size={22} stroke={2.5} />
+                </div>
+                <div className="kpi-qc-content">
+                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", width: "100%" }}>
+                    <span className="kpi-qc-label">Volume sampah bulanan</span>
+                    {data?.kpi?.volumeGrowthPercent != null && (
+                      <div className="kpi-qc-growth-pill">
+                        <span className="kpi-qc-growth-arrow">↑ {data.kpi.volumeGrowthPercent.toLocaleString("id-ID")}%</span>
+                        <span className="kpi-qc-growth-sub">vs Agu</span>
+                      </div>
                     )}
                   </div>
-                  <div className="kpi-s">
-                    {onlineCount > 0 ? "dari jaringan sensor aktif" : "infrastruktur sedang disiapkan"}
+                  <div className="kpi-qc-val">
+                    {data?.kpi?.volumeTotal != null && data.kpi.volumeTotal > 0 ? (
+                      <>{fmtN(data.kpi.volumeTotal)} <span className="kpi-qc-unit">{data.kpi.volumeUnit || "m³/bln"}</span></>
+                    ) : (
+                      <span style={{ fontSize: 16, color: "#9ca3af" }}>Belum ada data</span>
+                    )}
+                  </div>
+                  <div className="kpi-qc-subtext">
+                    {data?.kpi?.volumeTotal != null && data.kpi.volumeTotal > 0
+                      ? (kel !== "Semua" ? `Estimasi Kel. ${kel}` : "Total estimasi Coblong")
+                      : "Belum ada data survei"}
                   </div>
                 </div>
-                <span className={`kpi-dot ${onlineCount > 0 ? "" : "off"}`} aria-hidden="true" />
+              </div>
+
+              {/* Card 3: Kepatuhan pemilahan */}
+              <div className="kpi-card-qc">
+                <div className="kpi-circle-icon amber">
+                  <Icon name="pie" size={22} />
+                </div>
+                <div className="kpi-qc-content">
+                  <span className="kpi-qc-label">Kepatuhan pemilahan</span>
+                  <div className="kpi-qc-val-row">
+                    <span className="kpi-qc-val">
+                      {data?.kpi?.kepatuhanPemilahan != null ? `${data.kpi.kepatuhanPemilahan}%` : "—"}
+                    </span>
+                    <span className="kpi-qc-target-pill">Target: 25%</span>
+                  </div>
+                  <div className="kpi-qc-subtext">
+                    {data?.kpi?.kepatuhanPemilahan != null
+                      ? (kel !== "Semua" ? `Kelurahan ${kel}` : "Rata-rata 6 kelurahan")
+                      : "Belum ada data survei"}
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 4: Telemetri IoT CH₄ */}
+              <div className="kpi-card-qc">
+                <div className="kpi-circle-icon slate">
+                  <Icon name="broadcast" size={22} />
+                </div>
+                <div className="kpi-qc-content">
+                  <div className="kpi-ch4-head">
+                    <span className="kpi-qc-label">Telemetri IoT CH₄</span>
+                    <span className="kpi-ch4-prep-badge">
+                      {data?.pemantauanCh4?.sensorOnline ?? `${onlineCount}/${totalSensorCount}`} online
+                    </span>
+                  </div>
+                  <div className="kpi-ch4-status-val">
+                    {data?.pemantauanCh4?.status ?? data?.kpi?.sensorCh4Text ?? (onlineCount > 0 ? `${onlineCount} Sensor Online` : "Tahap Integrasi")}
+                  </div>
+                  <div className="kpi-ch4-progress-row">
+                    <div className="kpi-ch4-progress-track">
+                      <div
+                        className="kpi-ch4-progress-fill"
+                        style={{ width: `${data?.pemantauanCh4?.progressPercent ?? data?.kpi?.sensorCh4ProgressPercent ?? 0}%` }}
+                      />
+                    </div>
+                    <span className="kpi-ch4-progress-label">
+                      Infrastruktur {data?.pemantauanCh4?.progressPercent ?? data?.kpi?.sensorCh4ProgressPercent ?? 0}%
+                    </span>
+                  </div>
+                </div>
               </div>
             </>
           )}
@@ -919,7 +1116,7 @@ export default function GisEksekutifPage() {
                   if (kelName) changeKel(kel === kelName ? "Semua" : kelName);
                 }}
               />
-              <Methane sensors={sensors as any} />
+              <Methane sensors={sensors as any} metaCh4={data?.pemantauanCh4} />
             </>
           )}
         </section>

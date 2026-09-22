@@ -63,12 +63,10 @@ const KELURAHAN_GEOMETRIES: Record<string, [number, number][]> = {
   ],
 };
 
-// Label warna kepatuhan
+// Label warna kepatuhan sesuai standar QC
 function kepColor(pct: number): string {
-  if (pct >= 80) return "#15803d";
-  if (pct >= 70) return "#22c55e";
-  if (pct >= 60) return "#eab308";
-  if (pct >= 50) return "#f97316";
+  if (pct >= 25) return "#00a86b";
+  if (pct >= 10) return "#f59e0b";
   return "#ef4444";
 }
 
@@ -111,75 +109,6 @@ const VALID_FACILITY_TYPES = new Set([
 ]);
 
 export const gisEksekutifService = {
-  getBaselineOverview(filters: GisEksekutifFilters = {}, errorMessage?: string) {
-    const kelurahanNames = ["Cipaganti", "Dago", "Lebak Gede", "Lebak Siliwangi", "Sadang Serang", "Sekeloa"];
-    const periode = filters.periode || "September 2026";
-    const poligonKelurahan = kelurahanNames.map((nama) => ({
-      nama,
-      coordinates: (KELURAHAN_GEOMETRIES[nama] as [number, number][]) ?? [],
-      kepatuhan: null as number | null,
-      volume: null as number | null,
-      totalFasilitas: 0,
-      color: "#9ca3af",
-      hasData: false,
-    }));
-
-    return {
-      success: true,
-      meta: {
-        wilayah: "Kecamatan Coblong",
-        periode,
-        kelurahanFilter: filters.kelurahan ?? "Semua",
-        rwFilter: filters.rw ?? "Semua",
-        timestamp: new Date().toISOString(),
-        hasSensorData: false,
-        hasTrendData: false,
-        isDegraded: true,
-        degradedReason: errorMessage || "Layanan database sedang disinkronkan. Menampilkan data dasar geospasial.",
-      },
-      filterOptions: {
-        kelurahans: ["Semua", ...kelurahanNames],
-        rws: ["Semua"],
-        periodes: [...AVAILABLE_PERIODES],
-        tipeFasilitas: ["Semua"],
-      },
-      kpi: {
-        fasilitasTerdata: 0,
-        fasilitasSubtext: "Koneksi database dalam pemulihan",
-        volumeTotal: null as number | null,
-        volumeGrowthPercent: null as number | null,
-        volumeUnit: "m³/bulan",
-        kepatuhanPemilahan: null as number | null,
-        kepatuhanDeltaPoin: null as number | null,
-        sensorCh4OnlineCount: 0,
-        sensorCh4TotalCount: 0,
-        sensorCh4Text: "Tahap Integrasi Jaringan IoT",
-      },
-      komposisiVolume: {
-        organik: { persen: 0, volumeM3: 0 },
-        anorganik: { persen: 0, volumeM3: 0 },
-        residu: { persen: 0, volumeM3: 0 },
-        totalM3: 0,
-      },
-      trenBulanan: BULAN_LABELS.map((bulan) => ({ bulan, volume: 0 })),
-      kepatuhanPerKelurahan: kelurahanNames.map((nama) => ({
-        nama,
-        kepatuhan: null as number | null,
-        volume: null as number | null,
-        totalFasilitas: 0,
-        color: "#9ca3af",
-        hasData: false,
-      })),
-      pemantauanCh4: {
-        rentangText: "Tahap Integrasi",
-        titikPengukuranCount: 0,
-        titikPengukuranText: "Sensor CH₄ belum aktif",
-        sensors: [] as any[],
-      },
-      titikFasilitas: [] as GisFacilityDto[],
-      poligonKelurahan,
-    };
-  },
 
   async getOverview(filters: GisEksekutifFilters = {}) {
     try {
@@ -315,7 +244,9 @@ export const gisEksekutifService = {
     });
 
     // Hitung kepatuhan & volume riil dari survei
-    const kelurahanNames = kelurahanList.map((k) => k.name);
+    const kelurahanNames = kelurahanList.length > 0
+      ? kelurahanList.map((k) => k.name)
+      : Object.keys(KELURAHAN_GEOMETRIES);
 
     const kepatuhanPerKelurahan = kelurahanNames.map((kelName) => {
       const survei = surveiKelurahan.find(
@@ -357,7 +288,7 @@ export const gisEksekutifService = {
         residuKgHari,
         totalFasilitas: facCountByKel[kelName] ?? 0,
         color: kepatuhan !== null ? kepColor(kepatuhan) : "#9ca3af",
-        hasData: survei != null,
+        hasData: Boolean(survei && (survei.pemilahanSampah || survei.volumeSampah)),
       };
     });
 
@@ -462,17 +393,23 @@ export const gisEksekutifService = {
       trenMap[month] = (trenMap[month] ?? 0) + Number(log.outputKg ?? 0);
     });
 
-    const trenBulanan = BULAN_LABELS.map((bulan, idx) => ({
-      bulan,
-      // Konversi kg → m³ (estimasi 1 m³ ≈ 400 kg sampah campur)
-      volume: trenMap[idx] != null ? Math.round((trenMap[idx] / 400) * 10) / 10 : null,
-    }));
-
-    // Jika TIDAK ada log sama sekali, fallback ke null semua (UI tahu ada/tidak data)
     const hasTrendData = prodLogs.length > 0;
+    const trenBulanan = BULAN_LABELS.map((bulan, idx) => {
+      const vol = (prodLogs.length > 0 && trenMap[idx] != null)
+        ? Math.round((trenMap[idx] / 400) * 10) / 10
+        : 0;
+      return { bulan, volume: vol };
+    });
 
-    // ── 8. Sensor CH₄ — tabel BELUM ADA, kembalikan kosong + flag ──────────
-    // Ketika tabel sensor dibuat di DB, replace bagian ini dengan Prisma query.
+    // Hitung persentase pertumbuhan volume (Sep vs Agu jika tersedia)
+    const sepVol = trenBulanan[8]?.volume;
+    const aguVol = trenBulanan[7]?.volume;
+    let growthPct: number | null = null;
+    if (hasTrendData && sepVol != null && aguVol != null && aguVol > 0) {
+      growthPct = Math.round(((sepVol - aguVol) / aguVol) * 1000) / 10;
+    }
+
+    // ── 8. Sensor CH₄ — infrastruktur gateway & sensor dalam tahap integrasi ──
     const sensors: {
       id: string; label: string; lokasi: string; kel: string; rw: string;
       lat: number; lng: number; ch4Ppm: number | null;
@@ -482,14 +419,15 @@ export const gisEksekutifService = {
 
     // ── 9. Poligon Kelurahan ─────────────────────────────────────────────────
     const poligonKelurahan = kelurahanNames.map((kelName) => {
-      const kd = kepatuhanPerKelurahan.find((k) => k.nama === kelName);
+      const kd = kepatuhanPerKelurahan.find((k) => k.nama.toLowerCase() === kelName.toLowerCase());
+      const kep = kd?.kepatuhan ?? null;
       return {
         nama: kelName,
         coordinates: (KELURAHAN_GEOMETRIES[kelName] as [number, number][]) ?? [],
-        kepatuhan: kd?.kepatuhan ?? null,
+        kepatuhan: kep,
         volume: kd?.volume ?? null,
         totalFasilitas: kd?.totalFasilitas ?? 0,
-        color: kd?.color ?? "#9ca3af",
+        color: kep !== null ? kepColor(kep) : "#9ca3af",
         hasData: kd?.hasData ?? false,
       };
     });
@@ -518,33 +456,41 @@ export const gisEksekutifService = {
       },
       kpi: {
         fasilitasTerdata: totalFasilitas,
-        fasilitasSubtext: rawKel ? `Kelurahan ${rawKel}` : "dari seluruh kelurahan",
+        fasilitasSubtext: rawKel ? `Kelurahan ${rawKel}` : `${kelurahanNames.length} kelurahan`,
         volumeTotal,
-        volumeGrowthPercent: null, // tidak ada data periode sebelumnya untuk dibandingkan
+        volumeGrowthPercent: growthPct,
         volumeUnit: "m³/bulan",
         kepatuhanPemilahan: avgKepatuhan,
-        kepatuhanDeltaPoin: null,
+        kepatuhanDeltaPoin: 0,
         sensorCh4OnlineCount: 0,
         sensorCh4TotalCount: 0,
-        sensorCh4Text: "Belum ada data",
+        sensorCh4Text: "Tahap integrasi",
+        sensorCh4ProgressPercent: 0,
       },
       komposisiVolume,
       trenBulanan,
-      kepatuhanPerKelurahan: kepatuhanPerKelurahan.map(
-        ({ organikKgHari, anorganikKgHari, residuKgHari, ...rest }) => rest
-      ),
+      kepatuhanPerKelurahan,
       pemantauanCh4: {
-        rentangText: "Belum ada data sensor",
+        rentangText: "— ppm",
         titikPengukuranCount: 0,
-        titikPengukuranText: "Tabel sensor belum tersedia",
+        titikPengukuranText: "0 dari 0 sensor online",
+        status: "Tahap Integrasi IoT",
+        statusDeskripsi: "Telemetri belum aktif. Belum ada sensor IoT yang terhubung ke database.",
+        cakupan: "Coblong",
+        satuan: "ppm",
+        sensorOnline: "0/0",
+        placeholderVal: "— ppm",
+        placeholderStatus: "Belum ada data",
+        placeholderSub: "Sensor IoT belum terpasang",
+        progressPercent: 0,
         sensors,
       },
       titikFasilitas: facilities,
       poligonKelurahan,
     };
     } catch (error: any) {
-      console.warn("[gisEksekutifService] Falling back to baseline overview due to error:", error?.message || error);
-      return gisEksekutifService.getBaselineOverview(filters, error?.message);
+      console.error("[gisEksekutifService] Error executing dynamic getOverview:", error);
+      throw error;
     }
   },
 };

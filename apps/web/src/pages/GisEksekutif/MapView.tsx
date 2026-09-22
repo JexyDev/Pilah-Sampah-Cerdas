@@ -88,7 +88,15 @@ function getThematicStyle(
 
   const { s } = row;
   if (layer === "kep") {
-    const kep = s.kep ?? 0;
+    const hasData = (s as any).hasData !== false && s.kep != null;
+    if (!hasData) {
+      return {
+        fillColor: "#9ca3af",
+        badgeText: "Belum ada survei",
+        tooltipText: "Belum ada data survei pemilahan",
+      };
+    }
+    const kep = s.kep;
     const color = getComplianceColor(kep);
     return {
       fillColor: color,
@@ -106,6 +114,14 @@ function getThematicStyle(
   if (layer === "org") labelName = "Sampah Organik";
   else if (layer === "ano") labelName = "Sampah Anorganik";
   else if (layer === "res") labelName = "Sampah Residu";
+
+  if (val === 0 || (s as any).hasData === false) {
+    return {
+      fillColor: "#9ca3af",
+      badgeText: "0 m³ (Belum ada data)",
+      tooltipText: `0 m³ • ${labelName} (Belum ada data)`,
+    };
+  }
 
   const rampKey = (layer in RAMP ? layer : "total") as "org" | "ano" | "res" | "total";
   const ramp = RAMP[rampKey];
