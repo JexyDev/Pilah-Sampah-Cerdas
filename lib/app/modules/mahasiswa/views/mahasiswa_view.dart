@@ -1373,18 +1373,14 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
 
     final totalWarga = myWargaList.length;
 
-    // 3. Hitung Tempat Sampah Aktif dari Riwayat Poin
+    // 3. Hitung Tempat Sampah Aktif dari Daftar Warga Dampingan
     final asyncHistory = ref.watch(pointHistoryProvider);
-    int wargaAktif = 0;
-
-    if (asyncHistory.hasValue && asyncHistory.value != null) {
-      for (final ph in asyncHistory.value!) {
-        final lowerDesc = ph.description.toLowerCase();
-        if (lowerDesc.contains('aktivasi')) {
-          wargaAktif++;
-        }
-      }
-    }
+    int wargaAktif = myWargaList.where((w) {
+      final isMyId = w.mahasiswaId.isNotEmpty && w.mahasiswaId == user?.id;
+      final isMyName = w.pendampingName.trim().isNotEmpty &&
+          w.pendampingName.trim().toLowerCase() == (user?.name ?? '').trim().toLowerCase();
+      return isMyId || isMyName;
+    }).length;
 
     // 4. Hitung Data Pemanfaatan & Hasil Sampah
     final pemanfaatanAsync = ref.watch(riwayatPemanfaatanProvider);
