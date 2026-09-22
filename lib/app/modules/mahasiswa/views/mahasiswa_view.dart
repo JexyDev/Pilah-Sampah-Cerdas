@@ -617,22 +617,24 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
     }
 
     final summary = state.timesheetSummary!;
-    final students = summary['students'] as List?;
-    if (students == null || students.isEmpty) {
+    final students = summary['students'] is List ? (summary['students'] as List) : [];
+    if (students.isEmpty) {
       return _buildLocationStatus(locationState, kknLocationState);
     }
 
-    final student = students.first as Map<String, dynamic>;
+    final student = students.first is Map ? (students.first as Map) : {};
     final totalFormatted =
         student['totalFormatted']?.toString() ?? '0 Jam 0 Menit';
     final targetTotalHours =
-        (student['targetTotalHours'] as num?)?.toInt() ?? 100;
+        int.tryParse(student['targetTotalHours']?.toString() ?? '') ?? 100;
     final progressPercentage =
-        (student['progressPercentage'] as num?)?.toDouble() ?? 0.0;
+        double.tryParse(student['progressPercentage']?.toString() ?? '') ?? 0.0;
 
-    final targetRules = summary['targetRules'] as Map<String, dynamic>?;
-    final targetTotalHari = targetRules?['targetTotalHari'] as int? ?? 50;
-    final targetTotalPekan = targetRules?['targetTotalPekan'] as int? ?? 10;
+    final targetRules = summary['targetRules'] is Map ? (summary['targetRules'] as Map) : {};
+    final targetTotalHari =
+        int.tryParse(targetRules['targetTotalHari']?.toString() ?? '') ?? 50;
+    final targetTotalPekan =
+        int.tryParse(targetRules['targetTotalPekan']?.toString() ?? '') ?? 10;
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -1323,16 +1325,17 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
     int hariTidakMemenuhi = 0;
 
     if (mhsState.timesheetSummary != null) {
-      final students = mhsState.timesheetSummary!['students'] as List?;
-      if (students != null && students.isNotEmpty) {
-        final student = students.first as Map<String, dynamic>;
+      final summary = mhsState.timesheetSummary!;
+      final students = summary['students'] is List ? (summary['students'] as List) : [];
+      if (students.isNotEmpty) {
+        final student = students.first is Map ? (students.first as Map) : {};
         
         // Membaca key 'totalHariTerpenuhi' (Single Source of Truth Backend)
-        hariTerpenuhi = (student['totalHariTerpenuhi'] as num?)?.toInt() ?? 0;
+        hariTerpenuhi = int.tryParse(student['totalHariTerpenuhi']?.toString() ?? '') ?? 0;
 
         // Membaca key 'totalHariTidakMemenuhi'
         hariTidakMemenuhi =
-            (student['totalHariTidakMemenuhi'] as num?)?.toInt() ?? 0;
+            int.tryParse(student['totalHariTidakMemenuhi']?.toString() ?? '') ?? 0;
       }
     }
 
