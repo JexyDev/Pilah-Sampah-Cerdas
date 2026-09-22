@@ -184,6 +184,8 @@ jobs:
           else
             echo "Warning: Could not determine default interface."
           fi
+          echo "Applying iptables TCP MSS clamping..."
+          sudo iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1160
 
       - name: Prepare VPS Credentials and Target APK
         id: vps-creds
@@ -226,8 +228,8 @@ jobs:
           export SSHPASS="$VPS_PASS"
           SSH_OPTS="-o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=3 -o LogLevel=ERROR"
           
-          # Gunakan SCP (tanpa kompresi tambahan karena APK sudah terkompresi)
-          timeout 10m sshpass -e scp $SSH_OPTS "$APK_NAME" "$VPS_USER@$VPS_HOST:/tmp/$APK_NAME"
+          # Gunakan SCP dengan limitasi bandwidth (20000 Kbit/s = ~2.5 MB/s) untuk mencegah firewall IDCloudHost melakukan drop koneksi akibat burst traffic
+          timeout 10m sshpass -e scp -l 20000 $SSH_OPTS "$APK_NAME" "$VPS_USER@$VPS_HOST:/tmp/$APK_NAME"
           
           echo "Transfer selesai. Memulai eksekusi script di VPS..."
           timeout 2m sshpass -e ssh -T $SSH_OPTS "$VPS_USER@$VPS_HOST" "VPS_PASS='$VPS_PASS' APK_NAME='$APK_NAME' DEST_DIR='$DEST_DIR' APP_VERSION='$APP_VERSION' RUN_NUMBER='$RUN_NUMBER' bash -s" << 'EOF'
