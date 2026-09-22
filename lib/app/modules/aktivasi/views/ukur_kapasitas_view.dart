@@ -29,7 +29,7 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
   bool _targetResolvedFromBins = false;
 
   // Toggle apakah ukuran Organik & Anorganik identik (Default: false)
-  bool _sameSizeForBoth = false;
+  bool _sameSizeForBoth = true;
   int _activeBinTab =
       0; // 0 = Organik, 1 = Anorganik (jika _sameSizeForBoth == false)
 

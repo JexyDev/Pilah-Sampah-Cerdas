@@ -17,6 +17,7 @@ class MahasiswaState {
     this.dashboard,
     this.wargaList = const [],
     this.timesheetSummary,
+    this.kegiatanAktifList = const [],
   });
 
   final bool isLoading;
@@ -24,6 +25,7 @@ class MahasiswaState {
   final KknDashboardData? dashboard;
   final List<WargaDampingan> wargaList;
   final Map<String, dynamic>? timesheetSummary;
+  final List<dynamic> kegiatanAktifList;
 
   /// Warga yang membutuhkan edukasi ulang (kesalahan > 30%)
   List<WargaDampingan> get wargaNeedReeducation =>
@@ -35,6 +37,7 @@ class MahasiswaState {
     KknDashboardData? dashboard,
     List<WargaDampingan>? wargaList,
     Map<String, dynamic>? timesheetSummary,
+    List<dynamic>? kegiatanAktifList,
   }) {
     return MahasiswaState(
       isLoading: isLoading ?? this.isLoading,
@@ -42,6 +45,7 @@ class MahasiswaState {
       dashboard: dashboard ?? this.dashboard,
       wargaList: wargaList ?? this.wargaList,
       timesheetSummary: timesheetSummary ?? this.timesheetSummary,
+      kegiatanAktifList: kegiatanAktifList ?? this.kegiatanAktifList,
     );
   }
 }
@@ -92,17 +96,24 @@ class MahasiswaNotifier extends StateNotifier<MahasiswaState> {
         repo.getTimesheetSummary().catchError((e) {
           return <String, dynamic>{};
         }),
+        repo.getKegiatanAktif().catchError((e) {
+          return <Map<String, dynamic>>[];
+        }),
       ]);
 
       newDashboard = results[0] as KknDashboardData?;
       newWargaList = results[1] as List<WargaDampingan>?;
       final timesheetSummary = results[2] as Map<String, dynamic>?;
+      final rawKegiatan = results[3];
+      final kegiatanAktifList =
+          rawKegiatan is List ? rawKegiatan : const <dynamic>[];
 
       state = state.copyWith(
         isLoading: false,
         dashboard: newDashboard ?? state.dashboard,
         wargaList: newWargaList ?? state.wargaList,
         timesheetSummary: timesheetSummary,
+        kegiatanAktifList: kegiatanAktifList,
         errorMessage:
             (newDashboard == null &&
                 newWargaList == null &&
