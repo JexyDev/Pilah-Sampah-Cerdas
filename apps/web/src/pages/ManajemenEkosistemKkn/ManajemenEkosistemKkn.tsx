@@ -85,7 +85,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
   const [filterStudentQuery, setFilterStudentQuery] = useState("");
   const [submittingMemberAction, setSubmittingMemberAction] = useState(false);
   const [deleteKelompokId, setDeleteKelompokId] = useState<string | null>(null);
-  const [deleteUniName, setDeleteUniName] = useState<string | null>(null);
+
   const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchAvailableStudents = async () => {
@@ -202,11 +202,11 @@ export const ManajemenEkosistemKkn: React.FC = () => {
   const [dplForm, setDplForm] = useState({ name: "", email: "", phone: "", password: "", nip: "" });
   const [submittingDpl, setSubmittingDpl] = useState(false);
 
-  // Universitas State (Hanya UNIKOM)
-  const [uniList, setUniList] = useState<string[]>([
-    "Universitas Komputer Indonesia (UNIKOM)"
-  ]);
+  // Universitas State
+  const [uniList, setUniList] = useState<any[]>([]);
+  const [loadingUni, setLoadingUni] = useState(false);
   const [newUniName, setNewUniName] = useState("");
+  const [deleteUniId, setDeleteUniId] = useState<string | null>(null);
 
   // Fetch groups
   const fetchKelompok = async () => {
@@ -254,12 +254,29 @@ export const ManajemenEkosistemKkn: React.FC = () => {
     }
   };
 
+  const fetchUniversitas = async () => {
+    try {
+      setLoadingUni(true);
+      const res = await api.get("/universitas");
+      if (res.data?.success) {
+        setUniList(res.data.data || []);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Gagal memuat daftar Universitas");
+    } finally {
+      setLoadingUni(false);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === "kelompok") {
       fetchKelompok();
       fetchDpls();
     } else if (activeTab === "dpl") {
       fetchDpls();
+    } else if (activeTab === "universitas") {
+      fetchUniversitas();
     }
   }, [activeTab]);
 
@@ -544,24 +561,34 @@ export const ManajemenEkosistemKkn: React.FC = () => {
   };
 
   // Uni Submit Handler
-  const handleAddUni = (e: React.FormEvent) => {
+  const handleAddUni = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newUniName.trim()) return;
-    if (uniList.includes(newUniName.trim())) return toast.error("Universitas sudah terdaftar");
-    setUniList([...uniList, newUniName.trim()]);
-    setNewUniName("");
-    toast.success("Universitas berhasil ditambahkan!");
+    
+    try {
+      await api.post("/universitas", { nama: newUniName.trim() });
+      setNewUniName("");
+      toast.success("Universitas berhasil ditambahkan!");
+      fetchUniversitas();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Gagal menambahkan universitas");
+    }
   };
 
-  const handleRemoveUni = (name: string) => {
-    setDeleteUniName(name);
+  const handleRemoveUni = (id: string) => {
+    setDeleteUniId(id);
   };
 
-  const handleConfirmRemoveUni = () => {
-    if (!deleteUniName) return;
-    setUniList(uniList.filter((u) => u !== deleteUniName));
-    toast.success("Universitas berhasil dihapus.");
-    setDeleteUniName(null);
+  const handleConfirmRemoveUni = async () => {
+    if (!deleteUniId) return;
+    try {
+      await api.delete(`/universitas/${deleteUniId}`);
+      toast.success("Universitas berhasil dihapus.");
+      setDeleteUniId(null);
+      fetchUniversitas();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Gagal menghapus universitas");
+    }
   };
 
   // Generate page numbers array for pagination
@@ -679,8 +706,8 @@ export const ManajemenEkosistemKkn: React.FC = () => {
             </div>
             <div className="mt-4">
               <h3 className="text-3xl font-black text-slate-900 dark:text-slate-100">{uniList.length}</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 truncate" title={uniList[0] || "UNIKOM"}>
-                {uniList[0] || "UNIKOM"}
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 truncate" title={uniList[0]?.nama || "UNIKOM"}>
+                {uniList[0]?.nama || "UNIKOM"}
               </p>
             </div>
           </div>

@@ -856,14 +856,16 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       } as any);
 
       const updates: any[] = [];
-      vi.mocked(prisma.activityAttendance.update).mockImplementation(async ({ data }: any) => {
-        updates.push(data);
-        return {
-          ...mockAtt,
-          ...data,
-          status: "BERLANGSUNG",
-        } as any;
-      });
+      vi.mocked(prisma.activityAttendance.update as any).mockImplementation(
+        async ({ data }: any) => {
+          updates.push(data);
+          return {
+            ...mockAtt,
+            ...data,
+            status: "BERLANGSUNG",
+          } as any;
+        }
+      );
 
       const result = await service.lanjutKegiatan(studentId, scheduleId, {
         latitude: -6.8915,
@@ -1443,6 +1445,21 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
         jedaLogs: [{ waktuJeda: "2026-09-01T08:30:00Z", waktuResume: "2026-09-01T09:00:00Z" }],
       };
       expect(calculateTotalJedaMinutes(att)).toBe(0);
+    });
+
+    it("should correctly calculate pause minutes when waktuJeda and waktuResume are in separate log items", () => {
+      const att = {
+        attendedAt: new Date("2026-08-29T02:34:00Z"),
+        checkOutAt: new Date("2026-08-29T06:48:00Z"),
+        status: "HADIR_TIDAK_MEMENUHI",
+        jedaLogs: [
+          { waktuJeda: "2026-08-29T03:00:00Z", durasiSebelumJedaMenit: 26 },
+          { waktuResume: "2026-08-29T03:30:00Z" }, // 30 mins pause
+          { waktuJeda: "2026-08-29T04:00:00Z", durasiSebelumJedaMenit: 56 },
+          { waktuResume: "2026-08-29T04:15:00Z" }, // 15 mins pause
+        ],
+      };
+      expect(calculateTotalJedaMinutes(att)).toBe(45);
     });
   });
 
@@ -2114,8 +2131,18 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
 
       // Mock 8 hours (480 mins) of in-zone pings
       vi.mocked(prisma.studentLocation.findMany).mockResolvedValue([
-        { studentId, latitude: -6.89, longitude: 107.61, recordedAt: new Date("2026-09-03T01:00:00.000Z") },
-        { studentId, latitude: -6.89, longitude: 107.61, recordedAt: new Date("2026-09-03T09:00:00.000Z") },
+        {
+          studentId,
+          latitude: -6.89,
+          longitude: 107.61,
+          recordedAt: new Date("2026-09-03T01:00:00.000Z"),
+        },
+        {
+          studentId,
+          latitude: -6.89,
+          longitude: 107.61,
+          recordedAt: new Date("2026-09-03T09:00:00.000Z"),
+        },
       ] as any);
 
       (prisma.activityAttendance.update as any).mockImplementation(async ({ data }: any) => {

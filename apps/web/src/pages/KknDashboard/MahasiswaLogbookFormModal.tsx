@@ -11,14 +11,10 @@ import { createPortal } from "react-dom";
 import {
   X,
   Camera,
-  Calendar,
-  Clock,
-  MapPin,
   FileText,
   Send,
   Loader2,
   CheckCircle2,
-  AlertCircle,
   Image as ImageIcon,
 } from "lucide-react";
 import { logbookApiService } from "../../services/logbookService";

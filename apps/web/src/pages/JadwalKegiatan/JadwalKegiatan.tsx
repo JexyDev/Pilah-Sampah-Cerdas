@@ -642,7 +642,10 @@ const JadwalKegiatan: React.FC = () => {
         longitude: calcLng,
         radius: formData.radius !== "" ? parseInt(String(formData.radius), 10) : 200,
         polygon: !isCircle && formData.polygon.length >= 3 ? formData.polygon : null,
-        effectiveMonth: formData.effectiveMonth || null, // QC-36: TODO — Backend migration needed: tambahkan field effective_month String? @map("effective_month") ke model Schedule di schema.prisma
+        effectiveMonth:
+          !isCircle && formData.polygon.length >= 3 && formData.effectiveMonth
+            ? String(formData.effectiveMonth).trim()
+            : null,
       };
 
       if (editId) {
@@ -1935,6 +1938,40 @@ const JadwalKegiatan: React.FC = () => {
                               <MapPin size={12} className="text-slate-400" />
                               {schedule.location || "Wilayah Dampingan"}
                             </p>
+
+                            {schedule.polygon && Array.isArray(schedule.polygon) && schedule.polygon.length >= 3 && (
+                              <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[10px]">
+                                <span className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                  Area Polygon ({schedule.polygon.length} titik)
+                                </span>
+                                {schedule.effectiveMonth ? (
+                                  (() => {
+                                    const now = new Date();
+                                    const currentYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+                                    const isFuture = schedule.effectiveMonth > currentYM;
+                                    return (
+                                      <span
+                                        className={`px-2 py-0.5 rounded-md font-extrabold text-[9px] ${
+                                          isFuture
+                                            ? "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800"
+                                            : "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800"
+                                        }`}
+                                        title={
+                                          isFuture
+                                            ? `Mulai berlaku pada bulan ${schedule.effectiveMonth} (saat ini menggunakan geofence radius/posko)`
+                                            : `Batas polygon aktif sejak bulan ${schedule.effectiveMonth}`
+                                        }
+                                      >
+                                        {isFuture ? `Mulai ${schedule.effectiveMonth}` : `Aktif (${schedule.effectiveMonth})`}
+                                      </span>
+                                    );
+                                  })()
+                                ) : (
+                                  <span className="text-slate-400 text-[9.5px] font-semibold">Aktif</span>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
                       );
@@ -1996,12 +2033,11 @@ const JadwalKegiatan: React.FC = () => {
                         type="button"
                         onClick={() => {
                           setGeofenceMode("CIRCLE");
-                          if (formData.polygon.length > 1) {
-                            setFormData((prev: any) => ({
-                              ...prev,
-                              polygon: prev.polygon.slice(0, 1),
-                            }));
-                          }
+                          setFormData((prev: any) => ({
+                            ...prev,
+                            polygon: prev.polygon.length > 1 ? prev.polygon.slice(0, 1) : prev.polygon,
+                            effectiveMonth: "",
+                          }));
                         }}
                         className={`flex-1 py-2 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                           geofenceMode === "CIRCLE"
@@ -2426,7 +2462,6 @@ const JadwalKegiatan: React.FC = () => {
                         />
                         <p className="text-[10px] text-slate-400 font-medium">
                           Format: YYYY-MM. Tentukan bulan mulai berlakunya batas area kerja polygon ini. Minimal bulan saat ini.
-                          {/* TODO: Backend migration needed — tambahkan field <code>effective_month String? @map("effective_month")</code> ke model Schedule di prisma/schema.prisma lalu jalankan prisma migrate */}
                         </p>
                       </div>
                     )}

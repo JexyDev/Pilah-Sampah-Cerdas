@@ -108,3 +108,4 @@ linux/
 macos/
 windows/
 *.xlsx
+.vscode/
