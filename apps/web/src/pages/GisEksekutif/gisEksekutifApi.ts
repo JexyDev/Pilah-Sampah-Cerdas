@@ -67,10 +67,12 @@ export interface GisOverviewApiResponse {
     sensorCh4Text: string;
   };
   komposisiVolume: {
-    organik: { persen: number; volumeM3: number };
-    anorganik: { persen: number; volumeM3: number };
-    residu: { persen: number; volumeM3: number };
+    organik: { persen: number; volumeM3: number; kgHari?: number };
+    anorganik: { persen: number; volumeM3: number; kgHari?: number };
+    residu: { persen: number; volumeM3: number; kgHari?: number };
     totalM3: number;
+    totalKgHari?: number;
+    hasData?: boolean;
   };
   trenBulanan: Array<{ bulan: string; volume: number }>;
   kepatuhanPerKelurahan: Array<{

@@ -143,9 +143,9 @@ function Pill({ label, icon, children, disabled }: {
     <label className={`pill ${disabled ? "is-disabled" : ""}`}>
       <span className="pill-l">{label}</span>
       <span className="pill-s">
-        {icon ? <Icon name={icon} size={16} className="pill-i" /> : null}
+        {icon ? <Icon name={icon} size={14} className="pill-i" /> : null}
         {children}
-        <Icon name="chevron" size={15} className="pill-c" />
+        <Icon name="chevron" size={13} className="pill-c" />
       </span>
     </label>
   );
@@ -166,16 +166,16 @@ function ExportMenu({ onExport }: { onExport: (what: "kel" | "fac") => void }) {
   return (
     <div className="export" ref={box}>
       <button type="button" className="btn-primary" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
-        <Icon name="download" size={19} /> Ekspor <Icon name="chevron" size={15} />
+        <Icon name="download" size={15} /> Ekspor <Icon name="chevron" size={13} />
       </button>
       {open && (
         <div className="menu" role="menu">
           <button type="button" role="menuitem" onClick={() => { setOpen(false); onExport("kel"); }}>
-            <Icon name="table" size={17} />
+            <Icon name="table" size={15} />
             <span>Ringkasan kelurahan<small>CSV • periode terpilih</small></span>
           </button>
           <button type="button" role="menuitem" onClick={() => { setOpen(false); onExport("fac"); }}>
-            <Icon name="file" size={17} />
+            <Icon name="file" size={15} />
             <span>Daftar fasilitas<small>CSV • sesuai filter aktif</small></span>
           </button>
         </div>
@@ -188,11 +188,11 @@ function ExportMenu({ onExport }: { onExport: (what: "kel" | "fac") => void }) {
 function KpiSkeleton() {
   return (
     <div className="card kpi" style={{ animation: "pulse 1.5s ease-in-out infinite" }}>
-      <span className="kpi-ico k-teal" style={{ opacity: 0.3 }}><Icon name="building" size={30} /></span>
+      <span className="kpi-ico k-teal" style={{ opacity: 0.3 }}><Icon name="building" size={20} /></span>
       <div>
-        <div className="kpi-l" style={{ background: "#e5e7eb", borderRadius: 4, height: 14, width: 120, marginBottom: 8 }} />
-        <div className="kpi-v" style={{ background: "#e5e7eb", borderRadius: 4, height: 28, width: 80, marginBottom: 6 }} />
-        <div className="kpi-s" style={{ background: "#e5e7eb", borderRadius: 4, height: 12, width: 160 }} />
+        <div className="kpi-l" style={{ background: "#e5e7eb", borderRadius: 4, height: 12, width: 90, marginBottom: 6 }} />
+        <div className="kpi-v" style={{ background: "#e5e7eb", borderRadius: 4, height: 22, width: 70, marginBottom: 4 }} />
+        <div className="kpi-s" style={{ background: "#e5e7eb", borderRadius: 4, height: 11, width: 130 }} />
       </div>
     </div>
   );
@@ -549,18 +549,18 @@ export default function GisEksekutifPage() {
 
             {/* Radar / Server Icon */}
             <div style={{
-              width: 64,
-              height: 64,
-              borderRadius: "50%",
+              width: 48,
+              height: 48,
+              borderRadius: 12,
               background: "#ecfdf5",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               color: "#055c46",
-              boxShadow: "0 0 0 8px rgba(5, 92, 70, 0.06)",
+              boxShadow: "0 0 0 6px rgba(5, 92, 70, 0.06)",
               marginTop: 4,
             }}>
-              <Icon name="signal" size={32} />
+              <Icon name="signal" size={22} />
             </div>
 
             {/* Title & Description */}
@@ -827,7 +827,7 @@ export default function GisEksekutifPage() {
           ) : (
             <>
               <div className="card kpi">
-                <span className="kpi-ico k-teal"><Icon name="building" size={30} /></span>
+                <span className="kpi-ico k-teal"><Icon name="building" size={20} /></span>
                 <div>
                   <div className="kpi-l">Fasilitas terdata</div>
                   <div className="kpi-v">{data?.kpi.fasilitasTerdata ?? 0}</div>
@@ -835,38 +835,38 @@ export default function GisEksekutifPage() {
                 </div>
               </div>
               <div className="card kpi">
-                <span className="kpi-ico k-teal"><Icon name="bars" size={30} stroke={3} /></span>
+                <span className="kpi-ico k-teal"><Icon name="bars" size={20} stroke={2.5} /></span>
                 <div>
                   <div className="kpi-l">Volume</div>
                   <div className="kpi-v">
                     {data?.kpi.volumeTotal != null
                       ? <>{fmtN(data.kpi.volumeTotal)} <small>m³/bulan</small></>
-                      : <span style={{ fontSize: 14, color: "#9ca3af" }}>Belum ada data survei</span>}
+                      : <span style={{ fontSize: 12, color: "#9ca3af" }}>Belum ada data survei</span>}
                   </div>
                   <div className="kpi-s">dari survei KKN terkini</div>
                 </div>
               </div>
               <div className="card kpi">
-                <span className="kpi-ico k-amber"><Icon name="pie" size={30} /></span>
+                <span className="kpi-ico k-amber"><Icon name="pie" size={20} /></span>
                 <div>
                   <div className="kpi-l">Kepatuhan pemilahan</div>
                   <div className="kpi-v">
                     {data?.kpi.kepatuhanPemilahan != null
                       ? `${data.kpi.kepatuhanPemilahan}%`
-                      : <span style={{ fontSize: 14, color: "#9ca3af" }}>Belum ada data survei</span>}
+                      : <span style={{ fontSize: 12, color: "#9ca3af" }}>Belum ada data survei</span>}
                   </div>
                   <div className="kpi-s">rata-rata lintas kelurahan</div>
                 </div>
               </div>
               <div className="card kpi">
-                <span className="kpi-ico k-teal"><Icon name="signal" size={30} /></span>
+                <span className="kpi-ico k-teal"><Icon name="signal" size={20} /></span>
                 <div>
                   <div className="kpi-l">Telemetri IoT CH₄</div>
                   <div className="kpi-v">
                     {onlineCount > 0 ? (
                       <>{onlineCount} <small>titik online</small></>
                     ) : (
-                      <span style={{ fontSize: 18, fontWeight: 800, color: "#10b981" }}>Tahap Integrasi</span>
+                      <span style={{ fontSize: 14, fontWeight: 800, color: "#10b981" }}>Tahap Integrasi</span>
                     )}
                   </div>
                   <div className="kpi-s">
@@ -891,6 +891,15 @@ export default function GisEksekutifPage() {
                 org={data?.komposisiVolume.organik.volumeM3 ?? 0}
                 ano={data?.komposisiVolume.anorganik.volumeM3 ?? 0}
                 res={data?.komposisiVolume.residu.volumeM3 ?? 0}
+                orgPersen={data?.komposisiVolume.organik.persen}
+                anoPersen={data?.komposisiVolume.anorganik.persen}
+                resPersen={data?.komposisiVolume.residu.persen}
+                orgKg={data?.komposisiVolume.organik.kgHari}
+                anoKg={data?.komposisiVolume.anorganik.kgHari}
+                resKg={data?.komposisiVolume.residu.kgHari}
+                totalM3={data?.komposisiVolume.totalM3}
+                hasData={data?.komposisiVolume.hasData}
+                wilayahLabel={kel !== "Semua" ? kel : "Kec. Coblong"}
               />
               <Trend
                 series={
@@ -918,7 +927,7 @@ export default function GisEksekutifPage() {
         {/* Bilah alat peta */}
         <section className="card toolbar" aria-label="Kontrol peta">
           <div className="search">
-            <Icon name="search" size={19} className="search-i" />
+            <Icon name="search" size={15} className="search-i" />
             <input
               type="search" value={input}
               placeholder="Cari alamat, kelurahan, RW, atau fasilitas…"
@@ -938,7 +947,7 @@ export default function GisEksekutifPage() {
                   return <option key={t} value={t}>{label}</option>;
                 })}
               </select>
-              <Icon name="chevron" size={15} className="pill-c" />
+              <Icon name="chevron" size={13} className="pill-c" />
             </span>
           </label>
           <div className="tabs" role="group" aria-label="Lapisan overlay">
@@ -985,7 +994,7 @@ export default function GisEksekutifPage() {
                           onClick={() => setFacType(isOn ? "Semua" : t.id)}
                           title="Klik untuk menyaring jenis ini">
                           <span className="fac-ico" style={{ background: t.warna }}>
-                            <Icon name={TIPE_ICON[t.id]} size={17} stroke={2.2} />
+                            <Icon name={TIPE_ICON[t.id]} size={14} stroke={2} />
                           </span>
                           <span className="fac-n">{t.nama}</span>
                           <span className="fac-d">—</span>

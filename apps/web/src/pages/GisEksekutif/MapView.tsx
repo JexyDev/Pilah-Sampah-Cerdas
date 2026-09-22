@@ -662,7 +662,7 @@ export default function MapView({
             aria-label="Perbesar"
             onClick={handleZoomIn}
           >
-            <Icon name="plus" size={17} />
+            <Icon name="plus" size={15} />
           </button>
           <button
             type="button"
@@ -670,7 +670,7 @@ export default function MapView({
             aria-label="Perkecil"
             onClick={handleZoomOut}
           >
-            <Icon name="minus" size={17} />
+            <Icon name="minus" size={15} />
           </button>
           <button
             type="button"
@@ -678,7 +678,7 @@ export default function MapView({
             aria-label="Pusatkan peta"
             onClick={handleResetView}
           >
-            <Icon name="home" size={17} />
+            <Icon name="home" size={15} />
           </button>
         </div>
         <button
@@ -688,7 +688,7 @@ export default function MapView({
           aria-label="Layar penuh"
           onClick={toggleFullScreen}
         >
-          <Icon name={full ? "shrink" : "expand"} size={17} />
+          <Icon name={full ? "shrink" : "expand"} size={15} />
         </button>
       </div>
 
