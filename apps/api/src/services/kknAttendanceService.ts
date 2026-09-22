@@ -20,12 +20,33 @@ export { UNIKOM_CENTRAL_ZONE };
 import { evaluateSortingStatus } from "../utils/sortingEvaluation.js";
 
 /**
+ * Helper: Memeriksa apakah batas area kerja polygon sudah aktif/berlaku berdasarkan bulan WIB saat ini.
+ * Jika effectiveMonth kosong/null, dianggap langsung berlaku (true).
+ * Jika effectiveMonth diset (format YYYY-MM), berlaku jika bulan WIB saat ini >= effectiveMonth.
+ */
+export function isPolygonEffective(effectiveMonth?: string | null, refDate?: Date): boolean {
+  if (!effectiveMonth || typeof effectiveMonth !== "string" || !effectiveMonth.trim()) {
+    return true;
+  }
+  const date = refDate || new Date();
+  const wibDate = new Date(date.getTime() + 7 * 60 * 60 * 1000);
+  const currentYM = wibDate.toISOString().slice(0, 7);
+  return currentYM >= effectiveMonth.trim();
+}
+
+/**
  * Helper: Build unified geofence object with fallback to system defaults.
  * FEATURE 2: Ensures consistent geofence configuration across all location tracking methods.
  */
 async function buildGeofence(
   schedule: any
 ): Promise<{ latitude: number; longitude: number; radius: number; polygon?: any }> {
+  // QC-36: Advance Scheduling — batas polygon hanya dipakai jika bulan efektif sudah tiba
+  const activePolygon =
+    schedule.polygon && isPolygonEffective(schedule.effectiveMonth)
+      ? schedule.polygon
+      : undefined;
+
   // 1. Prioritas Utama: Titik Posko KKN resmi milik kelompok (Primary Posko / Multi-Posko)
   if (schedule.kelompokId) {
     try {
@@ -39,7 +60,7 @@ async function buildGeofence(
           latitude: Number(posko.latitude),
           longitude: Number(posko.longitude),
           radius: Math.max(50, pRadius),
-          polygon: schedule.polygon,
+          polygon: activePolygon,
         };
       }
 
@@ -54,7 +75,7 @@ async function buildGeofence(
           latitude: Number(multiPosko.latitude),
           longitude: Number(multiPosko.longitude),
           radius: Math.max(50, mRadius),
-          polygon: schedule.polygon,
+          polygon: activePolygon,
         };
       }
 
@@ -68,7 +89,7 @@ async function buildGeofence(
           latitude: Number(facPosko.latitude),
           longitude: Number(facPosko.longitude),
           radius: Math.max(50, Number(schedule.radius) || 500),
-          polygon: schedule.polygon,
+          polygon: activePolygon,
         };
       }
     } catch {
@@ -82,7 +103,7 @@ async function buildGeofence(
       latitude: Number(schedule.latitude),
       longitude: Number(schedule.longitude),
       radius: Math.max(50, Number(schedule.radius) || 500),
-      polygon: schedule.polygon,
+      polygon: activePolygon,
     };
   }
 
@@ -103,7 +124,7 @@ async function buildGeofence(
     latitude: defaultLat,
     longitude: defaultLng,
     radius: Math.max(50, Number(schedule.radius) || defaultRadius),
-    polygon: schedule.polygon,
+    polygon: activePolygon,
   };
 }
 
@@ -286,20 +307,34 @@ export function calculateDistance(lat1: number, lon1: number, lat2: number, lon2
 /** Hitung total durasi pause (ms) dari jedaLogs manual */
 function calcTotalPauseMs(jedaLogs: any[], sessionEndMs: number): number {
   let totalMs = 0;
-  for (const log of jedaLogs) {
+  for (let i = 0; i < jedaLogs.length; i++) {
+    const log = jedaLogs[i];
     if (!log || typeof log !== "object" || log.mode === "LOSS_MODE_INFO_ONLY") continue;
     if (!log.waktuJeda) continue;
     const pStart = new Date(log.waktuJeda).getTime();
     if (isNaN(pStart)) continue;
-    if (log.waktuResume) {
-      const pEnd = new Date(log.waktuResume).getTime();
+
+    let resumeTime = log.waktuResume || null;
+    if (!resumeTime) {
+      // Cari waktuResume pada entri log setelahnya jika tercatat secara terpisah
+      for (let j = i + 1; j < jedaLogs.length; j++) {
+        if (jedaLogs[j]?.waktuResume) {
+          resumeTime = jedaLogs[j].waktuResume;
+          break;
+        }
+        if (jedaLogs[j]?.waktuJeda) {
+          // Ditemukan event jeda lain berikutnya
+          break;
+        }
+      }
+    }
+
+    if (resumeTime) {
+      const pEnd = new Date(resumeTime).getTime();
       if (!isNaN(pEnd) && pEnd > pStart) totalMs += pEnd - pStart;
     } else {
-      // Jeda masih aktif (belum di-resume): gunakan snapshot durasiSebelumJedaMenit
-      // agar durasi jeda tidak terus bertambah (fix: freeze jeda saat paused)
-      if (log.durasiSebelumJedaMenit != null) {
-        totalMs += (log.durasiSebelumJedaMenit || 0) * 60000;
-      } else if (sessionEndMs > pStart) {
+      // Jeda masih aktif (belum di-resume): hitung durasi jeda riil hingga sessionEndMs
+      if (sessionEndMs > pStart) {
         totalMs += sessionEndMs - pStart;
       }
     }
@@ -631,13 +666,8 @@ export async function getScheduleTargetDurationMinutes(schedule: {
     ruleConfigs.attendanceMinDurationMinutes +
     Math.round(ruleConfigs.attendanceMinDurationSeconds / 60);
 
-  if (ruleTargetMinutes > 0) {
-    return ruleTargetMinutes;
-  }
-  if (scheduleDurationMinutes > 0) {
-    return scheduleDurationMinutes;
-  }
-  return 240;
+  let finalTarget = ruleTargetMinutes > 0 ? ruleTargetMinutes : (scheduleDurationMinutes > 0 ? scheduleDurationMinutes : 240);
+  return finalTarget < 240 ? 240 : finalTarget;
 }
 
 /**
@@ -961,8 +991,9 @@ export class KknAttendanceService {
         },
       });
 
-      const groupStudentIds =
-        studentProfile?.kelompok?.students?.map((s: any) => s.userId).filter(Boolean) || [userId];
+      const groupStudentIds = studentProfile?.kelompok?.students
+        ?.map((s: any) => s.userId)
+        .filter(Boolean) || [userId];
 
       whereCondition = {
         OR: [
@@ -1035,11 +1066,7 @@ export class KknAttendanceService {
       const household = u.user.households?.[0];
 
       const resolvedRwId: number | null =
-        u.user.rwId ||
-        household?.rwId ||
-        primaryBin?.rwId ||
-        studentProfile?.assignedRwId ||
-        null;
+        u.user.rwId || household?.rwId || primaryBin?.rwId || studentProfile?.assignedRwId || null;
 
       const rwName =
         u.user.rw?.name ||
@@ -1607,7 +1634,10 @@ export class KknAttendanceService {
       durationMinutes: targetDurationMinutes,
       actualInZoneMinutes: currentActualMins,
       actualInZoneSeconds: currentActualSecs,
-      polygon: schedule.polygon,
+      polygon:
+        schedule.polygon && isPolygonEffective(schedule.effectiveMonth) ? schedule.polygon : null,
+      effectiveMonth: schedule.effectiveMonth || null,
+      isPolygonEffective: isPolygonEffective(schedule.effectiveMonth),
       poskoList: groupPoskos,
       totalPosko: groupPoskos.length,
       validZones,
@@ -2066,7 +2096,30 @@ export class KknAttendanceService {
       console.log(
         `[checkOut] Idempotency: Mahasiswa ${studentId} sudah tercatat checkout pada ${attendance.checkOutAt.toISOString()}`
       );
-      return attendance;
+      const isMemenuhi = attendance.status === "HADIR_MEMENUHI";
+      const statusDisplay = isMemenuhi ? "Hadir & Memenuhi" : "Hadir & Tidak Memenuhi";
+      const durationMinutes = attendance.actualInZoneMinutes || 0;
+      return {
+        success: true,
+        message: `Check-out presensi sudah pernah dicatat sebelumnya.`,
+        data: {
+          attendanceId: attendance.id,
+          scheduleId: attendance.scheduleId,
+          attendedAt: attendance.attendedAt,
+          checkOutAt: attendance.checkOutAt,
+          durationMinutes,
+          durationFormatted: `${Math.floor(durationMinutes / 60)} Jam ${durationMinutes % 60} Menit`,
+          status: attendance.status,
+          statusDisplay,
+          statusKehadiran: attendance.status,
+          isMemenuhiDurasi: isMemenuhi,
+          durasiWajibMenit: 0,
+          actualInZoneMinutes: durationMinutes,
+          actualInZoneSeconds: durationMinutes * 60,
+          gpsActive: false,
+          statusGps: "INACTIVE",
+        },
+      };
     }
 
     // Validasi Geofence: Mahasiswa WAJIB berada di dalam zona untuk checkout
@@ -2604,10 +2657,7 @@ export class KknAttendanceService {
       if (!mplKelurahan && dbUser?.name) {
         mplKelurahan = dbUser.name.replace(/^Mpl\s+(Kelurahan\s+)?/i, "").trim();
       }
-      const mplOr: any[] = [
-        { mplId: mplUserId },
-        { mpl: { id: mplUserId } },
-      ];
+      const mplOr: any[] = [{ mplId: mplUserId }, { mpl: { id: mplUserId } }];
       if (mplKelurahan) {
         mplOr.push({
           name: { contains: mplKelurahan.trim(), mode: "insensitive" },
@@ -2729,10 +2779,7 @@ export class KknAttendanceService {
       if (!mplKelurahan && dbUser?.name) {
         mplKelurahan = dbUser.name.replace(/^Mpl\s+(Kelurahan\s+)?/i, "").trim();
       }
-      const mplOr: any[] = [
-        { mplId: mplUserId },
-        { mpl: { id: mplUserId } },
-      ];
+      const mplOr: any[] = [{ mplId: mplUserId }, { mpl: { id: mplUserId } }];
       if (mplKelurahan) {
         mplOr.push({
           name: { contains: mplKelurahan.trim(), mode: "insensitive" },
@@ -3330,7 +3377,8 @@ export class KknAttendanceService {
     endDate?: string;
     includeTestAccounts?: boolean;
   }) {
-    const { kelompokId, dplUserId, mplUserId, studentId, startDate, endDate, includeTestAccounts } = params;
+    const { kelompokId, dplUserId, mplUserId, studentId, startDate, endDate, includeTestAccounts } =
+      params;
 
     let attendanceDateFilter: any = undefined;
     if (startDate || endDate) {
@@ -3369,10 +3417,7 @@ export class KknAttendanceService {
       if (!mplKelurahan && dbUser?.name) {
         mplKelurahan = dbUser.name.replace(/^Mpl\s+(Kelurahan\s+)?/i, "").trim();
       }
-      const mplOr: any[] = [
-        { mplId: mplUserId },
-        { mpl: { id: mplUserId } },
-      ];
+      const mplOr: any[] = [{ mplId: mplUserId }, { mpl: { id: mplUserId } }];
       if (mplKelurahan) {
         mplOr.push({
           name: { contains: mplKelurahan.trim(), mode: "insensitive" },
@@ -3437,6 +3482,9 @@ export class KknAttendanceService {
     const summary = students.map((s) => {
       let totalMinutes = 0;
       let fulfilledTargetDays = 0;
+      let totalHariTerpenuhi = 0;
+      let totalHariTidakMemenuhi = 0;
+      let totalAlpa = 0;
 
       const sessionDetails = s.user.attendances.map((att) => {
         let durationMins = 0;
@@ -3465,14 +3513,26 @@ export class KknAttendanceService {
           att.status === "DI_ZONA" ||
           att.status === "DALAM_RADIUS"
         ) {
-          // Prioritaskan storedMins dari DB (mencerminkan jeda/keluar zona).
-          // Fallback ke timeDiffMins hanya jika DB masih 0 (sesi baru mulai).
           durationMins = storedMins > 0 ? storedMins : timeDiffMins;
         } else {
           durationMins = storedMins > 0 ? storedMins : timeDiffMins;
         }
         totalMinutes += durationMins;
         if (durationMins >= TARGET_HARIAN_MINUTES) fulfilledTargetDays++;
+
+        if (att.status === "ALPA") {
+          totalAlpa++;
+        } else if (att.status === "HADIR_MEMENUHI") {
+          totalHariTerpenuhi++;
+        } else if (att.status === "HADIR_TIDAK_MEMENUHI" || att.status === "SELESAI_TELAT") {
+          totalHariTidakMemenuhi++;
+        } else if (att.status === "HADIR" || att.status === "SELESAI") {
+          if (durationMins >= TARGET_HARIAN_MINUTES) {
+            totalHariTerpenuhi++;
+          } else {
+            totalHariTidakMemenuhi++;
+          }
+        }
 
         return {
           id: att.id,
@@ -3513,6 +3573,9 @@ export class KknAttendanceService {
         progressPercentage,
         totalDaysAttended: sessionDetails.length,
         fulfilledTargetDays,
+        totalHariTerpenuhi,
+        totalHariTidakMemenuhi,
+        totalAlpa,
         isTargetFulfilled: totalMinutes >= TARGET_TOTAL_MINUTES,
         sessions: sessionDetails,
       };
@@ -5299,10 +5362,7 @@ export class KknAttendanceService {
         }
       }
 
-      const mplOr: any[] = [
-        { mplId: params.mplUserId },
-        { mpl: { id: params.mplUserId } },
-      ];
+      const mplOr: any[] = [{ mplId: params.mplUserId }, { mpl: { id: params.mplUserId } }];
       if (mplKelurahan) {
         mplOr.push({
           kelurahan: { equals: mplKelurahan.trim(), mode: "insensitive" },
