@@ -361,7 +361,7 @@ export default function GisEksekutifPage() {
       "November 2026",
       "Desember 2026",
     ],
-    tipeFasilitas: ["Semua"],
+    tipeFasilitas: ["Semua", ...TIPE.map((t) => t.id)],
   });
 
   // ─── Fetch API ──────────────────────────────────────────────────────────────
@@ -379,9 +379,16 @@ export default function GisEksekutifPage() {
       setData(res);
       setError(null);
       setUseOfflineMode(false);
-      // Update filter options dari API (dinamis dari DB)
+      // Update filter options dari API (dinamis dari DB), pertahankan daftar lengkap opsi tipe fasilitas
       if (res.filterOptions) {
-        setFilterOptions(res.filterOptions);
+        setFilterOptions((prev) => {
+          const apiTypes = res.filterOptions.tipeFasilitas || [];
+          const merged = Array.from(new Set([...prev.tipeFasilitas, ...apiTypes]));
+          return {
+            ...res.filterOptions,
+            tipeFasilitas: merged.length > apiTypes.length ? merged : apiTypes,
+          };
+        });
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Gagal memuat data GIS";
@@ -1186,22 +1193,19 @@ export default function GisEksekutifPage() {
             <aside className="card side" aria-label="Legenda">
               <div className="side-sec">
                 <h4 className="side-h">Fasilitas dan fungsi</h4>
-                <ul className="fac-list">
+                <ul className="fac-list" role="list">
                   {TIPE.map((t) => {
                     const isOn = normalizeFacilityType(facType) === normalizeFacilityType(t.id);
                     return (
                       <li key={t.id}>
-                        <button type="button"
-                          className={isOn ? "on" : ""} aria-pressed={isOn}
-                          onClick={() => setFacType(isOn ? "Semua" : t.id)}
-                          title="Klik untuk menyaring jenis ini">
+                        <div className={`fac-item ${isOn ? "is-selected" : ""}`}>
                           <span className="fac-ico" style={{ background: t.warna }}>
                             <Icon name={TIPE_ICON[t.id]} size={14} stroke={2} />
                           </span>
                           <span className="fac-n">{t.nama}</span>
                           <span className="fac-d">—</span>
                           <span className="fac-f">{t.fungsi}</span>
-                        </button>
+                        </div>
                       </li>
                     );
                   })}

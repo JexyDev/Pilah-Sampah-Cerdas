@@ -68,9 +68,6 @@ export function Donut({
   orgPersen,
   anoPersen,
   resPersen,
-  orgKg,
-  anoKg,
-  resKg,
   totalM3,
   hasData,
   wilayahLabel,
@@ -89,13 +86,6 @@ export function Donut({
   const vOrg = hasRealData ? (org !== undefined && org > 0 ? org : Math.round(((displayTotal || 0) * pOrg) / 100 * 10) / 10) : 0;
   const vAno = hasRealData ? (ano !== undefined && ano > 0 ? ano : Math.round(((displayTotal || 0) * pAno) / 100 * 10) / 10) : 0;
   const vRes = hasRealData ? (res !== undefined && res > 0 ? res : Math.round(((displayTotal || 0) * pRes) / 100 * 10) / 10) : 0;
-
-  // Nilai timbulan harian kg/hari dihitung dinamis dari data survei
-  const kgOrg = hasRealData ? (orgKg != null && orgKg > 0 ? orgKg : Math.round((vOrg * 1000) / 30)) : 0;
-  const kgAno = hasRealData ? (anoKg != null && anoKg > 0 ? anoKg : Math.round((vAno * 1000) / 30)) : 0;
-  const kgRes = hasRealData ? (resKg != null && resKg > 0 ? resKg : Math.round((vRes * 1000) / 30)) : 0;
-  const totalKgHari = kgOrg + kgAno + kgRes;
-  const totalTonHari = totalKgHari > 0 ? Math.round((totalKgHari / 1000) * 10) / 10 : 0;
 
   const parts = [
     { k: "Organik", key: "org", v: vOrg, pct: pOrg, c: "#00a86b" },
@@ -213,78 +203,6 @@ export function Donut({
               </li>
             ))}
           </ul>
-        </div>
-
-        {/* Bar Proporsi Stacked 100% Horizontal */}
-        <div className="donut-stacked-wrap">
-          <div className="donut-stacked-head">
-            <span className="donut-stacked-title">Proporsi Akumulasi</span>
-            <span className="donut-stacked-total">
-              {hasRealData ? `~${fmtN(totalTonHari)} ton/hari` : "— ton/hari"}
-            </span>
-          </div>
-          <div className="donut-stacked-bar">
-            {hasRealData ? (
-              <>
-                <div
-                  className="donut-stacked-segment"
-                  style={{ width: `${pOrg}%`, backgroundColor: "#00a86b" }}
-                  title={`Organik: ${pOrg}%`}
-                />
-                <div
-                  className="donut-stacked-segment"
-                  style={{ width: `${pAno}%`, backgroundColor: "#f59e0b" }}
-                  title={`Anorganik: ${pAno}%`}
-                />
-                <div
-                  className="donut-stacked-segment"
-                  style={{ width: `${pRes}%`, backgroundColor: "#5b6b82" }}
-                  title={`Residu: ${pRes}%`}
-                />
-              </>
-            ) : (
-              <div
-                className="donut-stacked-segment is-empty"
-                style={{ width: "100%" }}
-              />
-            )}
-          </div>
-        </div>
-
-        {/* 3-Kolom Timbulan Harian (kg/hari) */}
-        <div className="donut-daily-grid">
-          <div className="donut-daily-col">
-            <div className="donut-daily-head">
-              <span className="donut-daily-dot" style={{ backgroundColor: "#00a86b" }} />
-              <span className="donut-daily-label">Organik</span>
-            </div>
-            <div className="donut-daily-val">
-              {hasRealData ? fmtInt(kgOrg) : "—"}
-            </div>
-            <div className="donut-daily-unit">kg/hari</div>
-          </div>
-
-          <div className="donut-daily-col">
-            <div className="donut-daily-head">
-              <span className="donut-daily-dot" style={{ backgroundColor: "#f59e0b" }} />
-              <span className="donut-daily-label">Anorganik</span>
-            </div>
-            <div className="donut-daily-val">
-              {hasRealData ? fmtInt(kgAno) : "—"}
-            </div>
-            <div className="donut-daily-unit">kg/hari</div>
-          </div>
-
-          <div className="donut-daily-col">
-            <div className="donut-daily-head">
-              <span className="donut-daily-dot" style={{ backgroundColor: "#5b6b82" }} />
-              <span className="donut-daily-label">Residu</span>
-            </div>
-            <div className="donut-daily-val">
-              {hasRealData ? fmtInt(kgRes) : "—"}
-            </div>
-            <div className="donut-daily-unit">kg/hari</div>
-          </div>
         </div>
       </div>
     </section>
