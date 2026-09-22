@@ -519,15 +519,15 @@ export function Trend({ series, pi }: TrendProps) {
         <div className="trend-table-title">Nilai volume (m³/bulan)</div>
         <div className="trend-table-grid">
           <div className="trend-table-row trend-table-head">
-            {MONTH_LABELS_9.map((m) => (
-              <div key={m} className="trend-table-cell">
+            {MONTH_LABELS_9.map((m, i) => (
+              <div key={m} className={`trend-table-cell ${i === activeIdx ? "is-active" : ""}`}>
                 {m}
               </div>
             ))}
           </div>
           <div className="trend-table-row trend-table-body">
             {activeSeries.map((v, i) => (
-              <div key={i} className="trend-table-cell">
+              <div key={i} className={`trend-table-cell ${i === activeIdx ? "is-active" : ""}`}>
                 {fmtN(v)}
               </div>
             ))}
