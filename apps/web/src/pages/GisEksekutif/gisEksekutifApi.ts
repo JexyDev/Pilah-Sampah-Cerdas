@@ -59,6 +59,8 @@ export interface GisOverviewApiResponse {
     fasilitasSubtext: string;
     volumeTotal: number | null;
     volumeGrowthPercent: number | null;
+    previousMonthName?: string | null;
+    activeMonthIndex?: number;
     volumeUnit: string;
     kepatuhanPemilahan: number | null;
     kepatuhanDeltaPoin: number;

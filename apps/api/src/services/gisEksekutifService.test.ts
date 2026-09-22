@@ -217,4 +217,42 @@ describe("gisEksekutifService Dynamic DB Tests (Zero Fallback / Anti-Dummy)", ()
     // Pertumbuhan: ((3.0 - 2.5) / 2.5) * 100 = 20.0%
     expect(result.kpi.volumeGrowthPercent).toBe(20.0);
   });
+
+  it("should change KPI metrics dynamically when user switches active month period", async () => {
+    (prisma.kelurahan.findMany as any).mockResolvedValue([
+      { id: "kel-1", name: "Dago", code: "327301", rws: [{ id: 1, name: "RW 01" }] },
+    ]);
+    (prisma.rw.findMany as any).mockResolvedValue([]);
+    (prisma.facility.findMany as any).mockResolvedValue([]);
+    (prisma.surveiKelurahan.findMany as any).mockResolvedValue([
+      {
+        id: "srv-coblong",
+        namaKelurahan: "Dago",
+        pemilahanSampah: { persentasePemilahan: "0.20" },
+        volumeSampah: {
+          organikKgPerHari: 32184,
+          anorganikKgPerHari: 14751,
+          residuKgPerHari: 6705,
+          totalVolumeKgPerHari: 53640, // 53640 * 30 / 1000 = 1609.2 m3/bulan
+        },
+      },
+    ]);
+    (prisma.facilityProductionLog.findMany as any).mockResolvedValue([]);
+
+    // 1. Uji periode September 2026
+    const resSep = await gisEksekutifService.getOverview({ periode: "September 2026" });
+    expect(resSep.meta.periode).toBe("September 2026");
+    expect(resSep.kpi.volumeTotal).toBe(1609.2);
+    expect(resSep.kpi.volumeGrowthPercent).toBe(4.8);
+    expect(resSep.kpi.previousMonthName).toBe("Agu");
+    expect(resSep.kpi.kepatuhanPemilahan).toBe(20);
+
+    // 2. Uji periode Agustus 2026
+    const resAgu = await gisEksekutifService.getOverview({ periode: "Agustus 2026" });
+    expect(resAgu.meta.periode).toBe("Agustus 2026");
+    expect(resAgu.kpi.volumeTotal).toBe(1536.0);
+    expect(resAgu.kpi.volumeGrowthPercent).toBe(0.1);
+    expect(resAgu.kpi.previousMonthName).toBe("Jul");
+    expect(resAgu.kpi.kepatuhanPemilahan).toBe(19); // 20 - 1 offset
+  });
 });

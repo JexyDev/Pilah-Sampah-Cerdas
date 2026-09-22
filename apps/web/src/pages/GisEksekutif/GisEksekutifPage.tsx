@@ -1003,8 +1003,13 @@ export default function GisEksekutifPage() {
                     <span className="kpi-qc-label">Volume sampah bulanan</span>
                     {data?.kpi?.volumeGrowthPercent != null && (
                       <div className="kpi-qc-growth-pill">
-                        <span className="kpi-qc-growth-arrow">↑ {data.kpi.volumeGrowthPercent.toLocaleString("id-ID")}%</span>
-                        <span className="kpi-qc-growth-sub">vs Agu</span>
+                        <span className="kpi-qc-growth-arrow">
+                          {data.kpi.volumeGrowthPercent >= 0 ? "↑" : "↓"}{" "}
+                          {Math.abs(data.kpi.volumeGrowthPercent).toLocaleString("id-ID")}%
+                        </span>
+                        <span className="kpi-qc-growth-sub">
+                          vs {data.kpi.previousMonthName || "Agu"}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -1017,7 +1022,7 @@ export default function GisEksekutifPage() {
                   </div>
                   <div className="kpi-qc-subtext">
                     {data?.kpi?.volumeTotal != null && data.kpi.volumeTotal > 0
-                      ? (kel !== "Semua" ? `Estimasi Kel. ${kel}` : "Total estimasi Coblong")
+                      ? `Periode ${periode}${kel !== "Semua" ? ` • Kel. ${kel}` : ""}`
                       : "Belum ada data survei"}
                   </div>
                 </div>
