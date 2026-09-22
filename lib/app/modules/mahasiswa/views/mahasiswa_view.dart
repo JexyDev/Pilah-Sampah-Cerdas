@@ -1327,12 +1327,8 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
       if (students != null && students.isNotEmpty) {
         final student = students.first as Map<String, dynamic>;
         
-        // Membaca key 'totalHariTerpenuhi' (Rencana perbaikan backend TO-BE)
-        // Fallback ke 'fulfilledTargetDays' (AS-IS Backend saat ini) karena ini sudah 
-        // mengecek durasi >= 4 jam secara akurat, DILARANG fallback ke totalDaysAttended.
-        hariTerpenuhi = (student['totalHariTerpenuhi'] as num?)?.toInt() ??
-            (student['fulfilledTargetDays'] as num?)?.toInt() ??
-            0;
+        // Membaca key 'totalHariTerpenuhi' (Single Source of Truth Backend)
+        hariTerpenuhi = (student['totalHariTerpenuhi'] as num?)?.toInt() ?? 0;
 
         // Membaca key 'totalHariTidakMemenuhi'
         hariTidakMemenuhi =
