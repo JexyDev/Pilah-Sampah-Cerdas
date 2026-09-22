@@ -14,6 +14,8 @@ function toWibDateString(d: Date): string {
   return wibDate.toISOString().slice(0, 10);
 }
 
+const YEAR_MONTH_REGEX = /^\d{4}-(0[1-9]|1[0-2])$/;
+
 export const scheduleController = {
   getAllSchedules: async (req: Request, res: Response) => {
     try {
@@ -45,6 +47,7 @@ export const scheduleController = {
         polygon,
         kelompokId,
         isActive,
+        effectiveMonth,
       } = req.body;
       if (!title || !date || !category) {
         res.status(400).json({
@@ -63,6 +66,18 @@ export const scheduleController = {
           message: "Format tanggal tidak valid (harus ISO 8601 atau YYYY-MM-DD)",
         });
         return;
+      }
+
+      if (effectiveMonth !== undefined && effectiveMonth !== null && effectiveMonth !== "") {
+        const trimmedYM = String(effectiveMonth).trim();
+        if (!YEAR_MONTH_REGEX.test(trimmedYM)) {
+          res.status(400).json({
+            success: false,
+            error: "VALIDATION_ERROR",
+            message: "Format bulan berlaku tidak valid (harus YYYY-MM, contoh: 2026-10)",
+          });
+          return;
+        }
       }
 
       // Validasi waktu mulai tidak boleh di masa lalu (kurang dari hari ini dalam WIB)
@@ -131,6 +146,11 @@ export const scheduleController = {
         }
       }
 
+      // Jika polygon tidak memenuhi syarat (bukan array / titik < 3), effectiveMonth di-reset ke null
+      const isPolygonValid = polygon && Array.isArray(polygon) && polygon.length >= 3;
+      const sanitizedEffectiveMonth =
+        isPolygonValid && effectiveMonth ? String(effectiveMonth).trim() : null;
+
       const schedule = await scheduleService.createSchedule({
         title,
         date: parsedDate,
@@ -143,6 +163,7 @@ export const scheduleController = {
         polygon: polygon ? polygon : undefined,
         kelompokId: resolvedKelompokId,
         isActive: isActive !== undefined ? Boolean(isActive) : true,
+        effectiveMonth: sanitizedEffectiveMonth,
       });
       res.status(201).json({
         success: true,
@@ -236,6 +257,7 @@ export const scheduleController = {
         polygon,
         kelompokId,
         isActive,
+        effectiveMonth,
       } = req.body;
 
       const userRole = String(req.user?.role || "").toUpperCase();
@@ -325,6 +347,29 @@ export const scheduleController = {
         }
       }
 
+      let sanitizedUpdateEffectiveMonth: string | null | undefined = undefined;
+      if (effectiveMonth !== undefined) {
+        if (effectiveMonth === null || effectiveMonth === "") {
+          sanitizedUpdateEffectiveMonth = null;
+        } else {
+          const trimmedYM = String(effectiveMonth).trim();
+          if (!YEAR_MONTH_REGEX.test(trimmedYM)) {
+            res.status(400).json({
+              success: false,
+              error: "VALIDATION_ERROR",
+              message: "Format bulan berlaku tidak valid (harus YYYY-MM, contoh: 2026-10)",
+            });
+            return;
+          }
+          sanitizedUpdateEffectiveMonth = trimmedYM;
+        }
+      }
+
+      // Jika update menyertakan polygon yang bukan polygon valid (misal beralih ke circle), reset effectiveMonth ke null
+      if (polygon !== undefined && (!polygon || !Array.isArray(polygon) || polygon.length < 3)) {
+        sanitizedUpdateEffectiveMonth = null;
+      }
+
       const updatedSchedule = await scheduleService.updateSchedule(id, {
         title,
         date: parsedDate,
@@ -337,6 +382,7 @@ export const scheduleController = {
         polygon: polygon !== undefined ? polygon : undefined,
         kelompokId: kelompokId !== undefined ? kelompokId : undefined,
         isActive: isActive !== undefined ? Boolean(isActive) : undefined,
+        effectiveMonth: sanitizedUpdateEffectiveMonth,
       });
 
       res.status(200).json({

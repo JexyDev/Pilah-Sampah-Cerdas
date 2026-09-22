@@ -201,6 +201,8 @@ model User {
   defaultPetugasId      String?                  @map("id_petugas_tetap")
   lifecycleState        WargaLifecycle           @default(REGISTERED)
   isTestAccount         Boolean                  @default(false) @map("is_test_account")
+  universitasId         String?                  @map("id_universitas")
+  universitas           UniversitasMitra?        @relation(fields: [universitasId], references: [id])
   bankSampahLedger      BankSampahLedger?
   aiRequestLogs         AiRequestLog[]
   picBatches            QrBatch[]                @relation("PicBatches")
@@ -1625,4 +1627,14 @@ model BeritaKonten {
   @@index([kategori])
   @@index([kelompokId])
   @@map("berita_konten")
+}
+
+model UniversitasMitra {
+  id        String   @id @default(uuid())
+  name      String   @unique @map("nama")
+  createdAt DateTime @default(now()) @map("dibuat_pada")
+  updatedAt DateTime @updatedAt @map("diperbarui_pada")
+  users     User[]
+
+  @@map("universitas_mitra")
 }

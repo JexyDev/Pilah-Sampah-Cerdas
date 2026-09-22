@@ -543,14 +543,6 @@ export const LogbookKknPage: React.FC = () => {
     return new Date(startDateFilter) > new Date(endDateFilter);
   }, [startDateFilter, endDateFilter]);
 
-  const hasExplicitFilter = useMemo(() => {
-    const hasCategory = selectedKategori !== "ALL";
-    const hasGroup = selectedGroup !== "ALL";
-    const hasStatus = selectedStatus !== "ALL";
-    const hasSearch = searchQuery.trim().length > 0;
-    const hasCompleteDate = Boolean(startDateFilter && endDateFilter && !isDateRangeInvalid);
-    return hasCompleteDate || hasCategory || hasGroup || hasStatus || hasSearch;
-  }, [selectedKategori, selectedGroup, selectedStatus, searchQuery, startDateFilter, endDateFilter, isDateRangeInvalid]);
 
   const isExportReady = useMemo(() => {
     if (!startDateFilter || !endDateFilter || isDateRangeInvalid) return false;

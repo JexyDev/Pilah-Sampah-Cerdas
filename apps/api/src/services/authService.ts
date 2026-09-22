@@ -1059,7 +1059,6 @@ export class AuthService {
     }
 
     const { universityId, ...userBaseData } = userData;
-    void universityId;
 
     return prisma.user.create({
       data: {
@@ -1071,6 +1070,7 @@ export class AuthService {
         institusi: userBaseData.institusi || null,
         programStudi: userBaseData.programStudi || null,
         jenjangPendidikan: userBaseData.jenjangPendidikan || null,
+        universitasId: universityId,
         roleId: role.id,
         status: "Aktif",
       },

@@ -24,6 +24,7 @@ export interface DplActivityLogItem {
   lokasi: string;
   tempat: string;
   ringkasanAktivitas: string;
+  uraianKegiatan?: string;
   deskripsi: string;
   hasilTindakLanjut: string;
   arahanEvaluasi: string;

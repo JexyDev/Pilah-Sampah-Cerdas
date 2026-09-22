@@ -301,11 +301,35 @@ export const gisEksekutifService = {
 
       // Persentase pemilahan — dari DB jika ada, disesuaikan offset periode historis aktif
       let kepatuhan: number | null = null;
+      let hasDataFallback = false;
+      const normK = kelName.toLowerCase().replace(/\s+/g, "");
+
       if (survei?.pemilahanSampah?.persentasePemilahan != null) {
         const raw = Number(survei.pemilahanSampah.persentasePemilahan);
         // Field disimpan sebagai desimal 0.0000–1.0000 (Decimal 5,4)
         const baseVal = raw <= 1 ? Math.round(raw * 100) : Math.round(raw);
         kepatuhan = Math.max(0, Math.min(100, baseVal + activeKepOffset));
+      } else {
+        // Fallback baseline estimasi (sinkronisasi dengan dashboardService)
+        if (normK.includes("cipaganti")) {
+          kepatuhan = Math.max(0, Math.min(100, Math.round(13.67) + activeKepOffset));
+          hasDataFallback = true;
+        } else if (normK.includes("dago")) {
+          kepatuhan = Math.max(0, Math.min(100, 10 + activeKepOffset));
+          hasDataFallback = true;
+        } else if (normK.includes("lebakgede")) {
+          kepatuhan = Math.max(0, Math.min(100, Math.round(21.6) + activeKepOffset));
+          hasDataFallback = true;
+        } else if (normK.includes("lebaksiliwangi")) {
+          kepatuhan = Math.max(0, Math.min(100, 15 + activeKepOffset));
+          hasDataFallback = true;
+        } else if (normK.includes("sadangserang")) {
+          kepatuhan = Math.max(0, Math.min(100, Math.round(24.8) + activeKepOffset));
+          hasDataFallback = true;
+        } else if (normK.includes("sekeloa")) {
+          kepatuhan = Math.max(0, Math.min(100, Math.round(17.8) + activeKepOffset));
+          hasDataFallback = true;
+        }
       }
 
       // Komposisi organik/anorganik/residu per kelurahan (dari survei) disesuaikan faktor bulan aktif
@@ -315,7 +339,18 @@ export const gisEksekutifService = {
         anorganikKgHari = Number(survei.volumeSampah.anorganikKgPerHari ?? 0);
         residuKgHari = Number(survei.volumeSampah.residuKgPerHari ?? 0);
       }
-      const sumKgHari = organikKgHari + anorganikKgHari + residuKgHari;
+      let sumKgHari = organikKgHari + anorganikKgHari + residuKgHari;
+
+      // Fallback volume untuk sinkronisasi dengan KPI utama
+      if (sumKgHari === 0 && !survei?.volumeSampah?.totalVolumeKgPerHari) {
+        if (normK.includes("dago")) sumKgHari = 500.0;
+        else if (normK.includes("lebakgede")) sumKgHari = 250.0;
+        else if (normK.includes("lebaksiliwangi")) sumKgHari = 10.0;
+        else if (normK.includes("sadangserang")) sumKgHari = 7298.5;
+        else if (normK.includes("sekeloa")) sumKgHari = 9723.4;
+        else if (normK.includes("cipaganti")) sumKgHari = 17.5;
+        if (sumKgHari > 0) hasDataFallback = true;
+      }
 
       // Volume — dari DB (dikonversi kg/hari ke m³/bln: kg/hari × 30 / 1000) disesuaikan periode aktif
       let volume: number | null = null;
@@ -335,7 +370,7 @@ export const gisEksekutifService = {
         residuKgHari: Math.round(residuKgHari * activeVolFactor * 10) / 10,
         totalFasilitas: facCountByKel[kelName] ?? 0,
         color: kepatuhan !== null ? kepColor(kepatuhan) : "#9ca3af",
-        hasData: Boolean(survei && (survei.pemilahanSampah || survei.volumeSampah)),
+        hasData: Boolean(hasDataFallback || (survei && (survei.pemilahanSampah || survei.volumeSampah))),
       };
     });
 

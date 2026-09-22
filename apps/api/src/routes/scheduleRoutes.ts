@@ -75,6 +75,9 @@ router.get("/", authMiddleware, scheduleController.getAllSchedules);
  *               polygon:
  *                 type: string
  *                 description: "String JSON koordinat polygon zona absensi"
+ *               effectiveMonth:
+ *                 type: string
+ *                 description: "Bulan mulai berlaku batas area kerja polygon (format: YYYY-MM, opsional)"
  *     responses:
  *       201:
  *         description: Jadwal berhasil dibuat
@@ -175,6 +178,9 @@ router.delete(
  *                 type: number
  *               polygon:
  *                 type: string
+ *               effectiveMonth:
+ *                 type: string
+ *                 description: "Bulan mulai berlaku batas area kerja polygon (format: YYYY-MM, opsional)"
  *     responses:
  *       200:
  *         description: Jadwal berhasil diupdate

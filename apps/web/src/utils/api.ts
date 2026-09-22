@@ -6,6 +6,7 @@
  */
 
 import axios from "axios";
+import { isCurrentUserDeveloper, shouldHideTestAccounts } from "./filterTestingUtils";
 
 export const getApiBaseUrl = (): string => {
   if (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_BASE_URL) {
@@ -43,6 +44,17 @@ api.interceptors.request.use(
       delete config.headers["Content-Type"];
       delete config.headers["content-type"];
     }
+
+    // Injeksi otomatis parameter includeTestAccounts: "true"
+    // HANYA jika peran adalah DEVELOPER DAN Developer menonaktifkan toggle "Sembunyikan Akun Pengujian" (mode debug)
+    // Non-developer (SUPER_USER, PIMPINAN, dll.) TIDAK AKAN PERNAH menyertakan akun pengujian
+    if (isCurrentUserDeveloper() && !shouldHideTestAccounts() && config.method?.toLowerCase() === "get") {
+      config.params = {
+        ...config.params,
+        includeTestAccounts: "true",
+      };
+    }
+
     return config;
   },
   (error) => Promise.reject(error)
