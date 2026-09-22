@@ -67,6 +67,8 @@ jobs:
     timeout-minutes: 25
     needs: validate
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout Mobile Code
