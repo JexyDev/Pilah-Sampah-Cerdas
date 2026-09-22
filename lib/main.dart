@@ -27,6 +27,10 @@ import 'app/modules/mahasiswa/controllers/location_ping_controller.dart';
 import 'app/modules/mahasiswa/controllers/kkn_location_controller.dart';
 import 'app/modules/mahasiswa/controllers/mahasiswa_controller.dart';
 import 'app/modules/mahasiswa/controllers/riwayat_kkn_controller.dart';
+import 'app/modules/mahasiswa/controllers/kelompok_kkn_controller.dart';
+import 'app/modules/mahasiswa/controllers/posko_kkn_controller.dart';
+import 'app/modules/mahasiswa/controllers/fasilitas_kkn_controller.dart';
+import 'app/modules/mahasiswa/controllers/kkn_map_controller.dart';
 import 'app/modules/notifikasi/controllers/warga_notifikasi_controller.dart';
 import 'app/modules/mahasiswa/controllers/mahasiswa_notifikasi_controller.dart';
 import 'app/modules/petugas_pemilahan/controllers/petugas_pemilahan_notifikasi_controller.dart';
@@ -449,6 +453,11 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
         ref.invalidate(dailyPointsProvider);
         ref.invalidate(wasteLogsProvider);
         ref.invalidate(binsProvider);
+        // Bersihkan sisa cache KKN agar akun baru tidak melihat data akun lama
+        ref.invalidate(kelompokKknProvider);
+        ref.invalidate(poskoKknProvider);
+        ref.invalidate(fasilitasKknProvider);
+        ref.invalidate(kknMapProvider);
       }
     });
 

@@ -10,6 +10,10 @@ import '../../notifikasi/controllers/notifikasi_controller.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/values/app_config.dart';
 import '../../mahasiswa/controllers/kkn_location_controller.dart';
+import '../../mahasiswa/controllers/kelompok_kkn_controller.dart';
+import '../../mahasiswa/controllers/posko_kkn_controller.dart';
+import '../../mahasiswa/controllers/fasilitas_kkn_controller.dart';
+import '../../mahasiswa/controllers/kkn_map_controller.dart';
 
 /// State autentikasi.
 class AuthState {
@@ -357,6 +361,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
       try {
         await _ref.read(kknLocationProvider.notifier).resetForNewUser();
       } catch (_) {}
+
+      // 3b. Invalidate semua provider KKN agar sesi akun baru tidak menampilkan
+      //     data stale (kelompok, posko, fasilitas, peta) dari akun sebelumnya.
+      //     Belt-and-suspenders: main.dart auth listener juga melakukan ini,
+      //     tapi tambahan di sini menjamin cover edge-case (auto-logout 401/403).
+      _ref.invalidate(kelompokKknProvider);
+      _ref.invalidate(poskoKknProvider);
+      _ref.invalidate(fasilitasKknProvider);
+      _ref.invalidate(kknMapProvider);
 
       // 4. Hentikan notifikasi & bersihkan cache notifikasi
       await NotificationEngine().cancelAll();
