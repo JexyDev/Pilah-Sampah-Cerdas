@@ -276,6 +276,26 @@
   filter: brightness(.95);
 }
 
+.gis-eksekutif-root .btn-primary:disabled,
+.gis-eksekutif-root .btn-primary.is-disabled {
+  background: #e2e8f0;
+  color: #94a3b8;
+  box-shadow: none;
+  cursor: not-allowed;
+  filter: none;
+  pointer-events: auto;
+}
+
+.gis-eksekutif-root .btn-primary:disabled:hover,
+.gis-eksekutif-root .btn-primary.is-disabled:hover {
+  filter: none;
+  background: #e2e8f0;
+}
+
+.gis-eksekutif-root .export.is-disabled {
+  cursor: not-allowed;
+}
+
 .gis-eksekutif-root .btn-sm {
   height: 36px;
   padding: 0 14px;
@@ -1759,4 +1779,804 @@
     left: 8px;
     max-width: none;
   }
+}
+
+/* ==========================================================================
+   QC STANDARDIZATION: DASHBOARD LINGKUNGAN & PERSAMPAHAN
+   ========================================================================== */
+
+/* Header controls */
+.gis-eksekutif-root .qc-filters-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.gis-eksekutif-root .qc-pill-dropdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0 10px;
+  height: 38px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #0f172a;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  position: relative;
+  cursor: pointer;
+}
+
+.gis-eksekutif-root .qc-pill-dropdown select {
+  border: none;
+  background: transparent;
+  font-weight: 600;
+  font-size: 12.5px;
+  color: #0f172a;
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 18px;
+  cursor: pointer;
+  outline: none;
+}
+
+.gis-eksekutif-root .qc-pill-dropdown .qc-chevron {
+  position: absolute;
+  right: 8px;
+  pointer-events: none;
+  color: #64748b;
+}
+
+.gis-eksekutif-root .qc-btn-refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #1e293b;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.2s ease;
+}
+
+.gis-eksekutif-root .qc-btn-refresh:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.gis-eksekutif-root .qc-btn-refresh.is-spinning svg {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.gis-eksekutif-root .qc-timestamp {
+  font-size: 11.5px;
+  color: #64748b;
+  font-weight: 500;
+  text-align: right;
+  margin-top: 4px;
+}
+
+/* 4 KPI Cards Grid */
+.gis-eksekutif-root .kpis-qc {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 1024px) {
+  .gis-eksekutif-root .kpis-qc {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .gis-eksekutif-root .kpis-qc {
+    grid-template-columns: 1fr;
+  }
+}
+
+.gis-eksekutif-root .kpi-card-qc {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 16px 18px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+  display: flex;
+  gap: 14px;
+  min-width: 0;
+  position: relative;
+}
+
+.gis-eksekutif-root .kpi-circle-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.gis-eksekutif-root .kpi-circle-icon.mint {
+  background: #e6f7f0;
+  color: #009966;
+}
+
+.gis-eksekutif-root .kpi-circle-icon.amber {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.gis-eksekutif-root .kpi-circle-icon.slate {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.gis-eksekutif-root .kpi-qc-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.gis-eksekutif-root .kpi-qc-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 2px;
+}
+
+.gis-eksekutif-root .kpi-qc-val-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.gis-eksekutif-root .kpi-qc-val {
+  font-size: 28px;
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.gis-eksekutif-root .kpi-qc-unit {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.gis-eksekutif-root .kpi-qc-growth-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 8px;
+  padding: 3px 8px;
+  line-height: 1.2;
+}
+
+.gis-eksekutif-root .kpi-qc-growth-arrow {
+  font-size: 12px;
+  font-weight: 800;
+  color: #059669;
+}
+
+.gis-eksekutif-root .kpi-qc-growth-sub {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #059669;
+}
+
+.gis-eksekutif-root .kpi-qc-subtext {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+.gis-eksekutif-root .kpi-qc-target-pill {
+  display: inline-block;
+  align-self: flex-start;
+  margin-top: 4px;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  color: #92400e;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+/* Card 4 telemetri */
+.gis-eksekutif-root .kpi-ch4-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.gis-eksekutif-root .kpi-ch4-prep-badge {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+.gis-eksekutif-root .kpi-ch4-status-val {
+  font-size: 15px;
+  font-weight: 800;
+  color: #059669;
+  margin-top: 3px;
+}
+
+.gis-eksekutif-root .kpi-ch4-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.gis-eksekutif-root .kpi-ch4-progress-track {
+  flex: 1;
+  height: 7px;
+  background: #e2e8f0;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.gis-eksekutif-root .kpi-ch4-progress-fill {
+  height: 100%;
+  background: #52637a;
+  border-radius: 9999px;
+}
+
+.gis-eksekutif-root .kpi-ch4-progress-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+/* Donut clean legend */
+.gis-eksekutif-root .donut-clean-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.gis-eksekutif-root .donut-clean-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.gis-eksekutif-root .donut-clean-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.gis-eksekutif-root .donut-clean-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.gis-eksekutif-root .donut-clean-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.gis-eksekutif-root .donut-clean-detail {
+  font-size: 11.5px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* Donut container & balanced full-height layout */
+.gis-eksekutif-root .donut-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex: 1;
+  min-height: 0;
+  gap: 10px;
+}
+
+.gis-eksekutif-root .donut-top-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.gis-eksekutif-root .donut-lg {
+  width: 112px;
+  height: 112px;
+  flex-shrink: 0;
+}
+
+/* Donut Horizontal Stacked Proportion Bar */
+.gis-eksekutif-root .donut-stacked-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.gis-eksekutif-root .donut-stacked-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.gis-eksekutif-root .donut-stacked-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.gis-eksekutif-root .donut-stacked-total {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #009966;
+}
+
+.gis-eksekutif-root .donut-stacked-bar {
+  height: 7px;
+  border-radius: 999px;
+  overflow: hidden;
+  display: flex;
+  background: #f1f5f9;
+  width: 100%;
+}
+
+.gis-eksekutif-root .donut-stacked-segment {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.gis-eksekutif-root .donut-stacked-segment.is-empty {
+  background: #e2e8f0;
+}
+
+/* Donut 3-Kolom Timbulan Harian (kg/hari) */
+.gis-eksekutif-root .donut-daily-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.gis-eksekutif-root .donut-daily-col {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 7px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  min-width: 0;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.gis-eksekutif-root .donut-daily-col:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.gis-eksekutif-root .donut-daily-head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+  margin-bottom: 2px;
+}
+
+.gis-eksekutif-root .donut-daily-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.gis-eksekutif-root .donut-daily-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #64748b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gis-eksekutif-root .donut-daily-val {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.gis-eksekutif-root .donut-daily-unit {
+  font-size: 9.5px;
+  font-weight: 500;
+  color: #94a3b8;
+  margin-top: 1px;
+}
+
+/* Card title & subtitle */
+.gis-eksekutif-root .card-title-l {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.gis-eksekutif-root .card-title-texts {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.gis-eksekutif-root .card-title-sub {
+  font-size: 11.5px;
+  color: #64748b;
+  font-weight: 500;
+  margin: 2px 0 0 0;
+}
+
+/* Trend toggle & table */
+.gis-eksekutif-root .trend-toggle-group {
+  display: inline-flex;
+  background: #f1f5f9;
+  border-radius: 8px;
+  padding: 2px;
+}
+
+.gis-eksekutif-root .trend-toggle-btn {
+  border: none;
+  background: transparent;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.gis-eksekutif-root .trend-toggle-btn.is-active {
+  background: #009966;
+  color: #ffffff;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+}
+
+.gis-eksekutif-root .trend-ax-y {
+  font-size: 10px;
+  font-weight: 500;
+  fill: #64748b;
+}
+
+.gis-eksekutif-root .trend-ax-x {
+  font-size: 10px;
+  font-weight: 500;
+  fill: #64748b;
+}
+
+.gis-eksekutif-root .trend-ax-x.is-active {
+  font-weight: 700;
+  fill: #009966;
+}
+
+.gis-eksekutif-root .trend-tooltip-text {
+  font-size: 10px;
+  font-weight: 700;
+  fill: #ffffff;
+}
+
+.gis-eksekutif-root .trend-table-wrap {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.gis-eksekutif-root .trend-table-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  margin-bottom: 5px;
+}
+
+.gis-eksekutif-root .trend-table-grid {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.gis-eksekutif-root .trend-table-row {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  text-align: center;
+}
+
+.gis-eksekutif-root .trend-table-head {
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 10px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.gis-eksekutif-root .trend-table-body {
+  background: #ffffff;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.gis-eksekutif-root .trend-table-cell {
+  padding: 4px 2px;
+  border-right: 1px solid #e2e8f0;
+}
+
+.gis-eksekutif-root .trend-table-cell:last-child {
+  border-right: none;
+}
+
+/* Compliance bars & target line */
+.gis-eksekutif-root .compliance-target-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.gis-eksekutif-root .compliance-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.gis-eksekutif-root .compliance-bars-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.gis-eksekutif-root .compliance-target-line {
+  position: absolute;
+  top: 0;
+  bottom: 16px;
+  width: 1px;
+  border-left: 1.5px dashed #94a3b8;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.gis-eksekutif-root .compliance-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.gis-eksekutif-root .compliance-row-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 2px 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.gis-eksekutif-root .compliance-name {
+  width: 95px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #1e293b;
+  flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gis-eksekutif-root .compliance-track {
+  flex: 1;
+  height: 9px;
+  background: #f1f5f9;
+  border-radius: 9999px;
+  overflow: hidden;
+  position: relative;
+}
+
+.gis-eksekutif-root .compliance-bar {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.3s ease;
+}
+
+.gis-eksekutif-root .compliance-val {
+  width: 32px;
+  text-align: right;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #0f172a;
+  flex-shrink: 0;
+}
+
+.gis-eksekutif-root .compliance-x-axis {
+  position: relative;
+  height: 16px;
+  margin-top: 4px;
+}
+
+.gis-eksekutif-root .compliance-x-label {
+  position: absolute;
+  font-size: 10px;
+  font-weight: 500;
+  color: #94a3b8;
+  transform: translateX(-50%);
+}
+
+.gis-eksekutif-root .compliance-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 8px;
+}
+
+.gis-eksekutif-root .compliance-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.gis-eksekutif-root .compliance-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Methane QC Layout */
+.gis-eksekutif-root .ch4-qc-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gis-eksekutif-root .ch4-qc-status-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.gis-eksekutif-root .ch4-qc-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #f59e0b;
+  flex-shrink: 0;
+}
+
+.gis-eksekutif-root .ch4-qc-status-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.gis-eksekutif-root .ch4-qc-desc {
+  font-size: 11px;
+  color: #64748b;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.gis-eksekutif-root .ch4-qc-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 6px 8px;
+  margin-top: 2px;
+}
+
+.gis-eksekutif-root .ch4-qc-stat-col {
+  display: flex;
+  flex-direction: column;
+  font-size: 10.5px;
+}
+
+.gis-eksekutif-root .ch4-qc-stat-label {
+  color: #64748b;
+  font-size: 10px;
+}
+
+.gis-eksekutif-root .ch4-qc-stat-val {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.gis-eksekutif-root .ch4-qc-placeholder-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-top: 4px;
+}
+
+.gis-eksekutif-root .ch4-qc-cloud-icon {
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+
+.gis-eksekutif-root .ch4-qc-placeholder-val {
+  font-size: 20px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.gis-eksekutif-root .ch4-qc-placeholder-status {
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  margin-top: 1px;
+}
+
+.gis-eksekutif-root .ch4-qc-placeholder-sub {
+  font-size: 10.5px;
+  color: #94a3b8;
+  font-weight: 500;
+  margin-top: 4px;
 }

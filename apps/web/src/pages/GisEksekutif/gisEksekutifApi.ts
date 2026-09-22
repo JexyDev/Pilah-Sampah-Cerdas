@@ -57,30 +57,32 @@ export interface GisOverviewApiResponse {
   kpi: {
     fasilitasTerdata: number;
     fasilitasSubtext: string;
-    volumeTotal: number;
-    volumeGrowthPercent: number;
+    volumeTotal: number | null;
+    volumeGrowthPercent: number | null;
     volumeUnit: string;
-    kepatuhanPemilahan: number;
+    kepatuhanPemilahan: number | null;
     kepatuhanDeltaPoin: number;
     sensorCh4OnlineCount: number;
     sensorCh4TotalCount: number;
     sensorCh4Text: string;
+    sensorCh4ProgressPercent?: number;
   };
   komposisiVolume: {
     organik: { persen: number; volumeM3: number; kgHari?: number };
     anorganik: { persen: number; volumeM3: number; kgHari?: number };
     residu: { persen: number; volumeM3: number; kgHari?: number };
-    totalM3: number;
+    totalM3: number | null;
     totalKgHari?: number;
     hasData?: boolean;
   };
-  trenBulanan: Array<{ bulan: string; volume: number }>;
+  trenBulanan: Array<{ bulan: string; volume: number | null }>;
   kepatuhanPerKelurahan: Array<{
     nama: string;
-    kepatuhan: number;
-    volume: number;
+    kepatuhan: number | null;
+    volume: number | null;
     totalFasilitas: number;
     color: string;
+    hasData?: boolean;
     organikKgHari?: number;
     anorganikKgHari?: number;
     residuKgHari?: number;
@@ -89,16 +91,26 @@ export interface GisOverviewApiResponse {
     rentangText: string;
     titikPengukuranCount: number;
     titikPengukuranText: string;
+    status?: string;
+    statusDeskripsi?: string;
+    cakupan?: string;
+    satuan?: string;
+    sensorOnline?: string;
+    placeholderVal?: string;
+    placeholderStatus?: string;
+    placeholderSub?: string;
+    progressPercent?: number;
     sensors: GisSensorDto[];
   };
   titikFasilitas: GisFacilityDto[];
   poligonKelurahan: Array<{
     nama: string;
     coordinates: [number, number][];
-    kepatuhan: number;
-    volume: number;
+    kepatuhan: number | null;
+    volume: number | null;
     totalFasilitas: number;
     color: string;
+    hasData?: boolean;
   }>;
 }
 

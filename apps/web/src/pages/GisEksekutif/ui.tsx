@@ -9,6 +9,25 @@ export const ICONS: Record<string, React.ReactNode> = {
       <path d="M9 11h.01M15 11h.01" />
     </>
   ),
+  home: (
+    <>
+      <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+      <polyline points="9 22 9 12 15 12 15 22" />
+    </>
+  ),
+  mapPin: (
+    <>
+      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+      <circle cx="12" cy="10" r="3" />
+    </>
+  ),
+  pinCircle: (
+    <>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 6a3.5 3.5 0 0 0-3.5 3.5c0 2.5 3.5 6.5 3.5 6.5s3.5-4 3.5-6.5A3.5 3.5 0 0 0 12 6Z" />
+      <circle cx="12" cy="9.5" r="1" />
+    </>
+  ),
   bars: (
     <>
       <path d="M5 21V12" />
@@ -26,6 +45,12 @@ export const ICONS: Record<string, React.ReactNode> = {
     <>
       <circle cx="12" cy="12" r="1.6" />
       <path d="M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8" />
+    </>
+  ),
+  broadcast: (
+    <>
+      <circle cx="12" cy="12" r="2" />
+      <path d="M16.2 7.8a6 6 0 0 1 0 8.4m-8.4 0a6 6 0 0 1 0-8.4m11.3-2.9a10 10 0 0 1 0 14.2m-14.2 0a10 10 0 0 1 0-14.2" />
     </>
   ),
   activity: <path d="M22 12h-4l-3 9L9 3l-3 9H2" />,
@@ -55,6 +80,16 @@ export const ICONS: Record<string, React.ReactNode> = {
       <path d="M16 2v4M8 2v4M3 10h18" />
     </>
   ),
+  refresh: (
+    <>
+      <path d="M21 12a9 9 0 1 1-2.6-6.4L21 8" />
+      <path d="M21 3v5h-5" />
+    </>
+  ),
+  cloud: (
+    <path d="M17.5 19H9a7 7 0 1 1 6.7-9h1.8a4.5 4.5 0 1 1 0 9Z" />
+  ),
+  arrowUp: <path d="m5 12 7-7 7 7M12 19V5" />,
   chevron: <path d="m6 9 6 6 6-6" />,
   plus: <path d="M12 5v14M5 12h14" />,
   minus: <path d="M5 12h14" />,
