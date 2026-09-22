@@ -228,10 +228,19 @@ jobs:
           export SSHPASS="$VPS_PASS"
           SSH_OPTS="-o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=3 -o LogLevel=ERROR"
           
-          # Gunakan SCP dengan limitasi bandwidth (20000 Kbit/s = ~2.5 MB/s) untuk mencegah firewall IDCloudHost melakukan drop koneksi akibat burst traffic
-          timeout 10m sshpass -e scp -l 20000 $SSH_OPTS "$APK_NAME" "$VPS_USER@$VPS_HOST:/tmp/$APK_NAME"
+          # Gunakan teknik pemecahan file (chunking) menjadi 5MB per part
+          # Ini sangat ampuh menembus firewall IDCloudHost yang sering memutus koneksi (drop)
+          # saat mendeteksi transfer file besar secara terus menerus dalam 1 sesi SSH.
+          echo "Memecah file APK menjadi bagian-bagian 5MB..."
+          split -b 5M "$APK_NAME" "${APK_NAME}_part_"
           
-          echo "Transfer selesai. Memulai eksekusi script di VPS..."
+          for part in ${APK_NAME}_part_*; do
+            echo "Mengirim $part..."
+            timeout 2m sshpass -e scp $SSH_OPTS "$part" "$VPS_USER@$VPS_HOST:/tmp/$part"
+          done
+          
+          echo "Menggabungkan file di server tujuan..."
+          sshpass -e ssh -T $SSH_OPTS "$VPS_USER@$VPS_HOST" "cat /tmp/${APK_NAME}_part_* > /tmp/$APK_NAME && rm /tmp/${APK_NAME}_part_*"
           timeout 2m sshpass -e ssh -T $SSH_OPTS "$VPS_USER@$VPS_HOST" "VPS_PASS='$VPS_PASS' APK_NAME='$APK_NAME' DEST_DIR='$DEST_DIR' APP_VERSION='$APP_VERSION' RUN_NUMBER='$RUN_NUMBER' bash -s" << 'EOF'
             set -e
             TMP_APK="/tmp/$APK_NAME"
