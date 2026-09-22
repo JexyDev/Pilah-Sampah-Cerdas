@@ -1350,7 +1350,9 @@ export class AuthController {
         return;
       }
       if (err.message === "ROLE_NOT_PERMITTED") {
-        res.status(403).json({ success: false, message: "Anda tidak memiliki izin untuk beralih ke peran ini" });
+        res
+          .status(403)
+          .json({ success: false, message: "Anda tidak memiliki izin untuk beralih ke peran ini" });
         return;
       }
       console.error("[switchRole]", err);
@@ -1358,6 +1360,5 @@ export class AuthController {
     }
   }
 }
-
 
 export const authController = new AuthController();

@@ -40,14 +40,14 @@ import {
 
 interface DispatchTask {
   id: string;
-  binId: string;
+  binId?: string | null;
   status: "PENDING" | "CLAIMED" | "COMPLETED" | "ESCALATED";
   claimedByUserId: string | null;
   createdAt: string;
   updatedAt: string;
-  bin: {
+  bin?: {
     id: string;
-    qrCode: string;
+    qrCode?: string | null;
     rtRw?: {
       id: number;
       name: string;
@@ -55,7 +55,7 @@ interface DispatchTask {
         name: string;
       };
     } | null;
-  };
+  } | null;
   claimedByUser?: {
     id: string;
     name: string;
@@ -86,15 +86,15 @@ interface PetugasItem {
 
 interface BinResetRequest {
   id: string;
-  binId: string;
-  userId: string;
-  evidencePhotoUrl: string;
+  binId?: string | null;
+  userId?: string | null;
+  evidencePhotoUrl?: string | null;
   status: "PENDING" | "ON_PROGRESS" | "APPROVED" | "COMPLETED" | "REJECTED";
   createdAt: string;
   updatedAt: string;
-  bin: {
+  bin?: {
     id: string;
-    qrCode: string;
+    qrCode?: string | null;
     rtRw?: {
       id: number;
       name: string;
@@ -102,12 +102,12 @@ interface BinResetRequest {
         name: string;
       };
     } | null;
-  };
-  user: {
-    id: string;
-    name: string;
-    email: string;
-  };
+  } | null;
+  user?: {
+    id?: string;
+    name?: string;
+    email?: string;
+  } | null;
 }
 
 export const ManajemenPengangkutan: React.FC = () => {
@@ -399,11 +399,15 @@ export const ManajemenPengangkutan: React.FC = () => {
     const list = tasks.filter((t) => {
       if (!searchQuery.trim()) return true;
       const q = searchQuery.toLowerCase().trim();
-      const idMatch = t.id.toLowerCase().includes(q);
-      const qrMatch = t.bin.qrCode.toLowerCase().includes(q);
-      const rwMatch = (t.bin.rtRw?.name || "").toLowerCase().includes(q);
+      const idMatch = (t.id || "").toLowerCase().includes(q);
+      const binIdMatch = (t.binId || "").toLowerCase().includes(q);
+      const qrMatch = (t.bin?.qrCode || "").toLowerCase().includes(q);
+      const rwMatch = (t.bin?.rtRw?.name || "").toLowerCase().includes(q);
+      const kelurahanMatch = (t.bin?.rtRw?.kelurahan?.name || "").toLowerCase().includes(q);
       const officerMatch = (t.claimedByUser?.name || "").toLowerCase().includes(q);
-      return idMatch || qrMatch || rwMatch || officerMatch;
+      const officerEmailMatch = (t.claimedByUser?.email || "").toLowerCase().includes(q);
+      const statusMatch = (t.status || "").toLowerCase().includes(q);
+      return idMatch || binIdMatch || qrMatch || rwMatch || kelurahanMatch || officerMatch || officerEmailMatch || statusMatch;
     });
     return sortChronologicalList(list, (t) => t.createdAt || t.updatedAt, "desc");
   }, [tasks, searchQuery]);
@@ -420,13 +424,16 @@ export const ManajemenPengangkutan: React.FC = () => {
     const list = requests.filter((r) => {
       if (!searchQuery.trim()) return true;
       const q = searchQuery.toLowerCase().trim();
+      const idMatch = (r.id || "").toLowerCase().includes(q);
+      const binIdMatch = (r.binId || "").toLowerCase().includes(q);
       const userMatch =
         (r.user?.name || "").toLowerCase().includes(q) ||
         (r.user?.email || "").toLowerCase().includes(q);
       const qrMatch = (r.bin?.qrCode || "").toLowerCase().includes(q);
       const areaMatch = (r.bin?.rtRw?.name || "").toLowerCase().includes(q);
+      const kelurahanMatch = (r.bin?.rtRw?.kelurahan?.name || "").toLowerCase().includes(q);
       const statusMatch = (r.status || "").toLowerCase().includes(q);
-      return userMatch || qrMatch || areaMatch || statusMatch;
+      return idMatch || binIdMatch || userMatch || qrMatch || areaMatch || kelurahanMatch || statusMatch;
     });
     return sortChronologicalList(list, (r) => r.createdAt || r.updatedAt, "desc");
   }, [requests, searchQuery]);
@@ -650,14 +657,20 @@ export const ManajemenPengangkutan: React.FC = () => {
                           {task.id.slice(0, 10).toUpperCase()}
                         </td>
                         <td className="py-3.5 px-4">
-                          <div className="font-bold text-slate-900 dark:text-slate-100">{task.bin.qrCode}</div>
-                          <div className="text-[10px] text-slate-400 font-mono">ID: {task.binId}</div>
+                          {task.bin?.qrCode ? (
+                            <div className="font-bold text-slate-900 dark:text-slate-100">{task.bin.qrCode}</div>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                              Belum Terhubung / Terhapus
+                            </span>
+                          )}
+                          <div className="text-[10px] text-slate-400 font-mono">ID: {task.binId || "—"}</div>
                         </td>
                         <td className="py-3.5 px-4 whitespace-nowrap">
                           <span className="inline-block bg-[#eef5ff] dark:bg-blue-950/60 text-[#2b6cb0] dark:text-blue-300 font-bold text-xs px-3 py-1 rounded-xl border border-[#c3dafe] dark:border-blue-700/50">
-                            {formatRukunWarga(task.bin.rtRw?.name)}
+                            {formatRukunWarga(task.bin?.rtRw?.name)}
                           </span>
-                          {task.bin.rtRw?.kelurahan?.name && (
+                          {task.bin?.rtRw?.kelurahan?.name && (
                             <span className="block text-[10px] text-slate-400 font-semibold mt-0.5">
                               Kel. {task.bin.rtRw.kelurahan.name}
                             </span>
@@ -803,12 +816,12 @@ export const ManajemenPengangkutan: React.FC = () => {
                   {paginatedRequests.map((req) => (
                     <tr key={req.id} className="hover:bg-slate-50/90 dark:bg-slate-800/90 dark:hover:bg-slate-800/50 transition-colors">
                       <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-slate-100">
-                        {req.user.name}
-                        <span className="block text-[10px] text-slate-400 font-semibold">{req.user.email}</span>
+                        {req.user?.name || "Pengguna Warga"}
+                        <span className="block text-[10px] text-slate-400 font-semibold">{req.user?.email || "—"}</span>
                       </td>
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         <span className="inline-block bg-[#eef5ff] dark:bg-blue-950/60 text-[#2b6cb0] dark:text-blue-300 font-bold text-xs px-3 py-1 rounded-xl border border-[#c3dafe] dark:border-blue-700/50">
-                          {formatRukunWarga(req.bin.rtRw?.name)}
+                          {formatRukunWarga(req.bin?.rtRw?.name)}
                         </span>
                       </td>
                       <td className="py-3.5 px-4 whitespace-nowrap font-bold text-slate-700 dark:text-slate-300">
@@ -994,18 +1007,18 @@ export const ManajemenPengangkutan: React.FC = () => {
             <div className="p-6 space-y-4 text-xs text-slate-700 dark:text-slate-300">
               <div className="p-3.5 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 space-y-1">
                 <span className="text-[10px] font-black uppercase text-slate-400">Pengirim Warga</span>
-                <p className="font-extrabold text-slate-900 dark:text-slate-100 text-sm">{selectedRequestForReview.user.name}</p>
-                <p className="text-slate-500 dark:text-slate-400 font-semibold">{selectedRequestForReview.user.email}</p>
+                <p className="font-extrabold text-slate-900 dark:text-slate-100 text-sm">{selectedRequestForReview.user?.name || "Pengguna Warga"}</p>
+                <p className="text-slate-500 dark:text-slate-400 font-semibold">{selectedRequestForReview.user?.email || "—"}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 space-y-1">
                   <span className="text-[10px] font-black uppercase text-slate-400">Rukun Warga</span>
-                  <p className="font-extrabold text-slate-900 dark:text-slate-100">{formatRukunWarga(selectedRequestForReview.bin.rtRw?.name)}</p>
+                  <p className="font-extrabold text-slate-900 dark:text-slate-100">{formatRukunWarga(selectedRequestForReview.bin?.rtRw?.name)}</p>
                 </div>
                 <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 space-y-1">
                   <span className="text-[10px] font-black uppercase text-slate-400">Kode Tempat Sampah</span>
-                  <p className="font-mono font-black text-[#009966] dark:text-emerald-400">{selectedRequestForReview.bin.qrCode}</p>
+                  <p className="font-mono font-black text-[#009966] dark:text-emerald-400">{selectedRequestForReview.bin?.qrCode || "—"}</p>
                 </div>
               </div>
 

@@ -9,17 +9,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
-  User,
   LogOut,
-  FileText,
-  Clock,
   Send,
   Loader2,
-  Calendar,
-  AlertTriangle,
-  CheckCircle2,
-  Phone,
-  Building2,
   X,
   Camera,
   Image as ImageIcon,
@@ -150,7 +142,7 @@ export const MahasiswaProfilMobile: React.FC = () => {
               </h2>
             </div>
             <p className="text-xs text-slate-500 font-medium">
-              NIM: <strong className="text-slate-800 dark:text-slate-200">{user?.nip || user?.phone || "-"}</strong>
+              NIM: <strong className="text-slate-800 dark:text-slate-200">{user?.nim || user?.nip || user?.phone || "-"}</strong>
             </p>
             <span className="inline-block px-2.5 py-0.5 rounded-full text-[9.5px] font-black uppercase bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
               Mahasiswa KKN 2026

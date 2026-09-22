@@ -60,6 +60,8 @@ export interface User {
   avatarColor: string;
   fotoProfil?: string;
   phone?: string;
+  nip?: string;
+  nim?: string;
   address?: string;
   rtRwId?: number;
   availableRoles?: string[];

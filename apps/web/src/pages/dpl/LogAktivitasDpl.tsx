@@ -21,8 +21,6 @@ import {
   Search,
   Plus,
   UploadCloud,
-  ChevronLeft,
-  ChevronRight,
   X,
   FileText,
   AlertCircle,
@@ -38,7 +36,6 @@ import {
   Camera,
   Image as ImageIcon,
   ExternalLink,
-  Check,
   Download,
 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -804,7 +801,7 @@ export const LogAktivitasDpl: React.FC = () => {
                             </button>
                             <button
                               type="button"
-                              onClick={() => handlePromptDeleteLog(item.id, item.uraianKegiatan)}
+                              onClick={() => handlePromptDeleteLog(item.id, item.uraianKegiatan || item.ringkasanAktivitas || item.deskripsi)}
                               className="px-2.5 py-1.5 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 hover:border-rose-300 text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
                               title="Hapus kegiatan"
                             >
@@ -1552,7 +1549,7 @@ export const LogAktivitasDpl: React.FC = () => {
             <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
               <button
                 type="button"
-                onClick={() => handlePromptDeleteLog(selectedDetailLog.id, selectedDetailLog.uraianKegiatan)}
+                onClick={() => handlePromptDeleteLog(selectedDetailLog.id, selectedDetailLog.uraianKegiatan || selectedDetailLog.ringkasanAktivitas || selectedDetailLog.deskripsi)}
                 className="px-4 py-2.5 border border-rose-200 bg-rose-50/60 hover:bg-rose-100 text-rose-600 font-semibold rounded-xl text-xs transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
               >
                 <Trash2 className="w-4 h-4" />

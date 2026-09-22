@@ -949,7 +949,6 @@ export class BinService {
           },
         });
 
-
         await tx.auditTrail.create({
           data: {
             action: "WARGA_REGISTER_BIN",
@@ -1907,7 +1906,6 @@ export class BinService {
             kategori: "REDUKSI_TONASE",
           },
         });
-
       } else {
         await tx.pointHistory.create({
           data: {

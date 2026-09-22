@@ -88,6 +88,7 @@ const KelolaPoinPengguna = React.lazy(() => import("../pages/KelolaPoinPengguna/
 const ZonaInspectorPage = React.lazy(() => import("../pages/Developer/ZonaInspectorPage"));
 const KelolaLogbookPage = React.lazy(() => import("../pages/Developer/KelolaLogbookPage"));
 const PoinMahasiswaKknPage = React.lazy(() => import("../pages/Developer/PoinMahasiswaKknPage"));
+const DeveloperSettingsPage = React.lazy(() => import("../pages/Developer/DeveloperSettingsPage"));
 const MplDashboardPage = React.lazy(() => import("../pages/mpl/MplDashboardPage"));
 
 // Scroll Restoration Helper Component (Safari WebKit & Cross-Browser Safe)
@@ -1122,6 +1123,18 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/master-data/crud-logbook"
           element={<Navigate to="/developer/kelola-logbook" replace />}
+        />
+        <Route
+          path="/developer-settings"
+          element={
+            <ProtectedRoute allowedRoles={["DEVELOPER"]}>
+              <DeveloperSettingsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/developer/settings"
+          element={<Navigate to="/developer-settings" replace />}
         />
         <Route
           path="/developer/inspeksi-zona"

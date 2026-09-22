@@ -46,7 +46,6 @@ import { sortKelompokList } from "../../utils/sortUtils";
 import { isTestProker, isTestKelompok } from "../../utils/filterTestingUtils";
 import {
   fetchMasterWilayah,
-  formatRwLabel,
   isKelurahanMatching,
   isRwMatching,
   isKelompokCoveringRw,
