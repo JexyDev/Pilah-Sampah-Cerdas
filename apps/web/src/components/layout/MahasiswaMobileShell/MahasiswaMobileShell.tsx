@@ -13,17 +13,8 @@ import {
   ClipboardList,
   Target,
   User,
-  Bell,
-  Sparkles,
-  ShieldCheck,
-  CheckCircle2,
-  AlertCircle,
-  ExternalLink,
-  PlusCircle,
 } from "lucide-react";
 import { useAuthStore } from "../../../store/useAuthStore";
-import showToast from "../../../utils/showToast";
-import { useNavigate } from "react-router-dom";
 
 interface MahasiswaMobileShellProps {
   activeTab?: "beranda" | "presensi" | "logbook" | "proker" | "profil";
@@ -36,10 +27,8 @@ export const MahasiswaMobileShell: React.FC<MahasiswaMobileShellProps> = ({
   onTabChange,
   children,
 }) => {
-  const { user, logout } = useAuthStore();
-  const navigate = useNavigate();
+  const { user } = useAuthStore();
   const [internalTab, setInternalTab] = useState<"beranda" | "presensi" | "logbook" | "proker" | "profil">("beranda");
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const currentTab = controlledTab || internalTab;
 
@@ -51,12 +40,6 @@ export const MahasiswaMobileShell: React.FC<MahasiswaMobileShellProps> = ({
       setInternalTab(tab);
     }
     window.scrollTo(0, 0);
-  };
-
-  const handleLogout = () => {
-    logout();
-    showToast.success("Berhasil keluar dari akun");
-    navigate("/login");
   };
 
   return (

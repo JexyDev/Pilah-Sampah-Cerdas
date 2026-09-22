@@ -34,6 +34,7 @@ import {
   GraduationCap,
   Activity,
   BarChart3,
+  Terminal,
 } from "lucide-react";
 
 import { Link, NavLink, useLocation } from "react-router-dom";
@@ -1796,6 +1797,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               icon: Radio,
               label: "Inspeksi Zona KKN",
               allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE"] as UserRole[],
+            },
+            {
+              to: "/developer-settings",
+              icon: Terminal,
+              label: "Developer Settings",
+              allowed: ["DEVELOPER"] as UserRole[],
             },
           ],
     },

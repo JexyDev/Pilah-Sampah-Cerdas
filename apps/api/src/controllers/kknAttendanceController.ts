@@ -393,7 +393,12 @@ export const kknAttendanceController = {
       const isDevOnly = roleName === "DEVELOPER";
       const includeTestAccounts = req.query.includeTestAccounts === "true" && isDevOnly;
 
-      const result = await kknAttendanceService.getActiveStudentsLocations(dplUserId, kelompokId, mplUserId, includeTestAccounts);
+      const result = await kknAttendanceService.getActiveStudentsLocations(
+        dplUserId,
+        kelompokId,
+        mplUserId,
+        includeTestAccounts
+      );
       res.status(200).json({
         success: true,
         data: result,

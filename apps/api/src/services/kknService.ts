@@ -276,8 +276,7 @@ export class KknService {
         totalRegistered: totalRegistered,
         remainingQuota,
         progressPct,
-        // Detail Poin Mahasiswa KKN (Penyesuaian UX Dasbor Mobile: personalPoints = contributionPoints)
-        personalPoints: contributionPoints,
+        personalPoints,
         purePersonalPoints,
         prokerPoints,
         contributionPoints,
@@ -733,7 +732,10 @@ export class KknService {
         registeredByStudentId: resolvedMahasiswaId,
         recentLogs,
         rwId: resolvedRwId,
-        rw: u.rw?.name || household?.rw?.name || (resolvedRwId ? `RW ${resolvedRwId}` : "Belum diset"),
+        rw:
+          u.rw?.name ||
+          household?.rw?.name ||
+          (resolvedRwId ? `RW ${resolvedRwId}` : "Belum diset"),
       };
     });
 
@@ -933,8 +935,10 @@ export class KknService {
 
         const foreignBinExists =
           student.kelompokId &&
-          (warga.binOwnerships?.some((bo: any) => bo.bin?.kelompokId && bo.bin.kelompokId !== student.kelompokId) ||
-           warga.bins?.some((b: any) => b.kelompokId && b.kelompokId !== student.kelompokId));
+          (warga.binOwnerships?.some(
+            (bo: any) => bo.bin?.kelompokId && bo.bin.kelompokId !== student.kelompokId
+          ) ||
+            warga.bins?.some((b: any) => b.kelompokId && b.kelompokId !== student.kelompokId));
 
         if (foreignBinExists) {
           throw new Error("FORBIDDEN_SCOPE");
@@ -1469,7 +1473,8 @@ export class KknService {
       const resolvedMahasiswaId =
         registeredStudentId || (isMyAssignedCitizen && kknUserId ? kknUserId : "");
       const resolvedPendampingName =
-        registeredStudentName || (isMyAssignedCitizen && student?.user?.name ? student.user.name : "");
+        registeredStudentName ||
+        (isMyAssignedCitizen && student?.user?.name ? student.user.name : "");
 
       return {
         id: w.id,
@@ -1598,7 +1603,11 @@ export class KknService {
           select: { kelompokId: true, assignedRwId: true, user: { select: { rwId: true } } },
         });
 
-        if (studentProfile?.kelompokId && bin.kelompokId && bin.kelompokId !== studentProfile.kelompokId) {
+        if (
+          studentProfile?.kelompokId &&
+          bin.kelompokId &&
+          bin.kelompokId !== studentProfile.kelompokId
+        ) {
           throw new Error(
             `Tempat sampah ${bin.qrCode} bukan milik kelompok KKN Anda dan tidak dapat diaktivasi.`
           );
@@ -1611,7 +1620,11 @@ export class KknService {
           userId: wargaId,
           status: "ACTIVE_BOUND",
           registeredByStudentId: kknUserId,
-          ...(bin.kelompokId ? {} : studentProfile?.kelompokId ? { kelompokId: studentProfile.kelompokId } : {}),
+          ...(bin.kelompokId
+            ? {}
+            : studentProfile?.kelompokId
+              ? { kelompokId: studentProfile.kelompokId }
+              : {}),
           rwId: targetWarga.rwId ?? bin.rwId,
           ...(latitude && longitude ? { latitude, longitude } : {}),
         },
@@ -1717,7 +1730,6 @@ export class KknService {
       // 1. RESOLVE DATA MAHASISWA & RW PENUGASAN (KHUSUS AKTIVASI VIA MAHASISWA KKN)
       // ============================================================================
       let studentAssignedRwId: number | null = null;
-      let kelompokCakupanRwList: string[] = [];
       let student: any = null;
 
       if (kknUserId) {
@@ -1732,28 +1744,6 @@ export class KknService {
         if (student) {
           studentAssignedRwId = student.assignedRwId;
 
-          // Parse cakupan_rw kelompok jika kelompok bertipe Multi-RW
-          if (student.kelompok?.cakupanRw) {
-            if (Array.isArray(student.kelompok.cakupanRw)) {
-              kelompokCakupanRwList = (student.kelompok.cakupanRw as any[]).map((r: any) =>
-                String(r).replace(/[^\d]/g, "").replace(/^0+/, "").trim()
-              );
-            } else if (typeof student.kelompok.cakupanRw === "string") {
-              try {
-                const parsed = JSON.parse(student.kelompok.cakupanRw);
-                kelompokCakupanRwList = Array.isArray(parsed)
-                  ? parsed.map((r: any) =>
-                      String(r).replace(/[^\d]/g, "").replace(/^0+/, "").trim()
-                    )
-                  : [];
-              } catch {
-                kelompokCakupanRwList = student.kelompok.cakupanRw
-                  .split(",")
-                  .map((r: string) => r.replace(/[^\d]/g, "").replace(/^0+/, "").trim());
-              }
-            }
-          }
-
           // A. Validasi Kelompok: Tempat sampah harus milik kelompok KKN mahasiswa ini
           for (const b of bins) {
             if (b.kelompokId && student.kelompokId && b.kelompokId !== student.kelompokId) {
@@ -1762,18 +1752,6 @@ export class KknService {
               );
             }
           }
-
-          // B. Validasi Wilayah Penugasan Mahasiswa vs Domisili Warga:
-          const effectiveWargaRwId = targetWarga.rwId;
-          const targetWargaRwRecord = targetWarga.rwId
-            ? await tx.rw.findUnique({ where: { id: targetWarga.rwId } })
-            : null;
-          const wargaRwNumber =
-            targetWargaRwRecord?.name?.replace(/[^\d]/g, "").replace(/^0+/, "") || "";
-
-          // B. Validasi Wilayah Penugasan Mahasiswa vs Domisili Warga:
-          // [FLEXIBLE/LOSS]: Mahasiswa diperbolehkan mendampingi warga di seluruh wilayah kelompok / kelurahan.
-          // Tidak ada error penolakan RW agar mahasiswa tidak terhambat saat aktivasi di lapangan.
         }
       }
 
@@ -1810,7 +1788,11 @@ export class KknService {
             userId: wargaId,
             status: "ACTIVE_BOUND",
             registeredByStudentId: kknUserId,
-            ...(bin.kelompokId ? {} : student?.kelompokId ? { kelompokId: student.kelompokId } : {}),
+            ...(bin.kelompokId
+              ? {}
+              : student?.kelompokId
+                ? { kelompokId: student.kelompokId }
+                : {}),
             rwId: resolvedTargetRwId ?? bin.rwId,
             kelurahanId: targetWargaRwRecord?.kelurahanId ?? bin.kelurahanId,
             ...(latitude && longitude ? { latitude, longitude } : {}),
@@ -2310,7 +2292,11 @@ export class KknService {
               status: "ACTIVE_BOUND",
               maxCapacityLiter,
               registeredByStudentId: kknUserId,
-              ...(bin.kelompokId ? {} : student?.kelompokId ? { kelompokId: student.kelompokId } : {}),
+              ...(bin.kelompokId
+                ? {}
+                : student?.kelompokId
+                  ? { kelompokId: student.kelompokId }
+                  : {}),
             },
           });
         }
@@ -2657,10 +2643,7 @@ export class KknService {
               };
             }
           }
-        } else if (
-          normalizedRole.includes("MPL") ||
-          normalizedRole.includes("MITRA")
-        ) {
+        } else if (normalizedRole.includes("MPL") || normalizedRole.includes("MITRA")) {
           const userMpl = await prisma.user.findUnique({
             where: { id: filters.userId },
             include: { rw: { include: { kelurahan: true } } },
@@ -4089,9 +4072,7 @@ export class KknService {
           attendanceForActiveSchedule.status = statusResult;
           attendanceForActiveSchedule.checkOutAt = checkoutTime;
           attendanceForActiveSchedule.actualInZoneMinutes =
-            resData?.actualInZoneMinutes ??
-            attendanceForActiveSchedule.actualInZoneMinutes ??
-            0;
+            resData?.actualInZoneMinutes ?? attendanceForActiveSchedule.actualInZoneMinutes ?? 0;
         }
       } catch (checkoutErr) {
         console.error(
@@ -4481,10 +4462,7 @@ export class KknService {
       const todayWibStr = getTodayWibDateString();
 
       const whereClause: any = {
-        OR: [
-          { statusUsulan: { in: ["DISETUJUI", "DITERIMA"] } },
-          { status: "DITERIMA" },
-        ],
+        OR: [{ statusUsulan: { in: ["DISETUJUI", "DITERIMA"] } }, { status: "DITERIMA" }],
         AND: [
           {
             OR: [
@@ -4564,9 +4542,7 @@ export class KknService {
             where: { id: candidate.kelompokId },
             include: { students: { select: { userId: true } } },
           });
-          const studentUserIds = (kelompok?.students || [])
-            .map((s) => s.userId)
-            .filter(Boolean);
+          const studentUserIds = (kelompok?.students || []).map((s) => s.userId).filter(Boolean);
 
           if (studentUserIds.length > 0) {
             await notificationIntegrationService.sendToUsers({
@@ -4726,103 +4702,105 @@ export class KknService {
       orderBy: [{ createdAt: "desc" }, { nomor: "desc" }],
     });
 
-    return list.map((item, index) => {
-      const parsed = parseProkerDeskripsi(item.deskripsi);
-      let judul = parsed.judul;
-      let deskripsiDetail = parsed.deskripsi;
-      let catatan = item.catatanDpl;
-      const st = String(item.status);
-      let u = (item as any).statusUsulan;
-      if (!u) {
-        if (
-          st === "DITERIMA" ||
-          st === "SEDANG_BERJALAN" ||
-          st === "SELESAI" ||
-          st === "APPROVED" ||
-          st === "DISETUJUI"
-        )
-          u = "DISETUJUI";
-        else if (st === "DITOLAK" || st === "REJECTED" || st === "TIDAK_DISETUJUI") u = "DITOLAK";
-        else u = "BELUM_DISETUJUI";
-      }
-      let pl = (item as any).statusPelaksanaan;
-      if (!pl) {
-        if (st === "SELESAI") pl = "SELESAI";
-        else if (
-          st === "SEDANG_BERJALAN" ||
-          st === "BERJALAN" ||
-          st === "BERLANGSUNG" ||
-          st === "SEDANG_BERLANGSUNG"
-        )
-          pl = "SEDANG_BERJALAN";
-        else pl = "BELUM_MULAI";
-      }
+    return list
+      .map((item, index) => {
+        const parsed = parseProkerDeskripsi(item.deskripsi);
+        let judul = parsed.judul;
+        let deskripsiDetail = parsed.deskripsi;
+        let catatan = item.catatanDpl;
+        const st = String(item.status);
+        let u = (item as any).statusUsulan;
+        if (!u) {
+          if (
+            st === "DITERIMA" ||
+            st === "SEDANG_BERJALAN" ||
+            st === "SELESAI" ||
+            st === "APPROVED" ||
+            st === "DISETUJUI"
+          )
+            u = "DISETUJUI";
+          else if (st === "DITOLAK" || st === "REJECTED" || st === "TIDAK_DISETUJUI") u = "DITOLAK";
+          else u = "BELUM_DISETUJUI";
+        }
+        let pl = (item as any).statusPelaksanaan;
+        if (!pl) {
+          if (st === "SELESAI") pl = "SELESAI";
+          else if (
+            st === "SEDANG_BERJALAN" ||
+            st === "BERJALAN" ||
+            st === "BERLANGSUNG" ||
+            st === "SEDANG_BERLANGSUNG"
+          )
+            pl = "SEDANG_BERJALAN";
+          else pl = "BELUM_MULAI";
+        }
 
-      const penginput = item.student
-        ? {
-            id: item.student.id,
-            nama: item.student.user?.name || "Mahasiswa",
-            nim: item.student.nim || "-",
-            prodi: item.student.jurusan || "-",
-            isKetua: Boolean(item.student.isKetua),
-            phone: item.student.user?.phone || "-",
-          }
-        : null;
+        const penginput = item.student
+          ? {
+              id: item.student.id,
+              nama: item.student.user?.name || "Mahasiswa",
+              nim: item.student.nim || "-",
+              prodi: item.student.jurusan || "-",
+              isKetua: Boolean(item.student.isKetua),
+              phone: item.student.user?.phone || "-",
+            }
+          : null;
 
-      return {
-        id: item.id,
-        kelompokId: item.kelompokId,
-        kelompokNama: item.kelompok?.name || "Kelompok KKN",
-        kelompokName: item.kelompok?.name || "Kelompok KKN",
-        kelurahan: item.kelompok?.kelurahan || "-",
-        cakupanRw: item.kelompok?.cakupanRw || [],
-        dplName: item.kelompok?.dpl?.name || "-",
-        dplPhone: item.kelompok?.dpl?.phone || "-",
-        submittedAt: item.createdAt.toISOString(),
-        nomor: item.nomor || index + 1,
-        judul,
-        deskripsi: deskripsiDetail,
-        kategori: normalizeProkerKategori(item.kategori),
-        sumber: item.sumber || "MAHASISWA",
-        waktuPelaksanaan: item.waktuPelaksanaan || null,
-        urlGoogleDrive: item.linkGoogleDrive || null,
-        linkGoogleDrive: item.linkGoogleDrive || null,
-        attachmentFile: item.attachmentFile || null,
-        attachmentUrls: Array.isArray(item.attachmentUrls)
-          ? item.attachmentUrls
-          : item.attachmentFile
-            ? [item.attachmentFile]
-            : [],
-        hasAttachment: Boolean(item.hasAttachment || item.attachmentFile || item.linkGoogleDrive),
-        rencanaAnggaran: Number(item.kebutuhanBiaya) || 0,
-        kebutuhanBiaya: Number(item.kebutuhanBiaya) || 0,
-        status:
-          st === "DITERIMA" ||
-          st === "SEDANG_BERJALAN" ||
-          st === "SELESAI" ||
-          st === "APPROVED" ||
-          st === "DISETUJUI"
-            ? "APPROVED"
-            : st === "DITOLAK"
-              ? "REJECTED"
-              : "PENDING",
-        statusUsulan: u,
-        statusPelaksanaan: pl,
-        catatanDpl: catatan,
-        reviewedByName: item.reviewedBy?.name || null,
-        reviewedAt: item.reviewedAt ? item.reviewedAt.toISOString() : null,
-        skorPenilaian: item.skorPenilaian ? Number(item.skorPenilaian) : null,
-        predikat: item.predikat || null,
-        statusPenilaian: item.statusPenilaian || "BELUM_DINILAI",
-        evaluasiDpl: item.evaluasiDpl || null,
-        aspekPenilaian: item.aspekPenilaian || null,
-        totalLogbookTerkait: item._count?.logbooks || 0,
-        penginput,
-        tanggal: item.createdAt.toISOString(),
-        createdAt: item.createdAt.toISOString(),
-        updatedAt: item.updatedAt.toISOString(),
-      };
-    }).filter((p) => !isTestProker(p) && !isTestKelompok({ name: p.kelompokName }));
+        return {
+          id: item.id,
+          kelompokId: item.kelompokId,
+          kelompokNama: item.kelompok?.name || "Kelompok KKN",
+          kelompokName: item.kelompok?.name || "Kelompok KKN",
+          kelurahan: item.kelompok?.kelurahan || "-",
+          cakupanRw: item.kelompok?.cakupanRw || [],
+          dplName: item.kelompok?.dpl?.name || "-",
+          dplPhone: item.kelompok?.dpl?.phone || "-",
+          submittedAt: item.createdAt.toISOString(),
+          nomor: item.nomor || index + 1,
+          judul,
+          deskripsi: deskripsiDetail,
+          kategori: normalizeProkerKategori(item.kategori),
+          sumber: item.sumber || "MAHASISWA",
+          waktuPelaksanaan: item.waktuPelaksanaan || null,
+          urlGoogleDrive: item.linkGoogleDrive || null,
+          linkGoogleDrive: item.linkGoogleDrive || null,
+          attachmentFile: item.attachmentFile || null,
+          attachmentUrls: Array.isArray(item.attachmentUrls)
+            ? item.attachmentUrls
+            : item.attachmentFile
+              ? [item.attachmentFile]
+              : [],
+          hasAttachment: Boolean(item.hasAttachment || item.attachmentFile || item.linkGoogleDrive),
+          rencanaAnggaran: Number(item.kebutuhanBiaya) || 0,
+          kebutuhanBiaya: Number(item.kebutuhanBiaya) || 0,
+          status:
+            st === "DITERIMA" ||
+            st === "SEDANG_BERJALAN" ||
+            st === "SELESAI" ||
+            st === "APPROVED" ||
+            st === "DISETUJUI"
+              ? "APPROVED"
+              : st === "DITOLAK"
+                ? "REJECTED"
+                : "PENDING",
+          statusUsulan: u,
+          statusPelaksanaan: pl,
+          catatanDpl: catatan,
+          reviewedByName: item.reviewedBy?.name || null,
+          reviewedAt: item.reviewedAt ? item.reviewedAt.toISOString() : null,
+          skorPenilaian: item.skorPenilaian ? Number(item.skorPenilaian) : null,
+          predikat: item.predikat || null,
+          statusPenilaian: item.statusPenilaian || "BELUM_DINILAI",
+          evaluasiDpl: item.evaluasiDpl || null,
+          aspekPenilaian: item.aspekPenilaian || null,
+          totalLogbookTerkait: item._count?.logbooks || 0,
+          penginput,
+          tanggal: item.createdAt.toISOString(),
+          createdAt: item.createdAt.toISOString(),
+          updatedAt: item.updatedAt.toISOString(),
+        };
+      })
+      .filter((p) => !isTestProker(p) && !isTestKelompok({ name: p.kelompokName }));
   }
 
   async getProgramKerjaById(userId: string, id: string) {
@@ -5447,10 +5425,7 @@ export class KknService {
     );
 
     // Notifikasi ke DPL jika ini adalah Pengajuan Ulang (Re-submission)
-    if (
-      effectiveUsulan === "BELUM_DISETUJUI" &&
-      isPreviousRejectedOrRevisi
-    ) {
+    if (effectiveUsulan === "BELUM_DISETUJUI" && isPreviousRejectedOrRevisi) {
       try {
         const kelompok = await prisma.kelompokKkn.findUnique({
           where: { id: proker.kelompokId },
@@ -5475,7 +5450,10 @@ export class KknService {
           });
         }
       } catch (err: any) {
-        console.warn("[kknService.updateProgramKerja] Push notification to DPL error:", err?.message);
+        console.warn(
+          "[kknService.updateProgramKerja] Push notification to DPL error:",
+          err?.message
+        );
       }
     }
 
@@ -6188,9 +6166,7 @@ export class KknService {
 
       // Proteksi Lintas Kelompok: Tolak jika tempat sampah terdaftar di kelompok KKN lain
       if (student.kelompokId) {
-        const foreignBin = bins.find(
-          (b) => b.kelompokId && b.kelompokId !== student.kelompokId
-        );
+        const foreignBin = bins.find((b) => b.kelompokId && b.kelompokId !== student.kelompokId);
         if (foreignBin) {
           throw new Error(
             `Tempat sampah ${foreignBin.qrCode} milik warga ini terdaftar pada kelompok KKN lain dan tidak dapat diklaim.`

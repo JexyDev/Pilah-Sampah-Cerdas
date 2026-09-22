@@ -35,6 +35,14 @@ export class ConfigController {
           .json({ success: false, code: "BAD_REQUEST", message: "key dan value wajib diisi" });
         return;
       }
+      if (key.startsWith("dev_") && (req as any).user?.role !== "DEVELOPER") {
+        res.status(403).json({
+          success: false,
+          code: "FORBIDDEN",
+          message: "Konfigurasi pengembang hanya dapat diubah oleh peran DEVELOPER",
+        });
+        return;
+      }
       const updated = await configService.updateConfig(key, String(value));
       res.status(200).json({ success: true, data: updated });
     } catch (error: any) {

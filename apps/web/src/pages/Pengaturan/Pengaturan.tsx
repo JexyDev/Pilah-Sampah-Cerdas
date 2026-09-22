@@ -23,13 +23,15 @@ import {
   Users,
   KeyRound,
   Cpu,
-  HardDrive
+  HardDrive,
+  Terminal,
 } from "lucide-react";
 import { authService } from "../../services/authService";
 import { useAuthStore } from "../../store/useAuthStore";
 import api from "../../services/api";
 import { getProfilePhotoUrl, handleAvatarError } from "../../utils/photoUtils";
 import RolePermissionPage from "../SuperUser/RolePermissionPage";
+import DeveloperSettingsPage from "../Developer/DeveloperSettingsPage";
 
 // Interface yang lebih ketat
 interface VpsHealthData {
@@ -41,7 +43,7 @@ interface VpsHealthData {
   activeUsersOnline: number;
 }
 
-type TabType = "profil" | "telemetri" | "rbac";
+type TabType = "profil" | "telemetri" | "rbac" | "developer";
 
 const Pengaturan: React.FC = () => {
   // PENGELOLAAN STATE & URL
@@ -58,18 +60,28 @@ const Pengaturan: React.FC = () => {
     ["DEVELOPER", "SUPER_USER"].includes(storeUser?.peran?.toUpperCase() || "") ||
     ["DEVELOPER", "SUPER_USER"].includes(profileData.role?.toUpperCase() || "");
 
+  // KETAT: Tab Developer Settings HANYA untuk DEVELOPER (SUPER_USER dilarang keras)
+  const isStrictDeveloper =
+    storeUser?.peran?.toUpperCase() === "DEVELOPER" ||
+    profileData.role?.toUpperCase() === "DEVELOPER";
+
   // Mengambil state tab langsung dari URL (Single Source of Truth)
   const rawTab = (searchParams.get("tab")?.toLowerCase() || "profil") as string;
   const normalizedTab: TabType = (rawTab === "database" ? "telemetri" : rawTab) as TabType;
-  const validTabs: TabType[] = ["profil", "telemetri", "rbac"];
+  const validTabs: TabType[] = ["profil", "telemetri", "rbac", "developer"];
 
   // Validasi tab yang aktif berdasarkan hak akses
-  const activeTab: TabType = (validTabs.includes(normalizedTab) && (!["telemetri", "rbac"].includes(normalizedTab) || isDeveloper))
+  const activeTab: TabType = (
+    validTabs.includes(normalizedTab) &&
+    (!["telemetri", "rbac"].includes(normalizedTab) || isDeveloper) &&
+    (normalizedTab !== "developer" || isStrictDeveloper)
+  )
     ? normalizedTab
     : "profil";
 
   const handleTabChange = (tab: TabType) => {
     if (["telemetri", "rbac"].includes(tab) && !isDeveloper) return;
+    if (tab === "developer" && !isStrictDeveloper) return;
     setSearchParams({ tab }); // Hanya perbarui URL, React akan otomatis me-render ulang
   };
 
@@ -280,6 +292,9 @@ const Pengaturan: React.FC = () => {
     ...(isDeveloper ? [
       { id: "telemetri" as TabType, label: "Telemetri & Basis Data", icon: Server },
       { id: "rbac" as TabType, label: "Hak Akses (RBAC)", icon: ShieldCheck },
+    ] : []),
+    ...(isStrictDeveloper ? [
+      { id: "developer" as TabType, label: "Developer & Pengujian", icon: Terminal },
     ] : []),
   ];
 
@@ -585,6 +600,13 @@ const Pengaturan: React.FC = () => {
               <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-2">
                 <RolePermissionPage />
               </div>
+            </div>
+          )}
+
+          {/* TAB 4: DEVELOPER SETTINGS (KHUSUS DEVELOPER) */}
+          {activeTab === "developer" && isStrictDeveloper && (
+            <div className="animate-fade-in space-y-4">
+              <DeveloperSettingsPage />
             </div>
           )}
         </div>

@@ -6,7 +6,74 @@
  * Modul Terpusat Frontend: Anti-Testing & Dummy Data Filter
  * Digunakan untuk perlindungan berlapis (defense-in-depth) pada tampilan
  * Leaderboard, DPL Portal, MPL Portal, Penilaian KKN, dan Dashboard Eksekutif.
+ *
+ * Dilengkapi dengan Kontrol Pengembang (Developer Settings):
+ * - KETAT: Hanya peran DEVELOPER yang memiliki hak istimewa untuk mengatur toggle
+ *   "Sembunyikan Akun Pengujian" (mode debug).
+ * - Seluruh peran lain (termasuk SUPER_USER, PIMPINAN, DPL, dll.) SELALU menyembunyikan
+ *   akun pengujian agar data yang disajikan 100% data riil operasional tanpa anomali dummy.
  */
+
+export const HIDE_TEST_ACCOUNTS_KEY = "berseka_hide_test_accounts";
+
+/**
+ * Mendapatkan role pengguna aktif dari storage lokal secara aman
+ */
+export function getCurrentUserRole(): string | null {
+  try {
+    if (typeof window === "undefined") return null;
+    const raw = localStorage.getItem("psc_user") ?? sessionStorage.getItem("psc_user");
+    if (!raw) return null;
+    const user = JSON.parse(raw);
+    return (user.peran || user.role || null) as string | null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Memeriksa apakah pengguna yang sedang aktif memiliki peran DEVELOPER
+ * (SUPER_USER, PIMPINAN, ADMIN_DLH, dll. akan bernilai false)
+ */
+export function isCurrentUserDeveloper(): boolean {
+  const role = getCurrentUserRole();
+  return String(role || "").toUpperCase() === "DEVELOPER";
+}
+
+/**
+ * Memeriksa status konfigurasi: Apakah akun pengujian harus disembunyikan?
+ * ATURAN KETAT:
+ * 1. Untuk SEMUA peran selain DEVELOPER (termasuk SUPER_USER, PIMPINAN, DPL, dll.),
+ *    fungsi ini SELALU mengembalikan `true` (akun pengujian WAJIB disembunyikan).
+ * 2. Hanya peran DEVELOPER yang memiliki hak istimewa untuk mematikan toggle (debug mode).
+ *    Jika DEVELOPER menyetel `berseka_hide_test_accounts = "false"`, fungsi mengembalikan `false`.
+ * 3. Nilai default untuk DEVELOPER tetap `true` (bersih 100% data operasional).
+ */
+export function shouldHideTestAccounts(): boolean {
+  if (typeof window === "undefined") return true;
+  if (!isCurrentUserDeveloper()) {
+    return true; // Non-developer SELALU disembunyikan
+  }
+  const val = localStorage.getItem(HIDE_TEST_ACCOUNTS_KEY);
+  if (val === "false") {
+    return false; // DEVELOPER sengaja mematikan toggle untuk inspeksi/debug
+  }
+  return true; // Default ON
+}
+
+/**
+ * Mengubah status toggle sembunyikan akun pengujian
+ * Hanya dapat dipanggil dan disimpan oleh peran DEVELOPER
+ */
+export function setHideTestAccountsSetting(hide: boolean): boolean {
+  if (typeof window === "undefined") return false;
+  if (!isCurrentUserDeveloper()) {
+    console.warn("[filterTestingUtils] Akses ditolak: Hanya peran DEVELOPER yang dapat mengubah setelan ini.");
+    return false;
+  }
+  localStorage.setItem(HIDE_TEST_ACCOUNTS_KEY, hide ? "true" : "false");
+  return true;
+}
 
 const TEST_KEYWORDS = [
   "test",
@@ -69,8 +136,10 @@ export function isTestUser(
     phone?: string | null;
     isTestAccount?: boolean | null;
     [key: string]: any;
-  } | null
+  } | null,
+  respectToggle = true
 ): boolean {
+  if (respectToggle && !shouldHideTestAccounts()) return false;
   if (!user) return false;
   if (typeof user === "string") return isTestOrDummyString(user);
   if (user.isTestAccount) return true;
@@ -99,12 +168,14 @@ export function isTestDpl(
     phone?: string | null;
     isTestAccount?: boolean | null;
     [key: string]: any;
-  } | null
+  } | null,
+  respectToggle = true
 ): boolean {
+  if (respectToggle && !shouldHideTestAccounts()) return false;
   if (!dpl) return false;
   if (typeof dpl === "string") return isTestOrDummyString(dpl);
   if (dpl.isTestAccount) return true;
-  if (isTestUser(dpl)) return true;
+  if (isTestUser(dpl, false)) return true;
   if (isTestOrDummyString(dpl.nama || dpl.name || dpl.dplNama || dpl.dplName)) return true;
   return false;
 }
@@ -125,8 +196,10 @@ export function isTestKelompok(
     dplNama?: string | null;
     dpl?: any;
     [key: string]: any;
-  } | null
+  } | null,
+  respectToggle = true
 ): boolean {
+  if (respectToggle && !shouldHideTestAccounts()) return false;
   if (!kelompok) return false;
   if (typeof kelompok === "string") return isTestOrDummyString(kelompok);
   if (isTestOrDummyString(kelompok.name)) return true;
@@ -137,7 +210,7 @@ export function isTestKelompok(
   if (isTestOrDummyString(kelompok.dplNamaMentah)) return true;
   if (isTestOrDummyString(kelompok.dplName)) return true;
   if (isTestOrDummyString(kelompok.dplNama)) return true;
-  if (kelompok.dpl && isTestUser(kelompok.dpl)) return true;
+  if (kelompok.dpl && isTestUser(kelompok.dpl, false)) return true;
   return false;
 }
 
@@ -158,8 +231,10 @@ export function isTestStudent(
     kelompok?: any;
     kelompokName?: string | null;
     [key: string]: any;
-  } | null
+  } | null,
+  respectToggle = true
 ): boolean {
+  if (respectToggle && !shouldHideTestAccounts()) return false;
   if (!student) return false;
   if (typeof student === "string") return isTestOrDummyString(student);
   if (student.nim) {
@@ -181,8 +256,8 @@ export function isTestStudent(
     const cleanW = String(student.noWa).replace(/[\s-]/g, "");
     if (TEST_PHONES.some((tp) => cleanW === tp || cleanW.includes("12345678900"))) return true;
   }
-  if (student.user && isTestUser(student.user)) return true;
-  if (student.kelompok && isTestKelompok(student.kelompok)) return true;
+  if (student.user && isTestUser(student.user, false)) return true;
+  if (student.kelompok && isTestKelompok(student.kelompok, false)) return true;
   return false;
 }
 
@@ -200,16 +275,18 @@ export function isTestPosko(
     namaKelompok?: string | null;
     dplName?: string | null;
     [key: string]: any;
-  } | null
+  } | null,
+  respectToggle = true
 ): boolean {
+  if (respectToggle && !shouldHideTestAccounts()) return false;
   if (!posko) return false;
   if (typeof posko === "string") return isTestOrDummyString(posko);
   if (isTestOrDummyString(posko.nama || posko.name)) return true;
   if (isTestOrDummyString(posko.kelompokName)) return true;
   if (isTestOrDummyString(posko.namaKelompok)) return true;
   if (isTestOrDummyString(posko.dplName)) return true;
-  if (posko.kelompok && isTestKelompok(posko.kelompok)) return true;
-  if (isTestKelompok(posko as any)) return true;
+  if (posko.kelompok && isTestKelompok(posko.kelompok, false)) return true;
+  if (isTestKelompok(posko as any, false)) return true;
   return false;
 }
 
@@ -231,8 +308,10 @@ export function isTestProker(
     student?: any;
     mahasiswa?: any;
     [key: string]: any;
-  } | null
+  } | null,
+  respectToggle = true
 ): boolean {
+  if (respectToggle && !shouldHideTestAccounts()) return false;
   if (!proker) return false;
   if (typeof proker === "string") return isTestOrDummyString(proker);
   if (isTestOrDummyString(proker.nama)) return true;
@@ -243,33 +322,48 @@ export function isTestProker(
   if (isTestOrDummyString(proker.namaKelompok)) return true;
   if (isTestOrDummyString(proker.dplNama)) return true;
   if (isTestOrDummyString(proker.dplName)) return true;
-  if (proker.kelompok && isTestKelompok(proker.kelompok)) return true;
-  if (proker.student && isTestStudent(proker.student)) return true;
-  if (proker.mahasiswa && isTestStudent(proker.mahasiswa)) return true;
-  if (isTestKelompok(proker as any)) return true;
+  if (proker.kelompok && isTestKelompok(proker.kelompok, false)) return true;
+  if (proker.student && isTestStudent(proker.student, false)) return true;
+  if (proker.mahasiswa && isTestStudent(proker.mahasiswa, false)) return true;
+  if (isTestKelompok(proker as any, false)) return true;
   return false;
 }
 
+// ─── Pemeriksa Akurat Tanpa Menghiraukan Toggle (Untuk Label/Badge Debug di UI) ──
+export const isActuallyTestUser = (user?: any) => isTestUser(user, false);
+export const isActuallyTestDpl = (dpl?: any) => isTestDpl(dpl, false);
+export const isActuallyTestKelompok = (kelompok?: any) => isTestKelompok(kelompok, false);
+export const isActuallyTestStudent = (student?: any) => isTestStudent(student, false);
+export const isActuallyTestPosko = (posko?: any) => isTestPosko(posko, false);
+export const isActuallyTestProker = (proker?: any) => isTestProker(proker, false);
+
+// ─── Filter Array Terpusat ──────────────────────────────────────────────────
 export function filterNonTestUsers<T>(list: T[]): T[] {
-  return list.filter((u) => !isTestUser(u as any));
+  if (!shouldHideTestAccounts()) return list;
+  return list.filter((u) => !isTestUser(u as any, false));
 }
 
 export function filterNonTestDpl<T>(list: T[]): T[] {
-  return list.filter((d) => !isTestDpl(d as any));
+  if (!shouldHideTestAccounts()) return list;
+  return list.filter((d) => !isTestDpl(d as any, false));
 }
 
 export function filterNonTestKelompok<T>(list: T[]): T[] {
-  return list.filter((k) => !isTestKelompok(k as any));
+  if (!shouldHideTestAccounts()) return list;
+  return list.filter((k) => !isTestKelompok(k as any, false));
 }
 
 export function filterNonTestStudents<T>(list: T[]): T[] {
-  return list.filter((s) => !isTestStudent(s as any));
+  if (!shouldHideTestAccounts()) return list;
+  return list.filter((s) => !isTestStudent(s as any, false));
 }
 
 export function filterNonTestPosko<T>(list: T[]): T[] {
-  return list.filter((p) => !isTestPosko(p as any));
+  if (!shouldHideTestAccounts()) return list;
+  return list.filter((p) => !isTestPosko(p as any, false));
 }
 
 export function filterNonTestProker<T>(list: T[]): T[] {
-  return list.filter((p) => !isTestProker(p as any));
+  if (!shouldHideTestAccounts()) return list;
+  return list.filter((p) => !isTestProker(p as any, false));
 }

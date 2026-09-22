@@ -94,6 +94,7 @@ export const scheduleService = {
     polygon?: any;
     kelompokId?: string;
     isActive?: boolean;
+    effectiveMonth?: string | null;
   }) => {
     // Pull default geofence buffer from Rule Engine if radius not provided
     if (data.radius === undefined || data.radius === null) {
@@ -155,6 +156,7 @@ export const scheduleService = {
       polygon?: any;
       kelompokId?: string;
       isActive?: boolean;
+      effectiveMonth?: string | null;
     }
   ) => {
     const parsedRadius =

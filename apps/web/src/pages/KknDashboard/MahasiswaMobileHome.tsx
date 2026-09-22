@@ -33,7 +33,6 @@ export const MahasiswaMobileHome: React.FC<MahasiswaMobileHomeProps> = ({
   const { user } = useAuthStore();
 
   const [recentLogbooks, setRecentLogbooks] = useState<LogbookMahasiswaItem[]>([]);
-  const [activeAttendance, setActiveAttendance] = useState<any | null>(null);
   const [todayAttendanceState, setTodayAttendanceState] = useState<{
     status: "SELESAI" | "AKTIF" | "TERJEDA" | "BELUM_ABSEN";
     label: string;
@@ -124,7 +123,6 @@ export const MahasiswaMobileHome: React.FC<MahasiswaMobileHomeProps> = ({
           p.statusPresensi === "AKTIF" ||
           (!p.checkOutAt && !p.jamPulang && (p.status === "BERLANGSUNG" || p.status === "DI_ZONA"))
       );
-      setActiveAttendance(active || null);
 
       // Cek apakah hari ini SUDAH SELESAI ABSEN
       const isKegiatanCompleted =

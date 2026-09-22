@@ -30,10 +30,12 @@ import {
   Eye,
   Building2,
   Users,
-  Globe
+  Globe,
+  Edit2
 } from "lucide-react";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
+import { useAuthStore } from "../../store/useAuthStore";
 import { Pagination } from "../../components/common/Pagination";
 import PageHeader from "../../components/common/PageHeader";
 import { ThemeTileLayer, GOOGLE_SATELLITE_URL } from "../../components/common/ThemeTileLayer";
@@ -228,6 +230,25 @@ const MapFlyToController: React.FC<{ center: [number, number] | null; zoom?: num
 export const PemanfaatanSampah: React.FC = () => {
   const [items, setItems] = useState<FacilityItem[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  const { user } = useAuthStore();
+  const isDeveloper = user?.peran === "DEVELOPER" || user?.peran === "SUPER_USER";
+  const [editingFacility, setEditingFacility] = useState<FacilityItem | null>(null);
+
+
+
+  const handleDeleteFacility = async (id: string) => {
+    if (!window.confirm("Apakah Anda yakin ingin menghapus fasilitas ini?")) return;
+    try {
+      const res = await api.delete(`/facilities/${id}`);
+      if (res.data.success) {
+        showToast("success", "Fasilitas berhasil dihapus");
+        setItems(prev => prev.filter(item => item.id !== id));
+      }
+    } catch (error: any) {
+      showToast("error", error.response?.data?.message || "Gagal menghapus fasilitas");
+    }
+  };
 
   // Filter & Search
   const [searchQuery, setSearchQuery] = useState("");
@@ -1145,19 +1166,42 @@ export const PemanfaatanSampah: React.FC = () => {
 
                         {/* 7. Kolom Aksi */}
                         <td className="py-4 px-4 text-center whitespace-nowrap">
-                          {hasValidCoords ? (
-                            <button
-                              type="button"
-                              onClick={() => handleViewOnMap(latNum, lngNum)}
-                              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/70 hover:bg-emerald-100 dark:hover:bg-emerald-900/80 text-[#009966] dark:text-emerald-400 text-xs font-bold border border-emerald-200 dark:border-emerald-800/80 transition active:scale-95 cursor-pointer shadow-2xs"
-                              title="Tampilkan lokasi titik ini di peta GIS"
-                            >
-                              <MapPin size={13} />
-                              <span>Peta</span>
-                            </button>
-                          ) : (
-                            <span className="text-[11px] text-slate-400 italic">-</span>
-                          )}
+                          <div className="flex items-center justify-center gap-2">
+                            {hasValidCoords ? (
+                              <button
+                                type="button"
+                                onClick={() => handleViewOnMap(latNum, lngNum)}
+                                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/70 hover:bg-emerald-100 dark:hover:bg-emerald-900/80 text-[#009966] dark:text-emerald-400 text-xs font-bold border border-emerald-200 dark:border-emerald-800/80 transition active:scale-95 cursor-pointer shadow-2xs"
+                                title="Tampilkan lokasi titik ini di peta GIS"
+                              >
+                                <MapPin size={13} />
+                                <span>Peta</span>
+                              </button>
+                            ) : (
+                              <span className="text-[11px] text-slate-400 italic px-2">-</span>
+                            )}
+                            
+                            {isDeveloper && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingFacility(item)}
+                                  className="inline-flex items-center justify-center p-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/70 hover:bg-blue-100 dark:hover:bg-blue-900/80 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/80 transition active:scale-95 cursor-pointer"
+                                  title="Edit Fasilitas"
+                                >
+                                  <Edit2 size={14} />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteFacility(item.id)}
+                                  className="inline-flex items-center justify-center p-1.5 rounded-xl bg-red-50 dark:bg-red-950/70 hover:bg-red-100 dark:hover:bg-red-900/80 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/80 transition active:scale-95 cursor-pointer"
+                                  title="Hapus Fasilitas"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );
@@ -1256,6 +1300,116 @@ export const PemanfaatanSampah: React.FC = () => {
         </div>
       )}
 
+      {editingFacility && (
+        <EditFacilityModal
+          facility={editingFacility}
+          onClose={() => setEditingFacility(null)}
+          onSuccess={() => {
+            setEditingFacility(null);
+            fetchItems();
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
+const EditFacilityModal: React.FC<{
+  facility: FacilityItem;
+  onClose: () => void;
+  onSuccess: () => void;
+}> = ({ facility, onClose, onSuccess }) => {
+  const [formData, setFormData] = useState({
+    nama: facility.nama,
+    jenis: facility.jenis,
+    pic: facility.pic,
+    kontak: facility.kontak || "",
+    alamat: facility.alamat || "",
+    kapasitas: facility.kapasitas || "",
+    latitude: facility.latitude,
+    longitude: facility.longitude,
+  });
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await api.put(`/facilities/${facility.id}`, formData);
+      showToast("success", "Fasilitas berhasil diperbarui");
+      onSuccess();
+    } catch (error: any) {
+      showToast("error", error.response?.data?.message || "Gagal memperbarui fasilitas");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+          <h3 className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+            <Edit2 size={18} className="text-emerald-500" /> Edit Fasilitas
+          </h3>
+          <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+            <X size={20} />
+          </button>
+        </div>
+        <div className="p-5 overflow-y-auto">
+          <form id="edit-facility-form" onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Nama Fasilitas</label>
+              <input type="text" value={formData.nama} onChange={e => setFormData({...formData, nama: e.target.value})} className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" required />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Jenis Fasilitas</label>
+              <select value={formData.jenis} onChange={e => setFormData({...formData, jenis: e.target.value})} className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" required>
+                <option value="bank_sampah">Bank Sampah</option>
+                <option value="buruan_sae">Buruan Sae</option>
+                <option value="loseda">Loseda</option>
+                <option value="rumah_maggot">Rumah Maggot</option>
+                <option value="bata_terawang">Bata Terawang</option>
+                <option value="poc">POC</option>
+                <option value="tps">TPS</option>
+                <option value="posko_kkn">Posko KKN</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">PIC (Penanggung Jawab)</label>
+              <input type="text" value={formData.pic} onChange={e => setFormData({...formData, pic: e.target.value})} className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" required />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Kontak PIC</label>
+              <input type="text" value={formData.kontak} onChange={e => setFormData({...formData, kontak: e.target.value})} className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Kapasitas (Kg)</label>
+              <input type="number" value={formData.kapasitas} onChange={e => setFormData({...formData, kapasitas: e.target.value})} className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Alamat Lengkap</label>
+              <textarea value={formData.alamat} onChange={e => setFormData({...formData, alamat: e.target.value})} className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" rows={2} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Latitude</label>
+                <input type="text" value={formData.latitude} onChange={e => setFormData({...formData, latitude: e.target.value})} className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" required />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Longitude</label>
+                <input type="text" value={formData.longitude} onChange={e => setFormData({...formData, longitude: e.target.value})} className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" required />
+              </div>
+            </div>
+          </form>
+        </div>
+        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/80 flex justify-end gap-3">
+          <button type="button" onClick={onClose} disabled={loading} className="px-4 py-2 text-sm font-semibold text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600">Batal</button>
+          <button type="submit" form="edit-facility-form" disabled={loading} className="px-4 py-2 text-sm font-semibold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-2">
+            {loading ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />} Simpan
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
