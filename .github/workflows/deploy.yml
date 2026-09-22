@@ -172,89 +172,80 @@ jobs:
             --android-skip-build-dependency-validation
           ls -lah build/app/outputs/flutter-apk/
 
-      - name: Bypass MTU Blackhole (Fix Hang Issue)
+      - name: Prepare APK for Release
+        id: prepare-apk
         run: |
-          echo "Current MTU settings:"
-          ip link show
-          DEFAULT_IF=$(ip route | grep default | awk '{print $5}')
-          if [ -n "$DEFAULT_IF" ]; then
-            echo "Default interface is $DEFAULT_IF. Lowering MTU to 1200 to bypass IDCloudHost firewall issues..."
-            sudo ip link set dev $DEFAULT_IF mtu 1200
-            ip link show $DEFAULT_IF
-          else
-            echo "Warning: Could not determine default interface."
-          fi
-          echo "Applying iptables TCP MSS clamping..."
-          sudo iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1160
-
-      - name: Prepare VPS Credentials and Target APK
-        id: vps-creds
-        run: |
-          if [ "${{ steps.set-env.outputs.target }}" = "staging" ]; then
-            echo "host=${{ secrets.STAGING_VPS_HOST }}" >> $GITHUB_OUTPUT
-            echo "user=${{ secrets.STAGING_VPS_USERNAME }}" >> $GITHUB_OUTPUT
-            echo "pass=${{ secrets.STAGING_VPS_PASSWORD }}" >> $GITHUB_OUTPUT
-          else
-            echo "host=${{ secrets.VPS_HOST }}" >> $GITHUB_OUTPUT
-            echo "user=${{ secrets.VPS_USERNAME }}" >> $GITHUB_OUTPUT
-            echo "pass=${{ secrets.VPS_PASSWORD }}" >> $GITHUB_OUTPUT
-          fi
-          
-          # Prepare the APK file to upload
           APK_FILE="build/app/outputs/flutter-apk/app-release.apk"
           if [ ! -f "$APK_FILE" ]; then
             APK_FILE=$(find build/app/outputs/flutter-apk/ -name "*.apk" | head -n 1)
           fi
-          
-          # Rename it locally so appleboy/scp-action uploads it directly with the correct name
+
           APK_NAME="${{ steps.set-env.outputs.apk_name }}"
           cp "$APK_FILE" "$APK_NAME"
           echo "apk_name=$APK_NAME" >> $GITHUB_OUTPUT
+          echo "APK ready: $APK_NAME ($(du -h "$APK_NAME" | cut -f1))"
 
-      - name: Upload APK & Execute Deployment
+      - name: Upload APK to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "build-${{ github.run_number }}"
+          name: "v${{ env.APP_VERSION }} (Build #${{ github.run_number }})"
+          body: |
+            Auto-build CI/CD v${{ env.APP_VERSION }}
+            Environment: ${{ steps.set-env.outputs.target }}
+          files: "${{ steps.prepare-apk.outputs.apk_name }}"
+          make_latest: true
         env:
-          VPS_HOST: ${{ steps.vps-creds.outputs.host }}
-          VPS_USER: ${{ steps.vps-creds.outputs.user }}
-          VPS_PASS: ${{ steps.vps-creds.outputs.pass }}
-          APK_NAME: ${{ steps.set-env.outputs.apk_name }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy APK to VPS (Pull Method)
+        env:
+          VPS_HOST: ${{ steps.set-env.outputs.target == 'staging' && secrets.STAGING_VPS_HOST || secrets.VPS_HOST }}
+          VPS_USER: ${{ steps.set-env.outputs.target == 'staging' && secrets.STAGING_VPS_USERNAME || secrets.VPS_USERNAME }}
+          VPS_PASS: ${{ steps.set-env.outputs.target == 'staging' && secrets.STAGING_VPS_PASSWORD || secrets.VPS_PASSWORD }}
+          APK_NAME: ${{ steps.prepare-apk.outputs.apk_name }}
           DEST_DIR: ${{ steps.set-env.outputs.dest_dir }}
           APP_VERSION: ${{ env.APP_VERSION }}
           RUN_NUMBER: ${{ github.run_number }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
         run: |
-          # Install sshpass and rsync
-          sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends sshpass rsync
-          
-          echo "Memulai transfer menggunakan SCP..."
+          sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends sshpass
+
           export SSHPASS="$VPS_PASS"
           SSH_OPTS="-o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=3 -o LogLevel=ERROR"
-          
-          # Gunakan teknik pemecahan file (chunking) menjadi 5MB per part
-          # Ini sangat ampuh menembus firewall IDCloudHost yang sering memutus koneksi (drop)
-          # saat mendeteksi transfer file besar secara terus menerus dalam 1 sesi SSH.
-          echo "Memecah file APK menjadi bagian-bagian 5MB..."
-          split -b 5M "$APK_NAME" "${APK_NAME}_part_"
-          
-          for part in ${APK_NAME}_part_*; do
-            echo "Mengirim $part..."
-            timeout 2m sshpass -e scp $SSH_OPTS "$part" "$VPS_USER@$VPS_HOST:/tmp/$part"
-          done
-          
-          echo "Menggabungkan file di server tujuan..."
-          sshpass -e ssh -T $SSH_OPTS "$VPS_USER@$VPS_HOST" "cat /tmp/${APK_NAME}_part_* > /tmp/$APK_NAME && rm /tmp/${APK_NAME}_part_*"
-          timeout 2m sshpass -e ssh -T $SSH_OPTS "$VPS_USER@$VPS_HOST" "VPS_PASS='$VPS_PASS' APK_NAME='$APK_NAME' DEST_DIR='$DEST_DIR' APP_VERSION='$APP_VERSION' RUN_NUMBER='$RUN_NUMBER' bash -s" << 'EOF'
+
+          # URL download dari GitHub Releases — VPS yang download sendiri via HTTPS (port 443)
+          DOWNLOAD_URL="https://github.com/${REPO}/releases/download/build-${RUN_NUMBER}/${APK_NAME}"
+
+          echo "=== Strategi: VPS Pull dari GitHub Release ==="
+          echo "Download URL: $DOWNLOAD_URL"
+          echo "Target: $VPS_HOST → $DEST_DIR/$APK_NAME"
+
+          # SSH ke VPS hanya kirim perintah (koneksi kecil ~1KB, tidak akan diblokir firewall)
+          # VPS yang download APK sendiri via HTTPS (port 443, tidak pernah diblokir)
+          timeout 5m sshpass -e ssh -T $SSH_OPTS "$VPS_USER@$VPS_HOST" \
+            "VPS_PASS='$VPS_PASS' APK_NAME='$APK_NAME' DEST_DIR='$DEST_DIR' APP_VERSION='$APP_VERSION' RUN_NUMBER='$RUN_NUMBER' DOWNLOAD_URL='$DOWNLOAD_URL' GH_TOKEN='$GH_TOKEN' bash -s" << 'EOF'
             set -e
-            TMP_APK="/tmp/$APK_NAME"
-            
-            if [ ! -f "$TMP_APK" ]; then
-              echo "Error: APK file not found at $TMP_APK"
+
+            echo "=== Downloading APK from GitHub Release via HTTPS ==="
+            curl -fSL --retry 3 --retry-delay 5 \
+              -H "Authorization: token $GH_TOKEN" \
+              -H "Accept: application/octet-stream" \
+              -o "/tmp/$APK_NAME" \
+              "$DOWNLOAD_URL"
+
+            if [ ! -s "/tmp/$APK_NAME" ]; then
+              echo "Error: APK download failed or file is empty"
               exit 1
             fi
+            echo "Download berhasil: $(du -h /tmp/$APK_NAME | cut -f1)"
 
             echo "=== Deploying APK to $DEST_DIR ==="
             echo "$VPS_PASS" | sudo -S mkdir -p "$DEST_DIR"
-            echo "$VPS_PASS" | sudo -S cp "$TMP_APK" "$DEST_DIR/$APK_NAME"
+            echo "$VPS_PASS" | sudo -S cp "/tmp/$APK_NAME" "$DEST_DIR/$APK_NAME"
             echo "$VPS_PASS" | sudo -S chmod 644 "$DEST_DIR/$APK_NAME"
-            rm -f "$TMP_APK"
+            rm -f "/tmp/$APK_NAME"
             echo "APK successfully published to $DEST_DIR/$APK_NAME"
             ls -lh "$DEST_DIR/$APK_NAME"
 
@@ -282,3 +273,4 @@ jobs:
 
             echo "=== Mobile APK Release Sync Completed ==="
           EOF
+
