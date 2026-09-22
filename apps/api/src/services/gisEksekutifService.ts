@@ -418,20 +418,26 @@ export const gisEksekutifService = {
       ) / 10;
     }
 
+    const hasData = totalKg > 0;
     const komposisiVolume = {
       organik: {
         persen: totalKg > 0 ? Math.round((totalOrganikKg / totalKg) * 100) : 0,
         volumeM3: orgM3,
+        kgHari: Math.round(totalOrganikKg * 10) / 10,
       },
       anorganik: {
         persen: totalKg > 0 ? Math.round((totalAnorganikKg / totalKg) * 100) : 0,
         volumeM3: anoM3,
+        kgHari: Math.round(totalAnorganikKg * 10) / 10,
       },
       residu: {
         persen: totalKg > 0 ? Math.round((totalResiduKg / totalKg) * 100) : 0,
         volumeM3: resM3,
+        kgHari: Math.round(totalResiduKg * 10) / 10,
       },
-      totalM3: volumeTotal ?? 0,
+      totalM3: volumeTotal ?? computedTotalM3,
+      totalKgHari: Math.round(totalKg * 10) / 10,
+      hasData,
     };
 
     // ── 7. Tren Bulanan — dari FacilityProductionLog jika ada ───────────────
