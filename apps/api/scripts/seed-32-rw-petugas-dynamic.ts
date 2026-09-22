@@ -173,9 +173,9 @@ async function main() {
     personilIdx++;
 
     // Dua Lapis Penamaan:
-    // 1. Identitas Asli: Nama personil riil (contoh: "Asep Sunandar")
-    // 2. Nama Umum: Nama representatif teritorial RW (contoh: "Petugas RW 21 Sadang Serang")
-    const namaUmumDisplay = `Petugas RW ${paddedRw} ${kelurahanName}`;
+    // 1. Nama Akun Resmi / Umum Publik: "Petugas Pemilah RW [Nomor] [Kelurahan]"
+    // 2. Identitas Asli Personil Lapangan: "Asep Sunandar", "Dadan Ramdani", dll. (disimpan di PetugasResidu.nama)
+    const namaUmumDisplay = `Petugas Pemilah RW ${paddedRw} ${kelurahanName}`;
     const cleanKelCode = kelurahanName.toLowerCase().replace(/\s+/g, "");
     const email = `petugas.rw${paddedRw}.${cleanKelCode}@berseka.id`;
     const phone = `+6281390${String(personilIdx).padStart(6, "0")}`;
@@ -185,11 +185,11 @@ async function main() {
     const lat = rwRecord.latitude ?? (group.poskoKkn?.latitude ? Number(group.poskoKkn.latitude) : null);
     const lng = rwRecord.longitude ?? (group.poskoKkn?.longitude ? Number(group.poskoKkn.longitude) : null);
 
-    // 3. Upsert User
+    // 3. Upsert User dengan nama utama = Nama Akun Petugas Pemilah Wilayah
     const user = await prisma.user.upsert({
       where: { phone: phone },
       update: {
-        name: personilName, // Identitas Asli
+        name: namaUmumDisplay, // Nama Akun / Petugas Pemilah Wilayah (Nama Umum)
         email: email,
         roleId: role.id,
         status: "Aktif",
@@ -199,7 +199,7 @@ async function main() {
         rwId: rwRecord.id,
       },
       create: {
-        name: personilName, // Identitas Asli
+        name: namaUmumDisplay, // Nama Akun / Petugas Pemilah Wilayah (Nama Umum)
         phone: phone,
         email: email,
         password: hashedPassword,
