@@ -255,4 +255,20 @@ describe("gisEksekutifService Dynamic DB Tests (Zero Fallback / Anti-Dummy)", ()
     expect(resAgu.kpi.previousMonthName).toBe("Jul");
     expect(resAgu.kpi.kepatuhanPemilahan).toBe(19); // 20 - 1 offset
   });
+
+  it("should keep all facility types in filterOptions.tipeFasilitas even when a specific facility filter is active", async () => {
+    (prisma.kelurahan.findMany as any).mockResolvedValue([]);
+    (prisma.rw.findMany as any).mockResolvedValue([]);
+    (prisma.facility.findMany as any).mockResolvedValue([
+      { id: "fac-1", nama: "POC RW 01", jenis: "poc", latitude: -6.88, longitude: 107.61 },
+    ]);
+    (prisma.surveiKelurahan.findMany as any).mockResolvedValue([]);
+    (prisma.facilityProductionLog.findMany as any).mockResolvedValue([]);
+
+    const res = await gisEksekutifService.getOverview({ jenisFasilitas: "poc" });
+    // Tipe fasilitas harus tetap memuat opsi lengkap (tidak terpotong hanya POC)
+    expect(res.filterOptions.tipeFasilitas).toContain("Semua");
+    expect(res.filterOptions.tipeFasilitas).toContain("poc");
+    expect(res.filterOptions.tipeFasilitas.length).toBeGreaterThanOrEqual(4);
+  });
 });

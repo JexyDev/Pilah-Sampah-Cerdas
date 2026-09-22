@@ -1239,7 +1239,8 @@
   gap: 2px;
 }
 
-.gis-eksekutif-root .fac-list button {
+.gis-eksekutif-root .fac-list button,
+.gis-eksekutif-root .fac-list .fac-item {
   display: grid;
   grid-template-columns: 26px 86px 10px 1fr;
   align-items: center;
@@ -1253,11 +1254,17 @@
   font-size: 12px;
 }
 
+.gis-eksekutif-root .fac-list .fac-item {
+  cursor: default;
+  user-select: none;
+}
+
 .gis-eksekutif-root .fac-list button:hover {
   background: var(--accent-soft);
 }
 
-.gis-eksekutif-root .fac-list button.on {
+.gis-eksekutif-root .fac-list button.on,
+.gis-eksekutif-root .fac-list .fac-item.is-selected {
   background: var(--accent-soft);
   box-shadow: inset 0 0 0 1.5px var(--accent-2);
 }
@@ -1429,7 +1436,8 @@
   .gis-eksekutif-root .seg { background: var(--field); border: 1px solid var(--line); box-shadow: none; }
   .gis-eksekutif-root .map-badge { left: 56px; right: 10px; top: 10px; width: auto; justify-content: space-between; }
   .gis-eksekutif-root .mc--tl { top: 10px; }
-  .gis-eksekutif-root .fac-list button { grid-template-columns: 26px 86px 10px 1fr; }
+  .gis-eksekutif-root .fac-list button,
+  .gis-eksekutif-root .fac-list .fac-item { grid-template-columns: 26px 86px 10px 1fr; }
 }
 
 @media (max-width: 400px) {
@@ -1438,7 +1446,8 @@
   .gis-eksekutif-root .donut-legend { gap: 4px; font-size: 11px; }
   .gis-eksekutif-root .kpi-v { font-size: 20px; }
   .gis-eksekutif-root .mc-br { flex-wrap: wrap; gap: 6px; }
-  .gis-eksekutif-root .fac-list button { grid-template-columns: 24px minmax(0, 80px) 8px minmax(0, 1fr); gap: 4px; font-size: 11.5px; }
+  .gis-eksekutif-root .fac-list button,
+  .gis-eksekutif-root .fac-list .fac-item { grid-template-columns: 24px minmax(0, 80px) 8px minmax(0, 1fr); gap: 4px; font-size: 11.5px; }
   .gis-eksekutif-root .side { padding: 12px 10px; }
 }
 
@@ -2104,7 +2113,7 @@
 .gis-eksekutif-root .donut-container {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: center;
   flex: 1;
   min-height: 0;
   gap: 10px;

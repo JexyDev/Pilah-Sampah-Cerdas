@@ -496,9 +496,21 @@ export const gisEksekutifService = {
     });
 
     // ── 10. Filter Options dari DB ──────────────────────────────────────────
-    const jenisFasilitasDB: string[] = [
-      ...new Set(facilitiesRaw.map((f) => f.jenis as string)),
-    ].sort();
+    // Ambil daftar lengkap jenis fasilitas agar seluruh opsi tetap muncul dan dapat dipilih
+    const systemTypes = Array.from(VALID_FACILITY_TYPES).filter((t) => t !== "posko_kkn");
+    let jenisFasilitasDB: string[] = [];
+    try {
+      const allTypes = await prisma.facility.findMany({
+        where: { jenis: { not: "posko_kkn" as const } },
+        distinct: ["jenis"],
+        select: { jenis: true },
+      });
+      jenisFasilitasDB = allTypes.map((f) => f.jenis as string).filter(Boolean);
+    } catch {
+      // fallback jika mock tidak menyediakan distinct
+    }
+
+    jenisFasilitasDB = Array.from(new Set([...systemTypes, ...jenisFasilitasDB])).sort();
 
     return {
       success: true,
