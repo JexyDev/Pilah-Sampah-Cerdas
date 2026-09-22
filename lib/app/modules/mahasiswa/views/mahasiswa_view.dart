@@ -1319,10 +1319,9 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
     final mhsState = ref.watch(mahasiswaControllerProvider);
 
     // 1. Ambil Angka Presensi Langsung dari Backend (Single Source of Truth)
-    // Mengikuti rekomendasi Laporan Analisis: Hapus loop manual dari riwayatKkn.logs
-    // karena riwayat log tersebut (kegiatan-aktif) hanya memuat 1-2 hari terakhir.
     int hariTerpenuhi = 0;
     int hariTidakMemenuhi = 0;
+    final Set<String> countedScheduleIds = {};
 
     if (mhsState.timesheetSummary != null) {
       final summary = mhsState.timesheetSummary!;
@@ -1336,6 +1335,33 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
         // Membaca key 'totalHariTidakMemenuhi'
         hariTidakMemenuhi =
             int.tryParse(student['totalHariTidakMemenuhi']?.toString() ?? '') ?? 0;
+
+        final sessions = student['sessions'] is List ? (student['sessions'] as List) : [];
+        for (final sess in sessions) {
+          if (sess is Map && sess['scheduleId'] != null) {
+            countedScheduleIds.add(sess['scheduleId'].toString());
+          }
+        }
+      }
+    }
+
+    // Hitung kegiatan aktif yang belum teragregasi di timesheetSummary atau saat timesheet kosong
+    for (final item in mhsState.kegiatanAktifList) {
+      if (item is Map) {
+        final schId = item['id']?.toString() ?? '';
+        if (schId.isNotEmpty && countedScheduleIds.contains(schId)) {
+          continue; // Sudah terhitung di timesheet
+        }
+        final status = (item['attendanceStatus'] ?? item['statusKehadiran'] ?? '').toString().toUpperCase();
+        final isMemenuhi = item['isMemenuhiDurasi'] == true;
+        if (status == 'HADIR_MEMENUHI' || (status == 'HADIR' && isMemenuhi)) {
+          hariTerpenuhi++;
+          if (schId.isNotEmpty) countedScheduleIds.add(schId);
+        } else if (status == 'HADIR_TIDAK_MEMENUHI' ||
+            (status.contains('HADIR') && !isMemenuhi && item['checkOutAt'] != null)) {
+          hariTidakMemenuhi++;
+          if (schId.isNotEmpty) countedScheduleIds.add(schId);
+        }
       }
     }
 
@@ -1374,7 +1400,6 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
     final totalWarga = myWargaList.length;
 
     // 3. Hitung Tempat Sampah Aktif dari Daftar Warga Dampingan
-    final asyncHistory = ref.watch(pointHistoryProvider);
     int wargaAktif = myWargaList.where((w) {
       final isMyId = w.mahasiswaId.isNotEmpty && w.mahasiswaId == user?.id;
       final isMyName = w.pendampingName.trim().isNotEmpty &&
@@ -1579,7 +1604,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                             child: _KknStatCard(
                               topText: 'Total',
                               middleText: '$totalWarga',
-                              bottomText: 'Warga Dampingan',
+                              bottomText: 'Warga Dampingan Anda',
                               color: AppColors.primaryGreen,
                             ),
                           ),
