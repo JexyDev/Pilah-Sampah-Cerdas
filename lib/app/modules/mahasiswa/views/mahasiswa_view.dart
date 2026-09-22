@@ -16,8 +16,6 @@ import '../controllers/kkn_location_controller.dart';
 import '../controllers/mahasiswa_notifikasi_controller.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../shared/controllers/connectivity_controller.dart';
-import '../controllers/riwayat_kkn_controller.dart';
-import 'riwayat_kkn_view.dart' show KknHistoryType;
 import '../../riwayat/controllers/riwayat_controller.dart'
     show pointHistoryProvider;
 import 'data_logbook_harian_view.dart' show logbookListProvider;
@@ -1317,44 +1315,28 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
   // ═══════════════════════════════════════════════════════════════════════════
   Widget _buildKknStatsRow(BuildContext context, WidgetRef ref) {
     final mhsState = ref.watch(mahasiswaControllerProvider);
-    final riwayatKkn = ref.watch(riwayatKknControllerProvider);
 
-    // 1. Hitung Presensi Terpenuhi & Tidak Memenuhi
-    final Set<String> hariTerpenuhiSet = {};
-    final Set<String> hariTidakMemenuhiSet = {};
+    // 1. Ambil Angka Presensi Langsung dari Backend (Single Source of Truth)
+    // Mengikuti rekomendasi Laporan Analisis: Hapus loop manual dari riwayatKkn.logs
+    // karena riwayat log tersebut (kegiatan-aktif) hanya memuat 1-2 hari terakhir.
+    int hariTerpenuhi = 0;
+    int hariTidakMemenuhi = 0;
 
-    for (final log in riwayatKkn.logs) {
-      if (log.type == KknHistoryType.gps) {
-        final d = log.timestamp.toLocal();
-        final dayKey =
-            '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-        final status = (log.statusKehadiran ?? '').toUpperCase();
-
-        if (log.isMemenuhiDurasi == true || status == 'HADIR_MEMENUHI') {
-          hariTerpenuhiSet.add(dayKey);
-        } else if (log.isMemenuhiDurasi == false ||
-            status == 'HADIR_TIDAK_MEMENUHI' ||
-            status == 'SELESAI_TELAT') {
-          hariTidakMemenuhiSet.add(dayKey);
-        }
-      }
-    }
-
-    hariTidakMemenuhiSet.removeAll(hariTerpenuhiSet);
-
-    int hariTerpenuhi = hariTerpenuhiSet.length;
-    int hariTidakMemenuhi = hariTidakMemenuhiSet.length;
-
-    // Fallback dari timesheetSummary jika logs riwayat masih kosong / loading
-    if (hariTerpenuhi == 0 && mhsState.timesheetSummary != null) {
+    if (mhsState.timesheetSummary != null) {
       final students = mhsState.timesheetSummary!['students'] as List?;
       if (students != null && students.isNotEmpty) {
         final student = students.first as Map<String, dynamic>;
-        final fromTimesheet =
-            (student['totalDaysAttended'] as num?)?.toInt() ?? 0;
-        if (fromTimesheet > 0) {
-          hariTerpenuhi = fromTimesheet;
-        }
+        
+        // Membaca key 'totalHariTerpenuhi' (Rencana perbaikan backend TO-BE)
+        // Fallback ke 'fulfilledTargetDays' (AS-IS Backend saat ini) karena ini sudah 
+        // mengecek durasi >= 4 jam secara akurat, DILARANG fallback ke totalDaysAttended.
+        hariTerpenuhi = (student['totalHariTerpenuhi'] as num?)?.toInt() ??
+            (student['fulfilledTargetDays'] as num?)?.toInt() ??
+            0;
+
+        // Membaca key 'totalHariTidakMemenuhi'
+        hariTidakMemenuhi =
+            (student['totalHariTidakMemenuhi'] as num?)?.toInt() ?? 0;
       }
     }
 
