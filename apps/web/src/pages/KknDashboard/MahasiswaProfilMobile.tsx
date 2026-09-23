@@ -23,6 +23,16 @@ import { compressImage } from "../../utils/compressImage";
 import { safeFormatDateShort } from "../../utils/safeDateUtils";
 import { useNavigate } from "react-router-dom";
 
+const getTodayWib = (): string => {
+  const d = new Date(Date.now() + 7 * 60 * 60 * 1000);
+  return d.toISOString().split("T")[0];
+};
+
+const getNDaysAgoWib = (days: number): string => {
+  const d = new Date(Date.now() + 7 * 60 * 60 * 1000 - days * 24 * 60 * 60 * 1000);
+  return d.toISOString().split("T")[0];
+};
+
 export const MahasiswaProfilMobile: React.FC = () => {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
@@ -30,8 +40,8 @@ export const MahasiswaProfilMobile: React.FC = () => {
   const [showIzinModal, setShowIzinModal] = useState(false);
   const [tipeIzin, setTipeIzin] = useState<"IZIN" | "SAKIT">("IZIN");
   const [alasan, setAlasan] = useState("");
-  const [tanggalMulai, setTanggalMulai] = useState(new Date().toISOString().split("T")[0]);
-  const [tanggalSelesai, setTanggalSelesai] = useState(new Date().toISOString().split("T")[0]);
+  const [tanggalMulai, setTanggalMulai] = useState(getTodayWib());
+  const [tanggalSelesai, setTanggalSelesai] = useState(getTodayWib());
   const [fotoFile, setFotoFile] = useState<File | null>(null);
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -246,7 +256,13 @@ export const MahasiswaProfilMobile: React.FC = () => {
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
-                      onClick={() => setTipeIzin("IZIN")}
+                      onClick={() => {
+                        setTipeIzin("IZIN");
+                        if (tanggalMulai < getTodayWib()) {
+                          setTanggalMulai(getTodayWib());
+                          setTanggalSelesai(getTodayWib());
+                        }
+                      }}
                       className={`py-2.5 rounded-xl font-bold transition cursor-pointer border flex items-center justify-center gap-1.5 ${
                         tipeIzin === "IZIN"
                           ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-500 shadow-xs"
@@ -269,25 +285,38 @@ export const MahasiswaProfilMobile: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase">Tanggal Mulai</label>
-                    <input
-                      type="date"
-                      value={tanggalMulai}
-                      onChange={(e) => setTanggalMulai(e.target.value)}
-                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-900 dark:text-white"
-                    />
+                <div className="space-y-1">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">Tanggal Mulai</label>
+                      <input
+                        type="date"
+                        value={tanggalMulai}
+                        min={tipeIzin === "SAKIT" ? getNDaysAgoWib(7) : getTodayWib()}
+                        onChange={(e) => setTanggalMulai(e.target.value)}
+                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-900 dark:text-white"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">Tanggal Selesai</label>
+                      <input
+                        type="date"
+                        value={tanggalSelesai}
+                        min={tanggalMulai || (tipeIzin === "SAKIT" ? getNDaysAgoWib(7) : getTodayWib())}
+                        onChange={(e) => setTanggalSelesai(e.target.value)}
+                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-900 dark:text-white"
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase">Tanggal Selesai</label>
-                    <input
-                      type="date"
-                      value={tanggalSelesai}
-                      onChange={(e) => setTanggalSelesai(e.target.value)}
-                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-900 dark:text-white"
-                    />
-                  </div>
+                  {tipeIzin === "SAKIT" ? (
+                    <p className="text-[9.5px] text-amber-600 dark:text-amber-400 font-medium pt-0.5">
+                      ℹ️ Izin sakit dapat diajukan susulan maksimal 7 hari ke belakang dengan melampirkan surat dokter.
+                    </p>
+                  ) : (
+                    <p className="text-[9.5px] text-slate-400 font-medium pt-0.5">
+                      ℹ️ Izin keperluan pribadi hanya dapat diajukan untuk hari ini atau hari mendatang.
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-1">

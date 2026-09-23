@@ -3233,11 +3233,33 @@ export class KknService {
     const startDate = new Date(`${startWibStr}T00:00:00+07:00`);
     const endDate = new Date(`${endWibStr}T23:59:59.999+07:00`);
 
-    // Validasi Tanggal: Tidak boleh mengajukan izin untuk hari yang sudah lewat (WIB Timezone)
+    const leaveType = (payload.kategori || (payload as any).type || "IZIN")
+      .toUpperCase()
+      .includes("SAKIT")
+      ? "SAKIT"
+      : "IZIN";
+
+    // Validasi Tanggal (WIB Timezone):
+    // 1. SAKIT: Mahasiswa diizinkan mengajukan izin sakit susulan (retroaktif) hingga 7 hari ke belakang dengan bukti surat dokter
+    // 2. IZIN: Tidak boleh untuk rentang tanggal yang seluruhnya sudah lewat (startWib < nowWib && endWib < nowWib)
     const nowWib = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
     const startWib = new Date(startDate.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
-    if (startWib < nowWib) {
-      throw new Error("Anda tidak dapat mengajukan izin untuk tanggal yang sudah lewat.");
+    const endWib = new Date(endDate.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+    if (leaveType === "SAKIT") {
+      const maxRetroactiveDays = 7;
+      const minSakitDate = new Date(Date.now() + 7 * 60 * 60 * 1000 - maxRetroactiveDays * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .slice(0, 10);
+      if (startWib < minSakitDate) {
+        throw new Error(
+          `Pengajuan izin sakit dengan surat dokter maksimal dilakukan untuk ${maxRetroactiveDays} hari ke belakang.`
+        );
+      }
+    } else {
+      if (startWib < nowWib && endWib < nowWib) {
+        throw new Error("Anda tidak dapat mengajukan izin untuk tanggal yang sudah lewat.");
+      }
     }
 
     // VALIDASI ANTI-TUMPUK (1 Hari/Pertemuan = 1 Status Pengajuan)
@@ -3273,12 +3295,6 @@ export class KknService {
         throw new Error("Permohonan pembatalan izin Anda sedang menunggu konfirmasi DPL.");
       }
     }
-
-    const leaveType = (payload.kategori || (payload as any).type || "IZIN")
-      .toUpperCase()
-      .includes("SAKIT")
-      ? "SAKIT"
-      : "IZIN";
 
     const leave = await (prisma as any).studentLeaveRequest.create({
       data: {
