@@ -42,6 +42,7 @@ export interface RuleEngineConfig {
   attendanceMinDurationHours: number;
   attendanceMinDurationMinutes: number;
   attendanceMinDurationSeconds: number;
+  attendanceMinDefaultMinutes: number;
   attendanceOutOfZoneToleranceMinutes: number;
   attendanceOutOfZonePenaltyPoints: number;
   attendanceOutOfZonePenaltyActive: boolean;
@@ -66,9 +67,10 @@ const DEFAULT_CONFIG: RuleEngineConfig = {
   wargaReminderNotificationEnabled: true,
   lateSubmissionDiscount: 0.5,
   lateSubmissionPenaltyActive: true,
-  attendanceMinDurationHours: 4,
+  attendanceMinDurationHours: 0,
   attendanceMinDurationMinutes: 0,
   attendanceMinDurationSeconds: 0,
+  attendanceMinDefaultMinutes: 30,
   attendanceOutOfZoneToleranceMinutes: 5,
   attendanceOutOfZonePenaltyPoints: 10,
   attendanceOutOfZonePenaltyActive: true,
@@ -270,7 +272,10 @@ const MasterRuleEngine: React.FC = () => {
           <div>
             <span className="text-[10.5px] font-black text-slate-400 uppercase tracking-wider block">Waktu Minimal Presensi KKN</span>
             <span className="text-xs font-black text-slate-800 dark:text-slate-100">
-              {String(config.attendanceMinDurationHours).padStart(2, "0")}J : {String(config.attendanceMinDurationMinutes).padStart(2, "0")}M : {String(config.attendanceMinDurationSeconds).padStart(2, "0")}D
+              {(config.attendanceMinDurationHours + config.attendanceMinDurationMinutes + config.attendanceMinDurationSeconds) === 0
+                ? `Default ${config.attendanceMinDefaultMinutes} Mnt (Ikuti Jadwal)`
+                : `${String(config.attendanceMinDurationHours).padStart(2, "0")}J : ${String(config.attendanceMinDurationMinutes).padStart(2, "0")}M : ${String(config.attendanceMinDurationSeconds).padStart(2, "0")}D`
+              }
             </span>
           </div>
         </div>
@@ -563,6 +568,30 @@ const MasterRuleEngine: React.FC = () => {
                       />
                     </div>
                   </div>
+                </div>
+
+                {/* Input Durasi Minimum Default (Fallback) */}
+                <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-2xl border border-amber-200/80 dark:border-amber-700/40 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-black text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                      <Timer size={15} className="text-amber-600" /> Durasi Minimum Default (Fallback)
+                    </label>
+                    <span className="text-xs font-black text-amber-700 bg-amber-100 dark:bg-amber-900/40 px-2 py-0.5 rounded-md">
+                      {config.attendanceMinDefaultMinutes} Menit
+                    </span>
+                  </div>
+                  <p className="text-[10.5px] text-amber-700 dark:text-amber-400 font-medium leading-relaxed">
+                    Digunakan saat Target Durasi di atas = <strong>0</strong> dan jadwal tidak memiliki waktu terdefinisi.
+                    Default: <strong>30 menit</strong>.
+                  </p>
+                  <input
+                    type="number"
+                    min="1"
+                    max="480"
+                    value={config.attendanceMinDefaultMinutes}
+                    onChange={(e) => handleChange("attendanceMinDefaultMinutes", parseInt(e.target.value) || 30)}
+                    className="w-full bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-700 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-amber-500"
+                  />
                 </div>
 
                 {/* Input Toleransi & Penalti Keluar Zona */}

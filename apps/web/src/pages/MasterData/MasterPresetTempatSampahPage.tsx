@@ -65,7 +65,7 @@ export const INDONESIAN_BIN_PHOTO_PRESETS = [
     desc: "Drum plastik biru bertutup komunal khas lingkungan warga Indonesia",
   },
   {
-    id: "photo-tong-pedal",
+    id: "photo-tempat-sampah-pedal",
     title: "Tempat Sampah Injak Pedal (Toilet/Kamar)",
     category: "tabung",
     url: "https://images.unsplash.com/photo-1595278069441-2cf29f8005a4?auto=format&fit=crop&w=800&q=80",

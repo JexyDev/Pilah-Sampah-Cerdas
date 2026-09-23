@@ -3607,19 +3607,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 <ChevronDown size={12} className="pointer-events-none absolute right-2.5 text-slate-400" />
               </div>
             )}
-            {/* Tombol Tambah Manual — tepat di samping dropdown */}
-            {/* TODO: HIDE SEMENTARA */}
-            {false && canCrudAttendance && activeSchedule && (
-              <button
-                type="button"
-                onClick={handleOpenAddPresensi}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition shadow-xs cursor-pointer shrink-0"
-                title="Tambahkan presensi manual untuk mahasiswa yang belum tercatat"
-              >
-                <Plus size={13} />
-                <span>Tambah Manual</span>
-              </button>
-            )}
+
           </div>
         </div>
 

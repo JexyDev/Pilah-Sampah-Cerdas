@@ -273,14 +273,53 @@ export const gisEksekutifService = {
       ? kelurahanList.map((k) => k.name)
       : Object.keys(KELURAHAN_GEOMETRIES);
 
+    // Filter setoran bulanan untuk evaluasi performa dinamis
+    const startOfMonth = new Date(Date.UTC(2026, activeMonthIdx, 1));
+    const endOfMonth = new Date(Date.UTC(2026, activeMonthIdx + 1, 0, 23, 59, 59, 999));
+    
+    const setoranBulanan = await prisma.setoranOtomatis.findMany({
+      where: {
+        createdAt: { gte: startOfMonth, lte: endOfMonth },
+        warga: { isTestAccount: false }
+      },
+      select: {
+        status: true,
+        warga: {
+          select: { rw: { select: { kelurahanId: true, kelurahan: { select: { name: true } } } } }
+        }
+      }
+    });
+
+    const kepatuhanAktual: Record<string, { total: number, patuh: number }> = {};
+    setoranBulanan.forEach((s) => {
+      const kelName = s.warga?.rw?.kelurahan?.name;
+      if (!kelName) return;
+      
+      const key = kelName.toLowerCase();
+      if (!kepatuhanAktual[key]) {
+        kepatuhanAktual[key] = { total: 0, patuh: 0 };
+      }
+      
+      kepatuhanAktual[key].total += 1;
+      if (s.status === "ACCEPTED") {
+        kepatuhanAktual[key].patuh += 1;
+      }
+    });
+
     const kepatuhanPerKelurahan = kelurahanNames.map((kelName) => {
       const survei = surveiKelurahan.find(
         (s) => s.namaKelurahan?.toLowerCase() === kelName.toLowerCase()
       );
 
-      // Persentase pemilahan — murni dari DB jika ada
       let kepatuhan: number | null = null;
-      if (survei?.pemilahanSampah?.persentasePemilahan != null) {
+      const key = kelName.toLowerCase();
+      const realData = kepatuhanAktual[key];
+
+      if (realData && realData.total > 0) {
+        // Gunakan data transaksi real jika ada
+        kepatuhan = Math.round((realData.patuh / realData.total) * 100);
+      } else if (survei?.pemilahanSampah?.persentasePemilahan != null) {
+        // Fallback ke survei KKN jika transaksi belum terjadi sama sekali
         const raw = Number(survei.pemilahanSampah.persentasePemilahan);
         // Field disimpan sebagai desimal 0.0000–1.0000 (Decimal 5,4)
         kepatuhan = raw <= 1 ? Math.round(raw * 100) : Math.round(raw);

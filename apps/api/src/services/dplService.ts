@@ -124,8 +124,11 @@ async function calculateStudentAttendanceRate(
       return 0;
     }
 
-    const targetDailyMinutes =
-      (ruleConfigs?.attendanceMinDurationHours || configTargets?.targetHarianJam || 4) * 60;
+    const ruleTargetMins = (ruleConfigs?.attendanceMinDurationHours ?? 0) * 60
+      + (ruleConfigs?.attendanceMinDurationMinutes ?? 0);
+    const targetDailyMinutes = ruleTargetMins > 0
+      ? ruleTargetMins
+      : ((ruleConfigs?.attendanceMinDefaultMinutes ?? configTargets?.targetHarianJam * 60) || 30);
 
     let sumSessionScores = 0;
 
@@ -1843,8 +1846,11 @@ export const dplService = {
     // Batch query points via centralized anti-leak function (SSOT)
     const pointsByStudent = await calculateValidIndividualPointsForUsers(studentUserIds);
 
-    const targetDailyMinutes =
-      (ruleConfigs?.attendanceMinDurationHours || configTargets?.targetHarianJam || 4) * 60;
+    const ruleTargetMins1850 = (ruleConfigs?.attendanceMinDurationHours ?? 0) * 60
+      + (ruleConfigs?.attendanceMinDurationMinutes ?? 0);
+    const targetDailyMinutes = ruleTargetMins1850 > 0
+      ? ruleTargetMins1850
+      : ((ruleConfigs?.attendanceMinDefaultMinutes ?? configTargets?.targetHarianJam * 60) || 30);
 
     const studentDetails = students.map((st) => {
       const attendances = attendancesByStudent.get(st.userId) || [];
@@ -4359,6 +4365,7 @@ export const dplService = {
       "attendance_min_duration_hours",
       "attendance_min_duration_minutes",
       "attendance_min_duration_seconds",
+      "attendance_min_default_minutes",
     ];
 
     const configs = await prisma.systemConfig.findMany({
@@ -4371,20 +4378,21 @@ export const dplService = {
     const targetJamRaw = Number(configMap.get("kkn_target_total_jam"));
     const targetJamTotal = !isNaN(targetJamRaw) && targetJamRaw > 0 ? targetJamRaw : 200;
 
+    const attendanceMinDefaultMinutes = Number(configMap.get("attendance_min_default_minutes") || 30);
     let minHours = Number(configMap.get("attendance_min_duration_hours") ?? 0);
     let minMinutes = Number(configMap.get("attendance_min_duration_minutes") ?? 0);
     let minSeconds = Number(configMap.get("attendance_min_duration_seconds") ?? 0);
 
     let minTotalHours = (minHours * 3600 + minMinutes * 60 + minSeconds) / 3600;
 
-    // Otomatisasi: Jika durasi minimal harian belum diatur atau nilai uji coba lama (< 0.05 jam saat target kumulatif >= 10 jam)
-    const autoDailyMins =
-      targetHariTotal > 0 ? Math.round((targetJamTotal * 60) / targetHariTotal) : 240;
-    if (minTotalHours <= 0 || (minTotalHours < 0.05 && targetJamTotal >= 10)) {
-      minHours = Math.floor(autoDailyMins / 60);
-      minMinutes = autoDailyMins % 60;
+    // Otomatisasi: Jika durasi minimal harian belum diatur (hours+minutes+seconds = 0),
+    // gunakan attendanceMinDefaultMinutes dari DB (bukan hardcode 240)
+    const ruleTargetMins = minHours * 60 + minMinutes + Math.round(minSeconds / 60);
+    if (ruleTargetMins <= 0) {
+      minHours = Math.floor(attendanceMinDefaultMinutes / 60);
+      minMinutes = attendanceMinDefaultMinutes % 60;
       minSeconds = 0;
-      minTotalHours = (minHours * 60 + minMinutes) / 60;
+      minTotalHours = attendanceMinDefaultMinutes / 60;
     }
 
     const targetHarianRaw = Number(configMap.get("kkn_target_harian_jam"));
@@ -4401,12 +4409,13 @@ export const dplService = {
       attendanceMinDurationHours: minHours,
       attendanceMinDurationMinutes: minMinutes,
       attendanceMinDurationSeconds: minSeconds,
+      attendanceMinDefaultMinutes,
       hariKerja: (configMap.get("kkn_hari_kerja") || "Senin - Jumat")
-        .replace(/\?{2,3}|â€“|–|—/g, " - ")
+        .replace(/\?{2,3}|â€"|–|—/g, " - ")
         .replace(/\s+-\s+/g, " - ")
         .trim(),
       jamKerja: (configMap.get("kkn_jam_kerja") || "08:00 - 19:00 WIB")
-        .replace(/\?{2,3}|â€“|–|—/g, " - ")
+        .replace(/\?{2,3}|â€"|–|—/g, " - ")
         .replace(/\s+-\s+/g, " - ")
         .trim(),
       targetPekan: Number(configMap.get("kkn_target_pekan") || 10),

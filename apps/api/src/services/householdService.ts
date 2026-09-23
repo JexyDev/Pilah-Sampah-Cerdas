@@ -206,7 +206,7 @@ export class HouseholdService {
       throw err;
     }
 
-    // Cek apakah user saat ini sudah memiliki tong sampah UTAMA
+    // Cek apakah user saat ini sudah memiliki Tempat Sampah UTAMA
     const hasPrimaryBin = currentUser.binOwnerships.some((b) => b.type === "UTAMA");
     if (hasPrimaryBin) {
       const err: any = new Error("Akun Anda sudah memiliki Tempat Sampah aktif terdaftar.");
@@ -292,7 +292,7 @@ export class HouseholdService {
 
     // 4. Eksekusi database transaction untuk menghubungkan akun
     await prisma.$transaction(async (tx) => {
-      // Hubungkan ke seluruh tong sampah milik Kepala Keluarga sebagai TAMBAHAN
+      // Hubungkan ke seluruh Tempat Sampah milik Kepala Keluarga sebagai TAMBAHAN
       for (const ownership of headUser.binOwnerships) {
         await tx.binOwnership.upsert({
           where: {
