@@ -647,7 +647,12 @@ export function parseScheduleTimeRange(timeStr?: string | null): {
 }
 
 /**
- * Helper: Determine required attendance duration (minutes) for a schedule activity.
+ * Helper: Menentukan target durasi presensi wajib (dalam menit) untuk satu sesi kegiatan.
+ *
+ * Prioritas (tanpa hardcode):
+ * 1. Rule Engine DB config (attendanceMinDurationHours/Minutes/Seconds) jika > 0
+ * 2. Durasi aktual jadwal kegiatan (selisih waktu mulai–selesai) jika tersedia
+ * 3. Fallback ke `attendanceMinDefaultMinutes` dari Rule Engine DB (default: 30 menit)
  */
 export async function getScheduleTargetDurationMinutes(schedule: {
   time?: string | null;
@@ -666,8 +671,14 @@ export async function getScheduleTargetDurationMinutes(schedule: {
     ruleConfigs.attendanceMinDurationMinutes +
     Math.round(ruleConfigs.attendanceMinDurationSeconds / 60);
 
-  let finalTarget = ruleTargetMinutes > 0 ? ruleTargetMinutes : (scheduleDurationMinutes > 0 ? scheduleDurationMinutes : 240);
-  return finalTarget < 240 ? 240 : finalTarget;
+  // Prioritas 1: Rule Engine dikonfigurasi secara eksplisit
+  if (ruleTargetMinutes > 0) return ruleTargetMinutes;
+
+  // Prioritas 2: Ambil dari durasi jadwal kegiatan (dinamis dari DB)
+  if (scheduleDurationMinutes > 0) return scheduleDurationMinutes;
+
+  // Prioritas 3: Fallback ke konfigurasi minimum default di Rule Engine (dapat di-CRUD)
+  return ruleConfigs.attendanceMinDefaultMinutes;
 }
 
 /**
@@ -3472,12 +3483,15 @@ export class KknAttendanceService {
     });
 
     const config = await dplService.getConfigTargets();
-    const TARGET_HARIAN_HOURS =
-      Number(config.attendanceMinDurationHours || config.targetHarianJam) || 4;
+    const ruleTargetHarian = (config.attendanceMinDurationHours ?? 0) * 60
+      + (config.attendanceMinDurationMinutes ?? 0);
+    const TARGET_HARIAN_MINUTES = ruleTargetHarian > 0
+      ? ruleTargetHarian
+      : (config.attendanceMinDefaultMinutes ?? (config.targetHarianJam ? config.targetHarianJam * 60 : 30));
+    const TARGET_HARIAN_HOURS = TARGET_HARIAN_MINUTES / 60;
     const TARGET_TOTAL_HOURS =
       Number(config.targetTotalJam) || TARGET_HARIAN_HOURS * Number(config.targetTotalHari || 50);
     const TARGET_TOTAL_MINUTES = Math.round(TARGET_TOTAL_HOURS * 60);
-    const TARGET_HARIAN_MINUTES = Math.round(TARGET_HARIAN_HOURS * 60);
 
     const summary = students.map((s) => {
       let totalMinutes = 0;
@@ -5640,10 +5654,11 @@ export class KknAttendanceService {
     ]);
 
     const ruleConfigs = await configService.getRuleEngineConfigs().catch(() => null);
-    const minHours = Number(
-      ruleConfigs?.attendanceMinDurationHours || ruleConfigs?.targetHarianJam || 4
-    );
-    const targetMinMenit = minHours * 60;
+    const ruleTargetMins5655 = (ruleConfigs?.attendanceMinDurationHours ?? 0) * 60
+      + (ruleConfigs?.attendanceMinDurationMinutes ?? 0);
+    const targetMinMenit = ruleTargetMins5655 > 0
+      ? ruleTargetMins5655
+      : (ruleConfigs?.attendanceMinDefaultMinutes ?? 30);
 
     // Calculate aggregated summary and per-student cumulative stats
     let hadirMemenuhiCount = 0;
