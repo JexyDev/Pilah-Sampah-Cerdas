@@ -235,7 +235,6 @@ const MONTH_LABELS_9 = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", 
 
 export function Trend({ series, pi }: TrendProps) {
   const [isCumulative, setIsCumulative] = useState(false);
-  const [scaleMode, setScaleMode] = useState<"focus" | "zero">("focus");
   const ref = useRef<HTMLDivElement>(null);
   const { w } = useSize(ref, { w: 420, h: 140 });
   const [hover, setHover] = useState<number | null>(null);
@@ -258,16 +257,14 @@ export function Trend({ series, pi }: TrendProps) {
   const m = { l: 44, r: 16, t: 26, b: 24 };
 
   const maxValInSeries = Math.max(...activeSeries, 0);
-  const positiveVals = activeSeries.filter((v) => v > 0);
-  const minValInSeries = positiveVals.length > 0 ? Math.min(...positiveVals) : 0;
 
-  // Hitung rentang dan ticks Sumbu Y dinamis
+  // Hitung rentang dan ticks Sumbu Y dinamis (Standar Baseline 0 Profesional)
   let yMin = 0;
   let yMax = 2000;
   let yTicks: number[] = [];
 
   if (isCumulative) {
-    // Mode Kumulatif: selalu mulai dari 0 hingga batas atas proporsional
+    // Mode Akumulasi Tahunan: mulai dari 0 hingga batas atas proporsional
     yMin = 0;
     const targetMax = Math.max(100, Math.ceil(maxValInSeries * 1.15));
     let step = 1000;
@@ -282,36 +279,8 @@ export function Trend({ series, pi }: TrendProps) {
     yMax = count * step;
     const tickStep = yMax / 4;
     yTicks = [0, Math.round(tickStep), Math.round(tickStep * 2), Math.round(tickStep * 3), yMax];
-  } else if (scaleMode === "focus") {
-    // Mode Fokus: interval rapat (1.200, 1.400, 1.600, 1.800) agar fluktuasi naik-turun terlihat jelas
-    if (minValInSeries > 0 && maxValInSeries > minValInSeries) {
-      const diff = maxValInSeries - minValInSeries;
-      let step = 200;
-      if (diff <= 60) step = 20;
-      else if (diff <= 150) step = 50;
-      else if (diff <= 350) step = 200; // Khusus data 1.320 s/d 1.609 -> step 200 (1.200, 1.400, 1.600, 1.800)
-      else if (diff <= 700) step = 250;
-      else step = Math.ceil(diff / 3 / 100) * 100;
-
-      yMin = Math.max(0, Math.floor((minValInSeries - step * 0.3) / step) * step);
-      yMax = Math.ceil((maxValInSeries + step * 0.3) / step) * step;
-
-      while ((yMax - yMin) / step < 3) {
-        yMax += step;
-      }
-
-      yTicks = [];
-      for (let t = yMin; t <= yMax + step * 0.01; t += step) {
-        yTicks.push(Math.round(t));
-      }
-    } else {
-      yMin = 0;
-      yMax = Math.max(20, Math.ceil(maxValInSeries * 1.25));
-      const step = yMax / 4;
-      yTicks = [0, Math.round(step), Math.round(step * 2), Math.round(step * 3), yMax];
-    }
   } else {
-    // Mode Skala 0: Mulai dari 0 tanpa loncatan ekstrim 2000 -> 5000
+    // Mode Per Bulan: Mulai dari 0 secara standar & proporsional
     yMin = 0;
     let computedMax = Math.max(20, Math.ceil(maxValInSeries * 1.15));
     if (computedMax <= 50) computedMax = 50;
@@ -365,46 +334,28 @@ export function Trend({ series, pi }: TrendProps) {
         subtitle={maxValInSeries > 0 ? undefined : "Belum ada log produksi tercatat"}
         right={
           <div className="trend-actions">
-            {!isCumulative && (
-              <div className="trend-toggle-group" role="group" aria-label="Mode Skala Sumbu Y">
-                <button
-                  type="button"
-                  className={`trend-toggle-btn ${scaleMode === "focus" ? "is-active" : ""}`}
-                  onClick={() => setScaleMode("focus")}
-                  title="Fokuskan rentang grafik ke fluktuasi data riil (1.200 - 1.800)"
-                >
-                  Fokus
-                </button>
-                <button
-                  type="button"
-                  className={`trend-toggle-btn ${scaleMode === "zero" ? "is-active" : ""}`}
-                  onClick={() => setScaleMode("zero")}
-                  title="Mulai sumbu Y dari angka nol (0)"
-                >
-                  Skala 0
-                </button>
-              </div>
-            )}
-            <div className="trend-toggle-group" role="group" aria-label="Tipe Tampilan Data">
+            <div className="trend-toggle-group" role="group" aria-label="Mode Tampilan Data Volume">
               <button
                 type="button"
                 className={`trend-toggle-btn ${!isCumulative ? "is-active" : ""}`}
                 onClick={() => setIsCumulative(false)}
+                title="Tampilkan volume per bulan (m³/bulan)"
               >
-                Bulanan
+                Per Bulan
               </button>
               <button
                 type="button"
                 className={`trend-toggle-btn ${isCumulative ? "is-active" : ""}`}
                 onClick={() => setIsCumulative(true)}
+                title="Tampilkan total akumulasi volume sampah tahun berjalan (m³)"
               >
-                Kumulatif
+                Akumulasi
               </button>
             </div>
           </div>
         }
       >
-        Tren volume bulanan
+        {isCumulative ? "Akumulasi volume sampah" : "Tren volume bulanan"}
       </CardTitle>
 
       <div ref={ref} className="trend">
@@ -513,9 +464,11 @@ export function Trend({ series, pi }: TrendProps) {
         </svg>
       </div>
 
-      {/* Tabel Nilai Volume Bulanan Sesuai Acuan QC */}
+      {/* Tabel Nilai Volume Sesuai Mode Tampilan */}
       <div className="trend-table-wrap">
-        <div className="trend-table-title">Nilai volume (m³/bulan)</div>
+        <div className="trend-table-title">
+          {isCumulative ? "Nilai volume akumulatif (m³)" : "Nilai volume per bulan (m³/bulan)"}
+        </div>
         <div className="trend-table-grid">
           <div className="trend-table-row trend-table-head">
             {MONTH_LABELS_9.map((m, i) => (
