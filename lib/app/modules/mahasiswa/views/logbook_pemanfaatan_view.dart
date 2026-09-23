@@ -121,10 +121,6 @@ class _LogbookPemanfaatanViewState
     setState(() => _isLoading = true);
     try {
       final repo = ref.read(kknRepositoryProvider);
-      // Dummy coords for context
-      const double latitude = 0.0;
-      const double longitude = 0.0;
-
       await repo.submitLogbookPemanfaatan({
         'programKerjaId': _selectedProkerId,
         if (_selectedFasilitasId != null) 'fasilitasId': _selectedFasilitasId,
@@ -133,8 +129,6 @@ class _LogbookPemanfaatanViewState
         'beratInputKg':
             double.tryParse(_beratInputCtrl.text.trim().replaceAll('.', '')) ??
             0,
-        'latitude': latitude,
-        'longitude': longitude,
       }, imagePath: _selectedImage?.path);
 
       if (mounted) {

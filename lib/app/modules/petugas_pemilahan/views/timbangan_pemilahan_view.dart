@@ -110,13 +110,8 @@ class _TimbanganPemilahanViewState
     final weightStr = _weightController.text.trim().replaceAll(',', '.');
     final weight = double.tryParse(weightStr) ?? 0.0;
 
-    // Skala KPI Petugas: 2 Poin per 1 Kg (Dibulatkan)
-    int points = weight.round() * 2;
-
-    // Bonus kehadiran & foto bukti di titik kumpul (+10)
-    if (weight > 0 && _photoPath != null && _photoTimbanganPath != null) {
-      points += 10;
-    }
+    // SSOT Backend: Flat 5 Poin per input timbangan pemilahan residu
+    final int points = weight > 0 ? 5 : 0;
 
     if (points != _estimatedPoints) {
       setState(() {
@@ -1017,19 +1012,19 @@ class _TimbanganPemilahanViewState
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppColors.warningYellow.withValues(alpha: 0.2),
+                          color: AppColors.primaryGreen.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: const Row(
                           children: [
-                            Icon(Icons.camera_alt_rounded, size: 12, color: AppColors.warningOrange),
+                            Icon(Icons.check_circle_rounded, size: 12, color: AppColors.primaryGreen),
                             SizedBox(width: 4),
                             Text(
-                              '+10',
+                              'Foto OK',
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
-                                color: AppColors.warningOrange,
+                                color: AppColors.primaryGreen,
                               ),
                             ),
                           ],
