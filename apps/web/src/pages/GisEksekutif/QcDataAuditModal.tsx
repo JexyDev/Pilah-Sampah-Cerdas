@@ -12,6 +12,7 @@ import { Icon } from "./ui";
 import { fmtN, fmtInt } from "./charts";
 import type { GisOverviewApiResponse } from "./gisEksekutifApi";
 import { downloadQcReportPdf } from "../../utils/downloadQcReportPdf";
+import { useAuthStore } from "../../store/useAuthStore";
 
 interface QcDataAuditModalProps {
   isOpen: boolean;
@@ -28,10 +29,14 @@ export function QcDataAuditModal({
   currentPeriode,
   selectedKel,
 }: QcDataAuditModalProps) {
+  const user = useAuthStore((s) => s.user);
+  const userRole = String(user?.peran || (user as any)?.role || "").toUpperCase();
+  const isDeveloper = userRole === "DEVELOPER" || userRole === "DEV";
+
   const [activeTab, setActiveTab] = useState<"formula" | "provenance" | "table" | "governance">("formula");
   const [copiedQueryId, setCopiedQueryId] = useState<string | null>(null);
 
-  if (!isOpen) return null;
+  if (!isOpen || !isDeveloper) return null;
 
   const hasData = Boolean(
     data?.komposisiVolume?.hasData ||

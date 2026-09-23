@@ -24,6 +24,7 @@ import {
 } from "./gisEksekutifApi";
 import { QcDataAuditModal } from "./QcDataAuditModal";
 import { downloadQcReportPdf } from "../../utils/downloadQcReportPdf";
+import { useAuthStore } from "../../store/useAuthStore";
 
 function createOfflineFallbackData(kelurahanFilter = "Semua"): GisOverviewApiResponse {
   const kelNames = ["Cipaganti", "Dago", "Lebak Gede", "Lebak Siliwangi", "Sadang Serang", "Sekeloa"];
@@ -170,9 +171,10 @@ interface ExportMenuProps {
   periode?: string;
   onOpenQcModal?: () => void;
   onDownloadQcPdf?: () => void;
+  isDeveloper?: boolean;
 }
 
-function ExportMenu({ onExport, selectedKel, periode, onOpenQcModal, onDownloadQcPdf }: ExportMenuProps) {
+function ExportMenu({ onExport, selectedKel, periode, onOpenQcModal, onDownloadQcPdf, isDeveloper }: ExportMenuProps) {
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
 
@@ -259,8 +261,8 @@ function ExportMenu({ onExport, selectedKel, periode, onOpenQcModal, onDownloadQ
             </span>
           </button>
 
-          {/* Opsi 4: Cetak / Unduh Laporan PDF QC */}
-          {onDownloadQcPdf && (
+          {/* Opsi 4: Cetak / Unduh Laporan PDF QC (Khusus Role Developer) */}
+          {isDeveloper && onDownloadQcPdf && (
             <button
               type="button"
               role="menuitem"
@@ -278,8 +280,8 @@ function ExportMenu({ onExport, selectedKel, periode, onOpenQcModal, onDownloadQ
             </button>
           )}
 
-          {/* Opsi 5: Laporan Asal & Rumus Data (QC) */}
-          {onOpenQcModal && (
+          {/* Opsi 5: Laporan Asal & Rumus Data (QC) (Khusus Role Developer) */}
+          {isDeveloper && onOpenQcModal && (
             <button
               type="button"
               role="menuitem"
@@ -368,6 +370,11 @@ function toSensorForMap(s: GisSensorDto): SensorForMap {
 
 /* ---------- Komponen Utama ---------- */
 export default function GisEksekutifPage() {
+  // ─── User role security: Fitur Asal & Rumus QC DILARANG untuk pimpinan/su/role lain, HANYA untuk DEVELOPER
+  const user = useAuthStore((s) => s.user);
+  const userRole = String(user?.peran || (user as any)?.role || "").toUpperCase();
+  const isDeveloper = userRole === "DEVELOPER" || userRole === "DEV";
+
   // ─── Filter state ───────────────────────────────────────────────────────────
   const [kel, setKel] = useState("Semua");
   const [rw, setRw] = useState("Semua");
@@ -1007,19 +1014,23 @@ export default function GisEksekutifPage() {
                 onExport={doExport}
                 selectedKel={kel}
                 periode={periode}
-                onOpenQcModal={() => setShowQcModal(true)}
-                onDownloadQcPdf={() => downloadQcReportPdf({ data, periode, selectedKel: kel })}
+                isDeveloper={isDeveloper}
+                onOpenQcModal={isDeveloper ? () => setShowQcModal(true) : undefined}
+                onDownloadQcPdf={isDeveloper ? () => downloadQcReportPdf({ data, periode, selectedKel: kel }) : undefined}
               />
 
-              <button
-                type="button"
-                className="qc-audit-trigger-btn"
-                onClick={() => setShowQcModal(true)}
-                title="Buka Lembar Asal Data & Rumus Perhitungan untuk Tim QC"
-              >
-                <Icon name="clipboard" size={14} />
-                <span>Asal & Rumus Data (QC)</span>
-              </button>
+              {/* Tombol Asal & Rumus Data (QC) — KHUSUS ROLE DEVELOPER */}
+              {isDeveloper && (
+                <button
+                  type="button"
+                  className="qc-audit-trigger-btn"
+                  onClick={() => setShowQcModal(true)}
+                  title="Buka Lembar Asal Data & Rumus Perhitungan untuk Tim QC (Akses Khusus Developer)"
+                >
+                  <Icon name="clipboard" size={14} />
+                  <span>Asal & Rumus Data (QC)</span>
+                </button>
+              )}
             </div>
 
             <div className="qc-timestamp">
@@ -1336,13 +1347,15 @@ export default function GisEksekutifPage() {
 
         <div className={`toast ${toast ? "show" : ""}`} role="status" aria-live="polite">{toast}</div>
 
-        <QcDataAuditModal
-          isOpen={showQcModal}
-          onClose={() => setShowQcModal(false)}
-          data={data}
-          currentPeriode={periode}
-          selectedKel={kel}
-        />
+        {isDeveloper && (
+          <QcDataAuditModal
+            isOpen={showQcModal}
+            onClose={() => setShowQcModal(false)}
+            data={data}
+            currentPeriode={periode}
+            selectedKel={kel}
+          />
+        )}
       </div>
     </div>
   );
