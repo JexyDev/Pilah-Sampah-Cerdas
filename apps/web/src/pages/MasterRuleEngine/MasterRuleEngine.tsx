@@ -884,7 +884,7 @@ const MasterRuleEngine: React.FC = () => {
           </div>
 
           {/* ========================================== */}
-          {/* RULE 6: KOMPOSISI BOBOT NILAI AKHIR KKN (DPL, MPL & LAPORAN AKHIR) */}
+          {/* RULE 6: KOMPOSISI BOBOT NILAI INDIVIDU KKN (DPL & MPL) */}
           {/* ========================================== */}
           <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 sm:p-6 space-y-5 shadow-2xs">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
@@ -894,19 +894,19 @@ const MasterRuleEngine: React.FC = () => {
                 </div>
                 <div>
                   <h2 className="text-sm font-black text-slate-900 dark:text-slate-100">
-                    Komposisi Bobot Nilai Akhir KKN (DPL 40% • MPL 40% • Laporan Akhir 20%)
+                    Komposisi Bobot Nilai Individu KKN (DPL {config.penilaianBobotDplPersen}% • MPL {config.penilaianBobotMplPersen}%)
                   </h2>
                   <p className="text-[11px] font-semibold text-slate-500">
-                    Konfigurasi Dinamis Bobot Kontribusi Dosen Pembimbing (DPL), Mitra Lapangan (MPL), dan Telaah Laporan Akhir
+                    Konfigurasi Dinamis Bobot Kontribusi Dosen Pembimbing (DPL) dan Mitra Lapangan (MPL) sebagai Pembentuk Pilar Nilai Individu KKN
                   </p>
                 </div>
               </div>
               <span className="bg-indigo-100 text-indigo-800 border border-indigo-300 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase shrink-0">
-                Formula Nilai Akhir (3 Pilar)
+                Pilar 2: Nilai Individu (DPL &amp; MPL)
               </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {/* Slider & Kontrol DPL */}
               <div className="bg-slate-50 dark:bg-slate-800/60 p-4.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-3">
                 <div className="flex items-center justify-between">
@@ -927,19 +927,21 @@ const MasterRuleEngine: React.FC = () => {
                 <input
                   type="number"
                   min="10"
-                  max="80"
+                  max="90"
                   value={config.penilaianBobotDplPersen}
                   onChange={(e) => {
-                    const dplVal = parseInt(e.target.value) || 0;
+                    const dplVal = Math.max(0, Math.min(100, parseInt(e.target.value) || 0));
+                    const mplVal = 100 - dplVal;
                     handleChange("penilaianBobotDplPersen", dplVal);
+                    handleChange("penilaianBobotMplPersen", mplVal);
                   }}
                   className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs font-black text-slate-800 dark:text-slate-100 focus:outline-none focus:border-emerald-500 text-center"
                 />
 
                 <div className="flex justify-between text-[10.5px] font-bold text-slate-400">
                   <span>10% (Min)</span>
-                  <span>40% (Standar)</span>
-                  <span>80% (Maks)</span>
+                  <span>50% (Standar)</span>
+                  <span>90% (Maks)</span>
                 </div>
               </div>
 
@@ -963,55 +965,21 @@ const MasterRuleEngine: React.FC = () => {
                 <input
                   type="number"
                   min="10"
-                  max="80"
+                  max="90"
                   value={config.penilaianBobotMplPersen}
                   onChange={(e) => {
-                    const mplVal = parseInt(e.target.value) || 0;
+                    const mplVal = Math.max(0, Math.min(100, parseInt(e.target.value) || 0));
+                    const dplVal = 100 - mplVal;
                     handleChange("penilaianBobotMplPersen", mplVal);
+                    handleChange("penilaianBobotDplPersen", dplVal);
                   }}
                   className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs font-black text-slate-800 dark:text-slate-100 focus:outline-none focus:border-sky-500 text-center"
                 />
 
                 <div className="flex justify-between text-[10.5px] font-bold text-slate-400">
                   <span>10% (Min)</span>
-                  <span>40% (Standar)</span>
-                  <span>80% (Maks)</span>
-                </div>
-              </div>
-
-              {/* Slider & Kontrol Laporan Akhir */}
-              <div className="bg-slate-50 dark:bg-slate-800/60 p-4.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-800 flex items-center justify-center shrink-0">
-                      <BookOpen size={15} />
-                    </div>
-                    <div>
-                      <span className="text-xs font-black text-slate-800 dark:text-slate-100 block">Laporan Akhir</span>
-                      <span className="text-[10px] text-slate-500 font-medium">Telaah Laporan &amp; Refleksi</span>
-                    </div>
-                  </div>
-                  <span className="text-xs font-black text-indigo-800 bg-indigo-100 px-2.5 py-1 rounded-lg border border-indigo-300">
-                    {config.penilaianBobotLaporanPersen}%
-                  </span>
-                </div>
-
-                <input
-                  type="number"
-                  min="5"
-                  max="50"
-                  value={config.penilaianBobotLaporanPersen}
-                  onChange={(e) => {
-                    const lapVal = parseInt(e.target.value) || 0;
-                    handleChange("penilaianBobotLaporanPersen", lapVal);
-                  }}
-                  className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs font-black text-slate-800 dark:text-slate-100 focus:outline-none focus:border-indigo-500 text-center"
-                />
-
-                <div className="flex justify-between text-[10.5px] font-bold text-slate-400">
-                  <span>5% (Min)</span>
-                  <span>20% (Standar)</span>
-                  <span>50% (Maks)</span>
+                  <span>50% (Standar)</span>
+                  <span>90% (Maks)</span>
                 </div>
               </div>
             </div>
@@ -1021,53 +989,46 @@ const MasterRuleEngine: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 text-xs font-black text-indigo-800 dark:text-indigo-300">
                   <Sparkles size={16} />
-                  <span>Simulasi Perhitungan Nilai Akhir Komposit ({config.penilaianBobotDplPersen}:{config.penilaianBobotMplPersen})</span>
+                  <span>Simulasi Perhitungan Nilai Individu ({config.penilaianBobotDplPersen}:{config.penilaianBobotMplPersen})</span>
                 </div>
                 <span className="text-[11px] font-mono font-extrabold text-indigo-700 bg-indigo-100 dark:bg-indigo-950 px-2.5 py-0.5 rounded-full border border-indigo-300 dark:border-indigo-800">
-                  Total Komposisi: {config.penilaianBobotDplPersen + config.penilaianBobotMplPersen + config.penilaianBobotLaporanPersen}% (100% Sah)
+                  Total Komposisi: {config.penilaianBobotDplPersen + config.penilaianBobotMplPersen}% (100% Sah)
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs pt-1">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs pt-1">
                 <div className="p-2.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
-                  <span className="text-[10px] font-bold text-slate-400 block uppercase">DPL (Skor: 85.00)</span>
+                  <span className="text-[10px] font-bold text-slate-400 block uppercase">Kontribusi DPL (Skor: 85.00)</span>
                   <span className="text-sm font-black text-emerald-700 dark:text-emerald-400">
                     85.00 × {config.penilaianBobotDplPersen}% = {(85 * (config.penilaianBobotDplPersen / 100)).toFixed(2)}
                   </span>
                 </div>
 
                 <div className="p-2.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
-                  <span className="text-[10px] font-bold text-slate-400 block uppercase">MPL (Skor: 90.00)</span>
+                  <span className="text-[10px] font-bold text-slate-400 block uppercase">Kontribusi MPL (Skor: 90.00)</span>
                   <span className="text-sm font-black text-sky-700 dark:text-sky-400">
                     90.00 × {config.penilaianBobotMplPersen}% = {(90 * (config.penilaianBobotMplPersen / 100)).toFixed(2)}
                   </span>
                 </div>
 
-                <div className="p-2.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
-                  <span className="text-[10px] font-bold text-slate-400 block uppercase">Laporan (Skor: 80.00)</span>
-                  <span className="text-sm font-black text-indigo-700 dark:text-indigo-400">
-                    80.00 × {config.penilaianBobotLaporanPersen}% = {(80 * (config.penilaianBobotLaporanPersen / 100)).toFixed(2)}
-                  </span>
-                </div>
-
                 <div className="p-2.5 bg-indigo-600 text-white rounded-xl shadow-xs flex flex-col justify-center">
-                  <span className="text-[10px] font-bold text-indigo-200 uppercase">Simulasi Nilai Akhir</span>
+                  <span className="text-[10px] font-bold text-indigo-200 uppercase">Simulasi Nilai Individu</span>
                   <span className="text-base font-black">
-                    {(85 * (config.penilaianBobotDplPersen / 100) + 90 * (config.penilaianBobotMplPersen / 100) + 80 * (config.penilaianBobotLaporanPersen / 100)).toFixed(2)} (Kategori A)
+                    {(85 * (config.penilaianBobotDplPersen / 100) + 90 * (config.penilaianBobotMplPersen / 100)).toFixed(2)}
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="p-3 bg-indigo-50/80 dark:bg-indigo-950/40 rounded-xl border border-indigo-200 dark:border-indigo-800 flex items-center justify-between text-xs font-medium text-indigo-900 dark:text-indigo-200">
+            <div className="p-3 bg-indigo-50/80 dark:bg-indigo-950/40 rounded-xl border border-indigo-200 dark:border-indigo-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-medium text-indigo-900 dark:text-indigo-200">
               <div className="flex items-center gap-2">
                 <CheckCircle2 size={16} className="text-indigo-700 shrink-0" />
                 <span>
-                  Perubahan bobot komposisi ini otomatis berlaku secara real-time pada seluruh modul Penilaian KKN &amp; Rekapitulasi Nilai Akhir.
+                  Nilai Individu ini berbobot <strong>25%</strong> pada Nilai Akhir KKN (bersama 25% Kehadiran, 25% Kelompok, dan 25% Laporan Akhir sesuai ketetapan Warek 1 &amp; DPL).
                 </span>
               </div>
-              <span className="font-mono font-bold text-[11px] bg-white dark:bg-slate-900 px-2 py-1 rounded border border-indigo-300 dark:border-indigo-700 shrink-0">
-                Formula: ({config.penilaianBobotDplPersen}% DPL) + ({config.penilaianBobotMplPersen}% MPL) + ({config.penilaianBobotLaporanPersen}% Laporan)
+              <span className="font-mono font-bold text-[11px] bg-white dark:bg-slate-900 px-2 py-1 rounded border border-indigo-300 dark:border-indigo-700 shrink-0 whitespace-nowrap">
+                Nilai Individu = ({config.penilaianBobotDplPersen}% DPL) + ({config.penilaianBobotMplPersen}% MPL)
               </span>
             </div>
           </div>

@@ -289,15 +289,15 @@ export class ConfigService {
       { key: "logbook_bobot_persen", value: String(data.logbookBobotPersen ?? 20) },
       {
         key: "penilaian_bobot_dpl_persen",
-        value: String(data.penilaianBobotDplPersen ?? 40),
+        value: String(data.penilaianBobotDplPersen ?? 50),
       },
       {
         key: "penilaian_bobot_mpl_persen",
-        value: String(data.penilaianBobotMplPersen ?? 40),
+        value: String(data.penilaianBobotMplPersen ?? 50),
       },
       {
         key: "penilaian_bobot_laporan_persen",
-        value: String(data.penilaianBobotLaporanPersen ?? 20),
+        value: String(data.penilaianBobotLaporanPersen ?? 0),
       },
     ];
 
