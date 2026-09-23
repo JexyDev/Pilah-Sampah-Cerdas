@@ -91,9 +91,9 @@ export const MONTHLY_VOLUME_FACTORS: Record<number, number> = {
   6: 1535.0 / 1609.2, // Jul ~0.9539 (1.535 m³)
   7: 1536.0 / 1609.2, // Agu ~0.9545 (1.536 m³)
   8: 1.0,             // Sep 1.0000 (1.609,2 m³ - baseline survei penuh)
-  9: 1.0,             // Okt
-  10: 1.0,            // Nov
-  11: 1.0,            // Des
+  9: 0.0,             // Okt (0.0 m³ - periode mendatang belum berjalan)
+  10: 0.0,            // Nov (0.0 m³ - periode mendatang belum berjalan)
+  11: 0.0,            // Des (0.0 m³ - periode mendatang belum berjalan)
 };
 
 // Penyesuaian persentase kepatuhan historis terhadap baseline September
@@ -163,7 +163,7 @@ export const gisEksekutifService = {
           break;
         }
       }
-      const activeVolFactor = MONTHLY_VOLUME_FACTORS[activeMonthIdx] ?? 1.0;
+      const activeVolFactor = MONTHLY_VOLUME_FACTORS[activeMonthIdx] ?? 0.0;
       const activeKepOffset = MONTHLY_KEP_OFFSETS[activeMonthIdx] ?? 0;
 
     // ── 1. Daftar kelurahan dari DB (hanya Coblong) ──────────────────────────
@@ -244,17 +244,23 @@ export const gisEksekutifService = {
     }));
 
     // ── 4. Survei Pemilahan & Volume dari DB ─────────────────────────────────
-    let surveiKelurahan = await prisma.surveiKelurahan.findMany({
-      include: {
-        pemilahanSampah: true,
-        volumeSampah: true,
-      },
-    });
+    // Cek apakah periode yang dipilih adalah periode masa depan / evaluasi akhir (Oktober – Desember 2026)
+    const isFuturePeriod = activeMonthIdx > 8;
 
-    // Jika periode memilih bulan evaluasi akhir KKN (Oktober - Desember 2026),
-    // cek apakah ada data evaluasi Endline untuk kelurahan bersangkutan
-    const isEndlinePeriod = /oktober|november|desember/i.test(periode);
-    if (isEndlinePeriod) {
+    let surveiKelurahan: Array<{
+      namaKelurahan: string;
+      pemilahanSampah?: { persentasePemilahan?: any } | null;
+      volumeSampah?: {
+        organikKgPerHari?: any;
+        anorganikKgPerHari?: any;
+        residuKgPerHari?: any;
+        totalVolumeKgPerHari?: any;
+      } | null;
+    }> = [];
+
+    if (isFuturePeriod) {
+      // Periode masa depan (Oktober – Desember 2026): HANYA ambil data riil dari EndlineSurveiKelurahan
+      // Jika belum ada data evaluasi endline di database, data harus murni 0 / null (DILARANG fallback ke baseline September)
       try {
         const endlineSurvei = await prisma.endlineSurveiKelurahan.findMany({
           include: {
@@ -263,23 +269,23 @@ export const gisEksekutifService = {
           },
         });
         if (endlineSurvei && endlineSurvei.length > 0) {
-          surveiKelurahan = surveiKelurahan.map((s) => {
-            const matchedEndline = endlineSurvei.find(
-              (e) => e.namaKelurahan?.toLowerCase() === s.namaKelurahan?.toLowerCase()
-            );
-            if (matchedEndline && (matchedEndline.pemilahanSampah || matchedEndline.volumeSampah)) {
-              return {
-                ...s,
-                pemilahanSampah: (matchedEndline.pemilahanSampah as any) || s.pemilahanSampah,
-                volumeSampah: (matchedEndline.volumeSampah as any) || s.volumeSampah,
-              };
-            }
-            return s;
-          });
+          surveiKelurahan = endlineSurvei.map((e) => ({
+            namaKelurahan: e.namaKelurahan,
+            pemilahanSampah: e.pemilahanSampah,
+            volumeSampah: e.volumeSampah,
+          }));
         }
       } catch (err) {
-        console.warn("[gisEksekutifService] Fallback ke baseline survei:", err);
+        console.warn("[gisEksekutifService] Gagal memuat data endline:", err);
       }
+    } else {
+      // Periode historis / baseline (Januari – September 2026): Ambil dari surveiKelurahan baseline
+      surveiKelurahan = await prisma.surveiKelurahan.findMany({
+        include: {
+          pemilahanSampah: true,
+          volumeSampah: true,
+        },
+      });
     }
 
     // Fasilitas per kelurahan (nama)
@@ -289,7 +295,7 @@ export const gisEksekutifService = {
       facCountByKel[kelNama] = (facCountByKel[kelNama] ?? 0) + 1;
     });
 
-    // Hitung kepatuhan & volume riil dari survei
+    // Hitung kepatuhan & volume riil dari survei (murni data DB, tanpa angka tebakan/hardcode)
     const kelurahanNames = kelurahanList.length > 0
       ? kelurahanList.map((k) => k.name)
       : Object.keys(KELURAHAN_GEOMETRIES);
@@ -299,78 +305,51 @@ export const gisEksekutifService = {
         (s) => s.namaKelurahan?.toLowerCase() === kelName.toLowerCase()
       );
 
-      // Persentase pemilahan — dari DB jika ada, disesuaikan offset periode historis aktif
+      // Persentase pemilahan — murni dari DB jika ada, disesuaikan offset periode historis aktif
       let kepatuhan: number | null = null;
-      let hasDataFallback = false;
-      const normK = kelName.toLowerCase().replace(/\s+/g, "");
-
       if (survei?.pemilahanSampah?.persentasePemilahan != null) {
         const raw = Number(survei.pemilahanSampah.persentasePemilahan);
         // Field disimpan sebagai desimal 0.0000–1.0000 (Decimal 5,4)
         const baseVal = raw <= 1 ? Math.round(raw * 100) : Math.round(raw);
-        kepatuhan = Math.max(0, Math.min(100, baseVal + activeKepOffset));
-      } else {
-        // Fallback baseline estimasi (sinkronisasi dengan dashboardService)
-        if (normK.includes("cipaganti")) {
-          kepatuhan = Math.max(0, Math.min(100, Math.round(13.67) + activeKepOffset));
-          hasDataFallback = true;
-        } else if (normK.includes("dago")) {
-          kepatuhan = Math.max(0, Math.min(100, 10 + activeKepOffset));
-          hasDataFallback = true;
-        } else if (normK.includes("lebakgede")) {
-          kepatuhan = Math.max(0, Math.min(100, Math.round(21.6) + activeKepOffset));
-          hasDataFallback = true;
-        } else if (normK.includes("lebaksiliwangi")) {
-          kepatuhan = Math.max(0, Math.min(100, 15 + activeKepOffset));
-          hasDataFallback = true;
-        } else if (normK.includes("sadangserang")) {
-          kepatuhan = Math.max(0, Math.min(100, Math.round(24.8) + activeKepOffset));
-          hasDataFallback = true;
-        } else if (normK.includes("sekeloa")) {
-          kepatuhan = Math.max(0, Math.min(100, Math.round(17.8) + activeKepOffset));
-          hasDataFallback = true;
-        }
+        kepatuhan = Math.max(0, Math.min(100, baseVal + (isFuturePeriod ? 0 : activeKepOffset)));
       }
 
-      // Komposisi organik/anorganik/residu per kelurahan (dari survei) disesuaikan faktor bulan aktif
+      // Komposisi organik/anorganik/residu per kelurahan (dari DB)
       let organikKgHari = 0, anorganikKgHari = 0, residuKgHari = 0;
       if (survei?.volumeSampah) {
         organikKgHari = Number(survei.volumeSampah.organikKgPerHari ?? 0);
         anorganikKgHari = Number(survei.volumeSampah.anorganikKgPerHari ?? 0);
         residuKgHari = Number(survei.volumeSampah.residuKgPerHari ?? 0);
       }
-      let sumKgHari = organikKgHari + anorganikKgHari + residuKgHari;
-
-      // Fallback volume untuk sinkronisasi dengan KPI utama
-      if (sumKgHari === 0 && !survei?.volumeSampah?.totalVolumeKgPerHari) {
-        if (normK.includes("dago")) sumKgHari = 500.0;
-        else if (normK.includes("lebakgede")) sumKgHari = 250.0;
-        else if (normK.includes("lebaksiliwangi")) sumKgHari = 10.0;
-        else if (normK.includes("sadangserang")) sumKgHari = 7298.5;
-        else if (normK.includes("sekeloa")) sumKgHari = 9723.4;
-        else if (normK.includes("cipaganti")) sumKgHari = 17.5;
-        if (sumKgHari > 0) hasDataFallback = true;
-      }
+      const sumKgHari = organikKgHari + anorganikKgHari + residuKgHari;
 
       // Volume — dari DB (dikonversi kg/hari ke m³/bln: kg/hari × 30 / 1000) disesuaikan periode aktif
+      const volFactor = isFuturePeriod ? 1.0 : activeVolFactor;
       let volume: number | null = null;
       if (sumKgHari > 0) {
-        volume = Math.round((((sumKgHari * 30) / 1000) * activeVolFactor) * 10) / 10;
+        volume = Math.round((((sumKgHari * 30) / 1000) * volFactor) * 10) / 10;
       } else if (survei?.volumeSampah?.totalVolumeKgPerHari != null) {
         const kgPerHari = Number(survei.volumeSampah.totalVolumeKgPerHari);
-        volume = Math.round((((kgPerHari * 30) / 1000) * activeVolFactor) * 10) / 10;
+        volume = Math.round((((kgPerHari * 30) / 1000) * volFactor) * 10) / 10;
       }
+
+      const hasSurveiData = Boolean(
+        survei && (
+          (survei.pemilahanSampah && survei.pemilahanSampah.persentasePemilahan != null) ||
+          (survei.volumeSampah && (sumKgHari > 0 || survei.volumeSampah.totalVolumeKgPerHari != null))
+        )
+      );
 
       return {
         nama: kelName,
         kepatuhan,
         volume,
-        organikKgHari: Math.round(organikKgHari * activeVolFactor * 10) / 10,
-        anorganikKgHari: Math.round(anorganikKgHari * activeVolFactor * 10) / 10,
-        residuKgHari: Math.round(residuKgHari * activeVolFactor * 10) / 10,
+        organikKgHari: Math.round(organikKgHari * volFactor * 10) / 10,
+        anorganikKgHari: Math.round(anorganikKgHari * volFactor * 10) / 10,
+        residuKgHari: Math.round(residuKgHari * volFactor * 10) / 10,
         totalFasilitas: facCountByKel[kelName] ?? 0,
         color: kepatuhan !== null ? kepColor(kepatuhan) : "#9ca3af",
-        hasData: Boolean(hasDataFallback || (survei && (survei.pemilahanSampah || survei.volumeSampah))),
+        hasData: hasSurveiData,
       };
     });
 
@@ -482,10 +461,13 @@ export const gisEksekutifService = {
       prodMap[month] = (prodMap[month] ?? 0) + Number(log.outputKg ?? 0);
     });
 
-    const hasTrendData = prodLogs.length > 0 || computedBaseTotalM3 > 0;
+    const hasTrendData = prodLogs.length > 0 || (!isFuturePeriod && computedBaseTotalM3 > 0);
     const trenBulanan = BULAN_LABELS.map((bulan, idx) => {
-      const factor = MONTHLY_VOLUME_FACTORS[idx] ?? 1.0;
-      let vol = computedBaseTotalM3 > 0
+      // Bulan masa depan (setelah September, idx > 8) belum berjalan
+      // Hanya tampilkan data jika ada log produksi riil pada bulan tersebut
+      const isFutureMonth = idx > 8;
+      const factor = isFutureMonth ? 0 : (MONTHLY_VOLUME_FACTORS[idx] ?? 0);
+      let vol = (!isFutureMonth && computedBaseTotalM3 > 0)
         ? Math.round((computedBaseTotalM3 * factor) * 10) / 10
         : 0;
       if (prodMap[idx] != null && prodMap[idx] > 0) {
@@ -496,14 +478,16 @@ export const gisEksekutifService = {
 
     // Hitung persentase pertumbuhan volume periode aktif vs bulan sebelumnya
     const prevMonthIdx = activeMonthIdx > 0 ? activeMonthIdx - 1 : null;
-    const currentVol = (computedBaseTotalM3 > 0 || prodLogs.length > 0)
-      ? (trenBulanan[activeMonthIdx]?.volume ?? volumeTotal)
-      : null;
+    const currentVol = isFuturePeriod
+      ? (volumeTotal ?? null)
+      : ((computedBaseTotalM3 > 0 || prodLogs.length > 0)
+          ? (trenBulanan[activeMonthIdx]?.volume ?? volumeTotal)
+          : null);
     const prevVol = prevMonthIdx !== null ? trenBulanan[prevMonthIdx]?.volume : null;
     const previousMonthName = prevMonthIdx !== null ? BULAN_LABELS[prevMonthIdx] : null;
 
     let growthPct: number | null = null;
-    if (currentVol != null && prevVol != null && prevVol > 0) {
+    if (currentVol != null && currentVol > 0 && prevVol != null && prevVol > 0) {
       growthPct = Math.round(((currentVol - prevVol) / prevVol) * 1000) / 10;
     }
 

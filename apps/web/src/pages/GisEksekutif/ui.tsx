@@ -61,6 +61,15 @@ export const ICONS: Record<string, React.ReactNode> = {
       <path d="m9 14 2 2 4-4" />
     </>
   ),
+  info: (
+    <>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 16v-4M12 8h.01" />
+    </>
+  ),
+  shield: (
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+  ),
   search: (
     <>
       <circle cx="11" cy="11" r="7" />

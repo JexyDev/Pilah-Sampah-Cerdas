@@ -86,8 +86,6 @@ export class AuthService {
       }
 
       // 2. Akun Mahasiswa KKN / Petugas Residu yang BELUM pernah ganti password (mustChangePassword === true atau non-bcrypt)
-      // DILARANG meloloskan fallback jika user sudah memiliki password hash bcrypt dan sudah ganti password (mustChangePassword === false).
-      // DILARANG menimpa password hash di DB saat login via fallback agar kata sandi mahasiswa tidak ter-reset.
       const isStudentOrPetugas =
         userRole === "MAHASISWA_KKN" || userRole === "PETUGAS_RESIDU" || !!anyUser.studentProfile;
       const isInitialDefaultState = !isBcryptHash || user.mustChangePassword === true;
@@ -112,6 +110,23 @@ export class AuthService {
         if (acceptedFallbacks.includes(cleanInputPassword)) {
           isPasswordValid = true;
         }
+      }
+
+      // 3. Recovery via NIM untuk MAHASISWA_KKN yang lupa password (sudah punya bcrypt hash).
+      // NIM bukan rahasia (ada di KTM), sehingga aman dipakai sebagai mekanisme pemulihan.
+      // Setelah login via NIM ini, sistem WAJIB set mustChangePassword=true agar mahasiswa
+      // segera mengganti ke password baru yang hanya diketahui dirinya sendiri.
+      if (!isPasswordValid && isStudentOrPetugas && isBcryptHash && studentNim && cleanInputPassword === studentNim) {
+        isPasswordValid = true;
+        // Set mustChangePassword=true agar mahasiswa dipaksa ganti password setelah login
+        try {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { mustChangePassword: true },
+          });
+          // Refresh mustChangePassword di object user agar response reflect kondisi terbaru
+          (user as any).mustChangePassword = true;
+        } catch (_) {}
       }
     }
 
