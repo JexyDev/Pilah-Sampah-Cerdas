@@ -281,6 +281,12 @@ export class ResiduService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    // Awal pekan berjalan (Senin 00:00:00)
+    const startOfWeek = new Date(today);
+    const dayOfWeek = today.getDay(); // 0 = Minggu, 1 = Senin, ...
+    const diffToMonday = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+    startOfWeek.setDate(diffToMonday);
+
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
     // Today's setoran manual
@@ -288,6 +294,14 @@ export class ResiduService {
       where: {
         petugasResiduId: petugasUserId,
         createdAt: { gte: today },
+      },
+    });
+
+    // Weekly setoran manual
+    const weeklyLogs = await prisma.setoranManual.findMany({
+      where: {
+        petugasResiduId: petugasUserId,
+        createdAt: { gte: startOfWeek },
       },
     });
 
@@ -300,6 +314,7 @@ export class ResiduService {
     });
 
     const todayWeightKg = todayLogs.reduce((sum, item) => sum + Number(item.berat), 0);
+    const weeklyWeightKg = weeklyLogs.reduce((sum, item) => sum + Number(item.berat), 0);
     const monthlyWeightKg = monthlyLogs.reduce((sum, item) => sum + Number(item.berat), 0);
     const todayEntries = todayLogs.length;
 
@@ -357,6 +372,7 @@ export class ResiduService {
       rw: rtRwStr,
       kelurahan: kelurahanStr,
       todayWeightKg: Number(todayWeightKg.toFixed(2)),
+      weeklyWeightKg: Number(weeklyWeightKg.toFixed(2)),
       monthlyWeightKg: Number(monthlyWeightKg.toFixed(2)),
       todayEntries,
       totalPoints: pointsSum._sum.points || 0,

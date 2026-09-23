@@ -114,9 +114,10 @@ export class AuthService {
 
       // 3. Recovery via NIM untuk MAHASISWA_KKN yang lupa password (sudah punya bcrypt hash).
       // NIM bukan rahasia (ada di KTM), sehingga aman dipakai sebagai mekanisme pemulihan.
+      // WAJIB: hanya berlaku jika mustChangePassword === true (belum pernah ganti password sendiri).
       // Setelah login via NIM ini, sistem WAJIB set mustChangePassword=true agar mahasiswa
       // segera mengganti ke password baru yang hanya diketahui dirinya sendiri.
-      if (!isPasswordValid && isStudentOrPetugas && isBcryptHash && studentNim && cleanInputPassword === studentNim) {
+      if (!isPasswordValid && isStudentOrPetugas && isBcryptHash && user.mustChangePassword === true && studentNim && cleanInputPassword === studentNim) {
         isPasswordValid = true;
         // Set mustChangePassword=true agar mahasiswa dipaksa ganti password setelah login
         try {

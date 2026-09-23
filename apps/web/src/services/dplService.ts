@@ -325,6 +325,7 @@ export interface ConfigTargets {
   attendanceMinDurationHours?: number;
   attendanceMinDurationMinutes?: number;
   attendanceMinDurationSeconds?: number;
+  attendanceMinDefaultMinutes?: number;
   hariKerja?: string;
   jamKerja?: string;
   targetPekan?: number;
@@ -590,11 +591,12 @@ export const dplService = {
     return {
       targetTotalKegiatan: 2000,
       targetTotalJam: 200,
-      targetHarianJam: 4,
+      targetHarianJam: 0,
       targetHarianKegiatan: 5,
-      attendanceMinDurationHours: 4,
+      attendanceMinDurationHours: 0,
       attendanceMinDurationMinutes: 0,
       attendanceMinDurationSeconds: 0,
+      attendanceMinDefaultMinutes: 30,
     };
   },
 

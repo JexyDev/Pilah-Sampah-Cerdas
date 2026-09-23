@@ -11,6 +11,11 @@ import { prisma } from "../lib/prisma.js";
 
 vi.mock("../lib/prisma.js", () => {
   const mPrisma = {
+    user: { findUnique: vi.fn() },
+    petugasResidu: { findUnique: vi.fn(), create: vi.fn() },
+    setoranManual: { findMany: vi.fn() },
+    violation: { count: vi.fn(), findMany: vi.fn() },
+    bin: { count: vi.fn() },
     binResetRequest: {
       findUnique: vi.fn(),
       update: vi.fn(),
@@ -108,5 +113,53 @@ describe("ResiduService - acceptPengajuanResetBin", () => {
     await expect(
       residuService.acceptPengajuanResetBin("req-123", "petugas-user-1")
     ).rejects.toThrow("PERMINTAAN_SUDAH_DIAMBIL");
+  });
+});
+
+describe("ResiduService - getDashboardSummary", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("should calculate and return weeklyWeightKg alongside todayWeightKg and monthlyWeightKg", async () => {
+    const mockPetugas = {
+      id: "ptr-uuid-123456",
+      userId: "petugas-user-1",
+      nama: "Petugas Lapangan 1",
+      whitelistStatus: "APPROVED",
+      assignedZone: "RW 03",
+      kpiScore: 92,
+    };
+
+    const mockUser = {
+      id: "petugas-user-1",
+      name: "Petugas Lapangan 1",
+      phone: "081234567890",
+      status: "ACTIVE",
+      rw: { name: "RW 03", kelurahan: { name: "Coblong" } },
+      petugasProfile: mockPetugas,
+    };
+
+    vi.mocked(prisma.user.findUnique).mockResolvedValue(mockUser as any);
+
+    // Mock 3 distinct calls to setoranManual.findMany (today, weekly, monthly)
+    vi.mocked(prisma.setoranManual.findMany)
+      .mockResolvedValueOnce([{ id: "s-1", berat: 12.5 }] as any) // today
+      .mockResolvedValueOnce([{ id: "s-1", berat: 12.5 }, { id: "s-2", berat: 35.0 }] as any) // weekly
+      .mockResolvedValueOnce([{ id: "s-1", berat: 12.5 }, { id: "s-2", berat: 35.0 }, { id: "s-3", berat: 50.0 }] as any); // monthly
+
+    vi.mocked(prisma.pointHistory.aggregate).mockResolvedValue({ _sum: { points: 150 } } as any);
+    vi.mocked(prisma.violation.count).mockResolvedValue(1);
+    vi.mocked(prisma.violation.findMany).mockResolvedValue([]);
+    vi.mocked(prisma.bin.count).mockResolvedValue(15);
+
+    const result = await residuService.getDashboardSummary("petugas-user-1");
+
+    expect(result.todayWeightKg).toBe(12.5);
+    expect(result.weeklyWeightKg).toBe(47.5);
+    expect(result.monthlyWeightKg).toBe(97.5);
+    expect(result.totalWeightKg).toBe(12.5);
+    expect(result.name).toBe("Petugas Lapangan 1");
+    expect(result.petugasId).toBe("PTR-PTR-UU");
   });
 });

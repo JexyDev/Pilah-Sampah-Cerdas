@@ -236,7 +236,11 @@ export const penilaianKknService = {
     const bobotDplPersen = 50;
     const bobotMplPersen = 50;
     const bobotLaporanPersen = 0;
-    const targetDailyMinutes = (ruleConfigs?.attendanceMinDurationHours || 4) * 60;
+    const ruleTargetMins = (ruleConfigs?.attendanceMinDurationHours ?? 0) * 60
+      + (ruleConfigs?.attendanceMinDurationMinutes ?? 0);
+    const targetDailyMinutes = ruleTargetMins > 0
+      ? ruleTargetMins
+      : (ruleConfigs?.attendanceMinDefaultMinutes ?? 30);
 
     const pastSchedulesCount = await prisma.schedule
       .count({
@@ -2052,7 +2056,7 @@ export const penilaianKknService = {
         update: {},
         create: {
           key: "penilaian_bobot_dpl_persen",
-          value: "40",
+          value: "50",
           tipe: "NUMBER",
           deskripsi: "Bobot penilaian akhir DPL (persen)",
           diperbaruiOleh: operatorId || "SYSTEM_NORMALIZER",
@@ -2086,7 +2090,11 @@ export const penilaianKknService = {
 
     const ruleConfigs = await configService.getRuleEngineConfigs().catch(() => null);
     const targetLogbook = ruleConfigs?.logbookTargetKegiatan || 24;
-    const targetDailyMinutes = (ruleConfigs?.attendanceMinDurationHours || 4) * 60;
+    const ruleTargetMins2 = (ruleConfigs?.attendanceMinDurationHours ?? 0) * 60
+      + (ruleConfigs?.attendanceMinDurationMinutes ?? 0);
+    const targetDailyMinutes = ruleTargetMins2 > 0
+      ? ruleTargetMins2
+      : (ruleConfigs?.attendanceMinDefaultMinutes ?? 30);
     // Sesuai Arahan Pak Agus Mulyana: Bobot Penilaian Mahasiswa 50% DPL + 50% MPL
     const bobotDplPersen = 50;
     const bobotMplPersen = 50;
