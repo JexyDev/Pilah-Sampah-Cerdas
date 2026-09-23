@@ -108,7 +108,7 @@ export function QcDataAuditModal({
   - Sekeloa: 18%
   - Lebak Siliwangi: 15%
   - Dago: 10%
-  - Cipaganti: 0%
+  - Cipaganti: 0% (Data survei baseline belum diinput di database survei_pemilahan_sampah; nilai estimasi fallback 13,67% ditandai *Estimasi* pada dasbor evaluasi)
   - Rata-rata Kecamatan: 18%
 
 ### C. Pertumbuhan Volume Bulanan (+${growthPct}% vs ${prevMonth})

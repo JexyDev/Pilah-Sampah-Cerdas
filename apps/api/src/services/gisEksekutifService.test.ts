@@ -21,6 +21,9 @@ vi.mock("../lib/prisma.js", () => ({
     facilityProductionLog: {
       findMany: vi.fn(),
     },
+    setoranOtomatis: {
+      findMany: vi.fn(),
+    },
   },
 }));
 
@@ -30,6 +33,7 @@ import { gisEksekutifService } from "./gisEksekutifService.js";
 describe("gisEksekutifService Dynamic DB Tests (Zero Fallback / Anti-Dummy)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    (prisma.setoranOtomatis.findMany as any).mockResolvedValue([]);
   });
 
   it("should return synced volume between KPI volumeTotal and komposisiVolume totalM3", async () => {

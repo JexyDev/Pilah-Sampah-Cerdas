@@ -43,6 +43,9 @@ export interface KelurahanBaselineData {
   hasEndline?: boolean; // true bila berasal dari survei endline resmi
   setoranDinilai?: number; // jumlah pemilahan yang dapat dinilai (bobot agregasi)
   setoranPatuh?: number; // jumlah pemilahan yang sesuai kategori tempat sampah
+  isFallbackBaselineRate?: boolean; // true jika persentase baseline berasal dari estimasi fallback
+  isFallbackBaselineKg?: boolean; // true jika volume baseline berasal dari estimasi fallback
+  isFallback?: boolean; // true jika salah satu nilai baseline merupakan estimasi non-DB
 }
 
 /**
@@ -3046,7 +3049,17 @@ const Dashboard: React.FC = () => {
                                 <span className="w-2 h-2 rounded-xs bg-slate-400 inline-block" />
                                 Baseline:
                               </span>
-                              <span className="font-bold text-slate-200">{bRate}%</span>
+                              <div className="flex items-center gap-1">
+                                <span className="font-bold text-slate-200">{bRate}%</span>
+                                {item.isFallbackBaselineRate && (
+                                  <span
+                                    className="text-[9px] px-1 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold"
+                                    title="Nilai estimasi sementara (data survei baseline belum diinput di database)"
+                                  >
+                                    Estimasi*
+                                  </span>
+                                )}
+                              </div>
                             </div>
 
                             {!HIDE_KEPATUHAN_REAL && (
@@ -3092,8 +3105,11 @@ const Dashboard: React.FC = () => {
                       <div className="w-full flex items-end justify-center gap-1.5 sm:gap-2 h-[88%] pb-1">
                         {/* Bar 1: Baseline (Slate Solid, Mantap & Lebar) */}
                         <div className={`flex flex-col items-center justify-end h-full ${HIDE_KEPATUHAN_REAL ? "w-full max-w-[85px] sm:max-w-[100px] lg:max-w-[115px]" : "flex-1"}`}>
-                          <span className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-100 mb-2 tracking-tight group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                          <span className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-100 mb-2 tracking-tight group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors flex items-center justify-center gap-0.5">
                             {bRate}%
+                            {item.isFallbackBaselineRate && (
+                              <span className="text-amber-500 font-extrabold text-xs" title="Estimasi sementara (belum terdata di database)">*</span>
+                            )}
                           </span>
                           <div className="w-full bg-slate-100/60 dark:bg-slate-800/30 rounded-t-2xl overflow-hidden h-full flex items-end border-x border-t border-dashed border-slate-200/80 dark:border-slate-700/50">
                             <div
@@ -3280,11 +3296,31 @@ const Dashboard: React.FC = () => {
                         {item.kelurahan}
                       </td>
                       <td className="py-3 px-3 text-center font-semibold text-slate-700 dark:text-slate-300 border-r border-slate-200/60 dark:border-slate-800/60">
-                        {formattedBaseline}
+                        <div className="flex items-center justify-center gap-1.5">
+                          <span>{formattedBaseline}</span>
+                          {item.isFallbackBaselineRate && (
+                            <span
+                              className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300/80 dark:border-amber-700/60 cursor-help"
+                              title="Nilai estimasi sementara (data survei baseline belum diinput di database)"
+                            >
+                              Estimasi*
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="py-3 px-3 text-center font-semibold text-slate-700 dark:text-slate-300 border-r border-slate-200/60 dark:border-slate-800/60">
                         {item.baselineKg && item.baselineKg > 0 ? (
-                          `${item.baselineKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })}`
+                          <div className="flex items-center justify-center gap-1.5">
+                            <span>{item.baselineKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })}</span>
+                            {item.isFallbackBaselineKg && (
+                              <span
+                                className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300/80 dark:border-amber-700/60 cursor-help"
+                                title="Volume estimasi awal (belum terdata di database)"
+                              >
+                                Estimasi*
+                              </span>
+                            )}
+                          </div>
                         ) : (
                           "—"
                         )}
@@ -3317,6 +3353,16 @@ const Dashboard: React.FC = () => {
               </tbody>
             </table>
           </div>
+
+          {/* Catatan Kaki Transparansi Audit Anti-Dummy */}
+          {kelurahanBaselineList.some((k) => k.isFallbackBaselineRate || k.isFallbackBaselineKg) && (
+            <div className="flex items-start gap-2 px-3.5 py-2.5 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/70 dark:border-amber-800/40 text-[11px] text-amber-800 dark:text-amber-300">
+              <span className="font-black text-amber-600 dark:text-amber-400 mt-0.5 text-xs">⚠️</span>
+              <p className="leading-relaxed">
+                <strong>Transparansi Tata Kelola Data (Anti-Dummy):</strong> Nilai berlabel <span className="underline font-bold">Estimasi*</span> merupakan angka estimasi sementara (*fallback*) untuk kelurahan yang instrumen survei baseline-nya belum tercatat di database resmi <code className="px-1 py-0.5 rounded bg-amber-100/80 dark:bg-amber-900/60 font-mono text-[10px]">survei_pemilahan_sampah</code>. Angka akan otomatis beralih menjadi data faktual murni segera setelah survei lapangan diinput oleh petugas/mahasiswa KKN.
+              </p>
+            </div>
+          )}
 
           {/* Dua Kartu Penjelas Metodologi Side-by-Side */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
