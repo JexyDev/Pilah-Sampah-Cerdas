@@ -2056,7 +2056,7 @@ export const penilaianKknService = {
         update: {},
         create: {
           key: "penilaian_bobot_dpl_persen",
-          value: "40",
+          value: "50",
           tipe: "NUMBER",
           deskripsi: "Bobot penilaian akhir DPL (persen)",
           diperbaruiOleh: operatorId || "SYSTEM_NORMALIZER",
