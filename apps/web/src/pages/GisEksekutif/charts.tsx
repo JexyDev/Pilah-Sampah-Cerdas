@@ -231,7 +231,7 @@ interface TrendProps {
   pi: number;
 }
 
-const MONTH_LABELS_9 = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep"];
+export const PROGRAM_MONTH_LABELS = ["Agu", "Sep", "Okt", "Nov", "Des"];
 
 export function Trend({ series, pi }: TrendProps) {
   const [isCumulative, setIsCumulative] = useState(false);
@@ -239,8 +239,8 @@ export function Trend({ series, pi }: TrendProps) {
   const { w } = useSize(ref, { w: 420, h: 140 });
   const [hover, setHover] = useState<number | null>(null);
 
-  // Ambil 9 bulan hingga September secara dinamis dari data series API
-  const rawMonthly = MONTH_LABELS_9.map((_, idx) => {
+  // Ambil 5 bulan linimasa program KKN (Agu s.d. Des) secara dinamis dari data series API
+  const rawMonthly = PROGRAM_MONTH_LABELS.map((_, idx) => {
     return (series && series[idx] != null) ? series[idx] : 0;
   });
 
@@ -310,10 +310,11 @@ export function Trend({ series, pi }: TrendProps) {
   const base = y(yMin);
   const area = pts.length > 0 ? `${line} L${x(activeSeries.length - 1)},${base} L${x(0)},${base} Z` : "";
 
-  // Index aktif default adalah September (idx 8)
-  const activeIdx = hover ?? (pi >= 0 && pi < activeSeries.length ? pi : activeSeries.length - 1);
-  const activeVal = activeSeries[activeIdx] ?? activeSeries[activeSeries.length - 1];
-  const activeMonth = MONTH_LABELS_9[activeIdx] ?? "Sep";
+  // Index aktif default adalah September (idx 1 pada deret 5 bulan: Agu=0, Sep=1, Okt=2, Nov=3, Des=4)
+  const defaultIdx = pi >= 0 && pi < activeSeries.length ? pi : 1;
+  const activeIdx = hover ?? defaultIdx;
+  const activeVal = activeSeries[activeIdx] ?? activeSeries[defaultIdx];
+  const activeMonth = PROGRAM_MONTH_LABELS[activeIdx] ?? "Sep";
 
   const onMove = (e: React.PointerEvent<SVGSVGElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -406,8 +407,8 @@ export function Trend({ series, pi }: TrendProps) {
           <path d={area} fill="url(#trendGradientFill)" />
           <path d={line} fill="none" stroke="#009966" strokeWidth="2.4" strokeLinecap="round" />
 
-          {/* Labels Sumbu X (Bulan) */}
-          {MONTH_LABELS_9.map((mo, i) => (
+          {/* Labels Sumbu X (Bulan Linimasa KKN) */}
+          {PROGRAM_MONTH_LABELS.map((mo, i) => (
             <text
               key={mo}
               x={x(i)}
@@ -471,7 +472,7 @@ export function Trend({ series, pi }: TrendProps) {
         </div>
         <div className="trend-table-grid">
           <div className="trend-table-row trend-table-head">
-            {MONTH_LABELS_9.map((m, i) => (
+            {PROGRAM_MONTH_LABELS.map((m, i) => (
               <div key={m} className={`trend-table-cell ${i === activeIdx ? "is-active" : ""}`}>
                 {m}
               </div>

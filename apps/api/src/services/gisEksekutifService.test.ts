@@ -111,7 +111,7 @@ describe("gisEksekutifService Dynamic DB Tests (Zero Fallback / Anti-Dummy)", ()
     );
   });
 
-  it("should provide period options from August to December 2026 and 12-month trend array", async () => {
+  it("should provide period options from August to December 2026 and 5-month KKN trend array", async () => {
     (prisma.kelurahan.findMany as any).mockResolvedValue([]);
     (prisma.rw.findMany as any).mockResolvedValue([]);
     (prisma.facility.findMany as any).mockResolvedValue([]);
@@ -127,11 +127,12 @@ describe("gisEksekutifService Dynamic DB Tests (Zero Fallback / Anti-Dummy)", ()
       "November 2026",
       "Desember 2026",
     ]);
-    expect(result.trenBulanan).toHaveLength(12);
-    expect(result.trenBulanan[0].bulan).toBe("Jan");
-    expect(result.trenBulanan[7].bulan).toBe("Agu");
-    expect(result.trenBulanan[8].bulan).toBe("Sep");
-    expect(result.trenBulanan[11].bulan).toBe("Des");
+    expect(result.trenBulanan).toHaveLength(5);
+    expect(result.trenBulanan[0].bulan).toBe("Agu");
+    expect(result.trenBulanan[1].bulan).toBe("Sep");
+    expect(result.trenBulanan[2].bulan).toBe("Okt");
+    expect(result.trenBulanan[3].bulan).toBe("Nov");
+    expect(result.trenBulanan[4].bulan).toBe("Des");
   });
 
   it("should return dynamic values from database when filtering by kelurahan without district fallbacks", async () => {
@@ -215,10 +216,11 @@ describe("gisEksekutifService Dynamic DB Tests (Zero Fallback / Anti-Dummy)", ()
     const result = await gisEksekutifService.getOverview();
 
     expect(result.meta.hasTrendData).toBe(true);
-    expect(result.trenBulanan[7].volume).toBe(2.5);
-    expect(result.trenBulanan[8].volume).toBe(3.0);
+    expect(result.trenBulanan[0].volume).toBe(2.5); // Agu (idx 0)
+    expect(result.trenBulanan[1].volume).toBe(3.0); // Sep (idx 1)
     // Pertumbuhan: ((3.0 - 2.5) / 2.5) * 100 = 20.0%
     expect(result.kpi.volumeGrowthPercent).toBe(20.0);
+    expect(result.kpi.previousMonthName).toBe("Agu");
   });
 
   it("should change KPI metrics dynamically when user switches active month period", async () => {
@@ -246,17 +248,17 @@ describe("gisEksekutifService Dynamic DB Tests (Zero Fallback / Anti-Dummy)", ()
     const resSep = await gisEksekutifService.getOverview({ periode: "September 2026" });
     expect(resSep.meta.periode).toBe("September 2026");
     expect(resSep.kpi.volumeTotal).toBe(1609.2);
-    expect(resSep.kpi.volumeGrowthPercent).toBe(4.8);
+    expect(resSep.kpi.volumeGrowthPercent).toBeNull(); // Agu volume 0, sehingga belum ada persentase pertumbuhan valid
     expect(resSep.kpi.previousMonthName).toBe("Agu");
     expect(resSep.kpi.kepatuhanPemilahan).toBe(20);
 
-    // 2. Uji periode Agustus 2026
+    // 2. Uji periode Agustus 2026 (Kickoff bulan ke-1: belum ada bulan program sebelumnya dan survei belum ada jika tanpa log)
     const resAgu = await gisEksekutifService.getOverview({ periode: "Agustus 2026" });
     expect(resAgu.meta.periode).toBe("Agustus 2026");
-    expect(resAgu.kpi.volumeTotal).toBe(1536.0);
-    expect(resAgu.kpi.volumeGrowthPercent).toBe(0.1);
-    expect(resAgu.kpi.previousMonthName).toBe("Jul");
-    expect(resAgu.kpi.kepatuhanPemilahan).toBe(19); // 20 - 1 offset
+    expect(resAgu.kpi.volumeTotal).toBeNull();
+    expect(resAgu.kpi.volumeGrowthPercent).toBeNull();
+    expect(resAgu.kpi.previousMonthName).toBeNull();
+    expect(resAgu.kpi.kepatuhanPemilahan).toBeNull();
   });
 
   it("should keep all facility types in filterOptions.tipeFasilitas even when a specific facility filter is active", async () => {
@@ -311,8 +313,8 @@ describe("gisEksekutifService Dynamic DB Tests (Zero Fallback / Anti-Dummy)", ()
     expect(resOkt.komposisiVolume.anorganik.volumeM3).toBe(0);
     expect(resOkt.komposisiVolume.residu.volumeM3).toBe(0);
 
-    // Tren bulanan bulan ke-9 (Okt) harus 0
-    expect(resOkt.trenBulanan[9].volume).toBe(0);
+    // Tren bulanan bulan Oktober (idx 2 pada deret 5 bulan KKN) harus 0
+    expect(resOkt.trenBulanan[2].volume).toBe(0);
 
     // Kepatuhan kelurahan dan poligon harus abu-abu tanpa data
     resOkt.kepatuhanPerKelurahan.forEach((kel) => {

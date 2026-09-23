@@ -79,7 +79,7 @@ function createOfflineFallbackData(kelurahanFilter = "Semua"): GisOverviewApiRes
       totalM3: 0,
       hasData: false,
     },
-    trenBulanan: ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"].map((b) => ({
+    trenBulanan: ["Agu", "Sep", "Okt", "Nov", "Des"].map((b) => ({
       bulan: b,
       volume: 0,
     })),
@@ -595,22 +595,15 @@ export default function GisEksekutifPage() {
     ? "dari seluruh kelurahan"
     : `di Kel. ${kel}${rw !== "Semua" ? ` RW ${rw}` : ""}`;
 
-  // Indeks bulan dari periode aktif untuk disorot pada grafik tren bulanan
+  // Indeks bulan dari periode aktif untuk disorot pada grafik tren bulanan (5 bulan: Agu=0, Sep=1, Okt=2, Nov=3, Des=4)
   const selectedMonthIndex = useMemo(() => {
     const p = (periode || "").toLowerCase();
-    if (p.includes("jan")) return 0;
-    if (p.includes("feb")) return 1;
-    if (p.includes("mar")) return 2;
-    if (p.includes("apr")) return 3;
-    if (p.includes("mei")) return 4;
-    if (p.includes("jun")) return 5;
-    if (p.includes("jul")) return 6;
-    if (p.includes("agu")) return 7;
-    if (p.includes("sep")) return 8;
-    if (p.includes("okt")) return 9;
-    if (p.includes("nov")) return 10;
-    if (p.includes("des")) return 11;
-    return 8; // default September 2026
+    if (p.includes("agu")) return 0;
+    if (p.includes("sep")) return 1;
+    if (p.includes("okt")) return 2;
+    if (p.includes("nov")) return 3;
+    if (p.includes("des")) return 4;
+    return 1; // default September 2026 (fase baseline utama)
   }, [periode]);
 
   // Format timestamp data diperbarui
@@ -1180,7 +1173,7 @@ export default function GisEksekutifPage() {
                 series={
                   (data?.trenBulanan && data.trenBulanan.length > 0)
                     ? data.trenBulanan.map((t) => t.volume ?? 0)
-                    : new Array(12).fill(0)
+                    : new Array(5).fill(0)
                 }
                 pi={selectedMonthIndex}
               />
