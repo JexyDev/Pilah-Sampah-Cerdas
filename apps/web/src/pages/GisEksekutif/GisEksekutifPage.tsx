@@ -22,6 +22,8 @@ import {
   type GisFacilityDto,
   type GisSensorDto,
 } from "./gisEksekutifApi";
+import { QcDataAuditModal } from "./QcDataAuditModal";
+import { downloadQcReportPdf } from "../../utils/downloadQcReportPdf";
 
 function createOfflineFallbackData(kelurahanFilter = "Semua"): GisOverviewApiResponse {
   const kelNames = ["Cipaganti", "Dago", "Lebak Gede", "Lebak Siliwangi", "Sadang Serang", "Sekeloa"];
@@ -166,9 +168,11 @@ interface ExportMenuProps {
   onExport: (what: "kel-all" | "kel-single" | "fac") => void;
   selectedKel?: string;
   periode?: string;
+  onOpenQcModal?: () => void;
+  onDownloadQcPdf?: () => void;
 }
 
-function ExportMenu({ onExport, selectedKel, periode }: ExportMenuProps) {
+function ExportMenu({ onExport, selectedKel, periode, onOpenQcModal, onDownloadQcPdf }: ExportMenuProps) {
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
 
@@ -254,6 +258,44 @@ function ExportMenu({ onExport, selectedKel, periode }: ExportMenuProps) {
               </small>
             </span>
           </button>
+
+          {/* Opsi 4: Cetak / Unduh Laporan PDF QC */}
+          {onDownloadQcPdf && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                onDownloadQcPdf();
+              }}
+              style={{ borderTop: "1px solid #f1f5f9" }}
+            >
+              <Icon name="file" size={15} />
+              <span>
+                Laporan PDF QC (Resmi)
+                <small>Format dokumen A4 berstandar DLH</small>
+              </span>
+            </button>
+          )}
+
+          {/* Opsi 5: Laporan Asal & Rumus Data (QC) */}
+          {onOpenQcModal && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                onOpenQcModal();
+              }}
+              style={!onDownloadQcPdf ? { borderTop: "1px solid #f1f5f9" } : undefined}
+            >
+              <Icon name="clipboard" size={15} />
+              <span>
+                Laporan Asal & Rumus QC
+                <small>Dokumentasi formula & audit tabel DB</small>
+              </span>
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -349,6 +391,7 @@ export default function GisEksekutifPage() {
   const [autoRetryCountdown, setAutoRetryCountdown] = useState(5);
   const [isAutoRetryPaused, setIsAutoRetryPaused] = useState(false);
   const [showTechnicalDetails, setShowTechnicalDetails] = useState(false);
+  const [showQcModal, setShowQcModal] = useState(false);
   const [filterOptions, setFilterOptions] = useState<{
     kelurahans: string[]; rws: string[]; periodes: string[]; tipeFasilitas: string[];
   }>({
@@ -964,7 +1007,19 @@ export default function GisEksekutifPage() {
                 onExport={doExport}
                 selectedKel={kel}
                 periode={periode}
+                onOpenQcModal={() => setShowQcModal(true)}
+                onDownloadQcPdf={() => downloadQcReportPdf({ data, periode, selectedKel: kel })}
               />
+
+              <button
+                type="button"
+                className="qc-audit-trigger-btn"
+                onClick={() => setShowQcModal(true)}
+                title="Buka Lembar Asal Data & Rumus Perhitungan untuk Tim QC"
+              >
+                <Icon name="clipboard" size={14} />
+                <span>Asal & Rumus Data (QC)</span>
+              </button>
             </div>
 
             <div className="qc-timestamp">
@@ -1280,6 +1335,14 @@ export default function GisEksekutifPage() {
         )}
 
         <div className={`toast ${toast ? "show" : ""}`} role="status" aria-live="polite">{toast}</div>
+
+        <QcDataAuditModal
+          isOpen={showQcModal}
+          onClose={() => setShowQcModal(false)}
+          data={data}
+          currentPeriode={periode}
+          selectedKel={kel}
+        />
       </div>
     </div>
   );
