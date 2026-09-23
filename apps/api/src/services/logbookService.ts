@@ -804,6 +804,7 @@ export class LogbookService {
             description: `Poin pengisian logbook harian KKN (${actDateStr})`,
             kategori: "KKN_LOGBOOK_HARIAN",
             redeemable: false,
+            createdAt: logbook.createdAt, // 🛡️ Mengunci stempel waktu sesuai waktu submit formulir
           },
         });
         pointsAwarded = true;
@@ -1233,6 +1234,7 @@ export class LogbookService {
               description: `Poin pengisian logbook harian KKN (${actDateStr})`,
               kategori: "KKN_LOGBOOK_HARIAN",
               redeemable: false,
+              createdAt: logbook.createdAt, // 🛡️ Mengunci waktu sesuai entry asli mahasiswa
             },
           });
         }
