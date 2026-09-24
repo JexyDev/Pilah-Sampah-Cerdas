@@ -159,6 +159,7 @@ export class KknService {
 
     const isSuperOrAdmin =
       user?.role?.name === "SUPER_USER" ||
+      user?.role?.name === "DEVELOPER" ||
       user?.role?.name === "ADMIN_DLH" ||
       user?.role?.name === "DPL" ||
       user?.role?.name === "DOSEN_PEMBIMBING" ||
@@ -167,7 +168,7 @@ export class KknService {
 
     let student = await prisma.studentKkn.findUnique({
       where: { userId },
-      include: { assignedRw: true },
+      include: { assignedRw: true, kelompok: true },
     });
 
     if (!student && !isSuperOrAdmin) {
@@ -180,9 +181,7 @@ export class KknService {
       : await prisma.bin.count({
           where: {
             status: "ACTIVE_BOUND",
-            qrBatch: {
-              assignedPicUserId: userId,
-            },
+            registeredByStudentId: userId,
           },
         });
 
@@ -244,6 +243,139 @@ export class KknService {
     } else {
       prokerPoints = 0;
     }
+
+    // ── METRIK BARU: Agregasi Warga Dampingan Personal & Warga Mandiri RW (ECO/BEND-KKN/2026-09/003) ──
+    let totalWargaDampingan = 0;
+    let wargaDampinganBinAktif = 0;
+    let wargaMandiriRwBelumKlaim = 0;
+    let totalWargaRw = 0;
+
+    let targetRwIds: number[] = [];
+    if (student?.assignedRwId) {
+      targetRwIds = [student.assignedRwId];
+    } else if (student?.kelompok) {
+      const rawCakupan = student.kelompok.cakupanRw;
+      const parsedCakupan =
+        typeof rawCakupan === "string" ? JSON.parse(rawCakupan) : rawCakupan;
+      if (Array.isArray(parsedCakupan) && parsedCakupan.length > 0) {
+        const rwNumbers = parsedCakupan
+          .map((r: any) => String(r).replace(/[^\d]/g, "").trim())
+          .filter(Boolean);
+        if (rwNumbers.length > 0) {
+          const matchedRws = await prisma.rw.findMany({
+            where: {
+              ...(student.kelompok.kelurahan
+                ? {
+                    kelurahan: {
+                      name: { equals: student.kelompok.kelurahan, mode: "insensitive" },
+                    },
+                  }
+                : {}),
+              OR: rwNumbers.flatMap((num) => [
+                { name: { equals: num, mode: "insensitive" } },
+                { name: { equals: `RW ${num}`, mode: "insensitive" } },
+                { name: { equals: `RW ${num.padStart(2, "0")}`, mode: "insensitive" } },
+                { name: { equals: num.padStart(2, "0"), mode: "insensitive" } },
+              ]),
+            },
+            select: { id: true },
+          });
+          targetRwIds = matchedRws.map((r) => r.id);
+        }
+      }
+    }
+
+    if (targetRwIds.length === 0 && user?.rwId) {
+      targetRwIds = [user.rwId];
+    }
+
+    if (isSuperOrAdmin) {
+      totalWargaRw = prisma.user.count
+        ? await prisma.user.count({ where: { role: { name: "WARGA" } } })
+        : 0;
+      totalWargaDampingan = totalWargaRw;
+      wargaDampinganBinAktif = await prisma.bin.count({
+        where: {
+          status: { in: ["ACTIVE_BOUND", "PENDING_APPROVAL"] },
+          userId: { not: null },
+        },
+      });
+      wargaMandiriRwBelumKlaim = prisma.user.count
+        ? await prisma.user.count({
+            where: {
+              role: { name: "WARGA" },
+              NOT: {
+                OR: [
+                  { bins: { some: { registeredByStudentId: { not: null } } } },
+                  { binOwnerships: { some: { bin: { registeredByStudentId: { not: null } } } } },
+                ],
+              },
+            },
+          })
+        : 0;
+    } else {
+      const studentIds = [userId, student?.id].filter(Boolean) as string[];
+      const wargaDampingan = prisma.user.findMany
+        ? await prisma.user.findMany({
+            where: {
+              role: { name: "WARGA" },
+              OR: [
+                { bins: { some: { registeredByStudentId: { in: studentIds } } } },
+                { binOwnerships: { some: { bin: { registeredByStudentId: { in: studentIds } } } } },
+              ],
+            },
+            include: {
+              bins: { select: { id: true, status: true } },
+              binOwnerships: { select: { bin: { select: { id: true, status: true } } } },
+            },
+          })
+        : [];
+
+      totalWargaDampingan = wargaDampingan.length;
+
+      wargaDampinganBinAktif = wargaDampingan.filter((w) => {
+        const allBins = [
+          ...(w.bins || []),
+          ...(w.binOwnerships?.map((bo: any) => bo.bin) || []),
+        ];
+        return allBins.some((b) => b && (b.status === "ACTIVE_BOUND" || b.status === "ACTIVE"));
+      }).length;
+
+      if (targetRwIds.length > 0 && prisma.user.count) {
+        totalWargaRw = await prisma.user.count({
+          where: {
+            role: { name: "WARGA" },
+            OR: [
+              { rwId: { in: targetRwIds } },
+              { households: { some: { rwId: { in: targetRwIds } } } },
+            ],
+          },
+        });
+
+        wargaMandiriRwBelumKlaim = await prisma.user.count({
+          where: {
+            role: { name: "WARGA" },
+            OR: [
+              { rwId: { in: targetRwIds } },
+              { households: { some: { rwId: { in: targetRwIds } } } },
+            ],
+            NOT: {
+              OR: [
+                { bins: { some: { registeredByStudentId: { not: null } } } },
+                { binOwnerships: { some: { bin: { registeredByStudentId: { not: null } } } } },
+              ],
+            },
+          },
+        });
+      }
+    }
+
+    const wargaStats = {
+      totalWargaDampingan,
+      wargaDampinganBinAktif,
+      wargaMandiriRwBelumKlaim,
+      totalWargaRw,
+    };
 
     const poskoLat = student?.assignedRw?.latitude ? Number(student.assignedRw.latitude) : null;
     const poskoLng = student?.assignedRw?.longitude ? Number(student.assignedRw.longitude) : null;
@@ -318,9 +450,20 @@ export class KknService {
           0,
         poinNormalisasiTim: groupPointsData?.totalNormalizationBonus ?? 0,
         groupScoreBreakdown: groupPointsData,
+        // ── METRIK BARU: Agregasi Warga Dampingan (ECO/BEND-KKN/2026-09/003) ──
+        wargaStats,
+        totalWargaDampingan,
+        wargaDampinganBinAktif,
+        wargaMandiriRwBelumKlaim,
+        totalWargaRw,
         maxLimit,
       },
       // Backward compatibility aliases & top-level direct access
+      wargaStats,
+      totalWargaDampingan,
+      wargaDampinganBinAktif,
+      wargaMandiriRwBelumKlaim,
+      totalWargaRw,
       personalPoints: contributionPoints,
       purePersonalPoints,
       prokerPoints,
@@ -473,10 +616,7 @@ export class KknService {
       }
 
       // 1. Klausa Ownership (Hak Cipta Kelompok/Mahasiswa)
-      const ownershipConditions: any[] = [
-        { registeredByStudentId: kknUserId },
-        { qrBatch: { assignedPicUserId: kknUserId } },
-      ];
+      const ownershipConditions: any[] = [{ registeredByStudentId: kknUserId }];
       if (studentProfile?.kelompokId) {
         ownershipConditions.push({ kelompokId: studentProfile.kelompokId });
       }
@@ -580,17 +720,59 @@ export class KknService {
       }
     });
 
+    // EXTRA FETCH FOR WARGA WITHOUT BINS
+    const orConditionsUser = [];
+    if (targetRwIds.length > 0) {
+      orConditionsUser.push(
+        { rwId: { in: targetRwIds } },
+        { households: { some: { rwId: { in: targetRwIds } } } }
+      );
+    }
+    const groupStudentUserIds =
+      studentProfile?.kelompok?.students?.map((s: any) => s.userId).filter(Boolean) || [];
+    if (!groupStudentUserIds.includes(kknUserId)) groupStudentUserIds.push(kknUserId);
+    
+    if (groupStudentUserIds.length > 0) {
+      orConditionsUser.push(
+        { bins: { some: { registeredByStudentId: { in: groupStudentUserIds } } } },
+        { binOwnerships: { some: { bin: { registeredByStudentId: { in: groupStudentUserIds } } } } }
+      );
+    }
+    
+    if (orConditionsUser.length > 0) {
+      const extraUsers = await prisma.user.findMany({
+        where: { role: { name: "WARGA" }, OR: orConditionsUser },
+        include: {
+          rw: { include: { kelurahan: true } },
+          households: true,
+          pointHistory: true,
+          wargaViolations: true,
+          setoranOtomatis: {
+            orderBy: { createdAt: "desc" },
+            include: { bin: { include: { category: true } } },
+          },
+          bins: { include: { category: true } },
+          binOwnerships: { include: { bin: { include: { category: true } } } },
+        },
+      });
+      extraUsers.forEach(u => {
+        if (!uniqueUsers.has(u.id)) {
+          uniqueUsers.set(u.id, { u, bins: [] });
+        }
+      });
+    }
+
     let list = Array.from(uniqueUsers.values()).map(({ u, bins: userBins }) => {
       const household = u.households?.[0];
-      const primaryBin = userBins[0];
-      const lat = primaryBin.latitude
+      const primaryBin = userBins[0] || u.bins?.[0] || u.binOwnerships?.[0]?.bin;
+      const lat = primaryBin?.latitude
         ? Number(primaryBin.latitude)
         : household?.latitude
           ? Number(household.latitude)
           : u.rw?.latitude
             ? Number(u.rw.latitude)
             : null;
-      const lng = primaryBin.longitude
+      const lng = primaryBin?.longitude
         ? Number(primaryBin.longitude)
         : household?.longitude
           ? Number(household.longitude)
@@ -652,7 +834,6 @@ export class KknService {
       const binAnorganik = userBins.find((b: any) => isAnorganikBin(b));
       const registeredStudentId =
         primaryBin?.registeredByStudentId ||
-        primaryBin?.qrBatch?.assignedPicUserId ||
         binOrganik?.registeredByStudentId ||
         binAnorganik?.registeredByStudentId ||
         "";
@@ -669,13 +850,8 @@ export class KknService {
           household?.rwId === effectiveRwId ||
           primaryBin.rwId === effectiveRwId);
 
-      const resolvedMahasiswaId =
-        registeredStudentId || (isMyAssignedCitizen && kknUserId ? kknUserId : "");
-      const resolvedPendampingName =
-        registeredStudentName ||
-        (isMyAssignedCitizen && (studentProfile as any)?.user?.name
-          ? (studentProfile as any).user.name
-          : "");
+      const resolvedMahasiswaId = registeredStudentId || "";
+      const resolvedPendampingName = registeredStudentName || "";
 
       return {
         id: u.id,
@@ -724,6 +900,9 @@ export class KknService {
         binOwnerships: u.binOwnerships || [],
         pendampingName: resolvedPendampingName,
         pendamping: resolvedPendampingName
+          ? { id: resolvedMahasiswaId, name: resolvedPendampingName }
+          : null,
+        pendampingKkn: resolvedPendampingName
           ? { id: resolvedMahasiswaId, name: resolvedPendampingName }
           : null,
         mahasiswaId: resolvedMahasiswaId,
@@ -836,17 +1015,11 @@ export class KknService {
         const isRegisteredByGroup =
           warga.binOwnerships?.some((bo: any) => {
             const regId = bo.bin?.registeredByStudentId;
-            const picId = bo.bin?.qrBatch?.assignedPicUserId;
-            return (
-              regId === kknUserId || groupStudentUserIds.includes(regId) || picId === kknUserId
-            );
+            return regId === kknUserId || groupStudentUserIds.includes(regId);
           }) ||
           warga.bins?.some((b: any) => {
             const regId = b.registeredByStudentId;
-            const picId = b.qrBatch?.assignedPicUserId;
-            return (
-              regId === kknUserId || groupStudentUserIds.includes(regId) || picId === kknUserId
-            );
+            return regId === kknUserId || groupStudentUserIds.includes(regId);
           });
 
         // 2. Assigned RW match
@@ -1071,7 +1244,6 @@ export class KknService {
       primaryBin?.registeredByStudentId ||
       binOrganik?.registeredByStudentId ||
       binAnorganik?.registeredByStudentId ||
-      primaryBin?.qrBatch?.assignedPicUserId ||
       "";
 
     // 4. Return semua field di response
@@ -1129,6 +1301,14 @@ export class KknService {
       registeredByStudentName: registeredStudent,
       mahasiswaId: registeredStudentId,
       registeredByStudentId: registeredStudentId,
+      pendamping:
+        registeredStudentId && registeredStudent
+          ? { id: registeredStudentId, name: registeredStudent }
+          : null,
+      pendampingKkn:
+        registeredStudentId && registeredStudent
+          ? { id: registeredStudentId, name: registeredStudent }
+          : null,
       recentLogs,
     };
   }
@@ -1434,7 +1614,6 @@ export class KknService {
 
       const registeredStudentId =
         primaryBin?.registeredByStudentId ||
-        primaryBin?.qrBatch?.assignedPicUserId ||
         binOrganik?.registeredByStudentId ||
         binAnorganik?.registeredByStudentId ||
         null;
@@ -1470,11 +1649,8 @@ export class KknService {
           household?.rwId === studentAssignedRwId ||
           primaryBin?.rwId === studentAssignedRwId);
 
-      const resolvedMahasiswaId =
-        registeredStudentId || (isMyAssignedCitizen && kknUserId ? kknUserId : "");
-      const resolvedPendampingName =
-        registeredStudentName ||
-        (isMyAssignedCitizen && student?.user?.name ? student.user.name : "");
+      const resolvedMahasiswaId = registeredStudentId || "";
+      const resolvedPendampingName = registeredStudentName || "";
 
       return {
         id: w.id,
@@ -1516,6 +1692,9 @@ export class KknService {
         registeredByStudent: resolvedPendampingName,
         registeredByStudentName: resolvedPendampingName,
         pendamping: resolvedPendampingName
+          ? { id: resolvedMahasiswaId, name: resolvedPendampingName }
+          : null,
+        pendampingKkn: resolvedPendampingName
           ? { id: resolvedMahasiswaId, name: resolvedPendampingName }
           : null,
         binOrganikId: binOrganik?.qrCode || null,
@@ -6532,6 +6711,248 @@ export class KknService {
       kelompokNama: qrData.kelompok.nama,
       htmlContent,
     };
+  }
+
+  /**
+   * ENG-MEMO/KKN-REASSIGN/2026-09/006-REV1:
+   * Unified service for reassigning warga dampingan KKN
+   * Supported callers: Ketua Kelompok KKN (Mobile) & Super User/Admin DLH/Developer (Web Admin/CS)
+   */
+  async reassignWargaPendampingUnified(params: {
+    requesterUserId: string;
+    requesterRole: string;
+    wargaId: string;
+    targetStudentId: string;
+    reason?: string;
+    ticketNumber?: string;
+  }) {
+    const {
+      requesterUserId,
+      requesterRole,
+      wargaId,
+      targetStudentId,
+      reason,
+      ticketNumber,
+    } = params;
+
+    if (!wargaId || typeof wargaId !== "string" || !wargaId.trim()) {
+      throw new Error("WARGA_NOT_FOUND");
+    }
+
+    if (!targetStudentId || typeof targetStudentId !== "string" || !targetStudentId.trim()) {
+      throw new Error("TARGET_STUDENT_REQUIRED");
+    }
+
+    const cleanWargaId = wargaId.trim();
+    const cleanTargetStudentId = targetStudentId.trim();
+
+    return prisma.$transaction(async (tx) => {
+      // 1. Ambil Data Warga & Bins
+      const warga = await tx.user.findUnique({
+        where: { id: cleanWargaId },
+        include: {
+          bins: {
+            select: {
+              id: true,
+              registeredByStudentId: true,
+              kelompokId: true,
+            },
+          },
+          binOwnerships: {
+            include: {
+              bin: {
+                select: {
+                  id: true,
+                  registeredByStudentId: true,
+                  kelompokId: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!warga) {
+        throw new Error("WARGA_NOT_FOUND");
+      }
+
+      // 2. Ambil Data Mahasiswa Target
+      let targetStudent = await tx.studentKkn.findUnique({
+        where: { userId: cleanTargetStudentId },
+        include: {
+          user: { select: { id: true, name: true, phone: true } },
+          kelompok: { select: { id: true, name: true } },
+        },
+      });
+
+      if (!targetStudent) {
+        targetStudent = await tx.studentKkn.findUnique({
+          where: { id: cleanTargetStudentId },
+          include: {
+            user: { select: { id: true, name: true, phone: true } },
+            kelompok: { select: { id: true, name: true } },
+          },
+        });
+      }
+
+      if (!targetStudent) {
+        throw new Error("TARGET_STUDENT_NOT_FOUND");
+      }
+
+      // 3. Validasi Otorisasi Pemohon
+      const normalizedRole = String(requesterRole || "").toUpperCase();
+      const isSuperOrAdmin = ["SUPER_USER", "DEVELOPER", "ADMIN_DLH"].includes(normalizedRole);
+      let requesterStudent: any = null;
+
+      if (!isSuperOrAdmin) {
+        requesterStudent = await tx.studentKkn.findUnique({
+          where: { userId: requesterUserId },
+        });
+
+        if (!requesterStudent) {
+          requesterStudent = await tx.studentKkn.findUnique({
+            where: { id: requesterUserId },
+          });
+        }
+
+        // Validasi: Wajib Ketua Kelompok
+        if (!requesterStudent || !requesterStudent.isKetua) {
+          throw new Error("ONLY_KETUA_CAN_REASSIGN");
+        }
+
+        // Validasi: Wajib Satu Kelompok
+        if (requesterStudent.kelompokId !== targetStudent.kelompokId) {
+          throw new Error("CROSS_KELOMPOK_FORBIDDEN");
+        }
+      }
+
+      // 4. Deteksi Pendamping Saat Ini & Cek Redundansi
+      const allBins = [
+        ...warga.bins,
+        ...warga.binOwnerships.map((bo) => bo.bin),
+      ];
+
+      const currentStudentId =
+        allBins.find((b) => b.registeredByStudentId)?.registeredByStudentId || null;
+
+      if (
+        currentStudentId &&
+        (currentStudentId === targetStudent.userId || currentStudentId === targetStudent.id)
+      ) {
+        throw new Error("SAME_STUDENT_ASSIGNED");
+      }
+
+      let previousStudentName = "-";
+      if (currentStudentId) {
+        const prevUser = await tx.user.findUnique({
+          where: { id: currentStudentId },
+          select: { name: true },
+        });
+        previousStudentName = prevUser?.name || "-";
+      }
+
+      // 5. Update Tempat Sampah Warga
+      const binUpdate = await tx.bin.updateMany({
+        where: {
+          OR: [
+            { userId: cleanWargaId },
+            { binOwnerships: { some: { userId: cleanWargaId } } },
+          ],
+        },
+        data: {
+          registeredByStudentId: targetStudent.userId,
+          kelompokId: targetStudent.kelompokId,
+        },
+      });
+
+      if (binUpdate.count === 0 && allBins.length === 0) {
+        const defaultCategory = await tx.wasteCategory.findFirst();
+        await tx.bin.create({
+          data: {
+            qrCode: `BSK-MEMBER-${Date.now().toString(36).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`,
+            status: "ACTIVE_BOUND",
+            userId: cleanWargaId,
+            registeredByStudentId: targetStudent.userId,
+            kelompokId: targetStudent.kelompokId,
+            categoryId: defaultCategory?.id,
+            rwId: warga.rwId,
+          },
+        });
+      }
+
+      // 6. Nama Aktor Pemohon
+      const requesterUser = await tx.user.findUnique({
+        where: { id: requesterUserId },
+        select: { name: true },
+      });
+      const actorName = requesterUser?.name || (isSuperOrAdmin ? "Admin/CS" : "Ketua Kelompok");
+
+      // 7. Audit Logging
+      await tx.auditTrail.create({
+        data: {
+          action: "KKN_WARGA_REASSIGN",
+          userId: requesterUserId,
+          roleName: requesterRole,
+          featureCategory: "Manajemen KKN",
+          endpoint: isSuperOrAdmin
+            ? `/api/v1/super-user/warga/${cleanWargaId}/reassign-pendamping`
+            : `/api/v1/kkn/warga/${cleanWargaId}/reassign-pendamping`,
+          newValue: {
+            wargaId: warga.id,
+            wargaName: warga.name,
+            previousStudentId: currentStudentId,
+            previousStudentName,
+            newStudentId: targetStudent.userId,
+            newStudentName: targetStudent.user?.name || "Mahasiswa KKN",
+            kelompokId: targetStudent.kelompokId,
+            kelompokName: targetStudent.kelompok?.name || "-",
+            reason: reason || null,
+            ticketNumber: ticketNumber || null,
+            reassignedByRole: requesterRole,
+            updatedBinsCount: binUpdate.count,
+          } as any,
+        },
+      });
+
+      // 8. In-App Notification (Mahasiswa Baru)
+      await tx.notification.create({
+        data: {
+          userId: targetStudent.userId,
+          title: "Warga Dampingan Dialihkan",
+          message: `Warga ${warga.name} telah dialihkan menjadi warga dampingan Anda oleh ${actorName}.${reason ? ` Alasan: ${reason}` : ""}`,
+        },
+      });
+
+      // In-App Notification (Mahasiswa Lama jika ada)
+      if (currentStudentId && currentStudentId !== targetStudent.userId) {
+        await tx.notification.create({
+          data: {
+            userId: currentStudentId,
+            title: "Warga Dampingan Dialihkan",
+            message: `Warga ${warga.name} telah dialihkan ke ${targetStudent.user?.name || "Mahasiswa KKN"} oleh ${actorName}.${reason ? ` Alasan: ${reason}` : ""}`,
+          },
+        });
+      }
+
+      return {
+        wargaId: warga.id,
+        wargaName: warga.name,
+        wargaPhone: warga.phone || "-",
+        previousStudentId: currentStudentId,
+        previousStudentName,
+        newStudentId: targetStudent.userId,
+        newStudentName: targetStudent.user?.name || "Mahasiswa KKN",
+        kelompokId: targetStudent.kelompokId,
+        kelompokName: targetStudent.kelompok?.name || "-",
+        updatedBinsCount: binUpdate.count,
+        reassignedBy: {
+          userId: requesterUserId,
+          name: actorName,
+          role: requesterRole,
+        },
+        updatedAt: new Date().toISOString(),
+      };
+    });
   }
 }
 

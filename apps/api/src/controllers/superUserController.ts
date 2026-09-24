@@ -416,6 +416,83 @@ export class SuperUserController {
       res.status(500).send(`<h3>Gagal memuat dokumen cetak QR: ${error.message}</h3>`);
     }
   }
+
+  /**
+   * ENG-MEMO/KKN-REASSIGN/2026-09/006-REV1:
+   * Endpoint PATCH /api/v1/super-user/warga/:wargaId/reassign-pendamping
+   * Khusus Portal Web Admin (Super User / Developer / Admin DLH / CS)
+   */
+  async reassignWargaPendamping(req: Request, res: Response): Promise<void> {
+    try {
+      const wargaId = req.params.wargaId || (req.params as any).id;
+      const { targetStudentId, reason, ticketNumber } = req.body || {};
+      const requesterUserId = req.user?.userId || (req.user as any)?.id;
+      const requesterRole = req.user?.role || "SUPER_USER";
+
+      if (!requesterUserId) {
+        res.status(401).json({ success: false, error: "UNAUTHORIZED", message: "User belum terotentikasi" });
+        return;
+      }
+
+      const data = await superUserService.reassignWargaPendamping({
+        requesterUserId,
+        requesterRole,
+        wargaId,
+        targetStudentId,
+        reason,
+        ticketNumber,
+      });
+
+      res.status(200).json({
+        success: true,
+        message: "Mahasiswa pendamping warga dampingan berhasil dialihkan",
+        data,
+      });
+    } catch (error: any) {
+      console.error("[superUserController] reassignWargaPendamping error:", error);
+      const REASSIGN_ERROR_MAP: Record<string, { status: number; message: string }> = {
+        TARGET_STUDENT_REQUIRED: {
+          status: 400,
+          message: "Mahasiswa tujuan wajib dipilih",
+        },
+        SAME_STUDENT_ASSIGNED: {
+          status: 400,
+          message: "Warga sudah didampingi oleh mahasiswa tersebut",
+        },
+        ONLY_KETUA_CAN_REASSIGN: {
+          status: 403,
+          message: "Akses ditolak. Hanya Ketua Kelompok KKN yang berhak mengalihkan pendamping warga",
+        },
+        CROSS_KELOMPOK_FORBIDDEN: {
+          status: 403,
+          message: "Mahasiswa tujuan berada di luar kelompok KKN Anda",
+        },
+        WARGA_NOT_FOUND: {
+          status: 404,
+          message: "Data warga tidak ditemukan",
+        },
+        TARGET_STUDENT_NOT_FOUND: {
+          status: 404,
+          message: "Mahasiswa tujuan tidak ditemukan di database KKN",
+        },
+      };
+
+      const mapped = REASSIGN_ERROR_MAP[error.message];
+      if (mapped) {
+        res.status(mapped.status).json({
+          success: false,
+          error: error.message,
+          message: mapped.message,
+        });
+        return;
+      }
+      res.status(500).json({
+        success: false,
+        error: "INTERNAL_SERVER_ERROR",
+        message: error.message || "Terjadi kesalahan internal server saat mengalihkan warga",
+      });
+    }
+  }
 }
 
 export const superUserController = new SuperUserController();

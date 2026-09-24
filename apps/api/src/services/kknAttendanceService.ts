@@ -975,161 +975,160 @@ export class KknAttendanceService {
   }
 
   async getWargaDampingan(userId: string, role?: string) {
-    let whereCondition: any = { registeredByStudentId: userId };
     let studentProfile: any = null;
+    let groupStudentIds: string[] = [userId];
+    let targetRwIds: number[] = [];
 
     if (role === "DPL" || role === "DOSEN_PEMBIMBING") {
       const groups = await prisma.kelompokKkn.findMany({
         where: { dplId: userId },
-        include: {
-          students: {
-            select: { userId: true },
-          },
-        },
+        include: { students: { select: { userId: true } } },
       });
-      const studentIds = groups.flatMap((g) => g.students.map((s) => s.userId));
-      whereCondition = { registeredByStudentId: { in: studentIds } };
+      groupStudentIds = groups.flatMap((g) => g.students.map((s) => s.userId));
     } else {
-      // Mahasiswa KKN: Ambil profil mahasiswa untuk mengetahui RW penugasan & nama
       studentProfile = await prisma.studentKkn.findFirst({
         where: { userId },
         include: {
           user: { select: { id: true, name: true, phone: true } },
-          assignedRw: { select: { id: true, name: true } },
+          assignedRw: { select: { id: true, name: true, kelurahanId: true } },
           kelompok: {
             include: { students: { select: { userId: true } } },
           },
         },
       });
 
-      const groupStudentIds = studentProfile?.kelompok?.students
+      groupStudentIds = studentProfile?.kelompok?.students
         ?.map((s: any) => s.userId)
         .filter(Boolean) || [userId];
 
-      whereCondition = {
-        OR: [
-          { registeredByStudentId: { in: groupStudentIds } },
-          { registeredByStudentId: userId },
-          ...(studentProfile?.kelompokId ? [{ kelompokId: studentProfile.kelompokId }] : []),
-          ...(studentProfile?.assignedRwId
-            ? [
-                { rwId: studentProfile.assignedRwId },
-                { user: { rwId: studentProfile.assignedRwId } },
-                { user: { households: { some: { rwId: studentProfile.assignedRwId } } } },
-              ]
-            : []),
-        ],
-      };
+      if (studentProfile?.kelompok?.cakupanRw) {
+        const rawCakupan = studentProfile.kelompok.cakupanRw;
+        const parsedCakupan = typeof rawCakupan === "string" ? JSON.parse(rawCakupan) : rawCakupan;
+        if (Array.isArray(parsedCakupan) && parsedCakupan.length > 0) {
+          const rwNumbers = parsedCakupan.map((r: any) => String(r).replace(/[^\d]/g, "").trim()).filter(Boolean);
+          if (rwNumbers.length > 0) {
+            const matchedRws = await prisma.rw.findMany({
+              where: {
+                ...(studentProfile.assignedRw?.kelurahanId ? { kelurahanId: studentProfile.assignedRw.kelurahanId } : {}),
+                OR: rwNumbers.flatMap((num) => [
+                  { name: { equals: num, mode: "insensitive" } },
+                  { name: { equals: `RW ${num}`, mode: "insensitive" } },
+                  { name: { equals: `RW ${num.padStart(2, "0")}`, mode: "insensitive" } },
+                  { name: { equals: num.padStart(2, "0"), mode: "insensitive" } },
+                ]),
+              },
+              select: { id: true },
+            });
+            targetRwIds = matchedRws.map((r: any) => r.id);
+          }
+        }
+      }
+      if (studentProfile?.assignedRwId && !targetRwIds.includes(studentProfile.assignedRwId)) {
+        targetRwIds.push(studentProfile.assignedRwId);
+      }
     }
 
-    // Ambil warga yang di-register oleh mahasiswa kelompok binaan DPL / mahasiswa ybs
-    const bins = await prisma.bin.findMany({
-      where: whereCondition,
+    const orConditions: any[] = [];
+    if (targetRwIds.length > 0) {
+      orConditions.push(
+        { rwId: { in: targetRwIds } },
+        { households: { some: { rwId: { in: targetRwIds } } } }
+      );
+    }
+    if (groupStudentIds.length > 0) {
+      orConditions.push(
+        { bins: { some: { registeredByStudentId: { in: groupStudentIds } } } },
+        { binOwnerships: { some: { bin: { registeredByStudentId: { in: groupStudentIds } } } } },
+      );
+    }
+
+    const wargaList = await prisma.user.findMany({
+      where: {
+        role: { name: "WARGA" },
+        OR: orConditions.length > 0 ? orConditions : undefined,
+      },
       include: {
-        category: true,
-        registeredByStudent: { select: { id: true, name: true, phone: true } },
         rw: { include: { kelurahan: true } },
-        user: {
-          include: {
-            households: { include: { rw: { include: { kelurahan: true } } } },
-            rw: { include: { kelurahan: true } },
-          },
+        households: { include: { rw: { include: { kelurahan: true } } } },
+        bins: {
+          include: { category: true, registeredByStudent: { select: { id: true, name: true } }, rw: { include: { kelurahan: true } }, setoranOtomatis: { take: 10, orderBy: { createdAt: "desc" }, include: { bin: { include: { category: true } } } } },
         },
-        setoranOtomatis: {
-          orderBy: { createdAt: "desc" },
-          take: 10,
+        binOwnerships: {
           include: {
-            bin: {
-              include: { category: true },
-            },
+            bin: { include: { category: true, registeredByStudent: { select: { id: true, name: true } }, rw: { include: { kelurahan: true } }, setoranOtomatis: { take: 10, orderBy: { createdAt: "desc" }, include: { bin: { include: { category: true } } } } } },
           },
         },
       },
     });
 
-    const usersMap = new Map<string, any>();
+    return wargaList.map((u: any) => {
+      const allBins = [
+        ...(u.bins || []),
+        ...(u.binOwnerships?.map((bo: any) => bo.bin) || [])
+      ].filter(Boolean);
 
-    for (const b of bins) {
-      if (!b.user) continue;
-      const uId = b.user.id;
-      if (!usersMap.has(uId)) {
-        usersMap.set(uId, {
-          user: b.user,
-          bins: [],
-          recentLogs: [],
-        });
-      }
-      const u = usersMap.get(uId);
-      u.bins.push(b);
-      if (b.setoranOtomatis) {
-        u.recentLogs.push(...b.setoranOtomatis);
-      }
-    }
+      const uniqueBinsMap = new Map();
+      allBins.forEach(b => {
+        if (!uniqueBinsMap.has(b.id)) uniqueBinsMap.set(b.id, b);
+      });
+      const uniqueBins = Array.from(uniqueBinsMap.values());
 
-    return Array.from(usersMap.values()).map((u: any) => {
-      u.recentLogs.sort(
-        (a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
+      let recentLogs: any[] = [];
+      uniqueBins.forEach(b => {
+        if (b.setoranOtomatis) recentLogs.push(...b.setoranOtomatis);
+      });
+      recentLogs.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-      const binOrganik = u.bins.find((b: any) => isOrganikBin(b));
-      const binAnorganik = u.bins.find((b: any) => isAnorganikBin(b));
-      const primaryBin = binOrganik || binAnorganik || u.bins[0];
-      const household = u.user.households?.[0];
+      const binOrganik = uniqueBins.find((b: any) => isOrganikBin(b));
+      const binAnorganik = uniqueBins.find((b: any) => isAnorganikBin(b));
+      const primaryBin = binOrganik || binAnorganik || uniqueBins[0];
+      const household = u.households?.[0];
 
-      const resolvedRwId: number | null =
-        u.user.rwId || household?.rwId || primaryBin?.rwId || studentProfile?.assignedRwId || null;
+      const resolvedRwId: number | null = u.rwId || household?.rwId || primaryBin?.rwId || studentProfile?.assignedRwId || null;
+      const rwName = u.rw?.name || household?.rw?.name || primaryBin?.rw?.name || (resolvedRwId ? `RW 0${resolvedRwId}` : "");
+      const kelName = u.rw?.kelurahan?.name || household?.rw?.kelurahan?.name || primaryBin?.rw?.kelurahan?.name || "";
 
-      const rwName =
-        u.user.rw?.name ||
-        household?.rw?.name ||
-        primaryBin?.rw?.name ||
-        (resolvedRwId ? `0${resolvedRwId}` : "");
-
-      const kelName =
-        u.user.rw?.kelurahan?.name ||
-        household?.rw?.kelurahan?.name ||
-        primaryBin?.rw?.kelurahan?.name ||
-        "";
-
-      const registeredStudentId =
-        primaryBin?.registeredByStudentId ||
-        binOrganik?.registeredByStudentId ||
-        binAnorganik?.registeredByStudentId ||
-        userId;
-
-      const registeredStudentName =
-        primaryBin?.registeredByStudent?.name ||
-        binOrganik?.registeredByStudent?.name ||
-        binAnorganik?.registeredByStudent?.name ||
-        studentProfile?.user?.name ||
-        "";
+      const isActivated = !!primaryBin;
+      const registeredStudentId = primaryBin?.registeredByStudentId || binOrganik?.registeredByStudentId || binAnorganik?.registeredByStudentId || null;
+      const registeredStudentName = primaryBin?.registeredByStudent?.name || binOrganik?.registeredByStudent?.name || binAnorganik?.registeredByStudent?.name || null;
 
       return {
-        wargaId: u.user.id,
-        id: u.user.id,
-        binId: primaryBin?.qrCode || primaryBin?.id || "",
-        binOrganikId: binOrganik?.qrCode || binOrganik?.id || null,
-        binAnorganikId: binAnorganik?.qrCode || binAnorganik?.id || null,
-        wargaName: u.user.name || "Unknown",
-        address: household?.address || u.user.address || "-",
+        registeredStudentId: registeredStudentId || "",
+        registeredStudentName: registeredStudentName || "",
+        wargaId: u.id,
+        id: u.id,
+        wargaName: u.name || "Unknown",
+        name: u.name || "Unknown",
+        phone: u.phone || "-",
+        address: household?.address || u.address || "-",
         kelurahan: kelName,
         rw: rwName,
         rwId: resolvedRwId,
         rt: household?.rt || "",
-        mahasiswaId: registeredStudentId,
-        registeredByStudentId: registeredStudentId,
-        pendampingName: registeredStudentName,
-        pendamping: registeredStudentName
-          ? { id: registeredStudentId, name: registeredStudentName }
-          : null,
-        isActivated: true,
-        status: "ACTIVATED",
-        totalPoints: u.user.totalPoints || 0,
-        totalKg:
-          Math.round(
-            u.recentLogs.reduce((sum: number, l: any) => sum + Number(l.berat || 0), 0) * 100
-          ) / 100,
-        recentLogs: u.recentLogs.slice(0, 10).map((log: any) => {
+        isActivated: isActivated,
+        status: isActivated ? "ACTIVATED" : "UNACTIVATED",
+        binId: primaryBin?.qrCode || primaryBin?.id || null,
+        binCode: primaryBin?.qrCode || primaryBin?.id || null,
+        bin: primaryBin || null,
+        binOrganikId: binOrganik?.qrCode || binOrganik?.id || null,
+        binAnorganikId: binAnorganik?.qrCode || binAnorganik?.id || null,
+        bins: uniqueBins,
+        binOwnerships: u.binOwnerships || [],
+        totalPoints: u.totalPoints || 0,
+        totalPoin: u.totalPoints || 0,
+        totalKg: Math.round(recentLogs.reduce((sum: number, l: any) => sum + Number(l.berat || 0), 0) * 100) / 100,
+        totalActivities: recentLogs.length,
+        correctCount: 0,
+        incorrectCount: 0,
+        correctPercentage: 0,
+        needsReeducation: false,
+        mahasiswaId: registeredStudentId || "",
+        registeredByStudentId: registeredStudentId || "",
+        registeredByStudent: registeredStudentName || "",
+        pendampingName: registeredStudentName || "",
+        pendamping: registeredStudentId && registeredStudentName ? { id: registeredStudentId, name: registeredStudentName } : null,
+        pendampingKkn: registeredStudentId && registeredStudentName ? { id: registeredStudentId, name: registeredStudentName } : null,
+        recentLogs: recentLogs.slice(0, 10).map((log: any) => {
           const sortingStatus = evaluateSortingStatus(
             log.confidenceAi,
             log.discrepancy_status || log.discrepancyStatus,
@@ -1139,8 +1138,7 @@ export class KknAttendanceService {
           return {
             ...log,
             weightKg: Number(log.berat || 0),
-            category:
-              (log.hasilKlasifikasiAi || "").toLowerCase() === "organik" ? "Organik" : "Anorganik",
+            category: (log.hasilKlasifikasiAi || "").toLowerCase() === "organik" ? "Organik" : "Anorganik",
             ai_confidence: sortingStatus.ai_confidence,
             aiConfidence: sortingStatus.aiConfidence,
             discrepancy_status: sortingStatus.discrepancy_status,
