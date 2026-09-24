@@ -552,30 +552,35 @@ export const MahasiswaPresensiMobile: React.FC = () => {
         : [];
       setHistoryList(list);
 
-      const active = list.find(
-        (item: any) =>
-          (item.status === "AKTIF" || item.statusPresensi === "AKTIF") &&
-          !item.checkOutAt &&
-          !item.waktuCheckout &&
-          !item.jamPulang
-      );
-      if (
-        active &&
-        (!primaryKegiatan ||
-          primaryKegiatan.statusKehadiran === "BERLANGSUNG" ||
-          primaryKegiatan.statusKehadiran === "TERJEDA")
-      ) {
-        setActiveSession({
-          id: active.presensiId || active.id,
-          jamMasuk: active.checkInAt || active.jamMasuk,
-          jamPulang: active.checkOutAt || active.jamPulang,
-          deskripsiKegiatan: active.deskripsiKegiatan,
-          fotoBuktiUrl: active.fotoUrl || active.fotoBuktiUrl,
-          status: active.status || active.statusPresensi,
-          ...active,
+      const active = list.find((item: any) => {
+        const st = String(item.statusPresensi || item.status || "").toUpperCase();
+        const isFinished = item.checkOutAt || item.waktuCheckout || item.jamPulang || st === "SELESAI" || st === "HADIR_MEMENUHI" || st === "HADIR";
+        const isIgnored = st === "TIDAK_ADA_KEGIATAN" || st === "SKIP_KEGIATAN" || st === "ALPA" || st === "ALPHA" || st === "IZIN" || st === "SAKIT";
+        return !isFinished && !isIgnored;
+      });
+
+      if (active) {
+        setActiveSession((prev: any) => {
+          if (prev && (prev.status === "BERLANGSUNG" || prev.status === "TERJEDA" || prev.status === "DI_ZONA")) {
+            return prev;
+          }
+          return {
+            id: active.presensiId || active.id,
+            jamMasuk: active.checkInAt || active.jamMasuk || active.waktuCheckin || active.waktuAbsen,
+            jamPulang: active.checkOutAt || active.jamPulang || active.waktuCheckout,
+            deskripsiKegiatan: active.deskripsiKegiatan,
+            fotoBuktiUrl: active.fotoUrl || active.fotoBuktiUrl,
+            status: active.status || active.statusPresensi || "BERLANGSUNG",
+            ...active,
+          };
         });
       } else {
-        setActiveSession(null);
+        setActiveSession((prev: any) => {
+          if (prev && (prev.status === "BERLANGSUNG" || prev.status === "TERJEDA" || prev.status === "DI_ZONA")) {
+            return prev;
+          }
+          return null;
+        });
       }
     } catch (err) {
       console.error("Gagal memuat riwayat presensi", err);
