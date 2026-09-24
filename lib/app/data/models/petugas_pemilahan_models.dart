@@ -54,7 +54,7 @@ class PetugasPemilahanDashboard extends Equatable {
   final int totalJadwal;
   final int sudahDiambil;
   final double totalWeightKg; // Maps to todayWeightKg from API
-  final double weeklyWeightKg; // Maps to weeklyWeightKg from API (fallback: todayWeightKg)
+  final double weeklyWeightKg; // Maps to weeklyWeightKg from API
   final double monthlyWeightKg; // Maps to monthlyWeightKg from API
   final double kpiScore; // Formula: 0.6 * ketepatanWaktu + 0.4 * akurasi
   final int totalPoints;
@@ -89,12 +89,7 @@ class PetugasPemilahanDashboard extends Equatable {
           (json['todayWeightKg'] as num?)?.toDouble() ??
           (json['totalWeightKg'] as num?)?.toDouble() ??
           0.0,
-      // ponytail: weeklyWeightKg falls back to todayWeightKg until backend adds the field
-      weeklyWeightKg:
-          (json['weeklyWeightKg'] as num?)?.toDouble() ??
-          (json['todayWeightKg'] as num?)?.toDouble() ??
-          (json['totalWeightKg'] as num?)?.toDouble() ??
-          0.0,
+      weeklyWeightKg: (json['weeklyWeightKg'] as num?)?.toDouble() ?? 0.0,
       monthlyWeightKg: (json['monthlyWeightKg'] as num?)?.toDouble() ?? 0.0,
       kpiScore: (json['kpiScore'] as num?)?.toDouble() ?? calculatedKpi,
       totalPoints: (json['totalPoints'] as num?)?.toInt() ?? 0,
