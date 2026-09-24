@@ -63,9 +63,12 @@ function createOfflineFallbackData(kelurahanFilter = "Semua"): GisOverviewApiRes
       fasilitasTerdata: 0,
       fasilitasSubtext: "Mode Peta Dasar Aktif",
       volumeTotal: null,
+      volumeTotalKg: null,
       volumeGrowthPercent: null,
-      volumeUnit: "m³/bulan",
+      volumeUnit: "kg",
+      volumeUnitM3: "m³/bulan",
       kepatuhanPemilahan: null,
+      kepatuhanTarget: 80,
       kepatuhanDeltaPoin: 0,
       sensorCh4OnlineCount: 0,
       sensorCh4TotalCount: 0,
@@ -73,15 +76,17 @@ function createOfflineFallbackData(kelurahanFilter = "Semua"): GisOverviewApiRes
       sensorCh4ProgressPercent: 0,
     },
     komposisiVolume: {
-      organik: { persen: 0, volumeM3: 0 },
-      anorganik: { persen: 0, volumeM3: 0 },
-      residu: { persen: 0, volumeM3: 0 },
+      organik: { persen: 0, volumeM3: 0, totalKg: 0 },
+      anorganik: { persen: 0, volumeM3: 0, totalKg: 0 },
+      residu: { persen: 0, volumeM3: 0, totalKg: 0 },
       totalM3: 0,
+      totalKg: 0,
       hasData: false,
     },
     trenBulanan: ["Agu", "Sep", "Okt", "Nov", "Des"].map((b) => ({
       bulan: b,
       volume: 0,
+      volumeKg: 0,
     })),
     kepatuhanPerKelurahan: kelNames.map((nama) => ({
       nama,
@@ -388,6 +393,7 @@ export default function GisEksekutifPage() {
   const [base, setBase] = useState<"peta" | "sat">("sat"); // Default Satelit Google (sesuai menu Fasilitas)
   const [active, setActive] = useState<ActiveTarget>(null);
   const [toast, setToast] = useState("");
+  const [volumeUnit, setVolumeUnit] = useState<"kg" | "m³">("kg");
 
   // ─── API state ──────────────────────────────────────────────────────────────
   const [data, setData] = useState<GisOverviewApiResponse | null>(null);
@@ -518,17 +524,17 @@ export default function GisEksekutifPage() {
       const defaultLL: [number, number] = [-6.885, 107.615];
       const labelLL = (ringCoords.length > 0 && Array.isArray(ringCoords[0])) ? ringCoords[0] : defaultLL;
 
-      // Hitung volume spesifik per kelurahan dari data survei
+      // Hitung volume spesifik per kelurahan dari data transaksi riil
       const orgM3 = kd?.organikKgHari != null
-        ? Math.round(((Number(kd.organikKgHari) * 30) / 1000) * 10) / 10
-        : (kd?.volume != null ? Math.round(Number(kd.volume) * 0.21 * 10) / 10 : 0);
+        ? Math.round((Number(kd.organikKgHari) / 1000) * 100) / 100
+        : (kd?.volume != null ? Math.round(Number(kd.volume) * 0.84 * 10) / 10 : 0);
       const anoM3 = kd?.anorganikKgHari != null
-        ? Math.round(((Number(kd.anorganikKgHari) * 30) / 1000) * 10) / 10
-        : (kd?.volume != null ? Math.round(Number(kd.volume) * 0.74 * 10) / 10 : 0);
+        ? Math.round((Number(kd.anorganikKgHari) / 1000) * 100) / 100
+        : (kd?.volume != null ? Math.round(Number(kd.volume) * 0.16 * 10) / 10 : 0);
       const resM3 = kd?.residuKgHari != null
-        ? Math.round(((Number(kd.residuKgHari) * 30) / 1000) * 10) / 10
-        : (kd?.volume != null ? Math.round(Number(kd.volume) * 0.05 * 10) / 10 : 0);
-      const totalM3 = kd?.volume != null ? Number(kd.volume) : Math.round((orgM3 + anoM3 + resM3) * 10) / 10;
+        ? Math.round((Number(kd.residuKgHari) / 1000) * 100) / 100
+        : 0;
+      const totalM3 = kd?.volume != null ? Number(kd.volume) : Math.round((orgM3 + anoM3 + resM3) * 100) / 100;
 
       // Pseudo KelurahanData shape for MapView compatibility
       const kShape = {
@@ -1067,28 +1073,58 @@ export default function GisEksekutifPage() {
                 <div className="kpi-qc-content">
                   <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", width: "100%" }}>
                     <span className="kpi-qc-label">Volume sampah bulanan</span>
-                    {data?.kpi?.volumeGrowthPercent != null && (
-                      <div className="kpi-qc-growth-pill">
-                        <span className="kpi-qc-growth-arrow">
-                          {data.kpi.volumeGrowthPercent >= 0 ? "↑" : "↓"}{" "}
-                          {Math.abs(data.kpi.volumeGrowthPercent).toLocaleString("id-ID")}%
-                        </span>
-                        <span className="kpi-qc-growth-sub">
-                          vs {data.kpi.previousMonthName || "Agu"}
-                        </span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      {/* Unit Switcher: kg | m³ */}
+                      <div className="trend-toggle-group" style={{ height: 22, padding: 1 }} role="group" aria-label="Pilih satuan volume">
+                        <button
+                          type="button"
+                          className={`trend-toggle-btn ${volumeUnit === "kg" ? "is-active" : ""}`}
+                          onClick={() => setVolumeUnit("kg")}
+                          style={{ padding: "0 6px", fontSize: 10.5, height: "100%", lineHeight: "20px" }}
+                          title="Tampilkan dalam satuan Kilogram (kg)"
+                        >
+                          kg
+                        </button>
+                        <button
+                          type="button"
+                          className={`trend-toggle-btn ${volumeUnit === "m³" ? "is-active" : ""}`}
+                          onClick={() => setVolumeUnit("m³")}
+                          style={{ padding: "0 6px", fontSize: 10.5, height: "100%", lineHeight: "20px" }}
+                          title="Tampilkan dalam satuan Meter Kubik (m³)"
+                        >
+                          m³
+                        </button>
                       </div>
-                    )}
+
+                      {data?.kpi?.volumeGrowthPercent != null && (
+                        <div className="kpi-qc-growth-pill">
+                          <span className="kpi-qc-growth-arrow">
+                            {data.kpi.volumeGrowthPercent >= 0 ? "↑" : "↓"}{" "}
+                            {Math.abs(data.kpi.volumeGrowthPercent).toLocaleString("id-ID")}%
+                          </span>
+                          <span className="kpi-qc-growth-sub">
+                            vs {data.kpi.previousMonthName || "Agu"}
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="kpi-qc-val">
                     {data?.kpi?.volumeTotal != null && data.kpi.volumeTotal > 0 ? (
-                      <>{fmtN(data.kpi.volumeTotal)} <span className="kpi-qc-unit">{data.kpi.volumeUnit || "m³/bln"}</span></>
+                      volumeUnit === "kg" ? (
+                        <>{fmtN(data.kpi.volumeTotalKg ?? ((data.kpi.volumeTotal ?? 0) * 1000))} <span className="kpi-qc-unit">kg</span></>
+                      ) : (
+                        <>{fmtN(data.kpi.volumeTotal)} <span className="kpi-qc-unit">m³</span></>
+                      )
                     ) : (
                       <span style={{ fontSize: 16, color: "#9ca3af" }}>Belum ada data</span>
                     )}
                   </div>
                   <div className="kpi-qc-subtext">
                     {data?.kpi?.volumeTotal != null && data.kpi.volumeTotal > 0
-                      ? `Periode ${periode}${kel !== "Semua" ? ` • Kel. ${kel}` : ""} • Riil Sistem`
+                      ? volumeUnit === "kg"
+                        ? `~${fmtN(data.kpi.volumeTotal)} m³ • Periode ${periode}${kel !== "Semua" ? ` • Kel. ${kel}` : ""} • Riil Sistem`
+                        : `~${fmtN(data.kpi.volumeTotalKg ?? ((data.kpi.volumeTotal ?? 0) * 1000))} kg • Periode ${periode}${kel !== "Semua" ? ` • Kel. ${kel}` : ""} • Riil Sistem`
                       : "Belum ada data transaksi"}
                   </div>
                 </div>
@@ -1110,7 +1146,9 @@ export default function GisEksekutifPage() {
                     <span className="kpi-qc-val">
                       {data?.kpi?.kepatuhanPemilahan != null ? `${data.kpi.kepatuhanPemilahan}%` : "—"}
                     </span>
-                    <span className="kpi-qc-target-pill">Target: 25%</span>
+                    <span className="kpi-qc-target-pill" style={{ background: "#ecfdf5", color: "#065f46", border: "1px solid #a7f3d0" }}>
+                      Target: 80%
+                    </span>
                   </div>
                   <div className="kpi-qc-subtext">
                     {data?.kpi?.kepatuhanPemilahan != null
@@ -1170,9 +1208,11 @@ export default function GisEksekutifPage() {
                 orgKg={data?.komposisiVolume.organik.kgHari}
                 anoKg={data?.komposisiVolume.anorganik.kgHari}
                 resKg={data?.komposisiVolume.residu.kgHari}
-                totalM3={data?.komposisiVolume.totalM3}
+                totalM3={data?.komposisiVolume.totalM3 ?? undefined}
+                totalKg={data?.komposisiVolume.totalKg ?? (data?.kpi?.volumeTotalKg ?? undefined)}
                 hasData={data?.komposisiVolume.hasData}
                 wilayahLabel={kel !== "Semua" ? kel : "Kec. Coblong"}
+                unit={volumeUnit}
               />
               <Trend
                 series={
@@ -1180,7 +1220,13 @@ export default function GisEksekutifPage() {
                     ? data.trenBulanan.map((t) => t.volume ?? 0)
                     : new Array(5).fill(0)
                 }
+                seriesKg={
+                  (data?.trenBulanan && data.trenBulanan.length > 0)
+                    ? data.trenBulanan.map((t) => t.volumeKg ?? ((t.volume ?? 0) * 1000))
+                    : new Array(5).fill(0)
+                }
                 pi={selectedMonthIndex}
+                unit={volumeUnit}
               />
               <Compliance
                 rows={kelRows as any}

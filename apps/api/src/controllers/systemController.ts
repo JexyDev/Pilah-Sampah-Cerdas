@@ -318,15 +318,15 @@ export class SystemController {
       const filename = `BERSEKA-v${release.version}.apk`;
 
       const possiblePaths = [
-        path.join(process.cwd(), "uploads", "berseka-release-arm64-v8a.apk"),
+        path.join(process.cwd(), "uploads", "berseka-release-universal.apk"),
         path.join(process.cwd(), "uploads", "app-release.apk"),
-        path.join(process.cwd(), "apps", "api", "uploads", "berseka-release-arm64-v8a.apk"),
+        path.join(process.cwd(), "apps", "api", "uploads", "berseka-release-universal.apk"),
         path.join(process.cwd(), "apps", "api", "uploads", "app-release.apk"),
-        path.join(__dirname, "..", "..", "uploads", "berseka-release-arm64-v8a.apk"),
+        path.join(__dirname, "..", "..", "uploads", "berseka-release-universal.apk"),
         path.join(__dirname, "..", "..", "uploads", "app-release.apk"),
-        path.join(__dirname, "..", "..", "..", "uploads", "berseka-release-arm64-v8a.apk"),
+        path.join(__dirname, "..", "..", "..", "uploads", "berseka-release-universal.apk"),
         path.join(__dirname, "..", "..", "..", "uploads", "app-release.apk"),
-        "/var/www/html/downloads/berseka-release-arm64-v8a.apk",
+        "/var/www/html/downloads/berseka-release-universal.apk",
       ];
 
       let foundPath = "";
