@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:package_info_plus/package_info_plus.dart';
-
+import '../../core/utils/update_checker.dart';
 import '../../core/values/app_colors.dart';
 
 class TentangAplikasiView extends StatefulWidget {
@@ -20,10 +19,10 @@ class _TentangAplikasiViewState extends State<TentangAplikasiView> {
   }
 
   Future<void> _initPackageInfo() async {
-    final info = await PackageInfo.fromPlatform();
+    final version = await UpdateChecker.getAppVersion();
     if (mounted) {
       setState(() {
-        _version = 'Versi ${info.version}';
+        _version = 'Versi $version';
       });
     }
   }

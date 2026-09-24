@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:package_info_plus/package_info_plus.dart';
+import '../../../core/utils/update_checker.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_assets.dart';
@@ -59,10 +59,10 @@ class _ForgotPasswordViewState extends ConsumerState<ForgotPasswordView> {
   }
 
   Future<void> _initPackageInfo() async {
-    final info = await PackageInfo.fromPlatform();
+    final version = await UpdateChecker.getAppVersion();
     if (mounted) {
       setState(() {
-        _version = 'Versi ${info.version}';
+        _version = 'Versi $version';
       });
     }
   }

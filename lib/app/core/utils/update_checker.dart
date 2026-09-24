@@ -11,6 +11,50 @@ class UpdateChecker {
   static String get _versionUrl =>
       '${AppConfig.apiBaseUrl}/system/latest-release';
 
+  static String? _cachedDynamicVersion;
+
+  /// Mengambil versi rilis aktif dari server backend secara dinamis.
+  /// Jika offline atau gagal, fallback otomatis ke versi lokal (PackageInfo).
+  static Future<String> getAppVersion() async {
+    if (_cachedDynamicVersion != null) return _cachedDynamicVersion!;
+    try {
+      final dio = Dio();
+      final response = await dio.get(
+        _versionUrl,
+        options: Options(
+          sendTimeout: const Duration(seconds: 3),
+          receiveTimeout: const Duration(seconds: 3),
+        ),
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        final Map<String, dynamic> responseData =
+            (response.data is Map<String, dynamic> &&
+                response.data['latestVersion'] == null &&
+                response.data['data'] != null)
+            ? response.data['data']
+            : (response.data is Map<String, dynamic> ? response.data : {});
+
+        final latestVersion =
+            responseData['latestVersion']?.toString() ??
+            responseData['version']?.toString();
+
+        if (latestVersion != null && latestVersion.isNotEmpty) {
+          _cachedDynamicVersion = latestVersion;
+          return latestVersion;
+        }
+      }
+    } catch (_) {}
+
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      _cachedDynamicVersion = packageInfo.version;
+      return packageInfo.version;
+    } catch (_) {
+      return '1.0.0';
+    }
+  }
+
   static Future<void> checkForUpdate(BuildContext context) async {
     try {
       final dio = Dio();
