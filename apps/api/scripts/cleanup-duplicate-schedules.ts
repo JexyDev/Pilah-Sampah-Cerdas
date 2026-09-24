@@ -29,7 +29,10 @@ function execCommand(conn: Client, cmd: string): Promise<{ code: number; output:
   });
 }
 
+import { assertNotProduction } from "../src/utils/vpsSafetyGuard.js";
+
 async function main() {
+  assertNotProduction("cleanup-duplicate-schedules.ts");
   console.log("=== 1. RUNNING LOCAL DATABASE CLEANUP ===");
   const localClean = await scheduleService.cleanAllDuplicateSchedules();
   console.log("Local cleanup result:", localClean);
@@ -119,3 +122,4 @@ EOF`;
 }
 
 main().catch(console.error);
+

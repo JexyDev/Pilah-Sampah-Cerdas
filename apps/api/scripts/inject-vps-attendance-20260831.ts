@@ -29,7 +29,10 @@ function execCommand(conn: Client, cmd: string): Promise<{ code: number; output:
   });
 }
 
+import { assertNotProduction } from "../src/utils/vpsSafetyGuard.js";
+
 async function main() {
+  assertNotProduction("inject-vps-attendance-20260831.ts");
   const sqlFilePath = path.resolve(__dirname, "insert-attendance-20260831.sql");
   if (!fs.existsSync(sqlFilePath)) {
     console.error("SQL file not found:", sqlFilePath);
@@ -110,3 +113,4 @@ async function main() {
 }
 
 main().catch(console.error);
+

@@ -174,7 +174,7 @@ const JadwalKegiatan: React.FC = () => {
   const [activeMainTab, setActiveMainTab] = useState<"TABEL_TIMELINE" | "KALENDER_AGENDA">("TABEL_TIMELINE");
 
   // Dynamic Timeline State & Filters (Termasuk Kelurahan, Bidang, Status)
-  const [timelineList, setTimelineList] = useState<any[]>(TIMELINE_KKN_DATA);
+  const [timelineList, setTimelineList] = useState<any[]>([]);
   const [timelineLoading, setTimelineLoading] = useState(false);
   const [timelineSearch, setTimelineSearch] = useState("");
   const [selectedKelurahan, setSelectedKelurahan] = useState<string>("ALL");
@@ -201,7 +201,7 @@ const JadwalKegiatan: React.FC = () => {
     "Sekeloa",
     "Cipaganti",
   ]);
-  const [rawTimelineData, setRawTimelineData] = useState<any[]>(TIMELINE_KKN_DATA);
+  const [rawTimelineData, setRawTimelineData] = useState<any[]>([]);
 
   const fetchKelurahans = async () => {
     try {
@@ -390,13 +390,13 @@ const JadwalKegiatan: React.FC = () => {
       ) {
         setTimelineList([]);
       } else {
-        setRawTimelineData(TIMELINE_KKN_DATA);
-        applyTimelineFilters(TIMELINE_KKN_DATA);
+        setRawTimelineData([]);
+        applyTimelineFilters([]);
       }
     } catch (err: any) {
-      console.warn("[fetchTimelineList] API unavailable, using local default reference data:", err?.message || err);
-      setRawTimelineData(TIMELINE_KKN_DATA);
-      applyTimelineFilters(TIMELINE_KKN_DATA);
+      console.warn("[fetchTimelineList] API unavailable, returning empty timeline list:", err?.message || err);
+      setRawTimelineData([]);
+      applyTimelineFilters([]);
     } finally {
       setTimelineLoading(false);
     }
@@ -2579,3 +2579,4 @@ const JadwalKegiatan: React.FC = () => {
 };
 
 export default JadwalKegiatan;
+
