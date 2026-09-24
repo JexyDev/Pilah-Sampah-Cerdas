@@ -160,6 +160,33 @@ async function resolveAreaContext(wilayah?: string): Promise<ResolvedAreaContext
   };
 }
 
+/**
+ * PENDING REVISE / SPRINT SINKRONISASI SURVEI KKN:
+ * Konstanta fallback estimasi sementara untuk kelurahan yang belum memiliki
+ * instrumen survei baseline terverifikasi di basis data PostgreSQL (SurveiPemilahanSampah & SurveiVolumeSampah).
+ * 
+ * ATURAN GOVERNANCE ANTI-DUMMY:
+ * - Setiap angka dari fallback ini WAJIB ditandai dengan metadata `isFallback: true`
+ *   agar antarmuka pengguna menampilkan badge/tanda "Estimasi" dan tidak menyesatkan eksekutif.
+ * - Hapus fallback kelurahan terkait begitu data survei resmi telah diinput ke DB via form survei KKN.
+ */
+export const BASELINE_FALLBACK_RATES: Record<string, number> = {
+  cipaganti: 13.67, // Estimasi lapangan awal pra-intervensi (rentang 10-20%)
+  dago: 10.0,
+  lebakgede: 21.6,
+  lebaksiliwangi: 15.0,
+  sadangserang: 24.8,
+  sekeloa: 17.8,
+};
+
+export const BASELINE_FALLBACK_KG: Record<string, number> = {
+  dago: 500.0,
+  lebakgede: 250.0,
+  lebaksiliwangi: 10.0,
+  sadangserang: 7298.5,
+  sekeloa: 9723.4,
+};
+
 export const dashboardService = {
   getKpi: async (
     wilayah?: string,
@@ -741,10 +768,11 @@ export const dashboardService = {
       const b = surveyBaselines.find((s) =>
         s.namaKelurahan.toLowerCase().replace(/\s+/g, "").includes(normK)
       );
-      // Default 0, bukan angka tebakan.
-      // Catatan: Survei baseline Cipaganti ditetapkan 13.67% (rentang 10-20% baseline lapangan).
+      // Baseline survei pemilahan dan timbulan sampah awal (pra-intervensi)
       let baselineRate = 0;
       let baselineKg = 0;
+      let isFallbackBaselineRate = false;
+      let isFallbackBaselineKg = false;
 
       if (b?.volumeSampah) {
         const org = Number(b.volumeSampah.organikKgPerHari || 0);
@@ -756,23 +784,22 @@ export const dashboardService = {
       if (b?.pemilahanSampah?.persentasePemilahan) {
         const val = Number(b.pemilahanSampah.persentasePemilahan);
         baselineRate = val <= 1 ? Number((val * 100).toFixed(2)) : Number(val.toFixed(2));
-      } else if (normK.includes("cipaganti")) {
-        baselineRate = 13.67;
-      } else if (normK.includes("dago")) {
-        baselineRate = 10.0;
-        if (!baselineKg) baselineKg = 500.0;
-      } else if (normK.includes("lebakgede")) {
-        baselineRate = 21.6;
-        if (!baselineKg) baselineKg = 250.0;
-      } else if (normK.includes("lebaksiliwangi")) {
-        baselineRate = 15.0;
-        if (!baselineKg) baselineKg = 10.0;
-      } else if (normK.includes("sadangserang")) {
-        baselineRate = 24.8;
-        if (!baselineKg) baselineKg = 7298.5;
-      } else if (normK.includes("sekeloa")) {
-        baselineRate = 17.8;
-        if (!baselineKg) baselineKg = 9723.4;
+      } else {
+        // Fallback eksplisit untuk kelurahan yang belum menyelesaikan input survei di DB
+        const matchKel = Object.keys(BASELINE_FALLBACK_RATES).find((key) => normK.includes(key));
+        if (matchKel && BASELINE_FALLBACK_RATES[matchKel] !== undefined) {
+          baselineRate = BASELINE_FALLBACK_RATES[matchKel];
+          isFallbackBaselineRate = true;
+        }
+      }
+
+      // Fallback volume sampah awal jika belum terinput di DB
+      if (!baselineKg) {
+        const matchKg = Object.keys(BASELINE_FALLBACK_KG).find((key) => normK.includes(key));
+        if (matchKg && BASELINE_FALLBACK_KG[matchKg] !== undefined) {
+          baselineKg = BASELINE_FALLBACK_KG[matchKg];
+          isFallbackBaselineKg = true;
+        }
       }
 
       const e = surveyEndlines.find((s) =>
@@ -843,6 +870,10 @@ export const dashboardService = {
         // bobot untuk agregasi lintas kelurahan
         setoranDinilai: kelDinilai,
         setoranPatuh: kelPatuh,
+        // Metadata transparansi asal data (Anti-Dummy Policy)
+        isFallbackBaselineRate,
+        isFallbackBaselineKg,
+        isFallback: isFallbackBaselineRate || isFallbackBaselineKg,
       };
     });
 
