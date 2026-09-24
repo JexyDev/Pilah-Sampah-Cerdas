@@ -63,23 +63,24 @@ router.get(
 );
 
 /**
- * GET /api/v1/survei-kkn/:id
- * Ambil detail survei KKN.
+ * GET /api/v1/survei-kkn/template
+ * Download file template XLSX survei KKN.
+ * Didaftarkan sebelum /:id agar tidak tertangkap sebagai parameter ID.
  */
 router.get(
-  "/:id",
-  roleMiddleware(["SUPER_USER", "DPL", "PANITIA_TASKFORCE", "PEMIMPIN"]),
-  surveiKknController.getSurveyById
+  "/template",
+  roleMiddleware(["SUPER_USER", "PANITIA_TASKFORCE", "DEVELOPER", "PIMPINAN", "PEMIMPIN", "DPL"]),
+  surveiKknController.downloadTemplate
 );
 
 /**
- * PUT /api/v1/survei-kkn/:id
- * Update detail data survei KKN (seluruh relasi).
+ * GET /api/v1/survei-kkn/import/history
+ * Riwayat impor survei KKN.
  */
-router.put(
-  "/:id",
-  roleMiddleware(["SUPER_USER", "PANITIA_TASKFORCE", "DPL"]),
-  surveiKknController.updateSurvey
+router.get(
+  "/import/history",
+  roleMiddleware(["SUPER_USER", "PANITIA_TASKFORCE", "DEVELOPER"]),
+  surveiKknController.getImportHistory
 );
 
 /**
@@ -89,21 +90,29 @@ router.put(
  */
 router.post(
   "/import",
-  roleMiddleware(["SUPER_USER"]),
+  roleMiddleware(["SUPER_USER", "PANITIA_TASKFORCE", "DEVELOPER"]),
   uploadXlsx.single("file"),
   surveiKknController.importSurveiKkn
 );
 
 /**
- * GET /api/v1/survei-kkn/import/history
- * Riwayat impor survei KKN.
+ * GET /api/v1/survei-kkn/:id
+ * Ambil detail survei KKN.
  */
-router.get("/import/history", roleMiddleware(["SUPER_USER"]), surveiKknController.getImportHistory);
+router.get(
+  "/:id",
+  roleMiddleware(["SUPER_USER", "DPL", "PANITIA_TASKFORCE", "PEMIMPIN", "PIMPINAN", "DEVELOPER"]),
+  surveiKknController.getSurveyById
+);
 
 /**
- * GET /api/v1/survei-kkn/template
- * Download file template XLSX survei KKN.
+ * PUT /api/v1/survei-kkn/:id
+ * Update detail data survei KKN (seluruh relasi).
  */
-router.get("/template", roleMiddleware(["SUPER_USER"]), surveiKknController.downloadTemplate);
+router.put(
+  "/:id",
+  roleMiddleware(["SUPER_USER", "PANITIA_TASKFORCE", "DPL", "DEVELOPER"]),
+  surveiKknController.updateSurvey
+);
 
 export default router;
