@@ -44,7 +44,6 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
           if (_activationFilterIndex == 2 && w.isActivated) return false;
 
           // Filter QC: Tampilkan HANYA warga si mahasiswa tersebut.
-          if (w.lifecycleState.toUpperCase() == 'REGISTERED') return false;
           final isMyCitizen = w.mahasiswaId == userId;
 
           return isMyCitizen;
@@ -427,7 +426,66 @@ class _WargaListItem extends StatelessWidget {
                           return const SizedBox.shrink();
                         },
                       ),
-                      if (warga.isActivated) ...[
+                      // ── Status Pendamping KKN (ECO/BERSEKA-MOBILE/2026-09/002) ───────────
+                      Builder(
+                        builder: (_) {
+                          final pendamping = warga.pendampingKkn?.name.isNotEmpty == true
+                              ? warga.pendampingKkn!.name
+                              : warga.pendampingName;
+                          final hasPendamping = pendamping.trim().isNotEmpty &&
+                              pendamping.trim().toLowerCase() != 'null';
+
+                          return Container(
+                            margin: const EdgeInsets.only(top: 5),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: hasPendamping
+                                  ? const Color(0xFFEBF5FF)
+                                  : AppColors.warningOrange.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: hasPendamping
+                                    ? const Color(0xFF90CDF4)
+                                    : AppColors.warningOrange.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  hasPendamping
+                                      ? Icons.verified_rounded
+                                      : Icons.person_outline_rounded,
+                                  size: 12,
+                                  color: hasPendamping
+                                      ? AppColors.primaryBlueDark
+                                      : AppColors.warningOrange,
+                                ),
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    hasPendamping
+                                        ? 'Pendamping: $pendamping'
+                                        : 'Belum Ada Pendamping (Mandiri)',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: hasPendamping
+                                          ? AppColors.primaryBlueDark
+                                          : AppColors.warningOrange,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                      if (!warga.isActivated) ...[
                         const SizedBox(height: 5),
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -435,42 +493,30 @@ class _WargaListItem extends StatelessWidget {
                             vertical: 3,
                           ),
                           decoration: BoxDecoration(
-                            color: warga.pendampingName.isNotEmpty
-                                ? const Color(0xFFEBF5FF)
-                                : AppColors.primaryGreen.withValues(alpha: 0.1),
+                            color: AppColors.warningOrange
+                                .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: warga.pendampingName.isNotEmpty
-                                  ? const Color(0xFF90CDF4)
-                                  : AppColors.primaryGreen.withValues(
-                                      alpha: 0.3,
-                                    ),
+                              color: AppColors.warningOrange.withValues(
+                                alpha: 0.3,
+                              ),
                             ),
                           ),
-                          child: Row(
+                          child: const Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
-                                Icons.verified_rounded,
+                                Icons.warning_amber_rounded,
                                 size: 12,
-                                color: warga.pendampingName.isNotEmpty
-                                    ? AppColors.primaryBlueDark
-                                    : AppColors.primaryGreen,
+                                color: AppColors.warningOrange,
                               ),
-                              const SizedBox(width: 4),
-                              Flexible(
-                                child: Text(
-                                  warga.pendampingName.isNotEmpty
-                                      ? 'Diaktivasi oleh: ${warga.pendampingName}'
-                                      : 'Aktivasi Mandiri',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    color: warga.pendampingName.isNotEmpty
-                                        ? AppColors.primaryBlueDark
-                                        : AppColors.primaryGreen,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
+                              SizedBox(width: 4),
+                              Text(
+                                'Belum Aktivasi Tempat Sampah',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.warningOrange,
                                 ),
                               ),
                             ],
@@ -478,23 +524,24 @@ class _WargaListItem extends StatelessWidget {
                         ),
                       ],
                       const SizedBox(height: 6),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 4,
-                        children: [
-                          _StatBadge(
-                            icon: Icons.check_circle_outline_rounded,
-                            label:
-                                '${warga.correctPercentage.toStringAsFixed(0)}% benar',
-                            color: AppColors.success,
-                          ),
-                          _StatBadge(
-                            icon: Icons.list_alt_rounded,
-                            label: '${warga.totalActivities} aktivitas',
-                            color: AppColors.primaryGreen,
-                          ),
-                        ],
-                      ),
+                      if (warga.isActivated)
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 4,
+                          children: [
+                            _StatBadge(
+                              icon: Icons.check_circle_outline_rounded,
+                              label:
+                                  '${warga.correctPercentage.toStringAsFixed(0)}% benar',
+                              color: AppColors.success,
+                            ),
+                            _StatBadge(
+                              icon: Icons.list_alt_rounded,
+                              label: '${warga.totalActivities} aktivitas',
+                              color: AppColors.primaryGreen,
+                            ),
+                          ],
+                        ),
                     ],
                   ),
                 ),
@@ -508,21 +555,27 @@ class _WargaListItem extends StatelessWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: warga.needsReeducation
+                        color: !warga.isActivated
                             ? AppColors.warningOrange.withValues(alpha: 0.1)
-                            : AppColors.success.withValues(alpha: 0.1),
+                            : (warga.needsReeducation
+                                ? AppColors.warningOrange.withValues(alpha: 0.1)
+                                : AppColors.success.withValues(alpha: 0.1)),
                         borderRadius: BorderRadius.circular(
                           AppDimensions.radiusFull,
                         ),
                       ),
                       child: Text(
-                        warga.needsReeducation ? '⚠ Edukasi' : '✅ Baik',
+                        !warga.isActivated
+                            ? '⏳ Belum Aktif'
+                            : (warga.needsReeducation ? '⚠ Edukasi' : '✅ Baik'),
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: warga.needsReeducation
+                          color: !warga.isActivated
                               ? AppColors.warningOrange
-                              : AppColors.success,
+                              : (warga.needsReeducation
+                                  ? AppColors.warningOrange
+                                  : AppColors.success),
                         ),
                       ),
                     ),

@@ -54,7 +54,8 @@ class ApiEndpoints {
 
   // KKN
   static const String kknDashboard = '/kkn/dashboard';
-  static const String kknWargaDampingan = '/kkn/warga-dampingan';
+  // [SYNC] Route warga-dampingan dialihkan ke /kkn-attendance/warga-dampingan (ENG-MEMO/BEND-SYNC/2026-09/005)
+  static const String kknWargaDampingan = '/kkn-attendance/warga-dampingan';
   static const String kknActivityLog = '/kkn/activity-log';
   static const String kknActiveZone = '/kkn/active-zone';
   // [FIX] Route /location-ping ada di kknAttendanceRouter → mount prefix /api/v1/kkn-attendance
@@ -70,6 +71,8 @@ class ApiEndpoints {
   static const String kknWilayahKelompok = '/kkn/wilayah-kelompok';
   static const String timesheetSummary = '/timesheet/summary';
   static String kknClaimWarga(String wargaId) => '/kkn/warga/$wargaId/claim';
+  static String kknReassignPendamping(String wargaId) =>
+      '/kkn/warga/$wargaId/reassign-pendamping';
 
   // 3 Pilar KKN
   static const String kknProgramKerja = '/kkn/program-kerja';

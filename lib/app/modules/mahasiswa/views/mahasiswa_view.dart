@@ -1365,47 +1365,32 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
       }
     }
 
-    // 2. Hitung Total Warga Dampingan
+    // 2. Hitung Total Warga Dampingan Personal & Agregasi Dashboard (BEND-MEMO/MOBILE-INTEGRATION/2026-09/007)
     final user = ref.watch(authProvider).user;
-    final userRwSet = (user?.rw ?? '')
-        .split(',')
-        .map(
-          (s) => s
-              .replaceAll(RegExp(r'[^\d]'), '')
-              .replaceFirst(RegExp(r'^0+'), ''),
-        )
-        .where((s) => s.isNotEmpty)
-        .toSet();
+    final dashboardWargaStats = mhsState.dashboard?.wargaStats;
 
-    final myWargaList = mhsState.wargaList.where((w) {
+    // Filter lokal warga yang resmi didampingi akun ini (Personal Warga Dampingan)
+    final personalWargaList = mhsState.wargaList.where((w) {
       if (w.role.isNotEmpty && w.role.toUpperCase() != 'WARGA') return false;
-
-      final cleanWargaRw = w.rw
-          .trim()
-          .replaceAll(RegExp(r'[^\d]'), '')
-          .replaceFirst(RegExp(r'^0+'), '');
-      final isMyRw = userRwSet.isNotEmpty && userRwSet.contains(cleanWargaRw);
-
-      final isMyId = w.mahasiswaId.isNotEmpty && w.mahasiswaId == user?.id;
-      final isMyName =
-          w.pendampingName.trim().isNotEmpty &&
-          w.pendampingName.trim().toLowerCase() ==
-              (user?.name ?? '').trim().toLowerCase();
-      final isUnassignedInMyRw =
-          w.mahasiswaId.isEmpty && w.pendampingName.trim().isEmpty && isMyRw;
-
-      return isMyId || isMyName || isUnassignedInMyRw;
-    }).toList();
-
-    final totalWarga = myWargaList.length;
-
-    // 3. Hitung Tempat Sampah Aktif dari Daftar Warga Dampingan
-    int wargaAktif = myWargaList.where((w) {
       final isMyId = w.mahasiswaId.isNotEmpty && w.mahasiswaId == user?.id;
       final isMyName = w.pendampingName.trim().isNotEmpty &&
-          w.pendampingName.trim().toLowerCase() == (user?.name ?? '').trim().toLowerCase();
-      return isMyId || isMyName;
-    }).length;
+          w.pendampingName.trim().toLowerCase() ==
+              (user?.name ?? '').trim().toLowerCase();
+      final isMyPendamping = (w.pendampingKkn != null &&
+          ((w.pendampingKkn!.id.isNotEmpty && w.pendampingKkn!.id == user?.id) ||
+              (user?.nim.isNotEmpty == true && w.pendampingKkn!.nim == user?.nim) ||
+              (user?.name.isNotEmpty == true &&
+                  w.pendampingKkn!.name.trim().toLowerCase() ==
+                      user?.name.trim().toLowerCase())));
+      return isMyId || isMyName || isMyPendamping;
+    }).toList();
+
+    // Kartu 1: Total Warga Dampingan Anda (Personal)
+    final totalWarga = dashboardWargaStats?.totalWargaDampingan ?? personalWargaList.length;
+
+    // Kartu 2: Tempat Sampah Aktif Terpasang pada Warga Dampingan Anda
+    final wargaAktif = dashboardWargaStats?.wargaDampinganBinAktif ??
+        personalWargaList.where((w) => w.isActivated).length;
 
     // 4. Hitung Data Pemanfaatan & Hasil Sampah
     final pemanfaatanAsync = ref.watch(riwayatPemanfaatanProvider);
