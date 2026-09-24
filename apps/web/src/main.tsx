@@ -13,17 +13,25 @@ import App from "./App.tsx";
 
 // Auto-reload when dynamic import / code-splitting chunk fails due to new deployment
 window.addEventListener("vite:preloadError", (event) => {
-  console.warn("Vite dynamic import preload error detected. Reloading page...", event);
-  const reloaded = sessionStorage.getItem("vite_preload_reloaded");
-  if (!reloaded) {
-    sessionStorage.setItem("vite_preload_reloaded", "true");
-    window.location.reload();
+  event.preventDefault();
+  console.warn("Vite dynamic import preload error detected. Busting cache & reloading...", event);
+  const reloadKey = "vite_preload_last_reload";
+  const lastReload = parseInt(sessionStorage.getItem(reloadKey) || "0", 10);
+  const now = Date.now();
+  if (now - lastReload > 8000) {
+    sessionStorage.setItem(reloadKey, now.toString());
+    if (typeof window !== "undefined" && "caches" in window) {
+      caches
+        .keys()
+        .then((names) => {
+          names.forEach((name) => caches.delete(name));
+        })
+        .catch(() => {});
+    }
+    const url = new URL(window.location.href);
+    url.searchParams.set("_v", now.toString());
+    window.location.replace(url.toString());
   }
-});
-
-// Clear reload guard once page loads successfully
-window.addEventListener("load", () => {
-  sessionStorage.removeItem("vite_preload_reloaded");
 });
 
 createRoot(document.getElementById("root")!).render(
