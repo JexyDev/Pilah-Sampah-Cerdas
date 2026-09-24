@@ -251,6 +251,50 @@ router.post(
 
 /**
  * @swagger
+ * /api/v1/kkn/warga/{wargaId}/reassign-pendamping:
+ *   patch:
+ *     summary: Pengalihan mahasiswa pendamping warga KKN (Khusus Ketua Kelompok KKN - ENG-MEMO/KKN-REASSIGN/2026-09/006-REV1)
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: wargaId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - targetStudentId
+ *             properties:
+ *               targetStudentId:
+ *                 type: string
+ *               reason:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Berhasil mengalihkan mahasiswa pendamping warga
+ *       400:
+ *         description: Parameter tidak valid atau mahasiswa tujuan sama
+ *       403:
+ *         description: Bukan Ketua Kelompok atau target di luar kelompok
+ *       404:
+ *         description: Warga atau mahasiswa target tidak ditemukan
+ */
+router.patch(
+  "/warga/:wargaId/reassign-pendamping",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknController.reassignWargaPendamping
+);
+
+/**
+ * @swagger
  * /api/v1/kkn/activity-log:
  *   get:
  *     summary: Logbook riwayat aktivitas lapangan Mahasiswa KKN

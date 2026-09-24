@@ -319,16 +319,28 @@ export class UserService {
         ? u.pointHistory.reduce((sum: number, p: any) => sum + (p.points || 0), 0)
         : 0;
 
-      let pendampingKkn = null;
-      if (u.bins && u.bins.length > 0) {
-        const boundBin = u.bins.find((b: any) => b.registeredByStudent);
-        if (boundBin && boundBin.registeredByStudent) {
-          pendampingKkn = {
-            id: boundBin.registeredByStudent.id,
-            name: boundBin.registeredByStudent.name,
-            phone: boundBin.registeredByStudent.phone,
-          };
-        }
+      let pendampingKkn: any = null;
+      const allUserBins = [
+        ...(u.bins || []),
+        ...((u.binOwnerships || []).map((bo: any) => bo.bin).filter(Boolean)),
+      ];
+      const boundBin = allUserBins.find(
+        (b: any) => b.registeredByStudent || b.registeredByStudentId
+      );
+      if (boundBin && boundBin.registeredByStudent) {
+        const student = boundBin.registeredByStudent;
+        pendampingKkn = {
+          id: student.id,
+          name: student.name,
+          phone: student.phone,
+          nim: student.studentProfile?.nim || null,
+          jurusan: student.studentProfile?.jurusan || null,
+          kelompokId: boundBin.kelompokId || student.studentProfile?.kelompokId || null,
+          kelompokName:
+            boundBin.kelompok?.name ||
+            student.studentProfile?.kelompok?.name ||
+            null,
+        };
       }
 
       const rwObj =
@@ -619,6 +631,7 @@ export class UserService {
           : null,
         namaAsli: u.petugasProfile?.nama || null,
         namaDisplay: u.petugasProfile?.namaDisplay || null,
+        pendampingKkn,
       };
     });
 

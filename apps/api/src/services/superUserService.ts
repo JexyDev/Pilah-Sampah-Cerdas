@@ -1068,11 +1068,11 @@ export class SuperUserService {
         });
       }
 
-      // Bonus 10 poin ke Mahasiswa KKN jika ada PIC
-      if (bin.qrBatch?.assignedPicUserId) {
+      // Bonus 10 poin ke Mahasiswa KKN jika aktivasi didampingi mahasiswa
+      if (bin.registeredByStudentId) {
         await tx.pointHistory.create({
           data: {
-            userId: bin.qrBatch.assignedPicUserId,
+            userId: bin.registeredByStudentId,
             points: 10,
             description: `Membantu aktivasi bin ${bin.qrCode}`,
             kategori: "PARTISIPASI_STREAK",
@@ -1751,6 +1751,22 @@ export class SuperUserService {
 
     const binIds = kelompok.bins.map((b) => b.id);
     return this.exportQrPdfHtml({ binIds });
+  }
+
+  /**
+   * ENG-MEMO/KKN-REASSIGN/2026-09/006-REV1:
+   * Delegate reassign warga pendamping to unified KKN service
+   */
+  async reassignWargaPendamping(params: {
+    requesterUserId: string;
+    requesterRole: string;
+    wargaId: string;
+    targetStudentId: string;
+    reason?: string;
+    ticketNumber?: string;
+  }) {
+    const { kknService } = await import("./kknService.js");
+    return kknService.reassignWargaPendampingUnified(params);
   }
 }
 
