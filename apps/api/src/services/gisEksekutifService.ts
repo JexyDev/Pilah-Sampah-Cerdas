@@ -10,6 +10,7 @@
  */
 
 import { prisma } from "../lib/prisma.js";
+import { classifyWaste } from "./dashboardService.js";
 
 export interface GisEksekutifFilters {
   kelurahan?: string;
@@ -216,151 +217,173 @@ export const gisEksekutifService = {
       statusApproval: f.statusApproval,
     }));
 
-    // ── 4. Survei Pemilahan & Volume dari DB ─────────────────────────────────
-    let surveiKelurahan: Array<{
-      namaKelurahan: string;
-      pemilahanSampah?: { persentasePemilahan?: any } | null;
-      volumeSampah?: {
-        organikKgPerHari?: any;
-        anorganikKgPerHari?: any;
-        residuKgPerHari?: any;
-        totalVolumeKgPerHari?: any;
-      } | null;
-    }> = [];
-
-    if (isFuturePeriod) {
-      // Periode masa depan (Oktober – Desember 2026): HANYA ambil data riil dari EndlineSurveiKelurahan
-      // Jika belum ada data evaluasi endline di database, data harus murni 0 / null (DILARANG fallback ke baseline September)
-      try {
-        const endlineSurvei = await prisma.endlineSurveiKelurahan.findMany({
-          include: {
-            pemilahanSampah: true,
-            volumeSampah: true,
-          },
-        });
-        if (endlineSurvei && endlineSurvei.length > 0) {
-          surveiKelurahan = endlineSurvei.map((e) => ({
-            namaKelurahan: e.namaKelurahan,
-            pemilahanSampah: e.pemilahanSampah,
-            volumeSampah: e.volumeSampah,
-          }));
-        }
-      } catch (err) {
-        console.warn("[gisEksekutifService] Gagal memuat data endline:", err);
-      }
-    } else if (activeMonthIdx === 8) {
-      // Periode baseline survei penuh (September 2026): Ambil dari surveiKelurahan baseline
-      surveiKelurahan = await prisma.surveiKelurahan.findMany({
-        include: {
-          pemilahanSampah: true,
-          volumeSampah: true,
-        },
-      });
-    } else {
-      // Periode Kickoff (Agustus 2026): Penerjunan 12 Agustus 2026, survei kelurahan belum difinalisasi
-      surveiKelurahan = [];
-    }
-
-    // Fasilitas per kelurahan (nama)
+    // ── 4. Fasilitas per kelurahan (nama) ───────────────────────────────────
     const facCountByKel: Record<string, number> = {};
     facilitiesRaw.forEach((f) => {
       const kelNama = f.rw?.kelurahan?.name ?? "-";
       facCountByKel[kelNama] = (facCountByKel[kelNama] ?? 0) + 1;
     });
 
-    // Hitung kepatuhan & volume riil dari survei (murni data DB, tanpa angka tebakan/hardcode)
     const kelurahanNames = kelurahanList.length > 0
       ? kelurahanList.map((k) => k.name)
       : Object.keys(KELURAHAN_GEOMETRIES);
 
-    // Filter setoran bulanan untuk evaluasi performa dinamis
-    const startOfMonth = new Date(Date.UTC(2026, activeMonthIdx, 1));
-    const endOfMonth = new Date(Date.UTC(2026, activeMonthIdx + 1, 0, 23, 59, 59, 999));
-    
-    const setoranBulanan = await prisma.setoranOtomatis.findMany({
+    // ── 5. Data Transaksi Riil Sistem (Setoran Otomatis & Setoran Manual) ───
+    // Rentang waktu program KKN (Agustus - Desember 2026)
+    const programStart = new Date("2026-08-01T00:00:00.000Z");
+    const programEnd = new Date("2026-12-31T23:59:59.999Z");
+
+    // A. Setoran Otomatis Warga (Smart Bin IoT & AI)
+    const setoranAllWindow = await prisma.setoranOtomatis.findMany({
       where: {
-        createdAt: { gte: startOfMonth, lte: endOfMonth },
-        warga: { isTestAccount: false }
+        createdAt: { gte: programStart, lte: programEnd },
+        warga: { isTestAccount: false },
       },
       select: {
+        id: true,
         status: true,
+        berat: true,
+        hasilKlasifikasiAi: true,
+        kategoriAktual: true,
+        createdAt: true,
         warga: {
-          select: { rw: { select: { kelurahanId: true, kelurahan: { select: { name: true } } } } }
-        }
-      }
+          select: {
+            rw: { select: { kelurahanId: true, kelurahan: { select: { name: true } } } },
+          },
+        },
+        bin: {
+          select: {
+            rw: { select: { kelurahanId: true, kelurahan: { select: { name: true } } } },
+            kelurahan: { select: { name: true } },
+          },
+        },
+      },
     });
 
-    const kepatuhanAktual: Record<string, { total: number, patuh: number }> = {};
+    // B. Setoran Manual Petugas Pengangkut
+    const setoranManualAllWindow = await prisma.setoranManual.findMany({
+      where: {
+        createdAt: { gte: programStart, lte: programEnd },
+        petugas: { isTestAccount: false },
+      },
+      select: {
+        id: true,
+        status: true,
+        berat: true,
+        kategori: true,
+        createdAt: true,
+        rw: {
+          select: { kelurahanId: true, kelurahan: { select: { name: true } } },
+        },
+      },
+    });
+
+    // Filter transaksi untuk bulan aktif (activeMonthIdx)
+    const setoranBulanan = setoranAllWindow.filter(
+      (s) => new Date(s.createdAt).getUTCMonth() === activeMonthIdx
+    );
+    const setoranManualBulanan = setoranManualAllWindow.filter(
+      (sm) => new Date(sm.createdAt).getUTCMonth() === activeMonthIdx
+    );
+
+    // Struktur agregasi riil per kelurahan
+    interface KelRealMetrics {
+      totalSetoran: number;
+      patuhSetoran: number;
+      organikKg: number;
+      anorganikKg: number;
+      residuKg: number;
+    }
+    const realMetricsByKel: Record<string, KelRealMetrics> = {};
+    const getOrInitKel = (name: string): KelRealMetrics => {
+      const key = name.toLowerCase();
+      if (!realMetricsByKel[key]) {
+        realMetricsByKel[key] = {
+          totalSetoran: 0,
+          patuhSetoran: 0,
+          organikKg: 0,
+          anorganikKg: 0,
+          residuKg: 0,
+        };
+      }
+      return realMetricsByKel[key];
+    };
+
+    // Agregasi setoran otomatis warga
     setoranBulanan.forEach((s) => {
-      const kelName = s.warga?.rw?.kelurahan?.name;
+      const kelName =
+        s.warga?.rw?.kelurahan?.name ||
+        s.bin?.rw?.kelurahan?.name ||
+        s.bin?.kelurahan?.name;
       if (!kelName) return;
-      
-      const key = kelName.toLowerCase();
-      if (!kepatuhanAktual[key]) {
-        kepatuhanAktual[key] = { total: 0, patuh: 0 };
-      }
-      
-      kepatuhanAktual[key].total += 1;
+      const m = getOrInitKel(kelName);
+
+      m.totalSetoran += 1;
       if (s.status === "ACCEPTED") {
-        kepatuhanAktual[key].patuh += 1;
+        m.patuhSetoran += 1;
+      }
+
+      const kg = Number(s.berat || 0);
+      const kelas = classifyWaste(s);
+      if (kelas === "organik") {
+        m.organikKg += kg;
+      } else if (kelas === "anorganik") {
+        m.anorganikKg += kg;
+      } else {
+        m.residuKg += kg;
       }
     });
 
+    // Agregasi setoran manual petugas
+    setoranManualBulanan.forEach((sm) => {
+      const kelName = sm.rw?.kelurahan?.name;
+      if (!kelName) return;
+      const m = getOrInitKel(kelName);
+
+      const kg = Number(sm.berat || 0);
+      const kat = (sm.kategori || "").toLowerCase();
+      if (kat.includes("organik")) {
+        m.organikKg += kg;
+      } else if (kat.includes("anorganik")) {
+        m.anorganikKg += kg;
+      } else if (kat.includes("residu")) {
+        m.residuKg += kg;
+      } else {
+        m.organikKg += kg;
+      }
+    });
+
+    // ── 6. Kepatuhan & Volume Real per Kelurahan (Murni Real Database) ────────
     const kepatuhanPerKelurahan = kelurahanNames.map((kelName) => {
-      const survei = surveiKelurahan.find(
-        (s) => s.namaKelurahan?.toLowerCase() === kelName.toLowerCase()
+      const key = kelName.toLowerCase();
+      const real = realMetricsByKel[key];
+      const hasRealTransactions = Boolean(
+        real && (real.totalSetoran > 0 || (real.organikKg + real.anorganikKg + real.residuKg) > 0)
       );
 
       let kepatuhan: number | null = null;
-      const key = kelName.toLowerCase();
-      const realData = kepatuhanAktual[key];
-
-      if (realData && realData.total > 0) {
-        // Gunakan data transaksi real jika ada
-        kepatuhan = Math.round((realData.patuh / realData.total) * 100);
-      } else if (survei?.pemilahanSampah?.persentasePemilahan != null) {
-        // Fallback ke survei KKN jika transaksi belum terjadi sama sekali
-        const raw = Number(survei.pemilahanSampah.persentasePemilahan);
-        // Field disimpan sebagai desimal 0.0000–1.0000 (Decimal 5,4)
-        kepatuhan = raw <= 1 ? Math.round(raw * 100) : Math.round(raw);
-        kepatuhan = Math.max(0, Math.min(100, kepatuhan));
+      if (real && real.totalSetoran > 0) {
+        kepatuhan = Math.round((real.patuhSetoran / real.totalSetoran) * 100);
       }
 
-      // Komposisi organik/anorganik/residu per kelurahan (dari DB)
-      let organikKgHari = 0, anorganikKgHari = 0, residuKgHari = 0;
-      if (survei?.volumeSampah) {
-        organikKgHari = Number(survei.volumeSampah.organikKgPerHari ?? 0);
-        anorganikKgHari = Number(survei.volumeSampah.anorganikKgPerHari ?? 0);
-        residuKgHari = Number(survei.volumeSampah.residuKgPerHari ?? 0);
-      }
-      const sumKgHari = organikKgHari + anorganikKgHari + residuKgHari;
+      const organikKg = real ? Math.round(real.organikKg * 10) / 10 : 0;
+      const anorganikKg = real ? Math.round(real.anorganikKg * 10) / 10 : 0;
+      const residuKg = real ? Math.round(real.residuKg * 10) / 10 : 0;
+      const sumKg = Math.round((organikKg + anorganikKg + residuKg) * 10) / 10;
 
-      // Volume — dari DB (dikonversi kg/hari ke m³/bln: kg/hari × 30 / 1000)
-      let volume: number | null = null;
-      if (sumKgHari > 0) {
-        volume = Math.round(((sumKgHari * 30) / 1000) * 10) / 10;
-      } else if (survei?.volumeSampah?.totalVolumeKgPerHari != null) {
-        const kgPerHari = Number(survei.volumeSampah.totalVolumeKgPerHari);
-        volume = Math.round(((kgPerHari * 30) / 1000) * 10) / 10;
-      }
-
-      const hasSurveiData = Boolean(
-        survei && (
-          (survei.pemilahanSampah && survei.pemilahanSampah.persentasePemilahan != null) ||
-          (survei.volumeSampah && (sumKgHari > 0 || survei.volumeSampah.totalVolumeKgPerHari != null))
-        )
-      );
+      // Konversi berat nyata ke volume m³/bulan (DLH/SNI: 1.000 kg = 1 m³)
+      const volumeM3 = sumKg > 0 ? Math.round((sumKg / 1000) * 100) / 100 : null;
 
       return {
         nama: kelName,
         kepatuhan,
-        volume,
-        organikKgHari,
-        anorganikKgHari,
-        residuKgHari,
+        volume: volumeM3,
+        organikKgHari: organikKg,
+        anorganikKgHari: anorganikKg,
+        residuKgHari: residuKg,
         totalFasilitas: facCountByKel[kelName] ?? 0,
         color: kepatuhan !== null ? kepColor(kepatuhan) : "#9ca3af",
-        hasData: hasSurveiData,
+        hasData: hasRealTransactions,
       };
     });
 
@@ -381,79 +404,53 @@ export const gisEksekutifService = {
       );
     }
 
-    // ── 6. Komposisi Volume Agregat ──────────────────────────────────────────
-    // Ambil dari survei kelurahan yang terpilih (atau semua)
-    const surveiScope = rawKel
-      ? surveiKelurahan.filter(
-          (s) => s.namaKelurahan?.toLowerCase() === rawKel.toLowerCase()
-        )
-      : surveiKelurahan;
+    // ── 7. Komposisi Volume Agregat (Real Database) ──────────────────────────
+    const scopedKels = rawKel
+      ? kepatuhanPerKelurahan.filter((k) => k.nama.toLowerCase() === rawKel.toLowerCase())
+      : kepatuhanPerKelurahan;
 
-    const baseOrgKg = surveiScope.reduce(
-      (s, sv) => s + Number(sv.volumeSampah?.organikKgPerHari ?? 0), 0
-    );
-    const baseAnoKg = surveiScope.reduce(
-      (s, sv) => s + Number(sv.volumeSampah?.anorganikKgPerHari ?? 0), 0
-    );
-    const baseResKg = surveiScope.reduce(
-      (s, sv) => s + Number(sv.volumeSampah?.residuKgPerHari ?? 0), 0
-    );
-    const baseTotalKg = baseOrgKg + baseAnoKg + baseResKg;
+    const baseOrgKg = Math.round(scopedKels.reduce((s, k) => s + (k.organikKgHari || 0), 0) * 10) / 10;
+    const baseAnoKg = Math.round(scopedKels.reduce((s, k) => s + (k.anorganikKgHari || 0), 0) * 10) / 10;
+    const baseResKg = Math.round(scopedKels.reduce((s, k) => s + (k.residuKgHari || 0), 0) * 10) / 10;
+    const baseTotalKg = Math.round((baseOrgKg + baseAnoKg + baseResKg) * 10) / 10;
 
-    const baseOrgM3 = Math.round(((baseOrgKg * 30) / 1000) * 10) / 10;
-    const baseAnoM3 = Math.round(((baseAnoKg * 30) / 1000) * 10) / 10;
-    const baseResM3 = Math.round(((baseResKg * 30) / 1000) * 10) / 10;
-    const computedBaseTotalM3 = Math.round((baseOrgM3 + baseAnoM3 + baseResM3) * 10) / 10;
+    const orgM3 = baseTotalKg > 0 ? Math.round((baseOrgKg / 1000) * 100) / 100 : 0;
+    const anoM3 = baseTotalKg > 0 ? Math.round((baseAnoKg / 1000) * 100) / 100 : 0;
+    const resM3 = baseTotalKg > 0 ? Math.round((baseResKg / 1000) * 100) / 100 : 0;
+    const computedTotalM3 = baseTotalKg > 0 ? Math.round((baseTotalKg / 1000) * 100) / 100 : null;
 
-    const orgM3 = baseOrgM3;
-    const anoM3 = baseAnoM3;
-    const resM3 = baseResM3;
-    const computedTotalM3 = computedBaseTotalM3;
-    const scaledTotalKg = baseTotalKg;
+    let orgPct = baseTotalKg > 0 ? Math.round((baseOrgKg / baseTotalKg) * 100) : 0;
+    let anoPct = baseTotalKg > 0 ? Math.round((baseAnoKg / baseTotalKg) * 100) : 0;
+    let resPct = baseTotalKg > 0 ? Math.max(0, 100 - orgPct - anoPct) : 0;
 
-    // Volume total m³/bln (konsisten 100% dengan komponen komposisi)
-    const kelWithVol = kepatuhanPerKelurahan.filter((k) => k.volume !== null);
-    let volumeTotal: number | null = null;
-    if (rawKel) {
-      const match = kepatuhanPerKelurahan.find(
-        (k) => k.nama.toLowerCase() === rawKel.toLowerCase()
-      );
-      volumeTotal = match?.volume ?? (computedTotalM3 > 0 ? computedTotalM3 : null);
-    } else if (computedTotalM3 > 0) {
-      volumeTotal = computedTotalM3;
-    } else if (kelWithVol.length > 0) {
-      volumeTotal = Math.round(
-        kelWithVol.reduce((s, k) => s + (k.volume as number), 0) * 10
-      ) / 10;
-    }
-
+    let volumeTotal = computedTotalM3;
     const hasData = baseTotalKg > 0;
+
     const komposisiVolume = {
       organik: {
-        persen: baseTotalKg > 0 ? Math.round((baseOrgKg / baseTotalKg) * 100) : 0,
+        persen: orgPct,
         volumeM3: orgM3,
         kgHari: baseOrgKg,
       },
       anorganik: {
-        persen: baseTotalKg > 0 ? Math.round((baseAnoKg / baseTotalKg) * 100) : 0,
+        persen: anoPct,
         volumeM3: anoM3,
         kgHari: baseAnoKg,
       },
       residu: {
-        persen: baseTotalKg > 0 ? Math.round((baseResKg / baseTotalKg) * 100) : 0,
+        persen: resPct,
         volumeM3: resM3,
         kgHari: baseResKg,
       },
-      totalM3: volumeTotal ?? computedTotalM3,
-      totalKgHari: scaledTotalKg,
+      totalM3: volumeTotal,
+      totalKgHari: baseTotalKg,
       hasData,
     };
 
-    // ── 7. Tren Bulanan — integrasi log produksi fasilitas dan deret linimasa KKN resmi (Agustus – Desember 2026) ──
-    // Query aggregate log produksi per bulan sepanjang linimasa KKN (Agustus – Desember 2026)
+    // ── 7. Tren Bulanan — integrasi riil transaksi bulanan + log produksi fasilitas (Agustus – Desember 2026) ──
     const prodLogs = await prisma.facilityProductionLog.findMany({
       where: {
-        createdAt: { gte: new Date("2026-08-01T00:00:00.000Z"), lte: new Date("2026-12-31T23:59:59.999Z") },
+        createdAt: { gte: programStart, lte: programEnd },
         ...(rawKel
           ? {
               facility: {
@@ -467,67 +464,52 @@ export const gisEksekutifService = {
 
     const prodMap: Record<number, number> = {};
     prodLogs.forEach((log) => {
-      const month = new Date(log.createdAt).getMonth(); // 7=Agu, 8=Sep, 9=Okt, 10=Nov, 11=Des
+      const month = new Date(log.createdAt).getUTCMonth(); // 7=Agu, 8=Sep, 9=Okt, 10=Nov, 11=Des
       prodMap[month] = (prodMap[month] ?? 0) + Number(log.outputKg ?? 0);
     });
 
-    // Ambil baseline survei September jika periode aktif bukan September
-    let sepBaselineVolume = 0;
-    if (activeMonthIdx === 8) {
-      sepBaselineVolume = computedBaseTotalM3;
-    } else {
-      const sepSurvei = await prisma.surveiKelurahan.findMany({
-        where: rawKel ? { namaKelurahan: { equals: rawKel, mode: "insensitive" } } : {},
-        include: { volumeSampah: true },
-      });
-      const orgKg = sepSurvei.reduce((s, sv) => s + Number(sv.volumeSampah?.organikKgPerHari ?? 0), 0);
-      const anoKg = sepSurvei.reduce((s, sv) => s + Number(sv.volumeSampah?.anorganikKgPerHari ?? 0), 0);
-      const resKg = sepSurvei.reduce((s, sv) => s + Number(sv.volumeSampah?.residuKgPerHari ?? 0), 0);
-      const totalKg = orgKg + anoKg + resKg;
-      if (totalKg > 0) {
-        sepBaselineVolume = Math.round(((totalKg * 30) / 1000) * 10) / 10;
-      }
-    }
-
-    // Jika periode aktif adalah Agustus dan ada log produksi di Agustus, sinkronkan volumeTotal
-    if (isKickoffPeriod && prodMap[7] != null && prodMap[7] > 0) {
-      volumeTotal = Math.round((prodMap[7] / 400) * 10) / 10;
-      komposisiVolume.totalM3 = volumeTotal;
-      komposisiVolume.hasData = true;
-    }
-
     const trenBulanan = PROGRAM_MONTHS.map(({ label, monthIdx }) => {
-      let vol = 0;
-      if (monthIdx === 8) {
-        vol = sepBaselineVolume;
-      } else if (monthIdx > 8 && activeMonthIdx === monthIdx && isFuturePeriod) {
-        vol = computedBaseTotalM3;
-      }
-      if (prodMap[monthIdx] != null && prodMap[monthIdx] > 0) {
-        vol = Math.round((vol + (prodMap[monthIdx] / 400)) * 10) / 10;
-      }
-      return { bulan: label, volume: vol };
+      const autoInMonth = setoranAllWindow.filter((s) => {
+        if (new Date(s.createdAt).getUTCMonth() !== monthIdx) return false;
+        if (!rawKel) return true;
+        const kelName =
+          s.warga?.rw?.kelurahan?.name ||
+          s.bin?.rw?.kelurahan?.name ||
+          s.bin?.kelurahan?.name;
+        return kelName?.toLowerCase() === rawKel.toLowerCase();
+      });
+
+      const manualInMonth = setoranManualAllWindow.filter((sm) => {
+        if (new Date(sm.createdAt).getUTCMonth() !== monthIdx) return false;
+        if (!rawKel) return true;
+        const kelName = sm.rw?.kelurahan?.name;
+        return kelName?.toLowerCase() === rawKel.toLowerCase();
+      });
+
+      const autoKg = autoInMonth.reduce((acc, s) => acc + Number(s.berat || 0), 0);
+      const manualKg = manualInMonth.reduce((acc, sm) => acc + Number(sm.berat || 0), 0);
+      const prodKg = prodMap[monthIdx] ?? 0;
+      const totalKgMonth = autoKg + manualKg + prodKg;
+
+      // Konversi berat nyata ke volume m³ (1.000 kg = 1 m³ standar DLH Kota Bandung / SNI)
+      const volumeM3 = totalKgMonth > 0 ? Math.round((totalKgMonth / 1000) * 100) / 100 : 0;
+      return { bulan: label, volume: volumeM3 };
     });
 
     // Indeks dalam deret 5 bulan linimasa KKN (0=Agu, 1=Sep, 2=Okt, 3=Nov, 4=Des)
     const programMonthIdx = PROGRAM_MONTHS.findIndex((pm) => pm.monthIdx === activeMonthIdx);
     const prevProgramMonthIdx = programMonthIdx > 0 ? programMonthIdx - 1 : null;
 
-    const currentVol = isFuturePeriod || isKickoffPeriod
-      ? (volumeTotal ?? null)
-      : ((computedBaseTotalM3 > 0 || prodLogs.length > 0)
-          ? (trenBulanan[programMonthIdx]?.volume ?? volumeTotal)
-          : null);
-
+    const currentVol = trenBulanan[programMonthIdx]?.volume ?? volumeTotal ?? 0;
     const prevVol = prevProgramMonthIdx !== null ? trenBulanan[prevProgramMonthIdx]?.volume : null;
     const previousMonthName = prevProgramMonthIdx !== null ? PROGRAM_MONTHS[prevProgramMonthIdx].label : null;
 
     let growthPct: number | null = null;
-    if (currentVol != null && currentVol > 0 && prevVol != null && prevVol > 0) {
+    if (currentVol > 0 && prevVol != null && prevVol > 0) {
       growthPct = Math.round(((currentVol - prevVol) / prevVol) * 1000) / 10;
     }
 
-    const hasTrendData = prodLogs.length > 0 || (activeMonthIdx === 8 && computedBaseTotalM3 > 0) || (isKickoffPeriod && (volumeTotal ?? 0) > 0);
+    const hasTrendData = trenBulanan.some((t) => t.volume > 0);
 
     // ── 8. Sensor CH₄ — infrastruktur gateway & sensor dalam tahap integrasi ──
     const sensors: {
@@ -596,6 +578,7 @@ export const gisEksekutifService = {
         activeMonthIndex: activeMonthIdx,
         volumeUnit: "m³/bulan",
         kepatuhanPemilahan: avgKepatuhan,
+        kepatuhanSubtext: "Sampel selama giat KKN",
         kepatuhanDeltaPoin: 0,
         sensorCh4OnlineCount: 0,
         sensorCh4TotalCount: 0,

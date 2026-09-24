@@ -24,19 +24,24 @@ vi.mock("../lib/prisma.js", () => ({
     setoranOtomatis: {
       findMany: vi.fn(),
     },
+    setoranManual: {
+      findMany: vi.fn(),
+    },
   },
 }));
 
 import { prisma } from "../lib/prisma.js";
 import { gisEksekutifService } from "./gisEksekutifService.js";
 
-describe("gisEksekutifService Dynamic DB Tests (Zero Fallback / Anti-Dummy)", () => {
+describe("gisEksekutifService Real DB Operational Tests (Zero Baseline / 100% Real Transaksi)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (prisma.setoranOtomatis.findMany as any).mockResolvedValue([]);
+    ((prisma as any).setoranManual.findMany as any).mockResolvedValue([]);
+    (prisma.facilityProductionLog.findMany as any).mockResolvedValue([]);
   });
 
-  it("should return synced volume between KPI volumeTotal and komposisiVolume totalM3", async () => {
+  it("should return synced volume between KPI volumeTotal and komposisiVolume totalM3 from real transactions", async () => {
     (prisma.kelurahan.findMany as any).mockResolvedValue([
       { id: "kel-1", name: "Dago", code: "327301", rws: [{ id: 1, name: "RW 01" }] },
       { id: "kel-2", name: "Sekeloa", code: "327302", rws: [{ id: 2, name: "RW 01" }] },
@@ -64,21 +69,28 @@ describe("gisEksekutifService Dynamic DB Tests (Zero Fallback / Anti-Dummy)", ()
       },
     ]);
 
-    (prisma.surveiKelurahan.findMany as any).mockResolvedValue([
+    (prisma.setoranOtomatis.findMany as any).mockResolvedValue([
       {
-        id: "srv-1",
-        namaKelurahan: "Dago",
-        pemilahanSampah: { persentasePemilahan: "0.45" },
-        volumeSampah: {
-          organikKgPerHari: 100,
-          anorganikKgPerHari: 200,
-          residuKgPerHari: 50,
-          totalVolumeKgPerHari: 350,
-        },
+        id: "so-1",
+        status: "ACCEPTED",
+        berat: 150,
+        hasilKlasifikasiAi: "organik",
+        kategoriAktual: "organik",
+        createdAt: new Date("2026-09-10T10:00:00.000Z"),
+        warga: { rw: { kelurahanId: "kel-1", kelurahan: { name: "Dago" } } },
+        bin: null,
+      },
+      {
+        id: "so-2",
+        status: "ACCEPTED",
+        berat: 200,
+        hasilKlasifikasiAi: "anorganik",
+        kategoriAktual: "anorganik",
+        createdAt: new Date("2026-09-11T10:00:00.000Z"),
+        warga: { rw: { kelurahanId: "kel-1", kelurahan: { name: "Dago" } } },
+        bin: null,
       },
     ]);
-
-    (prisma.facilityProductionLog.findMany as any).mockResolvedValue([]);
 
     const result = await gisEksekutifService.getOverview();
 
@@ -86,23 +98,23 @@ describe("gisEksekutifService Dynamic DB Tests (Zero Fallback / Anti-Dummy)", ()
     // Verifikasi foto fasilitas ter-map dengan benar
     expect(result.titikFasilitas[0].foto).toBe("uploads/facilities/bank_dago.jpg");
 
-    // Total volume dari komposisi
+    // Total volume dari komposisi riil: 150 kg org + 200 kg ano = 350 kg -> 0.35 m3
     const org = result.komposisiVolume.organik.volumeM3;
     const ano = result.komposisiVolume.anorganik.volumeM3;
     const res = result.komposisiVolume.residu.volumeM3;
-    const expectedSum = Math.round((org + ano + res) * 10) / 10;
+    const expectedSum = Math.round((org + ano + res) * 100) / 100;
 
-    // Verifikasi sinkronisasi 100%
+    expect(expectedSum).toBe(0.35);
     expect(result.komposisiVolume.totalM3).toBe(expectedSum);
     expect(result.kpi.volumeTotal).toBe(expectedSum);
+    expect(result.kpi.kepatuhanSubtext).toBe("Sampel selama giat KKN");
+    expect(result.kpi.kepatuhanPemilahan).toBe(100); // 2 dari 2 ACCEPTED = 100%
   });
 
   it("should normalize shorthand facility type 'maggot' to valid Prisma enum 'rumah_maggot'", async () => {
     (prisma.kelurahan.findMany as any).mockResolvedValue([]);
     (prisma.rw.findMany as any).mockResolvedValue([]);
     (prisma.facility.findMany as any).mockResolvedValue([]);
-    (prisma.surveiKelurahan.findMany as any).mockResolvedValue([]);
-    (prisma.facilityProductionLog.findMany as any).mockResolvedValue([]);
 
     await gisEksekutifService.getOverview({ jenisFasilitas: "maggot" });
 
@@ -119,8 +131,6 @@ describe("gisEksekutifService Dynamic DB Tests (Zero Fallback / Anti-Dummy)", ()
     (prisma.kelurahan.findMany as any).mockResolvedValue([]);
     (prisma.rw.findMany as any).mockResolvedValue([]);
     (prisma.facility.findMany as any).mockResolvedValue([]);
-    (prisma.surveiKelurahan.findMany as any).mockResolvedValue([]);
-    (prisma.facilityProductionLog.findMany as any).mockResolvedValue([]);
 
     const result = await gisEksekutifService.getOverview({ periode: "Agustus 2026" });
 
@@ -151,45 +161,39 @@ describe("gisEksekutifService Dynamic DB Tests (Zero Fallback / Anti-Dummy)", ()
       { id: "f2", nama: "Fasilitas 2", jenis: "bank_sampah", latitude: -6.81, longitude: 107.61, rw: { name: "RW 01", kelurahan: { name: "Dago" } } },
       { id: "f3", nama: "Fasilitas 3", jenis: "buruan_sae", latitude: -6.82, longitude: 107.62, rw: { name: "RW 01", kelurahan: { name: "Dago" } } },
     ]);
-    (prisma.surveiKelurahan.findMany as any).mockResolvedValue([
+    (prisma.setoranOtomatis.findMany as any).mockResolvedValue([
       {
-        id: "srv-dago",
-        namaKelurahan: "Dago",
-        pemilahanSampah: { persentasePemilahan: "0.45" },
-        volumeSampah: {
-          organikKgPerHari: 150,
-          anorganikKgPerHari: 150,
-          residuKgPerHari: 50,
-          totalVolumeKgPerHari: 350,
-        },
+        id: "so-dago",
+        status: "ACCEPTED",
+        berat: 350,
+        hasilKlasifikasiAi: "organik",
+        kategoriAktual: "organik",
+        createdAt: new Date("2026-09-12T10:00:00.000Z"),
+        warga: { rw: { kelurahanId: "kel-1", kelurahan: { name: "Dago" } } },
+        bin: null,
       },
     ]);
-    (prisma.facilityProductionLog.findMany as any).mockResolvedValue([]);
 
     const result = await gisEksekutifService.getOverview({ kelurahan: "Dago" });
 
-    // Dinamis: jumlah fasilitas adalah 3 (bukan fallback 83)
     expect(result.kpi.fasilitasTerdata).toBe(3);
     expect(result.kpi.fasilitasSubtext).toBe("Kelurahan Dago");
-    // Dinamis: kepatuhan pemilahan adalah 45% (bukan fallback 18%)
-    expect(result.kpi.kepatuhanPemilahan).toBe(45);
-    // Dinamis: volume total sesuai perhitungan survei Dago (350 kg/hari * 30 / 1000 = 10.5 m3/bulan)
-    expect(result.kpi.volumeTotal).toBe(10.5);
-    expect(result.komposisiVolume.totalM3).toBe(10.5);
+    expect(result.kpi.kepatuhanPemilahan).toBe(100);
+    expect(result.kpi.volumeTotal).toBe(0.35); // 350 kg / 1000 = 0.35 m3
+    expect(result.komposisiVolume.totalM3).toBe(0.35);
   });
 
-  it("should return clean and honest empty state when database has no survey or production logs", async () => {
+  it("should return clean and honest empty state when database has no real transactions", async () => {
     (prisma.kelurahan.findMany as any).mockResolvedValue([]);
     (prisma.rw.findMany as any).mockResolvedValue([]);
     (prisma.facility.findMany as any).mockResolvedValue([]);
-    (prisma.surveiKelurahan.findMany as any).mockResolvedValue([]);
-    (prisma.facilityProductionLog.findMany as any).mockResolvedValue([]);
+    (prisma.setoranOtomatis.findMany as any).mockResolvedValue([]);
+    ((prisma as any).setoranManual.findMany as any).mockResolvedValue([]);
 
     const result = await gisEksekutifService.getOverview();
 
-    // Pastikan tidak ada data palsu yang bocor
     expect(result.kpi.fasilitasTerdata).toBe(0);
-    expect(result.kpi.volumeTotal).toBeNull();
+    expect(result.kpi.volumeTotal).toBe(0);
     expect(result.kpi.kepatuhanPemilahan).toBeNull();
     expect(result.kpi.volumeGrowthPercent).toBeNull();
     expect(result.kpi.sensorCh4OnlineCount).toBe(0);
@@ -197,7 +201,7 @@ describe("gisEksekutifService Dynamic DB Tests (Zero Fallback / Anti-Dummy)", ()
     expect(result.kpi.sensorCh4ProgressPercent).toBe(0);
 
     expect(result.komposisiVolume.hasData).toBe(false);
-    expect(result.komposisiVolume.totalM3).toBe(0);
+    expect(result.komposisiVolume.totalM3).toBeNull();
     expect(result.komposisiVolume.organik.persen).toBe(0);
 
     expect(result.pemantauanCh4.status).toBe("Tahap Integrasi IoT");
@@ -206,23 +210,39 @@ describe("gisEksekutifService Dynamic DB Tests (Zero Fallback / Anti-Dummy)", ()
     expect(result.pemantauanCh4.placeholderStatus).toBe("Belum ada data");
   });
 
-  it("should calculate dynamic volumeGrowthPercent when real production logs exist", async () => {
+  it("should calculate dynamic volumeGrowthPercent when real transactions exist across months", async () => {
     (prisma.kelurahan.findMany as any).mockResolvedValue([]);
     (prisma.rw.findMany as any).mockResolvedValue([]);
     (prisma.facility.findMany as any).mockResolvedValue([]);
-    (prisma.surveiKelurahan.findMany as any).mockResolvedValue([]);
-    // Bulan 7 = Agustus, Bulan 8 = September
-    (prisma.facilityProductionLog.findMany as any).mockResolvedValue([
-      { createdAt: "2026-08-15T10:00:00.000Z", outputKg: 1000 }, // 1000 / 400 = 2.5 m3
-      { createdAt: "2026-09-15T10:00:00.000Z", outputKg: 1200 }, // 1200 / 400 = 3.0 m3
+    (prisma.setoranOtomatis.findMany as any).mockResolvedValue([
+      {
+        id: "so-agu",
+        status: "ACCEPTED",
+        berat: 1000, // 1.0 m3
+        hasilKlasifikasiAi: "organik",
+        kategoriAktual: "organik",
+        createdAt: new Date("2026-08-15T10:00:00.000Z"),
+        warga: null,
+        bin: null,
+      },
+      {
+        id: "so-sep",
+        status: "ACCEPTED",
+        berat: 1200, // 1.2 m3
+        hasilKlasifikasiAi: "organik",
+        kategoriAktual: "organik",
+        createdAt: new Date("2026-09-15T10:00:00.000Z"),
+        warga: null,
+        bin: null,
+      },
     ]);
 
-    const result = await gisEksekutifService.getOverview();
+    const result = await gisEksekutifService.getOverview({ periode: "September 2026" });
 
     expect(result.meta.hasTrendData).toBe(true);
-    expect(result.trenBulanan[0].volume).toBe(2.5); // Agu (idx 0)
-    expect(result.trenBulanan[1].volume).toBe(3.0); // Sep (idx 1)
-    // Pertumbuhan: ((3.0 - 2.5) / 2.5) * 100 = 20.0%
+    expect(result.trenBulanan[0].volume).toBe(1.0); // Agu (idx 0)
+    expect(result.trenBulanan[1].volume).toBe(1.2); // Sep (idx 1)
+    // Pertumbuhan: ((1.2 - 1.0) / 1.0) * 100 = 20.0%
     expect(result.kpi.volumeGrowthPercent).toBe(20.0);
     expect(result.kpi.previousMonthName).toBe("Agu");
   });
@@ -233,33 +253,31 @@ describe("gisEksekutifService Dynamic DB Tests (Zero Fallback / Anti-Dummy)", ()
     ]);
     (prisma.rw.findMany as any).mockResolvedValue([]);
     (prisma.facility.findMany as any).mockResolvedValue([]);
-    (prisma.surveiKelurahan.findMany as any).mockResolvedValue([
+    (prisma.setoranOtomatis.findMany as any).mockResolvedValue([
       {
-        id: "srv-coblong",
-        namaKelurahan: "Dago",
-        pemilahanSampah: { persentasePemilahan: "0.20" },
-        volumeSampah: {
-          organikKgPerHari: 32184,
-          anorganikKgPerHari: 14751,
-          residuKgPerHari: 6705,
-          totalVolumeKgPerHari: 53640, // 53640 * 30 / 1000 = 1609.2 m3/bulan
-        },
+        id: "so-sep",
+        status: "ACCEPTED",
+        berat: 500, // 0.5 m3
+        hasilKlasifikasiAi: "organik",
+        kategoriAktual: "organik",
+        createdAt: new Date("2026-09-15T10:00:00.000Z"),
+        warga: { rw: { kelurahanId: "kel-1", kelurahan: { name: "Dago" } } },
+        bin: null,
       },
     ]);
-    (prisma.facilityProductionLog.findMany as any).mockResolvedValue([]);
 
     // 1. Uji periode September 2026
     const resSep = await gisEksekutifService.getOverview({ periode: "September 2026" });
     expect(resSep.meta.periode).toBe("September 2026");
-    expect(resSep.kpi.volumeTotal).toBe(1609.2);
-    expect(resSep.kpi.volumeGrowthPercent).toBeNull(); // Agu volume 0, sehingga belum ada persentase pertumbuhan valid
+    expect(resSep.kpi.volumeTotal).toBe(0.5);
+    expect(resSep.kpi.volumeGrowthPercent).toBeNull(); // Agu volume 0
     expect(resSep.kpi.previousMonthName).toBe("Agu");
-    expect(resSep.kpi.kepatuhanPemilahan).toBe(20);
+    expect(resSep.kpi.kepatuhanPemilahan).toBe(100);
 
-    // 2. Uji periode Agustus 2026 (Kickoff bulan ke-1: belum ada bulan program sebelumnya dan survei belum ada jika tanpa log)
+    // 2. Uji periode Agustus 2026
     const resAgu = await gisEksekutifService.getOverview({ periode: "Agustus 2026" });
     expect(resAgu.meta.periode).toBe("Agustus 2026");
-    expect(resAgu.kpi.volumeTotal).toBeNull();
+    expect(resAgu.kpi.volumeTotal).toBe(0);
     expect(resAgu.kpi.volumeGrowthPercent).toBeNull();
     expect(resAgu.kpi.previousMonthName).toBeNull();
     expect(resAgu.kpi.kepatuhanPemilahan).toBeNull();
@@ -271,17 +289,14 @@ describe("gisEksekutifService Dynamic DB Tests (Zero Fallback / Anti-Dummy)", ()
     (prisma.facility.findMany as any).mockResolvedValue([
       { id: "fac-1", nama: "POC RW 01", jenis: "poc", latitude: -6.88, longitude: 107.61 },
     ]);
-    (prisma.surveiKelurahan.findMany as any).mockResolvedValue([]);
-    (prisma.facilityProductionLog.findMany as any).mockResolvedValue([]);
 
     const res = await gisEksekutifService.getOverview({ jenisFasilitas: "poc" });
-    // Tipe fasilitas harus tetap memuat opsi lengkap (tidak terpotong hanya POC)
     expect(res.filterOptions.tipeFasilitas).toContain("Semua");
     expect(res.filterOptions.tipeFasilitas).toContain("poc");
     expect(res.filterOptions.tipeFasilitas.length).toBeGreaterThanOrEqual(4);
   });
 
-  it("should return clean 0 / null state for future months (e.g., Oktober 2026) when endline survey has not been conducted", async () => {
+  it("should return clean 0 / null state for future months (e.g., Oktober 2026) when no transactions exist", async () => {
     (prisma.kelurahan.findMany as any).mockResolvedValue([
       { id: "kel-1", name: "Dago", code: "327301", rws: [{ id: 1, name: "RW 01" }] },
       { id: "kel-2", name: "Sekeloa", code: "327302", rws: [{ id: 2, name: "RW 01" }] },
@@ -290,82 +305,43 @@ describe("gisEksekutifService Dynamic DB Tests (Zero Fallback / Anti-Dummy)", ()
     (prisma.facility.findMany as any).mockResolvedValue([
       { id: "fac-1", nama: "TPS Dago", jenis: "tps", latitude: -6.88, longitude: 107.61, rw: { name: "RW 01", kelurahan: { name: "Dago" } } },
     ]);
-    // Survei kelurahan baseline September ada di DB, TETAPI tidak boleh bocor ke Oktober 2026
-    (prisma.surveiKelurahan.findMany as any).mockResolvedValue([
+    // Transaksi ada di September, TETAPI tidak boleh bocor ke Oktober 2026
+    (prisma.setoranOtomatis.findMany as any).mockResolvedValue([
       {
-        id: "srv-dago",
-        namaKelurahan: "Dago",
-        pemilahanSampah: { persentasePemilahan: "0.20" },
-        volumeSampah: { totalVolumeKgPerHari: 1000 },
+        id: "so-sep",
+        status: "ACCEPTED",
+        berat: 500,
+        hasilKlasifikasiAi: "organik",
+        kategoriAktual: "organik",
+        createdAt: new Date("2026-09-15T10:00:00.000Z"),
+        warga: { rw: { kelurahanId: "kel-1", kelurahan: { name: "Dago" } } },
+        bin: null,
       },
     ]);
-    // Belum ada data endline untuk Oktober
-    (prisma.endlineSurveiKelurahan.findMany as any).mockResolvedValue([]);
-    (prisma.facilityProductionLog.findMany as any).mockResolvedValue([]);
 
     const resOkt = await gisEksekutifService.getOverview({ periode: "Oktober 2026" });
 
     expect(resOkt.meta.periode).toBe("Oktober 2026");
     expect(resOkt.meta.activeMonthIndex).toBe(9);
-    // Data analitik harus murni 0 / null
-    expect(resOkt.kpi.volumeTotal).toBeNull();
+    // Data analitik Oktober harus 0 / null
+    expect(resOkt.kpi.volumeTotal).toBe(0);
     expect(resOkt.kpi.volumeGrowthPercent).toBeNull();
     expect(resOkt.kpi.kepatuhanPemilahan).toBeNull();
     expect(resOkt.komposisiVolume.hasData).toBe(false);
-    expect(resOkt.komposisiVolume.totalM3).toBe(0);
-    expect(resOkt.komposisiVolume.organik.volumeM3).toBe(0);
-    expect(resOkt.komposisiVolume.anorganik.volumeM3).toBe(0);
-    expect(resOkt.komposisiVolume.residu.volumeM3).toBe(0);
+    expect(resOkt.komposisiVolume.totalM3).toBeNull();
 
-    // Tren bulanan bulan Oktober (idx 2 pada deret 5 bulan KKN) harus 0
+    // Tren bulanan bulan Oktober harus 0
     expect(resOkt.trenBulanan[2].volume).toBe(0);
 
-    // Kepatuhan kelurahan dan poligon harus abu-abu tanpa data
+    // Kepatuhan kelurahan dan poligon Oktober harus abu-abu tanpa data
     resOkt.kepatuhanPerKelurahan.forEach((kel) => {
       expect(kel.hasData).toBe(false);
       expect(kel.kepatuhan).toBeNull();
       expect(kel.volume).toBeNull();
       expect(kel.color).toBe("#9ca3af");
     });
-    resOkt.poligonKelurahan.forEach((pk) => {
-      expect(pk.hasData).toBe(false);
-      expect(pk.kepatuhan).toBeNull();
-      expect(pk.volume).toBeNull();
-      expect(pk.color).toBe("#9ca3af");
-    });
 
-    // Fasilitas fisik tetap terdata (fasilitas fisik tidak hilang)
+    // Fasilitas fisik tetap terdata
     expect(resOkt.kpi.fasilitasTerdata).toBe(1);
-  });
-
-  it("should dynamically reflect real data in Oktober 2026 if endline survey is entered", async () => {
-    (prisma.kelurahan.findMany as any).mockResolvedValue([
-      { id: "kel-1", name: "Dago", code: "327301", rws: [{ id: 1, name: "RW 01" }] },
-    ]);
-    (prisma.rw.findMany as any).mockResolvedValue([]);
-    (prisma.facility.findMany as any).mockResolvedValue([]);
-    (prisma.surveiKelurahan.findMany as any).mockResolvedValue([]);
-    (prisma.endlineSurveiKelurahan.findMany as any).mockResolvedValue([
-      {
-        namaKelurahan: "Dago",
-        pemilahanSampah: { persentasePemilahan: "0.35" },
-        volumeSampah: {
-          organikKgPerHari: 100,
-          anorganikKgPerHari: 200,
-          residuKgPerHari: 50,
-          totalVolumeKgPerHari: 350,
-        },
-      },
-    ]);
-    (prisma.facilityProductionLog.findMany as any).mockResolvedValue([]);
-
-    const resOkt = await gisEksekutifService.getOverview({ periode: "Oktober 2026" });
-
-    expect(resOkt.kpi.kepatuhanPemilahan).toBe(35);
-    expect(resOkt.kpi.volumeTotal).toBe(10.5); // 350 * 30 / 1000 = 10.5 m3
-    expect(resOkt.komposisiVolume.hasData).toBe(true);
-    expect(resOkt.komposisiVolume.totalM3).toBe(10.5);
-    expect(resOkt.kepatuhanPerKelurahan[0].kepatuhan).toBe(35);
-    expect(resOkt.kepatuhanPerKelurahan[0].color).toBe("#00a86b");
   });
 });

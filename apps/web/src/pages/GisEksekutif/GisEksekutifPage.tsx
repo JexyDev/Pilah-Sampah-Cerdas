@@ -1088,8 +1088,8 @@ export default function GisEksekutifPage() {
                   </div>
                   <div className="kpi-qc-subtext">
                     {data?.kpi?.volumeTotal != null && data.kpi.volumeTotal > 0
-                      ? `Periode ${periode}${kel !== "Semua" ? ` • Kel. ${kel}` : ""}`
-                      : "Belum ada data survei"}
+                      ? `Periode ${periode}${kel !== "Semua" ? ` • Kel. ${kel}` : ""} • Riil Sistem`
+                      : "Belum ada data transaksi"}
                   </div>
                 </div>
               </div>
@@ -1100,7 +1100,12 @@ export default function GisEksekutifPage() {
                   <Icon name="pie" size={22} />
                 </div>
                 <div className="kpi-qc-content">
-                  <span className="kpi-qc-label">Kepatuhan pemilahan</span>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+                    <span className="kpi-qc-label">Kepatuhan pemilahan</span>
+                    <span style={{ fontSize: "10px", padding: "1px 6px", borderRadius: "8px", background: "#fef3c7", color: "#92400e", fontWeight: 600, border: "1px solid #fde68a" }}>
+                      Sampel Giat KKN
+                    </span>
+                  </div>
                   <div className="kpi-qc-val-row">
                     <span className="kpi-qc-val">
                       {data?.kpi?.kepatuhanPemilahan != null ? `${data.kpi.kepatuhanPemilahan}%` : "—"}
@@ -1109,8 +1114,8 @@ export default function GisEksekutifPage() {
                   </div>
                   <div className="kpi-qc-subtext">
                     {data?.kpi?.kepatuhanPemilahan != null
-                      ? (kel !== "Semua" ? `Kelurahan ${kel}` : "Rata-rata 6 kelurahan")
-                      : "Belum ada data survei"}
+                      ? `Sampel selama giat KKN • ${kel !== "Semua" ? `Kel. ${kel}` : "Rata-rata 6 kelurahan"}`
+                      : "Belum ada data transaksi"}
                   </div>
                 </div>
               </div>
