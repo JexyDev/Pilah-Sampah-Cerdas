@@ -166,14 +166,17 @@ jobs:
             cd "$REPO_DIR/apps/web"
             echo "$VPS_PASS" | sudo -S rm -rf "$REPO_DIR/apps/web/dist" 2>/dev/null || rm -rf "$REPO_DIR/apps/web/dist" 2>/dev/null || true
             mkdir -p "$REPO_DIR/apps/web/dist"
+            npm install --silent --legacy-peer-deps 2>/dev/null || npm install --legacy-peer-deps
             NODE_OPTIONS="--max-old-space-size=4096" VITE_API_BASE_URL=/api/v1 npm run build
+            test -f "$REPO_DIR/apps/web/dist/index.html" || { echo "ERROR: Frontend build failed! dist/index.html missing on VPS"; exit 1; }
 
             APK_NAME="berseka-staging-arm64-v8a.apk"
             if [ -f "$TARGET_WEB_DIR/downloads/$APK_NAME" ]; then
               cp "$TARGET_WEB_DIR/downloads/$APK_NAME" "/tmp/$APK_NAME"
             fi
 
-            cp -r dist/* "$TARGET_WEB_DIR/" 2>/dev/null || true
+            echo "$VPS_PASS" | sudo -S rm -rf "$TARGET_WEB_DIR"/assets "$TARGET_WEB_DIR"/index.html 2>/dev/null || true
+            cp -r dist/* "$TARGET_WEB_DIR/"
 
             if [ -f "/tmp/$APK_NAME" ]; then
               cp "/tmp/$APK_NAME" "$TARGET_WEB_DIR/downloads/$APK_NAME"
