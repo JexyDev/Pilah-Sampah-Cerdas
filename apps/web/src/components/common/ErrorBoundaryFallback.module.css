@@ -58,17 +58,23 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background-color: var(--primary-green);
-  color: white;
+  background-color: var(--color-primary, #055c46);
+  color: #ffffff !important;
   border: none;
   border-radius: 8px;
-  padding: 10px 24px;
+  padding: 12px 24px;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
-  transition: opacity 0.2s;
+  box-shadow: 0 4px 12px rgba(5, 92, 70, 0.25);
+  transition: all 0.2s ease;
 }
 
 .retryButton:hover {
-  opacity: 0.9;
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.retryButton:active {
+  transform: translateY(0);
 }

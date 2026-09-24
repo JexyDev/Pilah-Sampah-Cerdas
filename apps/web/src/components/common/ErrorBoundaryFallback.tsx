@@ -19,7 +19,19 @@ const ErrorBoundaryFallback: React.FC<FallbackProps> = ({ error, resetErrorBound
 
   const handleRetry = () => {
     if (isChunkError) {
-      window.location.reload();
+      if (typeof window !== "undefined") {
+        if ("caches" in window) {
+          caches
+            .keys()
+            .then((names) => {
+              names.forEach((name) => caches.delete(name));
+            })
+            .catch(() => {});
+        }
+        const url = new URL(window.location.href);
+        url.searchParams.set("_v", Date.now().toString());
+        window.location.replace(url.toString());
+      }
     } else {
       resetErrorBoundary();
     }
