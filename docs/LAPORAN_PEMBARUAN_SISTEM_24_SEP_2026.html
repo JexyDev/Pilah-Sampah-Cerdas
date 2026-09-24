@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Laporan Pembaruan Sistem - 24 September 2026</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; }
+        h1, h2, h3 { color: #2c3e50; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        h1 { font-size: 24px; text-align: center; border-bottom: 2px solid #2c3e50; margin-bottom: 30px; }
+        h2 { font-size: 20px; margin-top: 30px; }
+        h3 { font-size: 16px; border: none; margin-top: 20px; }
+        p { margin-bottom: 10px; }
+        ul { margin-bottom: 15px; }
+        li { margin-bottom: 5px; }
+        .highlight { background-color: #f8f9fa; padding: 15px; border-left: 4px solid #007bff; margin: 20px 0; border-radius: 4px; }
+        strong { color: #000; }
+        code { background-color: #f1f1f1; padding: 2px 4px; border-radius: 3px; font-family: Consolas, monospace; font-size: 14px; }
+        hr { border: 0; border-top: 1px solid #ddd; margin: 30px 0; }
+        .footer { font-size: 12px; text-align: center; color: #777; margin-top: 50px; border-top: 1px solid #eee; padding-top: 20px; }
+        @media print {
+            body { max-width: 100%; padding: 0; }
+            .highlight { border-left-color: #666; background-color: transparent; }
+        }
+    </style>
+</head>
+<body>
+    <h1>LAPORAN PEMBARUAN &amp; PERBAIKAN SISTEM (24 SEPTEMBER 2026)</h1>
+<p><strong>Dilaporkan oleh</strong>: Tim Fullstack Developer (Backend API &amp; Web Frontend)
+<strong>Target Repositori</strong>: <code>main</code> (Berseka Web &amp; API)
+<strong>Branch Eksekusi</strong>: <code>fix/security-hardening-and-anti-dummy</code> -&gt; <code>development</code> -&gt; <code>staging</code> -&gt; <code>main</code></p>
+<hr>
+<h2>1. Ringkasan Eksekutif</h2>
+<p>Telah dilakukan audit dan eksekusi perbaikan kritis (Prioritas P0 dan P1) pada <em>codebase</em> Berseka. Fokus utama perbaikan mencakup penambalan celah keamanan kriptografi, pembersihan <em>hardcoded</em> kredensial dan IP VPS, serta penguatan <em>Data Governance</em> (pencegahan modifikasi database produksi oleh skrip lokal/seeder). Semua kode telah tervalidasi oleh <em>type-checker</em> (0 error) dan berhasil di-<em>deploy</em> ke VPS produksi lewat jalur resmi (CI/CD GitHub Actions).</p>
+<h2>2. Rincian Task yang Terselesaikan</h2>
+<h3>? Task 1: Remedi Keamanan JWT &amp; Enkripsi Kriptografi (Prioritas P0)</h3>
+<ul>
+<li><strong>Masalah</strong>: Terdapat <em>fallback</em> kunci rahasia statis yang terekspos di kode (<code>jwtUtils.ts</code> dan <code>cryptoUtils.ts</code>), memungkinkan siapapun mendekripsi sesi pengguna jika <em>Environment Variable</em> gagal terbaca.</li>
+<li><strong>Tindakan</strong>: <ul>
+<li>Menghapus semua string <em>hardcoded</em> (<code>&#39;berseka_kkn_jwt_secret_key_2026&#39;</code>, dll).</li>
+<li>Sistem kini akan melempar pesan <em>error</em> keras (Fatal Error) dan mematikan proses jika variabel <code>JWT_SECRET</code> atau <code>AES_SECRET_KEY</code> tidak dikonfigurasi, sehingga menjamin keamanan sesi.</li>
+</ul>
+</li>
+</ul>
+<h3>? Task 2: Eliminasi <em>Hardcoded</em> IP VPS pada API (Prioritas P0)</h3>
+<ul>
+<li><strong>Masalah</strong>: Layanan API masih merujuk secara statis ke <code>http://157.10.252.252:3000</code>, yang memicu masalah CORS dan risiko <em>routing</em> jika IP server berubah.</li>
+<li><strong>Tindakan</strong>:<ul>
+<li>Semua referensi statis diubah menjadi dinamis menggunakan <code>process.env.API_BASE_URL</code> (atau menggunakan relatif URL <code>/api/v1</code> di <em>frontend</em>).</li>
+<li><em>Catatan Sinkronisasi Tim Mobile</em>: Penyesuaian <code>apiBaseUrl</code> di <code>app_config.dart</code> pada aplikasi Android harus dilakukan terpisah oleh tim Mobile.</li>
+</ul>
+</li>
+</ul>
+<h3>? Task 3: Penguatan <em>Data Governance</em> &amp; Karantina Skrip SSH (Prioritas P0)</h3>
+<ul>
+<li><strong>Masalah</strong>: Terdapat beberapa skrip injeksi data dan migrasi di folder <code>scripts/</code> yang berisiko merusak database operasional riil di VPS jika tereksekusi tanpa sengaja.</li>
+<li><strong>Tindakan</strong>:<ul>
+<li>IP server <em>Staging</em> (<code>157.10.160.93</code>) telah didaftarkan ke modul <code>vpsSafetyGuard.ts</code>.</li>
+<li>Fungsi <code>assertNotProduction()</code> berhasil diinjeksi pada 4 skrip kritis (<code>clean-vps-db.ts</code>, <code>cleanup-duplicate-schedules.ts</code>, <code>inject-vps-attendance-20260831.ts</code>, <code>insert-vps-attendance.ts</code>). Skrip ini sekarang secara otomatis memblokir eksekusi (Exit Code 1) bila mendeteksi target adalah server VPS Produksi.</li>
+</ul>
+</li>
+</ul>
+<h3>? Task 4: Pembersihan Data Semu Linimasa KKN (Prioritas P1)</h3>
+<ul>
+<li><strong>Masalah</strong>: Ketika API sedang <em>down</em> atau belum ada data linimasa, aplikasi Web secara <em>silent</em> menggunakan konstanta palsu (<code>TIMELINE_KKN_DATA</code>), sehingga menipu pengguna seolah-olah data riil KKN telah tersedia.</li>
+<li><strong>Tindakan</strong>:<ul>
+<li><strong>Backend (<code>timelineKknService.ts</code>)</strong>: Fungsi <em>auto-seed</em> dibatasi secara ekstrem; hanya bisa berjalan saat <code>NODE_ENV === &quot;development&quot;</code> di lokal developer, tidak lagi bisa menembus VPS.</li>
+<li><strong>Web (<code>JadwalKegiatan.tsx</code>)</strong>: <em>Fallback fallback</em> data palsu telah dihapus secara komprehensif. UI web kini murni hanya menampilkan <em>empty state</em> (tabel kosong) bila tabel jadwal di database kosong atau API tidak terjangkau.</li>
+</ul>
+</li>
+</ul>
+<h2>3. Deployment &amp; Sinkronisasi</h2>
+<ul>
+<li><strong>Integrasi Kode (Git-Flow)</strong>: Perubahan diproses dari branch <code>fix/security-hardening-and-anti-dummy</code> secara bertingkat (Pull Request/Merge) melewati tahapan <code>development</code> -&gt; <code>staging</code> -&gt; <code>main</code>.</li>
+<li><strong>Eksekusi VPS (CI/CD)</strong>: Pipeline GitHub Actions (<code>deploy.yml</code>) berhasil mendeteksi pembaruan di <code>main</code> dan telah melakukan penarikan kode (<em>git pull</em>) terbaru dan me-restart layanan secara otomatis di VPS (Zero-downtime reload via PM2).</li>
+<li><strong>Quality Control (QC)</strong>: Skrip otomatis pembuat <em>dummy data</em> (<code>test_e2e_api.ts</code>) sengaja diblokir dari target VPS demi kepatuhan pada kebijakan <strong>Anti-Dummy Policy</strong> yang melindungi keaslian data presensi.</li>
+</ul>
+<hr>
+<p><strong>Catatan untuk Atasan / Tech Lead</strong>:
+Laporan ini mengonfirmasi bahwa ekosistem arsitektur Backend &amp; Web kita sekarang telah jauh lebih tangguh, berorientasi keamanan (Security by Default), dan sangat ketat melindungi integritas data VPS agar terbebas dari kebocoran data <em>dummy</em> secara tak sengaja.</p>
+
+
+    <div class="footer">Dicetak dan digenerate secara otomatis dari GitHub Repository - Tim IT Berseka (2026)</div>
+</body>
+</html>
