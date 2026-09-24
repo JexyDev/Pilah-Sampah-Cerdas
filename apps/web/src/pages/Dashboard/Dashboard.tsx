@@ -1613,7 +1613,10 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const isPimpinan = user?.peran === "PIMPINAN" || user?.peran === "PEMIMPIN";
+  const isPimpinan =
+    user?.peran === "PIMPINAN" ||
+    user?.peran === "PEMIMPIN" ||
+    user?.peran === "PANITIA_TASKFORCE";
   const isSuperOrDev = user?.peran === "SUPER_USER" || user?.peran === "DEVELOPER";
   const userPeran = (user?.peran || (user as any)?.role || "").toUpperCase();
   const isMpl =
@@ -1917,7 +1920,7 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     // Role non-operasional dialihkan / tidak memuat stats sampah
-    // PIMPINAN / PEMIMPIN / DEVELOPER / SUPER_USER memuat fetchStats() agar data rekapitulasi kelurahan konsisten
+    // PIMPINAN / PEMIMPIN / PANITIA_TASKFORCE / DEVELOPER / SUPER_USER memuat fetchStats() agar data rekapitulasi kelurahan konsisten
     if (
       user?.peran === "WARGA" ||
       user?.peran === "MAHASISWA_KKN" ||
@@ -1925,7 +1928,6 @@ const Dashboard: React.FC = () => {
       user?.peran === "RW" ||
       user?.peran === "DPL" ||
       user?.peran === "DOSEN_PEMBIMBING" ||
-      user?.peran === "PANITIA_TASKFORCE" ||
       isMpl
     ) {
       setLoading(false);
@@ -2005,11 +2007,7 @@ const Dashboard: React.FC = () => {
     return <DplDashboardPage />;
   }
 
-  if (user?.peran === "PANITIA_TASKFORCE") {
-    return <TaskforceDashboardPage />;
-  }
-
-  // Khusus Pimpinan (atau Super User/Dev) jika sub-dashboard KKN aktif
+  // Khusus Pimpinan / Taskforce (atau Super User/Dev) jika sub-dashboard KKN aktif
   if (canAccessKknSub && activeSubTab === "kkn") {
     return (
       <div className="w-full space-y-6 font-sans">
