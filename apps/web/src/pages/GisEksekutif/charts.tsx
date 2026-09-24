@@ -61,8 +61,10 @@ export interface DonutProps {
   anoKg?: number;
   resKg?: number;
   totalM3?: number;
+  totalKg?: number;
   hasData?: boolean;
   wilayahLabel?: string;
+  unit?: "kg" | "m³";
 }
 
 export function Donut({
@@ -72,29 +74,40 @@ export function Donut({
   orgPersen,
   anoPersen,
   resPersen,
+  orgKg,
+  anoKg,
+  resKg,
   totalM3,
+  totalKg,
   hasData,
   wilayahLabel,
+  unit = "kg",
 }: DonutProps) {
   const [hoveredKey, setHoveredKey] = useState<string | null>(null);
 
-  const sum = (org || 0) + (ano || 0) + (res || 0);
-  const displayTotal = totalM3 !== undefined ? totalM3 : sum;
+  const isKg = unit === "kg";
+  const sumM3 = (org || 0) + (ano || 0) + (res || 0);
+  const displayTotalM3 = totalM3 !== undefined ? totalM3 : sumM3;
+
+  const sumKg = (orgKg || 0) + (anoKg || 0) + (resKg || 0);
+  const displayTotalKg = totalKg !== undefined ? totalKg : sumKg;
+
+  const displayTotal = isKg ? displayTotalKg : displayTotalM3;
   const hasRealData = Boolean(hasData && displayTotal != null && displayTotal > 0);
 
   // Persentase per kategori dihitung dinamis dari data
-  const pOrg = hasRealData ? (orgPersen !== undefined ? orgPersen : Math.round(((org || 0) / (displayTotal || 1)) * 100)) : 0;
-  const pAno = hasRealData ? (anoPersen !== undefined ? anoPersen : Math.round(((ano || 0) / (displayTotal || 1)) * 100)) : 0;
-  const pRes = hasRealData ? (resPersen !== undefined ? resPersen : Math.round(((res || 0) / (displayTotal || 1)) * 100)) : 0;
+  const pOrg = hasRealData ? (orgPersen !== undefined ? orgPersen : Math.round(((org || 0) / (displayTotalM3 || 1)) * 100)) : 0;
+  const pAno = hasRealData ? (anoPersen !== undefined ? anoPersen : Math.round(((ano || 0) / (displayTotalM3 || 1)) * 100)) : 0;
+  const pRes = hasRealData ? (resPersen !== undefined ? resPersen : Math.round(((res || 0) / (displayTotalM3 || 1)) * 100)) : 0;
 
-  const vOrg = hasRealData ? (org !== undefined && org > 0 ? org : Math.round(((displayTotal || 0) * pOrg) / 100 * 10) / 10) : 0;
-  const vAno = hasRealData ? (ano !== undefined && ano > 0 ? ano : Math.round(((displayTotal || 0) * pAno) / 100 * 10) / 10) : 0;
-  const vRes = hasRealData ? (res !== undefined && res > 0 ? res : Math.round(((displayTotal || 0) * pRes) / 100 * 10) / 10) : 0;
+  const vOrg = hasRealData ? (isKg ? (orgKg || 0) : (org !== undefined && org > 0 ? org : Math.round(((displayTotalM3 || 0) * pOrg) / 100 * 10) / 10)) : 0;
+  const vAno = hasRealData ? (isKg ? (anoKg || 0) : (ano !== undefined && ano > 0 ? ano : Math.round(((displayTotalM3 || 0) * pAno) / 100 * 10) / 10)) : 0;
+  const vRes = hasRealData ? (isKg ? (resKg || 0) : (res !== undefined && res > 0 ? res : Math.round(((displayTotalM3 || 0) * pRes) / 100 * 10) / 10)) : 0;
 
   const parts = [
-    { k: "Organik", key: "org", v: vOrg, pct: pOrg, c: "#00a86b" },
-    { k: "Anorganik", key: "ano", v: vAno, pct: pAno, c: "#f59e0b" },
-    { k: "Residu", key: "res", v: vRes, pct: pRes, c: "#5b6b82" },
+    { k: "Organik", key: "org", v: vOrg, vM3: org, vKg: orgKg, pct: pOrg, c: "#00a86b" },
+    { k: "Anorganik", key: "ano", v: vAno, vM3: ano, vKg: anoKg, pct: pAno, c: "#f59e0b" },
+    { k: "Residu", key: "res", v: vRes, vM3: res, vKg: resKg, pct: pRes, c: "#5b6b82" },
   ];
 
   const activePart = hoveredKey ? parts.find((p) => p.key === hoveredKey) : null;
@@ -102,7 +115,7 @@ export function Donut({
     ? (activePart ? fmtN(activePart.v) : fmtN(displayTotal))
     : "Belum ada data";
   const centerLabel = hasRealData
-    ? (activePart ? `${activePart.k}` : "m³/bulan")
+    ? (activePart ? `${activePart.k}` : (isKg ? "kg/bulan" : "m³/bulan"))
     : "Survei belum terdata";
 
   const r = 42;
@@ -111,11 +124,17 @@ export function Donut({
   let off = 0;
   const totalVal = parts.reduce((acc, p) => acc + p.v, 0) || 1;
 
+  const cardSubtitle = hasRealData
+    ? isKg
+      ? `Total ${fmtN(displayTotalKg)} kg/bulan${displayTotalM3 ? ` (~${fmtN(displayTotalM3)} m³)` : ""}`
+      : `Total ${fmtN(displayTotalM3)} m³/bulan${displayTotalKg ? ` (~${fmtN(displayTotalKg)} kg)` : ""}`
+    : "Belum ada data survei";
+
   return (
     <section className="card chart-card donut-card-full" aria-label="Komposisi volume">
       <CardTitle
         icon="pie"
-        subtitle={hasRealData ? `Total ${fmtN(displayTotal)} m³/bulan` : "Belum ada data survei"}
+        subtitle={cardSubtitle}
       >
         Komposisi volume
       </CardTitle>
@@ -127,7 +146,7 @@ export function Donut({
             viewBox="0 0 120 120"
             className="donut donut-lg"
             role="img"
-            aria-label={hasRealData ? parts.map((p) => `${p.k} ${p.pct}% (${fmtN(p.v)} m³)`).join(", ") : "Belum ada data komposisi volume"}
+            aria-label={hasRealData ? parts.map((p) => `${p.k} ${p.pct}% (${fmtN(p.v)} ${isKg ? "kg" : "m³"})`).join(", ") : "Belum ada data komposisi volume"}
             onPointerLeave={() => setHoveredKey(null)}
           >
             <g transform="rotate(-90 60 60)">
@@ -167,7 +186,7 @@ export function Donut({
               className="donut-n"
               style={{
                 fill: hasRealData ? (activePart ? activePart.c : "#0f172a") : "#9ca3af",
-                fontSize: hasRealData ? (activePart ? 18 : 20) : 11,
+                fontSize: hasRealData ? (activePart ? 16 : 17) : 11,
                 fontWeight: hasRealData ? 800 : 600,
               }}
             >
@@ -201,7 +220,11 @@ export function Donut({
                 <div className="donut-clean-info">
                   <span className="donut-clean-title">{p.k}</span>
                   <span className="donut-clean-detail">
-                    {hasRealData ? `${fmtN(p.v)} m³ • ${p.pct}%` : "— m³ • 0%"}
+                    {hasRealData
+                      ? isKg
+                        ? `${fmtN(p.v)} kg • ${p.pct}%`
+                        : `${fmtN(p.v)} m³ • ${p.pct}%`
+                      : `— ${isKg ? "kg" : "m³"} • 0%`}
                   </span>
                 </div>
               </li>
@@ -230,27 +253,40 @@ function smoothPath(pts: [number, number][]): string {
   return d;
 }
 
-interface TrendProps {
+export interface TrendProps {
   series: number[];
+  seriesKg?: number[];
   pi: number;
+  unit?: "kg" | "m³";
 }
 
 export const PROGRAM_MONTH_LABELS = ["Agu", "Sep", "Okt", "Nov", "Des"];
 
-export function Trend({ series, pi }: TrendProps) {
+export function Trend({ series, seriesKg, pi, unit = "kg" }: TrendProps) {
   const [isCumulative, setIsCumulative] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const { w } = useSize(ref, { w: 420, h: 140 });
   const [hover, setHover] = useState<number | null>(null);
 
-  // Ambil 5 bulan linimasa program KKN (Agu s.d. Des) secara dinamis dari data series API
-  const rawMonthly = PROGRAM_MONTH_LABELS.map((_, idx) => {
-    return (series && series[idx] != null) ? series[idx] : 0;
+  const currentUnit = unit;
+  const isKg = currentUnit === "kg";
+  const sourceSeries = (isKg && seriesKg && seriesKg.length > 0) ? seriesKg : series;
+
+  // Index aktif default (0=Agu, 1=Sep, 2=Okt, 3=Nov, 4=Des)
+  const defaultIdx = pi >= 0 && pi < PROGRAM_MONTH_LABELS.length ? pi : 1;
+
+  // Mode Per Bulan: Hanya bulan yang sudah berjalan (idx <= defaultIdx) yang memiliki data riil.
+  // Bulan ke depan (idx > defaultIdx) adalah null agar tidak menampilkan flatline/hardcode.
+  const rawMonthly: (number | null)[] = PROGRAM_MONTH_LABELS.map((_, idx) => {
+    if (idx > defaultIdx) return null;
+    return (sourceSeries && sourceSeries[idx] != null) ? sourceSeries[idx] : 0;
   });
 
-  // Hitung kumulatif jika mode kumulatif aktif
+  // Mode Akumulasi: Hanya akumulasi sampai defaultIdx. Bulan setelahnya null (tidak menggambar garis datar fiktif)
   let runningSum = 0;
-  const rawCumulative = rawMonthly.map((v) => {
+  const rawCumulative: (number | null)[] = PROGRAM_MONTH_LABELS.map((_, idx) => {
+    if (idx > defaultIdx) return null;
+    const v = (sourceSeries && sourceSeries[idx] != null) ? sourceSeries[idx] : 0;
     runningSum += v;
     return Math.round(runningSum * 10) / 10;
   });
@@ -260,77 +296,89 @@ export function Trend({ series, pi }: TrendProps) {
   const H = 142;
   const m = { l: 44, r: 16, t: 26, b: 24 };
 
-  const maxValInSeries = Math.max(...activeSeries, 0);
+  const nonNullVals = activeSeries.filter((v): v is number => v !== null);
+  const maxValInSeries = nonNullVals.length > 0 ? Math.max(...nonNullVals, 0) : 0;
 
-  // Hitung rentang dan ticks Sumbu Y dinamis (Standar Baseline 0 Profesional)
+  // Hitung rentang dan ticks Sumbu Y dinamis proporsional
   let yMin = 0;
-  let yMax = 2000;
+  let yMax = isKg ? 2000 : 2;
   let yTicks: number[] = [];
 
-  if (isCumulative) {
-    // Mode Akumulasi Tahunan: mulai dari 0 hingga batas atas proporsional
-    yMin = 0;
-    const targetMax = Math.max(100, Math.ceil(maxValInSeries * 1.15));
-    let step = 1000;
-    if (targetMax <= 500) step = 100;
-    else if (targetMax <= 2000) step = 500;
+  if (isKg) {
+    // Sumbu Y untuk satuan KG
+    const targetMax = Math.max(100, Math.ceil(maxValInSeries * 1.2));
+    let step = 500;
+    if (targetMax <= 200) step = 50;
+    else if (targetMax <= 500) step = 100;
+    else if (targetMax <= 1000) step = 250;
+    else if (targetMax <= 2500) step = 500;
     else if (targetMax <= 5000) step = 1000;
-    else if (targetMax <= 10000) step = 2500;
-    else if (targetMax <= 20000) step = 4000;
-    else step = Math.ceil(targetMax / 4 / 1000) * 1000;
+    else step = Math.ceil(targetMax / 4 / 500) * 500;
 
     const count = Math.max(4, Math.ceil(targetMax / step));
     yMax = count * step;
     const tickStep = yMax / 4;
     yTicks = [0, Math.round(tickStep), Math.round(tickStep * 2), Math.round(tickStep * 3), yMax];
   } else {
-    // Mode Per Bulan: Mulai dari 0 secara standar & proporsional
-    yMin = 0;
-    let computedMax = Math.max(20, Math.ceil(maxValInSeries * 1.15));
-    if (computedMax <= 50) computedMax = 50;
-    else if (computedMax <= 200) computedMax = 200;
-    else if (computedMax <= 500) computedMax = 500;
-    else if (computedMax <= 1000) computedMax = 1000;
-    else if (computedMax <= 2000) computedMax = 2000;
-    else if (computedMax <= 3000) computedMax = 3000;
-    else if (computedMax <= 4000) computedMax = 4000;
-    else if (computedMax <= 5000) computedMax = 5000;
-    else computedMax = Math.ceil(computedMax / 1000) * 1000;
+    // Sumbu Y untuk satuan m³
+    const targetMax = Math.max(0.4, maxValInSeries * 1.25);
+    let step = 0.5;
+    if (targetMax <= 0.5) step = 0.1;
+    else if (targetMax <= 1) step = 0.25;
+    else if (targetMax <= 2.5) step = 0.5;
+    else if (targetMax <= 5) step = 1;
+    else step = Math.ceil(targetMax / 4);
 
-    yMax = computedMax;
-    const step = yMax / 4;
-    yTicks = [0, Math.round(step), Math.round(step * 2), Math.round(step * 3), yMax];
+    const count = Math.max(4, Math.ceil(targetMax / step));
+    yMax = Math.round(count * step * 100) / 100;
+    const tickStep = yMax / 4;
+    yTicks = [
+      0,
+      Math.round(tickStep * 100) / 100,
+      Math.round(tickStep * 2 * 100) / 100,
+      Math.round(tickStep * 3 * 100) / 100,
+      yMax,
+    ];
   }
 
-  const denom = Math.max(1, activeSeries.length - 1);
+  const denom = Math.max(1, PROGRAM_MONTH_LABELS.length - 1);
   const x = (i: number) => m.l + ((w - m.l - m.r) * i) / denom;
   const y = (v: number) => {
     const clamped = Math.max(yMin, Math.min(yMax, v));
-    return m.t + (H - m.t - m.b) * (1 - (clamped - yMin) / (yMax - yMin));
+    return m.t + (H - m.t - m.b) * (1 - (clamped - yMin) / Math.max(1, yMax - yMin));
   };
 
-  const pts: [number, number][] = activeSeries.map((v, i) => [x(i), y(v)]);
-  const line = smoothPath(pts);
-  const base = y(yMin);
-  const area = pts.length > 0 ? `${line} L${x(activeSeries.length - 1)},${base} L${x(0)},${base} Z` : "";
+  // Hanya plot kurva dan titik untuk bulan yang memiliki nilai (tidak null)
+  const validPts: { idx: number; pt: [number, number]; val: number }[] = [];
+  activeSeries.forEach((v, i) => {
+    if (v !== null) {
+      validPts.push({ idx: i, pt: [x(i), y(v)], val: v });
+    }
+  });
 
-  // Index aktif default adalah September (idx 1 pada deret 5 bulan: Agu=0, Sep=1, Okt=2, Nov=3, Des=4)
-  const defaultIdx = pi >= 0 && pi < activeSeries.length ? pi : 1;
+  const linePts = validPts.map((p) => p.pt);
+  const line = smoothPath(linePts);
+  const base = y(yMin);
+  const area = validPts.length > 0
+    ? `${line} L${validPts[validPts.length - 1].pt[0]},${base} L${validPts[0].pt[0]},${base} Z`
+    : "";
+
   const activeIdx = hover ?? defaultIdx;
-  const activeVal = activeSeries[activeIdx] ?? activeSeries[defaultIdx];
+  const activeVal = activeSeries[activeIdx];
   const activeMonth = PROGRAM_MONTH_LABELS[activeIdx] ?? "Sep";
+  const unitLabel = isKg ? (isCumulative ? "kg" : "kg/bln") : (isCumulative ? "m³" : "m³/bln");
 
   const onMove = (e: React.PointerEvent<SVGSVGElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const px = e.clientX - rect.left;
-    const i = Math.round(((px - m.l) / (w - m.l - m.r)) * (activeSeries.length - 1));
-    setHover(Math.max(0, Math.min(activeSeries.length - 1, i)));
+    const i = Math.round(((px - m.l) / (w - m.l - m.r)) * (PROGRAM_MONTH_LABELS.length - 1));
+    setHover(Math.max(0, Math.min(PROGRAM_MONTH_LABELS.length - 1, i)));
   };
 
-  const tipW = 104;
+  const tipW = 108;
   const activeX = x(activeIdx);
   const tipX = Math.max(m.l, Math.min(w - tipW - 4, activeX - tipW / 2));
-  const tipY = Math.max(4, y(activeVal) - 34);
+  const tipY = activeVal != null ? Math.max(4, y(activeVal) - 34) : m.t;
 
   return (
     <section className="card chart-card" aria-label="Tren volume bulanan">
@@ -344,7 +392,7 @@ export function Trend({ series, pi }: TrendProps) {
                 type="button"
                 className={`trend-toggle-btn ${!isCumulative ? "is-active" : ""}`}
                 onClick={() => setIsCumulative(false)}
-                title="Tampilkan volume per bulan (m³/bulan)"
+                title={`Tampilkan volume per bulan (${isKg ? "kg/bulan" : "m³/bulan"})`}
               >
                 Per Bulan
               </button>
@@ -352,7 +400,7 @@ export function Trend({ series, pi }: TrendProps) {
                 type="button"
                 className={`trend-toggle-btn ${isCumulative ? "is-active" : ""}`}
                 onClick={() => setIsCumulative(true)}
-                title="Tampilkan total akumulasi volume sampah tahun berjalan (m³)"
+                title={`Tampilkan total akumulasi volume sampah tahun berjalan (${isKg ? "kg" : "m³"})`}
               >
                 Akumulasi
               </button>
@@ -386,7 +434,9 @@ export function Trend({ series, pi }: TrendProps) {
             textAnchor="start"
             style={{ fontSize: 10.5, fontWeight: 500, fill: "#64748b" }}
           >
-            {isCumulative ? "Volume (m³ kumulatif)" : "Volume (m³/bulan)"}
+            {isCumulative
+              ? `Volume (${isKg ? "kg" : "m³"} kumulatif)`
+              : `Volume (${isKg ? "kg/bln" : "m³/bln"})`}
           </text>
 
           {/* Gridlines & Ticks Sumbu Y */}
@@ -407,9 +457,9 @@ export function Trend({ series, pi }: TrendProps) {
             </g>
           ))}
 
-          {/* Area & Kurva */}
-          <path d={area} fill="url(#trendGradientFill)" />
-          <path d={line} fill="none" stroke="#009966" strokeWidth="2.4" strokeLinecap="round" />
+          {/* Area & Kurva — Hanya menggambar hingga bulan aktif yang ada datanya */}
+          {area && <path d={area} fill="url(#trendGradientFill)" />}
+          {line && <path d={line} fill="none" stroke="#009966" strokeWidth="2.4" strokeLinecap="round" />}
 
           {/* Labels Sumbu X (Bulan Linimasa KKN) */}
           {PROGRAM_MONTH_LABELS.map((mo, i) => (
@@ -419,36 +469,58 @@ export function Trend({ series, pi }: TrendProps) {
               y={H - 6}
               textAnchor="middle"
               className={`trend-ax-x ${i === activeIdx ? "is-active" : ""}`}
+              style={{
+                opacity: i > defaultIdx ? 0.45 : 1,
+              }}
             >
               {mo}
             </text>
           ))}
 
-          {/* Titik Point Lingkaran */}
-          {pts.map((p, i) => (
+          {/* Titik Point Lingkaran untuk Bulan Berjalan */}
+          {validPts.map(({ idx, pt }) => (
             <circle
-              key={i}
-              cx={p[0]}
-              cy={p[1]}
-              r={i === activeIdx ? 5.5 : 3.5}
-              fill={i === activeIdx ? "#009966" : "#ffffff"}
+              key={idx}
+              cx={pt[0]}
+              cy={pt[1]}
+              r={idx === activeIdx ? 5.5 : 3.5}
+              fill={idx === activeIdx ? "#009966" : "#ffffff"}
               stroke="#009966"
-              strokeWidth={i === activeIdx ? "2" : "2"}
+              strokeWidth={idx === activeIdx ? 2 : 2}
             />
           ))}
 
-          {/* Garis Vertikal Titik Aktif */}
-          <line
-            x1={x(activeIdx)}
-            x2={x(activeIdx)}
-            y1={m.t}
-            y2={base}
-            stroke="#009966"
-            strokeOpacity="0.3"
-            strokeDasharray="3 3"
-          />
+          {/* Indikator titik kosong halus untuk bulan mendatang (Okt, Nov, Des) */}
+          {PROGRAM_MONTH_LABELS.map((_, i) => {
+            if (i <= defaultIdx) return null;
+            return (
+              <circle
+                key={`future-${i}`}
+                cx={x(i)}
+                cy={base}
+                r={2.5}
+                fill="#ffffff"
+                stroke="#cbd5e1"
+                strokeDasharray="2 2"
+                strokeWidth={1.5}
+              />
+            );
+          })}
 
-          {/* Tooltip Pill pada Titik Aktif (Sep • 1.609,2 m³) */}
+          {/* Garis Vertikal Titik Aktif */}
+          {activeVal != null && (
+            <line
+              x1={x(activeIdx)}
+              x2={x(activeIdx)}
+              y1={m.t}
+              y2={base}
+              stroke="#009966"
+              strokeOpacity="0.3"
+              strokeDasharray="3 3"
+            />
+          )}
+
+          {/* Tooltip Pill pada Titik Aktif */}
           <g transform={`translate(${tipX}, ${tipY})`} pointerEvents="none">
             <rect
               width={tipW}
@@ -463,7 +535,9 @@ export function Trend({ series, pi }: TrendProps) {
               fill="#064e3b"
             />
             <text x={tipW / 2} y="16" textAnchor="middle" className="trend-tooltip-text">
-              {activeMonth} • {fmtN(activeVal)} m³
+              {activeVal != null
+                ? `${activeMonth} • ${fmtN(activeVal)} ${unitLabel}`
+                : `${activeMonth} • Belum berjalan`}
             </text>
           </g>
         </svg>
@@ -472,7 +546,9 @@ export function Trend({ series, pi }: TrendProps) {
       {/* Tabel Nilai Volume Sesuai Mode Tampilan */}
       <div className="trend-table-wrap">
         <div className="trend-table-title">
-          {isCumulative ? "Nilai volume akumulatif (m³)" : "Nilai volume per bulan (m³/bulan)"}
+          {isCumulative
+            ? `Nilai volume akumulatif (${isKg ? "kg" : "m³"})`
+            : `Nilai volume per bulan (${isKg ? "kg/bulan" : "m³/bulan"})`}
         </div>
         <div className="trend-table-grid">
           <div className="trend-table-row trend-table-head">
@@ -485,7 +561,7 @@ export function Trend({ series, pi }: TrendProps) {
           <div className="trend-table-row trend-table-body">
             {activeSeries.map((v, i) => (
               <div key={i} className={`trend-table-cell ${i === activeIdx ? "is-active" : ""}`}>
-                {fmtN(v)}
+                {v != null ? fmtN(v) : "—"}
               </div>
             ))}
           </div>
@@ -515,8 +591,8 @@ export function Compliance({ rows, selected, onSelect }: ComplianceProps) {
         const hasSurvei = kep !== null && kep !== undefined;
         let color = "#9ca3af";
         if (hasSurvei) {
-          if (kep >= 25) color = "#00a86b";
-          else if (kep >= 10) color = "#f59e0b";
+          if (kep >= 80) color = "#00a86b";
+          else if (kep >= 50) color = "#f59e0b";
           else color = "#ef4444";
         }
 
@@ -538,8 +614,8 @@ export function Compliance({ rows, selected, onSelect }: ComplianceProps) {
 
   // Skala maks sumbu X adalah 100%
   const MAX_SCALE = 100;
-  // Posisi target 25% (persentase lebar track)
-  const targetLeftPercent = (25 / MAX_SCALE) * 100;
+  // Posisi target KKN 80% (persentase lebar track)
+  const TARGET_KKN = 80;
 
   return (
     <section className="card chart-card" aria-label="Kepatuhan per kelurahan">
@@ -550,7 +626,9 @@ export function Compliance({ rows, selected, onSelect }: ComplianceProps) {
             <span style={{ fontSize: "11px", padding: "2px 8px", borderRadius: "12px", background: "#fef3c7", color: "#92400e", fontWeight: 600, border: "1px solid #fde68a" }}>
               Sampel Selama Giat KKN
             </span>
-            <span className="compliance-target-label">Target 25%</span>
+            <span className="compliance-target-label" style={{ background: "#ecfdf5", color: "#065f46", border: "1px solid #a7f3d0" }}>
+              Target 80%
+            </span>
           </div>
         }
       >
@@ -563,11 +641,11 @@ export function Compliance({ rows, selected, onSelect }: ComplianceProps) {
 
       <div className="compliance-container">
         <div className="compliance-bars-wrap">
-          {/* Garis Putus-putus Target 25% menembus semua bar */}
+          {/* Garis Putus-putus Target 80% menembus semua bar */}
           <div
             className="compliance-target-line"
-            style={{ left: `calc(100px + (100% - 145px) * 0.25)` }}
-            title="Garis Target Kepatuhan 25%"
+            style={{ left: `calc(100px + (100% - 145px) * 0.8)` }}
+            title="Garis Target Kepatuhan 80% (KKN)"
           />
 
           <ul className="compliance-list">
@@ -614,7 +692,7 @@ export function Compliance({ rows, selected, onSelect }: ComplianceProps) {
             })}
           </ul>
 
-          {/* Sumbu X Ticks di bawah bar (0%, 25%, 50%, 75%, 100%) */}
+          {/* Sumbu X Ticks di bawah bar (0%, 25%, 50%, 80%, 100%) */}
           <div className="compliance-x-axis">
             <span className="compliance-x-label" style={{ left: "100px" }}>
               0%
@@ -633,9 +711,9 @@ export function Compliance({ rows, selected, onSelect }: ComplianceProps) {
             </span>
             <span
               className="compliance-x-label"
-              style={{ left: `calc(100px + (100% - 145px) * 0.75)` }}
+              style={{ left: `calc(100px + (100% - 145px) * 0.8)`, color: "#065f46", fontWeight: 700 }}
             >
-              75%
+              80%
             </span>
             <span
               className="compliance-x-label"
@@ -650,15 +728,15 @@ export function Compliance({ rows, selected, onSelect }: ComplianceProps) {
         <div className="compliance-legend">
           <div className="compliance-legend-item">
             <span className="compliance-legend-dot" style={{ background: "#00a86b" }} />
-            <span>≥ 25% (mencapai target)</span>
+            <span>≥ 80% (mencapai target KKN)</span>
           </div>
           <div className="compliance-legend-item">
             <span className="compliance-legend-dot" style={{ background: "#f59e0b" }} />
-            <span>10 – 24% (perlu peningkatan)</span>
+            <span>50 – 79% (perlu peningkatan)</span>
           </div>
           <div className="compliance-legend-item">
             <span className="compliance-legend-dot" style={{ background: "#ef4444" }} />
-            <span>&lt; 10% (perlu perhatian)</span>
+            <span>&lt; 50% (perlu perhatian)</span>
           </div>
           <div className="compliance-legend-item">
             <span className="compliance-legend-dot" style={{ background: "#9ca3af" }} />

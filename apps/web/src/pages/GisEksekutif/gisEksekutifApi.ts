@@ -58,11 +58,14 @@ export interface GisOverviewApiResponse {
     fasilitasTerdata: number;
     fasilitasSubtext: string;
     volumeTotal: number | null;
+    volumeTotalKg?: number | null;
     volumeGrowthPercent: number | null;
     previousMonthName?: string | null;
     activeMonthIndex?: number;
     volumeUnit: string;
+    volumeUnitM3?: string;
     kepatuhanPemilahan: number | null;
+    kepatuhanTarget?: number;
     kepatuhanDeltaPoin: number;
     sensorCh4OnlineCount: number;
     sensorCh4TotalCount: number;
@@ -70,18 +73,20 @@ export interface GisOverviewApiResponse {
     sensorCh4ProgressPercent?: number;
   };
   komposisiVolume: {
-    organik: { persen: number; volumeM3: number; kgHari?: number };
-    anorganik: { persen: number; volumeM3: number; kgHari?: number };
-    residu: { persen: number; volumeM3: number; kgHari?: number };
+    organik: { persen: number; volumeM3: number; kgHari?: number; totalKg?: number };
+    anorganik: { persen: number; volumeM3: number; kgHari?: number; totalKg?: number };
+    residu: { persen: number; volumeM3: number; kgHari?: number; totalKg?: number };
     totalM3: number | null;
+    totalKg?: number | null;
     totalKgHari?: number;
     hasData?: boolean;
   };
-  trenBulanan: Array<{ bulan: string; volume: number | null }>;
+  trenBulanan: Array<{ bulan: string; volume: number | null; volumeKg?: number | null }>;
   kepatuhanPerKelurahan: Array<{
     nama: string;
     kepatuhan: number | null;
     volume: number | null;
+    volumeKg?: number | null;
     totalFasilitas: number;
     color: string;
     hasData?: boolean;
@@ -110,6 +115,7 @@ export interface GisOverviewApiResponse {
     coordinates: [number, number][];
     kepatuhan: number | null;
     volume: number | null;
+    volumeKg?: number | null;
     totalFasilitas: number;
     color: string;
     hasData?: boolean;

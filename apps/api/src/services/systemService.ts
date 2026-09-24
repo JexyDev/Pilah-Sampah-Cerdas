@@ -6,6 +6,7 @@ import { prisma } from "../lib/prisma.js";
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
+import { redisService } from "./redisService.js";
 export const systemService = {
   /**
    * Get all audit trail logs (SUPER USER only view)
@@ -1173,6 +1174,29 @@ export const systemService = {
         updatedBy: publisherName,
       },
     });
+
+    await prisma.systemConfig.upsert({
+      where: { key: "app_latest_version" },
+      update: { value: targetVersion, updatedBy: publisherName },
+      create: { key: "app_latest_version", value: targetVersion, tipe: "string", updatedBy: publisherName }
+    });
+
+    await prisma.systemConfig.upsert({
+      where: { key: "app_min_required_version" },
+      update: { value: targetVersion, updatedBy: publisherName },
+      create: { key: "app_min_required_version", value: targetVersion, tipe: "string", updatedBy: publisherName }
+    });
+
+    await prisma.systemConfig.upsert({
+      where: { key: "app_update_url" },
+      update: { value: targetUrl, updatedBy: publisherName },
+      create: { key: "app_update_url", value: targetUrl, tipe: "string", updatedBy: publisherName }
+    });
+
+    await redisService.invalidateConfigCache("app_release_info");
+    await redisService.invalidateConfigCache("app_latest_version");
+    await redisService.invalidateConfigCache("app_min_required_version");
+    await redisService.invalidateConfigCache("app_update_url");
 
     return releaseData;
   },
