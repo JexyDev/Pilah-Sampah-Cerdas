@@ -1,3 +1,4 @@
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
@@ -376,6 +377,8 @@ class ApiAuthRepository implements AuthRepository {
         secureStorage.delete(key: AppConfig.userDataKey),
         secureStorage.delete(key: AppConfig.householdIdKey),
       ]);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
     }
   }
 
@@ -1267,6 +1270,12 @@ class ApiAuthRepository implements AuthRepository {
           int.tryParse(userMap['jumlahAnggotaKeluarga']?.toString() ?? '') ??
           int.tryParse(userMap['jumlah_anggota_keluarga']?.toString() ?? '') ??
           1,
+      isKetua:
+          (sp?['isKetua'] == true) ||
+          (userMap['isKetua'] == true) ||
+          (userMap['is_ketua'] == true) ||
+          (userMap['role']?.toString().toUpperCase() == 'KETUA') ||
+          (sp?['isLeader'] == true),
     );
   }
 
@@ -1335,6 +1344,7 @@ class ApiAuthRepository implements AuthRepository {
             dplName: fetched.dplName.isNotEmpty
                 ? fetched.dplName
                 : user.dplName,
+            isKetua: fetched.isKetua || user.isKetua,
           );
         }
       }

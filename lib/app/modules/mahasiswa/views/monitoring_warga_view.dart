@@ -7,7 +7,9 @@ import '../controllers/mahasiswa_controller.dart';
 import '../controllers/aktivasi_warga_controller.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../../data/models/mahasiswa_kkn_models.dart';
+import '../../../data/models/user_entity.dart';
 import '../controllers/kelompok_kkn_controller.dart';
+import '../../../data/providers/repository_providers.dart';
 
 class MonitoringWargaView extends ConsumerStatefulWidget {
   const MonitoringWargaView({super.key});
@@ -42,6 +44,13 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final user = ref.read(authProvider).user;
+
+    if (ref.read(kelompokKknProvider).kelompok == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ref.read(kelompokKknProvider.notifier).fetchKelompok();
+      });
+    }
 
     if (!_hasFetchedAktivasi) {
       _hasFetchedAktivasi = true;
@@ -101,8 +110,6 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
 
     return allWarga.where((w) {
       if (w.role.isNotEmpty && w.role != 'WARGA') return false;
-      // Blokir warga yang baru registrasi awal dan belum mengisi form Gabung Komunitas
-      if (w.lifecycleState.toUpperCase() == 'REGISTERED') return false;
 
       final wRwClean = w.rw
           .replaceAll(RegExp(r'[^\d]'), '')
@@ -200,6 +207,17 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
     final user = ref.watch(authProvider).user;
     final userKec = user?.kecamatan ?? '';
     final kelompokState = ref.watch(kelompokKknProvider);
+    final isKetua = (user?.isKetua == true) ||
+        (kelompokState.kelompok?.members.any(
+              (m) =>
+                  ((m.userId.isNotEmpty && m.userId == user?.id) ||
+                      (user?.nim.isNotEmpty == true && m.nim == user?.nim) ||
+                      (user?.name.isNotEmpty == true &&
+                          m.name.trim().toLowerCase() ==
+                              user?.name.trim().toLowerCase())) &&
+                  m.isLeader,
+            ) ==
+            true);
 
     // Ambil kelurahan & rw dari profil user. Jika kosong (akun bulk-insert),
     // gunakan data kelompok KKN sebagai fallback.
@@ -296,7 +314,9 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
         title: Text(
-          isAktivasiBinMode ? 'Pilih Warga' : 'Monitoring Warga Dampingan',
+          isAktivasiBinMode
+              ? 'Aktivasi Warga Dampingan'
+              : 'Monitoring Warga Dampingan',
           style: const TextStyle(
             fontWeight: FontWeight.w700,
             color: AppColors.textPrimary,
@@ -338,6 +358,8 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
           userKec,
           userKel,
           userRw,
+          isKetua,
+          user,
         ),
       ),
     );
@@ -354,6 +376,8 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
     String userKec,
     String userKel,
     String userRw,
+    bool isKetua,
+    UserEntity? currentUser,
   ) {
     final isLoading = isAktivasiBinMode
         ? (aktivasiState?.isLoading ?? false)
@@ -599,80 +623,216 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                                         color: AppColors.textPrimary,
                                       ),
                                     ),
-                                    if (warga.isActivated) ...[
-                                      const SizedBox(height: 4),
-                                      Builder(
-                                        builder: (_) {
-                                          String mName = warga.pendampingName;
-                                          if (mName.isEmpty &&
-                                              warga.mahasiswaId.isNotEmpty) {
-                                            final mem = kelompokState
-                                                .kelompok
-                                                ?.members
-                                                .where(
-                                                  (m) =>
-                                                      m.userId ==
-                                                      warga.mahasiswaId,
-                                                )
-                                                .firstOrNull;
-                                            if (mem != null) mName = mem.name;
-                                          }
-                                          return Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 3,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: mName.isNotEmpty
-                                                  ? const Color(0xFFEBF5FF)
-                                                  : AppColors.primaryGreen
+                                    const SizedBox(height: 4),
+                                    // ── Status Pendamping KKN (ECO/BERSEKA-MOBILE/2026-09/002) ───────────
+                                    Builder(
+                                      builder: (_) {
+                                        String mName = warga.pendampingKkn?.name ?? warga.pendampingName;
+                                        if (mName.isEmpty &&
+                                            warga.mahasiswaId.isNotEmpty) {
+                                          final mem = kelompokState
+                                              .kelompok
+                                              ?.members
+                                              .where(
+                                                (m) =>
+                                                    m.userId ==
+                                                    warga.mahasiswaId,
+                                              )
+                                              .firstOrNull;
+                                          if (mem != null) mName = mem.name;
+                                        }
+                                        final hasPendamping = mName.trim().isNotEmpty &&
+                                            mName.trim().toLowerCase() != 'null';
+
+                                        return Wrap(
+                                          spacing: 6,
+                                          runSpacing: 4,
+                                          crossAxisAlignment:
+                                              WrapCrossAlignment.center,
+                                          children: [
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 8,
+                                                vertical: 3,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: hasPendamping
+                                                    ? const Color(0xFFEBF5FF)
+                                                    : AppColors.warningOrange
                                                         .withValues(alpha: 0.1),
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                              border: Border.all(
-                                                color: mName.isNotEmpty
-                                                    ? const Color(0xFF90CDF4)
-                                                    : AppColors.primaryGreen
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                                border: Border.all(
+                                                  color: hasPendamping
+                                                      ? const Color(0xFF90CDF4)
+                                                      : AppColors.warningOrange
                                                           .withValues(
                                                             alpha: 0.3,
                                                           ),
+                                                ),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(
+                                                    hasPendamping
+                                                        ? Icons.verified_rounded
+                                                        : Icons
+                                                            .person_outline_rounded,
+                                                    size: 12,
+                                                    color: hasPendamping
+                                                        ? AppColors
+                                                            .primaryBlueDark
+                                                        : AppColors
+                                                            .warningOrange,
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  Flexible(
+                                                    child: Text(
+                                                      hasPendamping
+                                                          ? 'Pendamping: $mName'
+                                                          : 'Belum Ada Pendamping (Mandiri)',
+                                                      style: TextStyle(
+                                                        fontSize: 10,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: hasPendamping
+                                                            ? AppColors
+                                                                .primaryBlueDark
+                                                            : AppColors
+                                                                .warningOrange,
+                                                      ),
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
                                             ),
-                                            child: Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Icon(
-                                                  Icons.verified_rounded,
-                                                  size: 12,
-                                                  color: mName.isNotEmpty
-                                                      ? AppColors
-                                                            .primaryBlueDark
-                                                      : AppColors.primaryGreen,
-                                                ),
-                                                const SizedBox(width: 4),
-                                                Flexible(
-                                                  child: Text(
-                                                    mName.isNotEmpty
-                                                        ? 'Diaktivasi oleh: $mName'
-                                                        : 'Aktivasi Mandiri',
-                                                    style: TextStyle(
-                                                      fontSize: 10,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      color: mName.isNotEmpty
-                                                          ? AppColors
-                                                                .primaryBlueDark
-                                                          : AppColors
-                                                                .primaryGreen,
+                                            InkWell(
+                                              onTap: () {
+                                                if (!isKetua) {
+                                                  ScaffoldMessenger.of(context)
+                                                      .showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(
+                                                        'Akses Terbatas: Hanya Ketua Kelompok KKN yang berwenang mengalihkan mahasiswa pendamping (Akun Anda: ${currentUser?.name ?? "Anggota"}).',
+                                                      ),
+                                                      backgroundColor:
+                                                          AppColors.warningOrange,
                                                     ),
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
+                                                  );
+                                                  return;
+                                                }
+                                                _showReassignBottomSheet(
+                                                  context,
+                                                  ref,
+                                                  warga,
+                                                  kelompokState,
+                                                );
+                                              },
+                                              child: Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                  horizontal: 8,
+                                                  vertical: 3,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: isKetua
+                                                      ? AppColors.primaryGreen
+                                                          .withValues(alpha: 0.1)
+                                                      : Colors.grey.withValues(
+                                                          alpha: 0.1,
+                                                        ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(6),
+                                                  border: Border.all(
+                                                    color: isKetua
+                                                        ? AppColors.primaryGreen
+                                                            .withValues(
+                                                              alpha: 0.4,
+                                                            )
+                                                        : Colors.grey
+                                                            .withValues(
+                                                              alpha: 0.3,
+                                                            ),
                                                   ),
                                                 ),
-                                              ],
+                                                child: Row(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    Icon(
+                                                      isKetua
+                                                          ? Icons
+                                                              .swap_horiz_rounded
+                                                          : Icons.lock_outline,
+                                                      size: 13,
+                                                      color: isKetua
+                                                          ? AppColors
+                                                              .primaryGreen
+                                                          : AppColors
+                                                              .textSecondary,
+                                                    ),
+                                                    const SizedBox(width: 3),
+                                                    Text(
+                                                      'Alihkan',
+                                                      style: TextStyle(
+                                                        fontSize: 11,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: isKetua
+                                                            ? AppColors
+                                                                .primaryGreen
+                                                            : AppColors
+                                                                .textSecondary,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
                                             ),
-                                          );
-                                        },
+                                          ],
+                                        );
+                                      },
+                                    ),
+                                    if (!warga.isActivated) ...[
+                                      const SizedBox(height: 4),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 3,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.warningOrange
+                                              .withValues(alpha: 0.1),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                          border: Border.all(
+                                            color: AppColors.warningOrange
+                                                .withValues(alpha: 0.3),
+                                          ),
+                                        ),
+                                        child: const Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.warning_amber_rounded,
+                                              size: 12,
+                                              color: AppColors.warningOrange,
+                                            ),
+                                            SizedBox(width: 4),
+                                            Text(
+                                              'Belum Aktivasi Tempat Sampah',
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.bold,
+                                                color: AppColors.warningOrange,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ],
                                   ],
@@ -952,6 +1112,50 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                                   ],
                                 ),
                               ),
+                          ] else if (!warga.isActivated) ...[
+                            const SizedBox(height: 12),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 38,
+                              child: OutlinedButton.icon(
+                                onPressed: () {
+                                  Navigator.pushNamed(
+                                    context,
+                                    AppRoutes.aktivasiWarga,
+                                    arguments: {
+                                      'warga': {
+                                        'id': warga.wargaId,
+                                        'name': warga.wargaName,
+                                        'rw': warga.rw,
+                                        'kelurahan': warga.kelurahan,
+                                        'address': warga.address,
+                                      },
+                                    },
+                                  );
+                                },
+                                icon: const Icon(
+                                  Icons.qr_code_scanner_rounded,
+                                  size: 16,
+                                  color: AppColors.primaryGreen,
+                                ),
+                                label: const Text(
+                                  'Aktivasi Tempat Sampah',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                    color: AppColors.primaryGreen,
+                                  ),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  side: const BorderSide(
+                                    color: AppColors.primaryGreen,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                              ),
+                            ),
                           ],
                         ],
                       ),
@@ -1181,6 +1385,393 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
           }),
         ],
       ),
+    );
+  }
+
+  Future<void> _showReassignBottomSheet(
+    BuildContext context,
+    WidgetRef ref,
+    WargaDampingan warga,
+    KelompokKknState kelompokState,
+  ) async {
+    // Pastikan data kelompok tersedia
+    if (kelompokState.kelompok == null) {
+      await ref.read(kelompokKknProvider.notifier).fetchKelompok();
+    }
+    final latestKelompokState = ref.read(kelompokKknProvider);
+    final members = latestKelompokState.kelompok?.members ?? [];
+    final currentStudentId = warga.pendampingKkn?.id ?? warga.mahasiswaId;
+
+    if (!context.mounted) return;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        String? selectedTargetId;
+        String? selectedTargetName;
+        final reasonCtrl = TextEditingController();
+        bool isSubmitting = false;
+        String? errorText;
+
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            return Container(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(ctx).viewInsets.bottom,
+              ),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: AppColors.border,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.swap_horiz_rounded,
+                              color: AppColors.primaryGreen,
+                              size: 22,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Alihkan Pendamping Warga',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                                SizedBox(height: 2),
+                                Text(
+                                  'Otoritas Khusus Ketua Kelompok KKN',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: AppColors.primaryGreen,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.backgroundCanvas,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              warga.wargaName,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '${warga.address.isNotEmpty ? warga.address : "-"}${warga.rw.isNotEmpty ? " • RW ${warga.rw}" : ""}',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Row(
+                              children: [
+                                const Text(
+                                  'Pendamping Saat Ini: ',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    (warga.pendampingKkn?.name.isNotEmpty == true)
+                                        ? warga.pendampingKkn!.name
+                                        : (warga.pendampingName.isNotEmpty
+                                            ? warga.pendampingName
+                                            : 'Belum Ada (Mandiri)'),
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Pilih Mahasiswa Pendamping Baru *',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      if (members.isEmpty)
+                        const Text(
+                          'Tidak ada anggota kelompok yang ditemukan.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.dangerRed,
+                          ),
+                        )
+                      else
+                        DropdownButtonFormField<String>(
+                          initialValue: selectedTargetId,
+                          isExpanded: true,
+                          decoration: InputDecoration(
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide:
+                                  const BorderSide(color: AppColors.border),
+                            ),
+                            hintText: '-- Pilih Rekan Mahasiswa --',
+                            hintStyle: const TextStyle(
+                              fontSize: 13,
+                              color: AppColors.textHint,
+                            ),
+                          ),
+                          items: members.map((m) {
+                            final isCurrent = (m.userId == currentStudentId);
+                            final label =
+                                '${m.name}${m.isLeader ? ' (Ketua)' : ''}${isCurrent ? ' (Saat Ini)' : ''}';
+                            return DropdownMenuItem<String>(
+                              value: m.userId,
+                              enabled: !isCurrent,
+                              child: Text(
+                                label,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: isCurrent
+                                      ? AppColors.textHint
+                                      : AppColors.textPrimary,
+                                  fontWeight: isCurrent
+                                      ? FontWeight.normal
+                                      : FontWeight.w500,
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: isSubmitting
+                              ? null
+                              : (val) {
+                                  setModalState(() {
+                                    selectedTargetId = val;
+                                    final m = members
+                                        .where((x) => x.userId == val)
+                                        .firstOrNull;
+                                    selectedTargetName = m?.name;
+                                    errorText = null;
+                                  });
+                                },
+                        ),
+                      const SizedBox(height: 14),
+                      const Text(
+                        'Alasan Pengalihan (Opsional)',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: reasonCtrl,
+                        maxLines: 2,
+                        enabled: !isSubmitting,
+                        decoration: InputDecoration(
+                          hintText:
+                              'Misal: Pembagian beban wilayah, perputaran binaan',
+                          hintStyle: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textHint,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide:
+                                const BorderSide(color: AppColors.border),
+                          ),
+                        ),
+                      ),
+                      if (errorText != null) ...[
+                        const SizedBox(height: 10),
+                        Text(
+                          errorText!,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.dangerRed,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: isSubmitting
+                                  ? null
+                                  : () => Navigator.pop(sheetContext),
+                              style: OutlinedButton.styleFrom(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: const Text('Batal'),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: isSubmitting
+                                  ? null
+                                  : () async {
+                                      if (selectedTargetId == null ||
+                                          selectedTargetId!.isEmpty) {
+                                        setModalState(() {
+                                          errorText =
+                                              'Silakan pilih mahasiswa tujuan pengalihan.';
+                                        });
+                                        return;
+                                      }
+                                      setModalState(() {
+                                        isSubmitting = true;
+                                        errorText = null;
+                                      });
+                                      try {
+                                        final repo =
+                                            ref.read(kknRepositoryProvider);
+                                        final success =
+                                            await repo.reassignWargaPendamping(
+                                          warga.wargaId,
+                                          targetStudentId: selectedTargetId!,
+                                          reason:
+                                              reasonCtrl.text.trim().isNotEmpty
+                                                  ? reasonCtrl.text.trim()
+                                                  : null,
+                                        );
+                                        if (success) {
+                                          if (sheetContext.mounted) {
+                                            Navigator.pop(sheetContext);
+                                          }
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  'Warga berhasil dialihkan ke ${selectedTargetName ?? 'mahasiswa target'}',
+                                                ),
+                                                backgroundColor:
+                                                    AppColors.success,
+                                              ),
+                                            );
+                                            // Refresh data warga
+                                            await ref
+                                                .read(mahasiswaControllerProvider
+                                                    .notifier)
+                                                .refresh();
+                                          }
+                                        }
+                                      } catch (err) {
+                                        setModalState(() {
+                                          isSubmitting = false;
+                                          errorText = err
+                                              .toString()
+                                              .replaceAll('Exception: ', '');
+                                        });
+                                      }
+                                    },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryGreen,
+                                foregroundColor: Colors.white,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: isSubmitting
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Text(
+                                      'Konfirmasi Alihkan',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }
