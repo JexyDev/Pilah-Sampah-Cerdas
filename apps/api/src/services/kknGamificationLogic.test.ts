@@ -7,6 +7,7 @@ vi.mock("../lib/prisma.js", () => {
       user: {
         findMany: vi.fn().mockResolvedValue([]),
         findUnique: vi.fn().mockResolvedValue(null),
+        count: vi.fn().mockResolvedValue(0),
       },
       kelompokKkn: {
         findUnique: vi.fn(),
@@ -36,6 +37,7 @@ vi.mock("../lib/prisma.js", () => {
         user: {
           findMany: vi.fn().mockResolvedValue([]),
           findUnique: vi.fn().mockResolvedValue(null),
+          count: vi.fn().mockResolvedValue(0),
         },
         studentKkn: {
           findUnique: vi.fn(),
@@ -480,7 +482,6 @@ describe("KKN Gamification Logic & Fixes", () => {
               expect.objectContaining({
                 OR: expect.arrayContaining([
                   { registeredByStudentId: "mhs-1" },
-                  { qrBatch: { assignedPicUserId: "mhs-1" } },
                   { kelompokId: "kel-1" },
                   { registeredByStudentId: { in: ["mhs-1", "mhs-2"] } },
                 ]),

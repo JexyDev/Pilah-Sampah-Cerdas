@@ -29,6 +29,11 @@ router.get("/bins/inactive", superUserController.getInactiveBins);
 router.put("/bins/:id/reactivate", superUserController.reactivateBin);
 router.post("/kkn/handover", superUserController.handoverKkn);
 router.get("/kkn/handover-history", superUserController.getKknHandoverHistory);
+router.patch(
+  "/warga/:wargaId/reassign-pendamping",
+  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH"]),
+  superUserController.reassignWargaPendamping
+);
 router.get("/bins/qr-master", superUserController.getQrMaster);
 router.get("/bins/export-qr-pdf", superUserController.exportQrPdf);
 router.post("/bins/generate-qr", superUserController.generateQrBatch);

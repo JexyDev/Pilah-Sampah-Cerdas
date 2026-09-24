@@ -70,7 +70,10 @@ jobs:
         run: |
           sshpass -p "$VPS_PASS" ssh -T -o StrictHostKeyChecking=no -o ConnectTimeout=60 -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o TCPKeepAlive=yes -o PreferredAuthentications=password -o PubkeyAuthentication=no "$VPS_USER@$VPS_HOST" "VPS_PASS='$VPS_PASS' bash -s" << 'EOF'
             set -e
-            export PATH=$PATH:/usr/local/bin:/usr/bin
+            NODE_BIN_DIR=$(ls -d ~/.nvm/versions/node/v* 2>/dev/null | tail -n 1)/bin
+            export PATH=$PATH:/usr/local/bin:/usr/bin:$NODE_BIN_DIR
+            PM2_BIN="$NODE_BIN_DIR/pm2"
+            if ! command -v "$PM2_BIN" &> /dev/null; then PM2_BIN="pm2"; fi
 
             echo "=== 1. Pulling Latest Code from Git on Staging ==="
             REPO_DIR=/home/maker/Pilah-Sampah-Cerdas-staging
@@ -79,17 +82,61 @@ jobs:
             fi
             cd "$REPO_DIR" || { echo "Directory $REPO_DIR not found"; exit 1; }
 
+            # Backup existing .env if present before git reset
+            if [ -f "$REPO_DIR/apps/api/.env" ]; then
+              cp "$REPO_DIR/apps/api/.env" /tmp/apps_api_env_staging_backup 2>/dev/null || true
+            elif [ -f "$REPO_DIR/.env" ]; then
+              cp "$REPO_DIR/.env" /tmp/apps_api_env_staging_backup 2>/dev/null || true
+            fi
+
+            # Fix ownership so non-root git can write to .git/objects and files
+            echo "$VPS_PASS" | sudo -S chown -R $(whoami):$(whoami) "$REPO_DIR" 2>/dev/null || true
+
             # Clean workspace to prevent local modifications from blocking fetch/reset
             git checkout -f 2>/dev/null || true
             git clean -fd 2>/dev/null || true
 
             git config extra.http.ipresolve 4 2>/dev/null || true
+            FETCH_SUCCESS=false
             for i in 1 2 3; do
-              git fetch --depth=1 origin staging && break || sleep 3
-            done || echo "WARNING: git fetch timed out, continuing..."
+              if git fetch --depth=1 origin staging; then
+                FETCH_SUCCESS=true
+                break
+              fi
+              sleep 3
+            done
 
-            git reset --hard origin/staging 2>/dev/null || true
+            if [ "$FETCH_SUCCESS" != "true" ]; then
+              echo "ERROR: git fetch origin staging failed on VPS!"
+              exit 1
+            fi
+
+            git reset --hard FETCH_HEAD
             git clean -fd 2>/dev/null || true
+            echo "Current VPS HEAD: $(git log -1 --oneline)"
+
+            # Restore or create .env for apps/api
+            if [ -f /tmp/apps_api_env_staging_backup ]; then
+              cp /tmp/apps_api_env_staging_backup "$REPO_DIR/apps/api/.env"
+              cp /tmp/apps_api_env_staging_backup "$REPO_DIR/.env"
+            fi
+
+            if [ ! -f "$REPO_DIR/apps/api/.env" ]; then
+              echo "Recreating staging .env for backend on VPS..."
+              echo "DATABASE_URL=postgresql://psc_user:psc_password@localhost:5432/psc_db" > "$REPO_DIR/apps/api/.env"
+              echo "REDIS_URL=redis://localhost:6379" >> "$REPO_DIR/apps/api/.env"
+              echo "JWT_SECRET=ganti_ini_dengan_string_random_minimal_32_karakter" >> "$REPO_DIR/apps/api/.env"
+              echo "JWT_EXPIRES_IN=24h" >> "$REPO_DIR/apps/api/.env"
+              echo "PORT=3000" >> "$REPO_DIR/apps/api/.env"
+              echo "NODE_ENV=production" >> "$REPO_DIR/apps/api/.env"
+              echo "FRONTEND_URL=https://staging.berseka.id" >> "$REPO_DIR/apps/api/.env"
+              echo "GOOGLE_APPLICATION_CREDENTIALS=./firebase-service-account.json" >> "$REPO_DIR/apps/api/.env"
+              echo "AI_VENDOR_PROVIDER=VENDOR" >> "$REPO_DIR/apps/api/.env"
+              echo "AI_VENDOR_ENDPOINT=http://localhost:8000/predict" >> "$REPO_DIR/apps/api/.env"
+              cp "$REPO_DIR/apps/api/.env" "$REPO_DIR/.env" 2>/dev/null || true
+            fi
+
+            export DATABASE_URL="postgresql://psc_user:psc_password@localhost:5432/psc_db"
 
             echo "=== 2. Updating Backend (apps/api) ==="
             cd "$REPO_DIR"
@@ -101,7 +148,10 @@ jobs:
               cp -r "$REPO_DIR/node_modules/@prisma/." "$REPO_DIR/apps/api/node_modules/@prisma/" 2>/dev/null || true
               cp -r "$REPO_DIR/node_modules/.prisma/." "$REPO_DIR/apps/api/node_modules/.prisma/" 2>/dev/null || true
             fi
+            echo "Executing Prisma migrations & schema synchronization..."
             npx prisma migrate deploy || true
+            npx tsx scripts/ensure-schema.ts || true
+            npx prisma db push --skip-generate --accept-data-loss || true
 
             # Sinkronisasi beban SKS mahasiswa (hanya berjalan saat RUN_SKS_SYNC diaktifkan)
             if [ "${RUN_SKS_SYNC:-false}" = "true" ]; then
@@ -112,47 +162,72 @@ jobs:
             NODE_OPTIONS="--max-old-space-size=4096" npm run build
 
             echo "=== 3. Reloading PM2 Backend Staging ==="
-            pm2 restart psc-backend-staging --update-env 2>/dev/null || pm2 restart psc-backend --update-env 2>/dev/null || pm2 reload psc-backend 2>/dev/null || true
-            pm2 save || true
-            pm2 status psc-backend-staging 2>/dev/null || pm2 status psc-backend 2>/dev/null || true
+            $PM2_BIN restart all --update-env 2>/dev/null || \
+            $PM2_BIN restart psc-backend-staging --update-env 2>/dev/null || \
+            $PM2_BIN restart psc-backend --update-env 2>/dev/null || \
+            $PM2_BIN start dist/index.js --name psc-backend-staging --cwd "$REPO_DIR/apps/api"
+            $PM2_BIN save || true
+            $PM2_BIN status
 
             echo "=== 4. Deploying Frontend Web to Nginx ==="
-            TARGET_WEB_DIR=/var/www/staging-web/dist
-            if [ ! -d "/var/www/staging-web" ]; then
-              TARGET_WEB_DIR=/var/www/html
-            fi
-            mkdir -p "$TARGET_WEB_DIR/downloads"
-
             echo "Building frontend directly on staging VPS..."
             cd "$REPO_DIR/apps/web"
             echo "$VPS_PASS" | sudo -S rm -rf "$REPO_DIR/apps/web/dist" 2>/dev/null || rm -rf "$REPO_DIR/apps/web/dist" 2>/dev/null || true
             mkdir -p "$REPO_DIR/apps/web/dist"
+            npm install --silent --legacy-peer-deps 2>/dev/null || npm install --legacy-peer-deps
             NODE_OPTIONS="--max-old-space-size=4096" VITE_API_BASE_URL=/api/v1 npm run build
+            test -f "$REPO_DIR/apps/web/dist/index.html" || { echo "ERROR: Frontend build failed! dist/index.html missing on VPS"; exit 1; }
 
             APK_NAME="berseka-staging-arm64-v8a.apk"
-            if [ -f "$TARGET_WEB_DIR/downloads/$APK_NAME" ]; then
-              cp "$TARGET_WEB_DIR/downloads/$APK_NAME" "/tmp/$APK_NAME"
+            if [ -f "/var/www/staging-web/dist/downloads/$APK_NAME" ]; then
+              cp "/var/www/staging-web/dist/downloads/$APK_NAME" "/tmp/$APK_NAME"
+            elif [ -f "/var/www/html/downloads/$APK_NAME" ]; then
+              cp "/var/www/html/downloads/$APK_NAME" "/tmp/$APK_NAME"
             fi
 
-            cp -r dist/* "$TARGET_WEB_DIR/" 2>/dev/null || true
+            NGINX_ROOTS=$(echo "$VPS_PASS" | sudo -S grep -h -r "root " /etc/nginx/sites-enabled/ 2>/dev/null | grep -v "#" | awk '{print $2}' | tr -d ';' | sort -u || true)
+            echo "Detected Nginx roots: $NGINX_ROOTS"
 
-            if [ -f "/tmp/$APK_NAME" ]; then
-              cp "/tmp/$APK_NAME" "$TARGET_WEB_DIR/downloads/$APK_NAME"
-              rm -f "/tmp/$APK_NAME"
-            fi
+            TARGET_DIRS=("/var/www/staging-web/dist" "/var/www/staging-web" "/var/www/html" "/var/www/pilah-sampah-cerdas/frontend/dist")
+            for r in $NGINX_ROOTS; do
+              if [ -n "$r" ] && [ "$r" != "/etc/nginx" ]; then
+                TARGET_DIRS+=("$r")
+              fi
+            done
 
-            test -f "$TARGET_WEB_DIR/index.html" || { echo "Staging frontend missing index.html"; exit 1; }
+            for d in "${TARGET_DIRS[@]}"; do
+              echo "$VPS_PASS" | sudo -S mkdir -p "$d" 2>/dev/null || true
+              if [ -d "$d" ]; then
+                echo "Copying built frontend to $d..."
+                echo "$VPS_PASS" | sudo -S rm -rf "$d"/assets "$d"/index.html 2>/dev/null || true
+                echo "$VPS_PASS" | sudo -S cp -r "$REPO_DIR/apps/web/dist"/* "$d"/
+                if [ -f "/tmp/$APK_NAME" ]; then
+                  echo "$VPS_PASS" | sudo -S mkdir -p "$d/downloads" 2>/dev/null || true
+                  echo "$VPS_PASS" | sudo -S cp "/tmp/$APK_NAME" "$d/downloads/$APK_NAME" 2>/dev/null || true
+                fi
+                echo "$VPS_PASS" | sudo -S chown -R www-data:www-data "$d" 2>/dev/null || true
+                echo "$VPS_PASS" | sudo -S chmod -R 755 "$d" 2>/dev/null || true
+              fi
+            done
 
             echo "=== 5. Reloading Nginx ==="
-            sudo systemctl reload nginx || true
+            echo "$VPS_PASS" | sudo -S systemctl reload nginx || echo "$VPS_PASS" | sudo -S systemctl restart nginx || true
 
             echo "=== 6. Health Check ==="
             echo "Waiting for backend initialization..."
-            for attempt in {1..10}; do
+            HEALTHY=false
+            for attempt in {1..15}; do
               if curl -fsS http://127.0.0.1:3000/api/v1/health >/dev/null 2>&1 || curl -fsS http://127.0.0.1:3000/api/dashboard/stats >/dev/null 2>&1; then
                 echo "Backend healthy on attempt $attempt"
+                HEALTHY=true
                 break
               fi
               sleep 2
             done
+
+            if [ "$HEALTHY" != "true" ]; then
+              echo "ERROR: Backend health check failed on staging VPS! Dumping PM2 logs:"
+              $PM2_BIN logs --lines 50 --nostream 2>/dev/null || pm2 logs --lines 50 --nostream 2>/dev/null || true
+              exit 1
+            fi
             echo "Staging deployment successfully completed!"

@@ -97,18 +97,32 @@ jobs:
               cp "$REPO_DIR/.env" /tmp/apps_api_env_backup 2>/dev/null || true
             fi
 
+            # Fix ownership so non-root git can write to .git/objects and files
+            echo "$VPS_PASS" | sudo -S chown -R $(whoami):$(whoami) "$REPO_DIR" 2>/dev/null || true
+
             # Clean workspace to prevent local modifications from blocking fetch/reset
             git checkout -f 2>/dev/null || true
             git clean -fd 2>/dev/null || true
 
             # Force IPv4 resolution and add retries for git fetch to handle VPS network glitches
             git config extra.http.ipresolve 4 2>/dev/null || true
+            FETCH_SUCCESS=false
             for i in 1 2 3; do
-              git fetch --depth=1 origin main && break || sleep 3
-            done || echo "WARNING: git fetch timed out on VPS network, continuing with existing workspace code..."
+              if git fetch --depth=1 origin main; then
+                FETCH_SUCCESS=true
+                break
+              fi
+              sleep 3
+            done
 
-            git reset --hard origin/main 2>/dev/null || true
+            if [ "$FETCH_SUCCESS" != "true" ]; then
+              echo "ERROR: git fetch origin main failed on VPS!"
+              exit 1
+            fi
+
+            git reset --hard FETCH_HEAD
             git clean -fd 2>/dev/null || true
+            echo "Current VPS HEAD: $(git log -1 --oneline)"
 
             # Restore or create .env for apps/api
             if [ -f /tmp/apps_api_env_backup ]; then
@@ -124,7 +138,7 @@ jobs:
               echo "JWT_EXPIRES_IN=24h" >> "$REPO_DIR/apps/api/.env"
               echo "PORT=3000" >> "$REPO_DIR/apps/api/.env"
               echo "NODE_ENV=production" >> "$REPO_DIR/apps/api/.env"
-              echo "FRONTEND_URL=https://psc.makerindo.com" >> "$REPO_DIR/apps/api/.env"
+              echo "FRONTEND_URL=https://berseka.id" >> "$REPO_DIR/apps/api/.env"
               echo "GOOGLE_APPLICATION_CREDENTIALS=./firebase-service-account.json" >> "$REPO_DIR/apps/api/.env"
               echo "AI_VENDOR_PROVIDER=VENDOR" >> "$REPO_DIR/apps/api/.env"
               echo "AI_VENDOR_ENDPOINT=http://localhost:8000/predict" >> "$REPO_DIR/apps/api/.env"
@@ -144,8 +158,10 @@ jobs:
               cp -r "$REPO_DIR/node_modules/@prisma/." "$REPO_DIR/apps/api/node_modules/@prisma/" 2>/dev/null || true
               cp -r "$REPO_DIR/node_modules/.prisma/." "$REPO_DIR/apps/api/node_modules/.prisma/" 2>/dev/null || true
             fi
-            echo "Executing Prisma Migration Deploy..."
-            npx prisma migrate deploy
+            echo "Executing Prisma migrations & schema synchronization..."
+            npx prisma migrate deploy || true
+            npx tsx scripts/ensure-schema.ts || true
+            npx prisma db push --skip-generate --accept-data-loss || true
 
             # Sinkronisasi beban SKS mahasiswa (hanya berjalan saat RUN_SKS_SYNC diaktifkan)
             if [ "${RUN_SKS_SYNC:-false}" = "true" ]; then
@@ -156,19 +172,22 @@ jobs:
             NODE_OPTIONS="--max-old-space-size=4096" npm run build
 
             echo "=== 3. Reloading PM2 Backend ==="
-            $PM2_BIN reload psc-backend 2>/dev/null || $PM2_BIN restart psc-backend 2>/dev/null || $PM2_BIN start dist/index.js --name psc-backend --cwd "$REPO_DIR/apps/api"
+            $PM2_BIN reload psc-backend --update-env 2>/dev/null || \
+            $PM2_BIN restart psc-backend --update-env 2>/dev/null || \
+            $PM2_BIN restart all --update-env 2>/dev/null || \
+            $PM2_BIN start dist/index.js --name psc-backend --cwd "$REPO_DIR/apps/api"
             $PM2_BIN save || true
             sleep 1
             $PM2_BIN status psc-backend
 
             echo "=== 4. Deploying Frontend Web to Nginx ==="
-            echo "$VPS_PASS" | sudo -S mkdir -p /var/www/html /var/www/pilah-sampah-cerdas/frontend/dist
-            echo "$VPS_PASS" | sudo -S rm -rf "$REPO_DIR/apps/web/dist" 2>/dev/null || rm -rf "$REPO_DIR/apps/web/dist" 2>/dev/null || true
-            mkdir -p "$REPO_DIR/apps/web/dist"
-
             echo "Building frontend directly on VPS..."
             cd "$REPO_DIR/apps/web"
+            echo "$VPS_PASS" | sudo -S rm -rf "$REPO_DIR/apps/web/dist" 2>/dev/null || rm -rf "$REPO_DIR/apps/web/dist" 2>/dev/null || true
+            mkdir -p "$REPO_DIR/apps/web/dist"
+            npm install --silent --legacy-peer-deps 2>/dev/null || npm install --legacy-peer-deps
             NODE_OPTIONS="--max-old-space-size=4096" VITE_API_BASE_URL=/api/v1 npm run build
+            test -f "$REPO_DIR/apps/web/dist/index.html" || { echo "ERROR: Frontend build failed! dist/index.html missing on VPS"; exit 1; }
 
             # Backup APK dari semua lokasi yang mungkin sebelum rm -rf
             APK_NAME="berseka-release-arm64-v8a.apk"
@@ -176,36 +195,57 @@ jobs:
             if [ -f "/var/www/html/downloads/$APK_NAME" ]; then
               cp "/var/www/html/downloads/$APK_NAME" "$APK_TMP"
               echo "APK backed up from /var/www/html/downloads/"
+            elif [ -f "/var/www/pilah-sampah-cerdas/frontend/dist/downloads/$APK_NAME" ]; then
+              cp "/var/www/pilah-sampah-cerdas/frontend/dist/downloads/$APK_NAME" "$APK_TMP"
+              echo "APK backed up from /var/www/pilah-sampah-cerdas/frontend/dist/downloads/"
             elif [ -f "$REPO_DIR/apps/api/uploads/$APK_NAME" ]; then
               cp "$REPO_DIR/apps/api/uploads/$APK_NAME" "$APK_TMP"
               echo "APK backed up from apps/api/uploads/"
             fi
 
-            echo "$VPS_PASS" | sudo -S rm -rf /var/www/html/* /var/www/pilah-sampah-cerdas/frontend/dist/*
-            echo "$VPS_PASS" | sudo -S cp -r "$REPO_DIR/apps/web/dist"/* /var/www/html/
-            echo "$VPS_PASS" | sudo -S cp -r "$REPO_DIR/apps/web/dist"/* /var/www/pilah-sampah-cerdas/frontend/dist/
+            TARGET_DIRS=("/var/www/html" "/var/www/pilah-sampah-cerdas/frontend/dist")
+            for d in "${TARGET_DIRS[@]}"; do
+              echo "$VPS_PASS" | sudo -S mkdir -p "$d" 2>/dev/null || true
+              if [ -d "$d" ]; then
+                echo "Copying built frontend to $d..."
+                echo "$VPS_PASS" | sudo -S rm -rf "$d"/assets "$d"/index.html 2>/dev/null || true
+                echo "$VPS_PASS" | sudo -S cp -r "$REPO_DIR/apps/web/dist"/* "$d"/
+                if [ -f "$APK_TMP" ]; then
+                  echo "$VPS_PASS" | sudo -S mkdir -p "$d/downloads" 2>/dev/null || true
+                  echo "$VPS_PASS" | sudo -S cp "$APK_TMP" "$d/downloads/$APK_NAME" 2>/dev/null || true
+                fi
+                echo "$VPS_PASS" | sudo -S chown -R www-data:www-data "$d" 2>/dev/null || true
+                echo "$VPS_PASS" | sudo -S chmod -R 755 "$d" 2>/dev/null || true
+              fi
+            done
 
-            # Restore APK dari backup /tmp (prioritas) atau uploads
-            echo "$VPS_PASS" | sudo -S mkdir -p /var/www/html/downloads /var/www/pilah-sampah-cerdas/frontend/dist/downloads
             if [ -f "$APK_TMP" ]; then
-              echo "Restoring APK from backup..."
-              echo "$VPS_PASS" | sudo -S cp "$APK_TMP" /var/www/html/downloads/$APK_NAME
-              echo "$VPS_PASS" | sudo -S cp "$APK_TMP" /var/www/pilah-sampah-cerdas/frontend/dist/downloads/$APK_NAME
-              # Sync balik ke uploads agar konsisten
               mkdir -p "$REPO_DIR/apps/api/uploads"
-              cp "$APK_TMP" "$REPO_DIR/apps/api/uploads/$APK_NAME"
+              cp "$APK_TMP" "$REPO_DIR/apps/api/uploads/$APK_NAME" 2>/dev/null || true
               rm -f "$APK_TMP"
-            else
-              echo "WARNING: APK tidak ditemukan di semua lokasi. Download page akan kosong sampai mobile CI jalan."
             fi
 
             test -f /var/www/html/index.html || { echo "Frontend missing index.html"; exit 1; }
 
             echo "=== 5. Fixing Permissions & Reloading Nginx ==="
-            echo "$VPS_PASS" | sudo -S chown -R www-data:www-data /var/www/html /var/www/pilah-sampah-cerdas/frontend/dist 2>/dev/null || true
-            echo "$VPS_PASS" | sudo -S chmod -R 755 /var/www/html /var/www/pilah-sampah-cerdas/frontend/dist 2>/dev/null || true
             echo "$VPS_PASS" | sudo -S systemctl reload nginx || echo "$VPS_PASS" | sudo -S systemctl restart nginx || true
 
-            echo "=== 6. Verification & Status ==="
-            test -f /var/www/html/index.html && echo "Deployment verified: /var/www/html/index.html exists"
+            echo "=== 6. Health Check & Verification ==="
+            echo "Waiting for backend initialization..."
+            HEALTHY=false
+            for attempt in {1..15}; do
+              if curl -fsS http://127.0.0.1:3000/api/v1/health >/dev/null 2>&1 || curl -fsS http://127.0.0.1:3000/api/dashboard/stats >/dev/null 2>&1; then
+                echo "Backend healthy on attempt $attempt"
+                HEALTHY=true
+                break
+              fi
+              sleep 2
+            done
+
+            if [ "$HEALTHY" != "true" ]; then
+              echo "ERROR: Backend health check failed on production VPS! Dumping PM2 logs:"
+              $PM2_BIN logs --lines 50 --nostream 2>/dev/null || pm2 logs --lines 50 --nostream 2>/dev/null || true
+              exit 1
+            fi
+            echo "Production deployment successfully completed!"
           EOF

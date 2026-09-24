@@ -207,6 +207,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
   const [loadingUni, setLoadingUni] = useState(false);
   const [newUniName, setNewUniName] = useState("");
   const [deleteUniId, setDeleteUniId] = useState<string | null>(null);
+  const [deleteUniName, setDeleteUniName] = useState<string | null>(null);
 
   // Fetch groups
   const fetchKelompok = async () => {
@@ -575,8 +576,9 @@ export const ManajemenEkosistemKkn: React.FC = () => {
     }
   };
 
-  const handleRemoveUni = (id: string) => {
+  const handleRemoveUni = (id: string, name: string) => {
     setDeleteUniId(id);
+    setDeleteUniName(name);
   };
 
   const handleConfirmRemoveUni = async () => {
@@ -1188,12 +1190,12 @@ export const ManajemenEkosistemKkn: React.FC = () => {
             <div className="space-y-3">
               <h2 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Daftar Universitas Mitra</h2>
               <div className="divide-y divide-slate-100 dark:divide-slate-800 border border-slate-100 dark:border-slate-800 rounded-xl overflow-hidden bg-slate-50/20 dark:bg-slate-800/20">
-                {uniList.map((uni) => (
-                  <div key={uni} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
-                    <span className="font-semibold text-slate-700 dark:text-slate-300 text-sm">{uni}</span>
+                {uniList.map((uni: any) => (
+                  <div key={uni.id || uni.name || uni} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
+                    <span className="font-semibold text-slate-700 dark:text-slate-300 text-sm">{uni.name || uni}</span>
                     {!isReadOnly && (
                       <button
-                        onClick={() => handleRemoveUni(uni)}
+                        onClick={() => handleRemoveUni(uni.id, uni.name)}
                         className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
                       >
                         <Trash2 size={16} />
