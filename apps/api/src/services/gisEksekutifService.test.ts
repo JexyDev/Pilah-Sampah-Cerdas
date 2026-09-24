@@ -106,9 +106,14 @@ describe("gisEksekutifService Real DB Operational Tests (Zero Baseline / 100% Re
 
     expect(expectedSum).toBe(0.35);
     expect(result.komposisiVolume.totalM3).toBe(expectedSum);
+    expect(result.komposisiVolume.totalKg).toBe(350);
     expect(result.kpi.volumeTotal).toBe(expectedSum);
+    expect(result.kpi.volumeTotalKg).toBe(350);
     expect(result.kpi.kepatuhanSubtext).toBe("Sampel selama giat KKN");
     expect(result.kpi.kepatuhanPemilahan).toBe(100); // 2 dari 2 ACCEPTED = 100%
+    expect(result.kpi.kepatuhanTarget).toBe(80);
+    expect(result.kepatuhanPerKelurahan[0].color).toBe("#00a86b"); // 100% >= 80% -> Hijau
+    expect(result.kepatuhanPerKelurahan[0].volumeKg).toBe(350);
   });
 
   it("should normalize shorthand facility type 'maggot' to valid Prisma enum 'rumah_maggot'", async () => {
@@ -343,5 +348,69 @@ describe("gisEksekutifService Real DB Operational Tests (Zero Baseline / 100% Re
 
     // Fasilitas fisik tetap terdata
     expect(resOkt.kpi.fasilitasTerdata).toBe(1);
+  });
+
+  it("should categorize compliance colors correctly: >= 80% green, 50-79% amber, < 50% red", async () => {
+    (prisma.kelurahan.findMany as any).mockResolvedValue([
+      { id: "kel-1", name: "Dago", code: "327301", rws: [{ id: 1, name: "RW 01" }] },
+      { id: "kel-2", name: "Sekeloa", code: "327302", rws: [{ id: 2, name: "RW 01" }] },
+      { id: "kel-3", name: "Cipaganti", code: "327303", rws: [{ id: 3, name: "RW 01" }] },
+    ]);
+    (prisma.rw.findMany as any).mockResolvedValue([]);
+    (prisma.facility.findMany as any).mockResolvedValue([]);
+
+    // Dago: 80% (8 accepted, 2 rejected) -> Hijau (#00a86b)
+    // Sekeloa: 60% (6 accepted, 4 rejected) -> Amber (#f59e0b)
+    // Cipaganti: 40% (4 accepted, 6 rejected) -> Merah (#ef4444)
+    const deposits: any[] = [];
+    for (let i = 0; i < 10; i++) {
+      deposits.push({
+        id: `so-dago-${i}`,
+        status: i < 8 ? "ACCEPTED" : "REJECTED",
+        berat: 10,
+        hasilKlasifikasiAi: "organik",
+        kategoriAktual: "organik",
+        createdAt: new Date("2026-09-15T10:00:00.000Z"),
+        warga: { rw: { kelurahanId: "kel-1", kelurahan: { name: "Dago" } } },
+        bin: null,
+      });
+      deposits.push({
+        id: `so-sekeloa-${i}`,
+        status: i < 6 ? "ACCEPTED" : "REJECTED",
+        berat: 10,
+        hasilKlasifikasiAi: "organik",
+        kategoriAktual: "organik",
+        createdAt: new Date("2026-09-15T10:00:00.000Z"),
+        warga: { rw: { kelurahanId: "kel-2", kelurahan: { name: "Sekeloa" } } },
+        bin: null,
+      });
+      deposits.push({
+        id: `so-cipaganti-${i}`,
+        status: i < 4 ? "ACCEPTED" : "REJECTED",
+        berat: 10,
+        hasilKlasifikasiAi: "organik",
+        kategoriAktual: "organik",
+        createdAt: new Date("2026-09-15T10:00:00.000Z"),
+        warga: { rw: { kelurahanId: "kel-3", kelurahan: { name: "Cipaganti" } } },
+        bin: null,
+      });
+    }
+
+    (prisma.setoranOtomatis.findMany as any).mockResolvedValue(deposits);
+
+    const res = await gisEksekutifService.getOverview({ periode: "September 2026" });
+
+    const dago = res.kepatuhanPerKelurahan.find((k) => k.nama === "Dago");
+    const sekeloa = res.kepatuhanPerKelurahan.find((k) => k.nama === "Sekeloa");
+    const cipaganti = res.kepatuhanPerKelurahan.find((k) => k.nama === "Cipaganti");
+
+    expect(dago?.kepatuhan).toBe(80);
+    expect(dago?.color).toBe("#00a86b"); // >= 80% -> Hijau
+
+    expect(sekeloa?.kepatuhan).toBe(60);
+    expect(sekeloa?.color).toBe("#f59e0b"); // 50-79% -> Amber
+
+    expect(cipaganti?.kepatuhan).toBe(40);
+    expect(cipaganti?.color).toBe("#ef4444"); // < 50% -> Merah
   });
 });
