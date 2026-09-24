@@ -103,7 +103,34 @@ export class UserRepository {
         petugasProfile: true,
         bins: {
           include: {
-            registeredByStudent: true,
+            registeredByStudent: {
+              include: {
+                studentProfile: {
+                  include: {
+                    kelompok: true,
+                  },
+                },
+              },
+            },
+            kelompok: true,
+          },
+        },
+        binOwnerships: {
+          include: {
+            bin: {
+              include: {
+                registeredByStudent: {
+                  include: {
+                    studentProfile: {
+                      include: {
+                        kelompok: true,
+                      },
+                    },
+                  },
+                },
+                kelompok: true,
+              },
+            },
           },
         },
       },

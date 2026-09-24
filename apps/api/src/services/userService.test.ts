@@ -138,6 +138,7 @@ describe("UserService", () => {
         petugasProfile: null,
         namaAsli: null,
         namaDisplay: null,
+        pendampingKkn: null,
         isTestAccount: false,
       });
     });

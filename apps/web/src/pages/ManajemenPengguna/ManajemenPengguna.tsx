@@ -1,4 +1,4 @@
-import { Search, Loader2, EyeOff, Eye, UserPlus, Upload, User, Users, Trash2, X, AlertTriangle, Pencil, Phone, CheckCircle, Shield, Lock, Info, ChevronDown, MapPin } from "lucide-react";
+import { Search, Loader2, EyeOff, Eye, UserPlus, Upload, User, Users, Trash2, X, AlertTriangle, Pencil, Phone, CheckCircle, Shield, Lock, Info, ChevronDown, MapPin, ArrowRightLeft, GraduationCap, UserCheck } from "lucide-react";
 /**
  * Project: BERSEKA
  * Developed by: PT Makerindo
@@ -139,6 +139,9 @@ const normalizeRoleFromUrl = (param: string | null): string => {
 const ManajemenPengguna: React.FC = () => {
   const { user, updateUser: updateStoreUser } = useAuthStore();
   const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "RT", "PETUGAS_RESIDU", "MAHASISWA_KKN", "WARGA"].includes(user?.peran || "");
+  const canReassign = ["DEVELOPER", "SUPER_USER", "ADMIN_DLH"].includes(
+    String(user?.peran || user?.role || "").toUpperCase()
+  );
   const [searchParams] = useSearchParams();
 
   const allowedRoleTabs = useMemo(() => {
@@ -310,6 +313,17 @@ const ManajemenPengguna: React.FC = () => {
   // Delete Modal State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<any>(null);
+
+  // Reassign Modal State (ENG-MEMO/KKN-REASSIGN/2026-09/006-REV1)
+  const [isReassignModalOpen, setIsReassignModalOpen] = useState(false);
+  const [wargaToReassign, setWargaToReassign] = useState<any>(null);
+  const [reassignTargetStudentId, setReassignTargetStudentId] = useState("");
+  const [reassignReason, setReassignReason] = useState("");
+  const [reassignTicketNumber, setReassignTicketNumber] = useState("");
+  const [studentsList, setStudentsList] = useState<any[]>([]);
+  const [loadingStudents, setLoadingStudents] = useState(false);
+  const [isSubmittingReassign, setIsSubmittingReassign] = useState(false);
+  const [studentSearchFilter, setStudentSearchFilter] = useState("");
 
   const fetchUsers = async () => {
     try {
@@ -915,6 +929,83 @@ const ManajemenPengguna: React.FC = () => {
     setIsDeleteModalOpen(false);
     setUserToDelete(null);
   };
+
+  // Reassign Modal Handlers (ENG-MEMO/KKN-REASSIGN/2026-09/006-REV1)
+  const fetchStudents = async () => {
+    try {
+      setLoadingStudents(true);
+      const res = await api.get("/users", { params: { roleName: "MAHASISWA_KKN" } });
+      const list = res.data?.data || [];
+      setStudentsList(list);
+    } catch (err: any) {
+      console.error("[ManajemenPengguna] fetchStudents error:", err);
+      showToast.error("Gagal memuat daftar mahasiswa KKN.");
+    } finally {
+      setLoadingStudents(false);
+    }
+  };
+
+  const handleOpenReassignModal = (warga: any) => {
+    setWargaToReassign(warga);
+    setReassignTargetStudentId("");
+    setReassignReason("");
+    setReassignTicketNumber("");
+    setStudentSearchFilter("");
+    setIsReassignModalOpen(true);
+    fetchStudents();
+  };
+
+  const handleCloseReassignModal = () => {
+    setIsReassignModalOpen(false);
+    setWargaToReassign(null);
+    setReassignTargetStudentId("");
+    setReassignReason("");
+    setReassignTicketNumber("");
+    setStudentSearchFilter("");
+  };
+
+  const handleConfirmReassign = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!wargaToReassign?.id) return;
+    if (!reassignTargetStudentId) {
+      showToast.error("Silakan pilih mahasiswa KKN tujuan.");
+      return;
+    }
+
+    try {
+      setIsSubmittingReassign(true);
+      const res = await api.patch(`/super-user/warga/${wargaToReassign.id}/reassign-pendamping`, {
+        targetStudentId: reassignTargetStudentId,
+        reason: reassignReason.trim() || undefined,
+        ticketNumber: reassignTicketNumber.trim() || undefined,
+      });
+
+      if (res.data?.success) {
+        showToast.success(res.data.message || "Mahasiswa pendamping berhasil dialihkan.");
+        handleCloseReassignModal();
+        fetchUsers();
+      } else {
+        showToast.error(res.data?.message || "Gagal mengalihkan mahasiswa pendamping.");
+      }
+    } catch (err: any) {
+      console.error("[ManajemenPengguna] reassign error:", err);
+      const msg = err?.response?.data?.message || err.message || "Terjadi kesalahan saat mengalihkan pendamping.";
+      showToast.error(msg);
+    } finally {
+      setIsSubmittingReassign(false);
+    }
+  };
+
+  const filteredStudents = useMemo(() => {
+    if (!studentSearchFilter.trim()) return studentsList;
+    const q = studentSearchFilter.trim().toLowerCase();
+    return studentsList.filter((s: any) => {
+      const name = (s.name || "").toLowerCase();
+      const nim = (s.nim || s.studentProfile?.nim || "").toLowerCase();
+      const kelompok = (s.studentProfile?.kelompok?.name || s.studentProfile?.kelompok?.nama || "").toLowerCase();
+      return name.includes(q) || nim.includes(q) || kelompok.includes(q);
+    });
+  }, [studentsList, studentSearchFilter]);
 
   // Kelurahan filtered users
   const filteredUsers = useMemo(() => {
@@ -1545,6 +1636,20 @@ const ManajemenPengguna: React.FC = () => {
                               <span className="font-extrabold">{u.namaAsli || u.petugasProfile?.nama}</span>
                             </span>
                           )}
+                          {(selectedRole === "WARGA" || u.role === "WARGA") && (
+                            <div className="mt-1">
+                              {u.pendampingKkn ? (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded-md border border-blue-200 dark:border-blue-800/80 shadow-2xs">
+                                  <GraduationCap size={11} className="text-blue-500 shrink-0" />
+                                  <span>Pendamping: {u.pendampingKkn.name}</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-400 dark:text-slate-500 bg-slate-100/70 dark:bg-slate-800/50 px-2 py-0.5 rounded-md border border-slate-200/60 dark:border-slate-700/50">
+                                  <span>Tanpa Pendamping</span>
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </td>
@@ -1787,6 +1892,16 @@ const ManajemenPengguna: React.FC = () => {
                     {!isReadOnly && (
                       <td className="py-3 px-4 text-center">
                         <div className="flex justify-center gap-1.5">
+                          {/* Reassign Pendamping (Warga only) */}
+                          {canReassign && (u.role === "WARGA" || selectedRole === "WARGA") && (
+                            <button
+                              onClick={() => handleOpenReassignModal(u)}
+                              className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 hover:bg-blue-100/80 dark:hover:bg-blue-900/60 border border-blue-200/80 dark:border-blue-900/40 transition-all flex items-center justify-center cursor-pointer active:scale-95 shadow-2xs"
+                              title="Ganti Mahasiswa Pendamping KKN"
+                            >
+                              <ArrowRightLeft size={14} />
+                            </button>
+                          )}
                           {(() => {
                             const isDevTarget = (u.role || u.roleName || u.role?.name) === "DEVELOPER";
                             const canEdit =
@@ -2006,11 +2121,43 @@ const ManajemenPengguna: React.FC = () => {
                       <span className="font-semibold block text-slate-800 dark:text-slate-100 leading-snug">{u.address}</span>
                     </div>
                   )}
+
+                  {(u.role === "WARGA" || selectedRole === "WARGA") && (
+                    <div className="col-span-2">
+                      <span className="font-extrabold text-slate-400 uppercase tracking-wider block text-[9px] mb-0.5">
+                        Mahasiswa Pendamping
+                      </span>
+                      {u.pendampingKkn ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900/40 text-[11px] font-bold">
+                          <GraduationCap size={13} className="text-blue-500" />
+                          <span>{u.pendampingKkn.name}</span>
+                          {u.pendampingKkn.kelompokName && (
+                            <span className="text-[9px] font-semibold text-blue-600/80 dark:text-blue-400/80">
+                              • {u.pendampingKkn.kelompokName}
+                            </span>
+                          )}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 dark:text-slate-500 font-medium text-xs">
+                          Belum Ada (Pendaftaran Mandiri)
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Mobile Action Buttons */}
-                {!isReadOnly && (canEdit || canDelete) && (
+                {!isReadOnly && (canEdit || canDelete || (canReassign && (u.role === "WARGA" || selectedRole === "WARGA"))) && (
                   <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                    {canReassign && (u.role === "WARGA" || selectedRole === "WARGA") && (
+                      <button
+                        onClick={() => handleOpenReassignModal(u)}
+                        className="px-3 py-2 bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 hover:bg-blue-100 border border-blue-200/80 dark:border-blue-900/40 text-xs font-black rounded-xl flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all shadow-2xs"
+                      >
+                        <ArrowRightLeft size={13} />
+                        <span>Ganti Pendamping</span>
+                      </button>
+                    )}
                     {canEdit && (
                       <button
                         onClick={() => handleOpenEditModal(u)}
@@ -2038,1035 +2185,1085 @@ const ManajemenPengguna: React.FC = () => {
       </div>
 
       {/* Modal Tambah/Edit — Standar ISO 27001 */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-sm p-4" onClick={handleCloseModal}>
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
-            {/* Modal Header */}
-            <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-slate-50 to-white dark:from-slate-800/80 dark:to-slate-900">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                    modalType === "add"
-                      ? "bg-[#009966]/10 dark:bg-emerald-950/50 text-[#009966] dark:text-emerald-400 border border-[#009966]/20 dark:border-emerald-800/60"
-                      : "bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/60"
-                  }`}>
-                    {modalType === "add" ? <UserPlus size={20} /> : <Pencil size={20} />}
-                  </div>
-                  <div>
-                    <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-100">
-                      {modalType === "add" ? "Tambah Pengguna Baru" : "Edit Data Pengguna"}
-                    </h3>
-                    <p className="text-[11px] text-slate-400 dark:text-slate-400 mt-0.5">
-                      {modalType === "add" ? "Isi formulir untuk mendaftarkan pengguna baru ke sistem" : `Perbarui informasi akun ${selectedUser?.name || ""}`}
-                    </p>
-                  </div>
-                </div>
-                <button type="button" onClick={handleCloseModal} className="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 flex items-center justify-center transition-colors cursor-pointer">
-                  <X size={18} />
-                </button>
-              </div>
+      {isModalOpen && (() => {
+        const hasRoleSpecificFields = ["DPL", "MPL", "MAHASISWA_KKN", "PEMIMPIN", "PANITIA_TASKFORCE", "WARGA", "RW", "PETUGAS_RESIDU", "LURAH", "ADMIN_DLH", "CAMAT"].includes(formData.roleName);
+
+        const renderSecurityAndStatusSection = () => (
+          <div>
+            <div className="flex items-center gap-2 mb-2.5">
+              <Shield size={14} className="text-slate-400 dark:text-slate-500" />
+              <span className="text-[11px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider">Keamanan & Status Akun</span>
             </div>
-
-            <form onSubmit={handleSubmit} className="overflow-y-auto max-h-[75vh]">
-              <div className="p-6 space-y-5">
-                {/* ── Section: Informasi Dasar ── */}
+            <div className="space-y-3">
+              {/* Password & Confirm */}
+              <div className={modalType === "add" || formData.password ? "grid grid-cols-1 sm:grid-cols-2 gap-3" : ""}>
                 <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <User size={14} className="text-slate-400 dark:text-slate-500" />
-                    <span className="text-[11px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider">Informasi Dasar</span>
-                  </div>
-                  <div className="space-y-3.5">
-                    {/* Foto Profil Input & Live Preview */}
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Foto Profil</label>
-                      <div className="flex items-center gap-3.5 bg-slate-50/90 dark:bg-slate-800/90 dark:bg-slate-800/90 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-2xs">
-                        <div className="w-13 h-13 rounded-full bg-[#009966] text-white font-black text-xs flex items-center justify-center shrink-0 overflow-hidden border-2 border-white dark:border-slate-700 shadow-md font-sans tracking-wider">
-                          {formData.fotoProfil ? (
-                            <img
-                              src={getProfilePhotoUrl(formData.fotoProfil, formData.name)}
-                              alt="Preview Foto"
-                              className="w-full h-full object-cover"
-                              onError={(e) => handleAvatarError(e, formData.name)}
-                            />
-                          ) : (
-                            <span>{getNameInitials(formData.name)}</span>
-                          )}
-                        </div>
-                        <div className="flex-1 space-y-1.5">
-                          <div className="flex gap-2">
-                            <input
-                              type="text"
-                              value={formData.fotoProfil}
-                              onChange={(e) => setFormData({ ...formData, fotoProfil: e.target.value })}
-                              placeholder="URL Foto (https://...) atau Unggah berkas"
-                              className="flex-1 h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-[#009966] focus:ring-1 focus:ring-[#009966] outline-none"
-                            />
-                            <label className="h-9 px-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-[#009966] dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80 text-xs font-extrabold flex items-center gap-1.5 cursor-pointer transition-colors shrink-0 shadow-2xs">
-                              <Upload size={13} />
-                              <span>Unggah</span>
-                              <input
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0];
-                                  if (file) {
-                                    const reader = new FileReader();
-                                    reader.onloadend = () => {
-                                      setFormData({ ...formData, fotoProfil: reader.result as string });
-                                    };
-                                    reader.readAsDataURL(file);
-                                  }
-                                }}
-                              />
-                            </label>
-                            {formData.fotoProfil && (
-                              <button
-                                type="button"
-                                onClick={() => setFormData({ ...formData, fotoProfil: "" })}
-                                className="h-9 px-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-300 border border-rose-200 dark:border-rose-800/80 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-xs font-bold transition-colors cursor-pointer"
-                                title="Reset Foto"
-                              >
-                                <X size={14} />
-                              </button>
-                            )}
-                          </div>
-                          <p className="text-[10px] text-slate-400 dark:text-slate-400 font-medium">
-                            {formData.fotoProfil ? "Preview foto profil aktif" : `Default foto otomatis inisial nama: (${getNameInitials(formData.name)})`}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
-                        {formData.roleName === "PETUGAS_RESIDU" ? "Nama Akun / Petugas Wilayah" : "Nama Lengkap"} <span className="text-rose-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={formData.name}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setFormData((prev) => ({
-                            ...prev,
-                            name: val,
-                            namaDisplay: prev.roleName === "PETUGAS_RESIDU" && (!prev.namaDisplay || prev.namaDisplay === prev.name) ? val : prev.namaDisplay,
-                          }));
-                        }}
-                        placeholder={formData.roleName === "PETUGAS_RESIDU" ? "Contoh: Petugas Sadang Serang 01" : "Masukkan nama lengkap"}
-                        className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none"
-                      />
-                      {formData.roleName === "PETUGAS_RESIDU" && (
-                        <p className="text-[10px] text-slate-400 mt-1">
-                          Nama ini akan menjadi identitas utama di sistem, akun login, dan dasbor monitoring wilayah.
-                        </p>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">No. Telepon <span className="text-rose-500">*</span></label>
-                      <input
-                        type="text"
-                        required
-                        inputMode="tel"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/[^\d+]/g, "") })}
-                        onBlur={() => {
-                          if (formData.phone) {
-                            setFormData((prev) => ({ ...prev, phone: formatPhone(prev.phone) }));
-                          }
-                        }}
-                        placeholder="+628xxxxxxxxxx"
-                        className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-mono font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Peran Sistem</label>
-                      <input type="text" disabled value={ROLE_LABEL_MAP[formData.roleName] || formData.roleName} className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 text-xs font-bold cursor-not-allowed" />
-                    </div>
+                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                    Kata Sandi {modalType === "add" && <span className="text-rose-500">*</span>}
+                    {modalType === "edit" && <span className="text-[10px] text-slate-400 dark:text-slate-400 font-normal ml-1">(Kosongkan jika tetap)</span>}
+                  </label>
+                  <div className="relative">
+                    <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+                    <input type={showPassword ? "text" : "password"} autoComplete="new-password" required={modalType === "add"} value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} placeholder="Minimal 8 karakter" className="w-full h-9.5 pl-10 pr-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer">
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
                   </div>
                 </div>
 
-                {/* ── Section: Data Khusus Peran ── */}
-                {(["DPL", "MPL", "MAHASISWA_KKN", "PEMIMPIN", "PANITIA_TASKFORCE", "WARGA", "RW", "PETUGAS_RESIDU", "LURAH", "ADMIN_DLH", "CAMAT"].includes(formData.roleName)) && (
+                {(modalType === "add" || formData.password) && (
                   <div>
-                    <div className="flex items-center gap-2 mb-3">
-                      <Info size={14} className="text-slate-400 dark:text-slate-500" />
-                      <span className="text-[11px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider">Data Khusus Peran</span>
+                    <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                      Konfirmasi Kata Sandi <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+                      <input type={showConfirmPassword ? "text" : "password"} required={modalType === "add" || !!formData.password} value={formData.confirmPassword} onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })} placeholder="Ulangi kata sandi" className={`w-full h-9.5 pl-10 pr-10 rounded-xl border dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold transition-all outline-none ${
+                        formData.confirmPassword
+                          ? (passwordRules?.matches ? "border-emerald-300 dark:border-emerald-700 focus:border-emerald-400 focus:ring-emerald-100 dark:focus:ring-emerald-950" : "border-rose-300 dark:border-rose-700 focus:border-rose-400 focus:ring-rose-100 dark:focus:ring-rose-950")
+                          : "border-slate-200 dark:border-slate-700 focus:border-[#009966] focus:ring-[#009966]/10"
+                      }`} />
+                      <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer">
+                        {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
                     </div>
-                    <div className="space-y-3">
-                      {/* DPL Fields */}
-                      {formData.roleName === "DPL" && (
-                        <>
-                          <div>
-                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">NIP</label>
-                            <input type="text" value={formData.nip} onChange={(e) => setFormData({ ...formData, nip: e.target.value })} placeholder="4127.34.02.006" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-mono font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
-                          </div>
-                          <div className="grid grid-cols-2 gap-3">
-                            <div>
-                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Mengajar Jenjang</label>
-                              <select value={formData.jenjangPendidikan || "S1"} onChange={(e) => setFormData({...formData, jenjangPendidikan: e.target.value})} className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none">
-                                <option value="S1">S1 (Sarjana)</option>
-                                <option value="D3">D3 (Diploma Tiga)</option>
-                              </select>
-                            </div>
-                            <div>
-                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Program Studi</label>
-                              <input type="text" value={formData.programStudi || formData.prodi} onChange={(e) => setFormData({ ...formData, programStudi: e.target.value, prodi: e.target.value })} placeholder="Manajemen" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
-                            </div>
-                          </div>
-                          <div>
-                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Pembimbing Kelompok</label>
-                            <select
-                              value={formData.dplKelompokIds?.[0] || ""}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                setFormData({ ...formData, dplKelompokIds: val ? [val] : [] });
-                              }}
-                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
-                            >
-                               <option value="">-- Tidak Mendampingi Kelompok --</option>
-                              {kelompokList.map((k: any) => (
-                                <option key={k.id} value={k.id}>
-                                  {cleanKknDisplayName(k.name)}
-                                </option>
-                              ))}
-                            </select>
-                            <p className="text-[10px] text-slate-400 dark:text-slate-400 mt-1">Dipilih dari 32 kelompok KKN terintegrasi secara real-time dari database.</p>
-                          </div>
-                        </>
-                      )}
-
-                      {/* MPL Fields */}
-                      {formData.roleName === "MPL" && (
-                        <div>
-                          <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
-                            Kelurahan Penugasan <span className="text-rose-500">*</span>
-                          </label>
-                          <select
-                            value={modalKelurahan}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              setModalKelurahan(val);
-                              setFormData((prev) => ({
-                                ...prev,
-                                address: val ? `Kel. ${val}` : prev.address,
-                                wilayah: val ? `Kel. ${val}` : prev.wilayah,
-                              }));
-                            }}
-                            className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
-                          >
-                            <option value="">-- Pilih Kelurahan --</option>
-                            {kelurahanList.map((kel: any) => {
-                              const kelName = kel.name || kel.nama || "";
-                              const cleanName = getCleanKelName(kelName);
-                              return (
-                                <option key={kel.id || cleanName} value={cleanName}>
-                                  Kel. {cleanName}
-                                </option>
-                              );
-                            })}
-                          </select>
-                          <p className="text-[10px] text-slate-400 dark:text-slate-400 mt-1">
-                            MPL bertugas membimbing dan memberikan evaluasi lapangan bagi mahasiswa KKN di wilayah Kelurahan terkait.
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Mahasiswa Fields */}
-                      {formData.roleName === "MAHASISWA_KKN" && (
-                        <>
-                          <div className="grid grid-cols-2 gap-3">
-                            <div>
-                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">NIM</label>
-                              <input type="text" inputMode="numeric" pattern="[0-9]*" value={formData.nim} onChange={(e) => setFormData({ ...formData, nim: e.target.value.replace(/\D/g, "") })} placeholder="10123047" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-mono font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
-                            </div>
-                            <div>
-                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Kelompok KKN</label>
-                              <select
-                                value={formData.dplKelompokIds?.[0] || ""}
-                                onChange={(e) => {
-                                  const val = e.target.value;
-                                  let autoDplId = "";
-                                  let autoKelName = "";
-                                  if (val) {
-                                    const foundKel = kelompokList.find((k: any) => k.id === val);
-                                    autoDplId = foundKel?.dplId || foundKel?.dpl?.id || "";
-                                    if (foundKel?.kelurahan || foundKel?.name) {
-                                      autoKelName = foundKel.kelurahan || cleanKelurahanName(foundKel.name);
-                                    }
-                                  }
-                                  if (autoKelName) setModalKelurahan(getCleanKelName(autoKelName));
-                                  setFormData({
-                                    ...formData,
-                                    dplKelompokIds: val ? [val] : [],
-                                    dplId: autoDplId,
-                                  });
-                                }}
-                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
-                              >
-                                <option value="">-- Tanpa Kelompok --</option>
-                                {kelompokList.map((k: any) => (
-                                  <option key={k.id} value={k.id}>
-                                    {cleanKknDisplayName(k.name)}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                          </div>
-
-                          <div>
-                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Dosen Pembimbing Lapangan</label>
-                            <input
-                              type="text"
-                              readOnly
-                              disabled
-                              value={
-                                (() => {
-                                  const selectedKelId = formData.dplKelompokIds?.[0];
-                                  if (!selectedKelId) return "Belum Ada Dosen Pembimbing";
-                                  const foundKel = kelompokList.find((k: any) => k.id === selectedKelId);
-                                  const dplObj = foundKel?.dpl || dplList.find((d: any) => d.id === (foundKel?.dplId || formData.dplId));
-                                  return dplObj?.name || foundKel?.dplName || foundKel?.dplNamaMentah || "Belum Ada Dosen Pembimbing";
-                                })()
-                              }
-                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100/80 dark:bg-slate-800/80 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-not-allowed outline-none select-none opacity-90"
-                            />
-                            <p className="text-[10px] text-slate-400 dark:text-slate-400 mt-1">Otomatis terhubung secara dinamis mengikuti DPL yang bertugas di kelompok KKN yang dipilih.</p>
-                          </div>
-
-                          <div className="grid grid-cols-3 gap-3">
-                            <div>
-                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Jenjang Pendidikan</label>
-                              <select value={formData.jenjangPendidikan} onChange={(e) => setFormData({...formData, jenjangPendidikan: e.target.value})} className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none">
-                                <option value="S1">S1 (Sarjana)</option>
-                                <option value="S2">S2 (Magister)</option>
-                                <option value="S3">S3 (Doktor)</option>
-                                <option value="D3">D3 (Diploma Tiga)</option>
-                                <option value="D4">D4 (Diploma Empat)</option>
-                              </select>
-                            </div>
-                            <div>
-                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Program Studi</label>
-                              <input type="text" value={formData.prodi} onChange={(e) => setFormData({ ...formData, prodi: e.target.value })} placeholder="S1 Teknik Informatika" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
-                            </div>
-                            <div>
-                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Beban SKS</label>
-                              <select
-                                value={formData.sks || 0}
-                                onChange={(e) => setFormData({ ...formData, sks: Number(e.target.value) })}
-                                className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
-                              >
-                                <option value={0}>Reguler (0 SKS)</option>
-                                <option value={6}>6 SKS</option>
-                                <option value={11}>11 SKS</option>
-                                <option value={12}>12 SKS</option>
-                                <option value={13}>13 SKS</option>
-                                <option value={14}>14 SKS</option>
-                                <option value={17}>17 SKS</option>
-                                <option value={18}>18 SKS</option>
-                                <option value={19}>19 SKS</option>
-                                <option value={20}>20 SKS (MBKM Penuh)</option>
-                              </select>
-                            </div>
-                          </div>
-                        </>
-                      )}
-
-                      {/* Pimpinan / Task Force Fields */}
-                      {["PEMIMPIN", "PANITIA_TASKFORCE"].includes(formData.roleName) && (
-                        <>
-                          {modalType === "add" && (
-                            <div className="p-3 bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 rounded-xl space-y-2">
-                              <div className="flex items-center justify-between">
-                                <label className="block text-[11px] font-bold text-emerald-800 dark:text-emerald-300">
-                                  Ambil Data dari DPL Terdaftar (1 ID / Multi-Role)
-                                </label>
-                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300">
-                                  Opsional
-                                </span>
-                              </div>
-                              <select
-                                value={dplList.find((d) => d.phone === formData.phone || (d.nip && formData.nip && d.nip === formData.nip))?.id || ""}
-                                onChange={(e) => {
-                                  const selectedId = e.target.value;
-                                  if (!selectedId) return;
-                                  const targetDpl = dplList.find((d) => String(d.id) === String(selectedId));
-                                  if (targetDpl) {
-                                    setFormData((prev) => ({
-                                      ...prev,
-                                      name: targetDpl.name || prev.name,
-                                      phone: targetDpl.phone || prev.phone,
-                                      nip: targetDpl.nip || prev.nip,
-                                      institusi: targetDpl.institusi || prev.institusi || "Universitas Komputer Indonesia",
-                                      prodi: targetDpl.prodi || targetDpl.programStudi || prev.prodi,
-                                      programStudi: targetDpl.programStudi || targetDpl.prodi || prev.programStudi,
-                                      fotoProfil: targetDpl.fotoProfil || prev.fotoProfil,
-                                      jenjangPendidikan: targetDpl.jenjangPendidikan || prev.jenjangPendidikan,
-                                    }));
-                                  }
-                                }}
-                                className="w-full h-10 px-3.5 rounded-xl border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/20 transition-all outline-none"
-                              >
-                                <option value="">-- Pilih Dosen DPL Terdaftar untuk Ditugaskan --</option>
-                                {dplList.map((d: any) => (
-                                  <option key={d.id} value={d.id}>
-                                    {d.name} {d.nip ? `(NIP: ${d.nip})` : ""} {d.phone ? `- ${d.phone}` : ""}
-                                  </option>
-                                ))}
-                              </select>
-                              <p className="text-[10px] text-emerald-700 dark:text-emerald-400 font-medium">
-                                Memilih dosen DPL otomatis menyinkronkan data profil dan nomor WhatsApp untuk penugasan multi-role.
-                              </p>
-                            </div>
-                          )}
-
-                          <div className="grid grid-cols-2 gap-3">
-                            <div>
-                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">NIP</label>
-                              <input type="text" value={formData.nip} onChange={(e) => setFormData({ ...formData, nip: e.target.value })} placeholder="4127.34.02.001" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-mono font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
-                            </div>
-                            <div>
-                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Institusi</label>
-                              <input type="text" value={formData.institusi || (formData.roleName === "PEMIMPIN" ? formData.prodi : "")} onChange={(e) => setFormData({ ...formData, institusi: e.target.value })} placeholder="Universitas Komputer Indonesia" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
-                            </div>
-                          </div>
-                          <div>
-                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Jabatan</label>
-                            <input type="text" value={formData.jabatan || ""} onChange={(e) => setFormData({ ...formData, jabatan: e.target.value })} placeholder={formData.roleName === "PEMIMPIN" ? "Rektor / Dekan / Pimpinan Utama" : "Ketua Task Force / Anggota Tim KKN"} className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
-                          </div>
-                        </>
-                      )}
-
-                      {/* ADMIN_DLH Fields */}
-                      {formData.roleName === "ADMIN_DLH" && (
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Provinsi Penugasan *</label>
-                            <select
-                              value={formData.provinsi || (provinsiList[0]?.name || provinsiList[0]?.nama || "Jawa Barat")}
-                              onChange={(e) => handleProvinsiSelect(e.target.value)}
-                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
-                            >
-                              {provinsiList.map((p: any) => (
-                                <option key={p.id} value={p.name || p.nama}>
-                                  {p.name || p.nama}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Kota / Kabupaten Penugasan *</label>
-                            <select
-                              value={formData.kabupaten || (filteredKabupatenList[0]?.name || "")}
-                              onChange={(e) => handleKabupatenSelect(e.target.value)}
-                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
-                            >
-                              {filteredKabupatenList.length === 0 ? (
-                                <option value="">-- Belum ada Kota/Kabupaten di Master Data --</option>
-                              ) : (
-                                filteredKabupatenList.map((kb: any) => (
-                                  <option key={kb.id} value={kb.name}>{kb.name}</option>
-                                ))
-                              )}
-                            </select>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* CAMAT Location Controls */}
-                      {formData.roleName === "CAMAT" && (
-                        <>
-                          <div className="grid grid-cols-2 gap-3">
-                            <div>
-                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Provinsi Penugasan *</label>
-                              <select
-                                value={formData.provinsi || (provinsiList[0]?.name || provinsiList[0]?.nama || "Jawa Barat")}
-                                onChange={(e) => handleProvinsiSelect(e.target.value)}
-                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
-                              >
-                                {provinsiList.map((p: any) => (
-                                  <option key={p.id} value={p.name || p.nama}>
-                                    {p.name || p.nama}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                            <div>
-                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Kota / Kabupaten Penugasan *</label>
-                              <select
-                                value={formData.kabupaten || (filteredKabupatenList[0]?.name || "")}
-                                onChange={(e) => handleKabupatenSelect(e.target.value)}
-                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
-                              >
-                                {filteredKabupatenList.length === 0 ? (
-                                  <option value="">-- Belum ada Kota/Kabupaten di Master Data --</option>
-                                ) : (
-                                  filteredKabupatenList.map((kb: any) => (
-                                    <option key={kb.id} value={kb.name}>{kb.name}</option>
-                                  ))
-                                )}
-                              </select>
-                            </div>
-                          </div>
-                          <div>
-                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Kecamatan Penugasan *</label>
-                            <select
-                              value={
-                                filteredKecamatanList.find((kc: any) => {
-                                  const cur = formData.kecamatan || "";
-                                  const name = kc.name || kc.nama || "";
-                                  return name.toLowerCase() === cur.toLowerCase() || normalizeKecamatan(name) === normalizeKecamatan(cur);
-                                })?.name || (filteredKecamatanList[0]?.name || "Kecamatan Coblong")
-                              }
-                              onChange={(e) => handleKecamatanSelect(e.target.value)}
-                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
-                            >
-                              {filteredKecamatanList.map((kc: any) => (
-                                <option key={kc.id} value={kc.name || kc.nama}>
-                                  {kc.name || kc.nama}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Cakupan Kelurahan Bawahan (Semua Kelurahan)</label>
-                            {(() => {
-                              const curKec = formData.kecamatan || (filteredKecamatanList[0]?.name || "");
-                              const kelsModal = filteredKelurahanList.map((kl: any) => getCleanKelName(kl.name || kl.nama));
-                              return kelsModal.length > 0 ? (
-                                <>
-                                  <div className="flex flex-wrap gap-1.5 p-3 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/60">
-                                    {kelsModal.map((kel: string) => (
-                                      <span key={kel} className="bg-emerald-100/80 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 px-2.5 py-1 rounded-lg text-[11px] border border-emerald-300/60 dark:border-emerald-700 font-extrabold shadow-2xs">
-                                        Kel. {kel}
-                                      </span>
-                                    ))}
-                                  </div>
-                                  <p className="text-[10px] text-slate-400 dark:text-slate-400 mt-1">Camat secara otomatis membawahi dan mengawasi seluruh {kelsModal.length} Kelurahan di {curKec}.</p>
-                                </>
-                              ) : (
-                                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 text-slate-400 dark:text-slate-500 text-xs italic font-medium">
-                                  Belum ada data Kelurahan terdaftar untuk {curKec || "kecamatan penugasan"} di Master Data.
-                                </div>
-                              );
-                            })()}
-                          </div>
-                        </>
-                      )}
-
-                      {/* Cascading Location Controls for Specific Location Roles (Lurah, RW, Petugas Residu, Warga) */}
-                      {["WARGA", "RW", "LURAH", "PETUGAS_RESIDU"].includes(formData.roleName) && (
-                        <>
-                          <div className="grid grid-cols-2 gap-3">
-                            <div>
-                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
-                                {formData.roleName === "WARGA" ? "Provinsi Domisili *" : "Provinsi Penugasan *"}
-                              </label>
-                              <select
-                                value={formData.provinsi || (provinsiList[0]?.name || provinsiList[0]?.nama || "Jawa Barat")}
-                                onChange={(e) => handleProvinsiSelect(e.target.value)}
-                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
-                              >
-                                {provinsiList.map((p: any) => (
-                                  <option key={p.id} value={p.name || p.nama}>
-                                    {p.name || p.nama}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                            <div>
-                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
-                                {formData.roleName === "WARGA" ? "Kota / Kabupaten Domisili *" : "Kota / Kabupaten Penugasan *"}
-                              </label>
-                              <select
-                                value={formData.kabupaten || (filteredKabupatenList[0]?.name || "")}
-                                onChange={(e) => handleKabupatenSelect(e.target.value)}
-                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
-                              >
-                                {filteredKabupatenList.length === 0 ? (
-                                  <option value="">-- Belum ada Kota/Kabupaten di Master Data --</option>
-                                ) : (
-                                  filteredKabupatenList.map((kb: any) => (
-                                    <option key={kb.id} value={kb.name}>{kb.name}</option>
-                                  ))
-                                )}
-                              </select>
-                            </div>
-                          </div>
-
-                          {/* 1. Kecamatan (Dropdown) */}
-                          <div>
-                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
-                              {formData.roleName === "WARGA" ? "Kecamatan Domisili *" : "Kecamatan Penugasan *"}
-                            </label>
-                            <select
-                              value={
-                                filteredKecamatanList.find((kc: any) => {
-                                  const cur = formData.kecamatan || "";
-                                  const name = kc.name || kc.nama || "";
-                                  return name.toLowerCase() === cur.toLowerCase() || normalizeKecamatan(name) === normalizeKecamatan(cur);
-                                })?.name || (filteredKecamatanList[0]?.name || "Kecamatan Coblong")
-                              }
-                              onChange={(e) => handleKecamatanSelect(e.target.value)}
-                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
-                            >
-                              {filteredKecamatanList.map((kc: any) => (
-                                <option key={kc.id} value={kc.name || kc.nama}>
-                                  {kc.name || kc.nama}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          {/* 2. Kelurahan (Dropdown - Cascading Level 1) */}
-                          <div>
-                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
-                              {formData.roleName === "WARGA" ? "Kelurahan Domisili *" : "Kelurahan Penugasan *"}
-                            </label>
-                            <select
-                              value={getCleanKelName(modalKelurahan)}
-                              onChange={(e) => {
-                                const selectedKel = e.target.value;
-                                setModalKelurahan(selectedKel);
-
-                                const cleanKel = selectedKel.toLowerCase();
-                                const matchedRws = areasList.filter((a: any) => {
-                                  const areaKel = (a.kelurahan?.name || "").toLowerCase().replace(/^kel\.\s*/i, "").trim();
-                                  return areaKel.includes(cleanKel) || cleanKel.includes(areaKel);
-                                });
-                                const firstRw = matchedRws.length > 0 ? matchedRws[0] : null;
-
-                                setFormData((prev) => {
-                                  const newRtRwId = firstRw ? firstRw.id.toString() : "";
-                                  const newRwName = firstRw ? firstRw.name : "";
-                                  const updatedSelectedRws = prev.roleName === "MAHASISWA_KKN" ? [] : prev.selectedRws;
-
-                                  let newWilayah = prev.wilayah;
-                                  if (["PETUGAS_RESIDU", "RW", "WARGA"].includes(prev.roleName)) {
-                                    newWilayah = `${newRwName ? `${newRwName}, ` : ""}Kel. ${selectedKel}`;
-                                  } else if (prev.roleName === "LURAH" || prev.roleName === "MAHASISWA_KKN") {
-                                    newWilayah = `Kel. ${selectedKel}`;
-                                  }
-
-                                  return {
-                                    ...prev,
-                                    rtRwId: newRtRwId,
-                                    rw: newRwName,
-                                    selectedRws: updatedSelectedRws,
-                                    wilayah: newWilayah,
-                                  };
-                                });
-                              }}
-                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
-                              disabled={filteredKelurahanList.length === 0}
-                            >
-                              {filteredKelurahanList.map((kl: any) => {
-                                const kName = getCleanKelName(kl.name || kl.nama);
-                                return (
-                                  <option key={kl.id} value={kName}>
-                                    Kel. {kName}
-                                  </option>
-                                );
-                              })}
-                            </select>
-                          </div>
-
-                          {/* 3. Rukun Warga (RW) */}
-                          {["WARGA", "RW", "PETUGAS_RESIDU"].includes(formData.roleName) && (
-                            <div>
-                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
-                                {formData.roleName === "WARGA" ? "Rukun Warga Domisili *" : "Rukun Warga Penugasan *"}
-                              </label>
-                              <select
-                                value={formData.rtRwId || (filteredRwsByKelurahan[0]?.id.toString() || "")}
-                                onChange={(e) => {
-                                  const selectedId = e.target.value;
-                                  const foundArea = areasList.find((a: any) => a.id.toString() === selectedId);
-                                  const rwName = foundArea ? foundArea.name : "";
-                                  const currentKel = getCleanKelName(foundArea?.kelurahan?.name || modalKelurahan);
-
-                                  setFormData((prev) => {
-                                    let newWilayah = prev.wilayah;
-                                    if (["PETUGAS_RESIDU", "RW", "WARGA"].includes(prev.roleName)) {
-                                      newWilayah = `${rwName ? `${rwName}, ` : ""}Kel. ${currentKel}`;
-                                    }
-
-                                    return {
-                                      ...prev,
-                                      rtRwId: selectedId,
-                                      rw: rwName,
-                                      wilayah: newWilayah,
-                                    };
-                                  });
-                                }}
-                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
-                                disabled={filteredRwsByKelurahan.length === 0}
-                              >
-                                {filteredRwsByKelurahan.map((a: any) => (
-                                  <option key={a.id} value={a.id.toString()}>
-                                    {a.cleanName || a.name.split("(")[0].trim()}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                          )}
-                        </>
-                      )}
-
-                      {/* Petugas Residu Assignment for RW */}
-                      {formData.roleName === "RW" && (
-                        <div>
-                          <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Petugas Pemilah</label>
-                          <select
-                            value={formData.petugasResiduId || ""}
-                            onChange={(e) => setFormData({ ...formData, petugasResiduId: e.target.value })}
-                            className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
-                          >
-                            <option value="">-- Belum Ditugaskan --</option>
-                            {petugasResiduList.map((p: any) => (
-                              <option key={p.id} value={p.id}>
-                                {p.name} ({p.phone})
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
-
-                      {/* PETUGAS_RESIDU Wilayah Penugasan, Nama Asli Personil & Nama Display Daerah */}
-                      {formData.roleName === "PETUGAS_RESIDU" && (
-                        <>
-                          <div>
-                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
-                              Nama Asli Petugas Pemilah (Personil Lapangan)
-                            </label>
-                            <input
-                              type="text"
-                              value={formData.namaAsli}
-                              onChange={(e) => setFormData({ ...formData, namaAsli: e.target.value })}
-                              placeholder="Contoh: Bapak Asep Supriatna (opsional)"
-                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none"
-                            />
-                            <p className="text-[10px] text-slate-400 mt-1">
-                              Nama bapak/ibu personil riil yang bertugas di lapangan. Jika dikosongkan, data akan otomatis mengikuti Nama Petugas Wilayah.
-                            </p>
-                          </div>
-                          <div>
-                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
-                              Nama Tampilan Wilayah (Monitoring & Leaderboard)
-                            </label>
-                            <input
-                              type="text"
-                              value={formData.namaDisplay}
-                              onChange={(e) => setFormData({ ...formData, namaDisplay: e.target.value })}
-                              placeholder="Contoh: Petugas Sadang Serang 01"
-                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none"
-                            />
-                            <p className="text-[10px] text-slate-400 mt-1">
-                              Nama wilayah operasional ini yang akan muncul di Peringkat/Leaderboard dan monitoring publik.
-                            </p>
-                          </div>
-                          <div>
-                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
-                              Kelurahan Penugasan
-                            </label>
-                            <input
-                              type="text"
-                              value={formData.petugasKelurahan}
-                              onChange={(e) => setFormData({ ...formData, petugasKelurahan: e.target.value })}
-                              placeholder="Contoh: Dago / Sadang Serang / Sekeloa"
-                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Wilayah Penugasan / Posko</label>
-                            <input
-                              type="text"
-                              value={formData.wilayah}
-                              onChange={(e) => setFormData({ ...formData, wilayah: e.target.value })}
-                              placeholder="TPS 3R / Wilayah Penugasan Operasional"
-                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none"
-                            />
-                          </div>
-                        </>
-                      )}
-
-
-                      {/* Address for WARGA, RW, PETUGAS_RESIDU */}
-                      {["WARGA", "RW", "PETUGAS_RESIDU"].includes(formData.roleName) && (
-                        <div>
-                          <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Alamat Lengkap</label>
-                          <textarea rows={2} value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} placeholder="Jl. Dipatiukur No. ..." className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none resize-none" />
-                        </div>
-                      )}
-
-                      {/* Warga: Jumlah Anggota Keluarga */}
-                      {formData.roleName === "WARGA" && (
-                        <div>
-                          <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Jumlah Anggota Keluarga</label>
-                          <input
-                            type="number"
-                            min="1"
-                            max="30"
-                            value={formData.jumlahAnggotaKeluarga || ""}
-                            onChange={(e) => setFormData({ ...formData, jumlahAnggotaKeluarga: e.target.value })}
-                            placeholder="Contoh: 4"
-                            className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none"
-                          />
-                        </div>
-                      )}
-
-                      {/* Dynamic Multi-select RW for Mahasiswa */}
-                      {formData.roleName === "MAHASISWA_KKN" && (
-                        <div className="space-y-3">
-                          <div>
-                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Kelurahan Penugasan *</label>
-                            <select
-                              value={getCleanKelName(modalKelurahan)}
-                              onChange={(e) => {
-                                const selectedKel = e.target.value;
-                                setModalKelurahan(selectedKel);
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  selectedRws: [],
-                                }));
-                              }}
-                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
-                              disabled={filteredKelurahanList.length === 0}
-                            >
-                              {filteredKelurahanList.map((kl: any) => {
-                                const kName = getCleanKelName(kl.name || kl.nama);
-                                return (
-                                  <option key={kl.id} value={kName}>
-                                    Kel. {kName}
-                                  </option>
-                                );
-                              })}
-                            </select>
-                          </div>
-
-                          <div>
-                            <div className="flex items-center justify-between mb-2">
-                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300">Wilayah Penugasan</label>
-                              <span className="text-[10px] font-extrabold text-[#009966] dark:text-emerald-400 bg-[#009966]/10 dark:bg-emerald-950/60 px-2.5 py-0.5 rounded-full border border-[#009966]/20 dark:border-emerald-800/60">
-                                Kel. {getCleanKelName(modalKelurahan) || "-"}
-                              </span>
-                            </div>
-                            <div className="grid grid-cols-5 gap-1.5 p-3 rounded-xl bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 max-h-36 overflow-y-auto">
-                              {filteredRwsByKelurahan.length === 0 ? (
-                                <div className="col-span-5 text-center text-slate-400 dark:text-slate-500 text-xs py-4">
-                                  Belum ada data RW untuk kelurahan ini.
-                                </div>
-                              ) : (
-                                filteredRwsByKelurahan.map((area: any) => {
-                                  const rwNum = area.name.replace(/\D/g, "").padStart(2, "0");
-                                  const rwCleanName = area.cleanName || (area.name.split("(")[0].trim().startsWith("RW") ? area.name.split("(")[0].trim() : `RW ${rwNum}`);
-                                  const isChecked = formData.selectedRws.includes(rwNum) || formData.selectedRws.includes(rwCleanName);
-                                  return (
-                                    <label key={area.id || rwNum} className={`flex items-center justify-center gap-1 py-1.5 rounded-lg border text-[10px] font-bold cursor-pointer transition-all ${isChecked ? "bg-[#009966]/10 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 border-[#009966]/30 dark:border-emerald-800/80 shadow-2xs" : "bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/60"}`}>
-                                      <input type="checkbox" checked={isChecked} onChange={() => handleRwToggle(rwNum)} className="sr-only" />
-                                      {rwCleanName}
-                                    </label>
-                                  );
-                                })
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                    {formData.confirmPassword && (
+                      <p className={`text-[10px] font-semibold mt-1 ${passwordRules?.matches ? "text-emerald-500 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"}`}>
+                        {passwordRules?.matches ? "✓ Kata sandi cocok" : "✗ Kata sandi tidak cocok"}
+                      </p>
+                    )}
                   </div>
                 )}
+              </div>
 
-                {/* ── Section: Keamanan Akun ── */}
+              {/* Password Strength Meter & Rules */}
+              {formData.password && (
                 <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <Shield size={14} className="text-slate-400 dark:text-slate-500" />
-                    <span className="text-[11px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider">Keamanan Akun</span>
+                  <div className="flex gap-1 mb-1">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i} className={`h-1 flex-1 rounded-full transition-all duration-300 ${i <= passwordStrength.level ? passwordStrength.color : "bg-slate-200 dark:bg-slate-700"}`} />
+                    ))}
                   </div>
-                  <div className="space-y-3">
-                    {/* Password */}
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
-                        Kata Sandi {modalType === "add" && <span className="text-rose-500">*</span>}
-                        {modalType === "edit" && <span className="text-[10px] text-slate-400 dark:text-slate-400 font-normal ml-1">(Kosongkan jika tidak diubah)</span>}
-                      </label>
-                      <div className="relative">
-                        <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
-                        <input type={showPassword ? "text" : "password"} autoComplete="new-password" required={modalType === "add"} value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} placeholder="Minimal 8 karakter" className="w-full h-10 pl-10 pr-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
-                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer">
-                          {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  <div className="flex items-center justify-between">
+                    <span className={`text-[10px] font-bold ${passwordStrength.level <= 1 ? "text-rose-500" : passwordStrength.level <= 2 ? "text-amber-500" : passwordStrength.level <= 3 ? "text-blue-500" : "text-emerald-500"}`}>
+                      {passwordStrength.label}
+                    </span>
+                  </div>
+
+                  {passwordRules && (
+                    <div className="mt-1.5 p-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 grid grid-cols-2 gap-x-2 gap-y-0.5">
+                      {[
+                        { key: "minLength", label: "Min. 8 karakter" },
+                        { key: "hasUppercase", label: "Huruf besar (A-Z)" },
+                        { key: "hasLowercase", label: "Huruf kecil (a-z)" },
+                        { key: "hasNumber", label: "Angka (0-9)" },
+                        { key: "hasSpecial", label: "Karakter khusus (!@#$)" },
+                      ].map(({ key, label }) => (
+                        <div key={key} className="flex items-center gap-1.5">
+                          <div className={`w-3 h-3 rounded-full flex items-center justify-center ${
+                            (passwordRules as any)[key] ? "bg-emerald-500 text-white" : "bg-slate-300 dark:bg-slate-700 text-white"
+                          }`}>
+                            {(passwordRules as any)[key] ? (
+                              <svg className="w-1.5 h-1.5" viewBox="0 0 12 12" fill="none"><path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                            ) : (
+                              <svg className="w-1.5 h-1.5" viewBox="0 0 12 12" fill="none"><path d="M9 3L3 9M3 3l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                            )}
+                          </div>
+                          <span className={`text-[9.5px] font-semibold ${(passwordRules as any)[key] ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"}`}>{label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Status Akun Segmented Control */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Status Akun</label>
+                {(() => {
+                  const isSelfAccountInModal = modalType === "edit" && user && selectedUser && (
+                    selectedUser.id === user.id ||
+                    selectedUser.id === (user as any).userId ||
+                    (selectedUser.phone && user.phone && selectedUser.phone === user.phone)
+                  );
+                  return (
+                    <>
+                      <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100/80 dark:bg-slate-800/80 rounded-xl border border-slate-200/80 dark:border-slate-700">
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, status: "Aktif" })}
+                          className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                            formData.status === "Aktif" || formData.status === "ACTIVE" || !formData.status
+                              ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-300 shadow-xs border border-emerald-200 dark:border-emerald-800/80 ring-2 ring-emerald-500/20"
+                              : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-700/50"
+                          }`}
+                        >
+                          <span className={`w-2 h-2 rounded-full ${
+                            formData.status === "Aktif" || formData.status === "ACTIVE" || !formData.status
+                              ? "bg-emerald-500 animate-pulse"
+                              : "bg-slate-300 dark:bg-slate-600"
+                          }`} />
+                          <span>Aktif</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          disabled={isSelfAccountInModal}
+                          onClick={() => {
+                            if (isSelfAccountInModal) return;
+                            setFormData({ ...formData, status: "Nonaktif" });
+                          }}
+                          className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-black transition-all ${
+                            isSelfAccountInModal
+                              ? "opacity-50 cursor-not-allowed bg-slate-200 dark:bg-slate-700 text-slate-400"
+                              : formData.status === "Nonaktif"
+                                ? "bg-white dark:bg-slate-900 text-rose-700 dark:text-rose-300 shadow-xs border border-rose-200 dark:border-rose-800/80 ring-2 ring-rose-500/20 cursor-pointer"
+                                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 cursor-pointer"
+                          }`}
+                        >
+                          <span className={`w-2 h-2 rounded-full ${
+                            formData.status === "Nonaktif"
+                              ? "bg-rose-500 animate-pulse"
+                              : "bg-slate-300 dark:bg-slate-600"
+                          }`} />
+                          <span>Nonaktif</span>
                         </button>
                       </div>
-
-                      {/* Password Strength Meter */}
-                      {formData.password && (
-                        <div className="mt-2">
-                          <div className="flex gap-1 mb-1.5">
-                            {[1, 2, 3, 4].map((i) => (
-                              <div key={i} className={`h-1 flex-1 rounded-full transition-all duration-300 ${i <= passwordStrength.level ? passwordStrength.color : "bg-slate-200 dark:bg-slate-700"}`} />
-                            ))}
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className={`text-[10px] font-bold ${passwordStrength.level <= 1 ? "text-rose-500" : passwordStrength.level <= 2 ? "text-amber-500" : passwordStrength.level <= 3 ? "text-blue-500" : "text-emerald-500"}`}>
-                              {passwordStrength.label}
-                            </span>
-                          </div>
-                        </div>
+                      {isSelfAccountInModal && (
+                        <p className="text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 p-2 rounded-xl border border-amber-200/80 dark:border-amber-800/60 flex items-center gap-1.5 mt-2">
+                          <AlertTriangle size={13} className="shrink-0 text-amber-500" />
+                          <span>Ini adalah akun Anda yang sedang login. Status akun tidak dapat dinonaktifkan demi keamanan.</span>
+                        </p>
                       )}
 
-                      {/* Password Rules Checklist */}
-                      {formData.password && passwordRules && (
-                        <div className="mt-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-1">
-                          {[
-                            { key: "minLength", label: "Minimal 8 karakter" },
-                            { key: "hasUppercase", label: "Mengandung huruf besar (A-Z)" },
-                            { key: "hasLowercase", label: "Mengandung huruf kecil (a-z)" },
-                            { key: "hasNumber", label: "Mengandung angka (0-9)" },
-                            { key: "hasSpecial", label: "Mengandung karakter khusus (!@#$...)" },
-                          ].map(({ key, label }) => (
-                            <div key={key} className="flex items-center gap-2">
-                              <div className={`w-3.5 h-3.5 rounded-full flex items-center justify-center ${
-                                (passwordRules as any)[key] ? "bg-emerald-500 text-white" : "bg-slate-300 dark:bg-slate-700 text-white"
-                              }`}>
-                                {(passwordRules as any)[key] ? (
-                                  <svg className="w-2 h-2" viewBox="0 0 12 12" fill="none"><path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                                ) : (
-                                  <svg className="w-2 h-2" viewBox="0 0 12 12" fill="none"><path d="M9 3L3 9M3 3l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                                )}
-                              </div>
-                              <span className={`text-[10px] font-semibold ${(passwordRules as any)[key] ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"}`}>{label}</span>
-                            </div>
-                          ))}
+                      {user?.peran === "DEVELOPER" && (
+                        <div className="bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 p-2.5 rounded-xl flex items-center justify-between mt-2.5 shadow-2xs">
+                          <div className="pr-3">
+                            <p className="text-xs font-bold text-amber-900 dark:text-amber-200">Tandai Akun Pengujian (Test Dev)</p>
+                            <p className="text-[10px] text-amber-700/90 dark:text-amber-400">Akun pengujian akan otomatis disembunyikan dari output monitoring atasan.</p>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                            <input
+                              type="checkbox"
+                              checked={Boolean((formData as any).isTestAccount)}
+                              onChange={(e) => setFormData({ ...formData, isTestAccount: e.target.checked } as any)}
+                              className="sr-only peer"
+                            />
+                            <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-amber-600"></div>
+                          </label>
                         </div>
                       )}
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
+        );
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-sm p-3 sm:p-4" onClick={handleCloseModal}>
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg md:max-w-4xl lg:max-w-5xl max-h-[92vh] overflow-hidden flex flex-col border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-200 my-auto" onClick={(e) => e.stopPropagation()}>
+              {/* Modal Header */}
+              <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-slate-50 to-white dark:from-slate-800/80 dark:to-slate-900 shrink-0">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                      modalType === "add"
+                        ? "bg-[#009966]/10 dark:bg-emerald-950/50 text-[#009966] dark:text-emerald-400 border border-[#009966]/20 dark:border-emerald-800/60"
+                        : "bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/60"
+                    }`}>
+                      {modalType === "add" ? <UserPlus size={20} /> : <Pencil size={20} />}
                     </div>
-
-                    {/* Confirm Password */}
-                    {(modalType === "add" || formData.password) && (
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
-                          Konfirmasi Kata Sandi <span className="text-rose-500">*</span>
-                        </label>
-                        <div className="relative">
-                          <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
-                          <input type={showConfirmPassword ? "text" : "password"} required={modalType === "add" || !!formData.password} value={formData.confirmPassword} onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })} placeholder="Ulangi kata sandi" className={`w-full h-10 pl-10 pr-10 rounded-xl border dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold transition-all outline-none ${
-                            formData.confirmPassword
-                              ? (passwordRules?.matches ? "border-emerald-300 dark:border-emerald-700 focus:border-emerald-400 focus:ring-emerald-100 dark:focus:ring-emerald-950" : "border-rose-300 dark:border-rose-700 focus:border-rose-400 focus:ring-rose-100 dark:focus:ring-rose-950")
-                              : "border-slate-200 dark:border-slate-700 focus:border-[#009966] focus:ring-[#009966]/10"
-                          }`} />
-                          <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer">
-                            {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                          </button>
-                        </div>
-                        {formData.confirmPassword && (
-                          <p className={`text-[10px] font-semibold mt-1 ${passwordRules?.matches ? "text-emerald-500 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"}`}>
-                            {passwordRules?.matches ? "✓ Kata sandi cocok" : "✗ Kata sandi tidak cocok"}
-                          </p>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Status */}
-                    {/* Status Akun Segmented Control */}
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Status Akun</label>
-                      {(() => {
-                        const isSelfAccountInModal = modalType === "edit" && user && selectedUser && (
-                          selectedUser.id === user.id ||
-                          selectedUser.id === (user as any).userId ||
-                          (selectedUser.phone && user.phone && selectedUser.phone === user.phone)
-                        );
-                        return (
-                          <>
-                            <div className="grid grid-cols-2 gap-2.5 p-1 bg-slate-100/80 dark:bg-slate-800/80 dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700">
-                              <button
-                                type="button"
-                                onClick={() => setFormData({ ...formData, status: "Aktif" })}
-                                className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                                  formData.status === "Aktif" || formData.status === "ACTIVE" || !formData.status
-                                    ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-300 shadow-sm border border-emerald-200 dark:border-emerald-800/80 ring-2 ring-emerald-500/20"
-                                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-700/50"
-                                }`}
-                              >
-                                <span className={`w-2.5 h-2.5 rounded-full ${
-                                  formData.status === "Aktif" || formData.status === "ACTIVE" || !formData.status
-                                    ? "bg-emerald-500 animate-pulse"
-                                    : "bg-slate-300 dark:bg-slate-600"
-                                }`} />
-                                <span>Aktif</span>
-                              </button>
-
-                              <button
-                                type="button"
-                                disabled={isSelfAccountInModal}
-                                onClick={() => {
-                                  if (isSelfAccountInModal) return;
-                                  setFormData({ ...formData, status: "Nonaktif" });
-                                }}
-                                className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-black transition-all ${
-                                  isSelfAccountInModal
-                                    ? "opacity-50 cursor-not-allowed bg-slate-200 dark:bg-slate-700 text-slate-400"
-                                    : formData.status === "Nonaktif"
-                                      ? "bg-white dark:bg-slate-900 text-rose-700 dark:text-rose-300 shadow-sm border border-rose-200 dark:border-rose-800/80 ring-2 ring-rose-500/20 cursor-pointer"
-                                      : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 cursor-pointer"
-                                }`}
-                              >
-                                <span className={`w-2.5 h-2.5 rounded-full ${
-                                  formData.status === "Nonaktif"
-                                    ? "bg-rose-500 animate-pulse"
-                                    : "bg-slate-300 dark:bg-slate-600"
-                                }`} />
-                                <span>Nonaktif</span>
-                              </button>
-                            </div>
-                            {isSelfAccountInModal && (
-                              <p className="text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 p-2 rounded-xl border border-amber-200/80 dark:border-amber-800/60 flex items-center gap-1.5 mt-2">
-                                <AlertTriangle size={13} className="shrink-0 text-amber-500" />
-                                <span>Ini adalah akun Anda yang sedang login. Status akun tidak dapat dinonaktifkan demi keamanan.</span>
-                              </p>
-                            )}
-
-                            {user?.peran === "DEVELOPER" && (
-                              <div className="bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 p-3 rounded-2xl flex items-center justify-between mt-3 shadow-2xs">
-                                <div className="pr-3">
-                                  <p className="text-xs font-bold text-amber-900 dark:text-amber-200">Tandai Akun Pengujian (Test Dev)</p>
-                                  <p className="text-[10.5px] text-amber-700/90 dark:text-amber-400">Akun pengujian akan otomatis disembunyikan dari output monitoring atasan (presensi, peta GIS, rekap excel, KPI).</p>
-                                </div>
-                                <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                                  <input
-                                    type="checkbox"
-                                    checked={Boolean((formData as any).isTestAccount)}
-                                    onChange={(e) => setFormData({ ...formData, isTestAccount: e.target.checked } as any)}
-                                    className="sr-only peer"
-                                  />
-                                  <div className="w-10 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-amber-600"></div>
-                                </label>
-                              </div>
-                            )}
-                          </>
-                        );
-                      })()}
+                      <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-100">
+                        {modalType === "add" ? "Tambah Pengguna Baru" : "Edit Data Pengguna"}
+                      </h3>
+                      <p className="text-[11px] text-slate-400 dark:text-slate-400 mt-0.5">
+                        {modalType === "add" ? "Isi formulir untuk mendaftarkan pengguna baru ke sistem" : `Perbarui informasi akun ${selectedUser?.name || ""}`}
+                      </p>
                     </div>
                   </div>
+                  <button type="button" onClick={handleCloseModal} className="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 flex items-center justify-center transition-colors cursor-pointer">
+                    <X size={18} />
+                  </button>
                 </div>
               </div>
 
-              {/* Modal Footer */}
-              <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800/50 flex items-center justify-end gap-2">
-                <button type="button" onClick={handleCloseModal} className="px-5 py-2.5 rounded-xl font-extrabold text-xs text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer">
-                  Batal
-                </button>
-                <button type="submit" disabled={isSubmitting || !isPasswordValid} className="px-5 py-2.5 bg-[#009966] hover:bg-[#008855] text-white rounded-xl font-extrabold text-xs disabled:opacity-50 flex items-center gap-2 cursor-pointer shadow-sm transition-all active:scale-95">
-                  {isSubmitting && <Loader2 className="animate-spin" size={14} />}
-                  {modalType === "add" ? "Tambah Pengguna" : "Simpan Perubahan"}
-                </button>
-              </div>
-            </form>
+              <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6 items-start">
+                    {/* ── Kolom Kiri ── */}
+                    <div className="space-y-4">
+                      {/* Section: Informasi Dasar */}
+                      <div>
+                        <div className="flex items-center gap-2 mb-2.5">
+                          <User size={14} className="text-slate-400 dark:text-slate-500" />
+                          <span className="text-[11px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider">Informasi Dasar</span>
+                        </div>
+                        <div className="space-y-3">
+                          {/* Foto Profil Input & Live Preview */}
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Foto Profil</label>
+                            <div className="flex items-center gap-3 bg-slate-50/90 dark:bg-slate-800/90 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-700 shadow-2xs">
+                              <div className="w-11 h-11 rounded-full bg-[#009966] text-white font-black text-xs flex items-center justify-center shrink-0 overflow-hidden border-2 border-white dark:border-slate-700 shadow-sm font-sans tracking-wider">
+                                {formData.fotoProfil ? (
+                                  <img
+                                    src={getProfilePhotoUrl(formData.fotoProfil, formData.name)}
+                                    alt="Preview Foto"
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => handleAvatarError(e, formData.name)}
+                                  />
+                                ) : (
+                                  <span>{getNameInitials(formData.name)}</span>
+                                )}
+                              </div>
+                              <div className="flex-1 space-y-1">
+                                <div className="flex gap-2">
+                                  <input
+                                    type="text"
+                                    value={formData.fotoProfil}
+                                    onChange={(e) => setFormData({ ...formData, fotoProfil: e.target.value })}
+                                    placeholder="URL Foto (https://...) atau Unggah berkas"
+                                    className="flex-1 h-8.5 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-[#009966] focus:ring-1 focus:ring-[#009966] outline-none"
+                                  />
+                                  <label className="h-8.5 px-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-[#009966] dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80 text-xs font-extrabold flex items-center gap-1.5 cursor-pointer transition-colors shrink-0 shadow-2xs">
+                                    <Upload size={13} />
+                                    <span>Unggah</span>
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      className="hidden"
+                                      onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                          const reader = new FileReader();
+                                          reader.onloadend = () => {
+                                            setFormData({ ...formData, fotoProfil: reader.result as string });
+                                          };
+                                          reader.readAsDataURL(file);
+                                        }
+                                      }}
+                                    />
+                                  </label>
+                                  {formData.fotoProfil && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setFormData({ ...formData, fotoProfil: "" })}
+                                      className="h-8.5 px-2 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-300 border border-rose-200 dark:border-rose-800/80 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-xs font-bold transition-colors cursor-pointer"
+                                      title="Reset Foto"
+                                    >
+                                      <X size={14} />
+                                    </button>
+                                  )}
+                                </div>
+                                <p className="text-[10px] text-slate-400 dark:text-slate-400 font-medium">
+                                  {formData.fotoProfil ? "Preview foto profil aktif" : `Default otomatis: (${getNameInitials(formData.name)})`}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                              {formData.roleName === "PETUGAS_RESIDU" ? "Nama Akun / Petugas Wilayah" : "Nama Lengkap"} <span className="text-rose-500">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={formData.name}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  name: val,
+                                  namaDisplay: prev.roleName === "PETUGAS_RESIDU" && (!prev.namaDisplay || prev.namaDisplay === prev.name) ? val : prev.namaDisplay,
+                                }));
+                              }}
+                              placeholder={formData.roleName === "PETUGAS_RESIDU" ? "Contoh: Petugas Sadang Serang 01" : "Masukkan nama lengkap"}
+                              className="w-full h-9.5 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none"
+                            />
+                            {formData.roleName === "PETUGAS_RESIDU" && (
+                              <p className="text-[10px] text-slate-400 mt-1">
+                                Nama ini akan menjadi identitas utama di sistem, akun login, dan dasbor monitoring wilayah.
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">No. Telepon <span className="text-rose-500">*</span></label>
+                              <input
+                                type="text"
+                                required
+                                inputMode="tel"
+                                value={formData.phone}
+                                onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/[^\d+]/g, "") })}
+                                onBlur={() => {
+                                  if (formData.phone) {
+                                    setFormData((prev) => ({ ...prev, phone: formatPhone(prev.phone) }));
+                                  }
+                                }}
+                                placeholder="+628xxxxxxxxxx"
+                                className="w-full h-9.5 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-mono font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Peran Sistem</label>
+                              <input type="text" disabled value={ROLE_LABEL_MAP[formData.roleName] || formData.roleName} className="w-full h-9.5 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 text-xs font-bold cursor-not-allowed" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Jika memiliki data khusus peran, Keamanan & Status ditaruh di kolom kiri */}
+                      {hasRoleSpecificFields && renderSecurityAndStatusSection()}
+                    </div>
+
+                    {/* ── Kolom Kanan ── */}
+                    <div className="space-y-4">
+                      {hasRoleSpecificFields ? (
+                        <div>
+                          <div className="flex items-center gap-2 mb-2.5">
+                            <Info size={14} className="text-slate-400 dark:text-slate-500" />
+                            <span className="text-[11px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider">
+                              {formData.roleName === "WARGA" ? "Data Domisili & Keluarga" : "Data Khusus Peran"}
+                            </span>
+                          </div>
+                          <div className="space-y-3">
+                            {/* DPL Fields */}
+                            {formData.roleName === "DPL" && (
+                              <>
+                                <div>
+                                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">NIP</label>
+                                  <input type="text" value={formData.nip} onChange={(e) => setFormData({ ...formData, nip: e.target.value })} placeholder="4127.34.02.006" className="w-full h-9.5 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-mono font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                    <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Mengajar Jenjang</label>
+                                    <select value={formData.jenjangPendidikan || "S1"} onChange={(e) => setFormData({...formData, jenjangPendidikan: e.target.value})} className="w-full h-9.5 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none">
+                                      <option value="S1">S1 (Sarjana)</option>
+                                      <option value="D3">D3 (Diploma Tiga)</option>
+                                    </select>
+                                  </div>
+                                  <div>
+                                    <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Program Studi</label>
+                                    <input type="text" value={formData.programStudi || formData.prodi} onChange={(e) => setFormData({ ...formData, programStudi: e.target.value, prodi: e.target.value })} placeholder="Manajemen" className="w-full h-9.5 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
+                                  </div>
+                                </div>
+                                <div>
+                                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Pembimbing Kelompok</label>
+                                  <select
+                                    value={formData.dplKelompokIds?.[0] || ""}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      setFormData({ ...formData, dplKelompokIds: val ? [val] : [] });
+                                    }}
+                                    className="w-full h-9.5 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                                  >
+                                    <option value="">-- Tidak Mendampingi Kelompok --</option>
+                                    {kelompokList.map((k: any) => (
+                                      <option key={k.id} value={k.id}>
+                                        {cleanKknDisplayName(k.name)}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <p className="text-[10px] text-slate-400 dark:text-slate-400 mt-1">Dipilih dari 32 kelompok KKN terintegrasi secara real-time dari database.</p>
+                                </div>
+                              </>
+                            )}
+
+                            {/* MPL Fields */}
+                            {formData.roleName === "MPL" && (
+                              <div>
+                                <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                                  Kelurahan Penugasan <span className="text-rose-500">*</span>
+                                </label>
+                                <select
+                                  value={modalKelurahan}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setModalKelurahan(val);
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      address: val ? `Kel. ${val}` : prev.address,
+                                      wilayah: val ? `Kel. ${val}` : prev.wilayah,
+                                    }));
+                                  }}
+                                  className="w-full h-9.5 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                                >
+                                  <option value="">-- Pilih Kelurahan --</option>
+                                  {kelurahanList.map((kel: any) => {
+                                    const kelName = kel.name || kel.nama || "";
+                                    const cleanName = getCleanKelName(kelName);
+                                    return (
+                                      <option key={kel.id || cleanName} value={cleanName}>
+                                        Kel. {cleanName}
+                                      </option>
+                                    );
+                                  })}
+                                </select>
+                                <p className="text-[10px] text-slate-400 dark:text-slate-400 mt-1">
+                                  MPL bertugas membimbing dan memberikan evaluasi lapangan bagi mahasiswa KKN di wilayah Kelurahan terkait.
+                                </p>
+                              </div>
+                            )}
+
+                            {/* Mahasiswa Fields */}
+                            {formData.roleName === "MAHASISWA_KKN" && (
+                              <>
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                    <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">NIM</label>
+                                    <input type="text" inputMode="numeric" pattern="[0-9]*" value={formData.nim} onChange={(e) => setFormData({ ...formData, nim: e.target.value.replace(/\D/g, "") })} placeholder="10123047" className="w-full h-9.5 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-mono font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
+                                  </div>
+                                  <div>
+                                    <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Kelompok KKN</label>
+                                    <select
+                                      value={formData.dplKelompokIds?.[0] || ""}
+                                      onChange={(e) => {
+                                        const val = e.target.value;
+                                        let autoDplId = "";
+                                        let autoKelName = "";
+                                        if (val) {
+                                          const foundKel = kelompokList.find((k: any) => k.id === val);
+                                          autoDplId = foundKel?.dplId || foundKel?.dpl?.id || "";
+                                          if (foundKel?.kelurahan || foundKel?.name) {
+                                            autoKelName = foundKel.kelurahan || cleanKelurahanName(foundKel.name);
+                                          }
+                                        }
+                                        if (autoKelName) setModalKelurahan(getCleanKelName(autoKelName));
+                                        setFormData({
+                                          ...formData,
+                                          dplKelompokIds: val ? [val] : [],
+                                          dplId: autoDplId,
+                                        });
+                                      }}
+                                      className="w-full h-9.5 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                                    >
+                                      <option value="">-- Tanpa Kelompok --</option>
+                                      {kelompokList.map((k: any) => (
+                                        <option key={k.id} value={k.id}>
+                                          {cleanKknDisplayName(k.name)}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Dosen Pembimbing Lapangan</label>
+                                  <input
+                                    type="text"
+                                    readOnly
+                                    disabled
+                                    value={
+                                      (() => {
+                                        const selectedKelId = formData.dplKelompokIds?.[0];
+                                        if (!selectedKelId) return "Belum Ada Dosen Pembimbing";
+                                        const foundKel = kelompokList.find((k: any) => k.id === selectedKelId);
+                                        const dplObj = foundKel?.dpl || dplList.find((d: any) => d.id === (foundKel?.dplId || formData.dplId));
+                                        return dplObj?.name || foundKel?.dplName || foundKel?.dplNamaMentah || "Belum Ada Dosen Pembimbing";
+                                      })()
+                                    }
+                                    className="w-full h-9.5 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100/80 dark:bg-slate-800/80 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-not-allowed outline-none select-none opacity-90"
+                                  />
+                                </div>
+
+                                <div className="grid grid-cols-3 gap-2.5">
+                                  <div>
+                                    <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Jenjang</label>
+                                    <select value={formData.jenjangPendidikan} onChange={(e) => setFormData({...formData, jenjangPendidikan: e.target.value})} className="w-full h-9.5 px-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none">
+                                      <option value="S1">S1</option>
+                                      <option value="S2">S2</option>
+                                      <option value="S3">S3</option>
+                                      <option value="D3">D3</option>
+                                      <option value="D4">D4</option>
+                                    </select>
+                                  </div>
+                                  <div>
+                                    <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Program Studi</label>
+                                    <input type="text" value={formData.prodi} onChange={(e) => setFormData({ ...formData, prodi: e.target.value })} placeholder="Informatika" className="w-full h-9.5 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
+                                  </div>
+                                  <div>
+                                    <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Beban SKS</label>
+                                    <select
+                                      value={formData.sks || 0}
+                                      onChange={(e) => setFormData({ ...formData, sks: Number(e.target.value) })}
+                                      className="w-full h-9.5 px-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                                    >
+                                      <option value={0}>0 SKS</option>
+                                      <option value={6}>6 SKS</option>
+                                      <option value={11}>11 SKS</option>
+                                      <option value={12}>12 SKS</option>
+                                      <option value={13}>13 SKS</option>
+                                      <option value={14}>14 SKS</option>
+                                      <option value={17}>17 SKS</option>
+                                      <option value={18}>18 SKS</option>
+                                      <option value={19}>19 SKS</option>
+                                      <option value={20}>20 SKS</option>
+                                    </select>
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Kelurahan Penugasan *</label>
+                                  <select
+                                    value={getCleanKelName(modalKelurahan)}
+                                    onChange={(e) => {
+                                      const selectedKel = e.target.value;
+                                      setModalKelurahan(selectedKel);
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        selectedRws: [],
+                                      }));
+                                    }}
+                                    className="w-full h-9.5 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                                    disabled={filteredKelurahanList.length === 0}
+                                  >
+                                    {filteredKelurahanList.map((kl: any) => {
+                                      const kName = getCleanKelName(kl.name || kl.nama);
+                                      return (
+                                        <option key={kl.id} value={kName}>
+                                          Kel. {kName}
+                                        </option>
+                                      );
+                                    })}
+                                  </select>
+                                </div>
+
+                                <div>
+                                  <div className="flex items-center justify-between mb-1.5">
+                                    <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300">Wilayah Penugasan (Pilih RW)</label>
+                                    <span className="text-[10px] font-extrabold text-[#009966] dark:text-emerald-400 bg-[#009966]/10 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full border border-[#009966]/20 dark:border-emerald-800/60">
+                                      Kel. {getCleanKelName(modalKelurahan) || "-"}
+                                    </span>
+                                  </div>
+                                  <div className="grid grid-cols-5 gap-1.5 p-2 rounded-xl bg-slate-50/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 max-h-24 overflow-y-auto">
+                                    {filteredRwsByKelurahan.length === 0 ? (
+                                      <div className="col-span-5 text-center text-slate-400 dark:text-slate-500 text-xs py-2">
+                                        Belum ada data RW.
+                                      </div>
+                                    ) : (
+                                      filteredRwsByKelurahan.map((area: any) => {
+                                        const rwNum = area.name.replace(/\D/g, "").padStart(2, "0");
+                                        const rwCleanName = area.cleanName || (area.name.split("(")[0].trim().startsWith("RW") ? area.name.split("(")[0].trim() : `RW ${rwNum}`);
+                                        const isChecked = formData.selectedRws.includes(rwNum) || formData.selectedRws.includes(rwCleanName);
+                                        return (
+                                          <label key={area.id || rwNum} className={`flex items-center justify-center gap-1 py-1 rounded-lg border text-[10px] font-bold cursor-pointer transition-all ${isChecked ? "bg-[#009966]/10 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 border-[#009966]/30 dark:border-emerald-800/80 shadow-2xs" : "bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/60"}`}>
+                                            <input type="checkbox" checked={isChecked} onChange={() => handleRwToggle(rwNum)} className="sr-only" />
+                                            {rwCleanName}
+                                          </label>
+                                        );
+                                      })
+                                    )}
+                                  </div>
+                                </div>
+                              </>
+                            )}
+
+                            {/* Pimpinan / Task Force Fields */}
+                            {["PEMIMPIN", "PANITIA_TASKFORCE"].includes(formData.roleName) && (
+                              <>
+                                {modalType === "add" && (
+                                  <div className="p-2.5 bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 rounded-xl space-y-1.5">
+                                    <div className="flex items-center justify-between">
+                                      <label className="block text-[11px] font-bold text-emerald-800 dark:text-emerald-300">
+                                        Ambil Data dari DPL Terdaftar
+                                      </label>
+                                      <span className="text-[9.5px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300">
+                                        Opsional
+                                      </span>
+                                    </div>
+                                    <select
+                                      value={dplList.find((d) => d.phone === formData.phone || (d.nip && formData.nip && d.nip === formData.nip))?.id || ""}
+                                      onChange={(e) => {
+                                        const selectedId = e.target.value;
+                                        if (!selectedId) return;
+                                        const targetDpl = dplList.find((d) => String(d.id) === String(selectedId));
+                                        if (targetDpl) {
+                                          setFormData((prev) => ({
+                                            ...prev,
+                                            name: targetDpl.name || prev.name,
+                                            phone: targetDpl.phone || prev.phone,
+                                            nip: targetDpl.nip || prev.nip,
+                                            institusi: targetDpl.institusi || prev.institusi || "Universitas Komputer Indonesia",
+                                            prodi: targetDpl.prodi || targetDpl.programStudi || prev.prodi,
+                                            programStudi: targetDpl.programStudi || targetDpl.prodi || prev.programStudi,
+                                            fotoProfil: targetDpl.fotoProfil || prev.fotoProfil,
+                                            jenjangPendidikan: targetDpl.jenjangPendidikan || prev.jenjangPendidikan,
+                                          }));
+                                        }
+                                      }}
+                                      className="w-full h-9 px-3 rounded-xl border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/20 transition-all outline-none"
+                                    >
+                                      <option value="">-- Pilih Dosen DPL untuk Sinkronisasi Profil --</option>
+                                      {dplList.map((d: any) => (
+                                        <option key={d.id} value={d.id}>
+                                          {d.name} {d.nip ? `(NIP: ${d.nip})` : ""} {d.phone ? `- ${d.phone}` : ""}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                )}
+
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                    <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">NIP</label>
+                                    <input type="text" value={formData.nip} onChange={(e) => setFormData({ ...formData, nip: e.target.value })} placeholder="4127.34.02.001" className="w-full h-9.5 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-mono font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
+                                  </div>
+                                  <div>
+                                    <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Institusi</label>
+                                    <input type="text" value={formData.institusi || (formData.roleName === "PEMIMPIN" ? formData.prodi : "")} onChange={(e) => setFormData({ ...formData, institusi: e.target.value })} placeholder="Universitas Komputer Indonesia" className="w-full h-9.5 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
+                                  </div>
+                                </div>
+                                <div>
+                                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Jabatan</label>
+                                  <input type="text" value={formData.jabatan || ""} onChange={(e) => setFormData({ ...formData, jabatan: e.target.value })} placeholder={formData.roleName === "PEMIMPIN" ? "Rektor / Dekan / Pimpinan Utama" : "Ketua Task Force / Anggota Tim KKN"} className="w-full h-9.5 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
+                                </div>
+                              </>
+                            )}
+
+                            {/* ADMIN_DLH Fields */}
+                            {formData.roleName === "ADMIN_DLH" && (
+                              <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Provinsi Penugasan *</label>
+                                  <select
+                                    value={formData.provinsi || (provinsiList[0]?.name || provinsiList[0]?.nama || "Jawa Barat")}
+                                    onChange={(e) => handleProvinsiSelect(e.target.value)}
+                                    className="w-full h-9.5 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                                  >
+                                    {provinsiList.map((p: any) => (
+                                      <option key={p.id} value={p.name || p.nama}>
+                                        {p.name || p.nama}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <div>
+                                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Kota / Kabupaten Penugasan *</label>
+                                  <select
+                                    value={formData.kabupaten || (filteredKabupatenList[0]?.name || "")}
+                                    onChange={(e) => handleKabupatenSelect(e.target.value)}
+                                    className="w-full h-9.5 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                                  >
+                                    {filteredKabupatenList.length === 0 ? (
+                                      <option value="">-- Belum ada Kota/Kabupaten --</option>
+                                    ) : (
+                                      filteredKabupatenList.map((kb: any) => (
+                                        <option key={kb.id} value={kb.name}>{kb.name}</option>
+                                      ))
+                                    )}
+                                  </select>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* CAMAT Location Controls */}
+                            {formData.roleName === "CAMAT" && (
+                              <>
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                    <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Provinsi Penugasan *</label>
+                                    <select
+                                      value={formData.provinsi || (provinsiList[0]?.name || provinsiList[0]?.nama || "Jawa Barat")}
+                                      onChange={(e) => handleProvinsiSelect(e.target.value)}
+                                      className="w-full h-9.5 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                                    >
+                                      {provinsiList.map((p: any) => (
+                                        <option key={p.id} value={p.name || p.nama}>
+                                          {p.name || p.nama}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                  <div>
+                                    <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Kota / Kabupaten Penugasan *</label>
+                                    <select
+                                      value={formData.kabupaten || (filteredKabupatenList[0]?.name || "")}
+                                      onChange={(e) => handleKabupatenSelect(e.target.value)}
+                                      className="w-full h-9.5 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                                    >
+                                      {filteredKabupatenList.length === 0 ? (
+                                        <option value="">-- Belum ada Kota/Kabupaten --</option>
+                                      ) : (
+                                        filteredKabupatenList.map((kb: any) => (
+                                          <option key={kb.id} value={kb.name}>{kb.name}</option>
+                                        ))
+                                      )}
+                                    </select>
+                                  </div>
+                                </div>
+                                <div>
+                                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Kecamatan Penugasan *</label>
+                                  <select
+                                    value={
+                                      filteredKecamatanList.find((kc: any) => {
+                                        const cur = formData.kecamatan || "";
+                                        const name = kc.name || kc.nama || "";
+                                        return name.toLowerCase() === cur.toLowerCase() || normalizeKecamatan(name) === normalizeKecamatan(cur);
+                                      })?.name || (filteredKecamatanList[0]?.name || "Kecamatan Coblong")
+                                    }
+                                    onChange={(e) => handleKecamatanSelect(e.target.value)}
+                                    className="w-full h-9.5 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                                  >
+                                    {filteredKecamatanList.map((kc: any) => (
+                                      <option key={kc.id} value={kc.name || kc.nama}>
+                                        {kc.name || kc.nama}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <div>
+                                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Cakupan Kelurahan Bawahan</label>
+                                  {(() => {
+                                    const curKec = formData.kecamatan || (filteredKecamatanList[0]?.name || "");
+                                    const kelsModal = filteredKelurahanList.map((kl: any) => getCleanKelName(kl.name || kl.nama));
+                                    return kelsModal.length > 0 ? (
+                                      <>
+                                        <div className="flex flex-wrap gap-1.5 p-2 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/60 max-h-20 overflow-y-auto">
+                                          {kelsModal.map((kel: string) => (
+                                            <span key={kel} className="bg-emerald-100/80 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 px-2 py-0.5 rounded-lg text-[10px] border border-emerald-300/60 dark:border-emerald-700 font-extrabold shadow-2xs">
+                                              Kel. {kel}
+                                            </span>
+                                          ))}
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 dark:text-slate-400 mt-1">Camat membawahi seluruh {kelsModal.length} Kelurahan di {curKec}.</p>
+                                      </>
+                                    ) : (
+                                      <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 text-slate-400 dark:text-slate-500 text-xs italic font-medium">
+                                        Belum ada data Kelurahan di Master Data.
+                                      </div>
+                                    );
+                                  })()}
+                                </div>
+                              </>
+                            )}
+
+                            {/* Cascading Controls (WARGA, RW, LURAH, PETUGAS_RESIDU) */}
+                            {["WARGA", "RW", "LURAH", "PETUGAS_RESIDU"].includes(formData.roleName) && (
+                              <>
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                    <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                                      {formData.roleName === "WARGA" ? "Provinsi Domisili *" : "Provinsi Penugasan *"}
+                                    </label>
+                                    <select
+                                      value={formData.provinsi || (provinsiList[0]?.name || provinsiList[0]?.nama || "Jawa Barat")}
+                                      onChange={(e) => handleProvinsiSelect(e.target.value)}
+                                      className="w-full h-9.5 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                                    >
+                                      {provinsiList.map((p: any) => (
+                                        <option key={p.id} value={p.name || p.nama}>
+                                          {p.name || p.nama}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                  <div>
+                                    <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                                      {formData.roleName === "WARGA" ? "Kota / Kab. Domisili *" : "Kota / Kab. Penugasan *"}
+                                    </label>
+                                    <select
+                                      value={formData.kabupaten || (filteredKabupatenList[0]?.name || "")}
+                                      onChange={(e) => handleKabupatenSelect(e.target.value)}
+                                      className="w-full h-9.5 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                                    >
+                                      {filteredKabupatenList.length === 0 ? (
+                                        <option value="">-- Belum ada Kota/Kabupaten --</option>
+                                      ) : (
+                                        filteredKabupatenList.map((kb: any) => (
+                                          <option key={kb.id} value={kb.name}>{kb.name}</option>
+                                        ))
+                                      )}
+                                    </select>
+                                  </div>
+                                </div>
+
+                                {/* Kecamatan & Kelurahan side-by-side */}
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                    <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                                      {formData.roleName === "WARGA" ? "Kecamatan Domisili *" : "Kecamatan Penugasan *"}
+                                    </label>
+                                    <select
+                                      value={
+                                        filteredKecamatanList.find((kc: any) => {
+                                          const cur = formData.kecamatan || "";
+                                          const name = kc.name || kc.nama || "";
+                                          return name.toLowerCase() === cur.toLowerCase() || normalizeKecamatan(name) === normalizeKecamatan(cur);
+                                        })?.name || (filteredKecamatanList[0]?.name || "Kecamatan Coblong")
+                                      }
+                                      onChange={(e) => handleKecamatanSelect(e.target.value)}
+                                      className="w-full h-9.5 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                                    >
+                                      {filteredKecamatanList.map((kc: any) => (
+                                        <option key={kc.id} value={kc.name || kc.nama}>
+                                          {kc.name || kc.nama}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+
+                                  <div>
+                                    <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                                      {formData.roleName === "WARGA" ? "Kelurahan Domisili *" : "Kelurahan Penugasan *"}
+                                    </label>
+                                    <select
+                                      value={getCleanKelName(modalKelurahan)}
+                                      onChange={(e) => {
+                                        const selectedKel = e.target.value;
+                                        setModalKelurahan(selectedKel);
+
+                                        const cleanKel = selectedKel.toLowerCase();
+                                        const matchedRws = areasList.filter((a: any) => {
+                                          const areaKel = (a.kelurahan?.name || "").toLowerCase().replace(/^kel\.\s*/i, "").trim();
+                                          return areaKel.includes(cleanKel) || cleanKel.includes(areaKel);
+                                        });
+                                        const firstRw = matchedRws.length > 0 ? matchedRws[0] : null;
+
+                                        setFormData((prev) => {
+                                          const newRtRwId = firstRw ? firstRw.id.toString() : "";
+                                          const newRwName = firstRw ? firstRw.name : "";
+                                          const updatedSelectedRws = prev.roleName === "MAHASISWA_KKN" ? [] : prev.selectedRws;
+
+                                          let newWilayah = prev.wilayah;
+                                          if (["PETUGAS_RESIDU", "RW", "WARGA"].includes(prev.roleName)) {
+                                            newWilayah = `${newRwName ? `${newRwName}, ` : ""}Kel. ${selectedKel}`;
+                                          } else if (prev.roleName === "LURAH" || prev.roleName === "MAHASISWA_KKN") {
+                                            newWilayah = `Kel. ${selectedKel}`;
+                                          }
+
+                                          return {
+                                            ...prev,
+                                            rtRwId: newRtRwId,
+                                            rw: newRwName,
+                                            selectedRws: updatedSelectedRws,
+                                            wilayah: newWilayah,
+                                          };
+                                        });
+                                      }}
+                                      className="w-full h-9.5 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                                      disabled={filteredKelurahanList.length === 0}
+                                    >
+                                      {filteredKelurahanList.map((kl: any) => {
+                                        const kName = getCleanKelName(kl.name || kl.nama);
+                                        return (
+                                          <option key={kl.id} value={kName}>
+                                            Kel. {kName}
+                                          </option>
+                                        );
+                                      })}
+                                    </select>
+                                  </div>
+                                </div>
+
+                                {/* WARGA: RW & Jumlah Anggota Keluarga in 2 cols */}
+                                {formData.roleName === "WARGA" && (
+                                  <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                                        Rukun Warga Domisili *
+                                      </label>
+                                      <select
+                                        value={formData.rtRwId || (filteredRwsByKelurahan[0]?.id.toString() || "")}
+                                        onChange={(e) => {
+                                          const selectedId = e.target.value;
+                                          const foundArea = areasList.find((a: any) => a.id.toString() === selectedId);
+                                          const rwName = foundArea ? foundArea.name : "";
+                                          const currentKel = getCleanKelName(foundArea?.kelurahan?.name || modalKelurahan);
+
+                                          setFormData((prev) => ({
+                                            ...prev,
+                                            rtRwId: selectedId,
+                                            rw: rwName,
+                                            wilayah: `${rwName ? `${rwName}, ` : ""}Kel. ${currentKel}`,
+                                          }));
+                                        }}
+                                        className="w-full h-9.5 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                                        disabled={filteredRwsByKelurahan.length === 0}
+                                      >
+                                        {filteredRwsByKelurahan.map((a: any) => (
+                                          <option key={a.id} value={a.id.toString()}>
+                                            {a.cleanName || a.name.split("(")[0].trim()}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </div>
+                                    <div>
+                                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Jumlah Anggota Keluarga</label>
+                                      <input
+                                        type="number"
+                                        min="1"
+                                        max="30"
+                                        value={formData.jumlahAnggotaKeluarga || ""}
+                                        onChange={(e) => setFormData({ ...formData, jumlahAnggotaKeluarga: e.target.value })}
+                                        placeholder="Contoh: 4"
+                                        className="w-full h-9.5 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none"
+                                      />
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* RW: RW Penugasan & Petugas Pemilah in 2 cols */}
+                                {formData.roleName === "RW" && (
+                                  <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                                        Rukun Warga Penugasan *
+                                      </label>
+                                      <select
+                                        value={formData.rtRwId || (filteredRwsByKelurahan[0]?.id.toString() || "")}
+                                        onChange={(e) => {
+                                          const selectedId = e.target.value;
+                                          const foundArea = areasList.find((a: any) => a.id.toString() === selectedId);
+                                          const rwName = foundArea ? foundArea.name : "";
+                                          const currentKel = getCleanKelName(foundArea?.kelurahan?.name || modalKelurahan);
+
+                                          setFormData((prev) => ({
+                                            ...prev,
+                                            rtRwId: selectedId,
+                                            rw: rwName,
+                                            wilayah: `${rwName ? `${rwName}, ` : ""}Kel. ${currentKel}`,
+                                          }));
+                                        }}
+                                        className="w-full h-9.5 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                                        disabled={filteredRwsByKelurahan.length === 0}
+                                      >
+                                        {filteredRwsByKelurahan.map((a: any) => (
+                                          <option key={a.id} value={a.id.toString()}>
+                                            {a.cleanName || a.name.split("(")[0].trim()}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </div>
+                                    <div>
+                                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Petugas Pemilah</label>
+                                      <select
+                                        value={formData.petugasResiduId || ""}
+                                        onChange={(e) => setFormData({ ...formData, petugasResiduId: e.target.value })}
+                                        className="w-full h-9.5 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                                      >
+                                        <option value="">-- Belum Ditugaskan --</option>
+                                        {petugasResiduList.map((p: any) => (
+                                          <option key={p.id} value={p.id}>
+                                            {p.name} ({p.phone})
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* PETUGAS_RESIDU Specific Fields */}
+                                {formData.roleName === "PETUGAS_RESIDU" && (
+                                  <>
+                                    <div className="grid grid-cols-2 gap-3">
+                                      <div>
+                                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                                          Rukun Warga Penugasan *
+                                        </label>
+                                        <select
+                                          value={formData.rtRwId || (filteredRwsByKelurahan[0]?.id.toString() || "")}
+                                          onChange={(e) => {
+                                            const selectedId = e.target.value;
+                                            const foundArea = areasList.find((a: any) => a.id.toString() === selectedId);
+                                            const rwName = foundArea ? foundArea.name : "";
+                                            const currentKel = getCleanKelName(foundArea?.kelurahan?.name || modalKelurahan);
+
+                                            setFormData((prev) => ({
+                                              ...prev,
+                                              rtRwId: selectedId,
+                                              rw: rwName,
+                                              wilayah: `${rwName ? `${rwName}, ` : ""}Kel. ${currentKel}`,
+                                            }));
+                                          }}
+                                          className="w-full h-9.5 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                                          disabled={filteredRwsByKelurahan.length === 0}
+                                        >
+                                          {filteredRwsByKelurahan.map((a: any) => (
+                                            <option key={a.id} value={a.id.toString()}>
+                                              {a.cleanName || a.name.split("(")[0].trim()}
+                                            </option>
+                                          ))}
+                                        </select>
+                                      </div>
+                                      <div>
+                                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Wilayah Penugasan / Posko</label>
+                                        <input
+                                          type="text"
+                                          value={formData.wilayah}
+                                          onChange={(e) => setFormData({ ...formData, wilayah: e.target.value })}
+                                          placeholder="TPS 3R / Wilayah Operasional"
+                                          className="w-full h-9.5 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none"
+                                        />
+                                      </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                      <div>
+                                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                                          Nama Asli Personil Lapangan
+                                        </label>
+                                        <input
+                                          type="text"
+                                          value={formData.namaAsli}
+                                          onChange={(e) => setFormData({ ...formData, namaAsli: e.target.value })}
+                                          placeholder="Contoh: Bpk. Asep (opsional)"
+                                          className="w-full h-9.5 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none"
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                                          Nama Tampilan Wilayah (Leaderboard)
+                                        </label>
+                                        <input
+                                          type="text"
+                                          value={formData.namaDisplay}
+                                          onChange={(e) => setFormData({ ...formData, namaDisplay: e.target.value })}
+                                          placeholder="Contoh: Petugas Sadang Serang 01"
+                                          className="w-full h-9.5 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none"
+                                        />
+                                      </div>
+                                    </div>
+                                  </>
+                                )}
+
+                                {/* Address for WARGA, RW, PETUGAS_RESIDU */}
+                                {["WARGA", "RW", "PETUGAS_RESIDU"].includes(formData.roleName) && (
+                                  <div>
+                                    <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Alamat Lengkap</label>
+                                    <textarea rows={2} value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} placeholder="Jl. Dipatiukur No. ..." className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none resize-none" />
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        /* Jika role tidak punya data khusus (DEVELOPER, SUPER_USER), Keamanan ditaruh di kolom kanan */
+                        renderSecurityAndStatusSection()
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Modal Footer */}
+                <div className="px-6 py-3.5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-end gap-2 shrink-0">
+                  <button type="button" onClick={handleCloseModal} className="px-5 py-2 rounded-xl font-extrabold text-xs text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+                    Batal
+                  </button>
+                  <button type="submit" disabled={isSubmitting || !isPasswordValid} className="px-5 py-2 bg-[#009966] hover:bg-[#008855] text-white rounded-xl font-extrabold text-xs disabled:opacity-50 flex items-center gap-2 cursor-pointer shadow-sm transition-all active:scale-95">
+                    {isSubmitting && <Loader2 className="animate-spin" size={14} />}
+                    {modalType === "add" ? "Tambah Pengguna" : "Simpan Perubahan"}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      )}      {/* Delete Modal */}
+        );
+      })()}      {/* Delete Modal */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-sm p-4 animate-in fade-in zoom-in-95 duration-150" onClick={closeDeleteModal}>
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg w-full max-w-sm overflow-hidden flex flex-col p-6 text-center border border-slate-200 dark:border-slate-800" onClick={(e) => e.stopPropagation()}>
@@ -3091,6 +3288,241 @@ const ManajemenPengguna: React.FC = () => {
                 Hapus
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Reassign Pendamping KKN (ENG-MEMO/KKN-REASSIGN/2026-09/006-REV1) */}
+      {isReassignModalOpen && wargaToReassign && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-sm p-4 animate-in fade-in zoom-in-95 duration-200"
+          onClick={handleCloseReassignModal}
+        >
+          <div
+            className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col border border-slate-200 dark:border-slate-800"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-blue-50/50 to-white dark:from-slate-800/80 dark:to-slate-900 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-200 dark:border-blue-900">
+                  <ArrowRightLeft size={18} />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-100">
+                    Ganti Mahasiswa Pendamping
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Alihkan warga dampingan ke mahasiswa KKN lain
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleCloseReassignModal}
+                className="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <form onSubmit={handleConfirmReassign} className="flex flex-col">
+              <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+                {/* Warga Info Card */}
+                <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200/70 dark:border-slate-700/60 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                      Warga Dampingan
+                    </span>
+                    {wargaToReassign.pendampingKkn ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900/60 shadow-2xs">
+                        <UserCheck size={11} className="text-blue-600 dark:text-blue-400" />
+                        Terikat Pendamping
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100/80 dark:bg-amber-950/70 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-900/50 shadow-2xs">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                        Belum Ada Pendamping
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-extrabold text-sm text-slate-800 dark:text-slate-100">
+                      {wargaToReassign.name}
+                    </span>
+                    <span className="text-xs text-slate-500 font-medium">
+                      {wargaToReassign.phone}
+                    </span>
+                  </div>
+                  <div className="text-xs text-slate-500 flex items-center gap-1">
+                    <MapPin size={12} className="text-slate-400 shrink-0" />
+                    <span>{wargaToReassign.wilayah || wargaToReassign.address || "-"}</span>
+                  </div>
+
+                  {/* Mahasiswa Pendamping Saat Ini */}
+                  <div className="pt-2.5 border-t border-slate-200/80 dark:border-slate-700/70 space-y-1.5">
+                    <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                      <GraduationCap size={13} className="text-blue-600 dark:text-blue-400" />
+                      <span>Mahasiswa Pendamping Saat Ini</span>
+                    </div>
+
+                    {wargaToReassign.pendampingKkn ? (
+                      <div className="p-2.5 rounded-xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/50 flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <div className="font-extrabold text-xs text-blue-950 dark:text-blue-100 flex items-center gap-1.5">
+                            <span>{wargaToReassign.pendampingKkn.name}</span>
+                            {wargaToReassign.pendampingKkn.kelompokName && (
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 bg-blue-200/60 dark:bg-blue-900/70 text-blue-800 dark:text-blue-200 rounded">
+                                {wargaToReassign.pendampingKkn.kelompokName}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[11px] text-blue-700/90 dark:text-blue-300/80 flex items-center gap-2">
+                            {wargaToReassign.pendampingKkn.nim && (
+                              <span className="font-mono">NIM: {wargaToReassign.pendampingKkn.nim}</span>
+                            )}
+                            {wargaToReassign.pendampingKkn.jurusan && (
+                              <span>• {wargaToReassign.pendampingKkn.jurusan}</span>
+                            )}
+                          </div>
+                        </div>
+                        {wargaToReassign.pendampingKkn.phone && (
+                          <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">
+                            {wargaToReassign.pendampingKkn.phone}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="p-2.5 rounded-xl bg-slate-100/90 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-amber-500" />
+                          <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                            Belum Ada Mahasiswa Pendamping
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-900/40 px-2 py-0.5 rounded">
+                          Mandiri
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Target Student Selection */}
+                <div>
+                  <label className="block text-xs font-black text-slate-700 dark:text-slate-200 mb-1.5">
+                    Pilih Mahasiswa Pendamping Baru *
+                  </label>
+                  <div className="relative mb-2">
+                    <Search
+                      size={14}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Cari nama, NIM, atau kelompok..."
+                      value={studentSearchFilter}
+                      onChange={(e) => setStudentSearchFilter(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-800 dark:text-slate-100"
+                    />
+                  </div>
+
+                  {loadingStudents ? (
+                    <div className="flex items-center justify-center py-6 text-slate-400 text-xs gap-2">
+                      <Loader2 size={16} className="animate-spin text-blue-500" />
+                      <span>Memuat daftar mahasiswa KKN...</span>
+                    </div>
+                  ) : (
+                    <div className="max-h-44 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-900">
+                      {filteredStudents.length === 0 ? (
+                        <div className="p-4 text-center text-xs text-slate-400">
+                          Tidak ditemukan mahasiswa KKN
+                        </div>
+                      ) : (
+                        filteredStudents.map((s: any) => {
+                          const isSelected = reassignTargetStudentId === s.id;
+                          const kelompokName =
+                            s.studentProfile?.kelompok?.name || s.studentProfile?.kelompok?.nama || "-";
+                          const nim = s.nim || s.studentProfile?.nim || "-";
+
+                          return (
+                            <div
+                              key={s.id}
+                              onClick={() => setReassignTargetStudentId(s.id)}
+                              className={`p-2.5 flex items-center justify-between cursor-pointer transition-colors ${
+                                isSelected
+                                  ? "bg-blue-50/90 dark:bg-blue-950/70 text-blue-900 dark:text-blue-200"
+                                  : "hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                              }`}
+                            >
+                              <div>
+                                <div className="font-extrabold text-xs text-slate-800 dark:text-slate-100">
+                                  {s.name}
+                                </div>
+                                <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                                  NIM: {nim} • {kelompokName}
+                                </div>
+                              </div>
+                              {isSelected && (
+                                <CheckCircle size={16} className="text-blue-600 dark:text-blue-400 shrink-0" />
+                              )}
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Nomor Tiket CS */}
+                <div>
+                  <label className="block text-xs font-black text-slate-700 dark:text-slate-200 mb-1">
+                    Nomor Tiket CS / Pengaduan <span className="font-normal text-slate-400">(Opsional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: CS-TICKET-2026-0901"
+                    value={reassignTicketNumber}
+                    onChange={(e) => setReassignTicketNumber(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-800 dark:text-slate-100"
+                  />
+                </div>
+
+                {/* Alasan Pengalihan */}
+                <div>
+                  <label className="block text-xs font-black text-slate-700 dark:text-slate-200 mb-1">
+                    Alasan Pengalihan <span className="font-normal text-slate-400">(Opsional)</span>
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="Contoh: Penyesuaian zonasi RT/RW atau koreksi salah input"
+                    value={reassignReason}
+                    onChange={(e) => setReassignReason(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none text-slate-800 dark:text-slate-100"
+                  />
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={handleCloseReassignModal}
+                  className="px-5 py-2.5 rounded-xl font-extrabold text-xs text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingReassign || !reassignTargetStudentId}
+                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-extrabold text-xs disabled:opacity-50 flex items-center gap-2 cursor-pointer shadow-sm transition-all active:scale-95"
+                >
+                  {isSubmittingReassign && <Loader2 className="animate-spin" size={14} />}
+                  <span>Simpan Pengalihan</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -65,6 +65,7 @@ export const readOnlyGuard = (req: Request, res: Response, next: NextFunction): 
                   targetUrl.includes("/discrepanc") ||
                   targetUrl.includes("/koreksi") ||
                   targetUrl.includes("/reject") ||
+                  targetUrl.includes("/reassign") ||
                   targetUrl.includes("/ai/")));
 
             if (!isUserNotificationAction) {
