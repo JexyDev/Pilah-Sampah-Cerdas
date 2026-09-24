@@ -156,12 +156,6 @@ jobs:
             $PM2_BIN status
 
             echo "=== 4. Deploying Frontend Web to Nginx ==="
-            TARGET_WEB_DIR=/var/www/staging-web/dist
-            if [ ! -d "/var/www/staging-web" ]; then
-              TARGET_WEB_DIR=/var/www/html
-            fi
-            mkdir -p "$TARGET_WEB_DIR/downloads"
-
             echo "Building frontend directly on staging VPS..."
             cd "$REPO_DIR/apps/web"
             echo "$VPS_PASS" | sudo -S rm -rf "$REPO_DIR/apps/web/dist" 2>/dev/null || rm -rf "$REPO_DIR/apps/web/dist" 2>/dev/null || true
@@ -171,22 +165,41 @@ jobs:
             test -f "$REPO_DIR/apps/web/dist/index.html" || { echo "ERROR: Frontend build failed! dist/index.html missing on VPS"; exit 1; }
 
             APK_NAME="berseka-staging-arm64-v8a.apk"
-            if [ -f "$TARGET_WEB_DIR/downloads/$APK_NAME" ]; then
-              cp "$TARGET_WEB_DIR/downloads/$APK_NAME" "/tmp/$APK_NAME"
+            if [ -f "/var/www/staging-web/dist/downloads/$APK_NAME" ]; then
+              cp "/var/www/staging-web/dist/downloads/$APK_NAME" "/tmp/$APK_NAME"
+            elif [ -f "/var/www/html/downloads/$APK_NAME" ]; then
+              cp "/var/www/html/downloads/$APK_NAME" "/tmp/$APK_NAME"
             fi
 
-            echo "$VPS_PASS" | sudo -S rm -rf "$TARGET_WEB_DIR"/assets "$TARGET_WEB_DIR"/index.html 2>/dev/null || true
-            cp -r dist/* "$TARGET_WEB_DIR/"
+            # Deteksi seluruh web root Nginx yang aktif di VPS
+            echo "Detecting Nginx web root directories..."
+            NGINX_ROOTS=$(grep -h -r "root " /etc/nginx/sites-enabled/ 2>/dev/null | grep -v "#" | awk '{print $2}' | tr -d ';' | sort -u)
+            echo "Detected Nginx roots: $NGINX_ROOTS"
 
-            if [ -f "/tmp/$APK_NAME" ]; then
-              cp "/tmp/$APK_NAME" "$TARGET_WEB_DIR/downloads/$APK_NAME"
-              rm -f "/tmp/$APK_NAME"
-            fi
+            TARGET_DIRS=("/var/www/staging-web/dist" "/var/www/staging-web" "/var/www/html" "/var/www/pilah-sampah-cerdas/frontend/dist")
+            for r in $NGINX_ROOTS; do
+              if [ -n "$r" ] && [ "$r" != "/etc/nginx" ]; then
+                TARGET_DIRS+=("$r")
+              fi
+            done
 
-            test -f "$TARGET_WEB_DIR/index.html" || { echo "Staging frontend missing index.html"; exit 1; }
+            for d in "${TARGET_DIRS[@]}"; do
+              echo "$VPS_PASS" | sudo -S mkdir -p "$d" 2>/dev/null || true
+              if [ -d "$d" ]; then
+                echo "Copying built frontend to $d..."
+                echo "$VPS_PASS" | sudo -S rm -rf "$d"/assets "$d"/index.html 2>/dev/null || true
+                echo "$VPS_PASS" | sudo -S cp -r "$REPO_DIR/apps/web/dist"/* "$d"/
+                if [ -f "/tmp/$APK_NAME" ]; then
+                  echo "$VPS_PASS" | sudo -S mkdir -p "$d/downloads" 2>/dev/null || true
+                  echo "$VPS_PASS" | sudo -S cp "/tmp/$APK_NAME" "$d/downloads/$APK_NAME" 2>/dev/null || true
+                fi
+                echo "$VPS_PASS" | sudo -S chown -R www-data:www-data "$d" 2>/dev/null || true
+                echo "$VPS_PASS" | sudo -S chmod -R 755 "$d" 2>/dev/null || true
+              fi
+            done
 
             echo "=== 5. Reloading Nginx ==="
-            sudo systemctl reload nginx || true
+            echo "$VPS_PASS" | sudo -S systemctl reload nginx || echo "$VPS_PASS" | sudo -S systemctl restart nginx || true
 
             echo "=== 6. Health Check ==="
             echo "Waiting for backend initialization..."
