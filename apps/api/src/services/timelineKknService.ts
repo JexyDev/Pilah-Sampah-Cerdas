@@ -989,7 +989,7 @@ export const timelineKknService = {
 
     // Inisialisasi data bawaan hanya jika di lingkungan development lokal dan tabel masih kosong
     try {
-      if (process.env.NODE_ENV !== "production") {
+      if (process.env.NODE_ENV === "development") {
         const count = await prisma.timelineKkn.count();
         if (count === 0) {
           await timelineKknService.seedDefaultCoblong();
@@ -1631,3 +1631,4 @@ export const timelineKknService = {
     return prisma.$transaction(creates);
   },
 };
+
