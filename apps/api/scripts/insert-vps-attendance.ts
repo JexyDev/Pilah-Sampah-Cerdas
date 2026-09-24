@@ -27,7 +27,10 @@ function execCommand(conn: Client, cmd: string): Promise<{ code: number; output:
   });
 }
 
+import { assertNotProduction } from "../src/utils/vpsSafetyGuard.js";
+
 async function main() {
+  assertNotProduction("insert-vps-attendance.ts");
   const conn = new Client();
   console.log("Connecting to VPS 157.10.252.252...");
 
@@ -260,3 +263,4 @@ async function main() {
 }
 
 main().catch(console.error);
+
