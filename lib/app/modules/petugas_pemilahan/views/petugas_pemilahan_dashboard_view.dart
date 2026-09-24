@@ -418,76 +418,72 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
       child: Container(
         padding: const EdgeInsets.all(AppDimensions.md),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [AppColors.primaryGreen, AppColors.primaryBlueDark],
-            begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          color: AppColors.primaryGreen,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primaryGreen.withValues(alpha: 0.25),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primaryGreen.withValues(alpha: 0.25),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.monetization_on_rounded, color: AppColors.warningYellow, size: 16),
-                    const SizedBox(width: 6),
-                    Flexible(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.monetization_on_rounded, color: AppColors.warningYellow, size: 16),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          poinLabel,
+                          style: const TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w600),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        '$totalPoints',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 30, color: Colors.white),
+                      ),
+                      const SizedBox(width: 6),
+                      const Text(
+                        'Poin',
+                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: AppColors.warningYellow),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
                       child: Text(
-                        poinLabel,
-                        style: const TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w600),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        'Hasil Timbangan & Pengosongan Tempat Sampah',
+                        style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(
-                      '$totalPoints',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 30, color: Colors.white),
-                    ),
-                    const SizedBox(width: 6),
-                    const Text(
-                      'Poin',
-                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: AppColors.warningYellow),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Dari hasil timbangan sampah',
-                      style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(

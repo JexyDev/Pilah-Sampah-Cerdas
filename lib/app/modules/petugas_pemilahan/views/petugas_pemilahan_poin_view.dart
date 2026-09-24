@@ -62,11 +62,7 @@ class PetugasPemilahanPoinView extends ConsumerWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.primaryGreen, AppColors.primaryBlueDark],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color: AppColors.primaryGreen,
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
@@ -110,7 +106,7 @@ class PetugasPemilahanPoinView extends ConsumerWidget {
                       child: const FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Text(
-                          'Poin Otomatis Diperoleh dari Timbangan & Validasi Pengajuan',
+                          'Hasil Timbangan & Pengosongan Tempat Sampah',
                           style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
                           textAlign: TextAlign.center,
                         ),
@@ -144,8 +140,7 @@ class PetugasPemilahanPoinView extends ConsumerWidget {
                     ),
                     const SizedBox(height: 12),
                     _buildPoinRuleRow(Icons.scale_rounded, 'Input Timbangan Pemilahan', '+5 Poin / Input'),
-                    _buildPoinRuleRow(Icons.delete_sweep_rounded, 'Reset Pengosongan Tempat Sampah', '+5 Poin / Pengajuan'),
-                    _buildPoinRuleRow(Icons.event_available_rounded, 'Penyelesaian Jadwal RW', 'Bonus Insentif Harian'),
+                    _buildPoinRuleRow(Icons.delete_sweep_rounded, 'Pengosongan Tempat Sampah', '+5 Poin / Pengajuan'),
                   ],
                 ),
               ),

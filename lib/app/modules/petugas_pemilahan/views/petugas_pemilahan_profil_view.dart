@@ -531,38 +531,54 @@ class _PetugasPemilahanProfilViewState
                     ),
                   ),
                   const SizedBox(height: 14),
-                  Text(
-                    user != null ? user.name : 'Petugas Pemilahan',
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryGreen.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: AppColors.primaryGreen.withValues(alpha: 0.25),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Text(
+                      user != null ? user.name : 'Petugas Pemilahan',
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: (user?.name.length ?? 0) > 30
+                            ? 17
+                            : ((user?.name.length ?? 0) > 20 ? 18 : 20),
+                        fontWeight: FontWeight.w800,
+                        height: 1.25,
                       ),
                     ),
-                    child: Text(
-                      (rw != '-' && kelurahan != '-')
-                          ? 'PETUGAS PEMILAHAN • RW $rw, KEL. $kelurahan'
-                          : (rw != '-'
-                              ? 'PETUGAS PEMILAHAN • RW $rw'
-                              : 'PETUGAS PEMILAHAN'),
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primaryGreen,
-                        letterSpacing: 0.5,
+                  ),
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.primaryGreen.withValues(alpha: 0.25),
+                        ),
+                      ),
+                      child: Text(
+                        (rw != '-' && kelurahan != '-')
+                            ? 'PETUGAS PEMILAHAN • RW $rw, KEL. $kelurahan'
+                            : (rw != '-'
+                                ? 'PETUGAS PEMILAHAN • RW $rw'
+                                : 'PETUGAS PEMILAHAN'),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primaryGreen,
+                          letterSpacing: 0.5,
+                          height: 1.2,
+                        ),
                       ),
                     ),
                   ),
@@ -834,6 +850,7 @@ class _PetugasPemilahanProfilViewState
           fontSize: 14,
           fontWeight: bold ? FontWeight.bold : FontWeight.w600,
           color: AppColors.textPrimary,
+          height: 1.3,
         ),
       ),
     );

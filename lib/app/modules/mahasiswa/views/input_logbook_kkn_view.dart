@@ -385,7 +385,7 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Berhasil mencatat logbook harian! (+3 Poin)'),
+            content: Text('Berhasil mencatat logbook harian!'),
             backgroundColor: AppColors.success,
           ),
         );
