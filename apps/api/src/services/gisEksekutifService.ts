@@ -64,10 +64,10 @@ const KELURAHAN_GEOMETRIES: Record<string, [number, number][]> = {
   ],
 };
 
-// Label warna kepatuhan sesuai standar QC
+// Label warna kepatuhan sesuai standar QC (≥ 80% Hijau, 50-79% Kuning, < 50% Merah)
 function kepColor(pct: number): string {
-  if (pct >= 25) return "#00a86b";
-  if (pct >= 10) return "#f59e0b";
+  if (pct >= 80) return "#00a86b";
+  if (pct >= 50) return "#f59e0b";
   return "#ef4444";
 }
 
@@ -378,6 +378,7 @@ export const gisEksekutifService = {
         nama: kelName,
         kepatuhan,
         volume: volumeM3,
+        volumeKg: sumKg > 0 ? sumKg : null,
         organikKgHari: organikKg,
         anorganikKgHari: anorganikKg,
         residuKgHari: residuKg,
@@ -443,6 +444,7 @@ export const gisEksekutifService = {
         kgHari: baseResKg,
       },
       totalM3: volumeTotal,
+      totalKg: baseTotalKg,
       totalKgHari: baseTotalKg,
       hasData,
     };
@@ -493,7 +495,8 @@ export const gisEksekutifService = {
 
       // Konversi berat nyata ke volume m³ (1.000 kg = 1 m³ standar DLH Kota Bandung / SNI)
       const volumeM3 = totalKgMonth > 0 ? Math.round((totalKgMonth / 1000) * 100) / 100 : 0;
-      return { bulan: label, volume: volumeM3 };
+      const volumeKg = totalKgMonth > 0 ? Math.round(totalKgMonth * 10) / 10 : 0;
+      return { bulan: label, volume: volumeM3, volumeKg };
     });
 
     // Indeks dalam deret 5 bulan linimasa KKN (0=Agu, 1=Sep, 2=Okt, 3=Nov, 4=Des)
@@ -501,6 +504,7 @@ export const gisEksekutifService = {
     const prevProgramMonthIdx = programMonthIdx > 0 ? programMonthIdx - 1 : null;
 
     const currentVol = trenBulanan[programMonthIdx]?.volume ?? volumeTotal ?? 0;
+    const currentVolKg = trenBulanan[programMonthIdx]?.volumeKg ?? baseTotalKg ?? 0;
     const prevVol = prevProgramMonthIdx !== null ? trenBulanan[prevProgramMonthIdx]?.volume : null;
     const previousMonthName = prevProgramMonthIdx !== null ? PROGRAM_MONTHS[prevProgramMonthIdx].label : null;
 
@@ -528,6 +532,7 @@ export const gisEksekutifService = {
         coordinates: (KELURAHAN_GEOMETRIES[kelName] as [number, number][]) ?? [],
         kepatuhan: kep,
         volume: kd?.volume ?? null,
+        volumeKg: kd?.volumeKg ?? null,
         totalFasilitas: kd?.totalFasilitas ?? 0,
         color: kep !== null ? kepColor(kep) : "#9ca3af",
         hasData: kd?.hasData ?? false,
@@ -573,11 +578,14 @@ export const gisEksekutifService = {
         fasilitasTerdata: totalFasilitas,
         fasilitasSubtext: rawKel ? `Kelurahan ${rawKel}` : `${kelurahanNames.length} kelurahan`,
         volumeTotal: currentVol,
+        volumeTotalKg: currentVolKg,
         volumeGrowthPercent: growthPct,
         previousMonthName,
         activeMonthIndex: activeMonthIdx,
-        volumeUnit: "m³/bulan",
+        volumeUnit: "kg",
+        volumeUnitM3: "m³/bulan",
         kepatuhanPemilahan: avgKepatuhan,
+        kepatuhanTarget: 80,
         kepatuhanSubtext: "Sampel selama giat KKN",
         kepatuhanDeltaPoin: 0,
         sensorCh4OnlineCount: 0,

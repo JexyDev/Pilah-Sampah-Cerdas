@@ -639,7 +639,7 @@ ORDER BY "jumlah_titik" DESC;`;
                   <ul className="qc-gov-list">
                     <li><strong>SNI 19-3964-1994</strong>: Metode Pengambilan dan Pengukuran Contoh Timbulan dan Komposisi Sampah Perkotaan.</li>
                     <li><strong>Faktor Densitas Padat</strong>: Faktor 1.000 kg/m³ digunakan untuk konversi berat timbulan harian menjadi volume bulanan terpadatkan pada level TPS/Kecamatan.</li>
-                    <li><strong>Target Pemilahan Sampah</strong>: Target acuan kepatuhan pemilahan minimum Kota Bandung sebesar 25%.</li>
+                    <li><strong>Target Pemilahan Sampah</strong>: Target acuan kepatuhan pemilahan program KKN Tematik sebesar ≥ 80% (Standar Kinerja Sangat Baik KKN Berseka).</li>
                   </ul>
                 </div>
               </div>
