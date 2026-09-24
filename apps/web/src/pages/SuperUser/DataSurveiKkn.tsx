@@ -190,7 +190,11 @@ export default function DataSurveiKkn({ type: propType }: DataSurveiKknProps) {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          {(user?.peran === "SUPER_USER" || user?.peran === "PANITIA_TASKFORCE") && (
+                          {(user?.peran === "SUPER_USER" ||
+                            user?.peran === "DEVELOPER" ||
+                            user?.peran === "PANITIA_TASKFORCE" ||
+                            user?.peran === "TASK_FORCE" ||
+                            (user?.peran as string) === "TASKFORCE") && (
                             <button
                               onClick={() => {
                                 setSelectedEditKelurahanId(survey.kelurahanId);

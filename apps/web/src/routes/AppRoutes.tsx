@@ -179,8 +179,11 @@ const ProtectedRoute: React.FC<{
             (allowedRoles.includes("MPL") ||
               (allowedRoles as any).includes("MITRA_PEMBIMBING_LAPANGAN") ||
               (allowedRoles as any).includes("MITRA_PENDAMPING_LAPANGAN"))) ||
-          ((user.peran === "PANITIA_TASKFORCE" || user.peran === "TASK_FORCE") &&
-            (allowedRoles.includes("TASK_FORCE") || (allowedRoles as any).includes("PANITIA_TASKFORCE"))));
+          ((user.peran === "PANITIA_TASKFORCE" || user.peran === "TASK_FORCE" || (user.peran as string) === "TASKFORCE") &&
+            (allowedRoles.includes("TASK_FORCE") ||
+              (allowedRoles as any).includes("PANITIA_TASKFORCE") ||
+              allowedRoles.includes("PIMPINAN") ||
+              (allowedRoles as any).includes("PEMIMPIN"))));
 
       if (!fallbackAllowed) {
         return <Navigate to="/dasbor" replace />;
@@ -212,8 +215,11 @@ const ProtectedRoute: React.FC<{
         (allowedRoles as any).includes("MITRA_PENDAMPING_LAPANGAN"))
     ) &&
     !(
-      (user.peran === "PANITIA_TASKFORCE" || user.peran === "TASK_FORCE") &&
-      (allowedRoles.includes("TASK_FORCE") || (allowedRoles as any).includes("PANITIA_TASKFORCE"))
+      (user.peran === "PANITIA_TASKFORCE" || user.peran === "TASK_FORCE" || (user.peran as string) === "TASKFORCE") &&
+      (allowedRoles.includes("TASK_FORCE") ||
+        (allowedRoles as any).includes("PANITIA_TASKFORCE") ||
+        allowedRoles.includes("PIMPINAN") ||
+        (allowedRoles as any).includes("PEMIMPIN"))
     )
   ) {
     // Redirect role yang tidak diizinkan kembali ke dashboard

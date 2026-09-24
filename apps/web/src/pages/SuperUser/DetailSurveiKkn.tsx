@@ -10,7 +10,12 @@ export default function DetailSurveiKkn() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const canEdit = user?.peran === "SUPER_USER" || user?.peran === "PANITIA_TASKFORCE";
+  const canEdit =
+    user?.peran === "SUPER_USER" ||
+    user?.peran === "DEVELOPER" ||
+    user?.peran === "PANITIA_TASKFORCE" ||
+    user?.peran === "TASK_FORCE" ||
+    (user?.peran as string) === "TASKFORCE";
 
   const [selectedSurvey, setSelectedSurvey] = useState<any>(null);
   const [isLoadingDetail, setIsLoadingDetail] = useState(true);
