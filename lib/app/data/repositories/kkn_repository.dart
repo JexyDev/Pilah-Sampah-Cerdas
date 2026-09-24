@@ -93,6 +93,15 @@ abstract class KknRepository {
   /// Mengklaim warga yang melakukan aktivasi mandiri (POST /api/v1/kkn/warga/:wargaId/claim)
   Future<bool> claimWargaMandiri(String wargaId);
 
+  /// Mengalihkan mahasiswa pendamping warga oleh Ketua Kelompok KKN
+  /// PATCH /api/v1/kkn/warga/:wargaId/reassign-pendamping (ECO/BERSEKA-MOBILE/2026-09/002)
+  Future<bool> reassignWargaPendamping(
+    String wargaId, {
+    required String targetStudentId,
+    String? reason,
+    String? ticketNumber,
+  });
+
   /// Mengambil riwayat aktivitas KKN
   Future<List<dynamic>> getKknHistory();
 

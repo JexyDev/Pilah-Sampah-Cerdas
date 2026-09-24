@@ -438,6 +438,75 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
+  Future<bool> reassignWargaPendamping(
+    String wargaId, {
+    required String targetStudentId,
+    String? reason,
+    String? ticketNumber,
+  }) async {
+    try {
+      final payload = <String, dynamic>{
+        'targetStudentId': targetStudentId,
+      };
+      if (reason != null && reason.trim().isNotEmpty) {
+        payload['reason'] = reason.trim();
+      }
+      if (ticketNumber != null && ticketNumber.trim().isNotEmpty) {
+        payload['ticketNumber'] = ticketNumber.trim();
+      }
+
+      final response = await apiClient.dio.patch(
+        ApiEndpoints.kknReassignPendamping(wargaId),
+        data: payload,
+      );
+      return response.statusCode == 200 || response.statusCode == 201;
+    } on DioException catch (e) {
+      final statusCode = e.response?.statusCode;
+      final responseData = e.response?.data;
+      String? code;
+      if (responseData is Map) {
+        code = responseData['code']?.toString() ??
+            responseData['error']?.toString() ??
+            responseData['message']?.toString();
+      }
+
+      if (code != null) {
+        if (code.contains('TARGET_STUDENT_REQUIRED')) {
+          throw Exception('Mahasiswa tujuan wajib dipilih.');
+        }
+        if (code.contains('SAME_STUDENT_ASSIGNED')) {
+          throw Exception('Warga sudah didampingi oleh mahasiswa ini.');
+        }
+        if (code.contains('ONLY_KETUA_CAN_REASSIGN')) {
+          throw Exception(
+            'Hanya Ketua Kelompok yang dapat mengalihkan warga dampingan.',
+          );
+        }
+        if (code.contains('CROSS_KELOMPOK_FORBIDDEN')) {
+          throw Exception(
+            'Hanya boleh mengalihkan ke sesama anggota kelompok KKN.',
+          );
+        }
+        if (code.contains('WARGA_NOT_FOUND')) {
+          throw Exception('Data warga tidak ditemukan.');
+        }
+        if (code.contains('TARGET_STUDENT_NOT_FOUND')) {
+          throw Exception('Mahasiswa tujuan tidak aktif/terdaftar.');
+        }
+      }
+
+      final message = _extractSafeErrorMessage(
+        responseData,
+        'Gagal mengalihkan mahasiswa pendamping (HTTP $statusCode)',
+      );
+      throw Exception(message);
+    } catch (e) {
+      if (e is Exception) rethrow;
+      throw Exception('Gagal mengalihkan mahasiswa pendamping: $e');
+    }
+  }
+
+  @override
   Future<bool> activateBin(
     String wargaId,
     String binOrganikId,

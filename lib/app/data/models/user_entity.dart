@@ -31,6 +31,7 @@ class UserEntity extends Equatable {
     this.kelompokName = '',
     this.dplName = '',
     this.familySize = 1,
+    this.isKetua = false,
   });
 
   final String id;
@@ -60,6 +61,7 @@ class UserEntity extends Equatable {
   final String kelompokName;
   final String dplName;
   final int familySize;
+  final bool isKetua;
 
   UserEntity copyWith({
     String? id,
@@ -89,6 +91,7 @@ class UserEntity extends Equatable {
     String? kelompokName,
     String? dplName,
     int? familySize,
+    bool? isKetua,
   }) {
     return UserEntity(
       id: id ?? this.id,
@@ -118,6 +121,7 @@ class UserEntity extends Equatable {
       kelompokName: kelompokName ?? this.kelompokName,
       dplName: dplName ?? this.dplName,
       familySize: familySize ?? this.familySize,
+      isKetua: isKetua ?? this.isKetua,
     );
   }
 
@@ -155,6 +159,7 @@ class UserEntity extends Equatable {
     pendampingName,
     kelompokName,
     dplName,
+    isKetua,
   ];
 }
 

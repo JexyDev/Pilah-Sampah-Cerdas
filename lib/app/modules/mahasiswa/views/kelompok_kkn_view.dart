@@ -444,137 +444,9 @@ class KelompokKknView extends ConsumerWidget {
                                 member.nim == user.nim) ||
                             (member.name.toLowerCase().trim() ==
                                 user.name.toLowerCase().trim()));
-                    return Card(
-                      elevation: 1,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 6,
-                        ),
-                        leading: CircleAvatar(
-                          backgroundColor: member.isLeader
-                              ? AppColors.primaryGreen
-                              : AppColors.primaryBlueDark.withValues(
-                                  alpha: 0.1,
-                                ),
-                          foregroundColor: member.isLeader
-                              ? Colors.white
-                              : AppColors.primaryBlueDark,
-                          child: Text(
-                            member.name.isNotEmpty
-                                ? member.name[0].toUpperCase()
-                                : 'M',
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        title: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                member.name,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ),
-                            if (member.isLeader)
-                              Container(
-                                margin: const EdgeInsets.only(left: 6),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryGreen.withValues(
-                                    alpha: 0.15,
-                                  ),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Text(
-                                  'KETUA',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.primaryGreen,
-                                  ),
-                                ),
-                              ),
-                            if (isCurrentUser)
-                              Container(
-                                margin: const EdgeInsets.only(left: 6),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryBlue.withValues(
-                                    alpha: 0.15,
-                                  ),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: AppColors.primaryBlue.withValues(
-                                      alpha: 0.3,
-                                    ),
-                                  ),
-                                ),
-                                child: const Text(
-                                  'ANDA',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.primaryBlue,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              member.nim.isNotEmpty ? member.nim : '-',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: AppColors.textSecondary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            if (member.statusPenugasanRw != '-')
-                              Text(
-                                'Penugasan: RW ${member.statusPenugasanRw}',
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: AppColors.primaryBlue,
-                                ),
-                              ),
-                          ],
-                        ),
-                        trailing: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              '${member.individualPoints} Pts',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w800,
-                                fontSize: 14,
-                                color: AppColors.primaryGreen,
-                              ),
-                            ),
-                            const Text(
-                              'Poin Total',
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                    return _MemberCardItem(
+                      member: member,
+                      isCurrentUser: isCurrentUser,
                     );
                   },
                 ),
@@ -1249,3 +1121,245 @@ class KelompokKknView extends ConsumerWidget {
     );
   }
 }
+
+class _MemberCardItem extends StatefulWidget {
+  final KelompokMemberData member;
+  final bool isCurrentUser;
+
+  const _MemberCardItem({
+    required this.member,
+    required this.isCurrentUser,
+  });
+
+  @override
+  State<_MemberCardItem> createState() => _MemberCardItemState();
+}
+
+class _MemberCardItemState extends State<_MemberCardItem> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final member = widget.member;
+    final isCurrentUser = widget.isCurrentUser;
+    final isLeader = member.isLeader;
+
+    Color bgColor;
+    Color borderColor;
+    List<BoxShadow> shadows;
+
+    if (isLeader) {
+      if (_isHovered) {
+        bgColor = AppColors.primaryGreen.withValues(alpha: 0.12);
+        borderColor = AppColors.primaryGreen;
+        shadows = [
+          BoxShadow(
+            color: AppColors.primaryGreen.withValues(alpha: 0.25),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ];
+      } else {
+        bgColor = AppColors.primaryGreen.withValues(alpha: 0.03);
+        borderColor = AppColors.primaryGreen.withValues(alpha: 0.35);
+        shadows = [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ];
+      }
+    } else if (isCurrentUser) {
+      if (_isHovered) {
+        bgColor = AppColors.primaryBlue.withValues(alpha: 0.12);
+        borderColor = AppColors.primaryBlue;
+        shadows = [
+          BoxShadow(
+            color: AppColors.primaryBlue.withValues(alpha: 0.25),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ];
+      } else {
+        bgColor = AppColors.primaryBlue.withValues(alpha: 0.03);
+        borderColor = AppColors.primaryBlue.withValues(alpha: 0.35);
+        shadows = [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ];
+      }
+    } else {
+      if (_isHovered) {
+        bgColor = Colors.grey.withValues(alpha: 0.06);
+        borderColor = AppColors.border;
+        shadows = [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ];
+      } else {
+        bgColor = Colors.white;
+        borderColor = AppColors.border.withValues(alpha: 0.4);
+        shadows = [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ];
+      }
+    }
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeInOut,
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: borderColor,
+            width: _isHovered ? 1.5 : 1.0,
+          ),
+          boxShadow: shadows,
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 6,
+          ),
+          leading: CircleAvatar(
+            backgroundColor: member.isLeader
+                ? AppColors.primaryGreen
+                : AppColors.primaryBlueDark.withValues(
+                    alpha: 0.1,
+                  ),
+            foregroundColor: member.isLeader
+                ? Colors.white
+                : AppColors.primaryBlueDark,
+            child: Text(
+              member.name.isNotEmpty
+                  ? member.name[0].toUpperCase()
+                  : 'M',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          title: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  member.name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              if (member.isLeader)
+                Container(
+                  margin: const EdgeInsets.only(left: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryGreen.withValues(
+                      alpha: 0.15,
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    'KETUA',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primaryGreen,
+                    ),
+                  ),
+                ),
+              if (isCurrentUser)
+                Container(
+                  margin: const EdgeInsets.only(left: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryBlue.withValues(
+                      alpha: 0.15,
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppColors.primaryBlue.withValues(
+                        alpha: 0.3,
+                      ),
+                    ),
+                  ),
+                  child: const Text(
+                    'ANDA',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primaryBlue,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                member.nim.isNotEmpty ? member.nim : '-',
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              if (member.statusPenugasanRw != '-')
+                Text(
+                  'Penugasan: RW ${member.statusPenugasanRw}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.primaryBlue,
+                  ),
+                ),
+            ],
+          ),
+          trailing: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${member.individualPoints} Pts',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 14,
+                  color: AppColors.primaryGreen,
+                ),
+              ),
+              const Text(
+                'Poin Total',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+

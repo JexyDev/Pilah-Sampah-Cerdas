@@ -1,6 +1,39 @@
 import 'dart:convert';
 import 'package:equatable/equatable.dart';
 
+class WargaStats extends Equatable {
+  const WargaStats({
+    required this.totalWargaDampingan,
+    required this.wargaDampinganBinAktif,
+    required this.wargaMandiriRwBelumKlaim,
+    required this.totalWargaRw,
+  });
+
+  final int totalWargaDampingan;
+  final int wargaDampinganBinAktif;
+  final int wargaMandiriRwBelumKlaim;
+  final int totalWargaRw;
+
+  factory WargaStats.fromJson(Map<String, dynamic> json) {
+    return WargaStats(
+      totalWargaDampingan: (json['totalWargaDampingan'] as num?)?.toInt() ?? 0,
+      wargaDampinganBinAktif:
+          (json['wargaDampinganBinAktif'] as num?)?.toInt() ?? 0,
+      wargaMandiriRwBelumKlaim:
+          (json['wargaMandiriRwBelumKlaim'] as num?)?.toInt() ?? 0,
+      totalWargaRw: (json['totalWargaRw'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  @override
+  List<Object?> get props => [
+        totalWargaDampingan,
+        wargaDampinganBinAktif,
+        wargaMandiriRwBelumKlaim,
+        totalWargaRw,
+      ];
+}
+
 /// ─────────────────────────────────────────────────────────────────────────────
 /// Model untuk response GET /api/kkn/dashboard
 /// ─────────────────────────────────────────────────────────────────────────────
@@ -25,6 +58,7 @@ class KknDashboardData extends Equatable {
     required this.contributionPoints,
     this.personalPoints,
     this.prokerPoints,
+    this.wargaStats,
   });
 
   final String nim;
@@ -36,6 +70,7 @@ class KknDashboardData extends Equatable {
   final int contributionPoints;
   final int? personalPoints;
   final int? prokerPoints;
+  final WargaStats? wargaStats;
 
   factory KknDashboardData.fromJson(Map<String, dynamic> json) {
     final student = json['studentKkn'] as Map<String, dynamic>? ?? {};
@@ -79,6 +114,37 @@ class KknDashboardData extends Equatable {
         (json['progressPercentage'] ?? stats['progressPercentage'] ?? 0.0)
             as num?;
 
+    WargaStats? parsedWargaStats;
+    if (stats['wargaStats'] is Map<String, dynamic>) {
+      parsedWargaStats =
+          WargaStats.fromJson(stats['wargaStats'] as Map<String, dynamic>);
+    } else if (json['wargaStats'] is Map<String, dynamic>) {
+      parsedWargaStats =
+          WargaStats.fromJson(json['wargaStats'] as Map<String, dynamic>);
+    } else if (stats['totalWargaDampingan'] != null ||
+        json['totalWargaDampingan'] != null) {
+      parsedWargaStats = WargaStats(
+        totalWargaDampingan:
+            ((stats['totalWargaDampingan'] ?? json['totalWargaDampingan'])
+                    as num?)
+                ?.toInt() ??
+            0,
+        wargaDampinganBinAktif:
+            ((stats['wargaDampinganBinAktif'] ?? json['wargaDampinganBinAktif'])
+                    as num?)
+                ?.toInt() ??
+            0,
+        wargaMandiriRwBelumKlaim: ((stats['wargaMandiriRwBelumKlaim'] ??
+                    json['wargaMandiriRwBelumKlaim']) as num?)
+                ?.toInt() ??
+            0,
+        totalWargaRw:
+            ((stats['totalWargaRw'] ?? json['totalWargaRw']) as num?)
+                ?.toInt() ??
+            0,
+      );
+    }
+
     return KknDashboardData(
       nim:
           student['nim']?.toString() ??
@@ -100,11 +166,17 @@ class KknDashboardData extends Equatable {
       contributionPoints: pointVal?.toInt() ?? 0,
       personalPoints: personalPointVal?.toInt(),
       prokerPoints: prokerPointVal?.toInt(),
+      wargaStats: parsedWargaStats,
     );
   }
 
   @override
-  List<Object?> get props => [nim, totalRegisteredBins, contributionPoints];
+  List<Object?> get props => [
+        nim,
+        totalRegisteredBins,
+        contributionPoints,
+        wargaStats,
+      ];
 }
 
 /// ─────────────────────────────────────────────────────────────────────────────
@@ -189,6 +261,62 @@ class WasteLogEntry extends Equatable {
 }
 
 /// ─────────────────────────────────────────────────────────────────────────────
+/// Model untuk Data Pendamping KKN Warga Binaan (ECO/BERSEKA-MOBILE/2026-09/002)
+/// ─────────────────────────────────────────────────────────────────────────────
+class PendampingKkn extends Equatable {
+  const PendampingKkn({
+    required this.id,
+    required this.name,
+    this.phone = '',
+    this.nim = '',
+    this.jurusan = '',
+    this.kelompokId = '',
+    this.kelompokName = '',
+  });
+
+  final String id;
+  final String name;
+  final String phone;
+  final String nim;
+  final String jurusan;
+  final String kelompokId;
+  final String kelompokName;
+
+  factory PendampingKkn.fromJson(Map<String, dynamic> json) {
+    return PendampingKkn(
+      id: json['id']?.toString() ?? json['userId']?.toString() ?? '',
+      name: json['name']?.toString() ?? json['nama']?.toString() ?? '',
+      phone: json['phone']?.toString() ?? json['noTelepon']?.toString() ?? '',
+      nim: json['nim']?.toString() ?? '',
+      jurusan: json['jurusan']?.toString() ?? json['prodi']?.toString() ?? '',
+      kelompokId: json['kelompokId']?.toString() ?? '',
+      kelompokName: json['kelompokName']?.toString() ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'phone': phone,
+    'nim': nim,
+    'jurusan': jurusan,
+    'kelompokId': kelompokId,
+    'kelompokName': kelompokName,
+  };
+
+  @override
+  List<Object?> get props => [
+    id,
+    name,
+    phone,
+    nim,
+    jurusan,
+    kelompokId,
+    kelompokName,
+  ];
+}
+
+/// ─────────────────────────────────────────────────────────────────────────────
 /// Model untuk satu warga dampingan dari GET /api/kkn/warga-dampingan
 /// ─────────────────────────────────────────────────────────────────────────────
 class WargaDampingan extends Equatable {
@@ -217,6 +345,7 @@ class WargaDampingan extends Equatable {
     this.backendCorrectCount,
     this.backendIncorrectCount,
     this.lifecycleState = '',
+    this.pendampingKkn,
   });
 
   final String wargaId;
@@ -243,6 +372,7 @@ class WargaDampingan extends Equatable {
   final int? backendCorrectCount;
   final int? backendIncorrectCount;
   final String lifecycleState;
+  final PendampingKkn? pendampingKkn;
 
   /// Total aktivitas pemilahan
   int get totalActivities => backendTotalActivities ?? recentLogs.length;
@@ -298,6 +428,7 @@ class WargaDampingan extends Equatable {
     int? backendCorrectCount,
     int? backendIncorrectCount,
     String? lifecycleState,
+    PendampingKkn? pendampingKkn,
   }) {
     return WargaDampingan(
       wargaId: wargaId ?? this.wargaId,
@@ -325,6 +456,7 @@ class WargaDampingan extends Equatable {
       backendIncorrectCount:
           backendIncorrectCount ?? this.backendIncorrectCount,
       lifecycleState: lifecycleState ?? this.lifecycleState,
+      pendampingKkn: pendampingKkn ?? this.pendampingKkn,
     );
   }
 
@@ -597,6 +729,32 @@ class WargaDampingan extends Equatable {
       }
     }
 
+    // Parse PendampingKkn (ECO/BERSEKA-MOBILE/2026-09/002)
+    PendampingKkn? parsedPendampingKkn;
+    if (json['pendampingKkn'] is Map<String, dynamic>) {
+      parsedPendampingKkn = PendampingKkn.fromJson(
+        json['pendampingKkn'] as Map<String, dynamic>,
+      );
+    } else if (json['pendampingKkn'] is Map) {
+      parsedPendampingKkn = PendampingKkn.fromJson(
+        Map<String, dynamic>.from(json['pendampingKkn'] as Map),
+      );
+    }
+
+    String resolvedMhsId = extractMhsId();
+    if (resolvedMhsId.isEmpty &&
+        parsedPendampingKkn != null &&
+        parsedPendampingKkn.id.isNotEmpty) {
+      resolvedMhsId = parsedPendampingKkn.id;
+    }
+
+    String resolvedPendampingName = extractPendampingName();
+    if (resolvedPendampingName.isEmpty &&
+        parsedPendampingKkn != null &&
+        parsedPendampingKkn.name.isNotEmpty) {
+      resolvedPendampingName = parsedPendampingKkn.name;
+    }
+
     return WargaDampingan(
       wargaId: extractedWargaId,
       binId: extractedBinId,
@@ -613,8 +771,8 @@ class WargaDampingan extends Equatable {
       kelurahan: parsedKelurahan,
       rw: parsedRw,
       rwId: json['rwId'] != null ? int.tryParse(json['rwId'].toString()) : null,
-      mahasiswaId: extractMhsId(),
-      pendampingName: extractPendampingName(),
+      mahasiswaId: resolvedMhsId,
+      pendampingName: resolvedPendampingName,
       status: rawStatus.isEmpty ? 'Aktif' : rawStatus,
       phone:
           json['phone']?.toString() ??
@@ -660,6 +818,7 @@ class WargaDampingan extends Equatable {
       backendIncorrectCount:
           (json['incorrectCount'] as num?)?.toInt() ??
           (json['salahCount'] as num?)?.toInt(),
+      pendampingKkn: parsedPendampingKkn,
     );
   }
 
@@ -673,6 +832,7 @@ class WargaDampingan extends Equatable {
     mahasiswaId,
     pendampingName,
     status,
+    pendampingKkn,
   ];
 }
 
@@ -893,8 +1053,16 @@ class KelompokMemberData extends Equatable {
           (json['points'] as num?)?.toInt() ??
           0,
       isLeader:
-          json['isLeader'] as bool? ??
-          (json['role']?.toString().toUpperCase() == 'KETUA'),
+          (json['isLeader'] == true) ||
+          (json['is_leader'] == true) ||
+          (json['isKetua'] == true) ||
+          (json['is_ketua'] == true) ||
+          (json['isLeader']?.toString() == '1') ||
+          (json['isKetua']?.toString() == '1') ||
+          (json['role']?.toString().toUpperCase() == 'KETUA') ||
+          (json['role']?.toString().toUpperCase() == 'LEADER') ||
+          (json['jabatan']?.toString().toUpperCase() == 'KETUA') ||
+          (json['posisi']?.toString().toUpperCase() == 'KETUA'),
       statusPenugasanRw:
           json['statusPenugasanRw']?.toString() ??
           json['assignedRw']?.toString() ??
