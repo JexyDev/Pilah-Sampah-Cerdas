@@ -89,15 +89,17 @@ export class ConfigController {
   async getAppVersion(req: Request, res: Response): Promise<void> {
     try {
       const data = await configService.getAppVersionConfig();
+      // HOTFIX: Force min_required_version to 1.0.0 so old apps aren't locked out by the Orange Screen
+      data.min_required_version = "1.0.0";
+      // HOTFIX: Force absolute URL
+      data.update_url = "https://berseka.id/downloads/berseka-release-arm64-v8a.apk";
       res.status(200).json(data);
     } catch (error: any) {
       console.error("[ConfigController] getAppVersion error:", error);
       res.status(200).json({
-        min_required_version: process.env.APP_MIN_REQUIRED_VERSION || "1.0.0",
+        min_required_version: "1.0.0",
         latest_version: process.env.APP_LATEST_VERSION || "1.0.0",
-        update_url:
-          process.env.APP_UPDATE_URL ||
-          "https://berseka.id/downloads/berseka-release-universal.apk",
+        update_url: "https://berseka.id/downloads/berseka-release-arm64-v8a.apk",
       });
     }
   }
