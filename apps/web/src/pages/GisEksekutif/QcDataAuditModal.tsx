@@ -90,28 +90,27 @@ export function QcDataAuditModal({
 
 ### A. Volume Sampah Bulanan (m³/bulan)
 * **Rumus Acuan**:
-  Volume (m³/bulan) = (Timbulan Sampah Harian (kg/hari) × 30 hari) / Faktor Densitas Padat (1.000 kg/m³)
+  Volume (m³/bulan) = Total Berat Terkumpul (kg) / Faktor Densitas Padat (1.000 kg/m³)
 * **Faktor Konversi**: 1.000 kg = 1 m³ (Standar Kompaksi Timbulan Padat DLH Kota Bandung & SNI 19-3964-1994).
+* **Sumber Data**: 100% dari transaksi operasional riil \`setoran_otomatis\` (Smart Bin IoT) dan \`setoran_manual\` (petugas).
 * **Perhitungan Nilai Aktual**:
-  - Organik: ${fmtInt(kgOrg)} kg/hari × 30 / 1.000 = ${fmtN(vOrg)} m³/bulan (${pOrg}%)
-  - Anorganik: ${fmtInt(kgAno)} kg/hari × 30 / 1.000 = ${fmtN(vAno)} m³/bulan (${pAno}%)
-  - Residu: ${fmtInt(kgRes)} kg/hari × 30 / 1.000 = ${fmtN(vRes)} m³/bulan (${pRes}%)
+  - Organik: ${fmtN(vOrg)} m³/bulan (${pOrg}%)
+  - Anorganik: ${fmtN(vAno)} m³/bulan (${pAno}%)
+  - Residu: ${fmtN(vRes)} m³/bulan (${pRes}%)
   - Total Akumulasi: ${fmtN(vOrg)} + ${fmtN(vAno)} + ${fmtN(vRes)} = ${fmtN(totalVolM3)} m³/bulan
-  - Ekivalensi Timbulan Harian: ~${fmtN(totalTonHari)} ton/hari (~${fmtInt(totalKgHari)} kg/hari)
+  - Ekivalensi Berat: ~${fmtN(totalTonHari)} ton (~${fmtInt(totalKgHari)} kg)
 
 ### B. Kepatuhan Pemilahan Sampah (${kepatuhanRata}%)
-* **Rumus Acuan**: Rata-rata tertimbang persentase pemilahan sampah pada tingkat kelurahan di Kecamatan Coblong:
-  Kepatuhan Rata-Rata = (1 / N) × ∑ (Persentase Pemilahan Kelurahan_i)
+* **Konsep**: Sampel Tingkat Validitas Pemilahan Selama Giat KKN Tematik.
+* **Rumus Acuan**:
+  Kepatuhan (%) = (Jumlah Setoran Terpilah Valid [Status: ACCEPTED] / Total Transaksi Setoran Sampel Warga) × 100%
+* **Catatan Paparan Eksekutif**:
+  Angka ini mencerminkan persentase kepatuhan dari **sampel warga yang didampingi dan menyetor selama kegiatan KKN Tematik**, bukan sensus seluruh penduduk kecamatan.
 * **Nilai per Kelurahan**:
-  - Sadang Serang: 25%
-  - Lebak Gede: 22%
-  - Sekeloa: 18%
-  - Lebak Siliwangi: 15%
-  - Dago: 10%
-  - Cipaganti: 0%
-  - Rata-rata Kecamatan: 18%
+${(data?.kepatuhanPerKelurahan ?? []).map(k => `  - ${k.nama}: ${k.kepatuhan != null ? `${k.kepatuhan}% (Sampel giat KKN)` : "Belum ada transaksi"}`).join("\n")}
+  - Rata-rata Kecamatan: ${kepatuhanRata ?? 0}%
 
-### C. Pertumbuhan Volume Bulanan (+${growthPct}% vs ${prevMonth})
+### C. Pertumbuhan Volume Bulanan (${growthPct != null ? `${growthPct >= 0 ? "+" : ""}${growthPct}%` : "—"} vs ${prevMonth})
 * **Rumus Acuan**:
   Pertumbuhan (%) = ((Volume Periode Aktif - Volume Bulan Sebelumnya) / Volume Bulan Sebelumnya) × 100%
 
@@ -124,46 +123,53 @@ export function QcDataAuditModal({
 
 | No | Metrik Dashboard | Tabel Database Sumber | Kolom Sumber |
 |---|---|---|---|
-| 1 | Timbulan & Komposisi Sampah | survei_volume_sampah | organikKgPerHari, anorganikKgPerHari, residuKgPerHari, totalVolumeKgPerHari |
-| 2 | Kepatuhan Pemilahan | survei_pemilahan_sampah | persentasePemilahan (Decimal/String, misal 0.25 = 25%) |
-| 3 | Entitas Kelurahan & Relasi | survei_kelurahan, Kelurahan | namaKelurahan, volumeSampahId, pemilahanSampahId |
-| 4 | Titik Fasilitas Persampahan | Facility | id, nama, jenis, latitude, longitude, rwId (Filter: jenis != 'posko_kkn') |
-| 5 | Tren Bulanan & Dinamika Produksi | FacilityProductionLog | volumeTotalM3, bulan, tahun, createdAt |
+| 1 | Transaksi Setoran Otomatis Warga | setoran_otomatis | berat, status (ACCEPTED/PENDING/REJECTED), hasilKlasifikasiAi, createdAt |
+| 2 | Transaksi Setoran Manual Petugas | setoran_manual | berat, kategori (organik/anorganik/residu), status, createdAt |
+| 3 | Tingkat Kepatuhan Pemilahan | setoran_otomatis | COUNT(status='ACCEPTED') / COUNT(*) * 100 (Sampel Giat KKN) |
+| 4 | Titik Fasilitas Persampahan | fasilitas (Facility) | id, nama, jenis, latitude, longitude, rwId (Filter: jenis != 'posko_kkn') |
+| 5 | Log Produksi Fasilitas | catatan_produksi_fasilitas | outputKg, createdAt |
 
 ---
 
 ## 3. QUERY SQL UNTUK VERIFIKASI MANDIRI TIM QC
 
 \`\`\`sql
--- Query 1: Verifikasi Timbulan & Konversi Volume Bulanan
+-- Query 1: Verifikasi Transaksi Setoran Riil Warga & Petugas (Bulan Berjalan)
 SELECT 
-  sk."namaKelurahan",
-  svs."organikKgPerHari",
-  svs."anorganikKgPerHari",
-  svs."residuKgPerHari",
-  svs."totalVolumeKgPerHari",
-  ROUND((svs."organikKgPerHari" * 30 / 1000)::numeric, 1) AS "organik_m3_bln",
-  ROUND((svs."anorganikKgPerHari" * 30 / 1000)::numeric, 1) AS "anorganik_m3_bln",
-  ROUND((svs."residuKgPerHari" * 30 / 1000)::numeric, 1) AS "residu_m3_bln",
-  ROUND((svs."totalVolumeKgPerHari" * 30 / 1000)::numeric, 1) AS "total_m3_bln"
-FROM "survei_kelurahan" sk
-JOIN "survei_volume_sampah" svs ON sk."volumeSampahId" = svs."id"
-ORDER BY "total_m3_bln" DESC;
+  'setoran_otomatis' AS sumber,
+  COUNT(*) AS total_transaksi,
+  ROUND(SUM(berat)::numeric, 2) AS total_kg,
+  ROUND((SUM(berat) / 1000)::numeric, 3) AS volume_m3
+FROM setoran_otomatis
+WHERE created_at >= '2026-09-01' AND created_at <= '2026-09-30 23:59:59'
+UNION ALL
+SELECT 
+  'setoran_manual' AS sumber,
+  COUNT(*) AS total_transaksi,
+  ROUND(SUM(berat)::numeric, 2) AS total_kg,
+  ROUND((SUM(berat) / 1000)::numeric, 3) AS volume_m3
+FROM setoran_manual
+WHERE created_at >= '2026-09-01' AND created_at <= '2026-09-30 23:59:59';
 
--- Query 2: Verifikasi Kepatuhan Pemilahan
+-- Query 2: Verifikasi Kepatuhan Pemilahan (Sampel Warga Selama Giat KKN)
 SELECT 
-  sk."namaKelurahan",
-  sps."persentasePemilahan",
-  ROUND((sps."persentasePemilahan"::numeric * 100), 1) AS "kepatuhan_persen"
-FROM "survei_kelurahan" sk
-JOIN "survei_pemilahan_sampah" sps ON sk."pemilahanSampahId" = sps."id"
-ORDER BY "kepatuhan_persen" DESC;
+  k.name AS kelurahan,
+  COUNT(*) AS total_transaksi,
+  COUNT(CASE WHEN so.status = 'ACCEPTED' THEN 1 END) AS transaksi_valid,
+  ROUND(COUNT(CASE WHEN so.status = 'ACCEPTED' THEN 1 END)::numeric / NULLIF(COUNT(*), 0) * 100, 1) AS kepatuhan_persen
+FROM setoran_otomatis so
+JOIN pengguna p ON so.warga_id = p.id
+JOIN rw r ON p.rw_id = r.id
+JOIN kelurahan k ON r.kelurahan_id = k.id
+WHERE so.created_at >= '2026-09-01' AND so.created_at <= '2026-09-30 23:59:59'
+GROUP BY k.name
+ORDER BY kepatuhan_persen DESC;
 
 -- Query 3: Verifikasi Jumlah Titik Fasilitas Aktif
 SELECT 
   f."jenis", 
   COUNT(*) AS "jumlah_titik"
-FROM "Facility" f
+FROM "fasilitas" f
 WHERE f."jenis" != 'posko_kkn'
 GROUP BY f."jenis"
 ORDER BY "jumlah_titik" DESC;
@@ -202,32 +208,42 @@ ${(data?.kepatuhanPerKelurahan ?? []).map((k) => {
     URL.revokeObjectURL(url);
   };
 
-  const sqlVolume = `SELECT 
-  sk."namaKelurahan",
-  svs."organikKgPerHari",
-  svs."anorganikKgPerHari",
-  svs."residuKgPerHari",
-  svs."totalVolumeKgPerHari",
-  ROUND((svs."organikKgPerHari" * 30 / 1000)::numeric, 1) AS "organik_m3_bln",
-  ROUND((svs."anorganikKgPerHari" * 30 / 1000)::numeric, 1) AS "anorganik_m3_bln",
-  ROUND((svs."residuKgPerHari" * 30 / 1000)::numeric, 1) AS "residu_m3_bln",
-  ROUND((svs."totalVolumeKgPerHari" * 30 / 1000)::numeric, 1) AS "total_m3_bln"
-FROM "survei_kelurahan" sk
-JOIN "survei_volume_sampah" svs ON sk."volumeSampahId" = svs."id"
-ORDER BY "total_m3_bln" DESC;`;
+  const sqlVolume = `-- Query 1: Verifikasi Transaksi Setoran Riil Warga & Petugas (Bulan Berjalan)
+SELECT 
+  'setoran_otomatis' AS sumber,
+  COUNT(*) AS total_transaksi,
+  ROUND(SUM(berat)::numeric, 2) AS total_kg,
+  ROUND((SUM(berat) / 1000)::numeric, 3) AS volume_m3
+FROM setoran_otomatis
+WHERE created_at >= '2026-09-01' AND created_at <= '2026-09-30 23:59:59'
+UNION ALL
+SELECT 
+  'setoran_manual' AS sumber,
+  COUNT(*) AS total_transaksi,
+  ROUND(SUM(berat)::numeric, 2) AS total_kg,
+  ROUND((SUM(berat) / 1000)::numeric, 3) AS volume_m3
+FROM setoran_manual
+WHERE created_at >= '2026-09-01' AND created_at <= '2026-09-30 23:59:59';`;
 
-  const sqlKepatuhan = `SELECT 
-  sk."namaKelurahan",
-  sps."persentasePemilahan",
-  ROUND((sps."persentasePemilahan"::numeric * 100), 1) AS "kepatuhan_persen"
-FROM "survei_kelurahan" sk
-JOIN "survei_pemilahan_sampah" sps ON sk."pemilahanSampahId" = sps."id"
-ORDER BY "kepatuhan_persen" DESC;`;
+  const sqlKepatuhan = `-- Query 2: Verifikasi Kepatuhan Pemilahan (Sampel Warga Selama Giat KKN)
+SELECT 
+  k.name AS kelurahan,
+  COUNT(*) AS total_transaksi,
+  COUNT(CASE WHEN so.status = 'ACCEPTED' THEN 1 END) AS transaksi_valid,
+  ROUND(COUNT(CASE WHEN so.status = 'ACCEPTED' THEN 1 END)::numeric / NULLIF(COUNT(*), 0) * 100, 1) AS kepatuhan_persen
+FROM setoran_otomatis so
+JOIN pengguna p ON so.warga_id = p.id
+JOIN rw r ON p.rw_id = r.id
+JOIN kelurahan k ON r.kelurahan_id = k.id
+WHERE so.created_at >= '2026-09-01' AND so.created_at <= '2026-09-30 23:59:59'
+GROUP BY k.name
+ORDER BY kepatuhan_persen DESC;`;
 
-  const sqlFasilitas = `SELECT 
+  const sqlFasilitas = `-- Query 3: Verifikasi Jumlah Titik Fasilitas Persampahan Non-Posko
+SELECT 
   f."jenis", 
   COUNT(*) AS "jumlah_titik"
-FROM "Facility" f
+FROM "fasilitas" f
 WHERE f."jenis" != 'posko_kkn'
 GROUP BY f."jenis"
 ORDER BY "jumlah_titik" DESC;`;
@@ -466,8 +482,8 @@ ORDER BY "jumlah_titik" DESC;`;
               <div className="qc-sql-card">
                 <div className="qc-sql-head">
                   <div>
-                    <h4 className="qc-sql-title">Query 1: Verifikasi Timbulan & Volume Sampah (m³/bln)</h4>
-                    <span className="qc-sql-target">Tabel: <code>survei_kelurahan</code> + <code>survei_volume_sampah</code></span>
+                    <h4 className="qc-sql-title">Query 1: Verifikasi Transaksi & Volume Sampah (m³/bln)</h4>
+                    <span className="qc-sql-target">Tabel: <code>setoran_otomatis</code> + <code>setoran_manual</code></span>
                   </div>
                   <button
                     type="button"
@@ -484,8 +500,8 @@ ORDER BY "jumlah_titik" DESC;`;
               <div className="qc-sql-card">
                 <div className="qc-sql-head">
                   <div>
-                    <h4 className="qc-sql-title">Query 2: Verifikasi Persentase Kepatuhan Pemilahan</h4>
-                    <span className="qc-sql-target">Tabel: <code>survei_kelurahan</code> + <code>survei_pemilahan_sampah</code></span>
+                    <h4 className="qc-sql-title">Query 2: Verifikasi Kepatuhan Pemilahan (Sampel Giat KKN)</h4>
+                    <span className="qc-sql-target">Tabel: <code>setoran_otomatis</code> (Filter: status = 'ACCEPTED')</span>
                   </div>
                   <button
                     type="button"

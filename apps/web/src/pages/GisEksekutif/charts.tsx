@@ -10,8 +10,12 @@ import {
 } from "./data";
 
 const nf1 = new Intl.NumberFormat("id-ID", { maximumFractionDigits: 1 });
+const nf2 = new Intl.NumberFormat("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 export const fmtN = (n: number | null | undefined): string => {
   if (n == null) return "—";
+  if (Math.abs(n) > 0 && Math.abs(n) < 10) {
+    return nf2.format(n);
+  }
   return nf1.format(n);
 };
 
@@ -532,8 +536,8 @@ export function Compliance({ rows, selected, onSelect }: ComplianceProps) {
     return (b.kepatuhan ?? 0) - (a.kepatuhan ?? 0);
   });
 
-  // Skala maks sumbu X adalah 30%
-  const MAX_SCALE = 30;
+  // Skala maks sumbu X adalah 100%
+  const MAX_SCALE = 100;
   // Posisi target 25% (persentase lebar track)
   const targetLeftPercent = (25 / MAX_SCALE) * 100;
 
@@ -541,17 +545,28 @@ export function Compliance({ rows, selected, onSelect }: ComplianceProps) {
     <section className="card chart-card" aria-label="Kepatuhan per kelurahan">
       <CardTitle
         icon="pinCircle"
-        right={<span className="compliance-target-label">Target 25%</span>}
+        right={
+          <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+            <span style={{ fontSize: "11px", padding: "2px 8px", borderRadius: "12px", background: "#fef3c7", color: "#92400e", fontWeight: 600, border: "1px solid #fde68a" }}>
+              Sampel Selama Giat KKN
+            </span>
+            <span className="compliance-target-label">Target 25%</span>
+          </div>
+        }
       >
         Kepatuhan per kelurahan
       </CardTitle>
+
+      <div style={{ fontSize: "11px", color: "#64748b", margin: "-6px 0 10px 0" }}>
+        *Tingkat validasi pemilahan sampah warga binaan dari catatan transaksi aplikasi selama kegiatan KKN Tematik
+      </div>
 
       <div className="compliance-container">
         <div className="compliance-bars-wrap">
           {/* Garis Putus-putus Target 25% menembus semua bar */}
           <div
             className="compliance-target-line"
-            style={{ left: `calc(100px + (100% - 145px) * ${25 / MAX_SCALE})` }}
+            style={{ left: `calc(100px + (100% - 145px) * 0.25)` }}
             title="Garis Target Kepatuhan 25%"
           />
 
@@ -567,7 +582,7 @@ export function Compliance({ rows, selected, onSelect }: ComplianceProps) {
                     type="button"
                     className={`compliance-row-btn ${isSelected ? "is-selected" : ""}`}
                     onClick={() => onSelect(item.id)}
-                    title={item.hasSurvei && item.kepatuhan != null ? `${item.nama}: ${item.kepatuhan}%` : `${item.nama}: Belum ada data survei`}
+                    title={item.hasSurvei && item.kepatuhan != null ? `${item.nama}: ${item.kepatuhan}% (Sampel giat KKN)` : `${item.nama}: Belum ada data transaksi`}
                   >
                     <span className="compliance-name">{item.nama}</span>
                     <div className="compliance-track">
@@ -599,28 +614,34 @@ export function Compliance({ rows, selected, onSelect }: ComplianceProps) {
             })}
           </ul>
 
-          {/* Sumbu X Ticks di bawah bar (0%, 10%, 20%, 30%) */}
+          {/* Sumbu X Ticks di bawah bar (0%, 25%, 50%, 75%, 100%) */}
           <div className="compliance-x-axis">
             <span className="compliance-x-label" style={{ left: "100px" }}>
               0%
             </span>
             <span
               className="compliance-x-label"
-              style={{ left: `calc(100px + (100% - 145px) * ${10 / MAX_SCALE})` }}
+              style={{ left: `calc(100px + (100% - 145px) * 0.25)` }}
             >
-              10%
+              25%
             </span>
             <span
               className="compliance-x-label"
-              style={{ left: `calc(100px + (100% - 145px) * ${20 / MAX_SCALE})` }}
+              style={{ left: `calc(100px + (100% - 145px) * 0.5)` }}
             >
-              20%
+              50%
             </span>
             <span
               className="compliance-x-label"
-              style={{ left: `calc(100px + (100% - 145px) * ${30 / MAX_SCALE})` }}
+              style={{ left: `calc(100px + (100% - 145px) * 0.75)` }}
             >
-              30%
+              75%
+            </span>
+            <span
+              className="compliance-x-label"
+              style={{ left: `calc(100px + (100% - 145px) * 1)` }}
+            >
+              100%
             </span>
           </div>
         </div>
@@ -641,7 +662,7 @@ export function Compliance({ rows, selected, onSelect }: ComplianceProps) {
           </div>
           <div className="compliance-legend-item">
             <span className="compliance-legend-dot" style={{ background: "#9ca3af" }} />
-            <span>Belum ada data survei</span>
+            <span>Belum ada data transaksi</span>
           </div>
         </div>
       </div>
