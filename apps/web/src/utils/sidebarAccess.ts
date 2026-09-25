@@ -204,13 +204,16 @@ export function canAccessSidebarRoute(
     return true;
   }
 
-  // 8. Rute Pelaksanaan, Monitoring, Penilaian, Logbook KKN (Terbuka untuk PIMPINAN)
+  // 8. Rute Pelaksanaan, Monitoring, Penilaian, Logbook, Hasil Survei, dan Laporan Resmi KKN (Terbuka untuk PIMPINAN)
   const isKknExecutiveAllowed =
     cleanPath.startsWith("/pelaksanaan/") ||
     cleanPath.startsWith("/monitoring-kegiatan/") ||
     cleanPath.startsWith("/penilaian/") ||
     cleanPath.startsWith("/log-aktivitas/") ||
-    cleanPath.startsWith("/hasil-survei/");
+    cleanPath.startsWith("/hasil-survei/") ||
+    cleanPath.startsWith("/laporan/") ||
+    cleanPath === "/laporan/kkn" ||
+    cleanPath === "/laporan-pimpinan/kkn";
 
   if (isKknExecutiveAllowed) {
     return true;

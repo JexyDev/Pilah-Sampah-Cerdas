@@ -35,6 +35,7 @@ import {
   Activity,
   BarChart3,
   Terminal,
+  Cpu,
 } from "lucide-react";
 
 import { Link, NavLink, useLocation } from "react-router-dom";
@@ -255,6 +256,12 @@ const checkRouteActive = (
       "/data-survei-baseline",
     ];
     if (baselineAliases.includes(tPath) && baselineAliases.includes(cPath)) return true;
+
+    const laporanKknAliases = [
+      "/laporan/kkn",
+      "/laporan-pimpinan/kkn",
+    ];
+    if (laporanKknAliases.includes(tPath) && laporanKknAliases.includes(cPath)) return true;
 
     const endlineAliases = [
       "/hasil-survei/endline",
@@ -1285,6 +1292,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               ] as UserRole[],
             },
             {
+              to: "/laporan/kkn",
+              label: "Laporan Resmi KKN",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "PIMPINAN",
+              ] as UserRole[],
+            },
+            {
               to: "/hasil-survei/endline",
               label: "Endline",
               allowed: [
@@ -1355,6 +1371,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             "PANITIA_TASKFORCE",
             "MPL",
             "PIMPINAN",
+          ] as UserRole[],
+        },
+        {
+          to: "/manajemen-iot",
+          icon: Cpu,
+          label: "Manajemen IoT (CH4)",
+          resource: "monitoring_sampah",
+          allowed: [
+            "DEVELOPER",
+            "SUPER_USER",
+            "ADMIN_DLH",
+            "CAMAT",
+            "LURAH",
+            "RW",
+            "PIMPINAN",
+            "PEMIMPIN",
           ] as UserRole[],
         },
         {

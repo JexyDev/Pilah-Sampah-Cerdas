@@ -88,6 +88,7 @@ const KelolaPoinPengguna = React.lazy(() => import("../pages/KelolaPoinPengguna/
 const ZonaInspectorPage = React.lazy(() => import("../pages/Developer/ZonaInspectorPage"));
 const KelolaLogbookPage = React.lazy(() => import("../pages/Developer/KelolaLogbookPage"));
 const PoinMahasiswaKknPage = React.lazy(() => import("../pages/Developer/PoinMahasiswaKknPage"));
+const LaporanResmiKknPage = React.lazy(() => import("../pages/LaporanKkn/LaporanResmiKknPage"));
 const DeveloperSettingsPage = React.lazy(() => import("../pages/Developer/DeveloperSettingsPage"));
 const MplDashboardPage = React.lazy(() => import("../pages/mpl/MplDashboardPage"));
 
@@ -1372,6 +1373,16 @@ const AppRoutes: React.FC = () => {
         <Route path="/data-survei-endline" element={<Navigate to="/hasil-survei/endline" replace />} />
         <Route path="/survei-endline" element={<Navigate to="/hasil-survei/endline" replace />} />
         <Route path="/data-survei-kkn" element={<Navigate to="/hasil-survei/baseline" replace />} />
+        <Route
+          path="/laporan/kkn"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "PANITIA_TASKFORCE", "PIMPINAN", "DEVELOPER"]}>
+              <LaporanResmiKknPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/laporan-pimpinan/kkn" element={<Navigate to="/laporan/kkn" replace />} />
+        <Route path="/laporan-resmi/kkn" element={<Navigate to="/laporan/kkn" replace />} />
         <Route
           path="/evaluasi-dampak-kkn"
           element={
