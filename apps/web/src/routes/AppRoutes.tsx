@@ -90,6 +90,9 @@ const KelolaLogbookPage = React.lazy(() => import("../pages/Developer/KelolaLogb
 const PoinMahasiswaKknPage = React.lazy(() => import("../pages/Developer/PoinMahasiswaKknPage"));
 const DeveloperSettingsPage = React.lazy(() => import("../pages/Developer/DeveloperSettingsPage"));
 const MplDashboardPage = React.lazy(() => import("../pages/mpl/MplDashboardPage"));
+const LaporanTataKelolaSampahPage = React.lazy(() => import("../pages/Laporan/LaporanTataKelolaSampahPage"));
+const DashboardEksekutifKkn = React.lazy(() => import("../pages/Dashboard/DashboardEksekutifKkn"));
+const ManajemenIotPage = React.lazy(() => import("../pages/ManajemenIot/ManajemenIotPage"));
 
 // Scroll Restoration Helper Component (Safari WebKit & Cross-Browser Safe)
 export const ScrollToTop: React.FC = () => {
@@ -726,6 +729,23 @@ const AppRoutes: React.FC = () => {
         <Route path="/analisis-sistem/tata-kelola" element={<Navigate to="/analisis-sistem/tata-kelola-sampah" replace />} />
         <Route path="/tata-kelola-sampah" element={<Navigate to="/analisis-sistem/tata-kelola-sampah" replace />} />
         <Route
+          path="/laporan/tata-kelola-sampah"
+          element={
+            <ProtectedRoute allowedRoles={["DEVELOPER", "SUPER_USER", "PIMPINAN"]}>
+              <LaporanTataKelolaSampahPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/laporan-tata-kelola-sampah" element={<Navigate to="/laporan/tata-kelola-sampah" replace />} />
+        <Route
+          path="/laporan/kkn"
+          element={
+            <ProtectedRoute allowedRoles={["DEVELOPER", "SUPER_USER", "PIMPINAN", "PEMIMPIN"]}>
+              <DashboardEksekutifKkn />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/dashboard-dpl"
           element={
             <ProtectedRoute allowedRoles={["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "MPL", "PIMPINAN", "PANITIA_TASKFORCE"]}>
@@ -1178,10 +1198,19 @@ const AppRoutes: React.FC = () => {
           path="/master-data/poin-pengguna"
           element={<Navigate to="/kelola-poin" replace />}
         />
+        {/* Modul Manajemen IoT & Sensor Gas Metana (CH4) */}
         <Route
-          path="/master-data/kelola-poin"
-          element={<Navigate to="/kelola-poin" replace />}
+          path="/manajemen-iot"
+          element={
+            <ProtectedRoute
+              allowedRoles={["SUPER_USER", "DEVELOPER", "PIMPINAN", "PEMIMPIN"]}
+            >
+              <ManajemenIotPage />
+            </ProtectedRoute>
+          }
         />
+        <Route path="/iot" element={<Navigate to="/manajemen-iot" replace />} />
+
         <Route path="/notifikasi" element={<Notifikasi />} />
 
         <Route

@@ -275,4 +275,36 @@ router.get(
   }
 );
 
+/**
+ * @swagger
+ * /api/v1/dashboard/waste-executive-report:
+ *   get:
+ *     summary: Mendapatkan Laporan Resmi Tata Kelola Sampah untuk Pimpinan
+ *     tags: [Executive & Monitoring, Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get(
+  "/waste-executive-report",
+  authMiddleware,
+  roleMiddleware(["PIMPINAN", "PEMIMPIN", "SUPER_USER", "DEVELOPER"]),
+  dashboardController.getWasteExecutiveReport
+);
+
+/**
+ * @swagger
+ * /api/v1/dashboard/waste-executive-report/export:
+ *   get:
+ *     summary: Mengunduh Spreadsheet Excel Laporan Resmi Tata Kelola Sampah
+ *     tags: [Executive & Monitoring, Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get(
+  "/waste-executive-report/export",
+  authMiddleware,
+  roleMiddleware(["PIMPINAN", "PEMIMPIN", "SUPER_USER", "DEVELOPER"]),
+  dashboardController.exportWasteExecutiveReport
+);
+
 export default router;

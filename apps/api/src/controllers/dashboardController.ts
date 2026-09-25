@@ -9,6 +9,7 @@ import { prisma } from "../lib/prisma.js";
 import { Request, Response } from "express";
 import { dashboardService } from "../services/dashboardService.js";
 import { kknExecutiveService } from "../services/kknExecutiveService.js";
+import { wasteExecutiveReportService } from "../services/wasteExecutiveReportService.js";
 
 export const dashboardController = {
   getKpi: async (req: Request, res: Response) => {
@@ -311,6 +312,62 @@ export const dashboardController = {
       res.status(500).json({
         success: false,
         message: error.message || "Gagal mengunduh laporan eksekutif KKN",
+      });
+    }
+  },
+
+  getWasteExecutiveReport: async (req: Request, res: Response) => {
+    try {
+      const { wilayah, periode, startDate, endDate } = req.query;
+      const user = req.user;
+      const isDevOnly = user?.role === "DEVELOPER";
+      const includeTestAccounts = req.query.includeTestAccounts === "true" && isDevOnly;
+
+      const report = await wasteExecutiveReportService.getWasteExecutiveReport({
+        wilayah: wilayah as string,
+        periode: periode as string,
+        startDate: startDate as string,
+        endDate: endDate as string,
+        includeTestAccounts,
+      });
+
+      res.status(200).json({
+        success: true,
+        data: report,
+      });
+    } catch (error: any) {
+      console.error("[DashboardController] getWasteExecutiveReport error:", error);
+      res.status(500).json({
+        success: false,
+        message: error.message || "Internal server error memuat laporan resmi tata kelola sampah",
+      });
+    }
+  },
+
+  exportWasteExecutiveReport: async (req: Request, res: Response) => {
+    try {
+      const { wilayah, periode, startDate, endDate } = req.query;
+      const buffer = await wasteExecutiveReportService.exportWasteExecutiveReport({
+        wilayah: wilayah as string,
+        periode: periode as string,
+        startDate: startDate as string,
+        endDate: endDate as string,
+      });
+
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      );
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename=Laporan_Resmi_Tata_Kelola_Sampah_${Date.now()}.xlsx`
+      );
+      res.status(200).send(buffer);
+    } catch (error: any) {
+      console.error("[DashboardController] exportWasteExecutiveReport error:", error);
+      res.status(500).json({
+        success: false,
+        message: error.message || "Gagal mengunduh spreadsheet laporan resmi tata kelola sampah",
       });
     }
   },
