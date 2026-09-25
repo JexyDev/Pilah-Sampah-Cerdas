@@ -19,6 +19,7 @@ import {
   X,
   FileCheck2,
   Calendar,
+  XCircle,
   Sparkles,
   Activity,
   Target,
@@ -1796,6 +1797,12 @@ export const LaporanPresensiPage: React.FC = () => {
                     const isTerjeda = item.status === "TERJEDA";
                     const isBerlangsung = item.status === "BERLANGSUNG";
                     const isIzinSakit = item.status.includes("IZIN") || item.status.includes("SAKIT");
+                    const isAlpa =
+                      item.status === "ALPA" ||
+                      item.status === "ALPHA" ||
+                      item.status === "TIDAK_HADIR" ||
+                      item.statusDisplay?.toLowerCase().includes("tanpa keterangan") ||
+                      item.statusDisplay?.toLowerCase().includes("tidak hadir");
                     const actualMins = item.durasiAktualMenit ?? item.durasiMenit ?? 0;
                     const targetMin = item.targetMinMenit ?? 240;
                     const rasio = Math.min(100, Math.max(0, item.rasioKehadiran ?? Number(((actualMins / targetMin) * 100).toFixed(1))));
@@ -1881,14 +1888,20 @@ export const LaporanPresensiPage: React.FC = () => {
 
                         {/* Jam Masuk (JM) */}
                         <td className="py-3.5 px-4 text-center">
-                          <span className="px-2 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-mono font-bold text-xs border border-emerald-200 dark:border-emerald-800">
-                            {item.jamMasuk} WIB
-                          </span>
+                          {isAlpa || item.jamMasuk === "-" ? (
+                            <span className="text-slate-400 font-mono text-xs font-semibold">-</span>
+                          ) : (
+                            <span className="px-2 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-mono font-bold text-xs border border-emerald-200 dark:border-emerald-800">
+                              {item.jamMasuk} WIB
+                            </span>
+                          )}
                         </td>
 
                         {/* Jam Pulang (JP) */}
                         <td className="py-3.5 px-4 text-center">
-                          {item.jamPulang === "-" ? (
+                          {isAlpa || (item.jamPulang === "-" && !isBerlangsung) ? (
+                            <span className="text-slate-400 font-mono text-xs font-semibold">-</span>
+                          ) : item.jamPulang === "-" ? (
                             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 font-bold text-xs animate-pulse">
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                               <span>Aktif</span>
@@ -1902,10 +1915,10 @@ export const LaporanPresensiPage: React.FC = () => {
 
                         {/* Durasi Jeda (DJ) */}
                         <td className="py-3.5 px-3 text-center bg-amber-50/30 dark:bg-amber-950/10">
-                          <div className={`font-mono font-bold text-xs ${jedaMins > 0 ? "text-amber-700 dark:text-amber-400" : "text-slate-400"}`}>
-                            {item.durasiJedaFormatted || `${jedaMins} Menit`}
+                          <div className={`font-mono font-bold text-xs ${!isAlpa && jedaMins > 0 ? "text-amber-700 dark:text-amber-400" : "text-slate-400"}`}>
+                            {isAlpa ? "-" : item.durasiJedaFormatted || `${jedaMins} Menit`}
                           </div>
-                          {jedaMins > 0 && (
+                          {!isAlpa && jedaMins > 0 && (
                             <span className="text-[10px] text-amber-600/80 dark:text-amber-400/80 font-mono">
                               ({jedaMins} mnt)
                             </span>
@@ -1956,6 +1969,11 @@ export const LaporanPresensiPage: React.FC = () => {
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-700">
                               <FileText size={12} className="text-blue-600" />
                               <span>{item.statusDisplay}</span>
+                            </span>
+                          ) : isAlpa ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800">
+                              <XCircle size={12} className="text-rose-600" />
+                              <span>Tidak Hadir (Alpa)</span>
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700">
@@ -2463,6 +2481,12 @@ export const LaporanPresensiPage: React.FC = () => {
                     const isTerjeda = item.status === "TERJEDA";
                     const isBerlangsung = item.status === "BERLANGSUNG";
                     const isIzinSakit = item.status.includes("IZIN") || item.status.includes("SAKIT");
+                    const isAlpa =
+                      item.status === "ALPA" ||
+                      item.status === "ALPHA" ||
+                      item.status === "TIDAK_HADIR" ||
+                      item.statusDisplay?.toLowerCase().includes("tanpa keterangan") ||
+                      item.statusDisplay?.toLowerCase().includes("tidak hadir");
 
                     return (
                       <div
@@ -2506,6 +2530,11 @@ export const LaporanPresensiPage: React.FC = () => {
                                 <FileText size={12} className="text-blue-600" />
                                 <span>{item.statusDisplay}</span>
                               </span>
+                            ) : isAlpa ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800">
+                                <XCircle size={12} className="text-rose-600" />
+                                <span>Tidak Hadir (Alpa)</span>
+                              </span>
                             ) : (
                               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700">
                                 <AlertTriangle size={12} className="text-amber-600" />
@@ -2519,20 +2548,20 @@ export const LaporanPresensiPage: React.FC = () => {
                         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 text-xs">
                           <div>
                             <span className="text-[10px] font-bold text-slate-400 block">Jam Masuk (JM)</span>
-                            <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400">
-                              {item.jamMasuk !== "-" ? `${item.jamMasuk} WIB` : "-"}
+                            <span className={`font-mono font-bold ${isAlpa ? "text-slate-400" : "text-emerald-700 dark:text-emerald-400"}`}>
+                              {!isAlpa && item.jamMasuk !== "-" ? `${item.jamMasuk} WIB` : "-"}
                             </span>
                           </div>
                           <div>
                             <span className="text-[10px] font-bold text-slate-400 block">Jam Pulang (JP)</span>
                             <span className="font-mono font-bold text-slate-700 dark:text-slate-300">
-                              {item.jamPulang !== "-" ? `${item.jamPulang} WIB` : isBerlangsung ? "Sedang Aktif" : "-"}
+                              {!isAlpa && item.jamPulang !== "-" ? `${item.jamPulang} WIB` : isBerlangsung ? "Sedang Aktif" : "-"}
                             </span>
                           </div>
                           <div>
                             <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 block">Durasi Jeda (DJ)</span>
-                            <span className={`font-mono font-bold ${item.durasiJedaMenit && item.durasiJedaMenit > 0 ? "text-amber-700 dark:text-amber-300" : "text-slate-400"}`}>
-                              {item.durasiJedaFormatted || `${item.durasiJedaMenit || 0} Menit`}
+                            <span className={`font-mono font-bold ${!isAlpa && item.durasiJedaMenit && item.durasiJedaMenit > 0 ? "text-amber-700 dark:text-amber-300" : "text-slate-400"}`}>
+                              {isAlpa ? "-" : item.durasiJedaFormatted || `${item.durasiJedaMenit || 0} Menit`}
                             </span>
                           </div>
                           <div>
@@ -2608,9 +2637,9 @@ export const LaporanPresensiPage: React.FC = () => {
                                 </div>
                               </div>
                             ) : (
-                              <div className="flex items-center gap-1.5 p-2.5 rounded-xl bg-rose-50/80 dark:bg-rose-955/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 text-xs font-semibold">
-                                <AlertTriangle size={13} className="shrink-0 text-rose-600" />
-                                <span>⚠️ Tanpa Foto Bukti Dokumentasi Lapangan</span>
+                              <div className="flex items-center gap-1.5 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 text-xs font-medium">
+                                <Info size={13} className="shrink-0 text-slate-400" />
+                                <span>{isAlpa ? "Tidak ada foto (Alpa / Tidak Hadir)" : "Tanpa Foto Bukti Dokumentasi Lapangan"}</span>
                               </div>
                             )}
                           </div>
@@ -2648,18 +2677,20 @@ export const LaporanPresensiPage: React.FC = () => {
                         {/* GPS Location Row */}
                         <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500">
                           <div className="flex items-center gap-1.5">
-                            <MapPin size={13} className="text-emerald-600" />
+                            <MapPin size={13} className={isAlpa ? "text-slate-400" : "text-emerald-600"} />
                             <span>
                               GPS Check-in:{" "}
-                              {item.latitude && item.longitude ? (
+                              {!isAlpa && item.latitude && item.longitude ? (
                                 <strong className="font-mono text-slate-800 dark:text-slate-200">
                                   {item.latitude.toFixed(6)}, {item.longitude.toFixed(6)}
                                 </strong>
                               ) : (
-                                <span className="italic text-slate-400">Tidak ada data GPS</span>
+                                <span className="italic text-slate-400">
+                                  {isAlpa ? "Tidak ada check-in (Alpa)" : "Tidak ada data GPS"}
+                                </span>
                               )}
                             </span>
-                            {item.latitude && item.longitude && (
+                            {!isAlpa && item.latitude && item.longitude && (
                               <a
                                 href={`https://www.google.com/maps?q=${item.latitude},${item.longitude}`}
                                 target="_blank"

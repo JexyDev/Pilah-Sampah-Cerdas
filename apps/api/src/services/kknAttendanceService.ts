@@ -974,7 +974,7 @@ export class KknAttendanceService {
     };
   }
 
-  async getWargaDampingan(userId: string, role?: string) {
+  async getWargaDampingan(userId: string, role?: string, filters?: { rwId?: number; search?: string }) {
     let studentProfile: any = null;
     let groupStudentIds: string[] = [userId];
     let targetRwIds: number[] = [];
@@ -1050,18 +1050,44 @@ export class KknAttendanceService {
       include: {
         rw: { include: { kelurahan: true } },
         households: { include: { rw: { include: { kelurahan: true } } } },
+        pointHistory: true,
+        wargaViolations: true,
+        setoranOtomatis: {
+          orderBy: { createdAt: "desc" },
+          include: { bin: { include: { category: true } } },
+        },
         bins: {
-          include: { category: true, registeredByStudent: { select: { id: true, name: true } }, rw: { include: { kelurahan: true } }, setoranOtomatis: { take: 10, orderBy: { createdAt: "desc" }, include: { bin: { include: { category: true } } } } },
+          include: {
+            category: true,
+            registeredByStudent: { select: { id: true, name: true } },
+            rw: { include: { kelurahan: true } },
+            setoranOtomatis: {
+              take: 20,
+              orderBy: { createdAt: "desc" },
+              include: { bin: { include: { category: true } } },
+            },
+          },
         },
         binOwnerships: {
           include: {
-            bin: { include: { category: true, registeredByStudent: { select: { id: true, name: true } }, rw: { include: { kelurahan: true } }, setoranOtomatis: { take: 10, orderBy: { createdAt: "desc" }, include: { bin: { include: { category: true } } } } } },
+            bin: {
+              include: {
+                category: true,
+                registeredByStudent: { select: { id: true, name: true } },
+                rw: { include: { kelurahan: true } },
+                setoranOtomatis: {
+                  take: 20,
+                  orderBy: { createdAt: "desc" },
+                  include: { bin: { include: { category: true } } },
+                },
+              },
+            },
           },
         },
       },
     });
 
-    return wargaList.map((u: any) => {
+    let mapped = wargaList.map((u: any) => {
       const allBins = [
         ...(u.bins || []),
         ...(u.binOwnerships?.map((bo: any) => bo.bin) || [])
@@ -1073,11 +1099,20 @@ export class KknAttendanceService {
       });
       const uniqueBins = Array.from(uniqueBinsMap.values());
 
-      let recentLogs: any[] = [];
-      uniqueBins.forEach(b => {
-        if (b.setoranOtomatis) recentLogs.push(...b.setoranOtomatis);
+      // Deduplicate all setoran logs from user and bins
+      const setoranLogsMap = new Map();
+      (u.setoranOtomatis || []).forEach((l: any) => {
+        if (!setoranLogsMap.has(l.id)) setoranLogsMap.set(l.id, l);
       });
-      recentLogs.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      uniqueBins.forEach((b: any) => {
+        if (b.setoranOtomatis) {
+          b.setoranOtomatis.forEach((l: any) => {
+            if (!setoranLogsMap.has(l.id)) setoranLogsMap.set(l.id, l);
+          });
+        }
+      });
+      const allSetoranLogs = Array.from(setoranLogsMap.values());
+      allSetoranLogs.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
       const binOrganik = uniqueBins.find((b: any) => isOrganikBin(b));
       const binAnorganik = uniqueBins.find((b: any) => isAnorganikBin(b));
@@ -1091,6 +1126,28 @@ export class KknAttendanceService {
       const isActivated = !!primaryBin;
       const registeredStudentId = primaryBin?.registeredByStudentId || binOrganik?.registeredByStudentId || binAnorganik?.registeredByStudentId || null;
       const registeredStudentName = primaryBin?.registeredByStudent?.name || binOrganik?.registeredByStudent?.name || binAnorganik?.registeredByStudent?.name || null;
+
+      const totalKg = allSetoranLogs.reduce((sum: number, l: any) => sum + Number(l.berat || 0), 0);
+      const totalPoin =
+        u.pointHistory?.reduce((acc: number, curr: any) => acc + Number(curr.points || 0), 0) ||
+        Math.round(totalKg * 10);
+
+      let correctCount = 0;
+      let incorrectCount = 0;
+      for (const log of allSetoranLogs) {
+        const sortingStatus = evaluateSortingStatus(
+          log.confidenceAi,
+          log.discrepancy_status || log.discrepancyStatus,
+          log.hasilKlasifikasiAi,
+          log.bin?.category || primaryBin?.category
+        );
+        if (sortingStatus.is_correct) {
+          correctCount++;
+        } else {
+          incorrectCount++;
+        }
+      }
+      const totalActivities = allSetoranLogs.length;
 
       return {
         registeredStudentId: registeredStudentId || "",
@@ -1114,21 +1171,27 @@ export class KknAttendanceService {
         binAnorganikId: binAnorganik?.qrCode || binAnorganik?.id || null,
         bins: uniqueBins,
         binOwnerships: u.binOwnerships || [],
-        totalPoints: u.totalPoints || 0,
-        totalPoin: u.totalPoints || 0,
-        totalKg: Math.round(recentLogs.reduce((sum: number, l: any) => sum + Number(l.berat || 0), 0) * 100) / 100,
-        totalActivities: recentLogs.length,
-        correctCount: 0,
-        incorrectCount: 0,
-        correctPercentage: 0,
-        needsReeducation: false,
+        totalPoints: totalPoin,
+        totalPoin: totalPoin,
+        totalKg: Math.round(totalKg * 10) / 10,
+        totalActivities,
+        totalSetoran: totalActivities,
+        correctCount,
+        benarCount: correctCount,
+        incorrectCount,
+        salahCount: incorrectCount,
+        correctPercentage:
+          totalActivities > 0 ? Math.round((correctCount / totalActivities) * 1000) / 10 : 0,
+        errorPercentage:
+          totalActivities > 0 ? Math.round((incorrectCount / totalActivities) * 1000) / 10 : 0,
+        needsReeducation: totalActivities > 0 && correctCount / totalActivities < 0.8,
         mahasiswaId: registeredStudentId || "",
         registeredByStudentId: registeredStudentId || "",
         registeredByStudent: registeredStudentName || "",
         pendampingName: registeredStudentName || "",
         pendamping: registeredStudentId && registeredStudentName ? { id: registeredStudentId, name: registeredStudentName } : null,
         pendampingKkn: registeredStudentId && registeredStudentName ? { id: registeredStudentId, name: registeredStudentName } : null,
-        recentLogs: recentLogs.slice(0, 10).map((log: any) => {
+        recentLogs: allSetoranLogs.slice(0, 10).map((log: any) => {
           const sortingStatus = evaluateSortingStatus(
             log.confidenceAi,
             log.discrepancy_status || log.discrepancyStatus,
@@ -1149,6 +1212,21 @@ export class KknAttendanceService {
         }),
       };
     });
+
+    if (filters?.rwId) {
+      mapped = mapped.filter((w: any) => w.rwId === filters.rwId);
+    }
+    if (filters?.search && filters.search.trim()) {
+      const q = filters.search.toLowerCase().trim();
+      mapped = mapped.filter((w: any) =>
+        (w.name && w.name.toLowerCase().includes(q)) ||
+        (w.wargaName && w.wargaName.toLowerCase().includes(q)) ||
+        (w.phone && w.phone.toLowerCase().includes(q)) ||
+        (w.address && w.address.toLowerCase().includes(q)) ||
+        (w.rw && String(w.rw).toLowerCase().includes(q))
+      );
+    }
+    return mapped;
   }
 
   /**
@@ -5950,12 +6028,16 @@ export class KknAttendanceService {
         tanggal: att.attendedAt
           ? new Date(att.attendedAt.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10)
           : "-",
-        jamMasuk: att.attendedAt
-          ? new Date(att.attendedAt.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(11, 16)
-          : "-",
-        jamPulang: att.checkOutAt
-          ? new Date(att.checkOutAt.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(11, 16)
-          : "-",
+        jamMasuk: isLeaveOrAlpha
+          ? "-"
+          : att.attendedAt
+            ? new Date(att.attendedAt.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(11, 16)
+            : "-",
+        jamPulang: isLeaveOrAlpha
+          ? "-"
+          : att.checkOutAt
+            ? new Date(att.checkOutAt.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(11, 16)
+            : "-",
         durasiMenit: actualMins,
         durasiFormatted,
         durasiAktualMenit: actualMins,
@@ -5972,8 +6054,8 @@ export class KknAttendanceService {
         isMemenuhiDurasi: isMemenuhi,
         deskripsiKegiatan: (att as any).deskripsiKegiatan ?? null,
         fotoUrl: (att as any).fotoUrl ?? null,
-        latitude: attLat,
-        longitude: attLng,
+        latitude: isLeaveOrAlpha ? null : attLat,
+        longitude: isLeaveOrAlpha ? null : attLng,
         isPoskoUnikom,
         poskoName: isPoskoUnikom
           ? "PRESENSI POSKO UNIKOM"
