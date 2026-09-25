@@ -732,7 +732,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/laporan/tata-kelola-sampah"
           element={
-            <ProtectedRoute allowedRoles={["DEVELOPER", "SUPER_USER", "PIMPINAN"]}>
+            <ProtectedRoute allowedRoles={["DEVELOPER", "SUPER_USER", "PIMPINAN", "ADMIN_DLH", "PEMIMPIN"]}>
               <LaporanTataKelolaSampahPage />
             </ProtectedRoute>
           }

@@ -1309,7 +1309,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             {
               to: "/laporan/tata-kelola-sampah",
               label: "Laporan Tata Kelola Sampah",
-              allowed: ["DEVELOPER", "SUPER_USER", "PIMPINAN"] as UserRole[],
+              allowed: ["DEVELOPER", "SUPER_USER", "PIMPINAN", "PEMIMPIN", "ADMIN_DLH"] as UserRole[],
             },
             {
               to: "/hasil-survei/endline",
@@ -1468,6 +1468,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             "SUPER_USER",
             "PIMPINAN",
             "PEMIMPIN",
+            "ADMIN_DLH",
+            "CAMAT",
+            "LURAH",
+            "RW",
           ] as UserRole[],
         },
         {
