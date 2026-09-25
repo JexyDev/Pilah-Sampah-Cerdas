@@ -12,6 +12,7 @@
 import React, { useState, useEffect } from "react";
 import {
   LayoutDashboard,
+  FileText,
   Building2,
   Trash2,
   Recycle,
