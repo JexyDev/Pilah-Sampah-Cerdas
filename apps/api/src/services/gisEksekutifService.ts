@@ -341,13 +341,14 @@ export const gisEksekutifService = {
       const m = getOrInitKel(kelName);
 
       const kg = Number(sm.berat || 0);
-      const kat = (sm.kategori || "").toLowerCase();
-      if (kat.includes("organik")) {
-        m.organikKg += kg;
-      } else if (kat.includes("anorganik")) {
+      const kat = (sm.kategori || "").toLowerCase().trim();
+      // urutan penting: "anorganik" mengandung substring "organik"
+      if (kat.includes("anorganik") || kat.includes("non-organik") || kat.includes("non organik")) {
         m.anorganikKg += kg;
-      } else if (kat.includes("residu")) {
+      } else if (kat.includes("residu") || kat.includes("residual")) {
         m.residuKg += kg;
+      } else if (kat.includes("organik")) {
+        m.organikKg += kg;
       } else {
         m.organikKg += kg;
       }

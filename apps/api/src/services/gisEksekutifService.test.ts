@@ -413,4 +413,73 @@ describe("gisEksekutifService Real DB Operational Tests (Zero Baseline / 100% Re
     expect(cipaganti?.kepatuhan).toBe(40);
     expect(cipaganti?.color).toBe("#ef4444"); // < 50% -> Merah
   });
+
+  it("should accurately classify manual deposits into anorganik, residu, and organik without lexical substring collision", async () => {
+    (prisma.kelurahan.findMany as any).mockResolvedValue([
+      { id: "kel-1", name: "Dago", code: "327301", rws: [{ id: 1, name: "RW 01" }] },
+    ]);
+    (prisma.rw.findMany as any).mockResolvedValue([
+      { id: 1, name: "RW 01", kelurahan: { name: "Dago" } },
+    ]);
+    (prisma.facility.findMany as any).mockResolvedValue([]);
+    (prisma.setoranOtomatis.findMany as any).mockResolvedValue([]);
+
+    // Setoran manual dengan berbagai variasi kategori
+    ((prisma as any).setoranManual.findMany as any).mockResolvedValue([
+      {
+        id: "sm-1",
+        status: "APPROVED",
+        berat: 100,
+        kategori: "Anorganik",
+        createdAt: new Date("2026-09-12T10:00:00.000Z"),
+        rw: { kelurahanId: "kel-1", kelurahan: { name: "Dago" } },
+      },
+      {
+        id: "sm-2",
+        status: "APPROVED",
+        berat: 50,
+        kategori: "non-organik",
+        createdAt: new Date("2026-09-13T10:00:00.000Z"),
+        rw: { kelurahanId: "kel-1", kelurahan: { name: "Dago" } },
+      },
+      {
+        id: "sm-3",
+        status: "APPROVED",
+        berat: 30,
+        kategori: "Residu",
+        createdAt: new Date("2026-09-14T10:00:00.000Z"),
+        rw: { kelurahanId: "kel-1", kelurahan: { name: "Dago" } },
+      },
+      {
+        id: "sm-4",
+        status: "APPROVED",
+        berat: 70,
+        kategori: "Organik",
+        createdAt: new Date("2026-09-15T10:00:00.000Z"),
+        rw: { kelurahanId: "kel-1", kelurahan: { name: "Dago" } },
+      },
+    ]);
+
+    const res = await gisEksekutifService.getOverview({ periode: "September 2026" });
+
+    expect(res.success).toBe(true);
+    // Anorganik: sm-1 (100) + sm-2 (50) = 150 kg
+    expect(res.komposisiVolume.anorganik.kgHari).toBe(150);
+    // Residu: sm-3 (30) = 30 kg
+    expect(res.komposisiVolume.residu.kgHari).toBe(30);
+    // Organik: sm-4 (70) = 70 kg
+    expect(res.komposisiVolume.organik.kgHari).toBe(70);
+
+    // Total: 250 kg
+    expect(res.komposisiVolume.totalKg).toBe(250);
+
+    // Persentase:
+    // anorganik = 150 / 250 = 60%
+    // organik = 70 / 250 = 28%
+    // residu = 100 - 60 - 28 = 12%
+    expect(res.komposisiVolume.anorganik.persen).toBe(60);
+    expect(res.komposisiVolume.organik.persen).toBe(28);
+    expect(res.komposisiVolume.residu.persen).toBe(12);
+  });
 });
+
