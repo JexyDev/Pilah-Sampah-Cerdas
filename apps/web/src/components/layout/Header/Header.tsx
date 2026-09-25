@@ -113,7 +113,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
         if (tab === "tata-kelola-sampah" || tab === "sampah") {
           return ["Dasbor", "Tata Kelola Sampah"];
         }
-        if (tab === "kkn" || isPimpinan) {
+        if (tab === "kkn") {
           return ["Dasbor", "Kuliah Kerja Nyata"];
         }
         return ["Dasbor", "Tata Kelola Sampah"];
@@ -299,6 +299,11 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
         return ["Monitoring Pemilahan", "Papan Peringkat"];
       case "/laporan-analitik":
         return ["Laporan & Analitik"];
+      case "/laporan/kkn":
+      case "/laporan-kkn":
+      case "/dasbor-kkn-eksekutif":
+      case "/dashboard-eksekutif-kkn":
+        return ["Laporan", "KKN"];
       case "/laporan/tata-kelola-sampah":
       case "/laporan-tata-kelola-sampah":
         return ["Laporan", "Tata Kelola Sampah"];

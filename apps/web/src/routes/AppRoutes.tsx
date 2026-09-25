@@ -91,6 +91,7 @@ const PoinMahasiswaKknPage = React.lazy(() => import("../pages/Developer/PoinMah
 const DeveloperSettingsPage = React.lazy(() => import("../pages/Developer/DeveloperSettingsPage"));
 const MplDashboardPage = React.lazy(() => import("../pages/mpl/MplDashboardPage"));
 const LaporanTataKelolaSampahPage = React.lazy(() => import("../pages/Laporan/LaporanTataKelolaSampahPage"));
+const DashboardEksekutifKkn = React.lazy(() => import("../pages/Dashboard/DashboardEksekutifKkn"));
 const ManajemenIotPage = React.lazy(() => import("../pages/ManajemenIot/ManajemenIotPage"));
 
 // Scroll Restoration Helper Component (Safari WebKit & Cross-Browser Safe)
@@ -736,7 +737,14 @@ const AppRoutes: React.FC = () => {
           }
         />
         <Route path="/laporan-tata-kelola-sampah" element={<Navigate to="/laporan/tata-kelola-sampah" replace />} />
-        <Route path="/laporan/kkn" element={<Navigate to="/dasbor?tab=kkn" replace />} />
+        <Route
+          path="/laporan/kkn"
+          element={
+            <ProtectedRoute allowedRoles={["DEVELOPER", "SUPER_USER", "PIMPINAN", "PEMIMPIN"]}>
+              <DashboardEksekutifKkn />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/dashboard-dpl"
           element={

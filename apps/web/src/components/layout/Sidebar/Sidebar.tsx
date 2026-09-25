@@ -257,6 +257,9 @@ const checkRouteActive = (
     ];
     if (baselineAliases.includes(tPath) && baselineAliases.includes(cPath)) return true;
 
+    const laporanKknAliases = ["/laporan/kkn", "/laporan-kkn", "/dasbor-kkn-eksekutif", "/dashboard-eksekutif-kkn"];
+    if (laporanKknAliases.includes(tPath) && laporanKknAliases.includes(cPath)) return true;
+
     const laporanTataKelolaAliases = [
       "/laporan/tata-kelola-sampah",
       "/laporan-tata-kelola-sampah",
@@ -1292,9 +1295,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               ] as UserRole[],
             },
             {
-              to: "/dasbor?tab=kkn",
+              to: "/laporan/kkn",
               label: "Laporan KKN",
-              allowed: ["DEVELOPER", "SUPER_USER", "PIMPINAN"] as UserRole[],
+              allowed: ["DEVELOPER", "SUPER_USER", "PIMPINAN", "PEMIMPIN"] as UserRole[],
             },
             {
               to: "/laporan/tata-kelola-sampah",
