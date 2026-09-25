@@ -36,7 +36,6 @@ import {
   Activity,
   BarChart3,
   Terminal,
-  Cpu,
 } from "lucide-react";
 
 import { Link, NavLink, useLocation } from "react-router-dom";
