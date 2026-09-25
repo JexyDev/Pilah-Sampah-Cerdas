@@ -8,26 +8,19 @@
  * 100% Real-time Data dari Database PostgreSQL
  */
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Printer,
   Download,
   RefreshCw,
   FileSpreadsheet,
-  FileText,
-  Building2,
-  Calendar,
   Users,
   CheckCircle2,
   Clock,
-  Award,
   Layers,
-  MapPin,
-  ChevronRight,
   ShieldCheck,
   TrendingUp,
   Filter,
-  SlidersHorizontal,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -36,13 +29,7 @@ import {
   XAxis,
   YAxis,
   Tooltip as RechartsTooltip,
-  PieChart as RechartsPieChart,
-  Pie,
-  Cell,
-  LineChart,
-  Line,
   CartesianGrid,
-  Legend,
 } from "recharts";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
@@ -191,7 +178,15 @@ export const LaporanResmiKknPage: React.FC = () => {
 
   useEffect(() => {
     fetchLaporanData();
-  }, [selectedKelurahan, selectedRw, selectedKelompok]);
+  }, [selectedKelurahan]); // Dropdown langsung trigger fetch
+
+  useEffect(() => {
+    // Debounce text inputs (RW & Kelompok) agar tidak flood API per keystroke
+    const handler = setTimeout(() => {
+      fetchLaporanData();
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [selectedRw, selectedKelompok]);
 
   const handlePrint = () => {
     window.print();
@@ -423,13 +418,15 @@ export const LaporanResmiKknPage: React.FC = () => {
             onChange={(e) => setSelectedKelurahan(e.target.value)}
             className="text-xs bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-md px-2.5 py-1.5 font-medium text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
           >
-            <option value="Semua Kelurahan">Seluruh Kelurahan (Coblong)</option>
-            <option value="Cipaganti">Kel. Cipaganti</option>
-            <option value="Dago">Kel. Dago</option>
-            <option value="Lebakgede">Kel. Lebak Gede</option>
-            <option value="Lebak Siliwangi">Kel. Lebak Siliwangi</option>
-            <option value="Sadang Serang">Kel. Sadang Serang</option>
-            <option value="Sekeloa">Kel. Sekeloa</option>
+            {/* Kelurahan dari API, fallback statis */}
+            {(data?.filterOptions?.kelurahanOptions?.length
+              ? ["Semua Kelurahan", ...data.filterOptions.kelurahanOptions]
+              : ["Semua Kelurahan", "Cipaganti", "Dago", "Lebakgede", "Lebak Siliwangi", "Sadang Serang", "Sekeloa"]
+            ).map((k) => (
+              <option key={k} value={k}>
+                {k === "Semua Kelurahan" ? "Seluruh Kelurahan (Coblong)" : `Kel. ${k}`}
+              </option>
+            ))}
           </select>
 
           {/* Filter RW */}
@@ -672,10 +669,10 @@ export const LaporanResmiKknPage: React.FC = () => {
                   </div>
                   <div>
                     <div className="text-2xl font-black text-slate-900">
-                      {data.ringkasanEksekutif.totalJamKontribusi.toLocaleString("id-ID")}
+                      {(data.ringkasanEksekutif.totalJamKontribusi ?? 0).toLocaleString("id-ID")}
                     </div>
                     <div className="text-[10px] text-slate-500 mt-0.5">
-                      Rata-rata {data.ringkasanEksekutif.rataRataJamPerMahasiswa} Jam / Mhs
+                      Rata-rata {data.ringkasanEksekutif.rataRataJamPerMahasiswa ?? 0} Jam / Mhs
                     </div>
                   </div>
                 </div>
@@ -767,7 +764,7 @@ export const LaporanResmiKknPage: React.FC = () => {
                   III
                 </span>
                 <h3 className="font-black text-sm sm:text-base text-slate-900 uppercase tracking-wide">
-                  Matriks Kinerja per Kelompok KKN (35 Kelompok Coblong)
+                  Matriks Kinerja per Kelompok KKN ({data.ringkasanEksekutif.totalKelompok} Kelompok)
                 </h3>
               </div>
 
@@ -787,7 +784,14 @@ export const LaporanResmiKknPage: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200 font-medium text-slate-800">
-                    {data.matriksKelompok.map((m, idx) => {
+                    {data.matriksKelompok.length === 0 ? (
+                      <tr>
+                        <td colSpan={9} className="py-8 text-center text-slate-500 text-xs italic">
+                          Tidak ada data kelompok KKN yang ditemukan untuk filter yang dipilih.
+                        </td>
+                      </tr>
+                    ) : (
+                      data.matriksKelompok.map((m, idx) => {
                       const isEven = idx % 2 === 0;
                       return (
                         <tr
@@ -846,13 +850,13 @@ export const LaporanResmiKknPage: React.FC = () => {
                             </div>
                           </td>
                           <td className="py-2 px-3 text-center">
-                            {m.rataRataSkorEvaluasi !== null ? (
+                            {typeof m.rataRataSkorEvaluasi === "number" ? (
                               <div className="flex items-center justify-center gap-1.5">
                                 <span className="font-black text-slate-900 text-xs">
                                   {m.rataRataSkorEvaluasi.toFixed(2)}
                                 </span>
                                 <span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 font-black text-[10px]">
-                                  {m.kategoriNilai}
+                                  {m.kategoriNilai || "-"}
                                 </span>
                                 <span className="text-[10px] text-slate-500">
                                   ({m.jumlahMhsDinilai}/{m.totalMahasiswa})
@@ -866,7 +870,7 @@ export const LaporanResmiKknPage: React.FC = () => {
                           </td>
                         </tr>
                       );
-                    })}
+                    }))}
                   </tbody>
                   {/* Footer Ringkasan Matriks */}
                   <tfoot>
