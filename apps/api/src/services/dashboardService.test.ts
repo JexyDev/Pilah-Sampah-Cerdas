@@ -62,22 +62,12 @@ describe("dashboardService Baseline Anti-Dummy & Fallback Metadata Tests", () =>
     (prisma.endlineSurveiKelurahan.findMany as any).mockResolvedValue([]);
   });
 
-  it("should export explicitly declared fallback constants with expected rates", () => {
-    expect(BASELINE_FALLBACK_RATES.cipaganti).toBe(13.67);
-    expect(BASELINE_FALLBACK_RATES.dago).toBe(10.0);
-    expect(BASELINE_FALLBACK_RATES.lebakgede).toBe(21.6);
-    expect(BASELINE_FALLBACK_RATES.lebaksiliwangi).toBe(15.0);
-    expect(BASELINE_FALLBACK_RATES.sadangserang).toBe(24.8);
-    expect(BASELINE_FALLBACK_RATES.sekeloa).toBe(17.8);
-
-    expect(BASELINE_FALLBACK_KG.dago).toBe(500.0);
-    expect(BASELINE_FALLBACK_KG.lebakgede).toBe(250.0);
-    expect(BASELINE_FALLBACK_KG.lebaksiliwangi).toBe(10.0);
-    expect(BASELINE_FALLBACK_KG.sadangserang).toBe(7298.5);
-    expect(BASELINE_FALLBACK_KG.sekeloa).toBe(9723.4);
+  it("should have deactivated static fallback constants in compliance with anti-dummy governance", () => {
+    expect(Object.keys(BASELINE_FALLBACK_RATES).length).toBe(0);
+    expect(Object.keys(BASELINE_FALLBACK_KG).length).toBe(0);
   });
 
-  it("should flag isFallbackBaselineRate=false and isFallback=false when survey data exists in DB", async () => {
+  it("should flag hasBaseline=true and return factual data when survey data exists in DB", async () => {
     (prisma.surveiKelurahan.findMany as any).mockResolvedValue([
       {
         id: "survei-dago",
@@ -97,14 +87,13 @@ describe("dashboardService Baseline Anti-Dummy & Fallback Metadata Tests", () =>
 
     expect(dago).toBeDefined();
     // Harus murni dari DB (35% dan 200 kg)
+    expect(dago.hasBaseline).toBe(true);
     expect(dago.baselineRate).toBe(35);
     expect(dago.baselineKg).toBe(200);
-    expect(dago.isFallbackBaselineRate).toBe(false);
-    expect(dago.isFallbackBaselineKg).toBe(false);
     expect(dago.isFallback).toBe(false);
   });
 
-  it("should flag isFallbackBaselineRate=true and isFallback=true when kelurahan has no survey in DB (e.g. Cipaganti)", async () => {
+  it("should return hasBaseline=false and null baseline values when kelurahan has no survey in DB (Zero Dummy Policy)", async () => {
     // Database kosong untuk seluruh survei kelurahan
     (prisma.surveiKelurahan.findMany as any).mockResolvedValue([]);
 
@@ -112,27 +101,10 @@ describe("dashboardService Baseline Anti-Dummy & Fallback Metadata Tests", () =>
     const cipaganti = result.baselineComparison.find((k: any) => k.kelurahan === "Cipaganti");
 
     expect(cipaganti).toBeDefined();
-    // Mengambil fallback terkonfigurasi
-    expect(cipaganti.baselineRate).toBe(13.67);
-    // Cipaganti tidak memiliki fallback volume Kg
-    expect(cipaganti.baselineKg).toBe(0);
-    // Metadata audit transparansi wajib aktif
-    expect(cipaganti.isFallbackBaselineRate).toBe(true);
-    expect(cipaganti.isFallbackBaselineKg).toBe(false);
-    expect(cipaganti.isFallback).toBe(true);
-  });
-
-  it("should flag both isFallbackBaselineRate=true and isFallbackBaselineKg=true when fallback applies to both rate and volume", async () => {
-    (prisma.surveiKelurahan.findMany as any).mockResolvedValue([]);
-
-    const result = await dashboardService.getKpi();
-    const sekeloa = result.baselineComparison.find((k: any) => k.kelurahan === "Sekeloa");
-
-    expect(sekeloa).toBeDefined();
-    expect(sekeloa.baselineRate).toBe(17.8);
-    expect(sekeloa.baselineKg).toBe(9723.4);
-    expect(sekeloa.isFallbackBaselineRate).toBe(true);
-    expect(sekeloa.isFallbackBaselineKg).toBe(true);
-    expect(sekeloa.isFallback).toBe(true);
+    // Tidak menginjeksi fallback angka fiktif
+    expect(cipaganti.hasBaseline).toBe(false);
+    expect(cipaganti.baselineRate).toBeNull();
+    expect(cipaganti.baselineKg).toBeNull();
+    expect(cipaganti.isFallback).toBe(false);
   });
 });

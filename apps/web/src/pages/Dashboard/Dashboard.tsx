@@ -35,17 +35,18 @@ import { canAccessSidebarRoute } from "../../utils/sidebarAccess";
 export interface KelurahanBaselineData {
   id: string;
   kelurahan: string;
-  baselineRate: number; // Persentase pemilahan survei baseline pra-intervensi
-  baselineKg?: number; // Volume sampah terpilah survei baseline (Organik + Anorganik) (Kg/Hari)
+  hasBaseline?: boolean; // true bila kelurahan memiliki data survei baseline di database
+  baselineRate?: number | null; // Persentase pemilahan survei baseline pra-intervensi
+  baselineKg?: number | null; // Volume sampah terpilah survei baseline (Organik + Anorganik) (Kg/Hari)
   endlineRate: number; // Persentase kepatuhan pemilahan real-time
   totalKg?: number; // Total akumulasi volume sampah terdata aktual (Kg)
   status: "Terverifikasi Real" | "Belum Terverifikasi";
   hasEndline?: boolean; // true bila berasal dari survei endline resmi
   setoranDinilai?: number; // jumlah pemilahan yang dapat dinilai (bobot agregasi)
   setoranPatuh?: number; // jumlah pemilahan yang sesuai kategori tempat sampah
-  isFallbackBaselineRate?: boolean; // true jika persentase baseline berasal dari estimasi fallback
-  isFallbackBaselineKg?: boolean; // true jika volume baseline berasal dari estimasi fallback
-  isFallback?: boolean; // true jika salah satu nilai baseline merupakan estimasi non-DB
+  isFallbackBaselineRate?: boolean;
+  isFallbackBaselineKg?: boolean;
+  isFallback?: boolean;
 }
 
 /**
@@ -2115,9 +2116,12 @@ const Dashboard: React.FC = () => {
       ? stats.baselineComparison
       : (loading ? KELURAHAN_BASELINE_DATA : []);
 
+  const validBaselines = kelurahanBaselineList.filter(
+    (k) => k.hasBaseline && k.baselineRate !== null && k.baselineRate !== undefined
+  );
   const avgBaseline =
-    kelurahanBaselineList.length > 0
-      ? +(kelurahanBaselineList.reduce((acc, curr) => acc + (curr.baselineRate || 0), 0) / kelurahanBaselineList.length).toFixed(1)
+    validBaselines.length > 0
+      ? +(validBaselines.reduce((acc, curr) => acc + (curr.baselineRate || 0), 0) / validBaselines.length).toFixed(1)
       : 0;
 
   const validEndlines = kelurahanBaselineList.filter((k) => k.endlineRate > 0);
@@ -2136,9 +2140,12 @@ const Dashboard: React.FC = () => {
       ? +(validEndlines.reduce((acc, curr) => acc + (curr.endlineRate || 0), 0) / validEndlines.length).toFixed(1)
       : 0;
 
+  const validActiveBaselines = validEndlines.filter(
+    (k) => k.hasBaseline && k.baselineRate !== null && k.baselineRate !== undefined
+  );
   const avgBaselineActive =
-    validEndlines.length > 0
-      ? +(validEndlines.reduce((acc, curr) => acc + (curr.baselineRate || 0), 0) / validEndlines.length).toFixed(1)
+    validActiveBaselines.length > 0
+      ? +(validActiveBaselines.reduce((acc, curr) => acc + (curr.baselineRate || 0), 0) / validActiveBaselines.length).toFixed(1)
       : avgBaseline;
 
   const deltaBaseline = +(avgEndline - avgBaselineActive).toFixed(1);
@@ -3048,15 +3055,11 @@ const Dashboard: React.FC = () => {
                                 Baseline:
                               </span>
                               <div className="flex items-center gap-1">
-                                <span className="font-bold text-slate-200">{bRate}%</span>
-                                {item.isFallbackBaselineRate && (
-                                  <span
-                                    className="text-[9px] px-1 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold"
-                                    title="Nilai estimasi sementara (data survei baseline belum diinput di database)"
-                                  >
-                                    Estimasi*
-                                  </span>
-                                )}
+                                <span className="font-bold text-slate-200">
+                                  {item.hasBaseline && item.baselineRate !== null && item.baselineRate !== undefined
+                                    ? `${bRate}%`
+                                    : "Belum ada survei baseline"}
+                                </span>
                               </div>
                             </div>
 
@@ -3084,16 +3087,20 @@ const Dashboard: React.FC = () => {
                           {!HIDE_KEPATUHAN_REAL && (
                             <div className="mt-2 pt-1.5 border-t border-slate-800 flex justify-between items-center text-[10px] font-bold">
                               <span className="text-slate-400">Delta Capaian:</span>
-                              <span
-                                className={`px-1.5 py-0.5 rounded text-[10px] font-extrabold ${
-                                  eRate >= bRate
-                                    ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                                    : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
-                                }`}
-                              >
-                                {eRate >= bRate ? "+" : ""}
-                                {(eRate - bRate).toFixed(1)}%
-                              </span>
+                              {item.hasBaseline && item.baselineRate !== null && item.baselineRate !== undefined ? (
+                                <span
+                                  className={`px-1.5 py-0.5 rounded text-[10px] font-extrabold ${
+                                    eRate >= bRate
+                                      ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                                      : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                                  }`}
+                                >
+                                  {eRate >= bRate ? "+" : ""}
+                                  {(eRate - bRate).toFixed(1)}%
+                                </span>
+                              ) : (
+                                <span className="text-slate-500 italic text-[9.5px]">N/A</span>
+                              )}
                             </div>
                           )}
                         </div>
@@ -3104,15 +3111,12 @@ const Dashboard: React.FC = () => {
                         {/* Bar 1: Baseline (Slate Solid, Mantap & Lebar) */}
                         <div className={`flex flex-col items-center justify-end h-full ${HIDE_KEPATUHAN_REAL ? "w-full max-w-[85px] sm:max-w-[100px] lg:max-w-[115px]" : "flex-1"}`}>
                           <span className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-100 mb-2 tracking-tight group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors flex items-center justify-center gap-0.5">
-                            {bRate}%
-                            {item.isFallbackBaselineRate && (
-                              <span className="text-amber-500 font-extrabold text-xs" title="Estimasi sementara (belum terdata di database)">*</span>
-                            )}
+                            {item.hasBaseline && item.baselineRate !== null && item.baselineRate !== undefined ? `${bRate}%` : "—"}
                           </span>
                           <div className="w-full bg-slate-100/60 dark:bg-slate-800/30 rounded-t-2xl overflow-hidden h-full flex items-end border-x border-t border-dashed border-slate-200/80 dark:border-slate-700/50">
                             <div
                               className="w-full bg-gradient-to-t from-slate-700 via-slate-600 to-slate-500 dark:from-slate-600 dark:via-slate-500 dark:to-slate-300 rounded-t-2xl transition-all duration-500 shadow-md group-hover:brightness-110 group-hover:scale-[1.02]"
-                              style={{ height: `${bRate}%` }}
+                              style={{ height: item.hasBaseline && item.baselineRate !== null && item.baselineRate !== undefined ? `${bRate}%` : "0%" }}
                             />
                           </div>
                         </div>
@@ -3270,10 +3274,15 @@ const Dashboard: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-slate-200/70 dark:divide-slate-800">
                 {kelurahanBaselineList.map((item, idx) => {
-                  const deltaPp = +(item.endlineRate - item.baselineRate).toFixed(2);
+                  const hasBaselineRate = item.hasBaseline && item.baselineRate !== null && item.baselineRate !== undefined;
+                  const deltaPp = hasBaselineRate ? +(item.endlineRate - (item.baselineRate || 0)).toFixed(2) : null;
                   const itemKg = Number(item.totalKg || 0);
-                  const formattedBaseline = item.baselineRate.toFixed(2).replace(".", ",") + "%";
-                  const formattedDelta = deltaPp >= 0 ? `+${deltaPp.toFixed(2).replace(".", ",")}` : deltaPp.toFixed(2).replace(".", ",");
+                  const formattedBaseline = hasBaselineRate
+                    ? (item.baselineRate || 0).toFixed(2).replace(".", ",") + "%"
+                    : "Belum ada survei baseline";
+                  const formattedDelta = deltaPp !== null
+                    ? (deltaPp >= 0 ? `+${deltaPp.toFixed(2).replace(".", ",")}` : deltaPp.toFixed(2).replace(".", ","))
+                    : "—";
                   const formattedKg = itemKg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                   const hasBaselineKg = item.baselineKg !== undefined && item.baselineKg !== null && item.baselineKg > 0;
                   const hasEndlineData = item.endlineRate > 0 || itemKg > 0;
@@ -3295,14 +3304,10 @@ const Dashboard: React.FC = () => {
                       </td>
                       <td className="py-3 px-3 text-center font-semibold text-slate-700 dark:text-slate-300 border-r border-slate-200/60 dark:border-slate-800/60">
                         <div className="flex items-center justify-center gap-1.5">
-                          <span>{formattedBaseline}</span>
-                          {item.isFallbackBaselineRate && (
-                            <span
-                              className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300/80 dark:border-amber-700/60 cursor-help"
-                              title="Nilai estimasi sementara (data survei baseline belum diinput di database)"
-                            >
-                              Estimasi*
-                            </span>
+                          {hasBaselineRate ? (
+                            <span>{formattedBaseline}</span>
+                          ) : (
+                            <span className="text-slate-400 font-normal italic text-[11px]">Belum ada survei baseline</span>
                           )}
                         </div>
                       </td>
@@ -3310,17 +3315,9 @@ const Dashboard: React.FC = () => {
                         {item.baselineKg && item.baselineKg > 0 ? (
                           <div className="flex items-center justify-center gap-1.5">
                             <span>{item.baselineKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })}</span>
-                            {item.isFallbackBaselineKg && (
-                              <span
-                                className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300/80 dark:border-amber-700/60 cursor-help"
-                                title="Volume estimasi awal (belum terdata di database)"
-                              >
-                                Estimasi*
-                              </span>
-                            )}
                           </div>
                         ) : (
-                          "—"
+                          <span className="text-slate-400 font-normal italic text-[11px]">Belum ada data</span>
                         )}
                       </td>
                       <td className="py-3 px-3 text-center font-extrabold text-emerald-600 dark:text-emerald-400 border-r border-slate-200/60 dark:border-slate-800/60">
@@ -3334,7 +3331,7 @@ const Dashboard: React.FC = () => {
                         {formattedKg}
                       </td>
                       <td className="py-3 px-3 text-center font-extrabold text-blue-600 dark:text-blue-400 border-r border-slate-200/60 dark:border-slate-800/60">
-                        {item.endlineRate > 0 ? formattedDelta : "—"}
+                        {item.endlineRate > 0 && hasBaselineRate ? formattedDelta : "—"}
                       </td>
                       <td className={`py-3 px-3 text-center font-extrabold ${
                         deltaKg === null
@@ -3351,16 +3348,6 @@ const Dashboard: React.FC = () => {
               </tbody>
             </table>
           </div>
-
-          {/* Catatan Kaki Transparansi Audit Anti-Dummy */}
-          {kelurahanBaselineList.some((k) => k.isFallbackBaselineRate || k.isFallbackBaselineKg) && (
-            <div className="flex items-start gap-2 px-3.5 py-2.5 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/70 dark:border-amber-800/40 text-[11px] text-amber-800 dark:text-amber-300">
-              <span className="font-black text-amber-600 dark:text-amber-400 mt-0.5 text-xs">⚠️</span>
-              <p className="leading-relaxed">
-                <strong>Transparansi Tata Kelola Data (Anti-Dummy):</strong> Nilai berlabel <span className="underline font-bold">Estimasi*</span> merupakan angka estimasi sementara (*fallback*) untuk kelurahan yang instrumen survei baseline-nya belum tercatat di database resmi <code className="px-1 py-0.5 rounded bg-amber-100/80 dark:bg-amber-900/60 font-mono text-[10px]">survei_pemilahan_sampah</code>. Angka akan otomatis beralih menjadi data faktual murni segera setelah survei lapangan diinput oleh petugas/mahasiswa KKN.
-              </p>
-            </div>
-          )}
 
           {/* Dua Kartu Penjelas Metodologi Side-by-Side */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">

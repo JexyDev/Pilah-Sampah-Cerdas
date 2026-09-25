@@ -1286,6 +1286,7 @@ export const kknExecutiveService = {
         longitude: true,
         createdAt: true,
         maxCapacityLiter: true,
+        binType: true,
         category: {
           select: { id: true, name: true },
         },
@@ -1313,6 +1314,25 @@ export const kknExecutiveService = {
         kelurahan: b.kelurahan?.name ?? null,
         rwNama: b.rw?.name ?? null,
         status: b.status,
+        statusBaku:
+          b.status === "ACTIVE_BOUND"
+            ? "AKTIF_TERPASANG"
+            : b.status === "BROKEN"
+              ? "RUSAK"
+              : b.status === "INACTIVE"
+                ? "NON_AKTIF"
+                : "TERCETAK",
+        statusDisplay:
+          b.status === "ACTIVE_BOUND"
+            ? "Aktif Terpasang"
+            : b.status === "BROKEN"
+              ? "Rusak"
+              : b.status === "INACTIVE"
+                ? "Tidak Aktif"
+                : "Tercetak",
+        deskripsiLokasi: null,
+        tipeKepemilikan: b.user ? "RUMAH_TANGGA" : "KOMUNAL_RW",
+        binType: b.binType ?? null,
         createdAt: b.createdAt,
         tanggalAktivasi: b.createdAt,
         latitude: b.latitude ? Number(b.latitude) : null,

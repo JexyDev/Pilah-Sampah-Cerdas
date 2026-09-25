@@ -361,6 +361,8 @@ model Bin {
   length                Decimal?          @map("panjang") @db.Decimal(5, 2)
   height                Decimal?          @map("tinggi") @db.Decimal(5, 2)
   binType               String?           @map("tipe_wadah")
+  deskripsiLokasi       String?           @map("deskripsi_lokasi")
+  tipeKepemilikan       String?           @default("RUMAH_TANGGA") @map("tipe_kepemilikan")
   binOwnerships         BinOwnership[]
   violations            Violation[]
   binResetRequests      BinResetRequest[]

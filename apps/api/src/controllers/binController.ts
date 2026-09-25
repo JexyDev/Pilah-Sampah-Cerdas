@@ -42,12 +42,14 @@ export class BinController {
    */
   async getAllBins(req: Request, res: Response): Promise<void> {
     try {
-      const { search, status, areaId, categoryId } = req.query;
+      const { search, status, areaId, categoryId, tipeKepemilikan, binType, jenisWadah } = req.query;
       const filters = {
         search: search as string,
         status: status as string,
         areaId: areaId as string,
         categoryId: categoryId as string,
+        tipeKepemilikan: tipeKepemilikan as string,
+        binType: (binType || jenisWadah) as string,
       };
 
       const bins = await binService.getAllBins(req.user, filters);
@@ -138,12 +140,47 @@ export class BinController {
           effectiveOwner?.households?.[0]?.address ||
           (bin.rw?.name ? `${bin.rw.name}, Coblong` : "Kecamatan Coblong");
 
+        const tipeKepemilikan =
+          bin.tipeKepemilikan || (effectiveOwner ? "RUMAH_TANGGA" : "KOMUNAL_RW");
+        const jenisWadah =
+          bin.binType ||
+          (String(bin.category?.name || "").toUpperCase().includes("ANORGANIK")
+            ? "ANORGANIK"
+            : String(bin.category?.name || "").toUpperCase().includes("RESIDU")
+              ? "RESIDU"
+              : "ORGANIK");
+
+        // Standardized status in Bahasa Indonesia baku
+        const statusBaku =
+          bin.status === "ACTIVE_BOUND" || bin.status === "ACTIVE"
+            ? "AKTIF_TERPASANG"
+            : bin.status === "BROKEN"
+              ? "RUSAK"
+              : bin.status === "INACTIVE"
+                ? "NON_AKTIF"
+                : "TERCETAK";
+
+        const statusDisplay =
+          statusBaku === "AKTIF_TERPASANG"
+            ? "Aktif Terpasang"
+            : statusBaku === "RUSAK"
+              ? "Rusak"
+              : statusBaku === "NON_AKTIF"
+                ? "Tidak Aktif"
+                : "Tercetak";
+
         return {
           id: bin.id,
           qrCode: bin.qrCode,
           kode: ensureTcFormat(bin.qrCode, bin.category?.name),
           lokasi: calculatedAddress,
           address: calculatedAddress,
+          deskripsiLokasi: bin.deskripsiLokasi || null,
+          tipeKepemilikan,
+          binType: jenisWadah,
+          jenisWadah,
+          statusBaku,
+          statusDisplay,
           wargaAddress: effectiveOwner?.address || effectiveOwner?.households?.[0]?.address || null,
           rw: bin.rw?.name || (bin.rwId ? `ID RT/RW: ${bin.rwId}` : "Belum Terikat"),
           kelurahan: bin.rw?.kelurahan?.name || null,
@@ -189,21 +226,77 @@ export class BinController {
       });
 
       if (filters.status && filters.status !== "Semua Status") {
-        const targetStatus = filters.status.toLowerCase();
+        const targetStatus = filters.status.toLowerCase().trim();
         mappedBins = mappedBins.filter((b: any) => {
           const st = (b.status || "").toLowerCase();
           const rst = (b.realStatus || "").toLowerCase();
+          const baku = (b.statusBaku || "").toLowerCase();
+          const disp = (b.statusDisplay || "").toLowerCase();
+
+          if (
+            targetStatus === "tercetak" ||
+            targetStatus === "printed" ||
+            targetStatus === "stiker belum terikat"
+          ) {
+            return baku === "tercetak" || rst === "printed" || st === "printed";
+          }
+          if (
+            targetStatus === "aktif" ||
+            targetStatus === "aktif terpasang" ||
+            targetStatus === "aktif_terpasang" ||
+            targetStatus === "active_bound" ||
+            targetStatus === "active" ||
+            targetStatus === "teraktivasi warga"
+          ) {
+            return baku === "aktif_terpasang" || rst === "active_bound" || rst === "active";
+          }
+          if (
+            targetStatus === "non_aktif" ||
+            targetStatus === "tidak aktif" ||
+            targetStatus === "tidak_aktif" ||
+            targetStatus === "inactive"
+          ) {
+            return baku === "non_aktif" || rst === "inactive";
+          }
           if (
             targetStatus === "perbaikan" ||
             targetStatus === "rusak" ||
-            targetStatus === "broken"
+            targetStatus === "broken" ||
+            targetStatus === "perbaikan / rusak"
           ) {
-            return st === "rusak" || rst === "broken" || st === "perbaikan";
+            return baku === "rusak" || rst === "broken" || st === "rusak";
           }
           if (targetStatus === "normal") {
             return st === "normal" || rst === "active_bound" || rst === "active";
           }
-          return st === targetStatus || rst === targetStatus;
+          if (targetStatus === "penuh") {
+            return st === "penuh";
+          }
+          if (targetStatus === "sedang") {
+            return st === "sedang";
+          }
+          return (
+            st === targetStatus ||
+            rst === targetStatus ||
+            baku === targetStatus ||
+            disp === targetStatus
+          );
+        });
+      }
+
+      if (filters.tipeKepemilikan && filters.tipeKepemilikan !== "Semua Kepemilikan" && filters.tipeKepemilikan !== "Semua") {
+        const targetKep = filters.tipeKepemilikan.toLowerCase().trim();
+        mappedBins = mappedBins.filter((b: any) => {
+          const kep = (b.tipeKepemilikan || "").toLowerCase();
+          return kep.includes(targetKep) || targetKep.includes(kep);
+        });
+      }
+
+      if (filters.binType && filters.binType !== "Semua Jenis" && filters.binType !== "Semua") {
+        const targetType = filters.binType.toLowerCase().trim();
+        mappedBins = mappedBins.filter((b: any) => {
+          const jw = (b.jenisWadah || b.binType || "").toLowerCase();
+          return jw.includes(targetType) || targetType.includes(jw);
         });
       }
 
