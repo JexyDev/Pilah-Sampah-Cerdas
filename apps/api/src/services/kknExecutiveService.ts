@@ -167,7 +167,16 @@ export const kknExecutiveService = {
     });
 
     const totalKelurahanDb = await prisma.kelurahan.count();
-    const totalRwKecamatan = await prisma.rw.count();
+    // Kondisi Prisma untuk mengecualikan RW dummy/test (nama mengandung "99", "dummy", atau "test")
+    // Selaras dengan logika filter frontend di DashboardEksekutifKkn.tsx (num < 90)
+    const nonTestRwWhere = {
+      NOT: [
+        { name: { contains: "99", mode: "insensitive" as const } },
+        { name: { contains: "dummy", mode: "insensitive" as const } },
+        { name: { contains: "test", mode: "insensitive" as const } },
+      ],
+    };
+    const totalRwKecamatan = await prisma.rw.count({ where: nonTestRwWhere });
 
     let kelurahanCount = totalKelurahanDb;
     if (isFilteredKel) {
@@ -184,25 +193,27 @@ export const kknExecutiveService = {
       // Jika difilter per kelompok spesifik, ambil RW cakupan kelompok tersebut
       rwCount = distinctRws.size;
     } else if (isFilteredKel) {
-      // Jika difilter per kelurahan, ambil total RW riil kelurahan tersebut dari tabel rw
+      // Jika difilter per kelurahan, ambil total RW riil kelurahan tersebut dari tabel rw (kecualikan dummy/test)
       const isLebakGede = kelFilterNormalized.toLowerCase().replace(/\s+/g, "") === "lebakgede";
       rwCount = await prisma.rw.count({
         where: isLebakGede
           ? {
+              ...nonTestRwWhere,
               OR: [
                 { kelurahan: { name: { contains: "Lebak Gede", mode: "insensitive" } } },
                 { kelurahan: { name: { contains: "Lebakgede", mode: "insensitive" } } },
               ],
             }
           : {
+              ...nonTestRwWhere,
               kelurahan: {
                 name: { contains: kelFilterNormalized, mode: "insensitive" },
               },
             },
       });
     } else {
-      // Kondisi default (Semua Kelurahan): Total seluruh RW riil terdaftar di kecamatan dari tabel rw (84 RW)
-      rwCount = totalRwKecamatan;
+      // Kondisi default (Semua Kelurahan): Total seluruh RW riil terdaftar di kecamatan dari tabel rw
+      rwCount = totalRwKecamatan; // sudah bersih karena totalRwKecamatan kini menggunakan nonTestRwWhere
     }
 
     // 6. Sebaran Program Studi Mahasiswa
@@ -379,33 +390,38 @@ export const kknExecutiveService = {
     let pelaksanaanBelum = 0;
     let pelaksanaanSedangBerjalan = 0;
     let pelaksanaanSelesai = 0;
+    let totalProkerDisetujui = 0;
 
     prokerList.forEach((p) => {
       // 1. Dimensi Status Usulan (Mandiri & Terpisah: Disetujui, Belum Disetujui, Ditolak)
       const stUsulan = (p.statusUsulan || "").toUpperCase();
       const stUtama = (p.status || "").toUpperCase();
 
-      if (stUsulan === "DITOLAK" || stUtama === "DITOLAK") {
-        usulanDitolak++;
-      } else if (
+      const isDisetujui =
         stUsulan === "DISETUJUI" ||
         stUtama === "DITERIMA" ||
         stUtama === "SEDANG_BERJALAN" ||
-        stUtama === "SELESAI"
-      ) {
+        stUtama === "SELESAI";
+
+      if (stUsulan === "DITOLAK" || stUtama === "DITOLAK") {
+        usulanDitolak++;
+      } else if (isDisetujui) {
         usulanDisetujui++;
       } else {
         usulanBelumDisetujui++;
       }
 
-      // 2. Dimensi Status Pelaksanaan (Belum, Sedang Berjalan, Selesai)
-      const stPelaksanaan = (p.statusPelaksanaan || "").toUpperCase();
-      if (stPelaksanaan === "SELESAI" || stUtama === "SELESAI") {
-        pelaksanaanSelesai++;
-      } else if (stPelaksanaan === "SEDANG_BERJALAN" || stUtama === "SEDANG_BERJALAN") {
-        pelaksanaanSedangBerjalan++;
-      } else {
-        pelaksanaanBelum++;
+      // 2. Dimensi Status Pelaksanaan (HANYA untuk proker yang telah disetujui)
+      if (isDisetujui) {
+        totalProkerDisetujui++;
+        const stPelaksanaan = (p.statusPelaksanaan || "").toUpperCase();
+        if (stPelaksanaan === "SELESAI" || stUtama === "SELESAI") {
+          pelaksanaanSelesai++;
+        } else if (stPelaksanaan === "SEDANG_BERJALAN" || stUtama === "SEDANG_BERJALAN") {
+          pelaksanaanSedangBerjalan++;
+        } else {
+          pelaksanaanBelum++;
+        }
       }
     });
 
@@ -414,9 +430,9 @@ export const kknExecutiveService = {
     const pctUsulanBelumDisetujui = totalProker > 0 ? Math.round((usulanBelumDisetujui / totalProker) * 100) : 0;
     const pctUsulanDitolak = totalProker > 0 ? Math.round((usulanDitolak / totalProker) * 100) : 0;
 
-    const pctPelaksanaanBelum = totalProker > 0 ? Math.round((pelaksanaanBelum / totalProker) * 100) : 0;
-    const pctPelaksanaanSedangBerjalan = totalProker > 0 ? Math.round((pelaksanaanSedangBerjalan / totalProker) * 100) : 0;
-    const pctPelaksanaanSelesai = totalProker > 0 ? Math.round((pelaksanaanSelesai / totalProker) * 100) : 0;
+    const pctPelaksanaanBelum = totalProkerDisetujui > 0 ? Math.round((pelaksanaanBelum / totalProkerDisetujui) * 100) : 0;
+    const pctPelaksanaanSedangBerjalan = totalProkerDisetujui > 0 ? Math.round((pelaksanaanSedangBerjalan / totalProkerDisetujui) * 100) : 0;
+    const pctPelaksanaanSelesai = totalProkerDisetujui > 0 ? Math.round((pelaksanaanSelesai / totalProkerDisetujui) * 100) : 0;
 
     const statusProker = {
       total: totalProker,
@@ -429,7 +445,7 @@ export const kknExecutiveService = {
       },
       // Dimensi Status Pelaksanaan (Belum, Sedang Berjalan, Sudah Selesai)
       pelaksanaan: {
-        total: totalProker,
+        total: totalProkerDisetujui,
         belum: { count: pelaksanaanBelum, percentage: pctPelaksanaanBelum },
         sedangBerjalan: { count: pelaksanaanSedangBerjalan, percentage: pctPelaksanaanSedangBerjalan },
         selesai: { count: pelaksanaanSelesai, percentage: pctPelaksanaanSelesai },
