@@ -561,6 +561,8 @@ export default function GisEksekutifPage() {
         sensors: sensors.filter((s) => s.kel === pk.nama),
         share: 1,
         hasData: Boolean(kd?.hasData),
+        totalSetoran: kd?.totalSetoran ?? 0,
+        patuhSetoran: kd?.patuhSetoran ?? 0,
       };
       return { k: kShape, s: sShape };
     });
@@ -601,15 +603,19 @@ export default function GisEksekutifPage() {
     ? "dari seluruh kelurahan"
     : `di Kel. ${kel}${rw !== "Semua" ? ` RW ${rw}` : ""}`;
 
-  // Indeks bulan dari periode aktif untuk disorot pada grafik tren bulanan (5 bulan: Agu=0, Sep=1, Okt=2, Nov=3, Des=4)
+  // Indeks bulan dari periode aktif untuk disorot pada grafik tren bulanan
   const selectedMonthIndex = useMemo(() => {
     const p = (periode || "").toLowerCase();
+    const currentMonthReal = new Date().getMonth();
+    // Agu=7 (idx 0), Sep=8 (idx 1), Okt=9 (idx 2), Nov=10 (idx 3), Des=11 (idx 4)
+    const realWorldIdx = Math.max(0, Math.min(4, currentMonthReal - 7));
+    if (p.includes("semua waktu")) return realWorldIdx; // Sorot bulan berjalan, BUKAN index 4
     if (p.includes("agu")) return 0;
     if (p.includes("sep")) return 1;
     if (p.includes("okt")) return 2;
     if (p.includes("nov")) return 3;
     if (p.includes("des")) return 4;
-    return 1; // default September 2026 (fase baseline utama)
+    return realWorldIdx;
   }, [periode]);
 
   // Format timestamp data diperbarui

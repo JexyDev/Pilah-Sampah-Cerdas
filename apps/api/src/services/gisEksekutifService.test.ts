@@ -405,12 +405,18 @@ describe("gisEksekutifService Real DB Operational Tests (Zero Baseline / 100% Re
     const cipaganti = res.kepatuhanPerKelurahan.find((k) => k.nama === "Cipaganti");
 
     expect(dago?.kepatuhan).toBe(80);
+    expect(dago?.totalSetoran).toBe(10);
+    expect(dago?.patuhSetoran).toBe(8);
     expect(dago?.color).toBe("#00a86b"); // >= 80% -> Hijau
 
     expect(sekeloa?.kepatuhan).toBe(60);
+    expect(sekeloa?.totalSetoran).toBe(10);
+    expect(sekeloa?.patuhSetoran).toBe(6);
     expect(sekeloa?.color).toBe("#f59e0b"); // 50-79% -> Amber
 
     expect(cipaganti?.kepatuhan).toBe(40);
+    expect(cipaganti?.totalSetoran).toBe(10);
+    expect(cipaganti?.patuhSetoran).toBe(4);
     expect(cipaganti?.color).toBe("#ef4444"); // < 50% -> Merah
   });
 

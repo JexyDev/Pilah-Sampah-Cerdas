@@ -85,6 +85,8 @@ export interface GisOverviewApiResponse {
   kepatuhanPerKelurahan: Array<{
     nama: string;
     kepatuhan: number | null;
+    totalSetoran?: number;
+    patuhSetoran?: number;
     volume: number | null;
     volumeKg?: number | null;
     totalFasilitas: number;

@@ -70,6 +70,8 @@ export interface StatsKelResult {
   fac: number;
   sensors: SensorItem[];
   share: number;
+  totalSetoran?: number;
+  patuhSetoran?: number;
 }
 
 export interface StatsAllResult {

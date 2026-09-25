@@ -272,8 +272,19 @@ export function Trend({ series, seriesKg, pi, unit = "kg" }: TrendProps) {
   const isKg = currentUnit === "kg";
   const sourceSeries = (isKg && seriesKg && seriesKg.length > 0) ? seriesKg : series;
 
-  // Index aktif default (0=Agu, 1=Sep, 2=Okt, 3=Nov, 4=Des)
-  const defaultIdx = pi >= 0 && pi < PROGRAM_MONTH_LABELS.length ? pi : 1;
+  // Mendeteksi bulan nyata berjalan (Real-time Clock)
+  const currentMonthReal = new Date().getMonth(); 
+  const realWorldIdx = Math.max(0, Math.min(4, currentMonthReal - 7));
+  
+  // Jika Akumulasi -> Potong array sampai bulan real-time saat ini.
+  const visibleLabels = isCumulative 
+    ? PROGRAM_MONTH_LABELS.slice(0, realWorldIdx + 1)
+    : PROGRAM_MONTH_LABELS;
+  // Index aktif default (dari filter dropdown, dibatasi ke range visibleLabels)
+  const defaultIdx = Math.min(
+    visibleLabels.length - 1,
+    pi >= 0 && pi < PROGRAM_MONTH_LABELS.length ? pi : realWorldIdx
+  );
 
   // Mode Per Bulan: Hanya bulan yang sudah berjalan (idx <= defaultIdx) yang memiliki data riil.
   // Bulan ke depan (idx > defaultIdx) adalah null agar tidak menampilkan flatline/hardcode.
@@ -602,6 +613,8 @@ export function Compliance({ rows, selected, onSelect }: ComplianceProps) {
           kepatuhan: kep,
           hasSurvei,
           color,
+          totalSetoran: r.s.totalSetoran ?? 0,
+          patuhSetoran: r.s.patuhSetoran ?? 0,
         };
       })
     : []
@@ -660,7 +673,11 @@ export function Compliance({ rows, selected, onSelect }: ComplianceProps) {
                     type="button"
                     className={`compliance-row-btn ${isSelected ? "is-selected" : ""}`}
                     onClick={() => onSelect(item.id)}
-                    title={item.hasSurvei && item.kepatuhan != null ? `${item.nama}: ${item.kepatuhan}% (Sampel giat KKN)` : `${item.nama}: Belum ada data transaksi`}
+                    title={
+                      item.hasSurvei && item.kepatuhan != null
+                        ? `${item.nama}: ${item.kepatuhan}% (${item.patuhSetoran}/${item.totalSetoran} transaksi valid)`
+                        : `${item.nama}: Belum ada data transaksi`
+                    }
                   >
                     <span className="compliance-name">{item.nama}</span>
                     <div className="compliance-track">
@@ -683,9 +700,47 @@ export function Compliance({ rows, selected, onSelect }: ComplianceProps) {
                         />
                       )}
                     </div>
-                    <span className="compliance-val" style={{ color: item.hasSurvei ? undefined : "#9ca3af" }}>
-                      {item.hasSurvei && item.kepatuhan != null ? `${item.kepatuhan}%` : "Belum ada"}
-                    </span>
+                    
+                    {/* UI Rasio Ganda Kanan */}
+                    <div
+                      className="compliance-val-col"
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "flex-end",
+                        justifyContent: "center",
+                        minWidth: 46,
+                        flexShrink: 0,
+                        lineHeight: 1,
+                      }}
+                    >
+                      <span
+                        className="compliance-val"
+                        style={{
+                          color: item.hasSurvei ? undefined : "#9ca3af",
+                          width: "auto",
+                          lineHeight: 1.1,
+                          fontSize: "11px",
+                        }}
+                      >
+                        {item.hasSurvei && item.kepatuhan != null ? `${item.kepatuhan}%` : "—"}
+                      </span>
+                      {item.hasSurvei && item.totalSetoran > 0 && (
+                        <span
+                          style={{
+                            fontSize: "8.5px",
+                            color: "#64748b",
+                            fontWeight: 500,
+                            lineHeight: 1,
+                            marginTop: "1.5px",
+                            fontVariantNumeric: "tabular-nums",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {item.patuhSetoran}/{item.totalSetoran} setor
+                        </span>
+                      )}
+                    </div>
                   </button>
                 </li>
               );

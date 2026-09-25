@@ -378,6 +378,8 @@ export const gisEksekutifService = {
       return {
         nama: kelName,
         kepatuhan,
+        totalSetoran: real ? real.totalSetoran : 0,
+        patuhSetoran: real ? real.patuhSetoran : 0,
         volume: volumeM3,
         volumeKg: sumKg > 0 ? sumKg : null,
         organikKgHari: organikKg,

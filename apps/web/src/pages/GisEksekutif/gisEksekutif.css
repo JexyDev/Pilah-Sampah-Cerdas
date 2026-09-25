@@ -2420,11 +2420,13 @@
   align-items: center;
   gap: 10px;
   width: 100%;
+  min-height: 24px;
   border: none;
   background: transparent;
-  padding: 2px 0;
+  padding: 1px 0;
   cursor: pointer;
   text-align: left;
+  box-sizing: border-box;
 }
 
 .gis-eksekutif-root .compliance-name {
