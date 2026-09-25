@@ -90,14 +90,20 @@ export class SmartZoneService {
     });
     const studentIds = students.map((s) => s.userId);
     if (studentIds.length === 0) return [];
+
+    const recentLocs = await prisma.studentLocation.findMany({
+      where: { studentId: { in: studentIds }, recordedAt: { gte: since } },
+      orderBy: { recordedAt: "desc" },
+      select: { studentId: true, latitude: true, longitude: true },
+    });
+
+    const seen = new Set<string>();
     const locations: Point[] = [];
-    for (const sid of studentIds) {
-      const loc = await prisma.studentLocation.findFirst({
-        where: { studentId: sid, recordedAt: { gte: since } },
-        orderBy: { recordedAt: "desc" },
-        select: { latitude: true, longitude: true },
-      });
-      if (loc) locations.push({ lat: Number(loc.latitude), lng: Number(loc.longitude) });
+    for (const loc of recentLocs) {
+      if (!seen.has(loc.studentId)) {
+        seen.add(loc.studentId);
+        locations.push({ lat: Number(loc.latitude), lng: Number(loc.longitude) });
+      }
     }
     return locations;
   }

@@ -375,6 +375,9 @@ model Bin {
   kelompok              KelompokKkn?      @relation(fields: [kelompokId], references: [id])
 
   @@index([kelompokId])
+  @@index([status, registeredByStudentId])
+  @@index([status, qrBatchId])
+  @@index([userId])
   @@map("tempat_sampah")
 }
 
@@ -900,6 +903,9 @@ model PointHistory {
   redeemable  Boolean  @default(false)
   user        User     @relation(fields: [userId], references: [id])
 
+  @@index([userId, kategori])
+  @@index([userId])
+  @@index([kategori])
   @@map("riwayat_poin")
 }
 

@@ -764,7 +764,7 @@ export class KknService {
 
     let list = Array.from(uniqueUsers.values()).map(({ u, bins: userBins }) => {
       const household = u.households?.[0];
-      const primaryBin = userBins[0] || u.bins?.[0] || u.binOwnerships?.[0]?.bin;
+      const primaryBin = userBins[0] || u.bins?.[0] || u.binOwnerships?.[0]?.bin || null;
       const lat = primaryBin?.latitude
         ? Number(primaryBin.latitude)
         : household?.latitude
@@ -843,12 +843,12 @@ export class KknService {
         binAnorganik?.registeredByStudent?.name ||
         "";
 
-      const resolvedRwId = u.rwId || primaryBin.rwId || household?.rwId || effectiveRwId || null;
+      const resolvedRwId = u.rwId || primaryBin?.rwId || household?.rwId || effectiveRwId || null;
       const isMyAssignedCitizen =
         effectiveRwId != null &&
         (u.rwId === effectiveRwId ||
           household?.rwId === effectiveRwId ||
-          primaryBin.rwId === effectiveRwId);
+          primaryBin?.rwId === effectiveRwId);
 
       const resolvedMahasiswaId = registeredStudentId || "";
       const resolvedPendampingName = registeredStudentName || "";
@@ -856,13 +856,15 @@ export class KknService {
       return {
         id: u.id,
         wargaId: u.id,
-        binId: primaryBin.qrCode,
-        binCode: primaryBin.qrCode,
-        bin: {
-          qrCode: primaryBin.qrCode,
-          category: primaryBin.category?.name || "UMUM",
-          capacity: `${primaryBin.currentVolumeLiter || 0}L / ${primaryBin.maxCapacityLiter || 25}L`,
-        },
+        binId: primaryBin?.qrCode || null,
+        binCode: primaryBin?.qrCode || null,
+        bin: primaryBin
+          ? {
+              qrCode: primaryBin.qrCode,
+              category: primaryBin.category?.name || "UMUM",
+              capacity: `${primaryBin.currentVolumeLiter || 0}L / ${primaryBin.maxCapacityLiter || 25}L`,
+            }
+          : null,
         binOrganikId: binOrganik?.qrCode || null,
         binAnorganikId: binAnorganik?.qrCode || null,
         wargaName: u.name,
@@ -875,7 +877,7 @@ export class KknService {
         longitude: lng,
         lat: lat,
         lng: lng,
-        category: primaryBin.category?.name || "Organik",
+        category: primaryBin?.category?.name || "Organik",
         totalKg: Math.round(totalKg * 10) / 10,
         totalPoin,
         totalPoints: totalPoin,

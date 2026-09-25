@@ -67,11 +67,37 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Monorepo Dependencies
+        run: npm ci --prefer-offline 2>/dev/null || npm install --legacy-peer-deps
+
+      - name: Generate Prisma Client
+        run: npm run prisma:generate
+
+      - name: Build Web Frontend on GitHub Runner
+        run: |
+          cd apps/web
+          VITE_API_BASE_URL=/api/v1 npm run build
+          tar -czf ../../web-dist.tar.gz -C dist .
+
       - name: Install sshpass
         run: |
           if ! command -v sshpass &> /dev/null; then
             sudo apt-get install -y --no-install-recommends sshpass 2>/dev/null || (sudo apt-get update -qq && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends sshpass)
           fi
+
+      - name: Transfer Web Dist Artifact to VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USERNAME }}
+          VPS_PASS: ${{ secrets.VPS_PASSWORD }}
+        run: |
+          sshpass -p "$VPS_PASS" scp -o StrictHostKeyChecking=no -o ConnectTimeout=60 -o PreferredAuthentications=password -o PubkeyAuthentication=no web-dist.tar.gz "$VPS_USER@$VPS_HOST:/tmp/web-dist.tar.gz"
 
       - name: Update Backend & Deploy Web on VPS
         env:
@@ -181,13 +207,17 @@ jobs:
             $PM2_BIN status psc-backend
 
             echo "=== 4. Deploying Frontend Web to Nginx ==="
-            echo "Building frontend directly on VPS..."
+            echo "Unpacking pre-built frontend artifact on VPS..."
             cd "$REPO_DIR/apps/web"
             echo "$VPS_PASS" | sudo -S rm -rf "$REPO_DIR/apps/web/dist" 2>/dev/null || rm -rf "$REPO_DIR/apps/web/dist" 2>/dev/null || true
             mkdir -p "$REPO_DIR/apps/web/dist"
-            npm install --silent --legacy-peer-deps 2>/dev/null || npm install --legacy-peer-deps
-            NODE_OPTIONS="--max-old-space-size=4096" VITE_API_BASE_URL=/api/v1 npm run build
-            test -f "$REPO_DIR/apps/web/dist/index.html" || { echo "ERROR: Frontend build failed! dist/index.html missing on VPS"; exit 1; }
+            if [ -f /tmp/web-dist.tar.gz ]; then
+              tar -xzf /tmp/web-dist.tar.gz -C "$REPO_DIR/apps/web/dist"
+              rm -f /tmp/web-dist.tar.gz
+            else
+              echo "Warning: /tmp/web-dist.tar.gz not found, using existing dist if present"
+            fi
+            test -f "$REPO_DIR/apps/web/dist/index.html" || { echo "ERROR: Frontend dist/index.html missing on VPS"; exit 1; }
 
             # Backup APK dari semua lokasi yang mungkin sebelum rm -rf
             APK_NAME="berseka-release-arm64-v8a.apk"
