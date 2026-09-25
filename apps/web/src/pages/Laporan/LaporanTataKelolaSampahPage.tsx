@@ -336,10 +336,14 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
       {/* ─────────────────────────────────────────────────────────────
           BILAH FILTER & KONTROL AKSI (DISEMBUNYIKAN SAAT PRINT)
       ───────────────────────────────────────────────────────────── */}
-      <section className="web-filter-section bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4 print:hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full lg:w-auto">
+      {/* ─────────────────────────────────────────────────────────────
+          BILAH FILTER & KONTROL AKSI (100% RESPONSIVE)
+      ───────────────────────────────────────────────────────────── */}
+      <section className="web-filter-section bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 md:p-6 shadow-xs space-y-4 print:hidden">
+        {/* Baris 1: Filter Dropdown (Cakupan Wilayah & Rentang Waktu) + Custom Date */}
+        <div className="flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-4 flex-wrap">
           {/* Filter Wilayah */}
-          <div className="w-full sm:w-72">
+          <div className="w-full sm:w-72 sm:max-w-xs">
             <label className="block text-[11px] font-extrabold uppercase text-slate-400 dark:text-slate-500 mb-1.5 tracking-wider">
               Cakupan Wilayah
             </label>
@@ -351,7 +355,7 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
           </div>
 
           {/* Filter Periode */}
-          <div className="w-full sm:w-60">
+          <div className="w-full sm:w-60 sm:max-w-xs">
             <label className="block text-[11px] font-extrabold uppercase text-slate-400 dark:text-slate-500 mb-1.5 tracking-wider">
               Rentang Waktu
             </label>
@@ -364,23 +368,23 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
 
           {/* Custom Date Range */}
           {selectedPeriode === "custom" && (
-            <div className="flex items-center gap-2 pt-5">
+            <div className="flex items-center gap-2 flex-wrap pb-0.5">
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                className="px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
-              <span className="text-xs text-slate-400">s/d</span>
+              <span className="text-xs text-slate-400 font-semibold">s/d</span>
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                className="px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
               <button
                 onClick={handleApplyCustomDate}
-                className="px-3 py-2 text-xs font-bold rounded-xl bg-slate-800 text-white hover:bg-slate-700 cursor-pointer"
+                className="px-3.5 py-2 text-xs font-bold rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-slate-800 cursor-pointer shadow-xs transition-all"
               >
                 Terapkan
               </button>
@@ -388,66 +392,69 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
           )}
         </div>
 
-        {/* Action Buttons & View Mode Switcher */}
-        <div className="flex items-center gap-2.5 shrink-0 flex-wrap self-end lg:self-auto">
-          {/* Segmented Control Switcher Tampilan */}
-          <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200/80 dark:border-slate-700/80">
+        {/* Baris 2: Pemisah & Bilah Aksi (View Switcher + Tombol Action) */}
+        <div className="border-t border-slate-100 dark:border-slate-800/80 pt-3 flex flex-col md:flex-row md:items-center justify-between gap-3 flex-wrap">
+          {/* Sisi Kiri: Segmented Control Switcher Tampilan */}
+          <div className="inline-flex items-center p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 w-full sm:w-auto">
             <button
               type="button"
               onClick={() => setViewMode("dashboard")}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 viewMode === "dashboard"
                   ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs"
-                  : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               }`}
               title="Tampilkan Dasbor Interaktif (Grafik & Widget)"
             >
-              <LayoutDashboard size={13} />
-              <span>Dasbor Interaktif</span>
+              <LayoutDashboard size={14} />
+              <span className="whitespace-nowrap">Dasbor Interaktif</span>
             </button>
             <button
               type="button"
               onClick={() => setViewMode("document")}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 viewMode === "document"
                   ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs"
-                  : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               }`}
               title="Pratinjau Format Naskah Dokumen Resmi A4 Kedinasan"
             >
-              <FileText size={13} />
-              <span>Naskah Dokumen (A4)</span>
+              <FileText size={14} />
+              <span className="whitespace-nowrap">Naskah Dokumen (A4)</span>
             </button>
           </div>
 
-          <button
-            onClick={fetchReportData}
-            disabled={loading}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs transition-colors cursor-pointer disabled:opacity-50"
-            title="Muat ulang data terbaru dari database"
-          >
-            <RefreshCw size={13} className={loading ? "animate-spin text-emerald-600" : ""} />
-            <span>Perbarui</span>
-          </button>
+          {/* Sisi Kanan: Action Buttons (Perbarui, Export XLSX, Cetak PDF) */}
+          <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap w-full sm:w-auto justify-start sm:justify-end">
+            <button
+              onClick={fetchReportData}
+              disabled={loading}
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs transition-colors cursor-pointer disabled:opacity-50"
+              title="Muat ulang data terbaru dari database"
+            >
+              <RefreshCw size={14} className={loading ? "animate-spin text-emerald-600" : ""} />
+              <span className="whitespace-nowrap">Perbarui</span>
+            </button>
 
-          <button
-            onClick={handleDownloadExcel}
-            disabled={downloadingExcel || loading}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-extrabold text-xs shadow-xs transition-all cursor-pointer disabled:opacity-50"
-            title="Unduh seluruh data dalam format spreadsheet Excel (.xlsx)"
-          >
-            <Download size={13} className={downloadingExcel ? "animate-bounce" : ""} />
-            <span>{downloadingExcel ? "Menyiapkan..." : "Export XLSX"}</span>
-          </button>
+            <button
+              onClick={handleDownloadExcel}
+              disabled={downloadingExcel || loading}
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-extrabold text-xs shadow-xs transition-all cursor-pointer disabled:opacity-50"
+              title="Unduh seluruh data dalam format spreadsheet Excel (.xlsx)"
+            >
+              <Download size={14} className={downloadingExcel ? "animate-bounce" : ""} />
+              <span className="whitespace-nowrap">{downloadingExcel ? "Menyiapkan..." : "Export XLSX"}</span>
+            </button>
 
-          <button
-            onClick={handlePrintPdf}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-extrabold text-xs shadow-xs transition-all cursor-pointer"
-            title="Cetak format naskah dokumen resmi A4 atau simpan ke PDF"
-          >
-            <Printer size={13} />
-            <span>Cetak / PDF (A4)</span>
-          </button>
+            <button
+              onClick={handlePrintPdf}
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-extrabold text-xs shadow-xs transition-all cursor-pointer"
+              title="Cetak format naskah dokumen resmi A4 atau simpan ke PDF"
+            >
+              <Printer size={14} />
+              <span className="whitespace-nowrap">Cetak / PDF (A4)</span>
+            </button>
+          </div>
         </div>
       </section>
 
@@ -1099,7 +1106,7 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
             BAGIAN 2: NASKAH DOKUMEN RESMI KEDINASAN A4 (PRATINJAU & PRINT/PDF)
         ───────────────────────────────────────────────────────────── */}
         <div
-          className={`official-document-section ${
+          className={`official-document-section w-full overflow-x-auto print:overflow-visible pb-12 ${
             viewMode === "document" ? "block" : "hidden"
           } print:block`}
         >

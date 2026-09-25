@@ -49,36 +49,36 @@ export const OfficialDocumentA4View: React.FC<OfficialDocumentA4ViewProps> = ({ 
       : "Periode Berjalan";
 
   return (
-    <article className="official-document-sheet bg-white text-black font-serif leading-relaxed text-[11pt] max-w-[210mm] mx-auto p-[15mm] sm:p-[20mm] border border-slate-200 shadow-2xl rounded-sm print:max-w-none print:w-full print:p-0 print:border-none print:shadow-none print:rounded-none">
+    <article className="official-document-sheet bg-white text-black font-serif leading-relaxed text-[11pt] w-full max-w-[210mm] mx-auto p-4 sm:p-8 md:p-[15mm] lg:p-[20mm] border border-slate-200 shadow-2xl rounded-sm print:max-w-none print:w-full print:p-0 print:border-none print:shadow-none print:rounded-none">
       {/* ─────────────────────────────────────────────────────────────
           1. KOP SURAT KEDINASAN RESMI PEMERINTAH DAERAH KOTA BANDUNG
       ───────────────────────────────────────────────────────────── */}
       <header className="avoid-break pb-2 mb-4 border-b-0">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 print:flex-row print:justify-between">
           {/* Logo Lambang Kota Bandung */}
-          <div className="w-24 shrink-0 flex items-center justify-center">
+          <div className="w-16 sm:w-20 md:w-24 shrink-0 flex items-center justify-center">
             <img
               src="/image/mitra/pemkot-bandung.png"
               alt="Lambang Pemerintah Kota Bandung"
-              className="h-20 w-auto object-contain"
+              className="h-14 sm:h-16 md:h-20 w-auto object-contain"
             />
           </div>
 
           {/* Teks Lembaga Kedinasan Berpusat */}
-          <div className="text-center flex-1 px-2 space-y-0.5">
-            <h3 className="text-[13pt] font-bold tracking-wide uppercase text-black leading-tight">
+          <div className="text-center flex-1 px-1 sm:px-2 space-y-0.5">
+            <h3 className="text-[10pt] sm:text-[12pt] md:text-[13pt] print:text-[13pt] font-bold tracking-wide uppercase text-black leading-tight">
               PEMERINTAH DAERAH KOTA BANDUNG
             </h3>
-            <h2 className="text-[14pt] font-black tracking-wider uppercase text-black leading-tight">
+            <h2 className="text-[11pt] sm:text-[13pt] md:text-[14pt] print:text-[14pt] font-black tracking-wider uppercase text-black leading-tight">
               DINAS LINGKUNGAN HIDUP
             </h2>
-            <h4 className="text-[12pt] font-bold tracking-wide uppercase text-black leading-tight">
+            <h4 className="text-[9.5pt] sm:text-[11pt] md:text-[12pt] print:text-[12pt] font-bold tracking-wide uppercase text-black leading-tight">
               KECAMATAN COBLONG
             </h4>
-            <h1 className="text-[13pt] font-extrabold tracking-widest uppercase text-emerald-950 print:text-black leading-tight pt-0.5">
+            <h1 className="text-[10.5pt] sm:text-[12pt] md:text-[13pt] print:text-[13pt] font-extrabold tracking-widest uppercase text-emerald-950 print:text-black leading-tight pt-0.5">
               TIM KOORDINASI PLATFORM CERDAS BERSEKA
             </h1>
-            <p className="text-[9pt] font-normal text-slate-800 print:text-black leading-tight pt-1">
+            <p className="text-[7.5pt] sm:text-[8.5pt] md:text-[9pt] print:text-[9pt] font-normal text-slate-800 print:text-black leading-tight pt-1">
               Sekretariat Operasional: Jl. Cigadung Raya Barat No. 28, Kel. Cigadung, Kota Bandung, Jawa Barat 40134
               <br />
               Laman Resmi: <span className="underline">https://berseka.bandung.go.id</span> &bull; Pos-el: <span className="underline">dlh@bandung.go.id</span> / <span className="underline">sekretariat@berseka.id</span>
@@ -86,11 +86,11 @@ export const OfficialDocumentA4View: React.FC<OfficialDocumentA4ViewProps> = ({ 
           </div>
 
           {/* Logo Platform BERSEKA */}
-          <div className="w-24 shrink-0 flex items-center justify-center">
+          <div className="w-16 sm:w-20 md:w-24 shrink-0 flex items-center justify-center">
             <img
               src="/image/berseka-logo-full.png"
               alt="Logo Resmi BERSEKA"
-              className="h-16 w-auto object-contain"
+              className="h-12 sm:h-14 md:h-16 w-auto object-contain"
             />
           </div>
         </div>
@@ -104,7 +104,7 @@ export const OfficialDocumentA4View: React.FC<OfficialDocumentA4ViewProps> = ({ 
           2. IDENTITAS & NOMOR NASKAH DINAS
       ───────────────────────────────────────────────────────────── */}
       <section className="avoid-break mb-6 text-[10.5pt]">
-        <div className="flex justify-between items-start">
+        <div className="flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-2 print:flex-row print:justify-between">
           <table className="w-auto border-none border-collapse text-left">
             <tbody>
               <tr>
@@ -234,7 +234,7 @@ export const OfficialDocumentA4View: React.FC<OfficialDocumentA4ViewProps> = ({ 
         </p>
 
         {/* Tabel 1: Neraca Massa dan Kinerja Pengurangan Sampah */}
-        <div className="space-y-1 my-2">
+        <div className="space-y-1 my-2 overflow-x-auto print:overflow-visible">
           <p className="text-[10pt] font-bold text-center">
             Tabel 1. Neraca Massa Timbulan dan Indikator Capaian Kinerja Pengurangan Sampah ke TPA
           </p>
@@ -435,7 +435,7 @@ export const OfficialDocumentA4View: React.FC<OfficialDocumentA4ViewProps> = ({ 
         </p>
 
         {/* Tabel 2: Matriks Evaluasi Kinerja Per Kelurahan */}
-        <div className="space-y-1 my-2">
+        <div className="space-y-1 my-2 overflow-x-auto print:overflow-visible">
           <p className="text-[10pt] font-bold text-center">
             Tabel 2. Matriks Capaian Kinerja dan Audit Kepatuhan Pemilahan Sampah Per Kelurahan
           </p>
@@ -524,7 +524,7 @@ export const OfficialDocumentA4View: React.FC<OfficialDocumentA4ViewProps> = ({ 
         </p>
 
         {/* Tabel 3: Rekapitulasi Fasilitas Pengolahan Aktif */}
-        <div className="space-y-1 my-2">
+        <div className="space-y-1 my-2 overflow-x-auto print:overflow-visible">
           <p className="text-[10pt] font-bold text-center">
             Tabel 3. Rekapitulasi Inventaris Sarana dan Prasarana Pengolahan Sampah Aktif
           </p>
@@ -652,7 +652,7 @@ export const OfficialDocumentA4View: React.FC<OfficialDocumentA4ViewProps> = ({ 
         </div>
 
         {/* 3 Kolom Tanda Tangan Kedinasan */}
-        <div className="grid grid-cols-3 gap-6 text-center text-[10pt]">
+        <div className="grid grid-cols-1 sm:grid-cols-3 print:grid-cols-3 gap-6 text-center text-[10pt]">
           {/* Kolom 1: Camat Coblong */}
           <div className="flex flex-col justify-between h-44">
             <div>
