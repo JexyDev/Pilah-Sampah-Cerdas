@@ -144,3 +144,97 @@ describe("kknExecutiveService - Total Wilayah & RW Calculation", () => {
     expect(result.summary.totalWilayah.rwCount).toBe(2);
   });
 });
+
+describe("kknExecutiveService - Status Pelaksanaan Proker (Business Logic Fix)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    (prisma.kelompokKkn.findMany as any).mockResolvedValue([
+      {
+        id: "k1",
+        name: "Kelompok 1 Dago",
+        kelurahan: "Dago",
+        cakupanRw: ["1", "2"],
+        dplId: "dpl1",
+        schedules: [],
+        programKerja: [],
+      },
+    ]);
+
+    (prisma.user.findMany as any).mockResolvedValue([]);
+    (prisma.studentKkn.findMany as any).mockResolvedValue([]);
+    (prisma.activityAttendance.groupBy as any).mockResolvedValue([]);
+    (prisma.activityAttendance.count as any).mockResolvedValue(0);
+    (prisma.logbookKkn.count as any).mockResolvedValue(0);
+    (prisma.logbookKkn.findFirst as any).mockResolvedValue(null);
+    (prisma.logbookKkn.findMany as any).mockResolvedValue([]);
+    (prisma.logbookDpl.count as any).mockResolvedValue(0);
+    (prisma.logbookDpl.findMany as any).mockResolvedValue([]);
+    (prisma.logbookDpl.groupBy as any).mockResolvedValue([]);
+    (prisma.timelineKkn.findMany as any).mockResolvedValue([]);
+    (prisma.kelurahan.count as any).mockResolvedValue(6);
+    (prisma.rw.count as any).mockResolvedValue(84);
+  });
+
+  it("hanya menghitung pelaksanaan dari proker DISETUJUI, mengabaikan proker MENUNGGU dan DITOLAK", async () => {
+    // 138 proker total:
+    // - 104 DISETUJUI -> 27 selesai, 64 sedang berjalan, 13 belum mulai
+    // - 28 MENUNGGU -> tidak masuk keranjang pelaksanaan
+    // - 6 DITOLAK -> tidak masuk keranjang pelaksanaan
+    const mockProkers = [
+      ...Array.from({ length: 27 }, (_, i) => ({
+        id: `selesai-${i}`,
+        status: "SELESAI",
+        statusUsulan: "DISETUJUI",
+        statusPelaksanaan: "SELESAI",
+      })),
+      ...Array.from({ length: 64 }, (_, i) => ({
+        id: `berjalan-${i}`,
+        status: "SEDANG_BERJALAN",
+        statusUsulan: "DISETUJUI",
+        statusPelaksanaan: "SEDANG_BERJALAN",
+      })),
+      ...Array.from({ length: 13 }, (_, i) => ({
+        id: `belum-${i}`,
+        status: "DITERIMA",
+        statusUsulan: "DISETUJUI",
+        statusPelaksanaan: "",
+      })),
+      ...Array.from({ length: 28 }, (_, i) => ({
+        id: `menunggu-${i}`,
+        status: "MENUNGGU",
+        statusUsulan: "MENUNGGU",
+        statusPelaksanaan: "",
+      })),
+      ...Array.from({ length: 6 }, (_, i) => ({
+        id: `ditolak-${i}`,
+        status: "DITOLAK",
+        statusUsulan: "DITOLAK",
+        statusPelaksanaan: "",
+      })),
+    ];
+
+    (prisma.programKerjaKkn.findMany as any).mockResolvedValue(mockProkers);
+
+    const result = await kknExecutiveService.getExecutiveDashboard({});
+    const { usulan, pelaksanaan } = result.statusProker;
+
+    // Dimensi Usulan: total 138
+    expect(usulan.total).toBe(138);
+    expect(usulan.disetujui.count).toBe(104);
+    expect(usulan.belumDisetujui.count).toBe(28);
+    expect(usulan.ditolak.count).toBe(6);
+
+    // Dimensi Pelaksanaan: total 104 (HANYA proker disetujui)
+    expect(pelaksanaan.total).toBe(104);
+    expect(pelaksanaan.selesai.count).toBe(27);
+    expect(pelaksanaan.sedangBerjalan.count).toBe(64);
+    expect(pelaksanaan.belum.count).toBe(13); // Terkoreksi akurat jadi 13, bukan 47!
+
+    // Persentase dihitung terhadap total proker disetujui (104)
+    expect(pelaksanaan.selesai.percentage).toBe(Math.round((27 / 104) * 100));
+    expect(pelaksanaan.sedangBerjalan.percentage).toBe(Math.round((64 / 104) * 100));
+    expect(pelaksanaan.belum.percentage).toBe(Math.round((13 / 104) * 100));
+  });
+});
+
