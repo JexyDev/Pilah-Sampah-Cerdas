@@ -1459,21 +1459,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           ],
         },
         {
-          to: "/manajemen-iot",
-          icon: Cpu,
-          label: "Manajemen IoT",
-          allowed: [
-            "DEVELOPER",
-            "SUPER_USER",
-            "PIMPINAN",
-            "PEMIMPIN",
-            "ADMIN_DLH",
-            "CAMAT",
-            "LURAH",
-            "RW",
-          ] as UserRole[],
-        },
-        {
           type: "group",
           label: "Operasional",
           icon: Truck,

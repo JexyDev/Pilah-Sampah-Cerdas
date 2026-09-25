@@ -257,7 +257,7 @@ export const wasteExecutiveReportService = {
     const [totalRitase, completedRitase, inProgressRitase, pendingRitase] = await Promise.all([
       prisma.dispatchTask.count({ where: dispatchWhere }),
       prisma.dispatchTask.count({ where: { ...dispatchWhere, status: "COMPLETED" } }),
-      prisma.dispatchTask.count({ where: { ...dispatchWhere, status: "IN_PROGRESS" } }),
+      prisma.dispatchTask.count({ where: { ...dispatchWhere, status: "CLAIMED" } }),
       prisma.dispatchTask.count({ where: { ...dispatchWhere, status: "PENDING" } }),
     ]);
 
