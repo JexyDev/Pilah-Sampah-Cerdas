@@ -72,6 +72,7 @@ import beritaRouter from "./routes/beritaRoutes.js";
 import presensiMandiriRouter from "./routes/presensiMandiriRoutes.js";
 import gisEksekutifRouter from "./routes/gisEksekutifRoutes.js";
 import laporanKknRouter from "./routes/laporanKknRoutes.js";
+import iotRouter from "./routes/iotRoutes.js";
 import { systemController } from "./controllers/systemController.js";
 import { kknAttendanceController } from "./controllers/kknAttendanceController.js";
 import { kknController } from "./controllers/kknController.js";
@@ -289,6 +290,7 @@ app.use("/api/v1/berita", beritaRouter);
 app.use("/api/v1/presensi", presensiMandiriRouter);
 app.use(["/api/v1/gis-eksekutif", "/api/v1/gis"], gisEksekutifRouter);
 app.use(["/api/v1/laporan/kkn", "/api/v1/laporan-pimpinan/kkn", "/api/laporan/kkn"], laporanKknRouter);
+app.use(["/api/v1/iot", "/api/iot"], iotRouter);
 
 // Master API Spec Alias Mounts (Compatibility for mobile client without /v1 prefix)
 app.use("/api/v1/user", userRouter);

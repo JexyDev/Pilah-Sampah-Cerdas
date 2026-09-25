@@ -780,6 +780,15 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
+        <Route path="/iot" element={<Navigate to="/manajemen-iot" replace />} />
+        <Route
+          path="/manajemen-iot"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "PIMPINAN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]}>
+              <ManajemenIotPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/pelaksanaan/kelompok"
           element={

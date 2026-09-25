@@ -1,0 +1,16 @@
+{
+  "name": "berseka-iot-emulator",
+  "version": "1.0.0",
+  "description": "Emulator Node Sensor Gas Metana (CH4) Agrisense Node untuk BERSEKA",
+  "main": "emulator.js",
+  "type": "module",
+  "scripts": {
+    "start": "node emulator.js",
+    "once": "node emulator.js --once",
+    "spike": "node emulator.js --spike",
+    "fast": "node emulator.js --interval 2"
+  },
+  "keywords": ["iot", "ch4", "sensor", "emulator", "berseka"],
+  "author": "PT Makerindo",
+  "license": "ISC"
+}
