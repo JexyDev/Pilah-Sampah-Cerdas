@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dokumentasi Sistem Poin — Berseka Platform 2026</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; color: #2d3748; }
+
+    /* SIDEBAR NAV */
+    .sidebar {
+      position: fixed; top: 0; left: 0; width: 230px; height: 100vh;
+      background: #1a3c5e; color: white; overflow-y: auto; padding: 24px 0;
+    }
+    .sidebar .logo { padding: 0 20px 20px; border-bottom: 1px solid rgba(255,255,255,0.15); }
+    .sidebar .logo h2 { font-size: 15px; font-weight: 700; }
+    .sidebar .logo p { font-size: 11px; opacity: 0.65; margin-top: 3px; }
+    .sidebar nav { padding: 16px 0; }
+    .sidebar nav a {
+      display: block; padding: 8px 20px; font-size: 12.5px; color: rgba(255,255,255,0.8);
+      text-decoration: none; border-left: 3px solid transparent; transition: all 0.15s;
+    }
+    .sidebar nav a:hover { background: rgba(255,255,255,0.08); color: white; border-left-color: #4fc3f7; }
+    .sidebar nav .section-label {
+      padding: 14px 20px 4px; font-size: 10px; font-weight: 700;
+      letter-spacing: 1px; text-transform: uppercase; opacity: 0.45;
+    }
+
+    /* MAIN CONTENT */
+    .main { margin-left: 230px; padding: 36px 40px; max-width: 960px; }
+
+    /* HERO */
+    .hero {
+      background: linear-gradient(135deg, #1a3c5e 0%, #2a6496 100%);
+      color: white; border-radius: 12px; padding: 32px 36px; margin-bottom: 36px;
+    }
+    .hero h1 { font-size: 24px; font-weight: 700; }
+    .hero p { font-size: 13px; opacity: 0.85; margin-top: 8px; line-height: 1.6; }
+    .hero .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    .hero .tag {
+      background: rgba(255,255,255,0.15); border-radius: 20px;
+      padding: 4px 12px; font-size: 11.5px;
+    }
+
+    /* SECTION */
+    .section { margin-bottom: 40px; }
+    .section-title {
+      font-size: 18px; font-weight: 700; color: #1a3c5e;
+      border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 20px;
+    }
+    .section-title span { font-size: 13px; font-weight: 400; color: #718096; margin-left: 8px; }
+
+    /* ROLE CARD */
+    .role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .role-card {
+      background: white; border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07); overflow: hidden;
+    }
+    .role-card .rc-header {
+      padding: 14px 18px; display: flex; align-items: center; gap: 10px;
+    }
+    .rc-icon { font-size: 22px; }
+    .rc-title { font-size: 14px; font-weight: 700; color: #1a202c; }
+    .rc-sub { font-size: 11.5px; color: #718096; }
+    .role-card .rc-body { padding: 0 18px 16px; }
+    .formula-box {
+      background: #f0f7ff; border: 1px solid #bee3f8; border-radius: 6px;
+      padding: 10px 14px; font-size: 12px; font-family: Consolas, monospace;
+      margin: 10px 0; line-height: 1.7; color: #2c5282;
+    }
+    .rc-body ul { padding-left: 18px; font-size: 12.5px; color: #4a5568; line-height: 1.8; }
+
+    /* STEP TABLE */
+    .step-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .step-table th {
+      background: #1a3c5e; color: white; padding: 10px 14px;
+      text-align: left; font-weight: 600;
+    }
+    .step-table td { padding: 9px 14px; border-bottom: 1px solid #eee; vertical-align: middle; }
+    .step-table tr:nth-child(even) td { background: #f9fafb; }
+    .step-table tr:last-child td { border-bottom: none; }
+    .badge-step { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; }
+    .s1 { background: #e9f5ff; color: #1a6fb8; }
+    .s2 { background: #fff3cd; color: #856404; }
+    .s3 { background: #d4edda; color: #155724; }
+    .sx { background: #f8d7da; color: #721c24; }
+
+    /* FLOW DIAGRAM (CSS) */
+    .flow { display: flex; align-items: center; gap: 0; flex-wrap: wrap; margin: 16px 0; }
+    .flow-box {
+      background: white; border: 2px solid #bee3f8; border-radius: 8px;
+      padding: 10px 14px; font-size: 12px; font-weight: 600; color: #2c5282;
+      text-align: center; min-width: 120px;
+    }
+    .flow-arrow {
+      font-size: 18px; color: #a0aec0; padding: 0 8px;
+    }
+    .flow-box.active { background: #ebf8ff; border-color: #2a6496; }
+    .flow-box.db { background: #f0fff4; border-color: #68d391; color: #276749; }
+
+    /* CODE BLOCK */
+    pre {
+      background: #1a202c; color: #e2e8f0; border-radius: 8px;
+      padding: 16px; font-size: 12px; overflow-x: auto; line-height: 1.6;
+      margin: 12px 0;
+    }
+    code { font-family: Consolas, 'Courier New', monospace; }
+
+    /* ALERT BOX */
+    .alert {
+      border-left: 4px solid; border-radius: 0 6px 6px 0;
+      padding: 12px 16px; margin: 14px 0; font-size: 13px; line-height: 1.6;
+    }
+    .alert-info { background: #ebf8ff; border-color: #2a6496; color: #2c5282; }
+    .alert-success { background: #f0fff4; border-color: #38a169; color: #276749; }
+    .alert-warn { background: #fffaf0; border-color: #dd6b20; color: #7b341e; }
+
+    /* SOURCE LINKS */
+    .src-link {
+      display: inline-block; background: #edf2f7; border-radius: 4px;
+      padding: 2px 8px; font-size: 11px; font-family: Consolas, monospace;
+      color: #2d3748; margin: 2px; text-decoration: none;
+    }
+
+    /* FOOTER */
+    .footer {
+      margin-top: 48px; padding-top: 20px; border-top: 1px solid #e2e8f0;
+      text-align: center; font-size: 12px; color: #a0aec0;
+    }
+
+    @media print {
+      .sidebar { display: none; }
+      .main { margin-left: 0; padding: 20px; }
+      .hero { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .role-card .rc-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="logo">
+    <h2>🌿 Berseka Platform</h2>
+    <p>Dokumentasi Teknis Sistem Poin</p>
+  </div>
+  <nav>
+    <div class="section-label">Overview</div>
+    <a href="#overview">📌 Pengantar</a>
+    <a href="#arsitektur">🏗️ Arsitektur SSOT</a>
+    <div class="section-label">Per Role</div>
+    <a href="#mahasiswa">🎓 Mahasiswa KKN</a>
+    <a href="#kelompok">👥 Kelompok KKN</a>
+    <a href="#dpl">👨‍🏫 DPL</a>
+    <a href="#warga">🏘️ Warga</a>
+    <a href="#petugas">🚛 Petugas</a>
+    <div class="section-label">Detail</div>
+    <a href="#proker">📋 Proker 3-Step</a>
+    <a href="#proteksi">🛡️ Proteksi Sistem</a>
+    <a href="#sumber">📂 Sumber Kode</a>
+  </nav>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- HERO -->
+  <div class="hero">
+    <h1>📊 Dokumentasi Sistem Poin Berseka</h1>
+    <p>
+      Dokumen ini menjelaskan secara teknis bagaimana sistem poin untuk 5 entitas pengguna
+      (Mahasiswa, Kelompok, DPL, Warga, dan Petugas) bekerja — termasuk formula, sumber data,
+      dan file kode yang menjadi acuannya.
+    </p>
+    <div class="tags">
+      <span class="tag">✅ Status: Live di VPS Produksi</span>
+      <span class="tag">📅 25 September 2026</span>
+      <span class="tag">🌿 Branch: main</span>
+      <span class="tag">PT Makerindo — Fullstack Developer</span>
+    </div>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="section" id="overview">
+    <div class="section-title">📌 Pengantar <span>— Mengapa ada sistem poin?</span></div>
+    <p style="font-size:13.5px;line-height:1.8;color:#4a5568;margin-bottom:14px;">
+      Sistem poin di Berseka berfungsi sebagai mesin <strong>gamifikasi dan evaluasi kinerja</strong>
+      yang mengukur kontribusi nyata setiap entitas pengguna di lapangan. Semua poin
+      dihitung secara otomatis oleh server berdasarkan data riil yang masuk dari aplikasi —
+      tidak ada input manual dari admin.
+    </p>
+    <div class="alert alert-info">
+      <strong>Sumber Data Poin:</strong> Semua poin berasal dari aksi nyata pengguna di lapangan
+      (scan QR Tempat Sampah, presensi GPS, input setoran sampah, progres program kerja)
+      yang tersimpan di database PostgreSQL VPS (<code>psc_db</code>) dan dihitung otomatis oleh Backend API.
+    </div>
+  </div>
+
+  <!-- ARSITEKTUR -->
+  <div class="section" id="arsitektur">
+    <div class="section-title">🏗️ Arsitektur SSOT <span>— Single Source of Truth</span></div>
+    <p style="font-size:13px;line-height:1.7;color:#4a5568;margin-bottom:14px;">
+      Sistem poin dibangun dengan pola <strong>SSOT (Single Source of Truth)</strong> —
+      semua kalkulasi terpusat di satu tempat agar tidak ada perhitungan ganda atau bocor antar role.
+    </p>
+    <div class="flow">
+      <div class="flow-box active">Aksi Pengguna<br/><small>(Scan/Presensi/Setoran)</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">Backend API<br/><small>(Express.js + TypeScript)</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">pointService.ts<br/><small>(Kalkulasi SSOT)</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box db">PointHistory<br/><small>(Tabel Database)</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">Dashboard & Mobile<br/><small>(Tampilan Final)</small></div>
+    </div>
+    <div class="alert alert-success">
+      <strong>File Utama:</strong>
+      <code>apps/api/src/services/pointService.ts</code> —
+      Semua poin individu (Mahasiswa & Warga) diproses di sini dengan filter anti-kebocoran.
+      Poin Kelompok diproses di <code>mahasiswaPoinService.ts</code>.
+    </div>
+  </div>
+
+  <!-- MAHASISWA -->
+  <div class="section" id="mahasiswa">
+    <div class="section-title">🎓 Poin Mahasiswa KKN</div>
+    <div class="role-card" style="margin-bottom:16px;">
+      <div class="rc-header" style="background:#ebf8ff;">
+        <div class="rc-icon">🎓</div>
+        <div>
+          <div class="rc-title">Poin Individu Mahasiswa</div>
+          <div class="rc-sub">Presensi + Logbook + Proker — terpisah dari skor kelompok</div>
+        </div>
+      </div>
+      <div class="rc-body">
+        <div class="formula-box">
+          Poin Individu = Poin Presensi + Poin Durasi + Poin Logbook - Penalti<br/>
+          &nbsp;&nbsp;• Presensi Hadir      → +5 poin/hari<br/>
+          &nbsp;&nbsp;• Durasi (per jam)    → +1 poin/jam (maks tertentu)<br/>
+          &nbsp;&nbsp;• Logbook diverifikasi → +3 poin/entri<br/>
+          &nbsp;&nbsp;• Proker per-step     → +2 poin/step (total +6 per proker)
+        </div>
+        <ul>
+          <li>Poin individu <strong>dipisahkan</strong> dari poin proker kelompok (tidak double-count)</li>
+          <li>Sistem penalti (minus poin) untuk Mahasiswa <strong>telah dinonaktifkan</strong></li>
+          <li>Poin proker muncul di riwayat tapi <strong>tidak mempengaruhi saldo poin individu</strong></li>
+        </ul>
+      </div>
+    </div>
+    <div class="alert alert-info">
+      <strong>File kode:</strong>
+      <code class="src-link">apps/api/src/services/pointService.ts</code>
+      <code class="src-link">apps/api/src/services/mahasiswaPoinService.ts</code>
+    </div>
+  </div>
+
+  <!-- KELOMPOK -->
+  <div class="section" id="kelompok">
+    <div class="section-title">👥 Poin Kelompok KKN</div>
+    <div class="role-card" style="margin-bottom:16px;">
+      <div class="rc-header" style="background:#f0fff4;">
+        <div class="rc-icon">👥</div>
+        <div>
+          <div class="rc-title">Skor Akhir Kelompok</div>
+          <div class="rc-sub">Formula 2-Komponen — sesuai notulensi rapat BERSEKA</div>
+        </div>
+      </div>
+      <div class="rc-body">
+        <div class="formula-box">
+          <strong>Komponen A (bobot 60%):</strong><br/>
+          &nbsp;&nbsp;NilaiProkerStep = rata-rata step proker kelompok (25 / 60 / 100)<br/>
+          &nbsp;&nbsp;RataAnggota     = rata-rata assessmentScore anggota<br/>
+          &nbsp;&nbsp;KomponenA       = (NilaiProkerStep + RataAnggota) / 2<br/><br/>
+          <strong>Komponen B (bobot 40%):</strong><br/>
+          &nbsp;&nbsp;KomponenB = rata-rata KomponenA dari SEMUA kelompok (benchmark global)<br/><br/>
+          <strong>Skor Akhir = (KomponenA × 0.6) + (KomponenB × 0.4)</strong><br/>
+          &nbsp;&nbsp;→ Semua anggota kelompok mendapat skor akhir yang sama
+        </div>
+        <ul>
+          <li>Nilai Proker Step: Belum Mulai = <strong>25</strong>, Berjalan = <strong>60</strong>, Selesai = <strong>100</strong></li>
+          <li>Kelompok uji coba (test account) dikecualikan dari kalkulasi global</li>
+        </ul>
+      </div>
+    </div>
+    <div class="alert alert-info">
+      <strong>File kode:</strong>
+      <code class="src-link">apps/api/src/services/mahasiswaPoinService.ts</code>
+      <code class="src-link">docs/diagram_pemisahan_poin_kkn.mmd</code>
+    </div>
+  </div>
+
+  <!-- DPL -->
+  <div class="section" id="dpl">
+    <div class="section-title">👨‍🏫 Poin DPL (Dosen Pembimbing Lapangan)</div>
+    <div class="role-card" style="margin-bottom:16px;">
+      <div class="rc-header" style="background:#fff5f5;">
+        <div class="rc-icon">👨‍🏫</div>
+        <div>
+          <div class="rc-title">Skor Kinerja DPL</div>
+          <div class="rc-sub">Formula 50-50 berdasarkan kinerja administratif & kelompok binaan</div>
+        </div>
+      </div>
+      <div class="rc-body">
+        <div class="formula-box">
+          Skor DPL = (Komponen Administratif × 50%) + (Kinerja Kelompok Binaan × 50%)<br/><br/>
+          &nbsp;&nbsp;Komponen Admin  = Verifikasi logbook, persetujuan proker, penilaian<br/>
+          &nbsp;&nbsp;Kinerja Kelompok = Rata-rata Skor Akhir Kelompok yang dibina DPL
+        </div>
+        <ul>
+          <li>Setiap DPL membina <strong>1 kelompok KKN</strong> (relasi 1-to-1)</li>
+          <li>DPL bisa melihat monitoring poin seluruh anggota kelompoknya</li>
+          <li>Penilaian DPL oleh mahasiswa masuk sebagai komponen assessmentScore</li>
+        </ul>
+      </div>
+    </div>
+    <div class="alert alert-info">
+      <strong>File kode:</strong>
+      <code class="src-link">apps/api/src/services/dplService.ts</code>
+      <code class="src-link">apps/api/src/services/penilaianKknService.ts</code>
+    </div>
+  </div>
+
+  <!-- WARGA -->
+  <div class="section" id="warga">
+    <div class="section-title">🏘️ Poin Warga</div>
+    <div class="role-card" style="margin-bottom:16px;">
+      <div class="rc-header" style="background:#fffaf0;">
+        <div class="rc-icon">🏘️</div>
+        <div>
+          <div class="rc-title">Poin Gamifikasi Warga</div>
+          <div class="rc-sub">Berbasis setoran sampah + streak aktivitas + bonus komunitas</div>
+        </div>
+      </div>
+      <div class="rc-body">
+        <div class="formula-box">
+          Poin Warga = Poin Setoran Sampah + Poin Streak + Poin Komunitas<br/><br/>
+          &nbsp;&nbsp;Setoran Sampah  → poin berdasarkan tonase (kg) × faktor kategori<br/>
+          &nbsp;&nbsp;Streak Harian   → bonus poin jika setoran konsisten setiap hari<br/>
+          &nbsp;&nbsp;Klaim Komunitas → poin dari kontribusi melalui warga dampingan
+        </div>
+        <ul>
+          <li>Setiap warga hanya bisa klaim <strong>1 Tempat Sampah aktif</strong> (proteksi anti-duplikasi)</li>
+          <li>Data tonase bersumber dari scan QR dan validasi Petugas Residu</li>
+          <li>Warga dari RW berbeda tidak bisa saling klaim (strict RW scoping)</li>
+        </ul>
+      </div>
+    </div>
+    <div class="alert alert-info">
+      <strong>File kode:</strong>
+      <code class="src-link">apps/api/src/services/pointService.ts</code>
+      <code class="src-link">apps/api/src/services/gamificationService.ts</code>
+    </div>
+  </div>
+
+  <!-- PETUGAS -->
+  <div class="section" id="petugas">
+    <div class="section-title">🚛 Poin Petugas Residu</div>
+    <div class="role-card" style="margin-bottom:16px;">
+      <div class="rc-header" style="background:#f0f4ff;">
+        <div class="rc-icon">🚛</div>
+        <div>
+          <div class="rc-title">Poin Kinerja Petugas</div>
+          <div class="rc-sub">Berbasis tonase pengangkutan & validasi setoran warga</div>
+        </div>
+      </div>
+      <div class="rc-body">
+        <div class="formula-box">
+          Poin Petugas = Poin Pengangkutan + Poin Validasi Setoran<br/><br/>
+          &nbsp;&nbsp;Pengangkutan → poin per kg sampah yang diangkut dari Tempat Sampah<br/>
+          &nbsp;&nbsp;Validasi     → poin setiap memvalidasi setoran warga yang masuk<br/>
+          &nbsp;&nbsp;Penalti (minus poin) → DINONAKTIFKAN untuk role Petugas
+        </div>
+        <ul>
+          <li>Data pengangkutan masuk dari modul <strong>Pengangkutan Sampah</strong> di aplikasi mobile Petugas</li>
+          <li>Petugas Residu hanya dapat mengakses data wilayah RW yang ditugaskan</li>
+          <li>Proteksi: sistem penalti (minus poin) untuk Petugas telah <strong>dinonaktifkan</strong> di kode</li>
+        </ul>
+      </div>
+    </div>
+    <div class="alert alert-info">
+      <strong>File kode:</strong>
+      <code class="src-link">apps/api/src/services/pointService.ts</code>
+      <code class="src-link">apps/api/src/services/pengangkutanService.ts</code>
+    </div>
+  </div>
+
+  <!-- PROKER 3-STEP -->
+  <div class="section" id="proker">
+    <div class="section-title">📋 Sistem Proker 3-Step <span>— Lifecycle Program Kerja</span></div>
+    <p style="font-size:13px;line-height:1.7;color:#4a5568;margin-bottom:14px;">
+      Setiap Program Kerja KKN memiliki 3 tahapan yang masing-masing memberikan poin otomatis
+      ke seluruh anggota kelompok. Sistem dilengkapi <strong>idempotensi</strong> sehingga
+      retry koneksi tidak akan menduplikasi poin.
+    </p>
+    <table class="step-table">
+      <thead>
+        <tr><th>Step</th><th>Status Pelaksanaan</th><th>Poin Diberikan</th><th>Total Kumulatif</th><th>Keterangan</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="badge-step s1">Step 1</span></td>
+          <td>DISETUJUI / BELUM_MULAI</td>
+          <td>+2 PTS/anggota</td>
+          <td>+2 PTS</td>
+          <td>Saat DPL menyetujui usulan proker</td>
+        </tr>
+        <tr>
+          <td><span class="badge-step s2">Step 2</span></td>
+          <td>SEDANG_BERJALAN</td>
+          <td>+2 PTS/anggota</td>
+          <td>+4 PTS</td>
+          <td>Saat mahasiswa update status ke berjalan</td>
+        </tr>
+        <tr>
+          <td><span class="badge-step s3">Step 3</span></td>
+          <td>SELESAI</td>
+          <td>+2 PTS/anggota</td>
+          <td>+6 PTS</td>
+          <td>Saat proker dinyatakan selesai</td>
+        </tr>
+        <tr>
+          <td><span class="badge-step sx">Ditolak</span></td>
+          <td>DITOLAK oleh DPL</td>
+          <td>0 PTS (direset)</td>
+          <td>0 PTS</td>
+          <td>Seluruh poin proker otomatis dicabut</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="alert alert-warn" style="margin-top:14px;">
+      <strong>Dokumentasi Detail:</strong> Lihat file
+      <code>docs/LAPORAN_GAMIFIKASI_PROKER_DAN_ENDPOINT_MOBILE.md</code>
+      di repositori GitHub untuk matriks lengkap dan contoh payload API.
+    </div>
+  </div>
+
+  <!-- PROTEKSI -->
+  <div class="section" id="proteksi">
+    <div class="section-title">🛡️ Proteksi Sistem Poin</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+      <div class="alert alert-success">
+        <strong>✅ Anti Kebocoran Poin KKN_PROKER</strong><br/>
+        Poin proker tidak ikut terhitung di saldo individu mahasiswa (difilter di level repository).
+      </div>
+      <div class="alert alert-success">
+        <strong>✅ Anti Duplikasi (Idempoten)</strong><br/>
+        Setiap poin proker diberi tag unik <code>[ProkerID:&lt;id&gt;:STEP]</code>, retry tidak akan double-count.
+      </div>
+      <div class="alert alert-success">
+        <strong>✅ Penalti Dinonaktifkan</strong><br/>
+        Sistem penalti (minus poin) untuk role Mahasiswa dan Petugas sudah dinonaktifkan di kode.
+      </div>
+      <div class="alert alert-success">
+        <strong>✅ Isolasi Test Account</strong><br/>
+        Kelompok/akun uji coba dikecualikan dari kalkulasi benchmark global kelompok.
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMBER KODE -->
+  <div class="section" id="sumber">
+    <div class="section-title">📂 Sumber Kode & Dokumentasi</div>
+    <table class="step-table">
+      <thead>
+        <tr><th>File / Dokumen</th><th>Lokasi</th><th>Isi</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>pointService.ts</code></td><td>apps/api/src/services/</td><td>Kalkulasi poin SSOT untuk Mahasiswa & Warga</td></tr>
+        <tr><td><code>mahasiswaPoinService.ts</code></td><td>apps/api/src/services/</td><td>Formula 2-Komponen Skor Kelompok & Mahasiswa</td></tr>
+        <tr><td><code>gamificationService.ts</code></td><td>apps/api/src/services/</td><td>Gamifikasi streak & bonus komunitas Warga</td></tr>
+        <tr><td><code>dplService.ts</code></td><td>apps/api/src/services/</td><td>Kalkulasi skor dan monitoring DPL</td></tr>
+        <tr><td><code>pengangkutanService.ts</code></td><td>apps/api/src/services/</td><td>Poin tonase pengangkutan Petugas</td></tr>
+        <tr><td><code>diagram_pemisahan_poin_kkn.mmd</code></td><td>docs/</td><td>Diagram alur sequence pemisahan poin KKN</td></tr>
+        <tr><td><code>LAPORAN_GAMIFIKASI_PROKER...</code></td><td>docs/</td><td>Dokumentasi sistem Proker 3-Step & endpoint API</td></tr>
+        <tr><td><code>DOKUMEN_HANDOFF_BACKEND_PERBAIKAN...</code></td><td>docs/</td><td>Laporan perbaikan integritas poin (riwayat migrasi)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="footer">
+    Dokumentasi ini dibuat secara otomatis dari data riil <em>codebase</em> Berseka Platform.<br/>
+    © 2026 PT Makerindo — Tim Fullstack Developer (Backend API & Web Frontend)
+  </div>
+</div>
+
+</body>
+</html>
