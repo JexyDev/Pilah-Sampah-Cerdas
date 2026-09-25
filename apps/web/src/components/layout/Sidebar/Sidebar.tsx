@@ -36,6 +36,7 @@ import {
   Activity,
   BarChart3,
   Terminal,
+  Cpu,
 } from "lucide-react";
 
 import { Link, NavLink, useLocation } from "react-router-dom";
@@ -257,7 +258,13 @@ const checkRouteActive = (
     ];
     if (baselineAliases.includes(tPath) && baselineAliases.includes(cPath)) return true;
 
-    const laporanKknAliases = ["/laporan/kkn", "/laporan-kkn", "/dasbor-kkn-eksekutif", "/dashboard-eksekutif-kkn"];
+    const laporanKknAliases = [
+      "/laporan/kkn",
+      "/laporan-kkn",
+      "/laporan-pimpinan/kkn",
+      "/dasbor-kkn-eksekutif",
+      "/dashboard-eksekutif-kkn",
+    ];
     if (laporanKknAliases.includes(tPath) && laporanKknAliases.includes(cPath)) return true;
 
     const laporanTataKelolaAliases = [
@@ -1296,7 +1303,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             },
             {
               to: "/laporan/kkn",
-              label: "Laporan KKN",
+              label: "Laporan Resmi KKN",
               allowed: ["DEVELOPER", "SUPER_USER", "PIMPINAN", "PEMIMPIN"] as UserRole[],
             },
             {
@@ -1375,6 +1382,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             "PANITIA_TASKFORCE",
             "MPL",
             "PIMPINAN",
+          ] as UserRole[],
+        },
+        {
+          to: "/manajemen-iot",
+          icon: Cpu,
+          label: "Manajemen IoT (CH4)",
+          resource: "monitoring_sampah",
+          allowed: [
+            "DEVELOPER",
+            "SUPER_USER",
+            "ADMIN_DLH",
+            "CAMAT",
+            "LURAH",
+            "RW",
+            "PIMPINAN",
+            "PEMIMPIN",
           ] as UserRole[],
         },
         {
