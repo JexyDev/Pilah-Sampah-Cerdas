@@ -299,6 +299,9 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
         return ["Monitoring Pemilahan", "Papan Peringkat"];
       case "/laporan-analitik":
         return ["Laporan & Analitik"];
+      case "/laporan/tata-kelola-sampah":
+      case "/laporan-tata-kelola-sampah":
+        return ["Laporan", "Tata Kelola Sampah"];
       case "/log-aktivitas/mahasiswa":
       case "/logbook-kkn":
       case "/dpl/logbook":
