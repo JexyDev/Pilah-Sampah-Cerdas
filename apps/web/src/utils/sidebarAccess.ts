@@ -194,12 +194,14 @@ export function canAccessSidebarRoute(
     return true;
   }
 
-  // 7. Rute Dasbor & Analisis Sistem & Monitoring Wilayah (Terbuka untuk PIMPINAN)
+  // 7. Rute Dasbor & Analisis Sistem & Monitoring Wilayah & Manajemen IoT (Terbuka untuk PIMPINAN)
   if (
     cleanPath === "/dasbor" ||
     cleanPath === "/analisis-sistem/tata-kelola-sampah" ||
     cleanPath === "/analisis-sistem/kkn" ||
-    cleanPath === "/monitoring-wilayah"
+    cleanPath === "/monitoring-wilayah" ||
+    cleanPath === "/manajemen-iot" ||
+    cleanPath === "/iot"
   ) {
     return true;
   }

@@ -11,6 +11,7 @@
 
 import React, { useState, useEffect } from "react";
 import {
+  LayoutDashboard,
   Building2,
   Trash2,
   Recycle,
@@ -26,9 +27,6 @@ import {
   Calendar,
   MapPin,
   Layers,
-  Activity,
-  FileText,
-  Clock,
   ArrowUpRight,
   ArrowDownRight,
   Sparkles,
@@ -48,113 +46,8 @@ import {
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
 import { CustomSelect, type SelectOption } from "../../components/common/CustomSelect";
-
-interface WasteReportData {
-  metadata: {
-    nomorDokumen: string;
-    judulLaporan: string;
-    subjudul: string;
-    tanggalTerbit: string;
-    wilayahCakupan: string;
-    periodeEvaluasi: string;
-    tanggalMulai: string | null;
-    tanggalSelesai: string | null;
-  };
-  kpiSummary: {
-    infrastruktur: {
-      totalFasilitas: number;
-      tps3rCount: number;
-      bankSampahCount: number;
-      rumahMaggotCount: number;
-      komposterCount: number;
-      totalKapasitasKg: number;
-      wadahSampahTotal: number;
-      wadahSampahAktif: number;
-      kapasitasWadahLiter: number;
-      volumeTerisiLiter: number;
-      wadahKritis: number;
-      wadahWaspada: number;
-      wadahNormal: number;
-    };
-    operasional: {
-      totalRitase: number;
-      ritaseSelesai: number;
-      ritaseDalamProses: number;
-      ritaseTertunda: number;
-      tingkatKeberhasilanRitase: number;
-      totalTransaksiSetoran: number;
-      totalLogPemilahan: number;
-      totalLogResidu: number;
-      materialOrganikMasukKg: number;
-      outputProdukOrganikKg: number;
-      outputKomposKg: number;
-      outputMaggotKg: number;
-      outputPocLiter: number;
-    };
-    dampakDanReduksi: {
-      totalSampahTerpilahKg: number;
-      totalSampahTerpilahTon: number;
-      tonaseTereduksiDariTpaKg: number;
-      tonaseTereduksiDariTpaTon: number;
-      residuKeTpaKg: number;
-      residuKeTpaTon: number;
-      totalTimbulanSampahKg: number;
-      totalTimbulanSampahTon: number;
-      rasioReduksiTpaPersen: number;
-      rasioPemilahan: {
-        organikKg: number;
-        organikPersen: number;
-        anorganikKg: number;
-        anorganikPersen: number;
-        residuKg: number;
-        residuPersen: number;
-      };
-      rataRataKepatuhanPersen: number;
-      rataRataAkurasiAiPersen: number;
-      reduksiEmisiCo2Kg: number;
-    };
-  };
-  kelurahanAudit: Array<{
-    kelurahan: string;
-    baselineRate: number;
-    currentComplianceRate: number;
-    deltaPercent: number;
-    totalTerpilahKg: number;
-    organikKg: number;
-    anorganikKg: number;
-    residuKg: number;
-    totalFacilities: number;
-    tps3rCount: number;
-    bankSampahCount: number;
-    activeBinsCount: number;
-    complianceLevel: "TINGGI" | "SEDANG" | "RENDAH";
-    statusVerifikasi: string;
-  }>;
-  trenBerkala: Array<{
-    pekan: string;
-    organikKg: number;
-    anorganikKg: number;
-    residuKg: number;
-    kepatuhanPercent: number;
-  }>;
-  fasilitasDetail: Array<{
-    id: string;
-    nama: string;
-    jenis: string;
-    pic: string;
-    kontak: string;
-    kapasitasKg: number;
-    kelurahan: string;
-    rw: string;
-    totalLogProduksi: number;
-    statusApproval: string;
-  }>;
-  signatories: {
-    camat: { jabatan: string; instansi: string; nama: string; nip: string };
-    dlh: { jabatan: string; instansi: string; nama: string; nip: string };
-    pimpinan: { jabatan: string; instansi: string; nama: string; nip: string };
-  };
-}
+import type { WasteReportData } from "./types";
+import { OfficialDocumentA4View } from "./components/OfficialDocumentA4View";
 
 const WILAYAH_OPTIONS: SelectOption[] = [
   { value: "ALL", label: "Kecamatan Coblong (Seluruh Wilayah)", sublabel: "Cakupan 6 Kelurahan Lengkap" },
@@ -179,6 +72,7 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
   const [data, setData] = useState<WasteReportData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [downloadingExcel, setDownloadingExcel] = useState<boolean>(false);
+  const [viewMode, setViewMode] = useState<"dashboard" | "document">("dashboard");
 
   // Filters
   const [selectedWilayah, setSelectedWilayah] = useState<string>("ALL");
@@ -213,13 +107,24 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
   };
 
   useEffect(() => {
+    if (selectedPeriode === "custom") {
+      // For custom range, only auto-fetch when both dates are already provided
+      if (startDate && endDate) {
+        fetchReportData();
+      }
+      return;
+    }
     fetchReportData();
-  }, [selectedWilayah, selectedPeriode]);
+  }, [selectedWilayah, selectedPeriode, startDate, endDate]);
 
   const handleApplyCustomDate = () => {
     if (selectedPeriode === "custom") {
       if (!startDate || !endDate) {
         showToast.error("Mohon lengkapi tanggal mulai dan tanggal akhir");
+        return;
+      }
+      if (new Date(startDate) > new Date(endDate)) {
+        showToast.error("Tanggal mulai tidak boleh lebih besar dari tanggal akhir");
         return;
       }
       fetchReportData();
@@ -251,7 +156,7 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
       link.href = url;
       link.setAttribute(
         "download",
-        `Laporan_Resmi_Tata_Kelola_Sampah_${selectedWilayah}_${Date.now()}.xlsx`
+        `Laporan_Resmi_Tata_Kelola_Sampah_${selectedWilayah}_${new Date().toISOString().split("T")[0]}.xlsx`
       );
       document.body.appendChild(link);
       link.click();
@@ -272,29 +177,65 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-3 sm:p-6 lg:p-8 space-y-6 text-slate-800 dark:text-slate-100 print:p-0 print:bg-white print:text-black">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-3 sm:p-6 lg:p-8 space-y-6 text-slate-800 dark:text-slate-100 print:p-0 print:m-0 print:bg-white print:text-black">
       <style>{`
         @page {
           size: A4 portrait;
-          margin: 12mm 14mm 12mm 14mm;
+          margin: 15mm 15mm 15mm 15mm;
         }
         @media print {
+          /* 1. Sembunyikan elemen Web UI dashboard, header, filter, navigasi */
+          .web-header,
+          .web-filter-section,
+          .web-dashboard-container,
+          .web-view-switcher,
+          button,
+          nav,
+          aside,
+          .print-hide,
+          .print\\:hidden {
+            display: none !important;
+          }
+
+          /* 2. Tampilkan Naskah Dinas Resmi Kedinasan A4 */
+          .official-document-section {
+            display: block !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #ffffff !important;
+            color: #000000 !important;
+            box-shadow: none !important;
+            border: none !important;
+          }
+
           body {
             background: #ffffff !important;
             color: #000000 !important;
+            font-family: "Times New Roman", Times, serif !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
-          header, section, footer {
-            break-inside: avoid;
-            page-break-inside: avoid;
+
+          .avoid-break {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+          }
+
+          .page-break-before {
+            break-before: page !important;
+            page-break-before: always !important;
+          }
+
+          table {
+            border-collapse: collapse !important;
           }
         }
       `}</style>
       {/* ─────────────────────────────────────────────────────────────
-          KOP DOKUMEN RESMI (OFFICIAL DOCUMENT LETTERHEAD)
+          KOP DOKUMEN RESMI (OFFICIAL DOCUMENT LETTERHEAD - WEB VIEW)
       ───────────────────────────────────────────────────────────── */}
-      <header className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-sm p-6 sm:p-8 relative overflow-hidden print:border-b-2 print:border-slate-900 print:rounded-none print:shadow-none print:p-4">
+      <header className="web-header print:hidden bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-sm p-6 sm:p-8 relative overflow-hidden">
         {/* Subtle decorative accent */}
         <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-700 print:hidden" />
 
@@ -335,7 +276,7 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
                       month: "long",
                       year: "numeric",
                     })
-                  : "25 September 2026"}
+                  : new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
               </span>
             </div>
             <div>
@@ -394,7 +335,7 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
       {/* ─────────────────────────────────────────────────────────────
           BILAH FILTER & KONTROL AKSI (DISEMBUNYIKAN SAAT PRINT)
       ───────────────────────────────────────────────────────────── */}
-      <section className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4 print:hidden">
+      <section className="web-filter-section bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4 print:hidden">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full lg:w-auto">
           {/* Filter Wilayah */}
           <div className="w-full sm:w-72">
@@ -446,35 +387,65 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
           )}
         </div>
 
-        {/* Action Buttons */}
+        {/* Action Buttons & View Mode Switcher */}
         <div className="flex items-center gap-2.5 shrink-0 flex-wrap self-end lg:self-auto">
+          {/* Segmented Control Switcher Tampilan */}
+          <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200/80 dark:border-slate-700/80">
+            <button
+              type="button"
+              onClick={() => setViewMode("dashboard")}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                viewMode === "dashboard"
+                  ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs"
+                  : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+              }`}
+              title="Tampilkan Dasbor Interaktif (Grafik & Widget)"
+            >
+              <LayoutDashboard size={13} />
+              <span>Dasbor Interaktif</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("document")}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                viewMode === "document"
+                  ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs"
+                  : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+              }`}
+              title="Pratinjau Format Naskah Dokumen Resmi A4 Kedinasan"
+            >
+              <FileText size={13} />
+              <span>Naskah Dokumen (A4)</span>
+            </button>
+          </div>
+
           <button
             onClick={fetchReportData}
             disabled={loading}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs transition-colors cursor-pointer disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs transition-colors cursor-pointer disabled:opacity-50"
             title="Muat ulang data terbaru dari database"
           >
-            <RefreshCw size={14} className={loading ? "animate-spin text-emerald-600" : ""} />
-            <span>Perbarui Data</span>
+            <RefreshCw size={13} className={loading ? "animate-spin text-emerald-600" : ""} />
+            <span>Perbarui</span>
           </button>
 
           <button
             onClick={handleDownloadExcel}
             disabled={downloadingExcel || loading}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-extrabold text-xs shadow-xs transition-all cursor-pointer disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-extrabold text-xs shadow-xs transition-all cursor-pointer disabled:opacity-50"
             title="Unduh seluruh data dalam format spreadsheet Excel (.xlsx)"
           >
-            <Download size={14} className={downloadingExcel ? "animate-bounce" : ""} />
-            <span>{downloadingExcel ? "Menyiapkan Excel..." : "Export XLSX"}</span>
+            <Download size={13} className={downloadingExcel ? "animate-bounce" : ""} />
+            <span>{downloadingExcel ? "Menyiapkan..." : "Export XLSX"}</span>
           </button>
 
           <button
             onClick={handlePrintPdf}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-extrabold text-xs shadow-xs transition-all cursor-pointer"
-            title="Cetak format dokumen kedinasan resmi A4 atau simpan ke PDF"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-extrabold text-xs shadow-xs transition-all cursor-pointer"
+            title="Cetak format naskah dokumen resmi A4 atau simpan ke PDF"
           >
-            <Printer size={14} />
-            <span>Cetak / Export PDF (A4)</span>
+            <Printer size={13} />
+            <span>Cetak / PDF (A4)</span>
           </button>
         </div>
       </section>
@@ -497,7 +468,15 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
       ───────────────────────────────────────────────────────────── */}
       {data && (
         <>
-          <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+          {/* ─────────────────────────────────────────────────────────────
+              BAGIAN 1: DASBOR INTERAKTIF (KHUSUS TAMPILAN WEB)
+          ───────────────────────────────────────────────────────────── */}
+          <div
+            className={`web-dashboard-container space-y-6 print:hidden ${
+              viewMode === "dashboard" ? "block" : "hidden"
+            }`}
+          >
+            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
             {/* Card 1: Infrastruktur */}
             <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-2">
               <div className="flex items-center justify-between">
@@ -563,7 +542,7 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
                 <span className="text-xs font-semibold text-slate-500">Ton</span>
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800 truncate">
-                Setara {data.kpiSummary.dampakDanReduksi.totalSampahTerpilahKg.toLocaleString("id-ID")} Kg terkelola
+                Setara {(data.kpiSummary.dampakDanReduksi.totalSampahTerpilahKg ?? 0).toLocaleString("id-ID")} Kg terkelola
               </p>
             </div>
 
@@ -623,7 +602,7 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
               </div>
               <div className="flex items-baseline gap-1.5">
                 <span className="text-2xl font-black text-slate-900 dark:text-white">
-                  {data.kpiSummary.dampakDanReduksi.reduksiEmisiCo2Kg.toLocaleString("id-ID")}
+                  {(data.kpiSummary.dampakDanReduksi.reduksiEmisiCo2Kg ?? 0).toLocaleString("id-ID")}
                 </span>
                 <span className="text-xs font-semibold text-slate-500">kg CO₂e</span>
               </div>
@@ -667,7 +646,7 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
                   <div className="w-full h-3 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                     <div
                       className="h-full bg-emerald-600 rounded-full transition-all duration-500"
-                      style={{ width: `${Math.min(data.kpiSummary.dampakDanReduksi.rasioReduksiTpaPersen, 100)}%` }}
+                      style={{ width: `${Math.max(0, Math.min(data.kpiSummary.dampakDanReduksi.rasioReduksiTpaPersen, 100))}%` }}
                     />
                   </div>
                 </div>
@@ -684,7 +663,7 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
                   <div className="w-full h-3 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                     <div
                       className="h-full bg-rose-500 rounded-full transition-all duration-500"
-                      style={{ width: `${Math.min(data.kpiSummary.dampakDanReduksi.rasioPemilahan.residuPersen, 100)}%` }}
+                      style={{ width: `${Math.max(0, Math.min(data.kpiSummary.dampakDanReduksi.rasioPemilahan.residuPersen, 100))}%` }}
                     />
                   </div>
                 </div>
@@ -702,7 +681,7 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
                       {data.kpiSummary.dampakDanReduksi.rasioPemilahan.organikPersen}%
                     </span>
                     <span className="text-[10px] text-slate-400 block mt-0.5">
-                      {data.kpiSummary.dampakDanReduksi.rasioPemilahan.organikKg.toLocaleString("id-ID")} Kg
+                      {(data.kpiSummary.dampakDanReduksi.rasioPemilahan.organikKg ?? 0).toLocaleString("id-ID")} Kg
                     </span>
                   </div>
 
@@ -712,7 +691,7 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
                       {data.kpiSummary.dampakDanReduksi.rasioPemilahan.anorganikPersen}%
                     </span>
                     <span className="text-[10px] text-slate-400 block mt-0.5">
-                      {data.kpiSummary.dampakDanReduksi.rasioPemilahan.anorganikKg.toLocaleString("id-ID")} Kg
+                      {(data.kpiSummary.dampakDanReduksi.rasioPemilahan.anorganikKg ?? 0).toLocaleString("id-ID")} Kg
                     </span>
                   </div>
 
@@ -722,7 +701,7 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
                       {data.kpiSummary.dampakDanReduksi.rasioPemilahan.residuPersen}%
                     </span>
                     <span className="text-[10px] text-slate-400 block mt-0.5">
-                      {data.kpiSummary.dampakDanReduksi.rasioPemilahan.residuKg.toLocaleString("id-ID")} Kg
+                      {(data.kpiSummary.dampakDanReduksi.rasioPemilahan.residuKg ?? 0).toLocaleString("id-ID")} Kg
                     </span>
                   </div>
                 </div>
@@ -752,7 +731,7 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
                   </span>
                   <div className="flex items-baseline gap-1 mt-1">
                     <span className="text-xl font-black text-slate-900 dark:text-white">
-                      {data.kpiSummary.operasional.materialOrganikMasukKg.toLocaleString("id-ID")}
+                      {(data.kpiSummary.operasional.materialOrganikMasukKg ?? 0).toLocaleString("id-ID")}
                     </span>
                     <span className="text-xs font-bold text-slate-500">Kg</span>
                   </div>
@@ -767,7 +746,7 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
                   </span>
                   <div className="flex items-baseline gap-1 mt-1">
                     <span className="text-xl font-black text-emerald-700 dark:text-emerald-400">
-                      {data.kpiSummary.operasional.outputProdukOrganikKg.toLocaleString("id-ID")}
+                      {(data.kpiSummary.operasional.outputProdukOrganikKg ?? 0).toLocaleString("id-ID")}
                     </span>
                     <span className="text-xs font-bold text-emerald-600">Kg</span>
                   </div>
@@ -782,21 +761,21 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
                 <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-800">
                   <span className="font-semibold text-slate-700 dark:text-slate-300">Kompos Organik (Buruan Sae/Bata Terawang)</span>
                   <span className="font-black text-slate-900 dark:text-white">
-                    {data.kpiSummary.operasional.outputKomposKg.toLocaleString("id-ID")} Kg
+                    {(data.kpiSummary.operasional.outputKomposKg ?? 0).toLocaleString("id-ID")} Kg
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-800">
                   <span className="font-semibold text-slate-700 dark:text-slate-300">Larva Maggot BSF &amp; Kasgot</span>
                   <span className="font-black text-slate-900 dark:text-white">
-                    {data.kpiSummary.operasional.outputMaggotKg.toLocaleString("id-ID")} Kg
+                    {(data.kpiSummary.operasional.outputMaggotKg ?? 0).toLocaleString("id-ID")} Kg
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-800">
                   <span className="font-semibold text-slate-700 dark:text-slate-300">Pupuk Organik Cair (POC)</span>
                   <span className="font-black text-slate-900 dark:text-white">
-                    {data.kpiSummary.operasional.outputPocLiter.toLocaleString("id-ID")} Liter
+                    {(data.kpiSummary.operasional.outputPocLiter ?? 0).toLocaleString("id-ID")} Liter
                   </span>
                 </div>
               </div>
@@ -921,10 +900,10 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
                         </span>
                       </td>
                       <td className="py-3.5 px-4 text-right font-mono font-bold text-emerald-700 dark:text-emerald-400">
-                        {k.totalTerpilahKg.toLocaleString("id-ID")}
+                        {(k.totalTerpilahKg ?? 0).toLocaleString("id-ID")}
                       </td>
                       <td className="py-3.5 px-4 text-right font-mono text-slate-500">
-                        {k.residuKg.toLocaleString("id-ID")}
+                        {(k.residuKg ?? 0).toLocaleString("id-ID")}
                       </td>
                       <td className="py-3.5 px-4 text-center font-semibold text-slate-700 dark:text-slate-300">
                         {k.tps3rCount} / {k.bankSampahCount}
@@ -1031,7 +1010,7 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
           {/* ─────────────────────────────────────────────────────────────
               BAGIAN 5: LEMBAR PENGESAHAN DOKUMEN RESMI (SIGN-OFF SHEET)
           ───────────────────────────────────────────────────────────── */}
-          <footer className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 p-6 sm:p-8 shadow-xs space-y-6 print:border-none print:shadow-none print:p-4 print:page-break-before">
+          <footer className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 p-6 sm:p-8 shadow-xs space-y-6 print:border-none print:shadow-none print:p-4 print:break-before-page">
             <div className="text-center space-y-1 border-b border-slate-100 dark:border-slate-800 pb-4">
               <h2 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
                 Lembar Pengesahan Laporan Evaluasi Tata Kelola Sampah
@@ -1113,8 +1092,20 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
               Dokumen ini dihasilkan secara sah melalui modul pelaporan resmi BERSEKA &bull; Hak Cipta &copy; 2026 PT Makerindo
             </div>
           </footer>
-        </>
-      )}
+        </div>
+
+        {/* ─────────────────────────────────────────────────────────────
+            BAGIAN 2: NASKAH DOKUMEN RESMI KEDINASAN A4 (PRATINJAU & PRINT/PDF)
+        ───────────────────────────────────────────────────────────── */}
+        <div
+          className={`official-document-section ${
+            viewMode === "document" ? "block" : "hidden"
+          } print:block`}
+        >
+          <OfficialDocumentA4View data={data} />
+        </div>
+      </>
+    )}
     </div>
   );
 };

@@ -1387,7 +1387,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           to: "/manajemen-iot",
           icon: Cpu,
           label: "Manajemen IoT (CH4)",
-          resource: "monitoring_sampah",
           allowed: [
             "DEVELOPER",
             "SUPER_USER",

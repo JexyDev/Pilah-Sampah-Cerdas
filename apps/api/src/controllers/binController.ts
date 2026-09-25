@@ -1310,7 +1310,28 @@ export class BinController {
     try {
       const { id } = req.params;
       const result = await binService.updateBin(id, req.body);
-      res.status(200).json({ success: true, data: result });
+      const jenisWadah = (result as any)?.binType || "TERPILAH";
+      let statusBaku = "TERCETAK";
+      let statusDisplay = "Tercetak";
+      if (result.status === "ACTIVE_BOUND" || (result.status as string) === "ACTIVE") {
+        statusBaku = "AKTIF_TERPASANG";
+        statusDisplay = "Aktif Terpasang";
+      } else if (result.status === "BROKEN") {
+        statusBaku = "RUSAK";
+        statusDisplay = "Rusak";
+      } else if (result.status === "INACTIVE") {
+        statusBaku = "NON_AKTIF";
+        statusDisplay = "Tidak Aktif";
+      }
+      res.status(200).json({
+        success: true,
+        data: {
+          ...result,
+          jenisWadah,
+          statusBaku,
+          statusDisplay,
+        },
+      });
     } catch (error) {
       console.error("[BinController] updateBin error:", error);
       res

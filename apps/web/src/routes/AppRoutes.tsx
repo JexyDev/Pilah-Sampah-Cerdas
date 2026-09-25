@@ -92,7 +92,6 @@ const LaporanResmiKknPage = React.lazy(() => import("../pages/LaporanKkn/Laporan
 const DeveloperSettingsPage = React.lazy(() => import("../pages/Developer/DeveloperSettingsPage"));
 const MplDashboardPage = React.lazy(() => import("../pages/mpl/MplDashboardPage"));
 const LaporanTataKelolaSampahPage = React.lazy(() => import("../pages/Laporan/LaporanTataKelolaSampahPage"));
-const DashboardEksekutifKkn = React.lazy(() => import("../pages/Dashboard/DashboardEksekutifKkn"));
 const ManajemenIotPage = React.lazy(() => import("../pages/ManajemenIot/ManajemenIotPage"));
 
 // Scroll Restoration Helper Component (Safari WebKit & Cross-Browser Safe)
@@ -739,14 +738,6 @@ const AppRoutes: React.FC = () => {
         />
         <Route path="/laporan-tata-kelola-sampah" element={<Navigate to="/laporan/tata-kelola-sampah" replace />} />
         <Route
-          path="/laporan/kkn"
-          element={
-            <ProtectedRoute allowedRoles={["DEVELOPER", "SUPER_USER", "PIMPINAN", "PEMIMPIN"]}>
-              <DashboardEksekutifKkn />
-            </ProtectedRoute>
-          }
-        />
-        <Route
           path="/dashboard-dpl"
           element={
             <ProtectedRoute allowedRoles={["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "MPL", "PIMPINAN", "PANITIA_TASKFORCE"]}>
@@ -784,7 +775,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/manajemen-iot"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "PIMPINAN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "PIMPINAN", "PEMIMPIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]}>
               <ManajemenIotPage />
             </ProtectedRoute>
           }
@@ -1208,19 +1199,6 @@ const AppRoutes: React.FC = () => {
           path="/master-data/poin-pengguna"
           element={<Navigate to="/kelola-poin" replace />}
         />
-        {/* Modul Manajemen IoT & Sensor Gas Metana (CH4) */}
-        <Route
-          path="/manajemen-iot"
-          element={
-            <ProtectedRoute
-              allowedRoles={["SUPER_USER", "DEVELOPER", "PIMPINAN", "PEMIMPIN"]}
-            >
-              <ManajemenIotPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="/iot" element={<Navigate to="/manajemen-iot" replace />} />
-
         <Route path="/notifikasi" element={<Notifikasi />} />
 
         <Route
@@ -1414,7 +1392,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/laporan/kkn"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "PANITIA_TASKFORCE", "PIMPINAN", "DEVELOPER"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "PANITIA_TASKFORCE", "PIMPINAN", "PEMIMPIN", "DEVELOPER"]}>
               <LaporanResmiKknPage />
             </ProtectedRoute>
           }
