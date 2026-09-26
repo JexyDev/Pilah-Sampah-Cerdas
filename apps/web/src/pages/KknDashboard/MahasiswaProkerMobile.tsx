@@ -503,7 +503,9 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
       u === "PERLU_REVISI_DPL" ||
       u === "DITOLAK" ||
       u === "TIDAK_DISETUJUI" ||
-      (u === "" && (l === "BELUM_DISETUJUI" || l === "DITOLAK" || l === "TIDAK_DISETUJUI"))
+      u === "KADALUARSA_OTOMATIS" ||
+      u === "KADALUARSA" ||
+      (u === "" && (l === "BELUM_DISETUJUI" || l === "DITOLAK" || l === "TIDAK_DISETUJUI" || l === "REJECTED"))
     );
   };
 
@@ -539,7 +541,7 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
     if (statusFilter === "DIUSULKAN") return usulan === "BELUM_DISETUJUI" || usulan === "DIUSULKAN";
     if (statusFilter === "BERJALAN") return pelaks === "SEDANG_BERJALAN" || pelaks === "BERLANGSUNG";
     if (statusFilter === "SELESAI") return pelaks === "SELESAI";
-    if (statusFilter === "DITOLAK") return usulan === "DITOLAK" || usulan === "TIDAK_DISETUJUI";
+    if (statusFilter === "DITOLAK") return usulan === "DITOLAK" || usulan === "TIDAK_DISETUJUI" || usulan === "KADALUARSA_OTOMATIS" || usulan === "REJECTED";
     return true;
   });
 
@@ -681,9 +683,13 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
                 proker.status === "DITERIMA" ||
                 proker.status === "DISETUJUI";
               const isRevision = proker.statusUsulan === "PERLU_REVISI_DPL";
+              const isExpired =
+                proker.statusUsulan === "KADALUARSA_OTOMATIS" ||
+                proker.statusUsulan === "KADALUARSA";
               const isRejected =
                 proker.statusUsulan === "DITOLAK" ||
                 proker.status === "DITOLAK" ||
+                proker.status === "REJECTED" ||
                 proker.status === "TIDAK_DISETUJUI";
               const isCompleted =
                 proker.statusPelaksanaan === "SELESAI" || proker.status === "SELESAI";
@@ -740,12 +746,12 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
 
                       {/* Status Usulan Badge */}
                       <span
-                        className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase flex items-center gap-1 ${
+                        className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase flex items-center gap-1 ${
                           isApproved
                             ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
                             : isRevision
                             ? "bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300"
-                            : isRejected
+                            : isExpired || isRejected
                             ? "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
                             : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
                         }`}
@@ -759,6 +765,11 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
                           <>
                             <AlertCircle size={10} />
                             <span>Perlu Revisi</span>
+                          </>
+                        ) : isExpired ? (
+                          <>
+                            <X size={10} />
+                            <span>Kadaluarsa</span>
                           </>
                         ) : isRejected ? (
                           <>
@@ -840,16 +851,18 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
                       className={`p-2.5 rounded-2xl ${
                         isRevision
                           ? "bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-900/60 text-orange-800 dark:text-orange-300"
-                          : isRejected
+                          : isExpired || isRejected
                           ? "bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-rose-800 dark:text-rose-300"
                           : "bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-900/60 text-amber-800 dark:text-amber-300"
                       } text-[10.5px] space-y-0.5`}
                     >
                       <div className="flex items-center gap-1 font-bold">
-                        <Award size={12} className={isRevision ? "text-orange-600" : isRejected ? "text-rose-600" : "text-amber-600"} />
+                        <Award size={12} className={isRevision ? "text-orange-600" : (isExpired || isRejected) ? "text-rose-600" : "text-amber-600"} />
                         <span>
                           {isRevision
                             ? "Catatan Revisi DPL:"
+                            : isExpired
+                            ? "Catatan Pembatalan Sistem:"
                             : isRejected
                             ? "Alasan Penolakan DPL:"
                             : "Catatan DPL:"}
@@ -1321,8 +1334,12 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
                         : selectedProker.statusUsulan === "PERLU_REVISI_DPL" ||
                           selectedProker.status === "REVISI"
                         ? "Perlu Revisi DPL"
+                        : selectedProker.statusUsulan === "KADALUARSA_OTOMATIS" ||
+                          selectedProker.statusUsulan === "KADALUARSA"
+                        ? "Kadaluarsa Otomatis"
                         : selectedProker.statusUsulan === "DITOLAK" ||
                           selectedProker.status === "DITOLAK" ||
+                          selectedProker.status === "REJECTED" ||
                           selectedProker.statusUsulan === "TIDAK_DISETUJUI"
                         ? "Ditolak DPL"
                         : "Menunggu Validasi"}
@@ -1438,7 +1455,11 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
                       className={`w-full py-3 px-3 rounded-2xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm active:scale-95 ${
                         selectedProker.statusUsulan === "PERLU_REVISI_DPL" || selectedProker.status === "REVISI"
                           ? "bg-orange-500 hover:bg-orange-600 text-white"
-                          : selectedProker.statusUsulan === "DITOLAK" || selectedProker.status === "DITOLAK"
+                          : selectedProker.statusUsulan === "DITOLAK" ||
+                            selectedProker.status === "DITOLAK" ||
+                            selectedProker.status === "REJECTED" ||
+                            selectedProker.statusUsulan === "KADALUARSA_OTOMATIS" ||
+                            selectedProker.statusUsulan === "KADALUARSA"
                           ? "bg-rose-600 hover:bg-rose-700 text-white"
                           : "bg-[#035941] hover:bg-emerald-700 text-white"
                       }`}
@@ -1447,7 +1468,11 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
                       <span>
                         {selectedProker.statusUsulan === "PERLU_REVISI_DPL" || selectedProker.status === "REVISI"
                           ? "Revisi Program Kerja Sekarang"
-                          : selectedProker.statusUsulan === "DITOLAK" || selectedProker.status === "DITOLAK"
+                          : selectedProker.statusUsulan === "DITOLAK" ||
+                            selectedProker.status === "DITOLAK" ||
+                            selectedProker.status === "REJECTED" ||
+                            selectedProker.statusUsulan === "KADALUARSA_OTOMATIS" ||
+                            selectedProker.statusUsulan === "KADALUARSA"
                           ? "Perbaiki & Ajukan Ulang"
                           : "Edit Usulan Program Kerja"}
                       </span>

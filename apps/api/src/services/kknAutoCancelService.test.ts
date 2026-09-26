@@ -11,10 +11,10 @@ vi.mock("./redisService.js", () => {
   };
 });
 
-// Mock prisma
 const mockFindMany = vi.fn();
 const mockUpdate = vi.fn();
 const mockFindUniqueKelompok = vi.fn();
+const mockCountLogbook = vi.fn().mockResolvedValue(0);
 
 vi.mock("../lib/prisma.js", () => {
   return {
@@ -22,6 +22,9 @@ vi.mock("../lib/prisma.js", () => {
       programKerjaKkn: {
         findMany: (...args: any[]) => mockFindMany(...args),
         update: (...args: any[]) => mockUpdate(...args),
+      },
+      logbookKkn: {
+        count: (...args: any[]) => mockCountLogbook(...args),
       },
       kelompokKkn: {
         findUnique: (...args: any[]) => mockFindUniqueKelompok(...args),
@@ -117,5 +120,33 @@ describe("kknService.autoCancelExpiredProker", () => {
 
     expect(count).toBe(0);
     expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it("should mark proker as SELESAI instead of cancelling if logbooks are already linked", async () => {
+    mockFindMany.mockResolvedValueOnce([
+      {
+        id: "proker-with-logbook-1",
+        kelompokId: "kel-1",
+        deskripsi: "**Sosialisasi Lapangan**",
+        waktuPelaksanaan: "2020-01-10 s/d 2020-01-15",
+        statusPelaksanaan: "BELUM_MULAI",
+        statusUsulan: "DISETUJUI",
+      },
+    ]);
+    mockCountLogbook.mockResolvedValueOnce(3); // 3 logbooks uploaded
+    mockUpdate.mockResolvedValueOnce({ id: "proker-with-logbook-1" });
+
+    const count = await kknService.autoCancelExpiredProker();
+
+    expect(count).toBe(0); // Not counted in cancelled list
+    expect(mockUpdate).toHaveBeenCalledWith({
+      where: { id: "proker-with-logbook-1" },
+      data: {
+        statusUsulan: "DISETUJUI",
+        statusPelaksanaan: "SELESAI",
+        status: "SELESAI",
+        catatanDpl: null,
+      },
+    });
   });
 });
