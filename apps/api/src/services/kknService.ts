@@ -4709,6 +4709,40 @@ export class KknService {
         const endDate = extractProkerEndDate(candidate.waktuPelaksanaan);
         const parsed = parseProkerDeskripsi(candidate.deskripsi);
         const judul = parsed.judul || "Program Kerja";
+
+        // 🛡️ Proteksi Integritas Lapangan:
+        // Cek apakah mahasiswa telah mengunggah logbook kegiatan terkait program kerja ini.
+        const linkedLogbookCount = (prisma as any).logbookKkn?.count
+          ? await (prisma as any).logbookKkn.count({
+              where: { programKerjaId: candidate.id },
+            })
+          : 0;
+
+        if (linkedLogbookCount > 0) {
+          // Program kerja ini nyata dilaksanakan di lapangan!
+          // Jangan batalkan, melainkan otomatis tetapkan statusPelaksanaan menjadi "SELESAI"
+          // karena batas akhir pelaksanaan sudah terlewati dan kegiatan sudah terdokumentasi riil.
+          await prisma.programKerjaKkn.update({
+            where: { id: candidate.id },
+            data: {
+              statusUsulan: "DISETUJUI",
+              statusPelaksanaan: "SELESAI",
+              status: "SELESAI",
+              catatanDpl: null,
+            },
+          });
+
+          await syncProkerGamificationPoints(
+            candidate.id,
+            candidate.kelompokId,
+            "DISETUJUI",
+            "SELESAI",
+            judul
+          ).catch(() => {});
+
+          continue;
+        }
+
         const cancellationReason = endDate
           ? `Dibatalkan otomatis oleh sistem: Program kerja tidak dimulai hingga melewati batas akhir pelaksanaan (${endDate}).`
           : "Dibatalkan otomatis oleh sistem: Program kerja telah melewati batas akhir pelaksanaan dan belum dimulai.";
@@ -5582,9 +5616,26 @@ export class KknService {
       updateData.statusPelaksanaan = normP;
     }
 
-    const effectiveUsulan = updateData.statusUsulan || proker.statusUsulan || "BELUM_DISETUJUI";
-    const effectivePelaksanaan =
+    let effectiveUsulan = updateData.statusUsulan || proker.statusUsulan || "BELUM_DISETUJUI";
+    let effectivePelaksanaan =
       updateData.statusPelaksanaan || proker.statusPelaksanaan || "BELUM_MULAI";
+
+    // 🛡️ Jika status disetujui namun pelaksanaan masih BELUM_MULAI, cek apakah ada bukti logbook di lapangan
+    if (effectiveUsulan === "DISETUJUI" && effectivePelaksanaan === "BELUM_MULAI") {
+      const logbookCount = (prisma as any).logbookKkn?.count
+        ? await (prisma as any).logbookKkn.count({ where: { programKerjaId: id } })
+        : 0;
+      if (logbookCount > 0) {
+        const todayStr = getTodayWibDateString();
+        const isExpired = isProkerExpired(proker.waktuPelaksanaan, todayStr);
+        effectivePelaksanaan = isExpired ? "SELESAI" : "SEDANG_BERJALAN";
+        updateData.statusPelaksanaan = effectivePelaksanaan;
+        // Bersihkan catatan DPL pembatalan jika ada
+        if (proker.catatanDpl?.includes("Dibatalkan otomatis oleh sistem")) {
+          updateData.catatanDpl = null;
+        }
+      }
+    }
 
     // Sinkronkan kolom legacy status
     if (effectivePelaksanaan === "SELESAI") {

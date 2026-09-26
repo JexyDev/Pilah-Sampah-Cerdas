@@ -607,6 +607,57 @@ export class LogbookService {
   }
 
   /**
+   * 🛡️ Helper: Otomatis sinkronkan status pelaksanaan Program Kerja jika ditautkan ke logbook.
+   * Mencegah proker dibatalkan otomatis jika mahasiswa sudah mulai mengunggah logbook kegiatan.
+   */
+  async syncLinkedProkerStatus(programKerjaId?: string | null): Promise<void> {
+    if (!programKerjaId) return;
+    try {
+      const linkedProker = await prisma.programKerjaKkn.findUnique({
+        where: { id: programKerjaId },
+        select: {
+          id: true,
+          kelompokId: true,
+          statusUsulan: true,
+          statusPelaksanaan: true,
+          deskripsi: true,
+          catatanDpl: true,
+        },
+      });
+
+      if (linkedProker) {
+        const currentPelaksanaan = String(linkedProker.statusPelaksanaan || "").toUpperCase();
+        if (
+          currentPelaksanaan === "BELUM_MULAI" ||
+          !linkedProker.statusPelaksanaan ||
+          linkedProker.statusUsulan === "KADALUARSA_OTOMATIS"
+        ) {
+          const nextPelaksanaan = "SEDANG_BERJALAN";
+          const nextUsulan =
+            linkedProker.statusUsulan === "KADALUARSA_OTOMATIS" ||
+            linkedProker.statusUsulan === "DITOLAK"
+              ? "DISETUJUI"
+              : linkedProker.statusUsulan || "DISETUJUI";
+
+          await prisma.programKerjaKkn.update({
+            where: { id: linkedProker.id },
+            data: {
+              statusPelaksanaan: nextPelaksanaan,
+              statusUsulan: nextUsulan,
+              status: nextPelaksanaan,
+              catatanDpl: linkedProker.catatanDpl?.includes("Dibatalkan otomatis oleh sistem")
+                ? null
+                : linkedProker.catatanDpl,
+            },
+          });
+        }
+      }
+    } catch (err: any) {
+      console.warn("[syncLinkedProkerStatus] Gagal mensinkronisasi status proker:", err?.message);
+    }
+  }
+
+  /**
    * Membuat logbook aktivitas baru oleh Mahasiswa / Perwakilan Kelompok / Developer
    */
   async createMahasiswaLogbook(
@@ -864,6 +915,9 @@ export class LogbookService {
         fotoUrl: logbook.fotoBuktiUrl,
       })
       .catch((err) => console.warn("[Audit] Logbook submit log error:", err));
+
+    // Sinkronkan status program kerja terkait agar tidak dibatalkan otomatis
+    await this.syncLinkedProkerStatus(payload.programKerjaId);
 
     return {
       ...logbook,
