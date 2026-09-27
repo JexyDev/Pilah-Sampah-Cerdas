@@ -73,8 +73,8 @@ describe("kknService.autoCancelExpiredProker", () => {
     expect(mockUpdate).not.toHaveBeenCalled();
   });
 
-  it("should auto-cancel proker if current date has passed endDate", async () => {
-    // Past date (e.g. 2020-01-01)
+  it("should preserve proker as DISETUJUI and not cancel it even if current date has passed endDate (Anti Auto-Delete Policy)", async () => {
+    // Past date (e.g. 2020-01-01) with no logbooks
     mockFindMany.mockResolvedValueOnce([
       {
         id: "proker-expired-1",
@@ -85,23 +85,12 @@ describe("kknService.autoCancelExpiredProker", () => {
         statusUsulan: "DISETUJUI",
       },
     ]);
-    mockUpdate.mockResolvedValueOnce({ id: "proker-expired-1" });
-    mockFindUniqueKelompok.mockResolvedValueOnce({
-      id: "kel-1",
-      students: [{ userId: "u-1" }, { userId: "u-2" }],
-    });
+    mockCountLogbook.mockResolvedValueOnce(0);
 
     const count = await kknService.autoCancelExpiredProker();
 
-    expect(count).toBe(1);
-    expect(mockUpdate).toHaveBeenCalledWith({
-      where: { id: "proker-expired-1" },
-      data: {
-        statusUsulan: "KADALUARSA_OTOMATIS",
-        status: "DITOLAK",
-        catatanDpl: expect.stringContaining("2020-01-15"),
-      },
-    });
+    expect(count).toBe(0);
+    expect(mockUpdate).not.toHaveBeenCalled();
   });
 
   it("should not auto-cancel proker with unparseable or conditional date", async () => {

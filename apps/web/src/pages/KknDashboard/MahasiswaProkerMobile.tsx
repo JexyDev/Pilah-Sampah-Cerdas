@@ -35,6 +35,7 @@ import {
   Navigation,
   Check,
   ChevronDown,
+  Play,
 } from "lucide-react";
 import api from "../../utils/api";
 import showToast from "../../utils/showToast";
@@ -149,6 +150,8 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
   // Modal State: Detail Proker
   const [selectedProker, setSelectedProker] = useState<ProkerItem | null>(null);
   const [isDeletingProker, setIsDeletingProker] = useState(false);
+  const [startingProkerId, setStartingProkerId] = useState<string | null>(null);
+  const [isStartingProker, setIsStartingProker] = useState(false);
 
   // Modal State: Daftarkan / Edit Posko KKN
   const [isPoskoModalOpen, setIsPoskoModalOpen] = useState(false);
@@ -871,6 +874,46 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
                       <p className="leading-snug">{proker.catatanDpl || proker.evaluasiDpl}</p>
                     </div>
                   )}
+
+                  {/* Quick Start Action on Card */}
+                  {isApproved &&
+                    (proker.statusPelaksanaan === "BELUM_MULAI" ||
+                      !proker.statusPelaksanaan) && (
+                      <div className="pt-1.5 flex items-center justify-end">
+                        <button
+                          type="button"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            try {
+                              setStartingProkerId(proker.id);
+                              await api.put(`/kkn/program-kerja/${proker.id}`, {
+                                statusPelaksanaan: "SEDANG_BERJALAN",
+                              });
+                              showToast.success(
+                                `Program kerja "${proker.judul}" berhasil dimulai! Status kini Sedang Berjalan 🚀`
+                              );
+                              fetchData();
+                            } catch (err: any) {
+                              showToast.error(
+                                err.response?.data?.message ||
+                                  "Gagal memulai program kerja"
+                              );
+                            } finally {
+                              setStartingProkerId(null);
+                            }
+                          }}
+                          disabled={startingProkerId === proker.id}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-[11px] transition shadow-xs active:scale-95 cursor-pointer"
+                        >
+                          {startingProkerId === proker.id ? (
+                            <Loader2 size={12} className="animate-spin" />
+                          ) : (
+                            <Play size={11} fill="currentColor" />
+                          )}
+                          <span>Mulai Kegiatan</span>
+                        </button>
+                      </div>
+                    )}
                 </div>
               );
             })
@@ -1478,6 +1521,46 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
                       </span>
                     </button>
                   )}
+
+                  {/* Quick Action: Mulai Pelaksanaan (BELUM_MULAI -> SEDANG_BERJALAN) */}
+                  {(selectedProker.statusUsulan === "DISETUJUI" ||
+                    selectedProker.status === "DITERIMA" ||
+                    selectedProker.status === "DISETUJUI") &&
+                    selectedProker.statusPelaksanaan !== "SEDANG_BERJALAN" &&
+                    selectedProker.statusPelaksanaan !== "SELESAI" && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            setIsStartingProker(true);
+                            await api.put(`/kkn/program-kerja/${selectedProker.id}`, {
+                              statusPelaksanaan: "SEDANG_BERJALAN",
+                            });
+                            showToast.success(
+                              `Program kerja "${selectedProker.judul}" berhasil dimulai! Status kini Sedang Berjalan 🚀`
+                            );
+                            setSelectedProker(null);
+                            fetchData();
+                          } catch (err: any) {
+                            showToast.error(
+                              err.response?.data?.message ||
+                                "Gagal memulai program kerja"
+                            );
+                          } finally {
+                            setIsStartingProker(false);
+                          }
+                        }}
+                        disabled={isStartingProker}
+                        className="w-full py-3 px-3 rounded-2xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm active:scale-95 bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        {isStartingProker ? (
+                          <Loader2 size={14} className="animate-spin" />
+                        ) : (
+                          <Play size={14} fill="currentColor" />
+                        )}
+                        <span>Mulai Pelaksanaan Program Kerja</span>
+                      </button>
+                    )}
 
                   {selectedProker.statusUsulan !== "DISETUJUI" &&
                     selectedProker.status !== "DITERIMA" &&

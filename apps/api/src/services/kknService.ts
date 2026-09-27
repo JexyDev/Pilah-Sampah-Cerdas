@@ -4743,64 +4743,18 @@ export class KknService {
           continue;
         }
 
-        const cancellationReason = endDate
-          ? `Dibatalkan otomatis oleh sistem: Program kerja tidak dimulai hingga melewati batas akhir pelaksanaan (${endDate}).`
-          : "Dibatalkan otomatis oleh sistem: Program kerja telah melewati batas akhir pelaksanaan dan belum dimulai.";
-
-        await prisma.programKerjaKkn.update({
-          where: { id: candidate.id },
-          data: {
-            statusUsulan: "KADALUARSA_OTOMATIS",
-            status: "DITOLAK",
-            catatanDpl: cancellationReason,
-          },
-        });
-
-        cancelledCount++;
-
-        // Revoke gamification points jika pernah terinjeksi
-        await syncProkerGamificationPoints(
-          candidate.id,
-          candidate.kelompokId,
-          "KADALUARSA_OTOMATIS",
-          candidate.statusPelaksanaan,
-          judul
-        ).catch(() => {});
-
-        // Kirim notifikasi ke mahasiswa kelompok KKN
-        try {
-          const kelompok = await prisma.kelompokKkn.findUnique({
-            where: { id: candidate.kelompokId },
-            include: { students: { select: { userId: true } } },
-          });
-          const studentUserIds = (kelompok?.students || []).map((s) => s.userId).filter(Boolean);
-
-          if (studentUserIds.length > 0) {
-            await notificationIntegrationService.sendToUsers({
-              userIds: studentUserIds,
-              title: "Program Kerja Dibatalkan Otomatis ⚠️",
-              message: `Program kerja "${judul}" telah dibatalkan otomatis oleh sistem karena melewati batas akhir pelaksanaan (${endDate || "-"}) dan belum dimulai.`,
-              triggerType: "PROKER_AUTO_CANCELLED",
-              dataPayload: {
-                event: "REFRESH_PROKER_MAHASISWA",
-                type: "PROKER_KADALUARSA",
-                entityId: candidate.id,
-                prokerId: candidate.id,
-                kelompokId: candidate.kelompokId,
-                status: "DITOLAK",
-                statusUsulan: "KADALUARSA_OTOMATIS",
-                click_action: "FLUTTER_NOTIFICATION_CLICK",
-              },
-            });
-          }
-        } catch (notifErr: any) {
-          console.warn("[autoCancelExpiredProker] Notification error:", notifErr?.message);
-        }
+        // 🛡️ REVISI KEBIJAKAN SISTEM (Instruksi Pimpinan CEO PT Makerindo - Anti Auto-Delete Policy):
+        // Program kerja yang sudah di-ACC DPL DILARANG KERAS dibatalkan atau ditolak sepihak oleh sistem
+        // ("aturan jangan di hapus oleh sistem").
+        // DPL adalah satu-satunya pihak yang berwenang menolak atau membatalkan usulan program kerja.
+        // Jika batas waktu terlewati namun belum ada logbook, proker tetap dibiarkan aktif (DISETUJUI)
+        // agar mahasiswa tetap dapat berkegiatan, menyusulkan dokumentasi/logbook, atau berkoordinasi dengan DPL.
+        continue;
       }
 
       if (cancelledCount > 0) {
         console.log(
-          `[autoCancelExpiredProker] Berhasil membatalkan otomatis ${cancelledCount} proker yang melewati batas akhir pelaksanaan.`
+          `[autoCancelExpiredProker] Berhasil menyelesaikan otomatis ${cancelledCount} proker yang melewati batas akhir pelaksanaan.`
         );
       }
 
