@@ -2359,29 +2359,54 @@ export const dplService = {
     }
 
     let pendingRequests = await prisma.studentLeaveRequest.findMany({
-      where: { studentId: { in: studentUserIds }, status: { in: ["PENDING", "CANCEL_REQUESTED"] } },
+      where: {
+        studentId: { in: studentUserIds },
+        status: { in: ["PENDING", "CANCEL_REQUESTED", "ESCALATED"] },
+      },
       include: {
-        student: { select: { id: true, name: true, phone: true } },
+        student: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            studentProfile: {
+              select: {
+                nim: true,
+                kelompok: { select: { id: true, name: true } },
+              },
+            },
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
 
     pendingRequests = pendingRequests.filter((r) => !isTestUser(r.student));
 
+    const mappedRequests = pendingRequests.map((r) => ({
+      id: r.id,
+      studentId: r.studentId,
+      studentName: r.student?.name || "Mahasiswa",
+      student: {
+        id: r.student?.id,
+        name: r.student?.name,
+        phone: r.student?.phone,
+        studentProfile: r.student?.studentProfile,
+      },
+      type: r.type,
+      reason: r.reason,
+      evidenceUrl: r.evidenceUrl,
+      startDate: r.startDate,
+      endDate: r.endDate,
+      status: r.status,
+      rejectionReason: r.rejectionReason,
+      createdAt: r.createdAt,
+    }));
+
     return {
-      pendingApprovalsCount: pendingRequests.length,
-      pendingRequests: pendingRequests.map((r) => ({
-        id: r.id,
-        studentId: r.studentId,
-        studentName: r.student?.name || "Mahasiswa",
-        type: r.type,
-        reason: r.reason,
-        evidenceUrl: r.evidenceUrl,
-        startDate: r.startDate,
-        endDate: r.endDate,
-        status: r.status,
-        createdAt: r.createdAt,
-      })),
+      pendingApprovalsCount: mappedRequests.length,
+      pendingRequests: mappedRequests,
+      pendingApprovals: mappedRequests,
     };
   },
 
@@ -2421,7 +2446,11 @@ export const dplService = {
 
     const history = await prisma.studentLeaveRequest.findMany({
       where: isAdmin
-        ? { reviewedAt: { not: null } }
+        ? {
+            status: {
+              in: ["APPROVED", "REJECTED", "ESCALATED", "CANCELLED", "OVERRIDDEN_HADIR"],
+            },
+          }
         : {
             AND: [
               { studentId: { in: studentUserIds } },
@@ -2438,16 +2467,17 @@ export const dplService = {
             ],
           },
       include: {
-        student: { select: { name: true } },
+        student: { select: { id: true, name: true } },
       },
-      orderBy: { reviewedAt: "desc" },
-      take: 50,
+      orderBy: { updatedAt: "desc" },
+      take: 100,
     });
 
     const filteredHistory = history.filter((h) => !isTestUser(h.student));
 
     return filteredHistory.map((h) => ({
       id: h.id,
+      studentId: h.studentId,
       studentName: h.student?.name || "Mahasiswa",
       type: h.type,
       reason: h.reason,
@@ -2455,6 +2485,7 @@ export const dplService = {
       startDate: h.startDate,
       endDate: h.endDate,
       reviewedAt: h.reviewedAt || h.updatedAt,
+      createdAt: h.createdAt,
       rejectionReason: h.rejectionReason,
       evidenceUrl: h.evidenceUrl,
     }));
@@ -2545,10 +2576,10 @@ export const dplService = {
 
     // Jika disetujui (APPROVED), sinkronkan presensi otomatis untuk jadwal kegiatan mahasiswa ybs
     if (status === "APPROVED") {
-      const start = new Date(req.startDate);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(req.endDate || req.startDate);
-      end.setHours(23, 59, 59, 999);
+      const startWibStr = new Date(req.startDate).toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
+      const endWibStr = new Date(req.endDate || req.startDate).toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
+      const start = new Date(`${startWibStr}T00:00:00+07:00`);
+      const end = new Date(`${endWibStr}T23:59:59.999+07:00`);
 
       const studentProfile = await prisma.studentKkn.findFirst({
         where: {
@@ -2603,10 +2634,10 @@ export const dplService = {
       }
     } else if (status === "REJECTED") {
       // Jika ditolak, bersihkan status presensi IZIN_DPL yang mungkin sempat disetujui sebelumnya
-      const start = new Date(req.startDate);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(req.endDate || req.startDate);
-      end.setHours(23, 59, 59, 999);
+      const startWibStr = new Date(req.startDate).toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
+      const endWibStr = new Date(req.endDate || req.startDate).toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
+      const start = new Date(`${startWibStr}T00:00:00+07:00`);
+      const end = new Date(`${endWibStr}T23:59:59.999+07:00`);
 
       const studentProfile = await prisma.studentKkn.findFirst({
         where: {
@@ -2622,6 +2653,9 @@ export const dplService = {
             gte: start,
             lte: end,
           },
+          ...(studentProfile?.kelompokId
+            ? { OR: [{ kelompokId: studentProfile.kelompokId }, { kelompokId: null }] }
+            : {}),
         },
       });
 
@@ -3539,7 +3573,17 @@ export const dplService = {
       allowedGroupIds = allGroups.map((g) => g.id);
     }
 
-    if (allowedGroupIds.length > 0 && !allowedGroupIds.includes(prokerExisting.kelompokId)) {
+    const isAdmin = [
+      "DEVELOPER",
+      "SUPER_USER",
+      "ADMIN",
+      "ADMIN_DLH",
+      "PANITIA_TASKFORCE",
+      "PANITIA",
+      "TASKFORCE",
+    ].some((r) => normRole.includes(r));
+
+    if (!isAdmin && allowedGroupIds.length > 0 && !allowedGroupIds.includes(prokerExisting.kelompokId)) {
       throw new Error("FORBIDDEN_SCOPE");
     }
 
@@ -3752,13 +3796,27 @@ export const dplService = {
       throw new Error("PROKER_NOT_STARTED");
     }
 
+    const isAdmin = [
+      "DEVELOPER",
+      "SUPER_USER",
+      "ADMIN",
+      "ADMIN_DLH",
+      "PANITIA_TASKFORCE",
+      "PANITIA",
+      "TASKFORCE",
+    ].some((r) => normRole.includes(r));
+
     const groups = await prisma.kelompokKkn.findMany({
       where: await getKelompokWhere(dplUserId, role),
       select: { id: true },
     });
-    const allowedGroupIds = groups.map((g) => g.id);
+    let allowedGroupIds = groups.map((g) => g.id);
+    if (allowedGroupIds.length === 0) {
+      const allGroups = await prisma.kelompokKkn.findMany({ select: { id: true } });
+      allowedGroupIds = allGroups.map((g) => g.id);
+    }
 
-    if (!allowedGroupIds.includes(prokerExisting.kelompokId)) {
+    if (!isAdmin && allowedGroupIds.length > 0 && !allowedGroupIds.includes(prokerExisting.kelompokId)) {
       throw new Error("FORBIDDEN_SCOPE");
     }
 

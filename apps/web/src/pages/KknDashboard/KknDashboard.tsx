@@ -10,6 +10,7 @@ import toast from "react-hot-toast";
 import { useAuthStore } from "../../store/useAuthStore";
 import { MahasiswaMobileApp } from "./MahasiswaMobileApp";
 import LeaderboardWidget from "../../components/LeaderboardWidget";
+import { resolveImageUrl } from "../../utils/imageUrl";
 import {
   Users,
   Trash2,
@@ -148,6 +149,7 @@ const KknDashboardContent: React.FC = () => {
 
   const [escalatedLeaves, setEscalatedLeaves] = useState<any[]>([]);
   const [isProcessingLeave, setIsProcessingLeave] = useState<string | null>(null);
+  const [previewEvidence, setPreviewEvidence] = useState<{ url: string; title: string } | null>(null);
 
   useEffect(() => {
     fetchInitialData();
@@ -168,7 +170,8 @@ const KknDashboardContent: React.FC = () => {
       if (results[2].status === "fulfilled") setRtRwAreas(results[2].value.data?.data || []);
       if (results[3].status === "fulfilled") {
         const alertData = results[3].value.data?.data;
-        setEscalatedLeaves(alertData?.pendingApprovals || []);
+        const allLeaves = alertData?.pendingApprovals || alertData?.pendingRequests || [];
+        setEscalatedLeaves(allLeaves);
       }
 
       results.forEach((r, i) => {
@@ -589,6 +592,23 @@ const KknDashboardContent: React.FC = () => {
                         ⚠️ Catatan Eskalasi: {leave.rejectionReason}
                       </p>
                     )}
+                    {leave.evidenceUrl && (
+                      <div className="pt-1">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setPreviewEvidence({
+                              url: resolveImageUrl(leave.evidenceUrl) || leave.evidenceUrl,
+                              title: `Surat Bukti ${leave.type}: ${leave.student?.name || leave.studentName || "Mahasiswa"}`,
+                            })
+                          }
+                          className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 px-2.5 py-1 rounded-xl transition cursor-pointer"
+                        >
+                          <Eye size={12} />
+                          <span>Lihat Surat Bukti</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
@@ -614,6 +634,31 @@ const KknDashboardContent: React.FC = () => {
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* MODAL PREVIEW SURAT BUKTI */}
+      {previewEvidence && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 dark:border-slate-800">
+              <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100">{previewEvidence.title}</h4>
+              <button
+                type="button"
+                onClick={() => setPreviewEvidence(null)}
+                className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="p-4 flex items-center justify-center bg-slate-100 dark:bg-slate-950 overflow-auto flex-1">
+              <img
+                src={previewEvidence.url}
+                alt="Surat Bukti"
+                className="max-h-[70vh] w-auto object-contain rounded-xl shadow-xs"
+              />
+            </div>
           </div>
         </div>
       )}

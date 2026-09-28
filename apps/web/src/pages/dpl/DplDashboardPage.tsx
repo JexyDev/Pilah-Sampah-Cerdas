@@ -10,6 +10,7 @@ import { useAuthStore } from "../../store/useAuthStore";
 import {
   CalendarCheck,
   AlertTriangle,
+  Check,
   CheckCircle,
   CheckCircle2,
   XCircle,
@@ -1432,8 +1433,8 @@ export const DplDashboardPage: React.FC = () => {
                       className={`p-4 border rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition ${
                         isCancelReq
                           ? "border-cyan-300 dark:border-cyan-700/60 bg-cyan-50/40 dark:bg-cyan-950/30"
-                          : isOver24Hours
-                          ? "border-rose-300 dark:border-rose-700/60 bg-rose-50/40 dark:bg-rose-950/30 shadow-xs"
+                          : req.status === "ESCALATED" || isOver24Hours
+                          ? "border-amber-300 dark:border-amber-700/60 bg-amber-50/40 dark:bg-amber-950/30 shadow-xs"
                           : "border-amber-200/80 dark:border-amber-700/60 bg-amber-50/40 dark:bg-amber-950/30"
                       }`}
                     >
@@ -1454,11 +1455,15 @@ export const DplDashboardPage: React.FC = () => {
                               <CheckCircle size={11} /> Permohonan Batal Izin (Ingin Hadir)
                             </span>
                           )}
-                          {!isCancelReq && isOver24Hours && (
+                          {req.status === "ESCALATED" ? (
+                            <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700 flex items-center gap-1">
+                              <AlertTriangle size={11} /> Dieskalasi ke Taskforce (&gt;24 Jam)
+                            </span>
+                          ) : !isCancelReq && isOver24Hours ? (
                             <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-700 flex items-center gap-1">
                               <Clock size={11} /> &gt;24 Jam (Siap Diambil Alih)
                             </span>
-                          )}
+                          ) : null}
                         </div>
                         <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-1">
                           <span className="font-semibold text-slate-700 dark:text-slate-200">Alasan:</span> {req.reason}
@@ -1660,10 +1665,35 @@ export const DplDashboardPage: React.FC = () => {
                         )}
                       </td>
                       <td className="px-4 py-3.5 text-center">
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold text-[11px] border ${badgeClass}`}>
-                          {isAppr || isOverr ? <CheckCircle size={12} /> : isRej ? <XCircle size={12} /> : null}
-                          {badgeLabel}
-                        </span>
+                        <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold text-[11px] border ${badgeClass}`}>
+                            {isAppr || isOverr ? <CheckCircle size={12} /> : isRej ? <XCircle size={12} /> : null}
+                            {badgeLabel}
+                          </span>
+                          {isEsc && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setReviewingRequest({
+                                  id: log.id,
+                                  studentId: (log as any).studentId,
+                                  studentName: log.studentName,
+                                  type: log.type,
+                                  reason: log.reason,
+                                  evidenceUrl: log.evidenceUrl,
+                                  startDate: log.startDate,
+                                  endDate: log.endDate,
+                                  status: log.status,
+                                  createdAt: (log as any).createdAt || log.reviewedAt,
+                                } as any)
+                              }
+                              className="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold shadow-2xs cursor-pointer inline-flex items-center gap-1 transition"
+                              title="Tinjau & Putuskan Izin Ini"
+                            >
+                              <Check size={10} /> Putuskan
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
