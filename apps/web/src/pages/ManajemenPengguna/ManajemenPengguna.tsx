@@ -136,6 +136,45 @@ const normalizeRoleFromUrl = (param: string | null): string => {
   return param.toUpperCase();
 };
 
+// Helper function for extracting degree level
+export const extractJenjang = (prodi?: string, fallbackJenjang?: string) => {
+  if (fallbackJenjang && ["S1", "S2", "S3", "D3", "D4"].includes(fallbackJenjang)) return fallbackJenjang;
+  if (!prodi) return "S1";
+  const match = prodi.match(/\b(S1|S2|S3|D3|D4)\b/i);
+  return match ? match[1].toUpperCase() : "S1";
+};
+
+// Helper function for cleaning redundant degree prefix from Program Studi name
+export const cleanProdiName = (prodi?: string) => {
+  if (!prodi || prodi.trim() === "" || prodi.trim() === "-") return "-";
+  const cleaned = prodi.replace(/\b(S1|S2|S3|D3|D4)\s*/gi, "").trim();
+  return cleaned.length > 0 ? cleaned : prodi;
+};
+
+// Helper function for cleaning redundant KKN Group names
+export const cleanKknDisplayName = (name?: string) => {
+  if (!name || name === "-") return "-";
+  let clean = name.trim();
+  clean = clean.replace(/\s*\([^)]*\)/g, ""); // strip existing parenthesized suffix e.g. (Dago) or (Kel. Dago)
+  clean = clean.replace(/\s+-\s+/g, " - "); // normalize dashes
+
+  // Normalize informal pattern like "Dago 1", "Dago 4", "Cipaganti 4" -> "Kelompok 1 Dago", "Kelompok 4 Dago"
+  const informalMatch = clean.match(/^([A-Za-z\s]+?)\s+(\d+)$/);
+  if (informalMatch) {
+    const place = informalMatch[1].replace(/^Kel\s*/i, "").trim();
+    const num = informalMatch[2];
+    return `Kelompok ${num} ${place}`;
+  }
+  return clean;
+};
+
+export const formatCleanRw = (rwStr?: string): string => {
+  if (!rwStr || rwStr === "-") return "-";
+  const rawClean = rwStr.split("(")[0].trim();
+  const rwNum = rawClean.replace(/\D/g, "").padStart(2, "0");
+  return rwNum && rwNum !== "00" ? `RW ${rwNum}` : rawClean;
+};
+
 export type UserCluster = "all" | "warga" | "mahasiswa" | "pejabat";
 
 const CLUSTER_CONFIG: Record<
@@ -1444,45 +1483,6 @@ const ManajemenPengguna: React.FC = () => {
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage
   );
-
-  // Helper function for extracting degree level
-  const extractJenjang = (prodi?: string, fallbackJenjang?: string) => {
-    if (fallbackJenjang && ["S1", "S2", "S3", "D3", "D4"].includes(fallbackJenjang)) return fallbackJenjang;
-    if (!prodi) return "S1";
-    const match = prodi.match(/\b(S1|S2|S3|D3|D4)\b/i);
-    return match ? match[1].toUpperCase() : "S1";
-  };
-
-  // Helper function for cleaning redundant degree prefix from Program Studi name
-  const cleanProdiName = (prodi?: string) => {
-    if (!prodi || prodi.trim() === "" || prodi.trim() === "-") return "-";
-    const cleaned = prodi.replace(/\b(S1|S2|S3|D3|D4)\s*/gi, "").trim();
-    return cleaned.length > 0 ? cleaned : prodi;
-  };
-
-  // Helper function for cleaning redundant KKN Group names
-  const cleanKknDisplayName = (name?: string) => {
-    if (!name || name === "-") return "-";
-    let clean = name.trim();
-    clean = clean.replace(/\s*\([^)]*\)/g, ""); // strip existing parenthesized suffix e.g. (Dago) or (Kel. Dago)
-    clean = clean.replace(/\s+-\s+/g, " - "); // normalize dashes
-
-    // Normalize informal pattern like "Dago 1", "Dago 4", "Cipaganti 4" -> "Kelompok 1 Dago", "Kelompok 4 Dago"
-    const informalMatch = clean.match(/^([A-Za-z\s]+?)\s+(\d+)$/);
-    if (informalMatch) {
-      const place = informalMatch[1].replace(/^Kel\s*/i, "").trim();
-      const num = informalMatch[2];
-      return `Kelompok ${num} ${place}`;
-    }
-    return clean;
-  };
-
-  const formatCleanRw = (rwStr?: string): string => {
-    if (!rwStr || rwStr === "-") return "-";
-    const rawClean = rwStr.split("(")[0].trim();
-    const rwNum = rawClean.replace(/\D/g, "").padStart(2, "0");
-    return rwNum && rwNum !== "00" ? `RW ${rwNum}` : rawClean;
-  };
 
   // Helper function for rendering Wilayah Penugasan as RW & Kelurahan badges
   const renderWilayahBadges = (raw?: string) => {

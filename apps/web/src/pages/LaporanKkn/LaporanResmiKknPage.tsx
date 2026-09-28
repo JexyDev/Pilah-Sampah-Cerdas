@@ -418,10 +418,13 @@ export const LaporanResmiKknPage: React.FC = () => {
             onChange={(e) => setSelectedKelurahan(e.target.value)}
             className="text-xs bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-md px-2.5 py-1.5 font-medium text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
           >
-            {/* Kelurahan dari API, fallback statis */}
-            {(data?.filterOptions?.kelurahanOptions?.length
-              ? ["Semua Kelurahan", ...data.filterOptions.kelurahanOptions]
-              : ["Semua Kelurahan", "Cipaganti", "Dago", "Lebakgede", "Lebak Siliwangi", "Sadang Serang", "Sekeloa"]
+            {/* Kelurahan dari API, fallback statis (deduplicated) */}
+            {Array.from(
+              new Set(
+                data?.filterOptions?.kelurahanOptions?.length
+                  ? ["Semua Kelurahan", ...data.filterOptions.kelurahanOptions]
+                  : ["Semua Kelurahan", "Cipaganti", "Dago", "Lebakgede", "Lebak Siliwangi", "Sadang Serang", "Sekeloa"]
+              )
             ).map((k) => (
               <option key={k} value={k}>
                 {k === "Semua Kelurahan" ? "Seluruh Kelurahan (Coblong)" : `Kel. ${k}`}
