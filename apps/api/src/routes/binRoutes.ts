@@ -389,7 +389,7 @@ router.get("/:identifier/poster", binController.getPoster);
 router.post(
   "/:id/empty",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "PETUGAS_RESIDU"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "PETUGAS_RESIDU", "PETUGAS_PEMILAHAN"]),
   binController.emptyBin
 );
 
@@ -473,7 +473,7 @@ router.get("/reset-request/:id", authMiddleware, binController.getResetRequest);
 router.put(
   "/reset-request/:id/review",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "PETUGAS_RESIDU"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "PETUGAS_RESIDU", "PETUGAS_PEMILAHAN"]),
   binController.reviewResetRequest
 );
 
@@ -501,14 +501,14 @@ router.put(
 router.post(
   "/dispatch/:id/claim",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "PETUGAS_RESIDU"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "PETUGAS_RESIDU", "PETUGAS_PEMILAHAN"]),
   binController.claimDispatch
 );
 
 router.get(
   "/dispatch/optimized-route",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "PETUGAS_RESIDU"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "PETUGAS_RESIDU", "PETUGAS_PEMILAHAN"]),
   binController.getOptimizedRoute
 );
 
@@ -567,7 +567,7 @@ router.post(
 router.post(
   "/:id/report-damage",
   authMiddleware,
-  roleMiddleware(["WARGA", "RT", "RW", "PETUGAS_RESIDU"]),
+  roleMiddleware(["WARGA", "RT", "RW", "PETUGAS_RESIDU", "PETUGAS_PEMILAHAN"]),
   binController.reportIssue
 );
 
@@ -621,7 +621,7 @@ router.post(
 router.get(
   "/reset-requests",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "PETUGAS_RESIDU"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "PETUGAS_RESIDU", "PETUGAS_PEMILAHAN"]),
   binController.listResetRequests
 );
 
@@ -636,7 +636,7 @@ router.post(
 router.put(
   "/reset/:id/approve",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "PETUGAS_RESIDU"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "PETUGAS_RESIDU", "PETUGAS_PEMILAHAN"]),
   binController.approveResetRequest
 );
 
