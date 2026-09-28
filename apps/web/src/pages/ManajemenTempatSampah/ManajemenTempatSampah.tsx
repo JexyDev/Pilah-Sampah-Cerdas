@@ -1,4 +1,4 @@
-import { Loader2, Check, X, Trash2, Map, Plus, Search, AlertTriangle, Pencil, Tags, QrCode, CheckCircle, XCircle, ChevronDown, ChevronUp, Phone, ShieldCheck, Download, Maximize2, Minimize2, Layers, User, Box, RotateCcw } from "lucide-react";
+import { Loader2, Check, X, Trash2, Map, Plus, Search, AlertTriangle, Pencil, Tags, QrCode, CheckCircle, XCircle, ChevronDown, ChevronUp, Phone, ShieldCheck, Download, Maximize2, Minimize2, Layers, User, Box, RotateCcw, MapPin } from "lucide-react";
 
 /**
  * Project: BERSEKA
@@ -436,6 +436,9 @@ const ManajemenTempatSampah: React.FC = () => {
     maxCapacityLiter: number;
     userId: string;
     status?: string;
+    deskripsiLokasi?: string;
+    tipeKepemilikan?: string;
+    binType?: string;
   }>({
     qrCode: "",
     categoryId: "organik",
@@ -445,6 +448,9 @@ const ManajemenTempatSampah: React.FC = () => {
     maxCapacityLiter: 25,
     userId: "",
     status: "ACTIVE_BOUND",
+    deskripsiLokasi: "",
+    tipeKepemilikan: "RUMAH_TANGGA",
+    binType: "ORGANIK",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -463,6 +469,10 @@ const ManajemenTempatSampah: React.FC = () => {
   const [searchInput, setSearchInput] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
+  const [kepemilikanFilter, setKepemilikanFilter] = useState("");
+  const [isKepemilikanDropdownOpen, setIsKepemilikanDropdownOpen] = useState(false);
+  const [binTypeFilter, setBinTypeFilter] = useState("");
+  const [isBinTypeDropdownOpen, setIsBinTypeDropdownOpen] = useState(false);
 
   // Phone formatter matching ManajemenPengguna.tsx
   const formatPhone = (phone?: string) => {
@@ -496,34 +506,67 @@ const ManajemenTempatSampah: React.FC = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchInput, statusFilter, rowsPerPage]);
+  }, [searchInput, statusFilter, kepemilikanFilter, binTypeFilter, rowsPerPage]);
 
   const filteredBins = useMemo(() => {
     return bins.filter((bin) => {
-      if (!statusFilter || statusFilter === "Semua Status" || statusFilter === "Semua Status Keterisian") return true;
-      if (statusFilter === "Teraktivasi Warga" || statusFilter === "ACTIVE_BOUND") {
-        return bin.status === "ACTIVE_BOUND" || bin.wargaName || bin.user?.name;
-      }
-      if (statusFilter === "Stiker Belum Terikat" || statusFilter === "Stiker Belum Terikat (PRINTED)" || statusFilter === "PRINTED") {
-        return (bin.status === "PRINTED" || bin.status === "PENDING_APPROVAL") && !bin.wargaName && !bin.user?.name;
-      }
-      if (statusFilter === "Ditugaskan ke PIC" || statusFilter === "ASSIGNED_TO_PIC") {
-        return bin.status === "ASSIGNED_TO_PIC";
-      }
-      const cap = Number(bin.kapasitas || 0);
-      const isPenuh = cap > 90 || bin.status === "Penuh" || bin.realStatus === "BROKEN";
-      const isSedang = !isPenuh && cap >= 70;
-      const isAman = !isPenuh && !isSedang && cap < 70;
+      if (statusFilter && statusFilter !== "Semua Status") {
+        const sf = statusFilter.toLowerCase().trim();
+        const st = (bin.status || "").toLowerCase();
+        const rst = (bin.realStatus || "").toLowerCase();
+        const baku = (bin.statusBaku || "").toLowerCase();
+        const disp = (bin.statusDisplay || "").toLowerCase();
 
-      if (statusFilter === "Aman" || statusFilter === "Aman (<70%)") return isAman;
-      if (statusFilter === "Sedang" || statusFilter === "Sedang (70-89%)") return isSedang;
-      if (statusFilter === "Penuh" || statusFilter === "Penuh (≥90%)") return isPenuh;
-      if (statusFilter === "Perbaikan" || statusFilter === "Perbaikan / Rusak") {
-        return bin.status === "Perbaikan" || bin.realStatus === "BROKEN" || bin.realStatus === "PENDING_APPROVAL" || bin.status === "BROKEN";
+        if (sf === "aktif terpasang" || sf === "teraktivasi warga" || sf === "aktif" || sf === "aktif_terpasang") {
+          if (!(baku === "aktif_terpasang" || disp === "aktif terpasang" || rst === "active_bound" || rst === "active" || st === "active_bound" || bin.wargaName || bin.user?.name)) return false;
+        } else if (sf === "tercetak" || sf === "stiker belum terikat" || sf === "printed") {
+          if (!(baku === "tercetak" || disp === "tercetak" || rst === "printed" || st === "printed" || bin.status === "PRINTED")) return false;
+        } else if (sf === "tidak aktif" || sf === "non_aktif" || sf === "inactive") {
+          if (!(baku === "non_aktif" || disp === "tidak aktif" || rst === "inactive" || st === "inactive")) return false;
+        } else if (sf === "rusak" || sf === "perbaikan" || sf === "perbaikan / rusak" || sf === "broken") {
+          if (!(baku === "rusak" || disp === "rusak" || rst === "broken" || st === "broken" || st === "rusak" || st === "perbaikan")) return false;
+        } else if (sf.includes("aman")) {
+          const cap = Number(bin.kapasitas || 0);
+          if (cap >= 70 || baku === "rusak" || disp === "rusak") return false;
+        } else if (sf.includes("sedang")) {
+          const cap = Number(bin.kapasitas || 0);
+          if (cap < 70 || cap > 90 || baku === "rusak" || disp === "rusak") return false;
+        } else if (sf.includes("penuh")) {
+          const cap = Number(bin.kapasitas || 0);
+          if (cap <= 90 || baku === "rusak" || disp === "rusak") return false;
+        }
       }
+
+      if (kepemilikanFilter && kepemilikanFilter !== "Semua Kepemilikan" && kepemilikanFilter !== "Semua") {
+        const kf = kepemilikanFilter.toLowerCase().trim();
+        const binKep = (bin.tipeKepemilikan || (bin.user ? "rumah_tangga" : "komunal_rw")).toLowerCase();
+        if (!binKep.includes(kf) && !kf.includes(binKep)) return false;
+      }
+
+      if (binTypeFilter && binTypeFilter !== "Semua Jenis" && binTypeFilter !== "Semua") {
+        const btf = binTypeFilter.toLowerCase().trim();
+        const binT = (bin.jenisWadah || bin.binType || "").toLowerCase();
+        if (!binT.includes(btf) && !btf.includes(binT)) return false;
+      }
+
+      if (searchInput.trim()) {
+        const q = searchInput.toLowerCase().trim();
+        const match =
+          (bin.kode || "").toLowerCase().includes(q) ||
+          (bin.qrCode || "").toLowerCase().includes(q) ||
+          (bin.deskripsiLokasi || "").toLowerCase().includes(q) ||
+          (bin.tipeKepemilikan || "").toLowerCase().includes(q) ||
+          (bin.jenisWadah || bin.binType || "").toLowerCase().includes(q) ||
+          (bin.lokasi || bin.address || "").toLowerCase().includes(q) ||
+          (bin.rw || "").toLowerCase().includes(q) ||
+          (bin.kelurahan || "").toLowerCase().includes(q) ||
+          (bin.wargaName || bin.user?.name || "").toLowerCase().includes(q);
+        if (!match) return false;
+      }
+
       return true;
     });
-  }, [bins, statusFilter]);
+  }, [bins, statusFilter, kepemilikanFilter, binTypeFilter, searchInput]);
 
   const totalPages = Math.max(1, Math.ceil(filteredBins.length / rowsPerPage));
   const startIndex = (currentPage - 1) * rowsPerPage;
@@ -536,6 +579,8 @@ const ManajemenTempatSampah: React.FC = () => {
       const query = new URLSearchParams();
       if (searchInput) query.append("search", searchInput);
       if (statusFilter) query.append("status", statusFilter);
+      if (kepemilikanFilter) query.append("tipeKepemilikan", kepemilikanFilter);
+      if (binTypeFilter) query.append("binType", binTypeFilter);
       const res = await api.get(`/bins?${query.toString()}`);
       setBins(res.data.data || []);
     } catch (err) {
@@ -576,7 +621,7 @@ const ManajemenTempatSampah: React.FC = () => {
 
   useEffect(() => {
     fetchBins();
-  }, [statusFilter]);
+  }, [statusFilter, kepemilikanFilter, binTypeFilter]);
 
   useEffect(() => {
     fetchHouseholds();
@@ -594,14 +639,17 @@ const ManajemenTempatSampah: React.FC = () => {
     const targetId = bin.id || bin.kode;
     setSelectedBin(targetId);
     setFormData({
-      qrCode: bin.kode,
+      qrCode: bin.kode || bin.qrCode,
       categoryId: bin.categoryId || "organik",
       rtRwId: bin.rwId || 1,
       latitude: bin.latitude ? bin.latitude.toString() : "",
       longitude: bin.longitude ? bin.longitude.toString() : "",
       maxCapacityLiter: bin.maxCapacityLiter || 25,
       userId: bin.userId || "",
-      status: bin.realStatus || bin.status || "ACTIVE_BOUND",
+      status: bin.statusBaku || bin.realStatus || bin.status || "AKTIF_TERPASANG",
+      deskripsiLokasi: bin.deskripsiLokasi || "",
+      tipeKepemilikan: bin.tipeKepemilikan || (bin.user ? "RUMAH_TANGGA" : "KOMUNAL_RW"),
+      binType: bin.binType || bin.jenisWadah || "ORGANIK",
     });
     setIsFormModalOpen(true);
   };
@@ -627,7 +675,7 @@ const ManajemenTempatSampah: React.FC = () => {
       };
 
       await api.put(`/bins/${selectedBin}`, payload);
-      toast.success("Data kode QR tempat sampah berhasil diperbarui!");
+      toast.success("Data keterangan tempat sampah berhasil diperbarui!");
       closeFormModal();
       await fetchBins();
       await fetchHouseholds();
@@ -1544,77 +1592,179 @@ const ManajemenTempatSampah: React.FC = () => {
             </div>
           </div>
 
-      {/* Search & Filter Toolbar matching User Screenshot */}
+      {/* Search & Multi-Filter Toolbar */}
       <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-3">
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
           {/* Search Box */}
-          <div className="relative w-full md:w-96">
+          <div className="relative flex-1 max-w-full lg:max-w-md">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="Cari kode tempat sampah, nama pemilik, lokasi/alamat, atau wilayah RW..."
+              placeholder="Cari kode, deskripsi lokasi spesifik, pemilik, RW, kelurahan..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-[#009966] focus:bg-white dark:focus:bg-slate-800 transition-all"
             />
           </div>
 
-          {/* Status Filter Dropdown */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
-              className="flex items-center gap-2.5 px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-extrabold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all cursor-pointer shadow-2xs"
-            >
-              <span className={`w-2 h-2 rounded-full ${
-                statusFilter === "Teraktivasi Warga" || statusFilter === "Aman" || statusFilter === "Aman (<70%)" || statusFilter === "ACTIVE" || statusFilter === "Aktif"
-                  ? "bg-emerald-500"
-                  : statusFilter === "Stiker Belum Terikat" || statusFilter === "Sedang" || statusFilter === "Sedang (70-89%)"
-                  ? "bg-amber-500"
-                  : statusFilter === "Penuh" || statusFilter === "Penuh (≥90%)" || statusFilter === "Perbaikan" || statusFilter === "Perbaikan / Rusak"
-                  ? "bg-rose-500"
-                  : "bg-slate-400"
-              }`} />
-              <span>{statusFilter ? statusFilter : "Semua Status"}</span>
-              <ChevronDown size={14} className="text-slate-400" />
-            </button>
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* 1. Filter Tipe Kepemilikan */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsKepemilikanDropdownOpen(!isKepemilikanDropdownOpen)}
+                className="flex items-center gap-2 px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-extrabold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all cursor-pointer shadow-2xs"
+              >
+                <span className="text-slate-400 text-[11px] font-medium">Kepemilikan:</span>
+                <span>{kepemilikanFilter || "Semua"}</span>
+                <ChevronDown size={14} className="text-slate-400" />
+              </button>
 
-            {isStatusDropdownOpen && (
-              <>
-                <div className="fixed inset-0 z-20" onClick={() => setIsStatusDropdownOpen(false)} />
-                <div className="absolute right-0 mt-2 w-60 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-xl z-30 p-1.5 space-y-1 animate-in fade-in zoom-in-95 duration-150">
-                  {[
-                    "Semua Status",
-                    "Teraktivasi Warga",
-                    "Stiker Belum Terikat",
-                    "Aman (<70%)",
-                    "Sedang (70-89%)",
-                    "Penuh (≥90%)",
-                    "Perbaikan / Rusak",
-                  ].map((st) => {
-                    const isSelected = (st === "Semua Status" && !statusFilter) || statusFilter === st;
-                    return (
-                      <button
-                        key={st}
-                        type="button"
-                        onClick={() => {
-                          setStatusFilter(st === "Semua Status" ? "" : st);
-                          setIsStatusDropdownOpen(false);
-                        }}
-                        className={`w-full text-left px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
-                          isSelected
-                            ? "bg-emerald-50/80 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 font-extrabold"
-                            : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold"
-                        }`}
-                      >
-                        <span>{st}</span>
-                        {isSelected && <Check size={16} className="text-[#009966] dark:text-emerald-400" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              </>
-            )}
+              {isKepemilikanDropdownOpen && (
+                <>
+                  <div className="fixed inset-0 z-20" onClick={() => setIsKepemilikanDropdownOpen(false)} />
+                  <div className="absolute right-0 mt-2 w-52 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-xl z-30 p-1.5 space-y-1 animate-in fade-in zoom-in-95 duration-150">
+                    {["Semua Kepemilikan", "Rumah Tangga", "Komunal RW"].map((kep) => {
+                      const isSelected = (kep === "Semua Kepemilikan" && !kepemilikanFilter) || kepemilikanFilter === kep;
+                      return (
+                        <button
+                          key={kep}
+                          type="button"
+                          onClick={() => {
+                            setKepemilikanFilter(kep === "Semua Kepemilikan" ? "" : kep);
+                            setIsKepemilikanDropdownOpen(false);
+                          }}
+                          className={`w-full text-left px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
+                            isSelected
+                              ? "bg-emerald-50/80 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 font-extrabold"
+                              : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold"
+                          }`}
+                        >
+                          <span>{kep}</span>
+                          {isSelected && <Check size={16} className="text-[#009966] dark:text-emerald-400" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* 2. Filter Jenis Wadah */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsBinTypeDropdownOpen(!isBinTypeDropdownOpen)}
+                className="flex items-center gap-2 px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-extrabold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all cursor-pointer shadow-2xs"
+              >
+                <span className="text-slate-400 text-[11px] font-medium">Jenis:</span>
+                <span>{binTypeFilter || "Semua"}</span>
+                <ChevronDown size={14} className="text-slate-400" />
+              </button>
+
+              {isBinTypeDropdownOpen && (
+                <>
+                  <div className="fixed inset-0 z-20" onClick={() => setIsBinTypeDropdownOpen(false)} />
+                  <div className="absolute right-0 mt-2 w-52 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-xl z-30 p-1.5 space-y-1 animate-in fade-in zoom-in-95 duration-150">
+                    {["Semua Jenis", "Organik", "Anorganik", "Terpilah", "Residu"].map((jt) => {
+                      const isSelected = (jt === "Semua Jenis" && !binTypeFilter) || binTypeFilter === jt;
+                      return (
+                        <button
+                          key={jt}
+                          type="button"
+                          onClick={() => {
+                            setBinTypeFilter(jt === "Semua Jenis" ? "" : jt);
+                            setIsBinTypeDropdownOpen(false);
+                          }}
+                          className={`w-full text-left px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
+                            isSelected
+                              ? "bg-emerald-50/80 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 font-extrabold"
+                              : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold"
+                          }`}
+                        >
+                          <span>{jt}</span>
+                          {isSelected && <Check size={16} className="text-[#009966] dark:text-emerald-400" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* 3. Status Filter Dropdown (Bahasa Indonesia Baku) */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
+                className="flex items-center gap-2.5 px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-extrabold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all cursor-pointer shadow-2xs"
+              >
+                <span className={`w-2 h-2 rounded-full ${
+                  statusFilter === "Aktif Terpasang" || statusFilter === "Teraktivasi Warga" || statusFilter === "Aman (<70%)"
+                    ? "bg-emerald-500"
+                    : statusFilter === "Tercetak" || statusFilter === "Sedang (70-89%)"
+                    ? "bg-amber-500"
+                    : statusFilter === "Rusak" || statusFilter === "Perbaikan / Rusak" || statusFilter === "Penuh (≥90%)"
+                    ? "bg-rose-500"
+                    : statusFilter === "Tidak Aktif"
+                    ? "bg-slate-500"
+                    : "bg-slate-400"
+                }`} />
+                <span>{statusFilter ? statusFilter : "Semua Status"}</span>
+                <ChevronDown size={14} className="text-slate-400" />
+              </button>
+
+              {isStatusDropdownOpen && (
+                <>
+                  <div className="fixed inset-0 z-20" onClick={() => setIsStatusDropdownOpen(false)} />
+                  <div className="absolute right-0 mt-2 w-60 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-xl z-30 p-1.5 space-y-1 animate-in fade-in zoom-in-95 duration-150">
+                    {[
+                      "Semua Status",
+                      "Aktif Terpasang",
+                      "Tercetak",
+                      "Tidak Aktif",
+                      "Rusak",
+                      "Aman (<70%)",
+                      "Sedang (70-89%)",
+                      "Penuh (≥90%)",
+                    ].map((st) => {
+                      const isSelected = (st === "Semua Status" && !statusFilter) || statusFilter === st;
+                      return (
+                        <button
+                          key={st}
+                          type="button"
+                          onClick={() => {
+                            setStatusFilter(st === "Semua Status" ? "" : st);
+                            setIsStatusDropdownOpen(false);
+                          }}
+                          className={`w-full text-left px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
+                            isSelected
+                              ? "bg-emerald-50/80 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 font-extrabold"
+                              : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className={`w-2 h-2 rounded-full ${
+                              st === "Aktif Terpasang" || st === "Aman (<70%)"
+                                ? "bg-emerald-500"
+                                : st === "Tercetak" || st === "Sedang (70-89%)"
+                                ? "bg-amber-500"
+                                : st === "Rusak" || st === "Penuh (≥90%)"
+                                ? "bg-rose-500"
+                                : st === "Tidak Aktif"
+                                ? "bg-slate-500"
+                                : "bg-slate-400"
+                            }`} />
+                            <span>{st}</span>
+                          </div>
+                          {isSelected && <Check size={16} className="text-[#009966] dark:text-emerald-400" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -1627,12 +1777,13 @@ const ManajemenTempatSampah: React.FC = () => {
               <tr className="bg-slate-50/80 dark:bg-slate-800/80 text-[10.5px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-700 whitespace-nowrap">
                 <th className="py-3 px-4 text-center whitespace-nowrap">QR CODE</th>
                 <th className="py-3 px-4 whitespace-nowrap">KODE TEMPAT SAMPAH</th>
-                <th className="py-3 px-4 whitespace-nowrap">KATEGORI</th>
+                <th className="py-3 px-4 whitespace-nowrap">LOKASI SPESIFIK</th>
+                <th className="py-3 px-4 whitespace-nowrap">JENIS WADAH</th>
+                <th className="py-3 px-4 whitespace-nowrap">KEPEMILIKAN</th>
                 <th className="py-3 px-4 whitespace-nowrap">PEMILIK</th>
-                <th className="py-3 px-4 text-center whitespace-nowrap">KAPASITAS MAKSIMUM</th>
+                <th className="py-3 px-4 text-center whitespace-nowrap">KAPASITAS</th>
                 <th className="py-3 px-4 whitespace-nowrap">RASIO KETERISIAN</th>
-                <th className="py-3 px-4 text-center whitespace-nowrap">STATUS QR</th>
-                <th className="py-3 px-4 text-center whitespace-nowrap">STATUS KAPASITAS</th>
+                <th className="py-3 px-4 text-center whitespace-nowrap">STATUS WADAH</th>
                 <th className="py-3 px-4 whitespace-nowrap">WAKTU AKTIVASI</th>
                 <th className="py-3 px-4 whitespace-nowrap">GPS</th>
                 {!isReadOnly && <th className="py-3 px-4 text-center whitespace-nowrap">AKSI</th>}
@@ -1641,7 +1792,7 @@ const ManajemenTempatSampah: React.FC = () => {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
             {loading ? (
               <tr>
-                <td colSpan={isReadOnly ? 10 : 11} className="px-6 py-16 text-center">
+                <td colSpan={isReadOnly ? 11 : 12} className="px-6 py-16 text-center">
                   <div className="flex flex-col items-center justify-center gap-3">
                     <div className="w-12 h-12 rounded-2xl bg-[#009966]/10 text-[#009966] dark:text-emerald-400 flex items-center justify-center border border-[#009966]/20 dark:border-emerald-700/40 shadow-xs">
                       <Loader2 className="animate-spin text-[#009966]" size={24} />
@@ -1655,7 +1806,7 @@ const ManajemenTempatSampah: React.FC = () => {
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan={isReadOnly ? 10 : 11} className="px-6 py-12 text-center">
+                <td colSpan={isReadOnly ? 11 : 12} className="px-6 py-12 text-center">
                   <div className="flex flex-col items-center justify-center gap-3">
                     <div className="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center border border-rose-100 dark:border-rose-700/50 shadow-xs">
                       <AlertTriangle size={24} />
@@ -1676,14 +1827,28 @@ const ManajemenTempatSampah: React.FC = () => {
               </tr>
             ) : bins.length > 0 ? (
               paginatedBins.map((bin) => {
-                const categoryName = String(bin.category?.name || bin.kategori || bin.categoryId || "Organik").toLowerCase();
-                const isResiduBin = categoryName.includes("residu") || categoryName.includes("b3");
-                const isAnorganikBin = categoryName.includes("anorganik");
-                const catText = isResiduBin ? "Residu" : isAnorganikBin ? "Anorganik" : "Organik";
+                const jwUpper = (bin.jenisWadah || bin.binType || bin.category?.name || "Organik").toUpperCase();
+                const isResiduBin = jwUpper.includes("RESIDU") || jwUpper.includes("B3");
+                const isAnorganikBin = jwUpper.includes("ANORGANIK");
+                const isTerpilahBin = jwUpper.includes("TERPILAH");
+                const catText = isResiduBin ? "Residu" : isAnorganikBin ? "Anorganik" : isTerpilahBin ? "Terpilah" : "Organik";
+
+                const kepUpper = (bin.tipeKepemilikan || (bin.user ? "RUMAH_TANGGA" : "KOMUNAL_RW")).toUpperCase();
+                const isKomunal = kepUpper.includes("KOMUNAL");
+
+                const baku = bin.statusBaku || (
+                  bin.status === "ACTIVE_BOUND" || bin.status === "ACTIVE"
+                    ? "AKTIF_TERPASANG"
+                    : bin.status === "BROKEN" || bin.realStatus === "BROKEN"
+                    ? "RUSAK"
+                    : bin.status === "INACTIVE"
+                    ? "NON_AKTIF"
+                    : "TERCETAK"
+                );
 
                 return (
                   <tr
-                    key={bin.kode}
+                    key={bin.kode || bin.id}
                     className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/50 transition-colors text-xs text-slate-700 dark:text-slate-300 font-medium whitespace-nowrap"
                   >
                     {/* 1. QR CODE */}
@@ -1713,20 +1878,51 @@ const ManajemenTempatSampah: React.FC = () => {
                       </button>
                     </td>
 
-                    {/* 3. KATEGORI */}
+                    {/* 3. LOKASI SPESIFIK */}
+                    <td className="py-3 px-4 whitespace-nowrap">
+                      {bin.deskripsiLokasi ? (
+                        <div className="flex items-center gap-1.5 text-slate-800 dark:text-slate-200 font-bold">
+                          <MapPin size={14} className="text-[#009966] shrink-0" />
+                          <span className="truncate max-w-[200px]" title={bin.deskripsiLokasi}>
+                            {bin.deskripsiLokasi}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-slate-400 italic text-[11px]">
+                          <MapPin size={12} className="text-slate-300 dark:text-slate-600" />
+                          Belum dispesifikasi
+                        </span>
+                      )}
+                    </td>
+
+                    {/* 4. JENIS WADAH */}
                     <td className="py-3 px-4 whitespace-nowrap">
                       <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
                         isResiduBin
                           ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
                           : isAnorganikBin
                           ? "bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-700/50"
+                          : isTerpilahBin
+                          ? "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700/50"
                           : "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/50"
                       }`}>
                         {catText}
                       </span>
                     </td>
 
-                    {/* 4. PEMILIK */}
+                    {/* 5. KEPEMILIKAN */}
+                    <td className="py-3 px-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
+                        isKomunal
+                          ? "bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-700/50"
+                          : "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/50"
+                      }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${isKomunal ? "bg-purple-500" : "bg-emerald-500"}`} />
+                        {isKomunal ? "Komunal RW" : "Rumah Tangga"}
+                      </span>
+                    </td>
+
+                    {/* 6. PEMILIK */}
                     <td className="py-3 px-4 whitespace-nowrap">
                       {bin.wargaName || bin.user?.name ? (
                         <div>
@@ -1742,7 +1938,7 @@ const ManajemenTempatSampah: React.FC = () => {
                       )}
                     </td>
 
-                    {/* 5. KAPASITAS MAKSIMUM (LITER) */}
+                    {/* 7. KAPASITAS MAKSIMUM (LITER) */}
                     <td className="py-3 px-4 text-center whitespace-nowrap">
                       <span className="font-bold text-slate-800 dark:text-slate-200 text-xs">
                         {bin.maxCapacityLiter || 25} Liter
@@ -1750,7 +1946,7 @@ const ManajemenTempatSampah: React.FC = () => {
                       <span className="block text-[9.5px] text-slate-400 font-medium">Batas Maks</span>
                     </td>
 
-                    {/* 6. RASIO KETERISIAN (%) */}
+                    {/* 8. RASIO KETERISIAN (%) */}
                     <td className="py-3 px-4 whitespace-nowrap">
                       <div className="flex flex-col gap-1 min-w-[120px]">
                         <div className="flex justify-between items-center text-[11px] font-bold">
@@ -1771,57 +1967,28 @@ const ManajemenTempatSampah: React.FC = () => {
                       </div>
                     </td>
 
-                    {/* 7. STATUS QR */}
+                    {/* 9. STATUS WADAH (Standardized Indonesian Baku) */}
                     <td className="py-3 px-4 text-center whitespace-nowrap">
-                      {bin.wargaName || bin.user?.name || bin.status === "ACTIVE_BOUND" ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/50">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                          Aktif
-                        </span>
-                      ) : bin.status === "ASSIGNED_TO_PIC" ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700/50">
-                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                          Ditugaskan ke PIC
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700/50">
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                          Belum Digunakan
-                        </span>
-                      )}
-                    </td>
-
-                    {/* 8. STATUS KAPASITAS */}
-                    <td className="py-3 px-4 text-center whitespace-nowrap">
-                      {(() => {
-                        const isBroken = bin.status === "Perbaikan" || bin.realStatus === "BROKEN";
-                        const fillStatus = isBroken
-                          ? "Perbaikan"
-                          : bin.kapasitas > 90
-                          ? "Penuh"
-                          : bin.kapasitas >= 70
-                          ? "Sedang"
-                          : "Aman";
-
-                        return (
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
-                            fillStatus === "Penuh"
-                              ? "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-700/50"
-                              : fillStatus === "Sedang" || fillStatus === "Perbaikan"
-                              ? "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700/50"
-                              : "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/50"
-                          }`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${
-                              fillStatus === "Penuh"
-                                ? "bg-rose-500"
-                                : fillStatus === "Sedang" || fillStatus === "Perbaikan"
-                                ? "bg-amber-500"
-                                : "bg-emerald-500"
-                            }`} />
-                            {fillStatus}
-                          </span>
-                        );
-                      })()}
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
+                        baku === "AKTIF_TERPASANG"
+                          ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/50"
+                          : baku === "TERCETAK"
+                          ? "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700/50"
+                          : baku === "RUSAK"
+                          ? "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-700/50"
+                          : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                      }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${
+                          baku === "AKTIF_TERPASANG"
+                            ? "bg-emerald-500"
+                            : baku === "TERCETAK"
+                            ? "bg-amber-500"
+                            : baku === "RUSAK"
+                            ? "bg-rose-500"
+                            : "bg-slate-400"
+                        }`} />
+                        {baku === "AKTIF_TERPASANG" ? "Aktif Terpasang" : baku === "TERCETAK" ? "Tercetak" : baku === "RUSAK" ? "Rusak" : "Tidak Aktif"}
+                      </span>
                     </td>
 
                     {/* 9. WAKTU AKTIVASI */}
@@ -2151,8 +2318,60 @@ const ManajemenTempatSampah: React.FC = () => {
                   type="text"
                   readOnly
                   value={formData.qrCode || selectedBin || ""}
-                  className="w-full h-12 px-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-100/80 dark:bg-slate-800/80 dark:bg-slate-800 font-mono font-bold text-slate-700 dark:text-slate-300 text-xs outline-none"
+                  className="w-full h-12 px-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-100/80 dark:bg-slate-800/80 font-mono font-bold text-slate-700 dark:text-slate-300 text-xs outline-none"
                 />
+              </div>
+
+              {/* Deskripsi Lokasi Spesifik */}
+              <div>
+                <label className="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
+                  Deskripsi Lokasi Spesifik
+                </label>
+                <div className="relative">
+                  <MapPin size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Contoh: Depan Pos RW 05, Samping Masjid Al-Hidayah, Gg. Melati RT 02"
+                    value={formData.deskripsiLokasi || ""}
+                    onChange={(e) => setFormData({ ...formData, deskripsiLokasi: e.target.value })}
+                    className="w-full h-12 pl-10 pr-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/70 focus:bg-white dark:focus:bg-slate-800 focus:border-[#009966] text-xs font-bold text-slate-800 dark:text-slate-100 outline-none transition-all"
+                  />
+                </div>
+                <p className="text-[10.5px] text-slate-400 mt-1 font-medium">
+                  Tuliskan patokan fisik lokasi penempatan tempat sampah agar mudah ditemukan di lapangan.
+                </p>
+              </div>
+
+              {/* Tipe Kepemilikan */}
+              <div>
+                <label className="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
+                  Tipe Kepemilikan Wadah <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  value={formData.tipeKepemilikan || "RUMAH_TANGGA"}
+                  onChange={(e) => setFormData({ ...formData, tipeKepemilikan: e.target.value })}
+                  className="w-full h-12 px-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/70 focus:bg-white dark:focus:bg-slate-800 focus:border-[#009966] text-xs font-bold text-slate-800 dark:text-slate-100 outline-none transition-all cursor-pointer"
+                >
+                  <option value="RUMAH_TANGGA">Rumah Tangga (Warga Mandiri)</option>
+                  <option value="KOMUNAL_RW">Komunal RW (Fasilitas Umum RW)</option>
+                </select>
+              </div>
+
+              {/* Jenis Wadah / Tipe Sampah */}
+              <div>
+                <label className="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
+                  Jenis Wadah / Pilahan Sampah <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  value={(formData.binType || "ORGANIK").toUpperCase()}
+                  onChange={(e) => setFormData({ ...formData, binType: e.target.value })}
+                  className="w-full h-12 px-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/70 focus:bg-white dark:focus:bg-slate-800 focus:border-[#009966] text-xs font-bold text-slate-800 dark:text-slate-100 outline-none transition-all cursor-pointer"
+                >
+                  <option value="ORGANIK">Organik (Sampah Dapur / Sisa Makanan)</option>
+                  <option value="ANORGANIK">Anorganik (Plastik, Kertas, Logam, Botol)</option>
+                  <option value="TERPILAH">Terpilah (Multi-Kompartemen)</option>
+                  <option value="RESIDU">Residu / B3</option>
+                </select>
               </div>
 
               <div>
@@ -2163,7 +2382,7 @@ const ManajemenTempatSampah: React.FC = () => {
                   required
                   value={formData.categoryId}
                   onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                  className="w-full h-12 px-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/70 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 focus:border-[#009966] text-xs font-bold text-slate-800 dark:text-slate-100 outline-none transition-all cursor-pointer"
+                  className="w-full h-12 px-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/70 focus:bg-white dark:focus:bg-slate-800 focus:border-[#009966] text-xs font-bold text-slate-800 dark:text-slate-100 outline-none transition-all cursor-pointer"
                 >
                   {categories.length > 0 ? (
                     categories.map((c) => (
@@ -2189,31 +2408,58 @@ const ManajemenTempatSampah: React.FC = () => {
                   required
                   value={formData.maxCapacityLiter}
                   onChange={(e) => setFormData({ ...formData, maxCapacityLiter: parseFloat(e.target.value) })}
-                  className="w-full h-12 px-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/70 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 focus:border-[#009966] text-xs font-bold text-slate-800 dark:text-slate-100 outline-none transition-all"
+                  className="w-full h-12 px-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/70 focus:bg-white dark:focus:bg-slate-800 focus:border-[#009966] text-xs font-bold text-slate-800 dark:text-slate-100 outline-none transition-all"
                 />
+              </div>
+
+              {/* Status Wadah Baku */}
+              <div>
+                <label className="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
+                  Status Wadah Tempat Sampah <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  value={formData.status || "AKTIF_TERPASANG"}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                  className="w-full h-12 px-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/70 focus:bg-white dark:focus:bg-slate-800 focus:border-[#009966] text-xs font-bold text-slate-800 dark:text-slate-100 outline-none transition-all cursor-pointer"
+                >
+                  <option value="AKTIF_TERPASANG">Aktif Terpasang (Terikat Warga / Wilayah)</option>
+                  <option value="TERCETAK">Tercetak (Stiker Siap Pasang / Belum Terikat)</option>
+                  <option value="NON_AKTIF">Tidak Aktif (Dinonaktifkan)</option>
+                  <option value="RUSAK">Rusak / Dalam Perbaikan</option>
+                </select>
               </div>
 
               <div>
                 <label className="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
-                  Status Operasional (Sensor Real-time)
+                  Status Operasional Lapangan
                 </label>
 
                 {/* Status Card 1 */}
-                <div className="p-4 bg-slate-50/60 dark:bg-slate-800/60 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700 rounded-2xl flex items-center justify-between gap-3">
+                <div className="p-4 bg-slate-50/60 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700 rounded-2xl flex items-center justify-between gap-3">
                   <div>
                     <span className="text-xs font-extrabold text-slate-800 dark:text-slate-200 block mb-0.5">
-                      Status Otomatis Lapangan
+                      Tingkat Keterisian & Sensor
                     </span>
                     <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-snug block max-w-[230px]">
-                      Dihitung otomatis dari persentase volume terisi dari sensor mobile.
+                      Status wadah sinkron dengan sensor keterisian dan pencatatan petugas.
                     </span>
                   </div>
                   <span className={`px-3 py-1.5 rounded-full text-[10.5px] font-extrabold uppercase tracking-wide border shrink-0 ${
-                    formData.status === "BROKEN" || formData.status === "Rusak"
+                    formData.status === "RUSAK" || formData.status === "BROKEN" || formData.status === "Rusak"
                       ? "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-700/50"
+                      : formData.status === "NON_AKTIF" || formData.status === "INACTIVE"
+                      ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+                      : formData.status === "TERCETAK" || formData.status === "PRINTED"
+                      ? "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700/50"
                       : "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/50"
                   }`}>
-                    {formData.status === "BROKEN" ? "Rusak" : "Aktif"}
+                    {formData.status === "RUSAK" || formData.status === "BROKEN"
+                      ? "Rusak"
+                      : formData.status === "NON_AKTIF"
+                      ? "Tidak Aktif"
+                      : formData.status === "TERCETAK"
+                      ? "Tercetak"
+                      : "Aktif"}
                   </span>
                 </div>
 
@@ -2221,11 +2467,11 @@ const ManajemenTempatSampah: React.FC = () => {
                 <label className="mt-3 flex items-start gap-3 p-4 rounded-2xl border border-amber-200/80 dark:border-amber-700/50 bg-amber-50/40 dark:bg-amber-950/30 text-slate-700 dark:text-slate-300 cursor-pointer hover:bg-amber-50/80 dark:hover:bg-amber-950/50 transition-all">
                   <input
                     type="checkbox"
-                    checked={formData.status === "BROKEN" || formData.status === "Rusak"}
+                    checked={formData.status === "RUSAK" || formData.status === "BROKEN" || formData.status === "Rusak"}
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        status: e.target.checked ? "BROKEN" : "ACTIVE_BOUND",
+                        status: e.target.checked ? "RUSAK" : "AKTIF_TERPASANG",
                       })
                     }
                     className="mt-0.5 w-4 h-4 text-amber-600 rounded border-slate-300 dark:border-slate-600 focus:ring-amber-500 cursor-pointer"

@@ -197,23 +197,28 @@ export function canAccessSidebarRoute(
     return true;
   }
 
-  // 7. Rute Dasbor & Analisis Sistem & Monitoring Wilayah (Terbuka untuk PIMPINAN)
+  // 7. Rute Dasbor & Analisis Sistem & Monitoring Wilayah & Manajemen IoT (Terbuka untuk PIMPINAN)
   if (
     cleanPath === "/dasbor" ||
     cleanPath === "/analisis-sistem/tata-kelola-sampah" ||
     cleanPath === "/analisis-sistem/kkn" ||
-    cleanPath === "/monitoring-wilayah"
+    cleanPath === "/monitoring-wilayah" ||
+    cleanPath === "/manajemen-iot" ||
+    cleanPath === "/iot"
   ) {
     return true;
   }
 
-  // 8. Rute Pelaksanaan, Monitoring, Penilaian, Logbook KKN (Terbuka untuk PIMPINAN)
+  // 8. Rute Pelaksanaan, Monitoring, Penilaian, Logbook, Hasil Survei, dan Laporan Resmi KKN (Terbuka untuk PIMPINAN)
   const isKknExecutiveAllowed =
     cleanPath.startsWith("/pelaksanaan/") ||
     cleanPath.startsWith("/monitoring-kegiatan/") ||
     cleanPath.startsWith("/penilaian/") ||
     cleanPath.startsWith("/log-aktivitas/") ||
-    cleanPath.startsWith("/hasil-survei/");
+    cleanPath.startsWith("/hasil-survei/") ||
+    cleanPath.startsWith("/laporan/") ||
+    cleanPath === "/laporan/kkn" ||
+    cleanPath === "/laporan-pimpinan/kkn";
 
   if (isKknExecutiveAllowed) {
     return true;

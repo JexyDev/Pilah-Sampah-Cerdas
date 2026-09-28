@@ -162,30 +162,14 @@ async function resolveAreaContext(wilayah?: string): Promise<ResolvedAreaContext
 
 /**
  * PENDING REVISE / SPRINT SINKRONISASI SURVEI KKN:
- * Konstanta fallback estimasi sementara untuk kelurahan yang belum memiliki
- * instrumen survei baseline terverifikasi di basis data PostgreSQL (SurveiPemilahanSampah & SurveiVolumeSampah).
- * 
- * ATURAN GOVERNANCE ANTI-DUMMY:
- * - Setiap angka dari fallback ini WAJIB ditandai dengan metadata `isFallback: true`
- *   agar antarmuka pengguna menampilkan badge/tanda "Estimasi" dan tidak menyesatkan eksekutif.
- * - Hapus fallback kelurahan terkait begitu data survei resmi telah diinput ke DB via form survei KKN.
+/**
+ * Konstanta fallback estimasi baseline telah DINONAKTIFKAN secara permanen
+ * sesuai arahan notulensi rapat pimpinan (Anti-Dummy Policy & Governance Faktual).
+ * Data baseline hanya boleh diambil dari basis data riil (SurveiKelurahan / SurveiPemilahanSampah).
+ * Objek kosong dipertahankan untuk backward compatibility jika ada import eksternal.
  */
-export const BASELINE_FALLBACK_RATES: Record<string, number> = {
-  cipaganti: 13.67, // Estimasi lapangan awal pra-intervensi (rentang 10-20%)
-  dago: 10.0,
-  lebakgede: 21.6,
-  lebaksiliwangi: 15.0,
-  sadangserang: 24.8,
-  sekeloa: 17.8,
-};
-
-export const BASELINE_FALLBACK_KG: Record<string, number> = {
-  dago: 500.0,
-  lebakgede: 250.0,
-  lebaksiliwangi: 10.0,
-  sadangserang: 7298.5,
-  sekeloa: 9723.4,
-};
+export const BASELINE_FALLBACK_RATES: Record<string, number> = {};
+export const BASELINE_FALLBACK_KG: Record<string, number> = {};
 
 export const dashboardService = {
   getKpi: async (
@@ -768,38 +752,28 @@ export const dashboardService = {
       const b = surveyBaselines.find((s) =>
         s.namaKelurahan.toLowerCase().replace(/\s+/g, "").includes(normK)
       );
-      // Baseline survei pemilahan dan timbulan sampah awal (pra-intervensi)
-      let baselineRate = 0;
-      let baselineKg = 0;
-      let isFallbackBaselineRate = false;
-      let isFallbackBaselineKg = false;
+      // Baseline survei pemilahan dan timbulan sampah awal (pra-intervensi) murni dari basis data
+      let baselineRate: number | null = null;
+      let baselineKg: number | null = null;
+      let hasBaseline = false;
 
       if (b?.volumeSampah) {
         const org = Number(b.volumeSampah.organikKgPerHari || 0);
         const anorgRaw = Number(b.volumeSampah.anorganikKgPerHari || 0);
         const anorg = anorgRaw > 10000 ? 0 : anorgRaw;
-        baselineKg = Number((org + anorg).toFixed(2));
+        if (org > 0 || anorg > 0) {
+          baselineKg = Number((org + anorg).toFixed(2));
+          hasBaseline = true;
+        }
       }
 
-      if (b?.pemilahanSampah?.persentasePemilahan) {
+      if (
+        b?.pemilahanSampah?.persentasePemilahan !== undefined &&
+        b?.pemilahanSampah?.persentasePemilahan !== null
+      ) {
         const val = Number(b.pemilahanSampah.persentasePemilahan);
         baselineRate = val <= 1 ? Number((val * 100).toFixed(2)) : Number(val.toFixed(2));
-      } else {
-        // Fallback eksplisit untuk kelurahan yang belum menyelesaikan input survei di DB
-        const matchKel = Object.keys(BASELINE_FALLBACK_RATES).find((key) => normK.includes(key));
-        if (matchKel && BASELINE_FALLBACK_RATES[matchKel] !== undefined) {
-          baselineRate = BASELINE_FALLBACK_RATES[matchKel];
-          isFallbackBaselineRate = true;
-        }
-      }
-
-      // Fallback volume sampah awal jika belum terinput di DB
-      if (!baselineKg) {
-        const matchKg = Object.keys(BASELINE_FALLBACK_KG).find((key) => normK.includes(key));
-        if (matchKg && BASELINE_FALLBACK_KG[matchKg] !== undefined) {
-          baselineKg = BASELINE_FALLBACK_KG[matchKg];
-          isFallbackBaselineKg = true;
-        }
+        hasBaseline = true;
       }
 
       const e = surveyEndlines.find((s) =>
@@ -861,6 +835,7 @@ export const dashboardService = {
       return {
         id: k.id,
         kelurahan: k.name,
+        hasBaseline,
         baselineRate,
         baselineKg,
         endlineRate,
@@ -870,10 +845,10 @@ export const dashboardService = {
         // bobot untuk agregasi lintas kelurahan
         setoranDinilai: kelDinilai,
         setoranPatuh: kelPatuh,
-        // Metadata transparansi asal data (Anti-Dummy Policy)
-        isFallbackBaselineRate,
-        isFallbackBaselineKg,
-        isFallback: isFallbackBaselineRate || isFallbackBaselineKg,
+        // Metadata transparansi asal data (Anti-Dummy Policy: 100% fakta sistem)
+        isFallbackBaselineRate: false,
+        isFallbackBaselineKg: false,
+        isFallback: false,
       };
     });
 

@@ -112,6 +112,7 @@ model Kelurahan {
   kecamatan   Kecamatan? @relation(fields: [kecamatanId], references: [id])
   bins        Bin[]
   rws         Rw[]
+  iotDevices  IoTDevice[]
 
   @@index([code])
   @@map("kelurahan")
@@ -141,6 +142,7 @@ model Rw {
   households      Household[]
   setoranManual   SetoranManual[]
   handovers       KknHandoverHistory[]
+  iotDevices      IoTDevice[]
 
   @@unique([kelurahanId, name])
   @@map("rw")
@@ -255,6 +257,7 @@ model User {
   notificationSync      UserNotificationSync?
   beritaKonten          BeritaKonten[]           @relation("BeritaAuthor")
   presensiMandiri       PresensiMandiri[]        @relation("PresensiMandiriStudent")
+  iotDevicesHandled     IoTDevice[]              @relation("PicIoTDevices")
 
   @@index([roleId])
   @@index([rwId])
@@ -361,6 +364,8 @@ model Bin {
   length                Decimal?          @map("panjang") @db.Decimal(5, 2)
   height                Decimal?          @map("tinggi") @db.Decimal(5, 2)
   binType               String?           @map("tipe_wadah")
+  deskripsiLokasi       String?           @map("deskripsi_lokasi")
+  tipeKepemilikan       String?           @default("RUMAH_TANGGA") @map("tipe_kepemilikan")
   binOwnerships         BinOwnership[]
   violations            Violation[]
   binResetRequests      BinResetRequest[]
@@ -1644,3 +1649,62 @@ model UniversitasMitra {
 
   @@map("universitas_mitra")
 }
+
+// ─────────────────────────────────────────────
+// MANAJEMEN IOT & SENSOR GAS METANA (CH4)
+// ─────────────────────────────────────────────
+
+enum CH4StatusLevel {
+  AMAN
+  WASPADA
+  BAHAYA
+}
+
+enum IoTDeviceStatus {
+  ACTIVE
+  INACTIVE
+  MAINTENANCE
+}
+
+model IoTDevice {
+  id           String          @id @default(uuid())
+  name         String          @map("nama")
+  nodeCode     String          @unique @map("kode_node")
+  locationName String          @map("nama_lokasi")
+  latitude     Decimal         @db.Decimal(11, 8)
+  longitude    Decimal         @db.Decimal(11, 8)
+  status       IoTDeviceStatus @default(ACTIVE) @map("status")
+  apiKey       String          @unique @map("api_key")
+  kelurahan    String?         @map("kelurahan")
+  kelurahanId  String?         @map("id_kelurahan")
+  rwId         Int?            @map("id_rw")
+  picUserId    String?         @map("id_petugas_pic")
+  createdAt    DateTime        @default(now()) @map("dibuat_pada")
+  updatedAt    DateTime        @updatedAt @map("diperbarui_pada")
+  readings     CH4Reading[]
+  kelurahanRef Kelurahan?      @relation(fields: [kelurahanId], references: [id])
+  rwRef        Rw?             @relation(fields: [rwId], references: [id])
+  picUser      User?           @relation("PicIoTDevices", fields: [picUserId], references: [id])
+
+  @@index([kelurahanId])
+  @@index([rwId])
+  @@index([picUserId])
+  @@map("perangkat_iot")
+}
+
+model CH4Reading {
+  id          String         @id @default(uuid())
+  deviceId    String         @map("id_perangkat")
+  nilaiPpm    Decimal        @map("nilai_ppm") @db.Decimal(8, 2)
+  suhu        Decimal?       @map("suhu_celsius") @db.Decimal(5, 2)
+  kelembaban  Decimal?       @map("kelembaban_persen") @db.Decimal(5, 2)
+  baterai     Decimal?       @map("level_baterai") @db.Decimal(5, 2)
+  statusLevel CH4StatusLevel @default(AMAN) @map("tingkat_status")
+  timestamp   DateTime       @default(now()) @map("waktu_rekam")
+  createdAt   DateTime       @default(now()) @map("dibuat_pada")
+  device      IoTDevice      @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId, timestamp])
+  @@map("pembacaan_sensor_ch4")
+}
+

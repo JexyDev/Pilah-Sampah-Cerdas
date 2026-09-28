@@ -140,11 +140,33 @@ export class BinService {
           whereClause.categoryId = filters.categoryId;
         }
       }
+      if ((filters as any).tipeKepemilikan) {
+        const kep = (filters as any).tipeKepemilikan;
+        if (whereClause.OR || whereClause.AND) {
+          whereClause = {
+            AND: [whereClause, { tipeKepemilikan: { equals: kep, mode: "insensitive" } }],
+          };
+        } else {
+          whereClause.tipeKepemilikan = { equals: kep, mode: "insensitive" };
+        }
+      }
+      if ((filters as any).binType) {
+        const bType = (filters as any).binType;
+        if (whereClause.OR || whereClause.AND) {
+          whereClause = {
+            AND: [whereClause, { binType: { contains: bType, mode: "insensitive" } }],
+          };
+        } else {
+          whereClause.binType = { contains: bType, mode: "insensitive" };
+        }
+      }
       if (filters.search) {
         const searchCondition = [
           { qrCode: { contains: filters.search, mode: "insensitive" } },
           { id: { contains: filters.search, mode: "insensitive" } },
           { binType: { contains: filters.search, mode: "insensitive" } },
+          { deskripsiLokasi: { contains: filters.search, mode: "insensitive" } },
+          { tipeKepemilikan: { contains: filters.search, mode: "insensitive" } },
           { user: { name: { contains: filters.search, mode: "insensitive" } } },
           { user: { address: { contains: filters.search, mode: "insensitive" } } },
           { rw: { name: { contains: filters.search, mode: "insensitive" } } },
@@ -1133,12 +1155,39 @@ export class BinService {
       if (statusUpper === "RUSAK" || statusUpper === "BROKEN") {
         updateData.status = "BROKEN";
       } else if (
-        ["ACTIVE_BOUND", "ACTIVE", "PRINTED", "INACTIVE", "PENDING_APPROVAL"].includes(statusUpper)
+        statusUpper === "AKTIF_TERPASANG" ||
+        statusUpper === "ACTIVE_BOUND" ||
+        statusUpper === "ACTIVE" ||
+        statusUpper === "AKTIF" ||
+        data.status === "Normal" ||
+        data.status === "Penuh" ||
+        data.status === "Sedang"
       ) {
-        updateData.status = statusUpper;
-      } else if (data.status === "Normal" || data.status === "Penuh" || data.status === "Sedang") {
         updateData.status = "ACTIVE_BOUND";
+      } else if (statusUpper === "TERCETAK" || statusUpper === "PRINTED") {
+        updateData.status = "PRINTED";
+      } else if (
+        statusUpper === "NON_AKTIF" ||
+        statusUpper === "TIDAK_AKTIF" ||
+        statusUpper === "INACTIVE" ||
+        statusUpper === "TIDAK AKTIF"
+      ) {
+        updateData.status = "INACTIVE";
+      } else if (["PENDING_APPROVAL"].includes(statusUpper)) {
+        updateData.status = statusUpper;
       }
+    }
+
+    if (data.deskripsiLokasi !== undefined) {
+      updateData.deskripsiLokasi = data.deskripsiLokasi || null;
+    }
+
+    if (data.tipeKepemilikan !== undefined) {
+      updateData.tipeKepemilikan = data.tipeKepemilikan || "RUMAH_TANGGA";
+    }
+
+    if (data.binType !== undefined) {
+      updateData.binType = data.binType || null;
     }
 
     if (data.latitude !== undefined) {

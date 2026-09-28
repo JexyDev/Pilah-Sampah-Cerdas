@@ -68,7 +68,21 @@ router.post(
 router.put(
   "/:id",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE", "RW", "DEVELOPER"]),
+  binController.updateBin
+);
+
+router.patch(
+  "/:id",
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE", "RW", "DEVELOPER"]),
+  binController.updateBin
+);
+
+router.patch(
+  "/:id/metadata",
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE", "RW", "DEVELOPER"]),
   binController.updateBin
 );
 

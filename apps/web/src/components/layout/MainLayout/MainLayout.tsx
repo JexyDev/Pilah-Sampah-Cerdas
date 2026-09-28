@@ -49,21 +49,25 @@ const MainLayout: React.FC = () => {
   };
 
   return (
-    <div className="flex bg-surface min-h-screen relative overflow-x-hidden w-full max-w-full min-w-0">
-      <Sidebar
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-        isCollapsed={isCollapsed}
-      />
+    <div className="flex bg-surface min-h-screen relative overflow-x-hidden w-full max-w-full min-w-0 print:bg-white print:overflow-visible">
+      <div className="print:hidden">
+        <Sidebar
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+          isCollapsed={isCollapsed}
+        />
+      </div>
       <main
         className={`ml-0 ${
           isCollapsed ? "lg:ml-[84px]" : "lg:ml-[280px]"
-        } min-h-screen flex flex-col justify-between flex-1 w-full min-w-0 max-w-full transition-all duration-300 overflow-x-hidden`}
+        } min-h-screen flex flex-col justify-between flex-1 w-full min-w-0 max-w-full transition-all duration-300 overflow-x-hidden print:ml-0 print:p-0 print:m-0 print:w-full print:block print:overflow-visible`}
       >
-        <div className="w-full min-w-0 max-w-full">
-          <Header onToggleSidebar={handleToggleSidebar} isCollapsed={isCollapsed} />
+        <div className="w-full min-w-0 max-w-full print:p-0">
+          <div className="print:hidden">
+            <Header onToggleSidebar={handleToggleSidebar} isCollapsed={isCollapsed} />
+          </div>
           <ErrorBoundary FallbackComponent={ErrorBoundaryFallback}>
-            <div className="p-3 sm:p-5 md:p-6 w-full min-w-0 max-w-full">
+            <div className="p-3 sm:p-5 md:p-6 w-full min-w-0 max-w-full print:p-0 print:m-0">
               <Outlet />
             </div>
           </ErrorBoundary>

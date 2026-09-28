@@ -27,6 +27,7 @@ import {
   Globe,
   Coins,
   Radio,
+  Cpu,
   BookOpen,
   X,
   Shield,
@@ -255,6 +256,21 @@ const checkRouteActive = (
       "/data-survei-baseline",
     ];
     if (baselineAliases.includes(tPath) && baselineAliases.includes(cPath)) return true;
+
+    const laporanKknAliases = [
+      "/laporan/kkn",
+      "/laporan-kkn",
+      "/laporan-pimpinan/kkn",
+      "/dasbor-kkn-eksekutif",
+      "/dashboard-eksekutif-kkn",
+    ];
+    if (laporanKknAliases.includes(tPath) && laporanKknAliases.includes(cPath)) return true;
+
+    const laporanTataKelolaAliases = [
+      "/laporan/tata-kelola-sampah",
+      "/laporan-tata-kelola-sampah",
+    ];
+    if (laporanTataKelolaAliases.includes(tPath) && laporanTataKelolaAliases.includes(cPath)) return true;
 
     const endlineAliases = [
       "/hasil-survei/endline",
@@ -1297,6 +1313,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               ] as UserRole[],
             },
             {
+              to: "/laporan/kkn",
+              label: "Laporan Resmi KKN",
+              allowed: ["DEVELOPER", "SUPER_USER", "PIMPINAN", "PEMIMPIN"] as UserRole[],
+            },
+            {
+              to: "/laporan/tata-kelola-sampah",
+              label: "Laporan Tata Kelola Sampah",
+              allowed: ["DEVELOPER", "SUPER_USER", "PIMPINAN", "PEMIMPIN", "ADMIN_DLH"] as UserRole[],
+            },
+            {
               to: "/hasil-survei/endline",
               label: "Endline",
               allowed: [
@@ -1367,6 +1393,21 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             "PANITIA_TASKFORCE",
             "MPL",
             "PIMPINAN",
+          ] as UserRole[],
+        },
+        {
+          to: "/manajemen-iot",
+          icon: Cpu,
+          label: "Manajemen IoT (CH4)",
+          allowed: [
+            "DEVELOPER",
+            "SUPER_USER",
+            "ADMIN_DLH",
+            "CAMAT",
+            "LURAH",
+            "RW",
+            "PIMPINAN",
+            "PEMIMPIN",
           ] as UserRole[],
         },
         {

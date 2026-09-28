@@ -88,8 +88,11 @@ const KelolaPoinPengguna = React.lazy(() => import("../pages/KelolaPoinPengguna/
 const ZonaInspectorPage = React.lazy(() => import("../pages/Developer/ZonaInspectorPage"));
 const KelolaLogbookPage = React.lazy(() => import("../pages/Developer/KelolaLogbookPage"));
 const PoinMahasiswaKknPage = React.lazy(() => import("../pages/Developer/PoinMahasiswaKknPage"));
+const LaporanResmiKknPage = React.lazy(() => import("../pages/LaporanKkn/LaporanResmiKknPage"));
 const DeveloperSettingsPage = React.lazy(() => import("../pages/Developer/DeveloperSettingsPage"));
 const MplDashboardPage = React.lazy(() => import("../pages/mpl/MplDashboardPage"));
+const LaporanTataKelolaSampahPage = React.lazy(() => import("../pages/Laporan/LaporanTataKelolaSampahPage"));
+const ManajemenIotPage = React.lazy(() => import("../pages/ManajemenIot/ManajemenIotPage"));
 
 // Scroll Restoration Helper Component (Safari WebKit & Cross-Browser Safe)
 export const ScrollToTop: React.FC = () => {
@@ -726,6 +729,15 @@ const AppRoutes: React.FC = () => {
         <Route path="/analisis-sistem/tata-kelola" element={<Navigate to="/analisis-sistem/tata-kelola-sampah" replace />} />
         <Route path="/tata-kelola-sampah" element={<Navigate to="/analisis-sistem/tata-kelola-sampah" replace />} />
         <Route
+          path="/laporan/tata-kelola-sampah"
+          element={
+            <ProtectedRoute allowedRoles={["DEVELOPER", "SUPER_USER", "PIMPINAN", "ADMIN_DLH", "PEMIMPIN"]}>
+              <LaporanTataKelolaSampahPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/laporan-tata-kelola-sampah" element={<Navigate to="/laporan/tata-kelola-sampah" replace />} />
+        <Route
           path="/dashboard-dpl"
           element={
             <ProtectedRoute allowedRoles={["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "MPL", "PIMPINAN", "PANITIA_TASKFORCE"]}>
@@ -756,6 +768,15 @@ const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "PIMPINAN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING", "MPL"]}>
               <ManajemenEkosistemKkn />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/iot" element={<Navigate to="/manajemen-iot" replace />} />
+        <Route
+          path="/manajemen-iot"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "PIMPINAN", "PEMIMPIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]}>
+              <ManajemenIotPage />
             </ProtectedRoute>
           }
         />
@@ -1178,10 +1199,6 @@ const AppRoutes: React.FC = () => {
           path="/master-data/poin-pengguna"
           element={<Navigate to="/kelola-poin" replace />}
         />
-        <Route
-          path="/master-data/kelola-poin"
-          element={<Navigate to="/kelola-poin" replace />}
-        />
         <Route path="/notifikasi" element={<Notifikasi />} />
 
         <Route
@@ -1372,6 +1389,16 @@ const AppRoutes: React.FC = () => {
         <Route path="/data-survei-endline" element={<Navigate to="/hasil-survei/endline" replace />} />
         <Route path="/survei-endline" element={<Navigate to="/hasil-survei/endline" replace />} />
         <Route path="/data-survei-kkn" element={<Navigate to="/hasil-survei/baseline" replace />} />
+        <Route
+          path="/laporan/kkn"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "PANITIA_TASKFORCE", "PIMPINAN", "PEMIMPIN", "DEVELOPER"]}>
+              <LaporanResmiKknPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/laporan-pimpinan/kkn" element={<Navigate to="/laporan/kkn" replace />} />
+        <Route path="/laporan-resmi/kkn" element={<Navigate to="/laporan/kkn" replace />} />
         <Route
           path="/evaluasi-dampak-kkn"
           element={

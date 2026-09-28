@@ -4710,6 +4710,7 @@ export class KknService {
         const parsed = parseProkerDeskripsi(candidate.deskripsi);
         const judul = parsed.judul || "Program Kerja";
 
+
         // 🛡️ Proteksi Integritas Lapangan:
         // Cek apakah mahasiswa telah mengunggah logbook kegiatan terkait program kerja ini.
         const linkedLogbookCount = (prisma as any).logbookKkn?.count
