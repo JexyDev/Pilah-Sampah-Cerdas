@@ -34,6 +34,30 @@ const router = Router();
  *         description: List of all users
  */
 router.get(
+  "/metrics",
+  authMiddleware,
+  roleMiddleware([
+    "DEVELOPER",
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "CAMAT",
+    "LURAH",
+    "RW",
+    "RT",
+    "PETUGAS_RESIDU",
+    "PENGANGKUT",
+    "MAHASISWA_KKN",
+    "WARGA",
+    "PEMIMPIN",
+    "PIMPINAN",
+    "PANITIA_TASKFORCE",
+    "DPL",
+    "MPL",
+  ]),
+  userController.getMetrics
+);
+
+router.get(
   "/",
   authMiddleware,
   roleMiddleware([
@@ -49,8 +73,10 @@ router.get(
     "MAHASISWA_KKN",
     "WARGA",
     "PEMIMPIN",
+    "PIMPINAN",
     "PANITIA_TASKFORCE",
     "DPL",
+    "MPL",
   ]),
   userController.getAll
 );

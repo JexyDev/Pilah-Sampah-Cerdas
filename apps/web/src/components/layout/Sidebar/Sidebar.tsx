@@ -380,6 +380,18 @@ const checkRouteActive = (
       );
     }
 
+    // Cluster parameter handling
+    if (targetParams.has("cluster")) {
+      const targetCluster = (targetParams.get("cluster") || "").toLowerCase();
+      const currentCluster = (currentParams.get("cluster") || "").toLowerCase();
+      if (currentCluster && targetCluster !== currentCluster) {
+        return false;
+      }
+      if (!targetParams.has("role") && targetCluster === currentCluster) {
+        return true;
+      }
+    }
+
     // Role parameter handling
     if (targetParams.has("role")) {
       const targetRole = (targetParams.get("role") || "").toLowerCase();
@@ -890,8 +902,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     if (userRole === "DEVELOPER" || userRole === "SUPER_USER") return true;
 
     // 1. Dynamic RBAC check jika resource didefinisikan
-    if (resource) {
-      return can(resource, "canView");
+    if (resource && can(resource, "canView")) {
+      return true;
     }
 
     // 2. Fallback static allowed role check
@@ -1672,94 +1684,108 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     },
     {
       header: "MASTER DATA",
-      items: isPimpinanOrTaskforce
-        ? []
-        : [
+      items: [
+        {
+          type: "group",
+          label: "Pengguna",
+          icon: Users,
+          resource: "manajemen_pengguna",
+          allowed: [
+            "DEVELOPER",
+            "SUPER_USER",
+            "ADMIN_DLH",
+            "CAMAT",
+            "LURAH",
+            "PIMPINAN",
+            "PEMIMPIN",
+            "PANITIA_TASKFORCE",
+            "RW",
+          ] as UserRole[],
+          children: [
             {
-              type: "group",
-              label: "Pengguna",
-              icon: Users,
-              resource: "manajemen_pengguna",
+              to: "/pengguna?cluster=pejabat&role=developer",
+              label: "Developer",
+              allowed: ["DEVELOPER"] as UserRole[],
+            },
+            {
+              to: "/pengguna?cluster=pejabat&role=su",
+              label: "Super User",
+              allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[],
+            },
+            {
+              to: "/pengguna?cluster=pejabat&role=dlh",
+              label: "Admin DLH",
+              allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PIMPINAN", "PEMIMPIN", "CAMAT", "LURAH"] as UserRole[],
+            },
+            {
+              to: "/pengguna?cluster=pejabat&role=pimpinan",
+              label: "Pimpinan",
+              allowed: ["DEVELOPER", "SUPER_USER", "PIMPINAN", "PEMIMPIN", "CAMAT", "LURAH"] as UserRole[],
+            },
+            {
+              to: "/pengguna?cluster=mahasiswa&role=taskforce",
+              label: "Task Force",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
                 "PANITIA_TASKFORCE",
                 "PIMPINAN",
-                "RW",
+                "PEMIMPIN",
+                "CAMAT",
+                "LURAH",
               ] as UserRole[],
-              children: [
-                {
-                  to: "/pengguna?role=developer",
-                  label: "Developer",
-                  allowed: ["DEVELOPER"] as UserRole[],
-                },
-                {
-                  to: "/pengguna?role=su",
-                  label: "Super User",
-                  allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[],
-                },
-                {
-                  to: "/pengguna?role=dlh",
-                  label: "Admin DLH",
-                  allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PIMPINAN"] as UserRole[],
-                },
-                {
-                  to: "/pengguna?role=pimpinan",
-                  label: "Pimpinan",
-                  allowed: ["DEVELOPER", "SUPER_USER", "PIMPINAN"] as UserRole[],
-                },
-                {
-                  to: "/pengguna?role=taskforce",
-                  label: "Task Force",
-                  allowed: [
-                    "DEVELOPER",
-                    "SUPER_USER",
-                    "PANITIA_TASKFORCE",
-                    "PIMPINAN",
-                  ] as UserRole[],
-                },
-                {
-                  to: "/pengguna?role=dpl",
-                  label: "Dosen Pembimbing Lapangan",
-                  allowed: [
-                    "DEVELOPER",
-                    "SUPER_USER",
-                    "PANITIA_TASKFORCE",
-                    "PIMPINAN",
-                  ] as UserRole[],
-                },
-                {
-                  to: "/pengguna?role=mpl",
-                  label: "Mitra Pembimbing Lapangan",
-                  allowed: [
-                    "DEVELOPER",
-                    "SUPER_USER",
-                    "PANITIA_TASKFORCE",
-                    "PIMPINAN",
-                  ] as UserRole[],
-                },
-                {
-                  to: "/pengguna?role=mahasiswa",
-                  label: "Mahasiswa",
-                  allowed: [
-                    "DEVELOPER",
-                    "SUPER_USER",
-                    "PANITIA_TASKFORCE",
-                    "PIMPINAN",
-                  ] as UserRole[],
-                },
-                {
-                  to: "/pengguna?role=warga",
-                  label: "Warga",
-                  allowed: ["DEVELOPER", "SUPER_USER", "RW", "PIMPINAN"] as UserRole[],
-                },
-                {
-                  to: "/pengguna?role=petugas-pemilah",
-                  label: "Petugas Pemilah",
-                  allowed: ["DEVELOPER", "SUPER_USER", "RW", "PIMPINAN"] as UserRole[],
-                },
-              ],
             },
+            {
+              to: "/pengguna?cluster=mahasiswa&role=dpl",
+              label: "Dosen Pembimbing Lapangan",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "PANITIA_TASKFORCE",
+                "PIMPINAN",
+                "PEMIMPIN",
+                "CAMAT",
+                "LURAH",
+              ] as UserRole[],
+            },
+            {
+              to: "/pengguna?cluster=mahasiswa&role=mpl",
+              label: "Mitra Pembimbing Lapangan",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "PANITIA_TASKFORCE",
+                "PIMPINAN",
+                "PEMIMPIN",
+                "CAMAT",
+                "LURAH",
+              ] as UserRole[],
+            },
+            {
+              to: "/pengguna?cluster=mahasiswa&role=mahasiswa",
+              label: "Mahasiswa",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "PANITIA_TASKFORCE",
+                "PIMPINAN",
+                "PEMIMPIN",
+                "CAMAT",
+                "LURAH",
+              ] as UserRole[],
+            },
+            {
+              to: "/pengguna?cluster=warga&role=warga",
+              label: "Warga",
+              allowed: ["DEVELOPER", "SUPER_USER", "RW", "PIMPINAN", "PEMIMPIN", "ADMIN_DLH", "CAMAT", "LURAH"] as UserRole[],
+            },
+            {
+              to: "/pengguna?cluster=warga&role=petugas-pemilah",
+              label: "Petugas Pemilah",
+              allowed: ["DEVELOPER", "SUPER_USER", "RW", "PIMPINAN", "PEMIMPIN", "ADMIN_DLH", "CAMAT", "LURAH"] as UserRole[],
+            },
+          ],
+        },
             {
               type: "group",
               label: "Wilayah",

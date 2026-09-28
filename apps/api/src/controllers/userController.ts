@@ -14,7 +14,7 @@ export const userController = {
    */
   getAll: async (req: Request, res: Response): Promise<void> => {
     try {
-      const { search, roleName, status, rw, rt } = req.query;
+      const { search, roleName, status, rw, rt, cluster, kelurahan, kelompokId, page, limit } = req.query;
 
       const mapped = await userService.getAllUsers(
         {
@@ -23,11 +23,18 @@ export const userController = {
           status: status as string,
           rw: rw as string,
           rt: rt as string,
+          cluster: cluster as string,
+          kelurahan: kelurahan as string,
+          kelompokId: kelompokId as string,
+          page: page as string,
+          limit: limit as string,
         },
         req.user!
       );
 
-      res.status(200).json({ success: true, data: mapped });
+      const pagination = (mapped as any).pagination;
+
+      res.status(200).json({ success: true, data: mapped, pagination });
     } catch (error: any) {
       console.error("[UserController] getAll uncaught error STACK:", error?.stack || error);
       res.status(500).json({
@@ -36,6 +43,23 @@ export const userController = {
         message: error?.message
           ? `Gagal memuat data pengguna: ${error.message}`
           : "Gagal memuat data pengguna",
+      });
+    }
+  },
+
+  /**
+   * Get user summary metrics (counts by cluster)
+   */
+  getMetrics: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const metrics = await userService.getUserMetrics(req.user!);
+      res.status(200).json({ success: true, data: metrics });
+    } catch (error: any) {
+      console.error("[UserController] getMetrics error:", error);
+      res.status(500).json({
+        success: false,
+        error: "INTERNAL_SERVER_ERROR",
+        message: "Gagal memuat ringkasan metrik pengguna",
       });
     }
   },

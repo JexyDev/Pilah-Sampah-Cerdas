@@ -129,10 +129,15 @@ export class UserService {
       status?: string;
       rw?: string;
       rt?: string;
+      cluster?: string;
+      kelurahan?: string;
+      kelompokId?: string;
+      page?: number | string;
+      limit?: number | string;
     },
     currentUser: { userId: string; role: string }
   ) {
-    const { search, roleName, status, rw, rt } = filters;
+    const { search, roleName, status, rw, rt, cluster, kelurahan, kelompokId, page, limit } = filters;
     const { getScopingFilters } = await import("../utils/rbacScoping.js");
     const scoping = await getScopingFilters(currentUser);
     const whereClause: any = { ...scoping.userFilter };
@@ -202,19 +207,78 @@ export class UserService {
       });
     }
 
-    if (roleName) {
+    const clusterLower = (cluster || "").toLowerCase().trim();
+    if (clusterLower === "warga") {
+      if (roleName && roleName !== "Semua") {
+        whereClause.role = { name: roleName };
+      } else {
+        whereClause.role = { name: { in: ["WARGA", "PETUGAS_RESIDU"] } };
+      }
+    } else if (clusterLower === "mahasiswa" || clusterLower === "kkn") {
+      if (roleName && roleName !== "Semua") {
+        whereClause.role = { name: roleName };
+      } else {
+        whereClause.role = { name: { in: ["MAHASISWA_KKN", "DPL", "MPL", "PANITIA_TASKFORCE"] } };
+      }
+    } else if (clusterLower === "pejabat" || clusterLower === "pimpinan") {
+      if (roleName && roleName !== "Semua") {
+        whereClause.role = { name: roleName };
+      } else {
+        whereClause.role = {
+          name: {
+            in: [
+              "PEMIMPIN",
+              "PIMPINAN",
+              "CAMAT",
+              "LURAH",
+              "RW",
+              "RT",
+              "SUPER_USER",
+              "ADMIN_DLH",
+              "DEVELOPER",
+            ],
+          },
+        };
+      }
+    } else if (roleName && roleName !== "Semua") {
       if (roleName === "PENGURUS_RW_RT") {
         // Tab "Pengurus RW/RT" → tampilkan RW dan RT
         whereClause.role = { name: { in: ["RW", "RT"] } };
       } else if (roleName === "EKSEKUTIF") {
-        // Tab umbrella eksekutif → tampilkan semua admin
-        whereClause.role = { name: { in: ["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH"] } };
+        // Tab umbrella eksekutif → tampilkan semua admin & pimpinan
+        whereClause.role = { name: { in: ["PEMIMPIN", "PIMPINAN", "SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH"] } };
       } else if (roleName === "MPL" || roleName === "MITRA_PEMBIMBING_LAPANGAN" || roleName === "MITRA_PENDAMPING_LAPANGAN") {
         whereClause.role = { name: { in: ["MPL", "MITRA_PENDAMPING_LAPANGAN", "MITRA_PEMBIMBING_LAPANGAN"] } };
+      } else if (roleName === "PIMPINAN") {
+        whereClause.role = { name: { in: ["PEMIMPIN", "PIMPINAN"] } };
       } else {
         // Tab spesifik (CAMAT, LURAH, ADMIN_DLH, SUPER_USER, dll) → query persis
         whereClause.role = { name: roleName };
       }
+    }
+
+    if (kelurahan && kelurahan !== "Semua") {
+      const cleanKel = kelurahan.replace(/^Kel\.\s*/i, "").trim();
+      andConditions.push({
+        OR: [
+          { rw: { kelurahan: { name: { contains: cleanKel, mode: "insensitive" } } } },
+          { studentProfile: { kelompok: { kelurahan: { contains: cleanKel, mode: "insensitive" } } } },
+          { dplKelompok: { some: { kelurahan: { contains: cleanKel, mode: "insensitive" } } } },
+          { households: { some: { rw: { kelurahan: { name: { contains: cleanKel, mode: "insensitive" } } } } } },
+          { address: { contains: cleanKel, mode: "insensitive" } },
+        ],
+      });
+    }
+
+    if (kelompokId && kelompokId !== "Semua") {
+      andConditions.push({
+        OR: [
+          { studentProfile: { kelompokId: kelompokId } },
+          { studentProfile: { kelompok: { name: { contains: kelompokId, mode: "insensitive" } } } },
+          { dplKelompok: { some: { id: kelompokId } } },
+          { dplKelompok: { some: { name: { contains: kelompokId, mode: "insensitive" } } } },
+        ],
+      });
     }
 
     if (status && !["Sudah Teraktivasi", "Belum Teraktivasi", "Semua"].includes(status)) {
@@ -701,7 +765,85 @@ export class UserService {
       mapped = mapped.filter((u: any) => u.binStatus === "Belum Teraktivasi");
     }
 
-    return mapped;
+    const pageNum = Math.max(1, Number(page) || 1);
+    const limitNum = Number(limit);
+
+    const total = mapped.length;
+    let finalUsers = mapped;
+
+    if (limitNum > 0) {
+      const startIndex = (pageNum - 1) * limitNum;
+      finalUsers = mapped.slice(startIndex, startIndex + limitNum);
+    }
+
+    (finalUsers as any).pagination = {
+      total,
+      page: pageNum,
+      limit: limitNum > 0 ? limitNum : total,
+      totalPages: limitNum > 0 ? Math.ceil(total / limitNum) || 1 : 1,
+    };
+
+    return finalUsers;
+  }
+
+  async getUserMetrics(currentUser: { userId: string; role: string }) {
+    const { getScopingFilters } = await import("../utils/rbacScoping.js");
+    const scoping = await getScopingFilters(currentUser);
+    const baseFilter = scoping.userFilter || {};
+
+    const [totalWarga, totalMahasiswaAktif, totalPimpinanPejabat, totalSemua] = await Promise.all([
+      prisma.user.count({
+        where: {
+          AND: [
+            baseFilter,
+            { role: { name: { in: ["WARGA", "PETUGAS_RESIDU"] } } },
+          ],
+        },
+      }),
+      prisma.user.count({
+        where: {
+          AND: [
+            baseFilter,
+            { role: { name: "MAHASISWA_KKN" } },
+            { status: { in: ["Aktif", "ACTIVE"] } },
+          ],
+        },
+      }),
+      prisma.user.count({
+        where: {
+          AND: [
+            baseFilter,
+            {
+              role: {
+                name: {
+                  in: [
+                    "PEMIMPIN",
+                    "PIMPINAN",
+                    "CAMAT",
+                    "LURAH",
+                    "RW",
+                    "RT",
+                    "SUPER_USER",
+                    "ADMIN_DLH",
+                    "DEVELOPER",
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      }),
+      prisma.user.count({
+        where: baseFilter,
+      }),
+    ]);
+
+    return {
+      totalWarga,
+      totalMahasiswaAktif,
+      totalPimpinanPejabat,
+      totalSemua,
+    };
   }
 
   async createUser(data: any, currentUser?: { userId: string; role: string }) {

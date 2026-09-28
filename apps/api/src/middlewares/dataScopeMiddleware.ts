@@ -28,13 +28,14 @@ export const dataScopeMiddleware = async (
       if (["DLH", "DLH_ADMIN", "Admin DLH"].includes(r)) return "ADMIN_DLH";
       if (["ADMIN_KECAMATAN", "Camat", "CAMAT_ADMIN"].includes(r)) return "CAMAT";
       if (["ADMIN_KELURAH", "Lurah", "LURAH_ADMIN"].includes(r)) return "LURAH";
+      if (["PIMPINAN", "Pimpinan", "PEMIMPIN", "Pemimpin"].includes(r)) return "PEMIMPIN";
       return r;
     };
 
     const role = normalizeRole(user.role);
 
-    // Global / Super roles bypass ID boundary checking
-    if (["DEVELOPER", "SUPER_USER", "PEMIMPIN", "PANITIA_TASKFORCE"].includes(role)) {
+    // Global / Super roles bypass ID boundary checking (Pimpinan memiliki hak pantau eksekutif lintas wilayah)
+    if (["DEVELOPER", "SUPER_USER", "PEMIMPIN", "PIMPINAN", "PANITIA_TASKFORCE"].includes(role)) {
       return next();
     }
 

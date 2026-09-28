@@ -23,6 +23,12 @@ const kelInclude = {
 };
 
 export class UserRepository {
+  async count(whereClause: any) {
+    return prisma.user.count({
+      where: whereClause,
+    });
+  }
+
   async findMany(whereClause: any) {
     return prisma.user.findMany({
       where: whereClause,

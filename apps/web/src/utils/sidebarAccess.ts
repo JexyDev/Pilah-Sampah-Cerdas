@@ -171,11 +171,14 @@ export function canAccessSidebarRoute(
     cleanPath.startsWith("/manajemen-pengguna");
 
   if (isPenggunaRoute) {
-    // Di Sidebar.tsx: MASTER DATA items: isPimpinan ? [] : [...]
-    if (role === "PIMPINAN") return false;
     return (
       role === "ADMIN_DLH" ||
+      role === "CAMAT" ||
+      role === "LURAH" ||
+      role === "PIMPINAN" ||
+      role === "PEMIMPIN" ||
       role === "PANITIA_TASKFORCE" ||
+      role === "TASK_FORCE" ||
       role === "RW" ||
       canView("manajemen_pengguna")
     );
