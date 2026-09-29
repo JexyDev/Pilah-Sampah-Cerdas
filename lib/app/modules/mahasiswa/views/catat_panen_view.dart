@@ -300,7 +300,7 @@ class _CatatPanenViewState extends ConsumerState<CatatPanenView> {
                         filled: true,
                         fillColor: Colors.white,
                         hintText: 'Contoh: 5',
-                        suffixText: 'Kg',
+                        suffixText: 'kg',
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 14,

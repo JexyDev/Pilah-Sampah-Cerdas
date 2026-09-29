@@ -1,4 +1,5 @@
 import 'dart:async' as dart_async;
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -72,7 +73,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       // getCurrentUser sudah attach householdId dari secure storage cache
       state = state.copyWith(user: user);
       // Daftarkan FCM token jika sesi sudah ada (app restart)
-      _registerFcmToken();
+      await _registerFcmToken();
       _restoreNotificationSyncState(user);
       NotificationEngine().scheduleRoleBasedNotifications(user.role.apiValue);
 
@@ -130,19 +131,23 @@ class AuthNotifier extends StateNotifier<AuthState> {
       if (settings.authorizationStatus == AuthorizationStatus.authorized ||
           settings.authorizationStatus == AuthorizationStatus.provisional) {
         final token = await messaging.getToken();
+        debugPrint('[FCM Token] Obtained token: ${token?.substring(0, 15)}...');
         if (token != null) {
           await _notificationRepository.registerDeviceToken(token);
+          debugPrint('[FCM Token] Successfully registered to backend database!');
         }
 
         // Dengarkan perubahan token (rotasi FCM) — cancel dulu yg lama agar tidak menumpuk
         _tokenRefreshSub?.cancel();
         _tokenRefreshSub = FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
+          debugPrint('[FCM Token] Rotated token: ${newToken.substring(0, 15)}...');
           _notificationRepository.registerDeviceToken(newToken);
         });
+      } else {
+        debugPrint('[FCM Token] Notification permission status: ${settings.authorizationStatus}');
       }
     } catch (e) {
-      // Non-critical — Firebase mungkin belum dikonfigurasi
-      // App tetap berjalan normal tanpa FCM
+      debugPrint('[FCM Token Error] Registration failed: $e');
     }
   }
 
@@ -327,7 +332,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
         }
       } catch (_) {}
 
-      // 1. Unregister FCM dengan timeout maksimal 2 detik
+      // 1. Batalkan listener token refresh & unregister FCM dengan timeout maksimal 2 detik
+      _tokenRefreshSub?.cancel();
+      _tokenRefreshSub = null;
       try {
         final token = await FirebaseMessaging.instance
             .getToken()
@@ -713,6 +720,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
       return false;
     }
+  }
+
+  @override
+  void dispose() {
+    _tokenRefreshSub?.cancel();
+    super.dispose();
   }
 }
 

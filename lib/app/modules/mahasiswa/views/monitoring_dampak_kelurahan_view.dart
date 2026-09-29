@@ -305,7 +305,7 @@ class MonitoringDampakKelurahanView extends ConsumerWidget {
                             ),
                             SizedBox(width: 8),
                             Text(
-                              'Total Volume Sampah Terpilah RW',
+                              'Total Berat Sampah Terpilah RW',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,

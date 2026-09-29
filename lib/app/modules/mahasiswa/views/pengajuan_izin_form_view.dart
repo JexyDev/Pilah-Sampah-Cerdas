@@ -158,7 +158,7 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
         _isSuccess = true;
       });
       NotificationEngine().showGenericNotification(
-        id: DateTime.now().millisecondsSinceEpoch.remainder(10000),
+        id: DateTime.now().millisecondsSinceEpoch.remainder(2147483647).abs(),
         title: 'Pengajuan Izin/Sakit Terkirim ⏳',
         body:
             'Pengajuan ${_selectedKategori.displayName} sedang menunggu verifikasi DPL.',

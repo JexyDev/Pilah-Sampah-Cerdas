@@ -182,8 +182,8 @@ class _ProkerDetailViewState extends ConsumerState<ProkerDetailView> {
   }
 
   String _formatKg(num? value) {
-    if (value == null) return '0 Kg';
-    return '${value % 1 == 0 ? value.toInt() : value} Kg';
+    if (value == null) return '0 kg';
+    return '${value % 1 == 0 ? value.toInt() : value} kg';
   }
 
   /// Hitung progress hari berdasarkan rentang waktuPelaksanaan

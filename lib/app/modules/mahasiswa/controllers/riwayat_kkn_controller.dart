@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../core/utils/input_sanitizer.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../views/riwayat_kkn_view.dart'; // Import models from view
 
@@ -113,8 +114,12 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
 
           parsedLogs.add(
             KknHistoryLog(
-              title: data['title']?.toString() ?? 'Riwayat Aktivitas',
-              subtitle: data['subtitle']?.toString() ?? '',
+              title: InputSanitizer.cleanSystemMessage(
+                data['title']?.toString() ?? 'Riwayat Aktivitas',
+              ),
+              subtitle: InputSanitizer.cleanSystemMessage(
+                data['subtitle']?.toString() ?? '',
+              ),
               timestamp:
                   (DateTime.tryParse(data['timestamp']?.toString() ?? '') ??
                           DateTime.now())
@@ -154,10 +159,11 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
               attStatus == 'HADIR_MEMENUHI' ||
               attStatus == 'HADIR_TIDAK_MEMENUHI' ||
               attStatus == 'SELESAI_TELAT') {
-            final title =
-                data['nama']?.toString() ??
-                data['namaKegiatan']?.toString() ??
-                'Riwayat Kegiatan';
+            final title = InputSanitizer.cleanSystemMessage(
+              data['nama']?.toString() ??
+                  data['namaKegiatan']?.toString() ??
+                  'Riwayat Kegiatan',
+            );
             var dateStr =
                 data['tanggal']?.toString() ??
                 data['tanggalKegiatan']?.toString() ??
@@ -367,8 +373,7 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
           final kat = (log.kategori ?? '').toUpperCase();
           if (kat == 'KKN_PRESENSI_HADIR' || kat == 'KKN_DURASI_MEMENUHI') {
             final isCheckIn = kat == 'KKN_PRESENSI_HADIR';
-            // Hindari duplikasi teks "Poin" di tab non-poin
-            final title = log.description.replaceAll(RegExp(r'Poin ', caseSensitive: false), ''); 
+            final title = InputSanitizer.cleanSystemMessage(log.description); 
             parsedLogs.add(
               KknHistoryLog(
                 title: title,

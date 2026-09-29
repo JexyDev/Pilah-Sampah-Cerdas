@@ -130,51 +130,7 @@ final notificationsProvider = FutureProvider<List<NotificationEntity>>((
     list = [];
   }
 
-  // Tambahkan riwayat poin (PointHistory) agar tampil di Notification Page
-  try {
-    final pointRepo = ref.read(wasteLogRepositoryProvider);
-    final pointHistory = await pointRepo.getPointHistoryByUser(user.id);
-
-    final prefs = await SharedPreferences.getInstance();
-    final readList =
-        prefs.getStringList('read_notifs_${user.id}_${user.role.name}') ?? [];
-    final readSet = readList.toSet();
-    final markAllTimestamp =
-        prefs.getInt('mark_all_notifs_${user.id}_${user.role.name}') ?? 0;
-
-    for (final ph in pointHistory) {
-      if (ph.points > 0) {
-        final notifId = 'point_${ph.id}';
-        final isRead =
-            readSet.contains(notifId) ||
-            ph.createdAt.millisecondsSinceEpoch <= markAllTimestamp ||
-            LocalNotificationCacheService().isRead(
-              user.id,
-              user.role.name,
-              notifId,
-            );
-
-        list.add(
-          NotificationEntity(
-            id: notifId,
-            type: 'POIN',
-            title: 'Poin Bertambah!',
-            desc: ph.description.isNotEmpty
-                ? ph.description
-                : 'Anda mendapatkan +${ph.points} poin.',
-            isRead: isRead,
-            time: ph.createdAt
-                .toLocal()
-                .toIso8601String()
-                .substring(0, 16)
-                .replaceAll('T', ' '),
-            icon: 'star',
-            createdAt: ph.createdAt,
-          ),
-        );
-      }
-    }
-  } catch (_) {}
+  // ponytail: Notifikasi murni dari backend API & FCM. Tidak lagi mensintesis dari PointHistory.
 
   // Otomatis tampilkan notifikasi belum dibaca dari backend di system notification tray (luar aplikasi / background)
   // Dikunci presisi per ID Mahasiswa & membuang notifikasi Warga jika role adalah Mahasiswa KKN.

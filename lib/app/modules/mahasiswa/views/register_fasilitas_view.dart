@@ -31,7 +31,7 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
   final _alamatController = TextEditingController();
   final MapController _mapController = MapController();
 
-  String _kapasitasUnit = 'Kg';
+  String _kapasitasUnit = 'kg';
   String _selectedKepemilikan = 'PRIBADI';
 
   String? _selectedJenis;
@@ -690,7 +690,7 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                                         color: AppColors.textPrimary,
                                         fontSize: 14,
                                       ),
-                                      items: ['Kg', 'Liter', 'Orang', 'Unit']
+                                      items: ['kg', 'Liter', 'Orang', 'Unit']
                                           .map(
                                             (e) => DropdownMenuItem(
                                               value: e,

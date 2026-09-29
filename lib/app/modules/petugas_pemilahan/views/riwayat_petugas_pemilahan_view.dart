@@ -73,8 +73,37 @@ class _RiwayatPetugasPemilahanViewState
 
   String _sanitizeClassification(String? raw) {
     if (raw == null || raw.isEmpty || raw == '-') return '-';
-    if (raw.toLowerCase() == 'residu') return 'Pemilahan';
-    return raw.replaceAll(RegExp(r'\bResidu\b', caseSensitive: false), 'Pemilahan');
+    String text = raw.trim();
+    if (text.toLowerCase() == 'residu') text = 'Pemilahan';
+    text = text.replaceAll(RegExp(r'\bResidu\b', caseSensitive: false), 'Pemilahan');
+    return text.split(' ').map((word) {
+      if (word.isEmpty) return '';
+      return word[0].toUpperCase() + word.substring(1).toLowerCase();
+    }).join(' ');
+  }
+
+  String _formatStatus(String? raw) {
+    if (raw == null || raw.isEmpty || raw == '-') return 'Terkirim';
+    final upper = raw.toUpperCase().trim();
+    if (upper == 'TERKIRIM' || upper == 'SUCCESS' || upper == 'SENT') {
+      return 'Terkirim';
+    }
+    if (upper == 'SELESAI DIVERIFIKASI' ||
+        upper == 'COMPLETED' ||
+        upper == 'APPROVED' ||
+        upper == 'VERIFIED') {
+      return 'Selesai Diverifikasi';
+    }
+    if (upper == 'PENDING' || upper == 'MENUNGGU') {
+      return 'Menunggu';
+    }
+    if (upper == 'REJECTED' || upper == 'DITOLAK') {
+      return 'Ditolak';
+    }
+    return raw.split(' ').map((word) {
+      if (word.isEmpty) return '';
+      return word[0].toUpperCase() + word.substring(1).toLowerCase();
+    }).join(' ');
   }
 
   void _showDetailModal(Map<String, dynamic> item) {
@@ -145,14 +174,14 @@ class _RiwayatPetugasPemilahanViewState
                     item['binCode'].toString().isNotEmpty &&
                     item['binCode'] != 'N/A')
                   _infoRow('Tempat Sampah', item['binCode'].toString()),
-                _infoRow('Status', 'SELESAI DIVERIFIKASI'),
+                _infoRow('Laporan', _formatStatus(item['status']?.toString() ?? 'Selesai Diverifikasi')),
                 if (item['points'] != null && (item['points'] as num) > 0)
                   _infoRow('Poin Diperoleh', '+${item['points']} Pts'),
               ] else ...[
                 _infoRow('Koordinat GPS', alamat),
                 _infoRow(
                   'Berat Fisik',
-                  '${item['weightKg'] ?? item['actualWeightKg'] ?? item['weight'] ?? 0} Kg',
+                  '${item['weightKg'] ?? item['actualWeightKg'] ?? item['weight'] ?? 0} kg',
                 ),
                 _infoRow(
                   'Klasifikasi',
@@ -164,8 +193,8 @@ class _RiwayatPetugasPemilahanViewState
                   ),
                 ),
                 _infoRow(
-                  'Status Server',
-                  item['status']?.toString() ?? 'TERKIRIM',
+                  'Laporan',
+                  _formatStatus(item['status']?.toString() ?? 'Terkirim'),
                 ),
               ],
               const SizedBox(height: 20),
@@ -209,7 +238,7 @@ class _RiwayatPetugasPemilahanViewState
               style: const TextStyle(
                 fontSize: 13,
                 color: AppColors.textSecondary,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w400,
               ),
             ),
           ),
@@ -220,7 +249,7 @@ class _RiwayatPetugasPemilahanViewState
               textAlign: TextAlign.right,
               style: const TextStyle(
                 fontSize: 13,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w500,
                 color: AppColors.textPrimary,
               ),
             ),
@@ -478,7 +507,7 @@ class _RiwayatPetugasPemilahanViewState
                                                 child: Text(
                                                   isPengosongan
                                                       ? 'Terverifikasi'
-                                                      : '$weight Kg',
+                                                      : '$weight kg',
                                                   style: TextStyle(
                                                     fontSize: 12,
                                                     fontWeight: FontWeight.bold,

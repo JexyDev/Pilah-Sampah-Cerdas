@@ -56,7 +56,7 @@ class WargaAspirasiNotifier extends StateNotifier<WargaAspirasiState> {
         clearError: true,
       );
       NotificationEngine().showGenericNotification(
-        id: DateTime.now().millisecondsSinceEpoch.remainder(10000),
+        id: DateTime.now().millisecondsSinceEpoch.remainder(2147483647).abs(),
         title: 'Aspirasi Berhasil Terkirim 📬',
         body: 'Kritik dan saran Anda telah diteruskan ke pihak RW.',
       );

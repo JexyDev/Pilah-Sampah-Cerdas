@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
+import '../../../core/utils/input_sanitizer.dart';
 import '../../../routes/app_routes.dart';
 import '../controllers/riwayat_kkn_controller.dart';
 
@@ -191,17 +192,18 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
   }
 
   String _formatSubtitle(String subtitle) {
-    if (subtitle == 'MENUNGGU_VERIFIKASI_DPL') {
+    final cleaned = InputSanitizer.cleanSystemMessage(subtitle);
+    if (cleaned == 'MENUNGGU_VERIFIKASI_DPL') {
       return '⏳ Menunggu Verifikasi DPL';
     }
-    if (subtitle == 'DISETUJUI') return '✅ Disetujui';
-    if (subtitle == 'DITOLAK') return '❌ Ditolak';
-    if (subtitle == 'MENUNGGU_VERIFIKASI_KETUA') return '⏳ Menunggu Verifikasi';
+    if (cleaned == 'DISETUJUI') return '✅ Disetujui';
+    if (cleaned == 'DITOLAK') return '❌ Ditolak';
+    if (cleaned == 'MENUNGGU_VERIFIKASI_KETUA') return '⏳ Menunggu Verifikasi';
     // Replace underscores with spaces for any other generic status
-    if (subtitle.contains('_')) {
-      return subtitle.replaceAll('_', ' ');
+    if (cleaned.contains('_')) {
+      return cleaned.replaceAll('_', ' ');
     }
-    return subtitle;
+    return cleaned;
   }
 
   Widget _buildLogCard(KknHistoryLog log) {
@@ -308,7 +310,7 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    log.title,
+                    InputSanitizer.cleanSystemMessage(log.title),
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,

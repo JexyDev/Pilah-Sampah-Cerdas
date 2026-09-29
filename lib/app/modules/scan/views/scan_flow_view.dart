@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lottie/lottie.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../../data/services/notification_engine.dart' as import_engine;
 
 import '../../../routes/app_routes.dart';
 import '../../../core/values/app_colors.dart';
@@ -193,10 +192,6 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
           final capturedContext = context;
-          // Trigger local notification untuk Poin
-          import_engine.NotificationEngine().showPointsNotification(
-            next.scanResult!.pointsAwarded,
-          );
 
           ref.invalidate(wasteLogsProvider);
           ref.invalidate(totalPointsProvider);

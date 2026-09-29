@@ -28,6 +28,7 @@ abstract class PetugasPemilahanRepository {
     required String classification,
     required String photoPath,
     required String photoTimbanganPath,
+    String inputMethod = 'MANUAL',
     double? latitude,
     double? longitude,
   });

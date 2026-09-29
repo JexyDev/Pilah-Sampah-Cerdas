@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,10 +7,12 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../core/values/app_colors.dart';
+import '../../../core/utils/scale_display_parser.dart';
 import '../../../core/values/app_dimensions.dart';
 import '../../../data/models/bin_entity.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../data/services/location_service.dart';
+import '../../../data/services/offline_queue_service.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../shared/controllers/connectivity_controller.dart';
 import '../controllers/petugas_pemilahan_controller.dart';
@@ -46,6 +49,8 @@ class _TimbanganPemilahanViewState
   bool _isSubmitting = false;
   bool _isScanningAi = false;
   SharedPreferences? _prefs;
+  String _inputMethod = 'MANUAL';
+  double? _ocrDetectedValue; // ponytail: tracks original OCR reading for banner display
 
   int _estimatedPoints = 0;
 
@@ -67,6 +72,7 @@ class _TimbanganPemilahanViewState
       _selectedClassification = widget.initialCategory!;
     }
     _weightController.addListener(_calculatePoints);
+    _weightController.addListener(_onWeightManualEdit);
     _loadDraft();
   }
 
@@ -102,6 +108,7 @@ class _TimbanganPemilahanViewState
   @override
   void dispose() {
     _weightController.removeListener(_calculatePoints);
+    _weightController.removeListener(_onWeightManualEdit);
     _weightController.dispose();
     super.dispose();
   }
@@ -163,11 +170,7 @@ class _TimbanganPemilahanViewState
             final category = aiResult.detectedType == WasteType.organic ? 'Organik' : 'Anorganik';
             setState(() {
               _selectedClassification = category;
-              if (_weightController.text.trim().isEmpty && aiResult.displayWeightKg > 0) {
-                _weightController.text = aiResult.displayWeightKg.toString();
-              }
             });
-            _calculatePoints();
           }
         } catch (e) {
           debugPrint('[TimbanganPemilahan] Waste detect fallback: $e');
@@ -200,11 +203,46 @@ class _TimbanganPemilahanViewState
       if (file != null) {
         setState(() {
           _photoTimbanganPath = file.path;
+          _isScanningAi = true;
         });
+
+        // On-device OCR via ML Kit
+        try {
+          final inputImage = InputImage.fromFilePath(file.path);
+          final textRecognizer = TextRecognizer();
+          final recognised = await textRecognizer.processImage(inputImage);
+          await textRecognizer.close();
+
+          final parsed = ScaleDisplayParser.parse(recognised.text);
+          if (parsed != null && mounted) {
+            setState(() {
+              _ocrDetectedValue = parsed;
+              _inputMethod = 'OCR_CAMERA';
+              _weightController.text = parsed.toStringAsFixed(1);
+            });
+          }
+        } catch (e) {
+          debugPrint('[TimbanganPemilahan] OCR fallback: $e');
+          // ponytail: OCR gagal → tetap simpan foto, petugas input manual
+        } finally {
+          if (mounted) setState(() => _isScanningAi = false);
+        }
         _calculatePoints();
       }
     } catch (e) {
       debugPrint('Error taking photo timbangan: $e');
+    }
+  }
+
+  void _onWeightManualEdit() {
+    // Jika petugas mengedit setelah OCR fill, ubah status
+    if (_inputMethod == 'OCR_CAMERA' && _ocrDetectedValue != null) {
+      final current = double.tryParse(
+        _weightController.text.trim().replaceAll(',', '.'),
+      );
+      if (current != _ocrDetectedValue) {
+        _inputMethod = 'OCR_MANUAL_CORRECTED';
+      }
     }
   }
 
@@ -227,7 +265,7 @@ class _TimbanganPemilahanViewState
       ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Berat timbangan tidak valid (0.1 - 500 Kg)!'),
+          content: Text('Berat timbangan tidak valid (0.1 - 500 kg)!'),
           backgroundColor: AppColors.maroonRed,
           duration: Duration(seconds: 3),
         ),
@@ -237,12 +275,27 @@ class _TimbanganPemilahanViewState
 
     final isOnline = ref.read(isOnlineProvider);
     if (!isOnline) {
+      final user = ref.read(authProvider).user;
+      await OfflineQueueService.enqueue({
+        'transaction_id': 'TRX-${DateTime.now().millisecondsSinceEpoch}',
+        'collector_id': user?.id ?? '',
+        'bin_id': 'GLOBAL_BIN_RT_RW',
+        'weight_kg': weight,
+        'input_method': _inputMethod,
+        'evidence_photo_path': _photoTimbanganPath,
+        'photo_path': _photoPath,
+        'classification': _selectedClassification,
+        'timestamp': DateTime.now().toUtc().toIso8601String(),
+        'latitude': _currentLocation?.latitude,
+        'longitude': _currentLocation?.longitude,
+      });
+      if (!mounted) return;
       ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Koneksi terputus. Data disimpan sebagai draft.'),
-          backgroundColor: AppColors.maroonRed,
-          duration: Duration(seconds: 3),
+          content: Text('Data Berhasil Disimpan di Antrean Offline\n(Akan otomatis disinkronkan saat sinyal pulih)'),
+          backgroundColor: AppColors.primaryGreen,
+          duration: Duration(seconds: 4),
         ),
       );
       return;
@@ -258,6 +311,7 @@ class _TimbanganPemilahanViewState
           classification: _selectedClassification,
           photoPath: _photoPath!,
           photoTimbanganPath: _photoTimbanganPath!,
+          inputMethod: _inputMethod,
           latitude: _currentLocation?.latitude,
           longitude: _currentLocation?.longitude,
         );
@@ -269,14 +323,18 @@ class _TimbanganPemilahanViewState
       if (mounted) {
         await _clearDraft(); // ponytail: clear BEFORE setState to prevent stale prefs if page is re-opened before async completes
         _weightController.removeListener(_calculatePoints);
+        _weightController.removeListener(_onWeightManualEdit);
         setState(() {
           _photoPath = null;
           _photoTimbanganPath = null;
           _selectedClassification = _classifications.first;
           _estimatedPoints = 0;
+          _inputMethod = 'MANUAL';
+          _ocrDetectedValue = null;
         });
         _weightController.clear();
         _weightController.addListener(_calculatePoints);
+        _weightController.addListener(_onWeightManualEdit);
 
         if (!mounted) return;
         if (Navigator.of(context).canPop()) {
@@ -739,9 +797,48 @@ class _TimbanganPemilahanViewState
               ),
               const SizedBox(height: AppDimensions.lg),
 
-              // 2. Input Berat Timbangan (Kg)
-              const Text('Berat Fisik Timbangan (Kg)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              // 2. Input Berat Timbangan (kg)
+              const Text('Berat Fisik Timbangan (kg)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
               const SizedBox(height: 8),
+              // OCR status banner
+              if (_ocrDetectedValue != null)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: _inputMethod == 'OCR_MANUAL_CORRECTED'
+                        ? AppColors.warningOrange.withValues(alpha: 0.1)
+                        : AppColors.primaryBlue.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: _inputMethod == 'OCR_MANUAL_CORRECTED'
+                          ? AppColors.warningOrange.withValues(alpha: 0.3)
+                          : AppColors.primaryBlue.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        _inputMethod == 'OCR_MANUAL_CORRECTED' ? Icons.edit_note : Icons.auto_fix_high,
+                        size: 16,
+                        color: _inputMethod == 'OCR_MANUAL_CORRECTED' ? AppColors.warningOrange : AppColors.primaryBlue,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _inputMethod == 'OCR_MANUAL_CORRECTED'
+                              ? 'OCR: ${_ocrDetectedValue!.toStringAsFixed(1)} kg → Dikoreksi manual'
+                              : 'Terdeteksi via OCR: ${_ocrDetectedValue!.toStringAsFixed(1)} kg (Dapat diedit manual)',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: _inputMethod == 'OCR_MANUAL_CORRECTED' ? AppColors.warningOrange : AppColors.primaryBlue,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               TextFormField(
                 controller: _weightController,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: false),
@@ -749,9 +846,9 @@ class _TimbanganPemilahanViewState
                 decoration: const InputDecoration(
                   hintText: 'Masukkan berat (misal: 12.5 atau 12,5)',
                   prefixIcon: Icon(Icons.scale_outlined, color: AppColors.primaryGreen),
-                  suffixText: 'Kg',
+                  suffixText: 'kg',
                   suffixStyle: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
-                  helperText: '* Angka terisi otomatis dari AI, namun dapat disesuaikan manual jika terjadi ketidaksesuaian.',
+                  helperText: '* Angka terisi otomatis dari foto timbangan (OCR), atau dapat diketik manual langsung di kolom ini.',
                   helperMaxLines: 2,
                   helperStyle: TextStyle(color: AppColors.primaryBlue, fontStyle: FontStyle.italic),
                 ),
@@ -902,13 +999,18 @@ class _TimbanganPemilahanViewState
               ),
               const SizedBox(height: AppDimensions.lg),
 
-              // 5. Foto Bukti Penimbangan
-              const Text('Foto Proses Penimbangan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              // 5. Foto Bukti Penimbangan (OCR)
+              const Text('Foto Timbangan & Display Angka (OCR)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              const SizedBox(height: 4),
+              const Text(
+                'Ambil foto saat sampah berada di atas timbangan. Pastikan layar angka timbangan terlihat jelas dan tidak buram/silau agar terbaca otomatis.',
+                style: TextStyle(fontSize: 11, color: AppColors.textSecondary, height: 1.3),
+              ),
               const SizedBox(height: 8),
               GestureDetector(
-                onTap: _takePhotoTimbangan,
+                onTap: _isScanningAi ? null : _takePhotoTimbangan,
                 child: Container(
-                  height: 260, // Increased height so photo is not aggressively cropped
+                  height: 260,
                   width: double.infinity,
                   decoration: BoxDecoration(
                     color: Colors.grey[100],
@@ -925,31 +1027,94 @@ class _TimbanganPemilahanViewState
                             fit: StackFit.expand,
                             children: [
                               Image.file(File(_photoTimbanganPath!), fit: BoxFit.cover),
+                              // Evidence badge
+                              Positioned(
+                                left: 12,
+                                top: 12,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryGreen,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.check_circle, color: Colors.white, size: 12),
+                                      SizedBox(width: 4),
+                                      Text('Evidence OK', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              // Ambil Ulang button
                               Positioned(
                                 right: 12,
                                 top: 12,
-                                child: Container(
-                                  padding: const EdgeInsets.all(6),
-                                  decoration: const BoxDecoration(
-                                    color: Colors.black54,
-                                    shape: BoxShape.circle,
+                                child: GestureDetector(
+                                  onTap: _takePhotoTimbangan,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black54,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.refresh, color: Colors.white, size: 14),
+                                        SizedBox(width: 4),
+                                        Text('Ambil Ulang', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
+                                      ],
+                                    ),
                                   ),
-                                  child: const Icon(Icons.edit, color: Colors.white, size: 20),
                                 ),
                               ),
+                              if (_isScanningAi)
+                                Container(
+                                  color: Colors.black54,
+                                  child: const Center(
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        CircularProgressIndicator(color: Colors.white),
+                                        SizedBox(height: 12),
+                                        Text('Membaca angka timbangan...', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                             ],
                           ),
                         )
-                      : const Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.scale_rounded, size: 40, color: AppColors.primaryBlue),
-                            SizedBox(height: 8),
-                            Text('Ambil Foto Penimbangan', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryBlue)),
-                            SizedBox(height: 4),
-                            Text('Foto angka pada alat timbangan fisik', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-                          ],
-                        ),
+                      : _isScanningAi
+                          ? const Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  CircularProgressIndicator(color: AppColors.primaryBlue),
+                                  SizedBox(height: 12),
+                                  Text('Membaca angka timbangan...', style: TextStyle(color: AppColors.primaryBlue, fontWeight: FontWeight.bold, fontSize: 13)),
+                                ],
+                              ),
+                            )
+                          : const Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.document_scanner_outlined, size: 40, color: AppColors.primaryBlue),
+                                SizedBox(height: 8),
+                                Text('Ambil Foto Timbangan (OCR)', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryBlue)),
+                                SizedBox(height: 4),
+                                Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 16),
+                                  child: Text(
+                                    'Foto saat sampah ditimbang & pastikan angka display terlihat jelas',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                  ),
+                                ),
+                              ],
+                            ),
                 ),
               ),
             ],
@@ -989,7 +1154,7 @@ class _TimbanganPemilahanViewState
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'Estimasi Poin Sementara (Dihitung Server)',
+                            'Estimasi Poin Sementara',
                             style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
                           ),
                           Row(
