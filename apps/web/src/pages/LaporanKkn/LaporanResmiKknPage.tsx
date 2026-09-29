@@ -1018,20 +1018,36 @@ export const LaporanResmiKknPage: React.FC = () => {
                     <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2 text-center">
                       Status Pelaksanaan Program Kerja
                     </h4>
-                    <div className="space-y-2.5 mt-2">
-                      <div className="flex items-center justify-between p-2 rounded-lg bg-emerald-50 border border-emerald-200">
-                        <span className="font-bold text-emerald-900">Sudah Selesai (100%):</span>
-                        <span className="font-black text-emerald-700">{data.ringkasanEksekutif.totalProkerSelesai} Proker ({data.ringkasanEksekutif.persentaseProkerSelesai}%)</span>
-                      </div>
-                      <div className="flex items-center justify-between p-2 rounded-lg bg-blue-50 border border-blue-200">
-                        <span className="font-bold text-blue-900">Sedang Berjalan di Lapangan:</span>
-                        <span className="font-black text-blue-700">62 Proker (46%)</span>
-                      </div>
-                      <div className="flex items-center justify-between p-2 rounded-lg bg-slate-100 border border-slate-200">
-                        <span className="font-bold text-slate-700">Belum Mulai / Persiapan:</span>
-                        <span className="font-black text-slate-600">46 Proker (34%)</span>
-                      </div>
-                    </div>
+                    {(() => {
+                      const list = data.grafikPerforma?.statusPelaksanaanProker || [];
+                      const selesaiItem = list.find((s) => s.status.toLowerCase().includes("selesai"));
+                      const sedangItem = list.find((s) => s.status.toLowerCase().includes("sedang") || s.status.toLowerCase().includes("berjalan"));
+                      const belumItem = list.find((s) => s.status.toLowerCase().includes("belum"));
+
+                      const selesaiCount = selesaiItem?.count ?? data.ringkasanEksekutif.totalProkerSelesai;
+                      const selesaiPct = selesaiItem?.percentage ?? data.ringkasanEksekutif.persentaseProkerSelesai;
+                      const sedangCount = sedangItem?.count ?? Math.max(0, data.ringkasanEksekutif.totalProkerDisetujui - selesaiCount);
+                      const sedangPct = sedangItem?.percentage ?? (data.ringkasanEksekutif.totalProkerDisetujui > 0 ? Math.round((sedangCount / data.ringkasanEksekutif.totalProkerDisetujui) * 100) : 0);
+                      const belumCount = belumItem?.count ?? Math.max(0, data.ringkasanEksekutif.totalProkerDisetujui - selesaiCount - sedangCount);
+                      const belumPct = belumItem?.percentage ?? (data.ringkasanEksekutif.totalProkerDisetujui > 0 ? Math.round((belumCount / data.ringkasanEksekutif.totalProkerDisetujui) * 100) : 0);
+
+                      return (
+                        <div className="space-y-2.5 mt-2">
+                          <div className="flex items-center justify-between p-2 rounded-lg bg-emerald-50 border border-emerald-200">
+                            <span className="font-bold text-emerald-900">Sudah Selesai (100%):</span>
+                            <span className="font-black text-emerald-700">{selesaiCount} Proker ({selesaiPct}%)</span>
+                          </div>
+                          <div className="flex items-center justify-between p-2 rounded-lg bg-blue-50 border border-blue-200">
+                            <span className="font-bold text-blue-900">Sedang Berjalan di Lapangan:</span>
+                            <span className="font-black text-blue-700">{sedangCount} Proker ({sedangPct}%)</span>
+                          </div>
+                          <div className="flex items-center justify-between p-2 rounded-lg bg-slate-100 border border-slate-200">
+                            <span className="font-bold text-slate-700">Belum Mulai / Persiapan:</span>
+                            <span className="font-black text-slate-600">{belumCount} Proker ({belumPct}%)</span>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                   <p className="text-[10px] text-slate-500 italic mt-2">
                     * Proker murni berfokus pada target fisik, edukasi, dan tata kelola sampah lingkungan. Penilaian mutu akademik dievaluasi terpisah melalui modul presensi dan pengujian DPL.

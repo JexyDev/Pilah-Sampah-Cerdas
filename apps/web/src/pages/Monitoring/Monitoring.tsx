@@ -288,7 +288,7 @@ const Monitoring: React.FC = () => {
     });
   }, [bins]);
 
-  // Total Active Bins (Synchronized with Dashboard KPI - Single Source of Truth: 351 unit)
+  // Total Active Bins (Disinkronkan dengan KPI Dashboard)
   const totalActiveBoundBins = useMemo(() => {
     if (kpi?.tempatSampahAktif !== undefined && kpi.tempatSampahAktif > 0) {
       return kpi.tempatSampahAktif;
@@ -308,7 +308,7 @@ const Monitoring: React.FC = () => {
         Boolean(b.userId || b.wargaName)
       );
     }).length;
-    return countActive > 0 ? countActive : 351;
+    return countActive;
   }, [kpi, bins]);
 
   const unmappedBinsCount = Math.max(0, totalActiveBoundBins - verifiedMapBins.length);

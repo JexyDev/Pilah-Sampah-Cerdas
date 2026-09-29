@@ -213,20 +213,18 @@ const ManajemenTempatSampah: React.FC = () => {
   }, [bins]);
 
   const totalActiveBoundBins = React.useMemo(() => {
-    return (
-      bins.filter((b) => {
-        const rst = (b.realStatus || "").toUpperCase();
-        const st = (b.status || "").toUpperCase();
-        const baku = ((b as any).statusBaku || "").toUpperCase();
-        return (
-          rst === "ACTIVE_BOUND" ||
-          rst === "ACTIVE" ||
-          baku === "AKTIF_TERPASANG" ||
-          st === "ACTIVE_BOUND" ||
-          Boolean(b.userId || b.wargaName)
-        );
-      }).length || 351
-    );
+    return bins.filter((b) => {
+      const rst = (b.realStatus || "").toUpperCase();
+      const st = (b.status || "").toUpperCase();
+      const baku = ((b as any).statusBaku || "").toUpperCase();
+      return (
+        rst === "ACTIVE_BOUND" ||
+        rst === "ACTIVE" ||
+        baku === "AKTIF_TERPASANG" ||
+        st === "ACTIVE_BOUND" ||
+        Boolean(b.userId || b.wargaName)
+      );
+    }).length;
   }, [bins]);
 
   const unmappedBinsCount = Math.max(0, totalActiveBoundBins - verifiedMapBins.length);
