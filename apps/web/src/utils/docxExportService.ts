@@ -807,24 +807,26 @@ export async function exportExecutiveReportDocx(payload: DocxReportPayload): Pro
  */
 export async function exportWasteReportDocx(data: any, customConfig?: any): Promise<void> {
   const metadata = {
-    judul: customConfig?.judulLaporan || data.metadata?.judulLaporan || "LAPORAN RESMI TATA KELOLA SAMPAH & EKONOMI SIRKULAR",
-    subjudul: customConfig?.subjudul || data.metadata?.subjudul || "PENGELOLAAN PERSAMPAHAN KECAMATAN COBLONG BERBASIS DIGITAL",
+    judul: customConfig?.judulLaporan || data.metadata?.judulLaporan || "LAPORAN EVALUASI & AKUNTABILITAS TATA KELOLA SAMPAH PERKOTAAN",
+    subjudul: customConfig?.subjudul || data.metadata?.subjudul || "PENGELOLAAN PERSAMPAHAN KECAMATAN COBLONG BERBASIS PLATFORM CERDAS BERSEKA",
     nomor: customConfig?.nomorDokumen || data.metadata?.nomorDokumen || "005/BERSEKA-DLH/EVAL/IX/2026",
     sifat: customConfig?.sifatDokumen || "Penting / Kedinasan Terbuka",
     lampiran: customConfig?.lampiranDokumen || "1 (Satu) Berkas Rekapitulasi Lengkap",
-    perihal: customConfig?.perihalDokumen || "Laporan Akuntabilitas dan Evaluasi Kinerja Tata Kelola Persampahan",
+    perihal: customConfig?.perihalDokumen || "Laporan Akuntabilitas dan Evaluasi Kinerja Tata Kelola Persampahan Berbasis Ekonomi Sirkular",
     tanggal: customConfig?.tanggalPengesahan || "29 September 2026",
     wilayah: customConfig?.wilayahCakupan || data.metadata?.wilayahCakupan || "Kecamatan Coblong (6 Kelurahan)",
   };
 
   const signatories = customConfig?.penandatangan || {
     jabatan: "Ketua Tim Pelaksana Task Force BERSEKA",
-    instansi: "Pemerintah Daerah Kota Bandung x BERSEKA",
+    instansi: "Universitas Komputer Indonesia x BERSEKA",
     nama: "Ketua Tim Pelaksana",
     nip: "19800512 200501 1 004",
   };
 
   const kpi = data.kpiSummary;
+  const audit = data.kelurahanAudit || [];
+  const isLandscape = customConfig?.orientation === "landscape";
 
   const doc = new Document({
     styles: {
@@ -838,33 +840,36 @@ export async function exportWasteReportDocx(data: any, customConfig?: any): Prom
       {
         properties: {
           page: {
+            size: isLandscape
+              ? { orientation: PageOrientation.LANDSCAPE }
+              : { orientation: PageOrientation.PORTRAIT },
             margin: { top: 1440, bottom: 1440, left: 1440, right: 1440 },
           },
         },
         children: [
-          // Kop Surat Kedinasan
+          // ── KOP SURAT FORMAL UNIKOM x BERSEKA (TANPA LPPM) ───────────────────────
           new Paragraph({
             alignment: AlignmentType.CENTER,
             children: [
-              new TextRun({ text: "PEMERINTAH DAERAH KOTA BANDUNG", bold: true, size: 24 }),
+              new TextRun({ text: "UNIVERSITAS KOMPUTER INDONESIA (UNIKOM)", bold: true, size: 26, color: "111827" }),
             ],
           }),
           new Paragraph({
             alignment: AlignmentType.CENTER,
             children: [
-              new TextRun({ text: "DINAS LINGKUNGAN HIDUP — KECAMATAN COBLONG", bold: true, size: 26, color: "065F46" }),
+              new TextRun({ text: "PEMERINTAH DAERAH KOTA BANDUNG • DINAS LINGKUNGAN HIDUP", bold: true, size: 24, color: "065F46" }),
             ],
           }),
           new Paragraph({
             alignment: AlignmentType.CENTER,
             children: [
-              new TextRun({ text: "TIM KOORDINASI PLATFORM CERDAS BERSEKA", bold: true, size: 22 }),
+              new TextRun({ text: "TIM KOORDINASI PLATFORM CERDAS BERSEKA", bold: true, size: 22, color: "111827" }),
             ],
           }),
           new Paragraph({
             alignment: AlignmentType.CENTER,
             children: [
-              new TextRun({ text: "Sekretariat: Jl. Cigadung Raya Barat No. 28, Kota Bandung • Laman: https://berseka.bandung.go.id", size: 18, color: "4B5563" }),
+              new TextRun({ text: "Sekretariat: Jl. Dipati Ukur No. 112-116 & Jl. Cigadung Raya Barat No. 28, Kota Bandung • Laman: https://berseka.bandung.go.id", size: 18, color: "4B5563" }),
             ],
           }),
           new Paragraph({
@@ -927,31 +932,95 @@ export async function exportWasteReportDocx(data: any, customConfig?: any): Prom
 
           new Paragraph({ spacing: { after: 160 }, children: [] }),
 
-          // Lembar Pengesahan
-          new Paragraph({
-            alignment: AlignmentType.CENTER,
-            spacing: { before: 200, after: 40 },
-            children: [new TextRun({ text: `Bandung, ${metadata.tanggal}`, italics: true, size: 18 })],
-          }),
-          new Paragraph({
-            alignment: AlignmentType.CENTER,
-            children: [new TextRun({ text: "MENGESAHKAN,", bold: true, size: 18 })],
-          }),
-          new Paragraph({
-            alignment: AlignmentType.CENTER,
-            spacing: { after: 800 },
-            children: [
-              new TextRun({ text: signatories.jabatan, bold: true, size: 20 }),
-              new TextRun({ text: `\n${signatories.instansi}`, size: 18, color: "4B5563" }),
+          // Bab II: Audit Kinerja 6 Kelurahan di Coblong
+          ...(audit.length > 0
+            ? [
+                new Paragraph({
+                  heading: HeadingLevel.HEADING_2,
+                  spacing: { before: 180, after: 80 },
+                  children: [new TextRun({ text: "BAB II. AUDIT KINERJA TATA KELOLA PERSAMPAHAN 6 KELURAHAN", bold: true, size: 22, color: "065F46" })],
+                }),
+                new Table({
+                  width: { size: 100, type: WidthType.PERCENTAGE },
+                  borders: tableBorderLight,
+                  rows: [
+                    new TableRow({
+                      children: [
+                        new TableCell({ shading: { fill: "F3F4F6" }, children: [new Paragraph({ children: [new TextRun({ text: "Kelurahan", bold: true, size: 18 })] })] }),
+                        new TableCell({ shading: { fill: "F3F4F6" }, children: [new Paragraph({ children: [new TextRun({ text: "Total Terpilah (Kg)", bold: true, size: 18 })] })] }),
+                        new TableCell({ shading: { fill: "F3F4F6" }, children: [new Paragraph({ children: [new TextRun({ text: "Organik (Kg)", bold: true, size: 18 })] })] }),
+                        new TableCell({ shading: { fill: "F3F4F6" }, children: [new Paragraph({ children: [new TextRun({ text: "Anorganik (Kg)", bold: true, size: 18 })] })] }),
+                        new TableCell({ shading: { fill: "F3F4F6" }, children: [new Paragraph({ children: [new TextRun({ text: "Residu (Kg)", bold: true, size: 18 })] })] }),
+                        new TableCell({ shading: { fill: "F3F4F6" }, children: [new Paragraph({ children: [new TextRun({ text: "Kepatuhan", bold: true, size: 18 })] })] }),
+                      ],
+                    }),
+                    ...audit.map(
+                      (a: any) =>
+                        new TableRow({
+                          children: [
+                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: a.kelurahan, bold: true, size: 18 })] })] }),
+                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${(a.totalTerpilahKg || 0).toFixed(2)}`, size: 18 })] })] }),
+                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${(a.organikKg || 0).toFixed(2)}`, size: 18 })] })] }),
+                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${(a.anorganikKg || 0).toFixed(2)}`, size: 18 })] })] }),
+                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${(a.residuKg || 0).toFixed(2)}`, size: 18 })] })] }),
+                            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${a.currentComplianceRate}% (${a.complianceLevel})`, bold: true, size: 18, color: "047857" })] })] }),
+                          ],
+                        })
+                    ),
+                  ],
+                }),
+                new Paragraph({ spacing: { after: 180 }, children: [] }),
+              ]
+            : []),
+
+          // Lembar Pengesahan (1 TTD Tengah Bawah Sesuai Mandat)
+          new Table({
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            borders: tableBorderNone,
+            rows: [
+              new TableRow({
+                children: [
+                  new TableCell({
+                    width: { size: 100, type: WidthType.PERCENTAGE },
+                    borders: tableBorderNone,
+                    children: [
+                      new Paragraph({
+                        alignment: AlignmentType.CENTER,
+                        spacing: { before: 200, after: 40 },
+                        children: [
+                          new TextRun({
+                            text: `Ditetapkan di Bandung, ${metadata.tanggal}`,
+                            size: 18,
+                            italics: true,
+                          }),
+                        ],
+                      }),
+                      new Paragraph({
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 20 },
+                        children: [new TextRun({ text: "MENGESAHKAN,", bold: true, size: 18 })],
+                      }),
+                      new Paragraph({
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 800 },
+                        children: [
+                          new TextRun({ text: signatories.jabatan, bold: true, size: 20, color: "111827" }),
+                          new TextRun({ text: `\n${signatories.instansi}`, size: 18, color: "4B5563" }),
+                        ],
+                      }),
+                      new Paragraph({
+                        alignment: AlignmentType.CENTER,
+                        children: [new TextRun({ text: `( ${signatories.nama} )`, bold: true, size: 20, underline: {}, color: "111827" })],
+                      }),
+                      new Paragraph({
+                        alignment: AlignmentType.CENTER,
+                        children: [new TextRun({ text: signatories.nip ? `NIP/NIDN. ${signatories.nip}` : "", size: 18, color: "4B5563" })],
+                      }),
+                    ],
+                  }),
+                ],
+              }),
             ],
-          }),
-          new Paragraph({
-            alignment: AlignmentType.CENTER,
-            children: [new TextRun({ text: `( ${signatories.nama} )`, bold: true, size: 20, underline: {} })],
-          }),
-          new Paragraph({
-            alignment: AlignmentType.CENTER,
-            children: [new TextRun({ text: signatories.nip ? `NIP. ${signatories.nip}` : "", size: 18 })],
           }),
         ],
       },
@@ -962,7 +1031,8 @@ export async function exportWasteReportDocx(data: any, customConfig?: any): Prom
   const url = window.URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.setAttribute("download", `Laporan_Tata_Kelola_Sampah_${Date.now()}.docx`);
+  const safeFilename = `${metadata.judul.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 40)}_${Date.now()}.docx`;
+  link.setAttribute("download", safeFilename);
   document.body.appendChild(link);
   link.click();
   link.remove();
