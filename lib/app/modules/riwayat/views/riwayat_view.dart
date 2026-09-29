@@ -375,7 +375,10 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
         final item = flatList[index];
 
         if (item == 'SUMMARY') {
-          return const Column(children: [_SummaryCard(), SizedBox(height: 16)]);
+          return Column(children: [
+            _SummaryCard(items: items, timeFilterIndex: _timeFilterIndex),
+            const SizedBox(height: 16),
+          ]);
         } else if (item is String) {
           return Padding(
             padding: const EdgeInsets.only(bottom: 8, top: 4),
@@ -437,85 +440,83 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
 }
 
 class _SummaryCard extends StatelessWidget {
-  const _SummaryCard();
+  const _SummaryCard({required this.items, required this.timeFilterIndex});
+  
+  final List<RiwayatItemData> items;
+  final int timeFilterIndex;
 
   @override
   Widget build(BuildContext context) {
-    return Consumer(
-      builder: (context, ref, _) {
-        final logsAsync = ref.watch(wasteLogsProvider);
-        return logsAsync.when(
-          data: (logs) {
-            double org = 0;
-            double anorg = 0;
-            for (var l in logs) {
-              if (l.wasteType == WasteType.organic) {
-                org += l.weightKg;
-              } else {
-                anorg += l.weightKg;
-              }
-            }
-            return Container(
-              margin: const EdgeInsets.all(16),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.border),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Total Sampah (Semua Waktu)',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildSummaryItem(
-                          'Organik',
-                          org,
-                          AppColors.organicColor,
-                        ),
-                      ),
-                      Container(width: 1, height: 40, color: AppColors.border),
-                      Expanded(
-                        child: _buildSummaryItem(
-                          'Anorganik',
-                          anorg,
-                          AppColors.nonOrganicColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            );
-          },
-          loading: () => const Padding(
-            padding: EdgeInsets.all(16.0),
-            child: SkeletonLoading(
-              height: 80,
-              width: double.infinity,
-              borderRadius: BorderRadius.all(Radius.circular(16)),
+    double org = 0;
+    double anorg = 0;
+    
+    for (var item in items) {
+      if (item.wasteLog != null) {
+        if (item.wasteLog!.wasteType == WasteType.organic) {
+          org += item.wasteLog!.weightKg;
+        } else if (item.wasteLog!.wasteType == WasteType.nonOrganic) {
+          anorg += item.wasteLog!.weightKg;
+        }
+      }
+    }
+
+    String labelWaktu = 'Semua Waktu';
+    if (timeFilterIndex == 1) {
+      labelWaktu = 'Hari Ini';
+    } else if (timeFilterIndex == 2) {
+      labelWaktu = 'Minggu Ini';
+    } else if (timeFilterIndex == 3) {
+      labelWaktu = 'Bulan Ini';
+    }
+
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Total Sampah ($labelWaktu)',
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
             ),
           ),
-          error: (_, __) => const SizedBox.shrink(),
-        );
-      },
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildSummaryItem(
+                  'Organik',
+                  org,
+                  AppColors.organicColor,
+                ),
+              ),
+              Container(width: 1, height: 40, color: AppColors.border),
+              Expanded(
+                child: _buildSummaryItem(
+                  'Anorganik',
+                  anorg,
+                  AppColors.nonOrganicColor,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
