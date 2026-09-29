@@ -306,7 +306,7 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
           </div>
         </div>
 
-        {/* Kolom Kanan (7 cols): Sub-Analisis Kesesuaian Tempat Sampah Organik vs Anorganik */}
+        {/* Kolom Kanan (7 cols): Sub-Analisis Akurasi Tempat Sampah Organik vs Anorganik */}
         <div className="md:col-span-7 flex flex-col justify-between gap-3">
           {/* Sub-Analisis 1: Tempat Sampah Organik */}
           <div className="bg-emerald-50/40 dark:bg-emerald-950/20 rounded-2xl p-4 border border-emerald-200/70 dark:border-emerald-800/40 flex flex-col justify-between">
@@ -317,10 +317,10 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
                 </span>
                 <div>
                   <h5 className="font-extrabold text-xs text-emerald-950 dark:text-emerald-200">
-                    Kesesuaian Tempat Sampah Organik
+                    Akurasi Tempat Sampah Organik
                   </h5>
                   <p className="text-[10px] text-emerald-700/80 dark:text-emerald-400">
-                    Sampah organik yang benar-benar masuk tempat sampah bertanda Organik
+                    Ketepatan pemilahan sampah organik pada wadah yang sesuai
                   </p>
                 </div>
               </div>
@@ -336,12 +336,12 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
               />
             </div>
 
-            <div className="flex justify-between items-center text-[10px] text-emerald-800 dark:text-emerald-300 font-medium">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[10px] text-emerald-800 dark:text-emerald-300 font-medium">
               <span>
-                {metrics ? `${metrics.wadahOrganik.aktivitasSesuai} dari ${metrics.wadahOrganik.totalAktivitas} setoran tepat` : "0 setoran"}
+                {metrics ? `${metrics.wadahOrganik.aktivitasSesuai} dari ${metrics.wadahOrganik.totalAktivitas} setoran tepat (Sudah sangat bagus)` : "0 setoran tepat"}
               </span>
               <span>
-                Kontaminasi Anorganik: {metrics ? `${metrics.wadahOrganik.kontaminasiPersen.toFixed(1)}%` : "0%"}
+                Kontaminasi Anorganik: {metrics ? `${metrics.wadahOrganik.kontaminasiPersen.toFixed(1)}%` : "0%"} (Sudah standar industri persampahan)
               </span>
             </div>
           </div>
@@ -355,10 +355,10 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
                 </span>
                 <div>
                   <h5 className="font-extrabold text-xs text-amber-950 dark:text-amber-200">
-                    Kesesuaian Tempat Sampah Anorganik
+                    Akurasi Tempat Sampah Anorganik
                   </h5>
                   <p className="text-[10px] text-amber-700/80 dark:text-amber-400">
-                    Sampah anorganik yang benar-benar masuk tempat sampah bertanda Anorganik
+                    Ketepatan pemilahan sampah anorganik pada wadah yang sesuai
                   </p>
                 </div>
               </div>
@@ -374,9 +374,9 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
               />
             </div>
 
-            <div className="flex justify-between items-center text-[10px] text-amber-800 dark:text-amber-300 font-medium">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[10px] text-amber-800 dark:text-amber-300 font-medium">
               <span>
-                {metrics ? `${metrics.wadahAnorganik.aktivitasSesuai} dari ${metrics.wadahAnorganik.totalAktivitas} setoran tepat` : "0 setoran"}
+                {metrics ? `${metrics.wadahAnorganik.aktivitasSesuai} dari ${metrics.wadahAnorganik.totalAktivitas} setoran tepat` : "0 setoran tepat"}
               </span>
               <span>
                 Kontaminasi Organik: {metrics ? `${metrics.wadahAnorganik.kontaminasiPersen.toFixed(1)}%` : "0%"}

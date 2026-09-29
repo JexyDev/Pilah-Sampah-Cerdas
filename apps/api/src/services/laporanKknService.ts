@@ -547,7 +547,7 @@ export const laporanKknService = {
 
     // 8. Integrasi Ringkasan Dampak & Baseline Tata Kelola Sampah (100% Real-time Database Aggregation)
     const nonTestWargaWhere: any = {
-      role: "WARGA",
+      role: { name: { in: ["WARGA", "warga"] } },
       isTestAccount: false,
       NOT: [{ name: { contains: "test", mode: "insensitive" } }],
     };
