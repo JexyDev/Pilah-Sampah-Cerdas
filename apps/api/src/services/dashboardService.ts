@@ -1111,20 +1111,6 @@ export const dashboardService = {
         isFallbackBaselineKg: false,
         isFallback: false,
       };
-        totalKg,
-        wargaKg,
-        petugasKg,
-        sourceType: normSource,
-        hasEndline,
-        status,
-        // bobot untuk agregasi lintas kelurahan
-        setoranDinilai: kelDinilai,
-        setoranPatuh: kelPatuh,
-        // Metadata transparansi asal data (Anti-Dummy Policy: 100% fakta sistem)
-        isFallbackBaselineRate: false,
-        isFallbackBaselineKg: false,
-        isFallback: false,
-      };
     });
 
     return {
