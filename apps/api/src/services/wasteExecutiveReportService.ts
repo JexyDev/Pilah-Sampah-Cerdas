@@ -17,6 +17,9 @@ export interface WasteExecutiveFilters {
   periode?: string;
   startDate?: string;
   endDate?: string;
+  hari?: string;
+  jamMulai?: string;
+  jamSelesai?: string;
   includeTestAccounts?: boolean;
 }
 

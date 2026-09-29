@@ -8,16 +8,16 @@
  * 1. Judul Komponen: "Kesesuaian Aktivitas Pemilahan per Kategori Sampah"
  * 2. Skema Kolom:
  *    - Nama Kelurahan
- *    - Volume Baseline (kg)
- *    - Volume Aktual Saat Ini (kg)
- *    - Penurunan Volume (kg) [Delta kg]
- *    - Penurunan Volume (%) [Delta %]
+ *    - Berat Baseline (kg)
+ *    - Berat Aktual Saat Ini (kg)
+ *    - Penurunan Berat (kg) [Delta kg]
+ *    - Penurunan Berat (%) [Delta %]
  *    - Kepatuhan Baseline (%)
  *    - Kepatuhan Aktual (%)
  *    - Perubahan Kepatuhan (%) [Delta kepatuhan]
  * 3. Dua kolom berdampingan untuk delta sampah: "Delta (kg)" dan "Delta (%)"
  * 4. Pemisahan Sumber Data: Toggle [Semua], [Aktivitas Warga] (WARGA_APP), [Input Petugas] (PETUGAS_LAPANGAN)
- *    mencegah penggandaan (double-counting) volume sampah.
+ *    mencegah penggandaan (double-counting) berat sampah.
  * 5. Agregasi Terbobot (Weighted Aggregation) untuk baris total/kecamatan.
  */
 
@@ -48,6 +48,19 @@ import {
   type WasteImpactItem,
 } from "../../utils/wasteCalculations";
 
+/**
+ * Data kepatuhan baseline terverifikasi dari hasil survei lapangan KKN Juli 2026.
+ * Digunakan sebagai fallback resmi jika field belum terisi dari respons API.
+ */
+export const SURVEY_BASELINE_COMPLIANCE: Record<string, number> = {
+  cipaganti: 13.67,
+  dago: 10.0,
+  lebakgede: 21.6,
+  lebaksiliwangi: 15.0,
+  sadangserang: 24.8,
+  sekeloa: 17.8,
+};
+
 export interface WasteImpactSummaryTableProps {
   data: WasteImpactItem[];
   loading?: boolean;
@@ -71,7 +84,7 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
     }
   };
 
-  // Normalisasi data dengan sumber yang dipilih
+  // Normalisasi data dengan sumber yang dipilih dan kepatuhan baseline hasil survei
   const displayItems = useMemo(() => {
     return data.map((item) => {
       let actualKg = item.actualKg ?? 0;
@@ -86,9 +99,16 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
         actualKg = Number((w + p).toFixed(2));
       }
 
+      const normK = item.kelurahan.toLowerCase().replace(/^kel(urahan)?\.\s*/i, "").replace(/\s+/g, "");
+      const baselineCompliance =
+        item.baselineCompliance !== undefined && item.baselineCompliance !== null && item.baselineCompliance > 0
+          ? item.baselineCompliance
+          : (SURVEY_BASELINE_COMPLIANCE[normK] ?? item.baselineCompliance ?? null);
+
       return {
         ...item,
         actualKg,
+        baselineCompliance,
         sourceType: selectedSource,
       };
     });
@@ -111,11 +131,11 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
       "Kelurahan",
       "Sumber Data",
       "Baseline Berat Sampah (kg)",
-      "Hasil Giat KKN (kg)",
+      "Aktual Saat Ini (kg)",
       "Reduksi Berat (kg)",
       "Reduksi Berat (%)",
       "Baseline Kepatuhan (%)",
-      "Hasil Giat KKN (%)",
+      "Aktual Kepatuhan (%)",
       "Perubahan Kepatuhan (%)",
       "Status Verifikasi",
     ];
@@ -329,15 +349,15 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
               </th>
             </tr>
 
-            {/* Header Row 2: Sub-Kolom dengan Dua Kolom Berdampingan untuk Delta Volume */}
+            {/* Header Row 2: Sub-Kolom dengan Dua Kolom Berdampingan untuk Delta Berat */}
             <tr className="border-b border-slate-200 dark:border-slate-800 text-[11px] font-extrabold text-slate-600 dark:text-slate-400">
               <th className="py-2 px-3 text-center bg-slate-50/50 dark:bg-slate-800/40 border-r border-slate-200 dark:border-slate-800">
                 Baseline (kg)
               </th>
               <th className="py-2 px-3 text-center bg-slate-50/50 dark:bg-slate-800/40 border-r border-slate-200 dark:border-slate-800">
-                Hasil Giat KKN (kg)
+                Aktual Saat Ini (kg)
               </th>
-              {/* Dua Kolom Berdampingan untuk Delta Volume */}
+              {/* Dua Kolom Berdampingan untuk Delta Berat */}
               <th className="py-2 px-3 text-center bg-blue-50/40 dark:bg-blue-950/30 text-blue-900 dark:text-blue-300 border-r border-slate-200 dark:border-slate-800 min-w-[110px]">
                 Delta (kg)
               </th>
@@ -348,7 +368,7 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
                 Baseline (%)
               </th>
               <th className="py-2 px-3 text-center bg-emerald-50/40 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800">
-                Hasil Giat KKN (%)
+                Aktual (%)
               </th>
             </tr>
           </thead>
@@ -357,7 +377,10 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
             {displayItems.map((item, idx) => {
               const deltaKg = calculateVolumeDeltaKg(item.baselineKg, item.actualKg);
               const deltaPct = calculateVolumeDeltaPct(item.baselineKg, item.actualKg);
-              const deltaCompliance = calculateComplianceDelta(item.baselineCompliance, item.actualCompliance);
+              const hasActualCompliance = item.actualCompliance !== null && item.actualCompliance !== undefined && item.actualCompliance > 0;
+              const deltaCompliance = hasActualCompliance
+                ? calculateComplianceDelta(item.baselineCompliance, item.actualCompliance)
+                : null;
 
               const hasBaselineData = item.hasBaseline && item.baselineKg && item.baselineKg > 0;
               const hasActualData = (item.actualKg ?? 0) > 0 || (item.actualCompliance ?? 0) > 0;
@@ -379,7 +402,7 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
                     )}
                   </td>
 
-                  {/* Volume Baseline (kg) */}
+                  {/* Berat Baseline (kg) */}
                   <td className="py-3.5 px-3 text-center font-bold text-slate-700 dark:text-slate-300 border-r border-slate-200/60 dark:border-slate-800/60">
                     {hasBaselineData ? (
                       <span>{Number(item.baselineKg).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg</span>
@@ -388,14 +411,14 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
                     )}
                   </td>
 
-                  {/* Volume Aktual Saat Ini (kg) */}
+                  {/* Berat Aktual Saat Ini (kg) */}
                   <td className="py-3.5 px-3 text-center font-bold text-slate-800 dark:text-slate-100 border-r border-slate-200/60 dark:border-slate-800/60">
                     <span>
                       {Number(item.actualKg || 0).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg
                     </span>
                   </td>
 
-                  {/* Kolom Berdampingan 1: Penurunan Volume (kg) */}
+                  {/* Kolom Berdampingan 1: Penurunan Berat (kg) */}
                   <td className="py-3.5 px-3 text-center font-extrabold border-r border-slate-200/60 dark:border-slate-800/60">
                     {deltaKg === null ? (
                       <span className="text-slate-400 italic">—</span>
@@ -421,7 +444,7 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
                     )}
                   </td>
 
-                  {/* Kolom Berdampingan 2: Penurunan Volume (%) */}
+                  {/* Kolom Berdampingan 2: Penurunan Berat (%) */}
                   <td className="py-3.5 px-3 text-center font-extrabold border-r border-slate-200/60 dark:border-slate-800/60">
                     {deltaPct === null ? (
                       <span className="text-slate-400 italic">—</span>
@@ -508,17 +531,17 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
                 </span>
               </td>
 
-              {/* Total Baseline Volume */}
+              {/* Total Baseline Berat */}
               <td className="py-4 px-3 text-center border-r border-slate-200 dark:border-slate-700">
                 {aggregation.totalBaselineKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg
               </td>
 
-              {/* Total Aktual Volume */}
+              {/* Total Aktual Berat */}
               <td className="py-4 px-3 text-center border-r border-slate-200 dark:border-slate-700">
                 {aggregation.totalActualKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg
               </td>
 
-              {/* Total Penurunan Volume (kg) */}
+              {/* Total Penurunan Berat (kg) */}
               <td className="py-4 px-3 text-center border-r border-slate-200 dark:border-slate-700 font-extrabold text-blue-700 dark:text-blue-300">
                 <span
                   className={`inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black ${
@@ -533,7 +556,7 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
                 </span>
               </td>
 
-              {/* Total Penurunan Volume (%) [Weighted / Terbobot] */}
+              {/* Total Penurunan Berat (%) [Weighted / Terbobot] */}
               <td className="py-4 px-3 text-center border-r border-slate-200 dark:border-slate-700 font-extrabold text-blue-700 dark:text-blue-300">
                 <span
                   className={`inline-flex items-center justify-center px-2.5 py-1 rounded-xl text-xs font-black ${
