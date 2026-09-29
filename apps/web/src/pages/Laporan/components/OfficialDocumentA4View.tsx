@@ -242,7 +242,7 @@ export const OfficialDocumentA4View: React.FC<OfficialDocumentA4ViewProps> = ({
 
         <p className="indent-8 text-[10.5pt] leading-relaxed">
           Berdasarkan hasil konsolidasi data penimbangan terverifikasi pada seluruh Tempat Pengolahan Sampah Terpadu
-          (TPS3R), Bank Sampah Unit (BSU), dan wadah sampah pintar (<em>IoT Smart Bins</em>), total akumulasi timbulan
+          (TPS3R), Bank Sampah Unit (BSU), dan tempat sampah pintar (<em>IoT Smart Bins</em>), total akumulasi timbulan
           sampah yang tercatat di wilayah <strong>{metadata.wilayahCakupan}</strong> selama periode evaluasi ini mencapai{" "}
           <strong>{kpiSummary.dampakDanReduksi.totalTimbulanSampahKg.toLocaleString("id-ID")} Kilogram</strong> (setara
           dengan <strong>{kpiSummary.dampakDanReduksi.totalTimbulanSampahTon} Ton</strong>). Dari berat timbulan tersebut,
@@ -650,7 +650,7 @@ export const OfficialDocumentA4View: React.FC<OfficialDocumentA4ViewProps> = ({
             </li>
             <li>
               <strong>Bagi Pengelola Platform BERSEKA:</strong> Mempertahankan keandalan sistem pelaporan real-time,
-              menyempurnakan notifikasi peringatan dini kapasitas wadah sampah kritis, dan memperluas integrasi insentif
+              menyempurnakan notifikasi peringatan dini kapasitas tempat sampah kritis, dan memperluas integrasi insentif
               ekonomi warga melalui modul tabungan sampah digital.
             </li>
           </ol>

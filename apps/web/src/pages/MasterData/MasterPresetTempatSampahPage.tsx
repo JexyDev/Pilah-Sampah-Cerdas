@@ -128,7 +128,7 @@ export const DEFAULT_MASTER_TEMPAT_SAMPAH: MasterTempatSampahItem[] = [
     material: "Stainless Steel / Plastik PP",
     lokasiUmum: "Toilet, Kamar Mandi Kos, Kamar Tidur, Ruang Medis",
     deskripsi:
-      "Model silinder higienis dengan mekanisme pedal injak kaki tanpa perlu menyentuh tutup wadah.",
+      "Model silinder higienis dengan mekanisme pedal injak kaki tanpa perlu menyentuh tutup tempat sampah.",
     imageUrl:
       "https://images.unsplash.com/photo-1595278069441-2cf29f8005a4?auto=format&fit=crop&w=800&q=80",
     isDefault: true,
@@ -233,7 +233,7 @@ export const DEFAULT_MASTER_TEMPAT_SAMPAH: MasterTempatSampahItem[] = [
     material: "Fiberglass / Plat Seng Tebal",
     lokasiUmum: "Balai RW, Halaman Sekolah, Taman Fasilitas Umum, Posko KKN",
     deskripsi:
-      "Tiga wadah kotak terintegrasi untuk pemilahan langsung jenis Organik (Hijau), Anorganik (Kuning), dan Residu/B3 (Merah).",
+      "Tiga kompartemen tempat sampah terintegrasi untuk pemilahan langsung jenis Organik (Hijau), Anorganik (Kuning), dan Residu/B3 (Merah).",
     imageUrl:
       "https://images.unsplash.com/photo-1618477461853-cf6ed80faba5?auto=format&fit=crop&w=800&q=80",
     isDefault: true,
@@ -1453,7 +1453,7 @@ export const MasterPresetTempatSampahPage: React.FC = () => {
 
               <div className="p-6 rounded-3xl bg-linear-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/30 border border-emerald-200/80 dark:border-emerald-800/60 text-center space-y-2">
                 <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">
-                  Estimasi Kapasitas Wadah
+                  Estimasi Kapasitas Tempat Sampah
                 </span>
                 <div className="text-5xl font-black text-emerald-900 dark:text-emerald-100 tracking-tight">
                   {simCalculatedVolume} <span className="text-2xl font-bold text-emerald-600">Liter</span>
@@ -1863,7 +1863,7 @@ export const MasterPresetTempatSampahPage: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="font-bold text-slate-700 dark:text-slate-300 mb-1 block">
-                    Material Wadah
+                    Material Tempat Sampah
                   </label>
                   <input
                     type="text"
@@ -2026,7 +2026,7 @@ export const MasterPresetTempatSampahPage: React.FC = () => {
               {/* Material & Area */}
               <div className="space-y-2 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800">
                 <div className="flex items-start justify-between gap-2">
-                  <span className="text-slate-500">Material Wadah:</span>
+                  <span className="text-slate-500">Material Tempat Sampah:</span>
                   <span className="font-bold text-slate-800 dark:text-slate-100 text-right">
                     {detailModalItem.material}
                   </span>

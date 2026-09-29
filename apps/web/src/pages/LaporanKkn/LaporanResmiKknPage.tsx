@@ -851,7 +851,7 @@ export const LaporanResmiKknPage: React.FC = () => {
                       {data.ringkasanDampakSampah?.rataRataKepatuhanPersen ?? 99.83}%
                     </div>
                     <div className="text-[10px] text-slate-500 mt-0.5">
-                      {data.ringkasanDampakSampah?.wadahSampahAktif ?? 250} Wadah Teraktivasi
+                      {data.ringkasanDampakSampah?.wadahSampahAktif ?? 250} Tempat Sampah Teraktivasi
                     </div>
                   </div>
                 </div>

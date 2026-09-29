@@ -360,63 +360,6 @@ export const BaselineSection: React.FC<BaselineSectionProps> = ({ className = ""
         </div>
       </div>
 
-      {/* ── 2. Kartu Mini Ringkasan KPI Eksekutif (3 Metrik Kunci) ───────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {/* KPI 1: Rata-rata Kepatuhan Baseline (40%) */}
-        <div className="bg-emerald-50/70 dark:bg-emerald-950/40 p-3.5 rounded-2xl border border-emerald-200/80 dark:border-emerald-800/50 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between text-[10px] font-extrabold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
-              <span>Indeks Baseline</span>
-              <span className="px-1.5 py-0.2 rounded bg-emerald-200/60 dark:bg-emerald-900 text-[9px]">KKN 2026</span>
-            </div>
-            <div className="mt-1 flex items-baseline gap-1">
-              <span className="text-2xl font-black text-emerald-900 dark:text-emerald-100">
-                {summary.avgKepatuhanBaseline.toFixed(1).replace(".", ",")}%
-              </span>
-            </div>
-          </div>
-          <p className="text-[10px] text-emerald-700 dark:text-emerald-400 mt-1 font-medium">
-            Rata-rata kepatuhan baseline target
-          </p>
-        </div>
-
-        {/* KPI 2: Acuan Grafik Kelurahan (17,8%) */}
-        <div className="bg-slate-50 dark:bg-slate-800/70 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              <span>Sampel Grafik</span>
-              <span className="px-1.5 py-0.2 rounded bg-slate-200/60 dark:bg-slate-700 text-[9px]">Sekeloa</span>
-            </div>
-            <div className="mt-1 flex items-baseline gap-1">
-              <span className="text-2xl font-black text-slate-800 dark:text-slate-100">
-                {summary.avgKepatuhanGrafik.toFixed(1).replace(".", ",")}%
-              </span>
-            </div>
-          </div>
-          <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
-            Tingkat kepatuhan grafik kelurahan
-          </p>
-        </div>
-
-        {/* KPI 3: RW Kepatuhan Tinggi (>85%) = 24 RW */}
-        <div className="bg-amber-50/70 dark:bg-amber-950/40 p-3.5 rounded-2xl border border-amber-200/80 dark:border-amber-800/50 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between text-[10px] font-extrabold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
-              <span>Kepatuhan &gt;85%</span>
-              <span className="px-1.5 py-0.2 rounded bg-amber-200/60 dark:bg-amber-900 text-[9px]">&gt;85% RW</span>
-            </div>
-            <div className="mt-1 flex items-baseline gap-1">
-              <span className="text-2xl font-black text-amber-900 dark:text-amber-100">
-                {summary.rwKepatuhanTinggi}
-              </span>
-              <span className="text-xs font-bold text-amber-800 dark:text-amber-300">RW</span>
-            </div>
-          </div>
-          <p className="text-[10px] text-amber-700 dark:text-amber-400 mt-1 font-medium">
-            Dari seluruh akumulasi RW target
-          </p>
-        </div>
-      </div>
 
       {/* ── 3. Pengendali Tampilan Visualisasi (Tab Switcher) & Legenda Kontras ─ */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">

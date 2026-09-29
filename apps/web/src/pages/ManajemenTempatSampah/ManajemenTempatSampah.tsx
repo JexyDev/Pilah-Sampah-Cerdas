@@ -1778,12 +1778,12 @@ const ManajemenTempatSampah: React.FC = () => {
                 <th className="py-3 px-4 text-center whitespace-nowrap">QR CODE</th>
                 <th className="py-3 px-4 whitespace-nowrap">KODE TEMPAT SAMPAH</th>
                 <th className="py-3 px-4 whitespace-nowrap">LOKASI SPESIFIK</th>
-                <th className="py-3 px-4 whitespace-nowrap">JENIS WADAH</th>
+                <th className="py-3 px-4 whitespace-nowrap">JENIS TEMPAT SAMPAH</th>
                 <th className="py-3 px-4 whitespace-nowrap">KEPEMILIKAN</th>
                 <th className="py-3 px-4 whitespace-nowrap">PEMILIK</th>
                 <th className="py-3 px-4 text-center whitespace-nowrap">KAPASITAS</th>
                 <th className="py-3 px-4 whitespace-nowrap">RASIO KETERISIAN</th>
-                <th className="py-3 px-4 text-center whitespace-nowrap">STATUS WADAH</th>
+                <th className="py-3 px-4 text-center whitespace-nowrap">STATUS TEMPAT SAMPAH</th>
                 <th className="py-3 px-4 whitespace-nowrap">WAKTU AKTIVASI</th>
                 <th className="py-3 px-4 whitespace-nowrap">GPS</th>
                 {!isReadOnly && <th className="py-3 px-4 text-center whitespace-nowrap">AKSI</th>}
@@ -2345,7 +2345,7 @@ const ManajemenTempatSampah: React.FC = () => {
               {/* Tipe Kepemilikan */}
               <div>
                 <label className="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
-                  Tipe Kepemilikan Wadah <span className="text-rose-500">*</span>
+                  Tipe Kepemilikan Tempat Sampah <span className="text-rose-500">*</span>
                 </label>
                 <select
                   value={formData.tipeKepemilikan || "RUMAH_TANGGA"}
@@ -2360,7 +2360,7 @@ const ManajemenTempatSampah: React.FC = () => {
               {/* Jenis Wadah / Tipe Sampah */}
               <div>
                 <label className="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
-                  Jenis Wadah / Pilahan Sampah <span className="text-rose-500">*</span>
+                  Jenis Tempat Sampah / Pilahan Sampah <span className="text-rose-500">*</span>
                 </label>
                 <select
                   value={(formData.binType || "ORGANIK").toUpperCase()}
@@ -2415,7 +2415,7 @@ const ManajemenTempatSampah: React.FC = () => {
               {/* Status Wadah Baku */}
               <div>
                 <label className="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
-                  Status Wadah Tempat Sampah <span className="text-rose-500">*</span>
+                  Status Tempat Sampah <span className="text-rose-500">*</span>
                 </label>
                 <select
                   value={formData.status || "AKTIF_TERPASANG"}
@@ -2441,7 +2441,7 @@ const ManajemenTempatSampah: React.FC = () => {
                       Tingkat Keterisian & Sensor
                     </span>
                     <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-snug block max-w-[230px]">
-                      Status wadah sinkron dengan sensor keterisian dan pencatatan petugas.
+                      Status tempat sampah sinkron dengan sensor keterisian dan pencatatan petugas.
                     </span>
                   </div>
                   <span className={`px-3 py-1.5 rounded-full text-[10.5px] font-extrabold uppercase tracking-wide border shrink-0 ${

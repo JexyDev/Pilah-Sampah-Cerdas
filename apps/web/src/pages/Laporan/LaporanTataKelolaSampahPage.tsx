@@ -700,11 +700,11 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Card 2: Wadah Sampah (Bin) Aktif */}
+            {/* Card 2: Tempat Sampah (Bin) Aktif */}
             <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                  Wadah Aktif (Bin)
+                  Tempat Sampah Aktif (Bin)
                 </span>
                 <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                   <Trash2 size={16} />
@@ -1175,7 +1175,7 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
                   <h2 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
                     Tren Tingkat Kepatuhan Warga (8 Pekan)
                   </h2>
-                  <p className="text-xs text-slate-500">Persentase kepatuhan pemilahan sesuai wadah sampah (%)</p>
+                  <p className="text-xs text-slate-500">Persentase kepatuhan pemilahan sesuai tempat sampah (%)</p>
                 </div>
               </div>
 

@@ -784,11 +784,11 @@ export const TempatSampahAktifPage: React.FC = () => {
 
       {/* ── 3 KPI Summary Cards ──────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Card 1: Total Wadah Aktif */}
+        {/* Card 1: Total Tempat Sampah Aktif */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs flex flex-col justify-between hover:border-blue-400/60 transition-colors">
           <div className="flex items-center justify-between w-full mb-3">
             <span className="text-[10.5px] font-extrabold uppercase tracking-wider text-blue-700 dark:text-blue-400">
-              Total Wadah Aktif
+              Total Tempat Sampah Aktif
             </span>
             <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400">
               <Trash2 size={18} />
@@ -829,7 +829,7 @@ export const TempatSampahAktifPage: React.FC = () => {
                       setKategoriFilter((prev) => (prev === "ORGANIK" ? "ALL" : "ORGANIK"));
                       setPage(1);
                     }}
-                    title="Klik untuk filter Wadah Organik"
+                    title="Klik untuk filter Tempat Sampah Organik"
                     className="inline-flex items-baseline text-emerald-600 dark:text-emerald-400 font-black hover:opacity-80 transition cursor-pointer"
                   >
                     <span>{metrics.organikCount}</span>
@@ -842,7 +842,7 @@ export const TempatSampahAktifPage: React.FC = () => {
                       setKategoriFilter((prev) => (prev === "ANORGANIK" ? "ALL" : "ANORGANIK"));
                       setPage(1);
                     }}
-                    title="Klik untuk filter Wadah Anorganik"
+                    title="Klik untuk filter Tempat Sampah Anorganik"
                     className="inline-flex items-baseline text-amber-600 dark:text-amber-400 font-black hover:opacity-80 transition cursor-pointer"
                   >
                     <span>{metrics.anorganikCount}</span>
@@ -875,7 +875,7 @@ export const TempatSampahAktifPage: React.FC = () => {
             )}
 
             <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1 truncate">
-              Wadah Organik &amp; Anorganik Terdata
+              Tempat Sampah Organik &amp; Anorganik Terdata
             </p>
           </div>
         </div>
@@ -1091,7 +1091,7 @@ export const TempatSampahAktifPage: React.FC = () => {
                       className="p-3.5 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider cursor-pointer hover:text-emerald-600 transition-colors"
                     >
                       <div className="flex items-center gap-1.5">
-                        <span>Jenis Wadah</span>
+                        <span>Jenis Tempat Sampah</span>
                         {sortField === "kategori" ? (
                           sortOrder === "asc" ? <ArrowUp size={13} className="text-emerald-600" /> : <ArrowDown size={13} className="text-emerald-600" />
                         ) : (
@@ -1296,7 +1296,7 @@ export const TempatSampahAktifPage: React.FC = () => {
                               : "bg-blue-200 dark:bg-blue-900 text-blue-900 dark:text-blue-200"
                           }`}
                         >
-                          Wadah {catInfo.label}
+                          Tempat Sampah {catInfo.label}
                         </span>
                         <h3 className="text-base font-black text-slate-900 dark:text-slate-100 mt-0.5 font-mono">
                           {previewBin.qrCode}

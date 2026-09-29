@@ -192,7 +192,7 @@ export function evaluateSortingDetail(
       binCategory: normBin || "TIDAK_DIKENAL",
       isCompliant: false,
       systemStatus: "Tidak Dapat Dinilai",
-      keterangan: "Kategori sampah atau wadah tidak dapat diverifikasi secara valid.",
+      keterangan: "Kategori sampah atau tempat sampah tidak dapat diverifikasi secara valid.",
       isContaminated: false,
     };
   }
@@ -217,10 +217,10 @@ export function evaluateSortingDetail(
       binCategory: normBin,
       isCompliant: false,
       systemStatus: "Tidak Patuh / Tidak Sesuai",
-      keterangan: "Kontaminasi pemilahan: sampah organik dimasukkan ke wadah anorganik.",
+      keterangan: "Kontaminasi pemilahan: sampah organik dimasukkan ke tempat sampah anorganik.",
       isContaminated: true,
       dampakKontaminasi:
-        "Sampah basah organik membusuk dan mengotori wadah anorganik, menurunkan harga jual daur ulang dan merusak material kertas/plastik kering.",
+        "Sampah basah organik membusuk dan mengotori tempat sampah anorganik, menurunkan harga jual daur ulang dan merusak material kertas/plastik kering.",
     };
   }
 
@@ -230,7 +230,7 @@ export function evaluateSortingDetail(
     binCategory: normBin,
     isCompliant: false,
     systemStatus: "Tidak Patuh / Tidak Sesuai",
-    keterangan: "Kontaminasi pemilahan: sampah anorganik dimasukkan ke wadah organik.",
+    keterangan: "Kontaminasi pemilahan: sampah anorganik dimasukkan ke tempat sampah organik.",
     isContaminated: true,
     dampakKontaminasi:
       "Plastik dan sampah anorganik mencemari bahan baku pupuk kompos, merusak proses fermentasi mikroba dan menurunkan kemurnian kompos.",
@@ -371,7 +371,7 @@ export function calculateComplianceMetrics(
 
   if (indeksKepatuhan >= 80) {
     predikat = "Sangat Baik";
-    ringkasanEksekutif = "Warga telah berpartisipasi aktif dan memilah sampah secara tepat dengan kontaminasi wadah sangat rendah (standar hijau DLH tercapai).";
+    ringkasanEksekutif = "Warga telah berpartisipasi aktif dan memilah sampah secara tepat dengan kontaminasi tempat sampah sangat rendah (standar hijau DLH tercapai).";
   } else if (indeksKepatuhan >= 65) {
     predikat = "Cukup Baik";
     ringkasanEksekutif = "Kepatuhan pemilahan dan partisipasi warga cukup baik, sosialisasi dapat ditingkatkan agar seluruh warga konsisten memilah.";
@@ -382,7 +382,7 @@ export function calculateComplianceMetrics(
 
   const penjelasanSistem =
     totalWargaTerdaftar > 0
-      ? `Skor kepatuhan diakumulasikan dari keaktifan partisipasi warga (${partisipasiPersen}%) dan akurasi pemilahan wadah (${akurasiPilahPersen}%), merefleksikan kedisiplinan riil masyarakat tanpa bias kamera AI.`
+      ? `Skor kepatuhan akumulasi (${indeksKepatuhan}%) dihitung dari rata-rata seimbang (50% : 50%) antara keaktifan partisipasi warga (${partisipasiPersen}%) dan ketepatan pemilahan wadah (${akurasiPilahPersen}%): (${partisipasiPersen}% + ${akurasiPilahPersen}%) ÷ 2 = ${indeksKepatuhan}%.`
       : "Skor kepatuhan dihitung berdasarkan kesesuaian biner penempatan jenis sampah pada wadah yang semestinya.";
 
   return {
@@ -437,17 +437,17 @@ export function calculateComplianceMetrics(
 
     kamusDefinisi: {
       kepatuhan:
-        "Rasio ketepatan pembuangan sampah pada wadah yang sesuai dibagi total aktivitas pemilahan terdata.",
+        "Rasio ketepatan pembuangan sampah pada tempat sampah yang sesuai dibagi total aktivitas pemilahan terdata.",
       ketidakpatuhan:
         "Kejadian penempatan jenis sampah yang tidak cocok dengan kategori tempat sampah.",
       edukasiTooltip:
-        "Kepatuhan adalah kesesuaian penempatan jenis sampah pada wadah yang semestinya. Ketidakpatuhan terjadi jika sampah dibuang pada wadah yang tidak cocok.",
+        "Kepatuhan adalah kesesuaian penempatan jenis sampah pada tempat sampah yang semestinya. Ketidakpatuhan terjadi jika sampah dibuang pada tempat sampah yang tidak cocok.",
       dampakKetidakpatuhan:
-        "Kontaminasi sampah organik pada wadah anorganik merusak material daur ulang, sedangkan kontaminasi anorganik pada wadah organik mencemari proses pembentukan pupuk kompos.",
+        "Kontaminasi sampah organik pada tempat sampah anorganik merusak material daur ulang, sedangkan kontaminasi anorganik pada tempat sampah organik mencemari proses pembentukan pupuk kompos.",
       kebijakanWaktu:
         "Warga berhak memilah dan melapor kapan saja tanpa dibatasi batas waktu harian ketat (no system rejection).",
       perlakuanAnomali:
-        "Sampah tidak patuh tetap dicatat volumenya dalam neraca massa limbah, namun dipisahkan sebagai data kontaminasi wadah.",
+        "Sampah tidak patuh tetap dicatat volumenya dalam neraca massa limbah, namun dipisahkan sebagai data kontaminasi tempat sampah.",
     },
   };
 }

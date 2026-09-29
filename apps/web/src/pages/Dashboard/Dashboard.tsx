@@ -187,12 +187,12 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
                 <div className="relative group inline-block">
                   <span
                     className="w-4 h-4 rounded-full bg-slate-100 hover:bg-emerald-100 dark:bg-slate-800 text-slate-500 hover:text-emerald-600 dark:text-slate-400 inline-flex items-center justify-center cursor-pointer text-[10px] font-bold"
-                    title="Kepatuhan adalah kesesuaian penempatan jenis sampah pada wadah yang semestinya. Ketidakpatuhan terjadi jika sampah dibuang pada wadah yang tidak cocok."
+                    title="Kepatuhan adalah kesesuaian penempatan jenis sampah pada tempat sampah yang semestinya. Ketidakpatuhan terjadi jika sampah dibuang pada tempat sampah yang tidak cocok."
                   >
                     i
                   </span>
                   <div className="absolute left-0 top-6 z-50 hidden group-hover:block w-72 p-3 bg-slate-900 text-white text-[11px] rounded-xl shadow-xl border border-slate-700 leading-relaxed pointer-events-none">
-                    Kepatuhan adalah kesesuaian penempatan jenis sampah pada wadah yang semestinya. Ketidakpatuhan terjadi jika sampah dibuang pada wadah yang tidak cocok.
+                    Kepatuhan adalah kesesuaian penempatan jenis sampah pada tempat sampah yang semestinya. Ketidakpatuhan terjadi jika sampah dibuang pada tempat sampah yang tidak cocok.
                   </div>
                 </div>
               </div>
@@ -214,14 +214,14 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
         <div className="px-5 py-3 bg-emerald-50/50 dark:bg-emerald-950/20 border-b border-emerald-200/50 dark:border-emerald-800/30 flex flex-wrap items-center justify-between gap-3 text-xs shrink-0">
           <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
             <span className="font-extrabold text-emerald-700 dark:text-emerald-400">Definisi:</span>
-            <span>Kesesuaian penempatan sampah biner: Sampah Organik ke Wadah Organik, Anorganik ke Wadah Anorganik.</span>
+            <span>Kesesuaian penempatan sampah biner: Sampah Organik ke Tempat Sampah Organik, Anorganik ke Tempat Sampah Anorganik.</span>
           </div>
           <div className="flex items-center gap-3 text-[11px] font-bold">
             <span className="text-emerald-700 dark:text-emerald-300 bg-white dark:bg-slate-850 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800">
-              Wadah Organik: ~92% Sesuai
+              Tempat Sampah Organik: ~92% Sesuai
             </span>
             <span className="text-amber-700 dark:text-amber-300 bg-white dark:bg-slate-850 px-2.5 py-1 rounded-lg border border-amber-200 dark:border-amber-800">
-              Wadah Anorganik: ~88% Sesuai
+              Tempat Sampah Anorganik: ~88% Sesuai
             </span>
           </div>
         </div>
