@@ -66,7 +66,26 @@ router.get(
   transactionController.getManualDeposits
 );
 
-router.get("/:id", authMiddleware, transactionController.getDepositDetails);
+router.get(
+  "/:id",
+  authMiddleware,
+  roleMiddleware([
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "RW",
+    "RT",
+    "PETUGAS_RESIDU",
+    "LURAH",
+    "CAMAT",
+    "MAHASISWA_KKN",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+    "DPL",
+    "WARGA",
+    "DEVELOPER",
+  ]),
+  transactionController.getDepositDetails
+);
 
 router.patch(
   "/:id/status",

@@ -441,9 +441,9 @@ export const AnalisisTataKelolaPage: React.FC = () => {
                   <div className="flex items-center">
                     <span className="text-xs font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Reduksi Emisi Karbon (CO₂e)</span>
                     <FormulaTooltip
-                      title="Reduksi Emisi Metana CO₂e (Panduan IPCC)"
-                      formula="Reduksi (kg CO₂e) = Sampah Organik (kg) × 0.6093 kg CO₂e/kg"
-                      description="Estimasi gas rumah kaca terhindar dari pembusukan anaerobik di TPA berdasarkan faktor emisi KLHK dan IPCC."
+                      title="Reduksi Emisi Gas Rumah Kaca (Panduan IPCC / KLHK)"
+                      formula="Reduksi (kg CO₂e) = (Kg Organik × 0.58) + (Kg Anorganik × 1.45)"
+                      description="Estimasi mitigasi emisi gas rumah kaca berbasis faktor IPCC / KLHK (0.58 kg CO₂e/kg dari pengolahan kompos/maggot & 1.45 kg CO₂e/kg dari daur ulang anorganik)."
                       isoStandard="ISO 14064 (Gas Rumah Kaca)"
                     />
                   </div>
@@ -454,7 +454,7 @@ export const AnalisisTataKelolaPage: React.FC = () => {
                   <span className="text-sm font-bold text-slate-500 dark:text-slate-400">kg CO₂e</span>
                 </div>
                 <span className="text-xs text-slate-500 mt-2 block">
-                  Emisi gas metana terhindar dari {data.pilar4.organikKg.toLocaleString("id-ID")} kg sampah organik terolah
+                  Mitigasi emisi GRK dari {data.pilar4.organikKg.toLocaleString("id-ID")} kg organik dan {data.pilar4.anorganikKg.toLocaleString("id-ID")} kg anorganik
                 </span>
               </div>
 

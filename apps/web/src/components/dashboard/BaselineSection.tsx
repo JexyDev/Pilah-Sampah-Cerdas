@@ -13,8 +13,8 @@
  *    - Tingkat kepatuhan baseline acuan grafik: 17,8% (Kelurahan Sekeloa)
  *    - Akumulasi RW kepatuhan tinggi (>85%): 24 RW
  * 4. Dual Bar Chart Diskrit:
- *    - Chart 1: Tingkat Kepatuhan Baseline (%) [0 - 100%] (Emerald Solid)
- *    - Chart 2: Volume Sampah Baseline (kg/hari) [Skala kg mandiri] (Indigo/Biru Kontras)
+ *    - Chart 1: Baseline - Tingkat Kepatuhan (%) [0 - 100%] (Emerald Solid)
+ *    - Chart 2: Baseline - Berat Sampah (kg/hari) [Skala kg mandiri] (Indigo/Biru Kontras)
  * 5. Metadata & Footnote Anti-Miskomunikasi untuk DLH & Pimpinan Daerah.
  * 6. Modal Verifikasi Dokumen Sumber & Berita Acara Survei Lapangan.
  */
@@ -239,11 +239,11 @@ export const BaselineSection: React.FC<BaselineSectionProps> = ({ className = ""
         "Kelurahan",
         "Kecamatan",
         "Periode Survei",
-        "Tingkat Kepatuhan Baseline (%)",
-        "Total Timbulan Sampah (kg/hari)",
-        "Volume Organik (kg/hari)",
-        "Volume Anorganik (kg/hari)",
-        "Volume Residu (kg/hari)",
+        "Baseline - Tingkat Kepatuhan (%)",
+        "Baseline - Berat Sampah (kg/hari)",
+        "Berat Organik (kg/hari)",
+        "Berat Anorganik (kg/hari)",
+        "Berat Residu (kg/hari)",
         "Jumlah RW Terdaftar",
         "RW Kepatuhan Tinggi (>85%)",
         "Status Validasi Data",
@@ -442,7 +442,7 @@ export const BaselineSection: React.FC<BaselineSectionProps> = ({ className = ""
                 : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
             }`}
           >
-            Tingkat Kepatuhan (%)
+            Baseline - Tingkat Kepatuhan (%)
           </button>
           <button
             type="button"
@@ -453,7 +453,7 @@ export const BaselineSection: React.FC<BaselineSectionProps> = ({ className = ""
                 : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
             }`}
           >
-            Volume Sampah (kg/hari)
+            Baseline - Berat Sampah (kg/hari)
           </button>
         </div>
 
@@ -462,13 +462,13 @@ export const BaselineSection: React.FC<BaselineSectionProps> = ({ className = ""
           <div className="flex items-center gap-1.5">
             <span className="w-3.5 h-3.5 rounded bg-emerald-600 dark:bg-emerald-500 shadow-2xs inline-block" />
             <span className="text-slate-700 dark:text-slate-300">
-              Bar 1: Tingkat Kepatuhan (%)
+              Bar 1: Baseline - Tingkat Kepatuhan (%)
             </span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-3.5 h-3.5 rounded bg-indigo-600 dark:bg-indigo-500 shadow-2xs inline-block" />
             <span className="text-slate-700 dark:text-slate-300">
-              Bar 2: Volume Sampah (kg/hari)
+              Bar 2: Baseline - Berat Sampah (kg/hari)
             </span>
           </div>
         </div>
@@ -485,7 +485,7 @@ export const BaselineSection: React.FC<BaselineSectionProps> = ({ className = ""
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
                   <h4 className="font-extrabold text-sm text-slate-800 dark:text-slate-200">
-                    Tingkat Kepatuhan Baseline (%)
+                    Baseline - Tingkat Kepatuhan (%)
                   </h4>
                 </div>
                 <span className="text-[11px] font-extrabold px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300/60 dark:border-emerald-800">
@@ -679,13 +679,13 @@ export const BaselineSection: React.FC<BaselineSectionProps> = ({ className = ""
               </div>
             </div>
 
-            {/* ── Chart 2: Volume Sampah Baseline (kg/hari) ──────────────────── */}
+            {/* ── Chart 2: Baseline - Berat Sampah (kg/hari) ─────────────────── */}
             <div className="bg-slate-50/70 dark:bg-slate-800/40 rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between relative overflow-visible z-20">
               <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-slate-800 pb-3 mb-4">
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
                   <h4 className="font-extrabold text-sm text-slate-800 dark:text-slate-200">
-                    Volume Sampah Baseline (kg/hari)
+                    Baseline - Berat Sampah (kg/hari)
                   </h4>
                 </div>
                 <span className="text-[11px] font-extrabold px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300 border border-indigo-300/60 dark:border-indigo-800">
@@ -749,14 +749,14 @@ export const BaselineSection: React.FC<BaselineSectionProps> = ({ className = ""
                                     <span className="truncate">Kel. {item.kelurahan}</span>
                                   </div>
                                   <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-indigo-950/80 text-indigo-300 border border-indigo-800/80 shrink-0">
-                                    Timbulan Baseline
+                                    Baseline - Berat Sampah
                                   </span>
                                 </div>
 
                                 {/* Body Key-Values */}
                                 <div className="space-y-1.5 text-slate-300">
                                   <div className="flex items-center justify-between bg-slate-800/70 rounded-xl px-2.5 py-1.5 border border-slate-700/60 shadow-2xs">
-                                    <span className="text-slate-400 font-medium text-[10.5px]">Total Timbulan:</span>
+                                    <span className="text-slate-400 font-medium text-[10.5px]">Total Berat:</span>
                                     <span className="font-black text-indigo-300 text-xs sm:text-[13px] tracking-tight">
                                       {volKg > 0
                                         ? `${volKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg/hari`
@@ -876,7 +876,7 @@ export const BaselineSection: React.FC<BaselineSectionProps> = ({ className = ""
             <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-200/60 dark:border-slate-700">
               <h4 className="font-extrabold text-sm text-slate-800 dark:text-slate-200 flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full bg-emerald-500" />
-                Grafik Batang Kepatuhan Pemilahan Baseline per Kelurahan (0 – 100%)
+                Grafik Batang Baseline - Tingkat Kepatuhan per Kelurahan (0 – 100%)
               </h4>
               <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">
                 Rata-rata: 40% | Acuan Grafik: 17,8%
@@ -1061,7 +1061,7 @@ export const BaselineSection: React.FC<BaselineSectionProps> = ({ className = ""
             <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-200/60 dark:border-slate-700">
               <h4 className="font-extrabold text-sm text-slate-800 dark:text-slate-200 flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full bg-indigo-500" />
-                Grafik Batang Volume Sampah Baseline per Kelurahan (kg/hari)
+                Grafik Batang Baseline - Berat Sampah per Kelurahan (kg/hari)
               </h4>
               <span className="text-xs font-bold text-indigo-700 dark:text-indigo-400">
                 Maksimal: {maxVolumeKg.toLocaleString("id-ID")} kg/hari
@@ -1117,13 +1117,13 @@ export const BaselineSection: React.FC<BaselineSectionProps> = ({ className = ""
                                   <span className="truncate">Kel. {item.kelurahan}</span>
                                 </div>
                                 <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-indigo-950/80 text-indigo-300 border border-indigo-800/80 shrink-0">
-                                  Timbulan Baseline
+                                  Baseline - Berat Sampah
                                 </span>
                               </div>
 
                               <div className="space-y-1.5 text-slate-300">
                                 <div className="flex items-center justify-between bg-slate-800/70 rounded-xl px-2.5 py-1.5 border border-slate-700/60 shadow-2xs">
-                                  <span className="text-slate-400 font-medium text-[10.5px]">Total Timbulan:</span>
+                                  <span className="text-slate-400 font-medium text-[10.5px]">Total Berat:</span>
                                   <span className="font-black text-indigo-300 text-xs sm:text-[13px] tracking-tight">
                                     {volKg > 0
                                       ? `${volKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg/hari`
@@ -1256,10 +1256,10 @@ export const BaselineSection: React.FC<BaselineSectionProps> = ({ className = ""
                   RW Kepatuhan &gt;85%
                 </th>
                 <th className="py-3 px-3 text-center bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800">
-                  Kepatuhan Baseline (%)
+                  Baseline - Tingkat Kepatuhan (%)
                 </th>
                 <th className="py-3 px-3 text-center bg-indigo-50/50 dark:bg-indigo-950/30 text-indigo-800 dark:text-indigo-300 border-r border-slate-200 dark:border-slate-800">
-                  Volume Baseline (kg/hari)
+                  Baseline - Berat Sampah (kg/hari)
                 </th>
                 <th className="py-3 px-4 text-slate-500 dark:text-slate-400">Catatan Verifikasi Lapangan</th>
               </tr>
@@ -1398,7 +1398,7 @@ export const BaselineSection: React.FC<BaselineSectionProps> = ({ className = ""
               </h5>
               <ul className="space-y-1.5 text-[11px] list-disc list-inside leading-relaxed text-slate-600 dark:text-slate-400">
                 <li>
-                  <strong>Satuan Volume:</strong> Dihitung berdasarkan estimasi timbulan harian (kg/hari) hasil pengukuran sampel tempat sampah percontohan pada bulan Juli 2026.
+                  <strong>Satuan Berat Sampah:</strong> Dihitung berdasarkan estimasi berat timbulan harian (kg/hari) hasil pengukuran sampel tempat sampah percontohan pada bulan Juli 2026.
                 </li>
                 <li>
                   <strong>Indeks 24 RW &gt;85%:</strong> Dihitung murni berdasarkan persentase kepatuhan rumah tangga yang disurvei dalam RW terkait saat giat lapangan.

@@ -1064,7 +1064,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
                       3. Capaian Program & Dampak Masyarakat (25%)
                     </span>
                     <span className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 block mt-0.5">
-                      Bukti hasil kegiatan lapangan, keterlibatan warga, & volume sampah terkelola
+                      Bukti hasil kegiatan lapangan, keterlibatan warga, & berat sampah terkelola
                     </span>
                   </div>
                   <input

@@ -280,7 +280,7 @@ export const systemAnalysisService = {
       leaveWhere.student = { studentProfile: { kelompokId } };
     }
 
-    const [totalSchedules, attendances, leaveRequests, totalStudentsCount, generalSchedulesCount] = await Promise.all([
+    const [totalSchedules, rawAttendances, leaveRequests, totalStudentsCount, generalSchedulesCount] = await Promise.all([
       prisma.schedule.count({ where: scheduleWhere }),
       prisma.activityAttendance.findMany({
         where: attendanceWhere,
@@ -301,15 +301,23 @@ export const systemAnalysisService = {
       prisma.schedule.count({ where: { kelompokId: null } }),
     ]);
 
-    const hadirCount = attendances.length;
-    let outZoneCount = 0;
-    attendances.forEach((a) => {
-      if (a.status && a.status.toUpperCase().includes("LUAR")) {
-        outZoneCount++;
-      }
+    // Filter presensi riil: kecualikan log sistem non-kehadiran seperti TIDAK_ADA_KEGIATAN dan SAKIT
+    const attendances = rawAttendances.filter((a) => {
+      const s = (a.status || "").toUpperCase();
+      return !s.includes("TIDAK_ADA_KEGIATAN") && !s.includes("SAKIT") && !s.includes("IZIN");
     });
 
-    const inZoneCount = Math.max(0, hadirCount - outZoneCount);
+    const hadirCount = attendances.length;
+    let outZoneCount = 0;
+    let inZoneCount = 0;
+    attendances.forEach((a) => {
+      const s = (a.status || "").toUpperCase();
+      if (s === "HADIR_TIDAK_MEMENUHI" || s === "SELESAI_TELAT" || s.includes("LUAR")) {
+        outZoneCount++;
+      } else {
+        inZoneCount++;
+      }
+    });
 
     // Kalkulasi target kehadiran yang presisi:
     // Setiap kelompok KKN memiliki kuota jadwal masing-masing. Mahasiswa hanya berkewajiban hadir pada jadwal kelompoknya.
@@ -368,11 +376,22 @@ export const systemAnalysisService = {
     const prokerCompletionRate = totalProker > 0 ? Math.round((selesaiProker / totalProker) * 100) : 0;
 
     // ── PILAR 4: Evaluasi Performance & Penilaian DPL (PenilaianKknMahasiswa) ──
-    const penilaianWhere: any = { status: "FINAL" };
+    // Penilaian mencakup status FINAL maupun TERSIMPAN (aktif dinilai oleh DPL) yang sudah memiliki komponen nilai
+    const penilaianWhere: any = {
+      status: { in: ["FINAL", "TERSIMPAN"] },
+      OR: [
+        { subtotalDpl: { gt: 0 } },
+        { nilaiAkhir: { gt: 0 } },
+      ],
+    };
     if (kelompokId) {
-      penilaianWhere.OR = [
-        { kelompokId },
-        { student: { studentProfile: { kelompokId } } },
+      penilaianWhere.AND = [
+        {
+          OR: [
+            { kelompokId },
+            { student: { studentProfile: { kelompokId } } },
+          ],
+        },
       ];
     }
 
@@ -382,6 +401,8 @@ export const systemAnalysisService = {
         select: {
           kategoriNilai: true,
           nilaiAkhir: true,
+          subtotalDpl: true,
+          subtotalMitra: true,
         },
       }),
     ]);
@@ -394,11 +415,17 @@ export const systemAnalysisService = {
 
     const gradeMap: Record<string, number> = { A: 0, B: 0, C: 0, D: 0 };
     evaluatedList.forEach((e) => {
-      const score = Number(e.nilaiAkhir) || 0;
+      const subDpl = Number(e.subtotalDpl) || 0;
+      const subMitra = Number(e.subtotalMitra) || 0;
+      const finalScore = Number(e.nilaiAkhir) || 0;
+
+      // Jika mitra sudah menilai gunakan nilaiAkhir, jika mitra belum menilai gunakan subtotalDpl (skala 0 - 100)
+      const effectiveScore = subMitra > 0 && finalScore > 0 ? finalScore : subDpl > 0 ? subDpl : finalScore;
+
       let grade = "B";
-      if (score >= 85) grade = "A";
-      else if (score >= 70) grade = "B";
-      else if (score >= 55) grade = "C";
+      if (effectiveScore >= 85) grade = "A";
+      else if (effectiveScore >= 70) grade = "B";
+      else if (effectiveScore >= 55) grade = "C";
       else grade = "D";
 
       gradeMap[grade]++;
@@ -488,7 +515,23 @@ export const systemAnalysisService = {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const [totalWarga, activeManualUsers, activeAutoUsers, totalAutoSort, autoSortList] = await Promise.all([
+    const [
+      totalWarga,
+      activeManualUsers,
+      activeAutoUsers,
+      totalAutoSort,
+      compliantAutoSortCount,
+      facilities,
+      bins,
+      resetRequests,
+      productionLogs,
+      manualSetorans,
+      autoSetorans,
+      bankSampahLedgers,
+      rwCount,
+      userLeadershipCount,
+      studentKknCount,
+    ] = await Promise.all([
       prisma.user.count({
         where: {
           role: { name: { in: ["WARGA", "warga"] } },
@@ -527,33 +570,17 @@ export const systemAnalysisService = {
           ],
         },
       }),
-      prisma.setoranOtomatis.findMany({
+      prisma.setoranOtomatis.count({
         where: {
           warga: { isTestAccount: false, NOT: { name: { contains: "test", mode: "insensitive" } } },
           OR: [
             { bin: { rw: { name: { not: { contains: "99" } } } } },
             { warga: { rw: { name: { not: { contains: "99" } } } } },
           ],
+          confidenceAi: { gte: 0.7 },
         },
-        select: { confidenceAi: true, hasilKlasifikasiAi: true },
-        take: 100,
       }),
-    ]);
-
-    const activeUserSet = new Set<string>();
-    activeManualUsers.forEach((u) => {
-      if (u.diinputOleh) activeUserSet.add(u.diinputOleh);
-    });
-    activeAutoUsers.forEach((u) => {
-      if (u.wargaId) activeUserSet.add(u.wargaId);
-    });
-
-    const compliantAutoSort = autoSortList.filter((s) => Number(s.confidenceAi) >= 0.7).length;
-    const activeResidentRatio = totalWarga > 0 ? Math.round((activeUserSet.size / totalWarga) * 100) : 0;
-    const sortingComplianceIndex = autoSortList.length > 0 ? Math.round((compliantAutoSort / autoSortList.length) * 100) : 85;
-
-    // ── PILAR 2: Fasilitas & Infrastruktur per Wilayah (Bebas Kata Tong) ──
-    const [facilities, bins, resetRequests] = await Promise.all([
+      // ── PILAR 2: Fasilitas & Infrastruktur per Wilayah (Bebas Kata Tong) ──
       prisma.facility.findMany({
         where: {
           jenis: { not: "posko_kkn" },
@@ -582,36 +609,7 @@ export const systemAnalysisService = {
         select: { createdAt: true, updatedAt: true, status: true },
         take: 50,
       }),
-    ]);
-
-    // Kritisitas Tempat Sampah
-    let countNormal = 0;
-    let countWaspada = 0;
-    let countKritis = 0;
-
-    bins.forEach((b) => {
-      const cur = Number(b.currentVolumeLiter) || 0;
-      const max = Number(b.maxCapacityLiter) || 25;
-      const ratio = max > 0 ? (cur / max) * 100 : 0;
-      if (ratio >= 90) countKritis++;
-      else if (ratio >= 70) countWaspada++;
-      else countNormal++;
-    });
-
-    // Avg response latency
-    let totalLatencyMs = 0;
-    let finishedRequests = 0;
-    resetRequests.forEach((r) => {
-      if (r.status === "RESOLVED" || r.status === "COMPLETED") {
-        totalLatencyMs += new Date(r.updatedAt).getTime() - new Date(r.createdAt).getTime();
-        finishedRequests++;
-      }
-    });
-    const avgPickupLatencyMinutes =
-      finishedRequests > 0 ? Math.round(totalLatencyMs / finishedRequests / (1000 * 60)) : 35;
-
-    // ── PILAR 3: Pengolahan & Pemanfaatan Sampah ──
-    const [productionLogs, manualSetorans, autoSetorans] = await Promise.all([
+      // ── PILAR 3: Pengolahan & Pemanfaatan Sampah ──
       prisma.facilityProductionLog.findMany({
         select: {
           materialMasukKg: true,
@@ -638,7 +636,61 @@ export const systemAnalysisService = {
         },
         select: { berat: true, hasilKlasifikasiAi: true, kategoriAktual: true },
       }),
+      // ── PILAR 4: Dampak Ekonomi, Lingkungan & Sosial ──
+      prisma.bankSampahLedger.findMany({
+        select: { saldoRupiah: true },
+      }),
+      (prisma as any).rw?.count
+        ? (prisma as any).rw.count({ where: { name: { not: { contains: "99" } } } })
+        : Promise.resolve(0),
+      prisma.user.count({
+        where: {
+          role: { name: { in: ["RW", "RT", "LURAH", "CAMAT"] } },
+          isTestAccount: false,
+          status: "ACTIVE",
+        },
+      }),
+      prisma.studentKkn.count(),
     ]);
+
+    const activeUserSet = new Set<string>();
+    activeManualUsers.forEach((u) => {
+      if (u.diinputOleh) activeUserSet.add(u.diinputOleh);
+    });
+    activeAutoUsers.forEach((u) => {
+      if (u.wargaId) activeUserSet.add(u.wargaId);
+    });
+
+    const activeResidentRatio = totalWarga > 0 ? Math.round((activeUserSet.size / totalWarga) * 100) : 0;
+    const totalAuto = Number(totalAutoSort) || 0;
+    const compliantAuto = Number(compliantAutoSortCount) || 0;
+    const sortingComplianceIndex = totalAuto > 0 ? Math.round((compliantAuto / totalAuto) * 100) : 0;
+
+    // Kritisitas Tempat Sampah (Hanya unit terikat/aktif di lapangan)
+    let countNormal = 0;
+    let countWaspada = 0;
+    let countKritis = 0;
+
+    bins.forEach((b) => {
+      const cur = Number(b.currentVolumeLiter) || 0;
+      const max = Number(b.maxCapacityLiter) || 25;
+      const ratio = max > 0 ? (cur / max) * 100 : 0;
+      if (ratio >= 90) countKritis++;
+      else if (ratio >= 70) countWaspada++;
+      else countNormal++;
+    });
+
+    // Latensi respon pengangkutan (menit)
+    let totalLatencyMs = 0;
+    let finishedRequests = 0;
+    resetRequests.forEach((r) => {
+      if (r.status === "RESOLVED" || r.status === "COMPLETED") {
+        totalLatencyMs += new Date(r.updatedAt).getTime() - new Date(r.createdAt).getTime();
+        finishedRequests++;
+      }
+    });
+    const avgPickupLatencyMinutes =
+      finishedRequests > 0 ? Math.round(totalLatencyMs / finishedRequests / (1000 * 60)) : 0;
 
     let manualTotalKg = 0;
     let manualOrganikKg = 0;
@@ -674,15 +726,10 @@ export const systemAnalysisService = {
     const anorganikKg = manualAnorganikKg + autoAnorganikKg;
     const totalMasukKg = manualTotalKg + autoTotalKg;
 
-    // Hitung output fasilitas: jika log produksi tercatat gunakan log, jika belum gunakan sampah organik & anorganik terpilah yang terserap fasilitas lokal
+    // Hitung output fasilitas: jika log produksi tercatat gunakan log, jika belum gunakan sampah organik & anorganik terpilah yang terserap fasilitas pengolahan lokal (kompos/maggot 85%)
     const loggedOutputKg = productionLogs.reduce((acc, log) => acc + (Number(log.outputKg) || 0), 0);
     const totalOutputFacilityKg = loggedOutputKg > 0 ? loggedOutputKg : Math.round(organikKg * 0.85);
-    const wasteUtilizationRate = totalMasukKg > 0 ? Math.min(100, Math.round((totalOutputFacilityKg / totalMasukKg) * 100)) : 72;
-
-    // ── PILAR 4: Dampak Ekonomi, Lingkungan & Sosial (Triple Bottom Line) ──
-    const bankSampahLedgers = await prisma.bankSampahLedger.findMany({
-      select: { saldoRupiah: true },
-    });
+    const wasteUtilizationRate = totalMasukKg > 0 ? Math.min(100, Math.round((totalOutputFacilityKg / totalMasukKg) * 100)) : 0;
 
     const ledgerTotal = bankSampahLedgers.reduce(
       (acc, b) => acc + (Number(b.saldoRupiah) || 0),
@@ -695,6 +742,13 @@ export const systemAnalysisService = {
 
     // Reduksi Emisi Karbon (Formula IPCC / KLHK: Kg Organik * 0.58 + Kg Anorganik * 1.45)
     const co2ReducedKg = Math.round((organikKg * 0.58 + anorganikKg * 1.45) * 10) / 10;
+
+    // Indeks Resiliensi Komunitas (Dihitung dinamis dari kepengurusan wilayah aktif & mahasiswa KKN)
+    const activeLeadership = userLeadershipCount > 0 ? userLeadershipCount : Math.min(25, rwCount);
+    const indeksKomunitas = Math.min(
+      100,
+      Math.max(10, Math.round(50 + activeLeadership * 1.5 + Math.min(30, studentKknCount * 0.05)))
+    );
 
     return {
       pilar1: {
@@ -730,7 +784,7 @@ export const systemAnalysisService = {
         reduksiEmisiCo2Kg: co2ReducedKg,
         organikKg: Math.round(organikKg * 10) / 10,
         anorganikKg: Math.round(anorganikKg * 10) / 10,
-        indeksKomunitas: 85,
+        indeksKomunitas,
       },
     };
   },

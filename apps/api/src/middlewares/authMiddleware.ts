@@ -40,8 +40,13 @@ export const authMiddleware = async (
       return;
     }
 
-    // DEV BYPASS
-    if (process.env.NODE_ENV === "development" && token === "MOCK_TOKEN_ADMIN") {
+    // DEV BYPASS — hanya aktif jika NODE_ENV=development DAN ENABLE_DEV_BYPASS=true
+    // Pastikan ENABLE_DEV_BYPASS tidak pernah di-set di .env staging/production
+    if (
+      process.env.NODE_ENV === "development" &&
+      process.env.ENABLE_DEV_BYPASS === "true" &&
+      token === "MOCK_TOKEN_ADMIN"
+    ) {
       const superUserUser = await prisma.user.findFirst({
         where: { role: { name: "SUPER_USER" } },
         select: { id: true },
@@ -136,7 +141,11 @@ export const optionalAuthMiddleware = async (
       return next();
     }
 
-    if (process.env.NODE_ENV === "development" && token === "MOCK_TOKEN_ADMIN") {
+    if (
+      process.env.NODE_ENV === "development" &&
+      process.env.ENABLE_DEV_BYPASS === "true" &&
+      token === "MOCK_TOKEN_ADMIN"
+    ) {
       const superUserUser = await prisma.user.findFirst({
         where: { role: { name: "SUPER_USER" } },
         select: { id: true },

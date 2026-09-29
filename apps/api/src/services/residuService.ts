@@ -715,6 +715,7 @@ export class ResiduService {
       binId?: string;
       latitude?: number | string;
       longitude?: number | string;
+      inputMethod?: string;
     }
   ) {
     const weightKg = Number(data.actualWeightKg) || 0;
@@ -772,6 +773,7 @@ export class ResiduService {
         unit: "Kg",
         kategori: data.classification || "Residu",
         lokasiGps: lokasiGps,
+        inputMethod: data.inputMethod || "MANUAL",
       },
     });
 
@@ -843,6 +845,7 @@ export class ResiduService {
       image_timbangan_url: setoran.imageTimbanganUrl || setoran.fotoResiduUrl,
       fotoResiduUrl: setoran.fotoResiduUrl,
       imagePhotoUrl: setoran.fotoResiduUrl,
+      inputMethod: (setoran as any).inputMethod || data.inputMethod || "MANUAL",
       globalBinTotalKg: Number(globalBinTotalKg.toFixed(2)),
       kpiScore: (user.petugasProfile?.kpiScore
         ? Number(user.petugasProfile.kpiScore)

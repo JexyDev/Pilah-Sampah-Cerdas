@@ -110,12 +110,12 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
       "No",
       "Kelurahan",
       "Sumber Data",
-      "Volume Baseline (kg)",
-      "Volume Aktual (kg)",
-      "Penurunan Volume (kg)",
-      "Penurunan Volume (%)",
-      "Kepatuhan Baseline (%)",
-      "Kepatuhan Aktual (%)",
+      "Baseline Berat Sampah (kg)",
+      "Hasil Giat KKN (kg)",
+      "Reduksi Berat (kg)",
+      "Reduksi Berat (%)",
+      "Baseline Kepatuhan (%)",
+      "Hasil Giat KKN (%)",
       "Perubahan Kepatuhan (%)",
       "Status Verifikasi",
     ];
@@ -190,7 +190,7 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
             </span>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-2xl">
-            Tabel rekapitulasi capaian penurunan volume sampah dan peningkatan kepatuhan pemilahan
+            Tabel rekapitulasi capaian penurunan berat sampah dan peningkatan kepatuhan pemilahan
             berdasarkan baseline awal vs realisasi giat lapangan di 6 Kelurahan Kecamatan Coblong.
           </p>
         </div>
@@ -288,15 +288,15 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
           <p className="text-[11px] leading-relaxed opacity-90">
             {selectedSource === "ALL" ? (
               <>
-                <strong>Perhatian Double-Counting:</strong> Menggabungkan volume sampah hasil pemilahan warga via aplikasi mobile dengan pencatatan manual timbangan petugas lapangan berpotensi menduplikasi angka timbulan jika sampah yang disetor warga ditimbang kembali di TPS3R. Gunakan filter <strong>[Aktivitas Warga]</strong> atau <strong>[Input Petugas]</strong> untuk analisis tunggal yang presisi.
+                <strong>Perhatian Double-Counting:</strong> Menggabungkan berat sampah hasil pemilahan warga via aplikasi mobile dengan pencatatan manual timbangan petugas lapangan berpotensi menduplikasi angka timbulan jika sampah yang disetor warga ditimbang kembali di TPS3R. Gunakan filter <strong>[Aktivitas Warga]</strong> atau <strong>[Input Petugas]</strong> untuk analisis tunggal yang presisi.
               </>
             ) : selectedSource === "WARGA_APP" ? (
               <>
-                Menampilkan volume sampah terpilah mandiri oleh warga melalui pemindaian QR dan klasifikasi BERSEKA Vision AI. Menunjukkan tingkat adopsi digital dan kepatuhan langsung rumah tangga.
+                Menampilkan berat sampah terpilah mandiri oleh warga melalui pemindaian QR dan klasifikasi BERSEKA Vision AI. Menunjukkan tingkat adopsi digital dan kepatuhan langsung rumah tangga.
               </>
             ) : (
               <>
-                Menampilkan volume sampah yang ditimbang dan dicatat secara fisik oleh petugas pemilah/residu di posko penampungan atau TPS3R kelurahan.
+                Menampilkan berat sampah yang ditimbang dan dicatat secara fisik oleh petugas pemilah/residu di posko penampungan atau TPS3R kelurahan.
               </>
             )}
           </p>
@@ -316,10 +316,10 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
                 Nama Kelurahan
               </th>
               <th colSpan={2} className="py-2.5 px-3 text-center uppercase tracking-wider bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 border-r border-slate-200 dark:border-slate-800">
-                Volume Sampah
+                Berat Sampah
               </th>
               <th colSpan={2} className="py-2.5 px-3 text-center uppercase tracking-wider bg-blue-50/80 dark:bg-blue-950/60 text-blue-900 dark:text-blue-200 border-r border-slate-200 dark:border-slate-800">
-                Penurunan Volume Sampah (Δ)
+                Penurunan Berat Sampah (Δ)
               </th>
               <th colSpan={2} className="py-2.5 px-3 text-center uppercase tracking-wider bg-emerald-50/80 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-200 border-r border-slate-200 dark:border-slate-800">
                 Kepatuhan Pemilahan
@@ -335,7 +335,7 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
                 Baseline (kg)
               </th>
               <th className="py-2 px-3 text-center bg-slate-50/50 dark:bg-slate-800/40 border-r border-slate-200 dark:border-slate-800">
-                Aktual Terkelola (kg)
+                Hasil Giat KKN (kg)
               </th>
               {/* Dua Kolom Berdampingan untuk Delta Volume */}
               <th className="py-2 px-3 text-center bg-blue-50/40 dark:bg-blue-950/30 text-blue-900 dark:text-blue-300 border-r border-slate-200 dark:border-slate-800 min-w-[110px]">
@@ -348,7 +348,7 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
                 Baseline (%)
               </th>
               <th className="py-2 px-3 text-center bg-emerald-50/40 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800">
-                Aktual (%)
+                Hasil Giat KKN (%)
               </th>
             </tr>
           </thead>
@@ -584,15 +584,15 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
           <div className="flex items-center justify-between">
             <h5 className="font-black text-xs sm:text-sm text-blue-900 dark:text-blue-200 flex items-center gap-1.5">
               <span className="p-1 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-xs">Δ</span>
-              Rumus Penurunan Volume Sampah (KPI 1)
+              Rumus Penurunan Berat Sampah (KPI 1)
             </h5>
             <span className="text-[10px] font-bold text-blue-600 bg-blue-100/60 dark:bg-blue-900/40 px-2 py-0.5 rounded-full">
               Matematika SI
             </span>
           </div>
           <div className="bg-white/80 dark:bg-slate-900/80 p-2.5 rounded-xl border border-blue-200/60 dark:border-blue-800/40 font-mono text-[11px] text-blue-950 dark:text-blue-200 space-y-1">
-            <p><strong>Δ Berat (kg)</strong> = Volume_Baseline − Volume_Aktual</p>
-            <p><strong>Δ Persen (%)</strong> = [(Volume_Baseline − Volume_Aktual) ÷ Volume_Baseline] × 100%</p>
+            <p><strong>Δ Berat (kg)</strong> = Berat_Baseline − Berat_Aktual</p>
+            <p><strong>Δ Persen (%)</strong> = [(Berat_Baseline − Berat_Aktual) ÷ Berat_Baseline] × 100%</p>
           </div>
           <div className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed bg-blue-100/50 dark:bg-blue-900/30 p-2.5 rounded-xl">
             <strong>Studi Kasus Lebakgede:</strong> Baseline = 250 kg, Aktual Terpilah = 37 kg.
@@ -619,7 +619,7 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
             <p><strong>Satuan Seragam:</strong> Persentase (%) / Percentage Point (pp)</p>
           </div>
           <div className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed bg-emerald-100/50 dark:bg-emerald-900/30 p-2.5 rounded-xl">
-            <strong>Dua KPI Utama Sistem:</strong> (1) Menurunkan tren volume sampah per kelurahan, dan (2) Menaikkan tren kepatuhan pemilahan sampah warga secara terverifikasi AI.
+            <strong>Dua KPI Utama Sistem:</strong> (1) Menurunkan tren berat sampah per kelurahan, dan (2) Menaikkan tren kepatuhan pemilahan sampah warga secara terverifikasi AI.
           </div>
         </div>
       </div>
@@ -643,13 +643,13 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
         {showFootnoteDetails && (
           <div className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-2 text-slate-600 dark:text-slate-300 leading-relaxed text-[11.5px]">
             <p>
-              <strong>1. Standarisasi Data Baseline:</strong> Angka baseline menggunakan total volume timbulan sampah resmi hasil survei lapangan KKN Juli 2026 dan proyeksi demografi BPS (4.172 jiwa &times; 0,63 kg/hari di Lebak Siliwangi) untuk memastikan perbandingan yang konsisten dan akuntabel di 6 kelurahan.
+              <strong>1. Standarisasi Data Baseline:</strong> Angka baseline menggunakan total berat timbulan sampah resmi hasil survei lapangan KKN Juli 2026 dan proyeksi demografi BPS (4.172 jiwa &times; 0,63 kg/hari di Lebak Siliwangi) untuk memastikan perbandingan yang konsisten dan akuntabel di 6 kelurahan.
             </p>
             <p>
-              <strong>2. Konteks Aktual Terkelola:</strong> Angka volume aktual mencerminkan akumulasi sampah terpilah yang tercatat aktif melalui penimbangan warga via aplikasi BERSEKA dan input manual petugas pemilah di wilayah binaan/percontohan.
+              <strong>2. Konteks Aktual Terkelola:</strong> Angka berat aktual mencerminkan akumulasi sampah terpilah yang tercatat aktif melalui penimbangan warga via aplikasi BERSEKA dan input manual petugas pemilah di wilayah binaan/percontohan.
             </p>
             <p>
-              <strong>3. Formula Agregasi Kecamatan:</strong> Rerata persentase reduksi volume kecamatan dihitung dari <strong>Total Volume Seluruh Kecamatan dibagi Total Baseline Seluruh Kecamatan</strong> (Agregasi Terbobot), bukan rata-rata sederhana persentase 6 kelurahan, untuk menghindari distorsi bobot kelurahan berpopulasi kecil terhadap kelurahan berpopulasi besar.
+              <strong>3. Formula Agregasi Kecamatan:</strong> Rerata persentase reduksi berat kecamatan dihitung dari <strong>Total Berat Seluruh Kecamatan dibagi Total Baseline Seluruh Kecamatan</strong> (Agregasi Terbobot), bukan rata-rata sederhana persentase 6 kelurahan, untuk menghindari distorsi bobot kelurahan berpopulasi kecil terhadap kelurahan berpopulasi besar.
             </p>
             <p>
               <strong>4. Taat Asas SI &amp; Terminologi:</strong> Seluruh penulisan massa menggunakan simbol baku <code>kg</code> (huruf kecil). Nilai tanda <code>—</code> menandakan data survei belum selesai diisi atau belum diverifikasi.

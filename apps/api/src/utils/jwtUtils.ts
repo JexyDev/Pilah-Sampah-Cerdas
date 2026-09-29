@@ -16,11 +16,19 @@ export interface TokenPayload {
   rtId?: number;
 }
 
-// In production, these should be dynamically loaded from environment variables (.env)
+/**
+ * Ambil JWT Access Secret dari environment variable.
+ * Akan throw error startup jika secret tidak dikonfigurasi — lebih aman daripada diam-diam memakai default.
+ */
 export const getJwtAccessSecret = (): string => {
-  return (
-    process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET || "access_secret_super_secure_key_123"
-  );
+  const secret = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error(
+      "[BERSEKA SECURITY] JWT_ACCESS_SECRET atau JWT_SECRET wajib diset di environment variables. " +
+      "Jangan pernah menggunakan fallback secret di production/staging."
+    );
+  }
+  return secret;
 };
 
 // Expiration times
@@ -40,8 +48,7 @@ export const generateAccessToken = (payload: TokenPayload): string => {
  * Generate Refresh Token
  */
 export const generateRefreshToken = (_userId: string): { token: string; expiresAt: Date } => {
-  // Using UUID for refresh token or could use JWT. Usually opaque strings like UUID are stored in DB.
-  // We'll generate a random opaque token for DB storage and rotation safety.
+  // Opaque UUID token — disimpan di DB untuk rotasi yang aman.
   const token = uuidv4();
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + REFRESH_TOKEN_EXPIRES_DAYS);
@@ -50,31 +57,14 @@ export const generateRefreshToken = (_userId: string): { token: string; expiresA
 };
 
 /**
- * Verify Access Token with multi-secret fallback for seamless session continuity
+ * Verify Access Token.
+ * Hanya menggunakan secret dari environment variable — tidak ada fallback hardcoded.
  */
 export const verifyAccessToken = (token: string): TokenPayload => {
-  const primarySecret = getJwtAccessSecret();
-  const candidateSecrets = Array.from(
-    new Set(
-      [
-        primarySecret,
-        "access_secret_super_secure_key_123",
-        "ganti_ini_dengan_string_random_minimal_32_karakter",
-      ].filter(Boolean)
-    )
-  );
-
-  let lastError: any = null;
-  for (const secret of candidateSecrets) {
-    try {
-      return jwt.verify(token, secret) as TokenPayload;
-    } catch (err: any) {
-      lastError = err;
-      if (err.name === "TokenExpiredError") {
-        throw err;
-      }
-    }
+  const secret = getJwtAccessSecret();
+  try {
+    return jwt.verify(token, secret) as TokenPayload;
+  } catch (err: any) {
+    throw err;
   }
-
-  throw lastError || new Error("Token verification failed");
 };

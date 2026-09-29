@@ -367,7 +367,7 @@ const ResiduDashboard: React.FC = () => {
           <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
             <h3 className="font-extrabold text-lg text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
               <BarChart2 className="text-emerald-600 dark:text-emerald-400 w-5 h-5" />
-              Volume Residu Agregat Mingguan (Kg)
+              Berat Residu Agregat Mingguan (Kg)
             </h3>
             <div className="flex items-end gap-3 h-48 pt-4">
               {analytics?.trend.map((t: any) => (

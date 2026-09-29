@@ -59,7 +59,7 @@ const SHEET_DISPLAY_NAMES: Record<string, string> = {
   pemilahan_sampah: "Pemilahan Sampah",
   bank_sampah_pengolahan: "Bank Sampah & Pengolahan",
   key_player: "Key Player",
-  volume_sampah: "Volume Sampah",
+  volume_sampah: "Berat Sampah",
   catatan_kesimpulan: "Catatan & Kesimpulan",
 };
 

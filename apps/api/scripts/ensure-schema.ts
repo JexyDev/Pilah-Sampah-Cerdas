@@ -14,6 +14,7 @@ async function main() {
     `ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "id_universitas" TEXT;`,
     `ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "is_test_account" BOOLEAN NOT NULL DEFAULT false;`,
     `CREATE INDEX IF NOT EXISTS "pengguna_is_test_account_idx" ON "pengguna"("is_test_account");`,
+    `ALTER TABLE "setoran_manual" ADD COLUMN IF NOT EXISTS "input_method" TEXT;`,
     `DO $$ BEGIN
       IF NOT EXISTS (
         SELECT 1 FROM pg_constraint WHERE conname = 'pengguna_id_universitas_fkey'

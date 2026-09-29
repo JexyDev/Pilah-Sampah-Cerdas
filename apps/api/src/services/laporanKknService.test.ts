@@ -195,9 +195,10 @@ describe("laporanKknService - Laporan Resmi KKN Eksekutif", () => {
       expect(group1.kategoriNilai).toBe("A");
       expect(group1.jumlahMhsDinilai).toBe(2);
 
-      // Verifikasi Lembar Pengesahan
-      expect(result.lembarPengesahan.pejabat.length).toBe(3);
-      expect(result.lembarPengesahan.pejabat[2].nama).toBe("Dr. Ir. Herman S. Soegoto, MBA");
+      // Verifikasi Lembar Pengesahan (1 Penandatangan di Tengah Bawah Tanpa LPPM)
+      expect(result.lembarPengesahan.pejabat.length).toBe(1);
+      expect(result.lembarPengesahan.pejabat[0].posisi).toBe("TENGAH");
+      expect(result.lembarPengesahan.pejabat[0].jabatan).toContain("Ketua Tim Pelaksana");
     });
   });
 

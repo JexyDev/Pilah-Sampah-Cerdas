@@ -353,7 +353,7 @@ export const AnalisisKknPage: React.FC = () => {
                 <div className="text-2xl font-black text-rose-600 dark:text-rose-400 mt-2">
                   {data.pilar2.outZoneCount}
                 </div>
-                <span className="text-xs text-slate-500 mt-1 block">Presensi ditolak sistem koordinat</span>
+                <span className="text-xs text-slate-500 mt-1 block">Presensi luar zona / durasi belum terpenuhi</span>
               </div>
 
               <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 shadow-2xs">
@@ -514,8 +514,8 @@ export const AnalisisKknPage: React.FC = () => {
                     <span className="text-xs font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Capaian Evaluasi Pembimbing</span>
                     <FormulaTooltip
                       title="Capaian Evaluasi Pembimbing Lapangan"
-                      formula="(Mahasiswa Dinilai Status Final / Total Mahasiswa) × 100%"
-                      description="Progres penilaian akademik akhir mahasiswa oleh Dosen Pembimbing Lapangan."
+                      formula="(Mahasiswa Dinilai DPL / Total Mahasiswa) × 100%"
+                      description="Progres penilaian akademik mahasiswa oleh Dosen Pembimbing Lapangan (status tersimpan maupun difinalisasi)."
                     />
                   </div>
                   <div className="text-3xl font-black text-slate-900 dark:text-slate-100 mt-2">

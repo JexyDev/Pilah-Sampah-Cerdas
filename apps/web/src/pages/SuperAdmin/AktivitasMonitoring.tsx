@@ -33,7 +33,7 @@ export const AktivitasMonitoring: React.FC = () => {
       </div>
 
       <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm h-96">
-        <h3 className="font-bold text-gray-800 text-sm mb-4">Volume Sampah Terpilah (Bulan Ini)</h3>
+        <h3 className="font-bold text-gray-800 text-sm mb-4">Berat Sampah Terpilah (Bulan Ini)</h3>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={stats}>
             <XAxis dataKey="name" stroke="#8884d8" />
