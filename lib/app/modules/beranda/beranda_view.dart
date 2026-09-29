@@ -948,7 +948,7 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                         ),
                       ),
                       child: Text(
-                        isUnjoined ? 'Belum Bergabung' : 'Sudah Bergabung',
+                        isUnjoined ? 'Bukan Warga Berseka' : 'Sudah Bergabung',
                         style: TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.w700,
@@ -1356,41 +1356,96 @@ class _BerandaViewState extends ConsumerState<BerandaView>
       children: [
         // Primary CTA: Scan Sampah
         Expanded(
-          child: GestureDetector(
-            onTap: isOnline
-                ? () {
-                    if (user?.role == UserRole.warga &&
-                        user?.lifecycleState != WargaLifecycle.fullyActive) {
-                      Navigator.of(context).pushNamed(AppRoutes.ukurKapasitas);
-                      return;
-                    }
-                    ScanGuard.handleScanNavigation(context, ref);
-                  }
-                : null,
-            child: AnimatedOpacity(
-              opacity: isOnline ? 1.0 : 0.5,
-              duration: const Duration(milliseconds: 200),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
+          child: _ScanSampahButton(
+            isOnline: isOnline,
+            onTap: () {
+              if (user?.role == UserRole.warga &&
+                  user?.lifecycleState != WargaLifecycle.fullyActive) {
+                Navigator.of(context).pushNamed(AppRoutes.ukurKapasitas);
+                return;
+              }
+              ScanGuard.handleScanNavigation(context, ref);
+            },
+          ),
+        ),
+        const SizedBox(width: 10),
+        // Secondary CTA: Pengosongan
+        Expanded(
+          child: _PengosonganButton(
+            isOnline: isOnline,
+            onTap: () {
+              Navigator.of(context).pushNamed(AppRoutes.resetBin);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyLogs(BuildContext context) {
+    return const EmptyState(
+      message: 'Belum ada riwayat terakhir.',
+      icon: Icons.history_rounded,
+    );
+  }
+}
+
+class _ScanSampahButton extends StatefulWidget {
+  const _ScanSampahButton({
+    required this.isOnline,
+    required this.onTap,
+  });
+
+  final bool isOnline;
+  final VoidCallback onTap;
+
+  @override
+  State<_ScanSampahButton> createState() => _ScanSampahButtonState();
+}
+
+class _ScanSampahButtonState extends State<_ScanSampahButton> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedScale(
+      scale: _isPressed ? 0.96 : 1.0,
+      duration: const Duration(milliseconds: 100),
+      child: AnimatedOpacity(
+        opacity: widget.isOnline ? 1.0 : 0.5,
+        duration: const Duration(milliseconds: 200),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [AppColors.primaryGreen, Color(0xFF15803D)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primaryGreen.withValues(alpha: 0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: widget.isOnline ? widget.onTap : null,
+              onTapDown: (_) => setState(() => _isPressed = true),
+              onTapUp: (_) => setState(() => _isPressed = false),
+              onTapCancel: () => setState(() => _isPressed = false),
+              borderRadius: BorderRadius.circular(16),
+              splashColor: Colors.white.withValues(alpha: 0.2),
+              highlightColor: Colors.white.withValues(alpha: 0.1),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(
                   vertical: 14,
                   horizontal: 8,
                 ),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.primaryGreen, Color(0xFF15803D)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primaryGreen.withValues(alpha: 0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: const Row(
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
@@ -1420,34 +1475,65 @@ class _BerandaViewState extends ConsumerState<BerandaView>
             ),
           ),
         ),
-        const SizedBox(width: 10),
-        // Secondary CTA: Pengosongan
-        Expanded(
-          child: GestureDetector(
-            onTap: isOnline
-                ? () {
-                    Navigator.of(context).pushNamed(AppRoutes.resetBin);
-                  }
-                : null,
-            child: AnimatedOpacity(
-              opacity: isOnline ? 1.0 : 0.5,
-              duration: const Duration(milliseconds: 200),
-              child: Container(
+      ),
+    );
+  }
+}
+
+class _PengosonganButton extends StatefulWidget {
+  const _PengosonganButton({
+    required this.isOnline,
+    required this.onTap,
+  });
+
+  final bool isOnline;
+  final VoidCallback onTap;
+
+  @override
+  State<_PengosonganButton> createState() => _PengosonganButtonState();
+}
+
+class _PengosonganButtonState extends State<_PengosonganButton> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedScale(
+      scale: _isPressed ? 0.96 : 1.0,
+      duration: const Duration(milliseconds: 100),
+      child: AnimatedOpacity(
+        opacity: widget.isOnline ? 1.0 : 0.5,
+        duration: const Duration(milliseconds: 200),
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.primaryGreen.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppColors.primaryGreen.withValues(alpha: 0.35),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primaryGreen.withValues(alpha: 0.08),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: widget.isOnline ? widget.onTap : null,
+              onTapDown: (_) => setState(() => _isPressed = true),
+              onTapUp: (_) => setState(() => _isPressed = false),
+              onTapCancel: () => setState(() => _isPressed = false),
+              borderRadius: BorderRadius.circular(16),
+              splashColor: AppColors.primaryGreen.withValues(alpha: 0.15),
+              highlightColor: AppColors.primaryGreen.withValues(alpha: 0.08),
+              child: Padding(
                 padding: const EdgeInsets.symmetric(
                   vertical: 14,
                   horizontal: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.shade200, width: 1.5),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.03),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -1466,9 +1552,9 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                           'Pengosongan',
                           maxLines: 1,
                           style: TextStyle(
-                            color: AppColors.textPrimary,
+                            color: AppColors.primaryGreen,
                             fontSize: 14,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ),
@@ -1479,14 +1565,7 @@ class _BerandaViewState extends ConsumerState<BerandaView>
             ),
           ),
         ),
-      ],
-    );
-  }
-
-  Widget _buildEmptyLogs(BuildContext context) {
-    return const EmptyState(
-      message: 'Belum ada riwayat terakhir.',
-      icon: Icons.history_rounded,
+      ),
     );
   }
 }

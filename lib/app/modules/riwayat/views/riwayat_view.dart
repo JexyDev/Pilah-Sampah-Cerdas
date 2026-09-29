@@ -470,22 +470,36 @@ class _SummaryCard extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: _buildSummaryItem(
-                      'Organik',
-                      org,
-                      AppColors.organicColor,
+                  const Text(
+                    'Total Sampah (Semua Waktu)',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
                     ),
                   ),
-                  Container(width: 1, height: 40, color: AppColors.border),
-                  Expanded(
-                    child: _buildSummaryItem(
-                      'Anorganik',
-                      anorg,
-                      AppColors.nonOrganicColor,
-                    ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildSummaryItem(
+                          'Organik',
+                          org,
+                          AppColors.organicColor,
+                        ),
+                      ),
+                      Container(width: 1, height: 40, color: AppColors.border),
+                      Expanded(
+                        child: _buildSummaryItem(
+                          'Anorganik',
+                          anorg,
+                          AppColors.nonOrganicColor,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

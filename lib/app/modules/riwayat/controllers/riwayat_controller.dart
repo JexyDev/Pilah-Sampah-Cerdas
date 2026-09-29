@@ -57,18 +57,10 @@ final pointHistoryProvider = FutureProvider<List<PointHistoryEntity>>((
   return await repo.getPointHistoryByUser(userId);
 });
 
-/// Provider total frekuensi setor sampah
+/// Provider total frekuensi setor sampah fisik (berdasarkan data riil log sampah)
 final totalSetoranProvider = FutureProvider<int>((ref) async {
-  final history = await ref.watch(pointHistoryProvider.future);
-  final setoranHistory = history.where((h) {
-    final descLower = h.description.toLowerCase();
-    final isAktivasi = descLower.contains('aktivasi') || descLower.contains('activation');
-    final isPunishment = h.points < 0 || descLower.contains('penalti') || descLower.contains('punishment');
-    final isRedeem = descLower.contains('redeem') || descLower.contains('tukar');
-    final isPresensi = descLower.contains('presensi') || descLower.contains('geofence');
-    return h.points > 0 && !isAktivasi && !isPunishment && !isRedeem && !isPresensi;
-  });
-  return setoranHistory.length;
+  final logs = await ref.watch(wasteLogsProvider.future);
+  return logs.length;
 });
 
 /// Provider total poin yang diperoleh hari ini (Dihitung murni dari riwayat backend createdAt = today).
