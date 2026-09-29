@@ -640,7 +640,9 @@ export const systemAnalysisService = {
       prisma.bankSampahLedger.findMany({
         select: { saldoRupiah: true },
       }),
-      prisma.rw.count({ where: { name: { not: { contains: "99" } } } }),
+      (prisma as any).rw?.count
+        ? (prisma as any).rw.count({ where: { name: { not: { contains: "99" } } } })
+        : Promise.resolve(0),
       prisma.user.count({
         where: {
           role: { name: { in: ["RW", "RT", "LURAH", "CAMAT"] } },
@@ -660,7 +662,9 @@ export const systemAnalysisService = {
     });
 
     const activeResidentRatio = totalWarga > 0 ? Math.round((activeUserSet.size / totalWarga) * 100) : 0;
-    const sortingComplianceIndex = totalAutoSort > 0 ? Math.round((compliantAutoSortCount / totalAutoSort) * 100) : 0;
+    const totalAuto = Number(totalAutoSort) || 0;
+    const compliantAuto = Number(compliantAutoSortCount) || 0;
+    const sortingComplianceIndex = totalAuto > 0 ? Math.round((compliantAuto / totalAuto) * 100) : 0;
 
     // Kritisitas Tempat Sampah (Hanya unit terikat/aktif di lapangan)
     let countNormal = 0;

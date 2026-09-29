@@ -5,7 +5,8 @@
  * 
  * Halaman: Laporan Resmi Tata Kelola Sampah
  * Peruntukan: Khusus Role PIMPINAN, SUPER_USER, dan DEVELOPER
- * Standard Visual: Dokumen Kedinasan Resmi Pemerintah Kota Bandung / Kecamatan Coblong & Berseka
+ * Standard Visual: Dokumen Kedinasan Resmi UNIKOM x Pemerintah Kota Bandung & BERSEKA (Bebas LPPM)
+ * Format Ekspor: Dokumen Word (.docx) & Cetak/PDF (A4)
  * 100% Real-Time Aggregation dari PostgreSQL Database
  */
 
@@ -19,7 +20,7 @@ import {
   Truck,
   Leaf,
   ShieldCheck,
-  Download,
+  FileDown,
   Printer,
   RefreshCw,
   CheckCircle2,
@@ -32,6 +33,8 @@ import {
   ArrowDownRight,
   Sparkles,
   Database,
+  Sliders,
+  Clock,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -50,6 +53,12 @@ import showToast from "../../utils/showToast";
 import { CustomSelect, type SelectOption } from "../../components/common/CustomSelect";
 import type { WasteReportData } from "./types";
 import { OfficialDocumentA4View } from "./components/OfficialDocumentA4View";
+import {
+  PengaturanLaporanModal,
+  type ReportCustomConfig,
+  DEFAULT_WASTE_REPORT_CONFIG,
+} from "../../components/laporan/PengaturanLaporanModal";
+import { exportWasteReportDocx } from "../../utils/docxExportService";
 
 const WILAYAH_OPTIONS: SelectOption[] = [
   { value: "ALL", label: "Kecamatan Coblong (Seluruh Wilayah)", sublabel: "Cakupan 6 Kelurahan Lengkap" },
@@ -70,17 +79,57 @@ const PERIODE_OPTIONS: SelectOption[] = [
   { value: "custom", label: "Rentang Tanggal Khusus", sublabel: "Pilih Tanggal Mulai s/d Akhir" },
 ];
 
+const HARI_OPTIONS: SelectOption[] = [
+  { value: "ALL", label: "Semua Hari (Senin - Minggu)", sublabel: "Operasional Penuh 7 Hari" },
+  { value: "SENIN", label: "Hari Senin", sublabel: "Awal Pekan Operasional" },
+  { value: "SELASA", label: "Hari Selasa", sublabel: "Hari Kerja Rutin" },
+  { value: "RABU", label: "Hari Rabu", sublabel: "Pertengahan Pekan" },
+  { value: "KAMIS", label: "Hari Kamis", sublabel: "Hari Kerja Rutin" },
+  { value: "JUMAT", label: "Hari Jumat", sublabel: "Jumat Bersih & Sirkular" },
+  { value: "SABTU", label: "Hari Sabtu", sublabel: "Kegiatan Swadaya Warga" },
+  { value: "MINGGU", label: "Hari Minggu", sublabel: "Kerja Bakti Lingkungan" },
+];
+
+const JAM_OPTIONS: SelectOption[] = [
+  { value: "ALL", label: "Semua Jam (24 Jam)", sublabel: "Akumulasi Ritase Penuh" },
+  { value: "PAGI", label: "Sesi Pagi (07:00 - 12:00)", sublabel: "Pengangkutan Utama" },
+  { value: "SIANG", label: "Sesi Siang (12:00 - 15:00)", sublabel: "Pemilahan & Biokonversi" },
+  { value: "SORE", label: "Sesi Sore (15:00 - 18:00)", sublabel: "Penimbangan Bank Sampah" },
+  { value: "CUSTOM", label: "Jam Kustom Khusus", sublabel: "Tentukan Jam Mulai & Selesai" },
+];
+
+const STORAGE_KEY = "berseka_waste_report_custom_config_v2";
+
 export const LaporanTataKelolaSampahPage: React.FC = () => {
   const [data, setData] = useState<WasteReportData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [downloadingExcel, setDownloadingExcel] = useState<boolean>(false);
+  const [exportingDocx, setExportingDocx] = useState<boolean>(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [viewMode, setViewMode] = useState<"dashboard" | "document">("dashboard");
+
+  // Orientasi Cetak A4: Portrait atau Landscape
+  const [printOrientation, setPrintOrientation] = useState<"portrait" | "landscape">("portrait");
+
+  // Pengaturan Naskah Dokumen Dinamis (CRUD Lengkap)
+  const [reportConfig, setReportConfig] = useState<ReportCustomConfig>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // fallback
+    }
+    return DEFAULT_WASTE_REPORT_CONFIG;
+  });
 
   // Filters
   const [selectedWilayah, setSelectedWilayah] = useState<string>("ALL");
   const [selectedPeriode, setSelectedPeriode] = useState<string>("semua");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
+  const [selectedHari, setSelectedHari] = useState<string>("ALL");
+  const [selectedJamPreset, setSelectedJamPreset] = useState<string>("ALL");
+  const [customJamMulai, setCustomJamMulai] = useState<string>("");
+  const [customJamSelesai, setCustomJamSelesai] = useState<string>("");
 
   const fetchReportData = async () => {
     try {
@@ -92,6 +141,22 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
       if (selectedPeriode === "custom" && startDate && endDate) {
         params.startDate = startDate;
         params.endDate = endDate;
+      }
+      if (selectedHari && selectedHari !== "ALL") {
+        params.hari = selectedHari;
+      }
+      if (selectedJamPreset === "PAGI") {
+        params.jamMulai = "07:00";
+        params.jamSelesai = "12:00";
+      } else if (selectedJamPreset === "SIANG") {
+        params.jamMulai = "12:00";
+        params.jamSelesai = "15:00";
+      } else if (selectedJamPreset === "SORE") {
+        params.jamMulai = "15:00";
+        params.jamSelesai = "18:00";
+      } else if (selectedJamPreset === "CUSTOM" && customJamMulai && customJamSelesai) {
+        params.jamMulai = customJamMulai;
+        params.jamSelesai = customJamSelesai;
       }
 
       const res = await api.get("/dashboard/waste-executive-report", { params });
@@ -110,14 +175,22 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
 
   useEffect(() => {
     if (selectedPeriode === "custom") {
-      // For custom range, only auto-fetch when both dates are already provided
       if (startDate && endDate) {
         fetchReportData();
       }
       return;
     }
     fetchReportData();
-  }, [selectedWilayah, selectedPeriode, startDate, endDate]);
+  }, [selectedWilayah, selectedPeriode, startDate, endDate, selectedHari, selectedJamPreset]);
+
+  useEffect(() => {
+    if (selectedJamPreset === "CUSTOM" && customJamMulai && customJamSelesai) {
+      const handler = setTimeout(() => {
+        fetchReportData();
+      }, 500);
+      return () => clearTimeout(handler);
+    }
+  }, [customJamMulai, customJamSelesai]);
 
   const handleApplyCustomDate = () => {
     if (selectedPeriode === "custom") {
@@ -133,44 +206,43 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
     }
   };
 
-  const handleDownloadExcel = async () => {
+  // Simpan Pengaturan Naskah Dinamis
+  const handleSaveConfig = (newConfig: ReportCustomConfig) => {
+    setReportConfig(newConfig);
     try {
-      setDownloadingExcel(true);
-      const params: any = {
-        wilayah: selectedWilayah,
-        periode: selectedPeriode,
-      };
-      if (selectedPeriode === "custom" && startDate && endDate) {
-        params.startDate = startDate;
-        params.endDate = endDate;
-      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newConfig));
+      showToast.success("Pengaturan naskah dokumen laporan berhasil disimpan");
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
-      const response = await api.get("/dashboard/waste-executive-report/export", {
-        params,
-        responseType: "blob",
+  // Reset Pengaturan Naskah ke Default
+  const handleResetConfig = () => {
+    setReportConfig(DEFAULT_WASTE_REPORT_CONFIG);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+      showToast.success("Format naskah laporan dikembalikan ke template standar");
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // Ekspor Dokumen Resmi Word (.docx) Asli
+  const handleExportDocx = async () => {
+    if (!data) return;
+    try {
+      setExportingDocx(true);
+      await exportWasteReportDocx(data, {
+        ...reportConfig,
+        orientation: printOrientation,
       });
-
-      const blob = new Blob([response.data], {
-        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute(
-        "download",
-        `Laporan_Resmi_Tata_Kelola_Sampah_${selectedWilayah}_${new Date().toISOString().split("T")[0]}.xlsx`
-      );
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-
-      showToast.success("Spreadsheet Excel (.xlsx) berhasil diunduh");
-    } catch (err) {
-      console.error("[LaporanTataKelola] Gagal export Excel:", err);
-      showToast.error("Gagal mengunduh spreadsheet Excel");
+      showToast.success("Dokumen Word (.docx) naskah resmi tata kelola sampah berhasil diunduh");
+    } catch (err: any) {
+      console.error("[LaporanTataKelola] Gagal export DOCX:", err);
+      showToast.error("Gagal mengunduh dokumen Word: " + (err.message || "Kesalahan sistem"));
     } finally {
-      setDownloadingExcel(false);
+      setExportingDocx(false);
     }
   };
 
@@ -182,8 +254,8 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-3 sm:p-6 lg:p-8 space-y-6 text-slate-800 dark:text-slate-100 print:p-0 print:m-0 print:bg-white print:text-black">
       <style>{`
         @page {
-          size: A4 portrait;
-          margin: 15mm 15mm 15mm 15mm;
+          size: A4 ${printOrientation};
+          margin: 12mm 10mm 12mm 10mm;
         }
         @media print {
           /* 1. Sembunyikan elemen Web UI dashboard, header, filter, navigasi */
@@ -253,10 +325,10 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
                 Dokumen Resmi Eksekutif &bull; Role Pimpinan
               </span>
               <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight text-slate-900 dark:text-white uppercase leading-tight print:text-xl print:text-black">
-                Laporan Evaluasi &amp; Akuntabilitas Tata Kelola Sampah
+                {reportConfig.judulLaporan || "Laporan Evaluasi & Akuntabilitas Tata Kelola Sampah"}
               </h1>
               <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">
-                Pemerintah Kota Bandung &bull; Kecamatan Coblong &bull; Platform Cerdas BERSEKA
+                {reportConfig.subjudul || "Pemerintah Kota Bandung • Kecamatan Coblong • Platform Cerdas BERSEKA"}
               </p>
             </div>
           </div>
@@ -265,20 +337,20 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
             <div>
               <span className="font-bold text-slate-700 dark:text-slate-300">No. Registrasi: </span>
               <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400 print:text-black">
-                {data?.metadata.nomorDokumen || "BERSEKA/LAP-TKS/2026/09/001"}
+                {reportConfig.nomorDokumen || data?.metadata.nomorDokumen || "005/BERSEKA-DLH/EVAL/IX/2026"}
               </span>
             </div>
             <div>
               <span className="font-bold text-slate-700 dark:text-slate-300">Tanggal Terbit: </span>
               <span>
-                {data?.metadata.tanggalTerbit
+                {reportConfig.tanggalPengesahan || (data?.metadata.tanggalTerbit
                   ? new Date(data.metadata.tanggalTerbit).toLocaleDateString("id-ID", {
                       weekday: "long",
                       day: "numeric",
                       month: "long",
                       year: "numeric",
                     })
-                  : new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
+                  : new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }))}
               </span>
             </div>
             <div>
@@ -363,7 +435,7 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
           BILAH FILTER & KONTROL AKSI (100% RESPONSIVE)
       ───────────────────────────────────────────────────────────── */}
       <section className="web-filter-section bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 md:p-6 shadow-xs space-y-4 print:hidden">
-        {/* Baris 1: Filter Dropdown (Cakupan Wilayah & Rentang Waktu) + Custom Date */}
+        {/* Baris 1: Filter Cakupan Wilayah & Periode Waktu */}
         <div className="flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-4 flex-wrap">
           {/* Filter Wilayah */}
           <div className="w-full sm:w-72 sm:max-w-xs">
@@ -415,63 +487,160 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
           )}
         </div>
 
-        {/* Baris 2: Pemisah & Bilah Aksi (View Switcher + Tombol Action) */}
-        <div className="border-t border-slate-100 dark:border-slate-800/80 pt-3 flex flex-col md:flex-row md:items-center justify-between gap-3 flex-wrap">
-          {/* Sisi Kiri: Segmented Control Switcher Tampilan */}
-          <div className="inline-flex items-center p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 w-full sm:w-auto">
-            <button
-              type="button"
-              onClick={() => setViewMode("dashboard")}
-              className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                viewMode === "dashboard"
-                  ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-              }`}
-              title="Tampilkan Dasbor Interaktif (Grafik & Widget)"
-            >
-              <LayoutDashboard size={14} />
-              <span className="whitespace-nowrap">Dasbor Interaktif</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("document")}
-              className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                viewMode === "document"
-                  ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-              }`}
-              title="Pratinjau Format Naskah Dokumen Resmi A4 Kedinasan"
-            >
-              <FileText size={14} />
-              <span className="whitespace-nowrap">Naskah Dokumen (A4)</span>
-            </button>
+        {/* Baris 2: Filter Waktu Presisi (Hari & Jam Operasional) */}
+        <div className="border-t border-slate-100 dark:border-slate-800/60 pt-3 flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-4 flex-wrap">
+          {/* Filter Hari */}
+          <div className="w-full sm:w-60 sm:max-w-xs">
+            <label className="block text-[11px] font-extrabold uppercase text-slate-400 dark:text-slate-500 mb-1.5 tracking-wider flex items-center gap-1.5">
+              <Calendar size={13} className="text-emerald-600 dark:text-emerald-400" />
+              Hari Operasional
+            </label>
+            <CustomSelect
+              options={HARI_OPTIONS}
+              value={selectedHari}
+              onChange={(v) => setSelectedHari(v)}
+            />
           </div>
 
-          {/* Sisi Kanan: Action Buttons (Perbarui, Export XLSX, Cetak PDF) */}
-          <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap w-full sm:w-auto justify-start sm:justify-end">
+          {/* Filter Jam */}
+          <div className="w-full sm:w-60 sm:max-w-xs">
+            <label className="block text-[11px] font-extrabold uppercase text-slate-400 dark:text-slate-500 mb-1.5 tracking-wider flex items-center gap-1.5">
+              <Clock size={13} className="text-emerald-600 dark:text-emerald-400" />
+              Sesi Jam Kerja
+            </label>
+            <CustomSelect
+              options={JAM_OPTIONS}
+              value={selectedJamPreset}
+              onChange={(v) => setSelectedJamPreset(v)}
+            />
+          </div>
+
+          {/* Custom Jam Input */}
+          {selectedJamPreset === "CUSTOM" && (
+            <div className="flex items-center gap-2 flex-wrap pb-0.5">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Mulai:</span>
+                <input
+                  type="time"
+                  value={customJamMulai}
+                  onChange={(e) => setCustomJamMulai(e.target.value)}
+                  className="px-2.5 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+              <span className="text-xs text-slate-400 font-semibold">s/d</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Selesai:</span>
+                <input
+                  type="time"
+                  value={customJamSelesai}
+                  onChange={(e) => setCustomJamSelesai(e.target.value)}
+                  className="px-2.5 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Baris 3: Pemisah & Bilah Aksi (View Switcher + Orientasi + Pengaturan + Export DOCX & Cetak PDF) */}
+        <div className="border-t border-slate-100 dark:border-slate-800/80 pt-3 flex flex-col lg:flex-row lg:items-center justify-between gap-3 flex-wrap">
+          {/* Sisi Kiri: Switcher Tampilan & Orientasi A4 */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* View Switcher */}
+            <div className="inline-flex items-center p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80">
+              <button
+                type="button"
+                onClick={() => setViewMode("dashboard")}
+                className={`inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  viewMode === "dashboard"
+                    ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                }`}
+                title="Tampilkan Dasbor Interaktif (Grafik & Widget)"
+              >
+                <LayoutDashboard size={14} />
+                <span className="whitespace-nowrap">Dasbor Interaktif</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("document")}
+                className={`inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  viewMode === "document"
+                    ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                }`}
+                title="Pratinjau Format Naskah Dokumen Resmi A4"
+              >
+                <FileText size={14} />
+                <span className="whitespace-nowrap">Naskah Dokumen (A4)</span>
+              </button>
+            </div>
+
+            {/* Orientasi Kertas A4 (Tegak / Mendatar) */}
+            <div className="inline-flex items-center p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80">
+              <button
+                type="button"
+                onClick={() => setPrintOrientation("portrait")}
+                className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  printOrientation === "portrait"
+                    ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                }`}
+                title="Format Tegak A4 (Portrait)"
+              >
+                Portrait
+              </button>
+              <button
+                type="button"
+                onClick={() => setPrintOrientation("landscape")}
+                className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  printOrientation === "landscape"
+                    ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                }`}
+                title="Format Mendatar A4 (Landscape)"
+              >
+                Landscape
+              </button>
+            </div>
+          </div>
+
+          {/* Sisi Kanan: Action Buttons (Perbarui, Pengaturan Naskah, Ekspor DOCX, Cetak PDF) */}
+          <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap w-full lg:w-auto justify-start lg:justify-end">
             <button
               onClick={fetchReportData}
               disabled={loading}
-              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs transition-colors cursor-pointer disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs transition-colors cursor-pointer disabled:opacity-50"
               title="Muat ulang data terbaru dari database"
             >
               <RefreshCw size={14} className={loading ? "animate-spin text-emerald-600" : ""} />
               <span className="whitespace-nowrap">Perbarui</span>
             </button>
 
+            {/* Tombol Pengaturan Naskah */}
             <button
-              onClick={handleDownloadExcel}
-              disabled={downloadingExcel || loading}
-              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-extrabold text-xs shadow-xs transition-all cursor-pointer disabled:opacity-50"
-              title="Unduh seluruh data dalam format spreadsheet Excel (.xlsx)"
+              onClick={() => setIsSettingsOpen(true)}
+              className="inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 font-bold text-xs transition-colors cursor-pointer"
+              title="Ubah judul laporan, nomor dokumen, dan nama penandatangan secara dinamis"
             >
-              <Download size={14} className={downloadingExcel ? "animate-bounce" : ""} />
-              <span className="whitespace-nowrap">{downloadingExcel ? "Menyiapkan..." : "Export XLSX"}</span>
+              <Sliders size={14} className="text-emerald-600 dark:text-emerald-400" />
+              <span className="whitespace-nowrap">Pengaturan Naskah</span>
             </button>
 
+            {/* Tombol Ekspor Word (.docx) */}
+            <button
+              onClick={handleExportDocx}
+              disabled={exportingDocx || loading || !data}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-extrabold text-xs shadow-xs transition-all cursor-pointer disabled:opacity-50"
+              title="Unduh seluruh naskah dalam format Microsoft Word (.docx) resmi"
+            >
+              <FileDown size={14} className={exportingDocx ? "animate-bounce" : ""} />
+              <span className="whitespace-nowrap">{exportingDocx ? "Menyiapkan Word..." : "Ekspor DOCX"}</span>
+            </button>
+
+            {/* Tombol Cetak PDF */}
             <button
               onClick={handlePrintPdf}
-              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-extrabold text-xs shadow-xs transition-all cursor-pointer"
+              className="inline-flex items-center justify-center gap-2 px-4.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-extrabold text-xs shadow-xs transition-all cursor-pointer"
               title="Cetak format naskah dokumen resmi A4 atau simpan ke PDF"
             >
               <Printer size={14} />
@@ -1133,10 +1302,23 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
             viewMode === "document" ? "block" : "hidden"
           } print:block`}
         >
-          <OfficialDocumentA4View data={data} />
+          <OfficialDocumentA4View
+            data={data}
+            customConfig={reportConfig}
+            orientation={printOrientation}
+          />
         </div>
       </>
     )}
+
+      {/* Modal Pengaturan Naskah Dokumen Laporan (CRUD Lengkap) */}
+      <PengaturanLaporanModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        config={reportConfig}
+        onSave={handleSaveConfig}
+        onReset={handleResetConfig}
+      />
     </div>
   );
 };

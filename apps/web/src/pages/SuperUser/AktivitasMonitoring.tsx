@@ -199,10 +199,10 @@ export const AktivitasMonitoring: React.FC = () => {
         title="Pemantauan & Rekapitulasi"
         description={
           isDpl
-            ? "Monitoring analitik volume sampah terpilah warga wilayah binaan KKN, riwayat log fisik, dan skor kepatuhan lingkungan terpadu."
+            ? "Monitoring analitik berat sampah terpilah warga wilayah binaan KKN, riwayat log fisik, dan skor kepatuhan lingkungan terpadu."
             : isLurah
-              ? `Monitoring analitik volume sampah terpilah warga Kelurahan ${user?.kelurahan || "Cipaganti"}, riwayat log fisik, dan skor kepatuhan lingkungan terpadu.`
-              : "Monitoring analitik volume sampah terpilah warga, riwayat log fisik, dan skor kepatuhan lingkungan terpadu."
+              ? `Monitoring analitik berat sampah terpilah warga Kelurahan ${user?.kelurahan || "Cipaganti"}, riwayat log fisik, dan skor kepatuhan lingkungan terpadu.`
+              : "Monitoring analitik berat sampah terpilah warga, riwayat log fisik, dan skor kepatuhan lingkungan terpadu."
         }
         actions={
           <div className="flex flex-wrap items-center gap-2.5">
@@ -338,7 +338,7 @@ export const AktivitasMonitoring: React.FC = () => {
                 Perbandingan Komposisi Pemilahan Sampah
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold mt-0.5">
-                Statistik volume terpilah ({period}) di wilayah {selectedKelurahan === "ALL" ? "Keseluruhan" : selectedKelurahan}
+                Statistik berat terpilah ({period}) di wilayah {selectedKelurahan === "ALL" ? "Keseluruhan" : selectedKelurahan}
               </p>
             </div>
             <span className="text-[11px] bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 font-black px-3 py-1 rounded-full border border-emerald-200 dark:border-emerald-700/50">
@@ -485,7 +485,7 @@ export const AktivitasMonitoring: React.FC = () => {
             </span>
             <h4 className="text-sm font-extrabold text-white tracking-tight">Perluas Tempat Sampah Komposter Organik</h4>
             <p className="text-xs text-slate-100 font-medium leading-relaxed">
-              Alokasikan 5 komposter tambahan di RW dengan volume sampah organik tinggi untuk mempercepat pembuatan Pupuk Organik Cair (POC).
+              Alokasikan 5 komposter tambahan di RW dengan berat sampah organik tinggi untuk mempercepat pembuatan Pupuk Organik Cair (POC).
             </p>
           </div>
 

@@ -276,7 +276,7 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
     { id: "karakter", label: "Karakteristik Wilayah", icon: MapPin },
     { id: "pemilahan", label: "Pemilahan Sampah", icon: Database },
     { id: "bank_sampah", label: "Bank Sampah & Fasilitas", icon: Sprout },
-    { id: "volume", label: "Volume Sampah", icon: Scale },
+    { id: "volume", label: "Berat Sampah", icon: Scale },
     { id: "key_player", label: "Aktor (Key Players)", icon: Users },
     { id: "kesimpulan", label: "Kesimpulan & Risiko", icon: AlertTriangle },
   ];
@@ -756,7 +756,7 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
                       />
                     </div>
                     <div className="md:col-span-3">
-                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Total Volume Sampah (Kg/Hari)</label>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Total Berat Sampah (Kg/Hari)</label>
                       <input
                         type="number"
                         step="0.01"
@@ -768,7 +768,7 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
                       />
                     </div>
                     <div className="md:col-span-3">
-                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Catatan Volume Sampah</label>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Catatan Berat Sampah</label>
                       <textarea
                         rows={2}
                         value={volume.catatan}

@@ -57,6 +57,10 @@ vi.mock("../lib/prisma.js", () => ({
     bankSampahLedger: {
       findMany: vi.fn(),
     },
+    rw: {
+      count: vi.fn().mockResolvedValue(10),
+      findMany: vi.fn().mockResolvedValue([]),
+    },
     $queryRawUnsafe: vi.fn(),
   },
 }));
@@ -238,7 +242,9 @@ describe("systemAnalysisService - Comprehensive QC and Formula Audit", () => {
           { confidenceAi: 0.9, hasilKlasifikasiAi: "Organik" },
           { confidenceAi: 0.8, hasilKlasifikasiAi: "Anorganik" },
         ] as any);
-      vi.mocked(prisma.setoranOtomatis.count).mockResolvedValueOnce(2);
+      vi.mocked(prisma.setoranOtomatis.count)
+        .mockResolvedValueOnce(2)
+        .mockResolvedValueOnce(2);
 
       vi.mocked(prisma.facility.findMany).mockResolvedValueOnce([
         { id: "fac-1", nama: "TPS3R Coblong", jenis: "TPS3R", rw: { name: "RW 01" } },
