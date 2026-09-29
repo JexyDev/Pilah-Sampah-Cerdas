@@ -1182,7 +1182,13 @@ export const dashboardService = {
     }));
   },
 
-  getTrend: async (weeks: number = 8, wilayah?: string, year?: number, range?: string) => {
+  getTrend: async (
+    weeks: number = 8,
+    wilayah?: string,
+    year?: number,
+    range?: string,
+    includeTestAccounts: boolean = false
+  ) => {
     const areaCtx = await resolveAreaContext(wilayah);
     const { isFiltered, rwIds, kelurahanIds, kelurahanNames } = areaCtx;
 
@@ -1230,6 +1236,9 @@ export const dashboardService = {
           lte: endDate,
         },
       };
+      if (!includeTestAccounts) {
+        logsWhere.warga = { isTestAccount: false };
+      }
       if (isFiltered && filterOr.length > 0) {
         logsWhere.OR = filterOr;
       }
@@ -1244,6 +1253,9 @@ export const dashboardService = {
           lte: endDate,
         },
       };
+      if (!includeTestAccounts) {
+        residuWhere.petugas = { isTestAccount: false };
+      }
       if (isFiltered && rwFilter) {
         residuWhere.OR = [{ rw: rwFilter }, { petugas: { rw: rwFilter } }];
       }
@@ -1323,8 +1335,8 @@ export const dashboardService = {
       return result;
     }
 
-    // 2. Mode Rentang Waktu "Tahun" -> Agregasi Bulanan (12 Bulan: Jan s/d Des)
-    if (range === "year" || range === "tahunan") {
+    // 2. Mode Rentang Waktu "Tahun" & "Semua Periode" -> Agregasi Bulanan (12 Bulan: Jan s/d Des)
+    if (range === "year" || range === "tahunan" || range === "all") {
       const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
 
       for (let m = 0; m < 12; m++) {

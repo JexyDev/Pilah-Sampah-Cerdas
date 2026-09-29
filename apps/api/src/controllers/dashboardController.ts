@@ -197,11 +197,20 @@ export const dashboardController = {
         }
       }
 
+      const isDevOnly = user?.role === "DEVELOPER";
+      const includeTestAccounts = req.query.includeTestAccounts === "true" && isDevOnly;
+
       const parsedWeeks = weeks ? parseInt(weeks as string) : 8;
       const parsedYear = year ? parseInt(year as string) : undefined;
       const parsedRange = typeof range === "string" ? range : undefined;
       const [trend, availableYears] = await Promise.all([
-        dashboardService.getTrend(parsedWeeks, wilayah as string, parsedYear, parsedRange),
+        dashboardService.getTrend(
+          parsedWeeks,
+          wilayah as string,
+          parsedYear,
+          parsedRange,
+          includeTestAccounts
+        ),
         dashboardService.getAvailableYears(wilayah as string),
       ]);
       res.status(200).json({
