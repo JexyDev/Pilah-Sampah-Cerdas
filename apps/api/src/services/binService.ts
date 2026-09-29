@@ -1520,7 +1520,8 @@ export class BinService {
 
     if (!warga) throw new Error("RESOURCE_NOT_FOUND");
     if (!petugas) throw new Error("PETUGAS_NOT_FOUND");
-    if (petugas.role.name !== "PETUGAS_RESIDU") throw new Error("NOT_PETUGAS");
+    if (!["PETUGAS_RESIDU", "PETUGAS_PEMILAHAN"].includes(petugas.role?.name || ""))
+      throw new Error("NOT_PETUGAS");
     if (petugas.rwId !== warga.rwId) throw new Error("WILAYAH_MISMATCH");
 
     await prisma.user.update({
@@ -1576,9 +1577,36 @@ export class BinService {
 
       if (!resolvedPetugasId && warga?.rwId) {
         const rwPetugas = await prisma.user.findFirst({
-          where: { rwId: warga.rwId, role: { name: "PETUGAS_RESIDU" }, status: "Aktif" },
+          where: {
+            rwId: warga.rwId,
+            role: { name: { in: ["PETUGAS_RESIDU", "PETUGAS_PEMILAHAN"] } },
+            status: "Aktif",
+          },
         });
         resolvedPetugasId = rwPetugas?.id ?? null;
+      }
+
+      // Fallback: Jika warga belum memiliki RW atau petugas RW tidak ditemukan,
+      // arahkan ke petugas aktif yang memiliki token FCM, atau petugas aktif lainnya
+      if (!resolvedPetugasId) {
+        const fallbackPetugasWithToken = await prisma.user.findFirst({
+          where: {
+            role: { name: { in: ["PETUGAS_RESIDU", "PETUGAS_PEMILAHAN"] } },
+            status: "Aktif",
+            fcmToken: { not: null },
+          },
+        });
+        if (fallbackPetugasWithToken) {
+          resolvedPetugasId = fallbackPetugasWithToken.id;
+        } else {
+          const anyActivePetugas = await prisma.user.findFirst({
+            where: {
+              role: { name: { in: ["PETUGAS_RESIDU", "PETUGAS_PEMILAHAN"] } },
+              status: "Aktif",
+            },
+          });
+          resolvedPetugasId = anyActivePetugas?.id ?? null;
+        }
       }
     }
 
@@ -1634,6 +1662,7 @@ export class BinService {
             "PENGAJUAN_PENGOSONGAN_BARU",
             {
               event: "NEW_RESET_REQUEST",
+              click_action: "FLUTTER_NOTIFICATION_CLICK",
               requestId: request.id,
               binId: request.binId,
               binQr,
@@ -1790,6 +1819,7 @@ export class BinService {
           "RESET_REQUEST_REVIEWED",
           {
             event: "RESET_REQUEST_REVIEWED",
+            click_action: "FLUTTER_NOTIFICATION_CLICK",
             requestId: request.id,
             binId: request.binId,
             status,

@@ -29,13 +29,26 @@ async function initFirebase() {
       }
 
       if (!serviceAccount) {
-        const jsonPath =
-          process.env.GOOGLE_APPLICATION_CREDENTIALS ||
-          path.resolve(process.cwd(), "firebase-service-account.json");
-        if (fs.existsSync(jsonPath)) {
-          const fileContent = fs.readFileSync(jsonPath, "utf-8");
-          serviceAccount = JSON.parse(fileContent);
-          console.log(`🔥 [Firebase] Loaded service account from ${jsonPath}`);
+        const candidatePaths = [
+          process.env.GOOGLE_APPLICATION_CREDENTIALS,
+          path.resolve(process.cwd(), "firebase-service-account.json"),
+          path.resolve(process.cwd(), "apps/api/firebase-service-account.json"),
+        ].filter(Boolean) as string[];
+
+        for (const candidatePath of candidatePaths) {
+          if (fs.existsSync(candidatePath)) {
+            try {
+              const fileContent = fs.readFileSync(candidatePath, "utf-8");
+              serviceAccount = JSON.parse(fileContent);
+              console.log(`🔥 [Firebase] Loaded service account from ${candidatePath}`);
+              break;
+            } catch (err: any) {
+              console.warn(
+                `⚠️ [Firebase] Failed to parse credentials at ${candidatePath}:`,
+                err.message
+              );
+            }
+          }
         }
       }
 
@@ -202,6 +215,25 @@ export const notificationIntegrationService = {
             body,
           },
           data: sanitizedData,
+          android: {
+            priority: "high",
+            notification: {
+              channelId: "backend_channel",
+              sound: "default",
+              priority: "high",
+              defaultSound: true,
+              defaultVibrateTimings: true,
+              clickAction: sanitizedData.click_action || "FLUTTER_NOTIFICATION_CLICK",
+            },
+          },
+          apns: {
+            payload: {
+              aps: {
+                sound: "default",
+                contentAvailable: true,
+              },
+            },
+          },
         });
         messageId = response;
         console.log(

@@ -247,11 +247,25 @@ export class CronService {
         // Send FCM push notifications for users with tokens
         for (const w of wargaList) {
           if (w.fcmToken) {
-            await notificationIntegrationService.sendPushNotification(w.fcmToken, title, message);
+            await notificationIntegrationService
+              .sendPushNotification(
+                w.fcmToken,
+                title,
+                message,
+                "JADWAL_PEMILAHAN",
+                {
+                  event: "SCHEDULE_NOTIFICATION",
+                  window,
+                  click_action: "FLUTTER_NOTIFICATION_CLICK",
+                }
+              )
+              .catch((err) =>
+                console.error("[CronService] Error sending push to warga:", err)
+              );
           }
         }
       }
-      // 4. Send notification to Petugas Residu for collection
+      // 4. Send notification to Petugas Residu / Pemilahan for collection
       const fullBins = await prisma.bin.findMany({
         where: { status: "ACTIVE_BOUND" },
       });
@@ -261,16 +275,43 @@ export class CronService {
         return max > 0 && vol / max >= 0.7;
       });
       const petugas = await prisma.user.findMany({
-        where: { role: { name: "PETUGAS_RESIDU" } },
+        where: {
+          role: { name: { in: ["PETUGAS_RESIDU", "PETUGAS_PEMILAHAN"] } },
+          status: "Aktif",
+        },
       });
+      const petugasTitle = `Jadwal Pengangkutan Sampah (${window === "MORNING" ? "Pagi" : "Sore"})`;
+      const petugasMessage = `Jendela pengangkutan sampah (${window === "MORNING" ? "Pagi" : "Sore"}) telah dibuka. Silakan lakukan pengecekan dan pengangkutan tempat sampah di wilayah Anda.`;
+
       for (const p of petugas) {
-        await prisma.notification.create({
-          data: {
-            userId: p.id,
-            title: `Jadwal Pengangkutan Sampah (${window === "MORNING" ? "Pagi" : "Sore"})`,
-            message: `Jendela ${window === "MORNING" ? "Pagi" : "Sore"} dibuka. Terdapat ${targetBins.length} tempat sampah yang perlu diangkut.`,
-          },
-        });
+        await prisma.notification
+          .create({
+            data: {
+              userId: p.id,
+              title: petugasTitle,
+              message: petugasMessage,
+            },
+          })
+          .catch(() => {});
+
+        if (p.fcmToken) {
+          await notificationIntegrationService
+            .sendPushNotification(
+              p.fcmToken,
+              petugasTitle,
+              petugasMessage,
+              "JADWAL_PENGANGKUTAN",
+              {
+                event: "SCHEDULE_NOTIFICATION",
+                window,
+                targetBinsCount: String(targetBins.length),
+                click_action: "FLUTTER_NOTIFICATION_CLICK",
+              }
+            )
+            .catch((err) =>
+              console.error("[CronService] Error sending push to petugas:", err)
+            );
+        }
       }
     } catch (e) {
       console.error("[CronService] triggerScheduleNotifications error:", e);
