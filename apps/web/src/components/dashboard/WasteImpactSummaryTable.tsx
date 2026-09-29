@@ -452,7 +452,14 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
                   {/* Kepatuhan Aktual (%) */}
                   <td className="py-3.5 px-3 text-center font-extrabold text-emerald-700 dark:text-emerald-400 border-r border-slate-200/60 dark:border-slate-800/60">
                     {item.actualCompliance !== null && item.actualCompliance !== undefined && item.actualCompliance > 0 ? (
-                      <span>{Number(item.actualCompliance).toFixed(1).replace(".", ",")}%</span>
+                      <div className="flex flex-col items-center">
+                        <span>{Number(item.actualCompliance).toFixed(1).replace(".", ",")}%</span>
+                        {item.partisipasiWarga !== undefined && item.partisipasiWarga !== null && (
+                          <span className="text-[9.5px] font-semibold text-slate-400 dark:text-slate-500 block">
+                            (Partisipasi: {item.partisipasiWarga}%)
+                          </span>
+                        )}
+                      </div>
                     ) : (
                       <span className="text-slate-400 font-normal italic">Belum terdata</span>
                     )}

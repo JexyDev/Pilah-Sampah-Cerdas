@@ -75,6 +75,10 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
       baselineCompliance: Number(baselineCompliance.toFixed(1)),
       actualCompliance: Number(actualCompliance.toFixed(1)),
       deltaCompliance,
+      partisipasiWarga: item.partisipasiWarga,
+      akurasiPilah: item.akurasiPilah,
+      wargaAktif: item.wargaAktif,
+      totalWarga: item.totalWarga,
     };
   });
 
@@ -92,7 +96,7 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
             </h4>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Visualisasi perbandingan terpadu 6 kelurahan untuk membaca tren reduksi timbulan sampah dan kenaikan kepatuhan warga.
+            Visualisasi perbandingan terpadu 6 kelurahan untuk membaca tren reduksi timbulan sampah dan kenaikan kepatuhan warga (akumulasi partisipasi aktif &amp; ketepatan wadah).
           </p>
           {lastUpdated && (
             <div className="flex items-center gap-2 pt-0.5 text-[11px] text-slate-400 font-semibold">
@@ -200,9 +204,26 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
                             <span className="font-bold text-white">{item.baselineCompliance}%</span>
                           </div>
                           <div className="flex justify-between text-emerald-300">
-                            <span>Aktual Real:</span>
+                            <span>Kepatuhan Komposit:</span>
                             <span className="font-bold text-emerald-400">{item.actualCompliance}%</span>
                           </div>
+                          {item.partisipasiWarga !== undefined && item.partisipasiWarga !== null && (
+                            <div className="pt-1 border-t border-slate-800 text-[10px] space-y-0.5 text-slate-400">
+                              <div className="flex justify-between">
+                                <span>• Partisipasi Warga:</span>
+                                <span className="font-semibold text-slate-200">{item.partisipasiWarga}%</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>• Ketepatan Wadah:</span>
+                                <span className="font-semibold text-slate-200">{item.akurasiPilah ?? 100}%</span>
+                              </div>
+                              {item.wargaAktif !== undefined && item.totalWarga !== undefined && item.totalWarga > 0 && (
+                                <div className="text-[9.5px] text-slate-500 italic text-right">
+                                  ({item.wargaAktif} dari {item.totalWarga} warga aktif)
+                                </div>
+                              )}
+                            </div>
+                          )}
                           <div className="flex justify-between border-t border-slate-800 pt-1">
                             <span className="text-slate-400">Kenaikan (Δ):</span>
                             <span
