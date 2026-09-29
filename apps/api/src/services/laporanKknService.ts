@@ -545,23 +545,63 @@ export const laporanKknService = {
       };
     });
 
-    // 8. Integrasi Ringkasan Dampak & Baseline Tata Kelola Sampah
+    // 8. Integrasi Ringkasan Dampak & Baseline Tata Kelola Sampah (100% Real-time Database Aggregation)
+    const nonTestWargaWhere: any = {
+      role: "WARGA",
+      isTestAccount: false,
+      NOT: [{ name: { contains: "test", mode: "insensitive" } }],
+    };
+    if (kelFilterNormalized) {
+      const isLebakGede = kelFilterNormalized.toLowerCase().replace(/\s+/g, "") === "lebakgede";
+      nonTestWargaWhere.rw = {
+        kelurahan: {
+          name: isLebakGede
+            ? { in: ["Lebak Gede", "Lebakgede"] }
+            : { contains: kelFilterNormalized, mode: "insensitive" },
+        },
+      };
+    }
+
+    const nonTestRwWhere: any = {
+      NOT: [
+        { name: { contains: "99", mode: "insensitive" } },
+        { name: { contains: "dummy", mode: "insensitive" } },
+        { name: { contains: "test", mode: "insensitive" } },
+      ],
+    };
+    if (kelFilterNormalized) {
+      const isLebakGede = kelFilterNormalized.toLowerCase().replace(/\s+/g, "") === "lebakgede";
+      if (isLebakGede) {
+        nonTestRwWhere.OR = [
+          { kelurahan: { name: { contains: "Lebak Gede", mode: "insensitive" } } },
+          { kelurahan: { name: { contains: "Lebakgede", mode: "insensitive" } } },
+        ];
+      } else {
+        nonTestRwWhere.kelurahan = { name: { contains: kelFilterNormalized, mode: "insensitive" } };
+      }
+    }
+
+    const [realWargaCount, realRwCount] = await Promise.all([
+      prisma.user.count({ where: nonTestWargaWhere }),
+      prisma.rw.count({ where: nonTestRwWhere }),
+    ]);
+
     let ringkasanDampakSampah = {
-      totalSampahTerpilahKg: 427.89,
-      totalSampahTerpilahTon: 0.43,
-      organikKg: 261.71,
-      organikPersen: 61,
-      anorganikKg: 166.18,
-      anorganikPersen: 39,
-      residuKg: 21.4,
-      residuPersen: 5,
-      rasioReduksiTpaPersen: 95.0,
-      reduksiEmisiCo2Kg: 850.5,
-      rataRataKepatuhanPersen: 99.83,
-      wadahSampahAktif: 250,
-      totalPenggunaWarga: 967,
-      totalLokasiRw: 86,
-      volumeBulananM3: 1609.2,
+      totalSampahTerpilahKg: 0,
+      totalSampahTerpilahTon: 0,
+      organikKg: 0,
+      organikPersen: 0,
+      anorganikKg: 0,
+      anorganikPersen: 0,
+      residuKg: 0,
+      residuPersen: 0,
+      rasioReduksiTpaPersen: 0,
+      reduksiEmisiCo2Kg: 0,
+      rataRataKepatuhanPersen: 0,
+      wadahSampahAktif: 0,
+      totalPenggunaWarga: realWargaCount,
+      totalLokasiRw: realRwCount,
+      volumeBulananM3: 0,
     };
 
     try {
@@ -570,28 +610,33 @@ export const laporanKknService = {
         periode: filters.periode || "semua",
         startDate: filters.startDate,
         endDate: filters.endDate,
+        hari: filters.hari,
+        jamMulai: filters.jamMulai,
+        jamSelesai: filters.jamSelesai,
       });
       if (wasteReport?.kpiSummary) {
+        const d = wasteReport.kpiSummary.dampakDanReduksi;
+        const totalKg = Number(d?.totalSampahTerpilahKg ?? 0);
         ringkasanDampakSampah = {
-          totalSampahTerpilahKg: wasteReport.kpiSummary.dampakDanReduksi.totalSampahTerpilahKg || 427.89,
-          totalSampahTerpilahTon: wasteReport.kpiSummary.dampakDanReduksi.totalSampahTerpilahTon || 0.43,
-          organikKg: wasteReport.kpiSummary.dampakDanReduksi.rasioPemilahan.organikKg || 261.71,
-          organikPersen: wasteReport.kpiSummary.dampakDanReduksi.rasioPemilahan.organikPersen || 61,
-          anorganikKg: wasteReport.kpiSummary.dampakDanReduksi.rasioPemilahan.anorganikKg || 166.18,
-          anorganikPersen: wasteReport.kpiSummary.dampakDanReduksi.rasioPemilahan.anorganikPersen || 39,
-          residuKg: wasteReport.kpiSummary.dampakDanReduksi.rasioPemilahan.residuKg || 21.4,
-          residuPersen: wasteReport.kpiSummary.dampakDanReduksi.rasioPemilahan.residuPersen || 5,
-          rasioReduksiTpaPersen: wasteReport.kpiSummary.dampakDanReduksi.rasioReduksiTpaPersen || 95.0,
-          reduksiEmisiCo2Kg: wasteReport.kpiSummary.dampakDanReduksi.reduksiEmisiCo2Kg || 850.5,
-          rataRataKepatuhanPersen: wasteReport.kpiSummary.dampakDanReduksi.rataRataKepatuhanPersen || 99.83,
-          wadahSampahAktif: wasteReport.kpiSummary.infrastruktur.wadahSampahAktif || 250,
-          totalPenggunaWarga: 967,
-          totalLokasiRw: 86,
-          volumeBulananM3: 1609.2,
+          totalSampahTerpilahKg: totalKg,
+          totalSampahTerpilahTon: Number(d?.totalSampahTerpilahTon ?? (totalKg / 1000).toFixed(2)),
+          organikKg: Number(d?.rasioPemilahan?.organikKg ?? 0),
+          organikPersen: Number(d?.rasioPemilahan?.organikPersen ?? 0),
+          anorganikKg: Number(d?.rasioPemilahan?.anorganikKg ?? 0),
+          anorganikPersen: Number(d?.rasioPemilahan?.anorganikPersen ?? 0),
+          residuKg: Number(d?.rasioPemilahan?.residuKg ?? 0),
+          residuPersen: Number(d?.rasioPemilahan?.residuPersen ?? 0),
+          rasioReduksiTpaPersen: Number(d?.rasioReduksiTpaPersen ?? 0),
+          reduksiEmisiCo2Kg: Number(d?.reduksiEmisiCo2Kg ?? 0),
+          rataRataKepatuhanPersen: Number(d?.rataRataKepatuhanPersen ?? 0),
+          wadahSampahAktif: Number(wasteReport.kpiSummary.infrastruktur?.wadahSampahAktif ?? 0),
+          totalPenggunaWarga: realWargaCount,
+          totalLokasiRw: realRwCount,
+          volumeBulananM3: Number((totalKg / 250).toFixed(2)),
         };
       }
-    } catch {
-      // Fallback tetap menggunakan data baseline 2026 yang terverifikasi
+    } catch (err) {
+      console.warn("[LaporanKknService] Gagal memuat ringkasan dampak sampah riil:", err);
     }
 
     // 9. Hitung 3 Mahasiswa Terbaik & 3 DPL Terbaik

@@ -19,6 +19,12 @@ vi.mock("../lib/prisma.js", () => ({
     studentKkn: {
       findMany: vi.fn(),
     },
+    user: {
+      count: vi.fn().mockResolvedValue(22),
+    },
+    rw: {
+      count: vi.fn().mockResolvedValue(75),
+    },
   },
 }));
 

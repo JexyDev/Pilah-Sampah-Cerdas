@@ -440,22 +440,22 @@ export async function exportExecutiveReportDocx(payload: DocxReportPayload): Pro
               new TableRow({
                 children: [
                   new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Total Pemilahan Sampah", bold: true, size: 18 })] })] }),
-                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${ringkasanDampakSampah?.totalSampahTerpilahKg || 427.89} kg`, bold: true, size: 18, color: "047857" })] })] }),
-                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `Organik: ${ringkasanDampakSampah?.organikKg || 261.71} kg (61%), Anorganik: ${ringkasanDampakSampah?.anorganikKg || 166.18} kg (39%)`, size: 18 })] })] }),
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${ringkasanDampakSampah?.totalSampahTerpilahKg ?? 0} kg`, bold: true, size: 18, color: "047857" })] })] }),
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `Organik: ${ringkasanDampakSampah?.organikKg ?? 0} kg (${ringkasanDampakSampah?.organikPersen ?? 0}%), Anorganik: ${ringkasanDampakSampah?.anorganikKg ?? 0} kg (${ringkasanDampakSampah?.anorganikPersen ?? 0}%)`, size: 18 })] })] }),
                 ],
               }),
               new TableRow({
                 children: [
                   new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Tingkat Kepatuhan AI", bold: true, size: 18 })] })] }),
-                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${ringkasanDampakSampah?.rataRataKepatuhanPersen || 99.83}%`, bold: true, size: 18, color: "047857" })] })] }),
-                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Verifikasi Otomatis AI Vision (Sangat Baik / Akurat)", size: 18 })] })] }),
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${ringkasanDampakSampah?.rataRataKepatuhanPersen ?? 0}%`, bold: true, size: 18, color: "047857" })] })] }),
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Verifikasi Otomatis AI Vision (Sirkularitas Aktif)", size: 18 })] })] }),
                 ],
               }),
               new TableRow({
                 children: [
                   new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Rasio Reduksi ke TPA", bold: true, size: 18 })] })] }),
-                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${ringkasanDampakSampah?.rasioReduksiTpaPersen || 95.0}%`, bold: true, size: 18, color: "047857" })] })] }),
-                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `Mencegah residu ke TPA Sarimukti; Reduksi emisi ${ringkasanDampakSampah?.reduksiEmisiCo2Kg || 850.5} kg CO2e`, size: 18 })] })] }),
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${ringkasanDampakSampah?.rasioReduksiTpaPersen ?? 0}%`, bold: true, size: 18, color: "047857" })] })] }),
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `Mencegah residu ke TPA Sarimukti; Reduksi emisi ${ringkasanDampakSampah?.reduksiEmisiCo2Kg ?? 0} kg CO2e`, size: 18 })] })] }),
                 ],
               }),
               new TableRow({
@@ -925,7 +925,7 @@ export async function exportWasteReportDocx(data: any, customConfig?: any): Prom
             alignment: AlignmentType.JUSTIFY,
             children: [
               new TextRun({
-                text: `Berdasarkan pemantauan sensor cerdas dan verifikasi AI platform BERSEKA di wilayah ${metadata.wilayah}, total timbulan terkelola mencapai ${kpi?.dampakDanReduksi?.totalSampahTerpilahKg || 427.89} kg dengan rasio reduksi pembuangan ke TPA sebesar ${kpi?.dampakDanReduksi?.rasioReduksiTpaPersen || 95.0}%. Emisi karbon yang berhasil dicegah mencapai ${kpi?.dampakDanReduksi?.reduksiEmisiCo2Kg || 850.5} kg CO₂e.`,
+                text: `Berdasarkan pemantauan sensor cerdas dan verifikasi AI platform BERSEKA di wilayah ${metadata.wilayah}, total timbulan terkelola mencapai ${kpi?.dampakDanReduksi?.totalSampahTerpilahKg ?? 0} kg dengan rasio reduksi pembuangan ke TPA sebesar ${kpi?.dampakDanReduksi?.rasioReduksiTpaPersen ?? 0}%. Emisi karbon yang berhasil dicegah mencapai ${kpi?.dampakDanReduksi?.reduksiEmisiCo2Kg ?? 0} kg CO₂e.`,
               }),
             ],
           }),

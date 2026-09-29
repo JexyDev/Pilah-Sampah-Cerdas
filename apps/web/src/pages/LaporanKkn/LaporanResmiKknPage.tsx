@@ -816,10 +816,10 @@ export const LaporanResmiKknPage: React.FC = () => {
                   </div>
                   <div>
                     <div className="text-2xl font-black text-emerald-950">
-                      {data.ringkasanDampakSampah?.totalSampahTerpilahKg ?? 427.89} <span className="text-xs font-bold text-emerald-700">kg</span>
+                      {data.ringkasanDampakSampah?.totalSampahTerpilahKg ?? 0} <span className="text-xs font-bold text-emerald-700">kg</span>
                     </div>
                     <div className="text-[10px] text-emerald-800 font-semibold mt-0.5">
-                      Organik {data.ringkasanDampakSampah?.organikPersen ?? 61}% • Anorganik {data.ringkasanDampakSampah?.anorganikPersen ?? 39}%
+                      Organik {data.ringkasanDampakSampah?.organikPersen ?? 0}% • Anorganik {data.ringkasanDampakSampah?.anorganikPersen ?? 0}%
                     </div>
                   </div>
                 </div>
@@ -832,10 +832,10 @@ export const LaporanResmiKknPage: React.FC = () => {
                   </div>
                   <div>
                     <div className="text-2xl font-black text-slate-900">
-                      {data.ringkasanDampakSampah?.rasioReduksiTpaPersen ?? 95.0}%
+                      {data.ringkasanDampakSampah?.rasioReduksiTpaPersen ?? 0}%
                     </div>
                     <div className="text-[10px] text-slate-500 mt-0.5">
-                      Reduksi Emisi {data.ringkasanDampakSampah?.reduksiEmisiCo2Kg ?? 850.5} kg CO₂e
+                      Reduksi Emisi {data.ringkasanDampakSampah?.reduksiEmisiCo2Kg ?? 0} kg CO₂e
                     </div>
                   </div>
                 </div>
@@ -848,10 +848,10 @@ export const LaporanResmiKknPage: React.FC = () => {
                   </div>
                   <div>
                     <div className="text-2xl font-black text-slate-900">
-                      {data.ringkasanDampakSampah?.rataRataKepatuhanPersen ?? 99.83}%
+                      {data.ringkasanDampakSampah?.rataRataKepatuhanPersen ?? 0}%
                     </div>
                     <div className="text-[10px] text-slate-500 mt-0.5">
-                      {data.ringkasanDampakSampah?.wadahSampahAktif ?? 250} Tempat Sampah Teraktivasi
+                      {data.ringkasanDampakSampah?.wadahSampahAktif ?? 0} Tempat Sampah Teraktivasi
                     </div>
                   </div>
                 </div>
