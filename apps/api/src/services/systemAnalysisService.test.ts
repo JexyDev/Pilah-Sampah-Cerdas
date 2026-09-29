@@ -236,12 +236,9 @@ describe("systemAnalysisService - Comprehensive QC and Formula Audit", () => {
         { diinputOleh: "user-warga-1" },
         { diinputOleh: "user-warga-2" },
       ] as any);
-      vi.mocked(prisma.setoranOtomatis.findMany)
-        .mockResolvedValueOnce([{ wargaId: "user-warga-3" }] as any)
-        .mockResolvedValueOnce([
-          { confidenceAi: 0.9, hasilKlasifikasiAi: "Organik" },
-          { confidenceAi: 0.8, hasilKlasifikasiAi: "Anorganik" },
-        ] as any);
+      vi.mocked(prisma.setoranOtomatis.findMany).mockResolvedValueOnce([
+        { wargaId: "user-warga-3" },
+      ] as any);
       vi.mocked(prisma.setoranOtomatis.count)
         .mockResolvedValueOnce(2)
         .mockResolvedValueOnce(2);
