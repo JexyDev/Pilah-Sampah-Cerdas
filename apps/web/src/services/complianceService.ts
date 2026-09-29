@@ -332,8 +332,8 @@ export function calculateComplianceMetrics(
 
   const penjelasanSistem =
     totalWargaTerdaftar > 0
-      ? `Skor kepatuhan akumulasi (${indeksKepatuhan}%) dihitung dari rata-rata seimbang (50% : 50%) antara keaktifan partisipasi warga (${partisipasiPersen}%) dan ketepatan pemilahan wadah (${akurasiPilahPersen}%): (${partisipasiPersen}% + ${akurasiPilahPersen}%) ÷ 2 = ${indeksKepatuhan}%.`
-      : "Skor kepatuhan dihitung berdasarkan kesesuaian biner penempatan jenis sampah pada wadah yang semestinya.";
+      ? `Skor kepatuhan akumulasi (${indeksKepatuhan}%) dihitung dari rata-rata seimbang (50% : 50%) antara keaktifan partisipasi warga (${partisipasiPersen}%) dan ketepatan pemilahan tempat sampah (${akurasiPilahPersen}%): (${partisipasiPersen}% + ${akurasiPilahPersen}%) ÷ 2 = ${indeksKepatuhan}%.`
+      : "Skor kepatuhan dihitung berdasarkan kesesuaian biner penempatan jenis sampah pada tempat sampah yang semestinya.";
 
   return {
     indeksKepatuhan,

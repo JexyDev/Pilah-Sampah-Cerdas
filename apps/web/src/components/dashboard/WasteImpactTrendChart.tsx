@@ -440,7 +440,7 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
                                     <span className="font-semibold text-slate-200">{item.partisipasiWarga}%</span>
                                   </div>
                                   <div className="flex justify-between">
-                                    <span>• Ketepatan Wadah:</span>
+                                    <span>• Ketepatan Tempat Sampah:</span>
                                     <span className="font-semibold text-slate-200">{item.akurasiPilah ?? 100}%</span>
                                   </div>
                                   {item.wargaAktif !== undefined && item.totalWarga !== undefined && item.totalWarga > 0 && (

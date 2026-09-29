@@ -155,7 +155,7 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
                     <Sparkles size={12} /> Definisi Akumulasi Sistem:
                   </p>
                   <p className="text-slate-200">
-                    "Kepatuhan warga diukur dari perpaduan tingkat partisipasi aktif masyarakat dan ketepatan pemilahan sampah pada wadah yang sesuai, bukan semata-mata klaim deteksi kamera AI."
+                    "Kepatuhan warga diukur dari perpaduan tingkat partisipasi aktif masyarakat dan ketepatan pemilahan sampah pada tempat sampah yang sesuai, bukan semata-mata klaim deteksi kamera AI."
                   </p>
                   <span className="block mt-2 text-[9.5px] text-slate-400 italic">
                     Klik ikon (i) untuk membaca kamus istilah &amp; matriks lengkap.
@@ -166,7 +166,7 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
           </div>
 
           <p className="text-[11.5px] text-slate-500 dark:text-slate-400 font-medium mt-1">
-            Evaluasi riil berbasis keaktifan partisipasi seluruh warga dan ketepatan pemilahan wadah
+            Evaluasi riil berbasis keaktifan partisipasi seluruh warga dan ketepatan pemilahan tempat sampah
           </p>
         </div>
 
@@ -234,7 +234,7 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
               <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                 {activeTab === "frekuensi"
                   ? (metrics?.partisipasiWarga && metrics.partisipasiWarga.totalWargaTerdaftar > 0
-                      ? "Akumulasi partisipasi & ketepatan wadah"
+                      ? "Akumulasi partisipasi & ketepatan tempat sampah"
                       : "dari total setoran terverifikasi")
                   : "dari total massa sampah terdata"}
               </span>
@@ -271,11 +271,11 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
                     </span>
                   </div>
                   <div className="bg-white/80 dark:bg-slate-800/80 p-2 rounded-xl border border-slate-200/80 dark:border-slate-700/80">
-                    <span className="text-[10px] text-slate-400 font-bold uppercase block">Ketepatan Wadah</span>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase block">Ketepatan Tempat Sampah</span>
                     <span className="text-xs font-black text-emerald-600 dark:text-emerald-400">
                       {metrics.akurasiPilahPersen ?? (metrics.wadahOrganik.kesesuaianPersen || 0)}%
                     </span>
-                    <span className="text-[9.5px] text-slate-400 block truncate" title={`${metrics.totalPatuh} tepat, ${metrics.totalTidakPatuh} salah wadah`}>
+                    <span className="text-[9.5px] text-slate-400 block truncate" title={`${metrics.totalPatuh} tepat, ${metrics.totalTidakPatuh} salah tempat sampah`}>
                       {metrics.totalPatuh} tepat, {metrics.totalTidakPatuh} salah
                     </span>
                   </div>
@@ -400,7 +400,7 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
           </div>
           <p className="text-slate-600 dark:text-slate-300 leading-relaxed text-[11px]">
             {metrics?.penjelasanSistem ||
-              "Skor kepatuhan akumulasi wilayah dihitung dari rata-rata seimbang (50% : 50%) antara keaktifan partisipasi warga yang rutin menyetor dan ketepatan pemilahan pada wadah yang sesuai, merefleksikan kedisiplinan riil masyarakat tanpa bias kamera AI."}
+              "Skor kepatuhan akumulasi wilayah dihitung dari rata-rata seimbang (50% : 50%) antara keaktifan partisipasi warga yang rutin menyetor dan ketepatan pemilahan pada tempat sampah yang sesuai, merefleksikan kedisiplinan riil masyarakat tanpa bias kamera AI."}
           </p>
         </div>
       </div>
