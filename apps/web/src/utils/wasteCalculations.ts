@@ -5,7 +5,7 @@
  * 
  * Module: wasteCalculations
  * Deskripsi: Modul utilitas matematis & analitik kalkulasi delta dampak persampahan:
- * - Penurunan Volume Sampah: Delta Volume (kg) & Delta Volume (%)
+ * - Penurunan Berat Sampah: Delta Berat (kg) & Delta Berat (%)
  * - Perubahan Kepatuhan Pemilahan: Delta Kepatuhan (% / PP)
  * - Agregasi Terbobot (Weighted Aggregation) vs Rata-rata Aritmetika
  * - Pemisahan Sumber Data (WARGA_APP vs PETUGAS_LAPANGAN)
@@ -49,13 +49,13 @@ export interface WasteImpactAggregation {
 }
 
 /**
- * 1. Menghitung Penurunan Volume Sampah dalam Satuan Berat (kg)
- * Rumus: Delta_volume (kg) = Volume_Baseline - Volume_Aktual
+ * 1. Menghitung Penurunan Berat Sampah dalam Satuan Berat (kg)
+ * Rumus: Delta_berat (kg) = Berat_Baseline - Berat_Aktual
  * Catatan:
- * - Nilai positif menandakan volume timbulan sampah berkurang / tereduksi.
+ * - Nilai positif menandakan berat timbulan sampah berkurang / tereduksi.
  * - Nilai negatif menandakan terjadi peningkatan / lonjakan timbulan sampah.
  */
-export function calculateVolumeDeltaKg(
+export function calculateWeightDeltaKg(
   baselineKg: number | null | undefined,
   actualKg: number | null | undefined
 ): number | null {
@@ -63,17 +63,19 @@ export function calculateVolumeDeltaKg(
   const actual = actualKg ?? 0;
   return Number((baselineKg - actual).toFixed(2));
 }
+export const calculateBeratDeltaKg = calculateWeightDeltaKg;
+export const calculateVolumeDeltaKg = calculateWeightDeltaKg;
 
 /**
- * 2. Menghitung Penurunan Volume Sampah dalam Satuan Persentase (%)
- * Rumus: Delta_volume (%) = ((Volume_Baseline - Volume_Aktual) / Volume_Baseline) * 100%
+ * 2. Menghitung Penurunan Berat Sampah dalam Satuan Persentase (%)
+ * Rumus: Delta_berat (%) = ((Berat_Baseline - Berat_Aktual) / Berat_Baseline) * 100%
  * Catatan Proteksi & Edge Cases:
- * - Jika Volume_Baseline <= 0, mengembalikan null untuk menghindari Division by Zero (div/0).
- * - Jika Volume_Aktual > Volume_Baseline, menghasilkan persentase negatif tanpa merusak format.
+ * - Jika Berat_Baseline <= 0, mengembalikan null untuk menghindari Division by Zero (div/0).
+ * - Jika Berat_Aktual > Berat_Baseline, menghasilkan persentase negatif tanpa merusak format.
  * - Studi kasus Lebakgede: Baseline = 250 kg, Aktual = 37 kg ->
  *   (250 - 37) / 250 * 100% = 213 / 250 * 100% = 85.20%.
  */
-export function calculateVolumeDeltaPct(
+export function calculateWeightDeltaPct(
   baselineKg: number | null | undefined,
   actualKg: number | null | undefined
 ): number | null {
@@ -84,6 +86,8 @@ export function calculateVolumeDeltaPct(
   const delta = ((baselineKg - actual) / baselineKg) * 100;
   return Number(delta.toFixed(2));
 }
+export const calculateBeratDeltaPct = calculateWeightDeltaPct;
+export const calculateVolumeDeltaPct = calculateWeightDeltaPct;
 
 /**
  * 3. Menghitung Kenaikan / Perubahan Kepatuhan Pemilahan
@@ -183,8 +187,8 @@ export function formatComplianceDelta(
 /**
  * 7. Agregasi Dampak Persampahan Lintas Kelurahan (Tingkat Kecamatan)
  * Menggunakan prinsip Agregasi Terbobot (Weighted Aggregation):
- * - Total Delta Volume (kg) = Total Baseline - Total Aktual
- * - Weighted Delta Volume (%) = ((Total Baseline - Total Aktual) / Total Baseline) * 100%
+ * - Total Delta Berat (kg) = Total Baseline - Total Aktual
+ * - Weighted Delta Berat (%) = ((Total Baseline - Total Aktual) / Total Baseline) * 100%
  * Ini mencegah bias / paradoks rata-rata kelurahan bervolume kecil mendistorsi angka kecamatan.
  */
 export function aggregateKelurahanImpact(items: WasteImpactItem[]): WasteImpactAggregation {

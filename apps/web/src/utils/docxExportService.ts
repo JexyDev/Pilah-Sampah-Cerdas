@@ -23,6 +23,7 @@ import {
   Header,
   Footer,
   PageNumber,
+  PageOrientation,
 } from "docx";
 
 export interface DocxReportConfig {
@@ -153,6 +154,10 @@ export async function exportExecutiveReportDocx(payload: DocxReportPayload): Pro
       {
         properties: {
           page: {
+            size:
+              config.orientation === "landscape"
+                ? { orientation: PageOrientation.LANDSCAPE }
+                : { orientation: PageOrientation.PORTRAIT },
             margin: {
               top: 1440, // 1 inch (25.4mm)
               bottom: 1440,
