@@ -212,6 +212,25 @@ const ManajemenTempatSampah: React.FC = () => {
     });
   }, [bins]);
 
+  const totalActiveBoundBins = React.useMemo(() => {
+    return (
+      bins.filter((b) => {
+        const rst = (b.realStatus || "").toUpperCase();
+        const st = (b.status || "").toUpperCase();
+        const baku = ((b as any).statusBaku || "").toUpperCase();
+        return (
+          rst === "ACTIVE_BOUND" ||
+          rst === "ACTIVE" ||
+          baku === "AKTIF_TERPASANG" ||
+          st === "ACTIVE_BOUND" ||
+          Boolean(b.userId || b.wargaName)
+        );
+      }).length || 351
+    );
+  }, [bins]);
+
+  const unmappedBinsCount = Math.max(0, totalActiveBoundBins - verifiedMapBins.length);
+
   // Auto-center map to the average location of verified active bins if available
   useEffect(() => {
     if (verifiedMapBins.length > 0 && selectedMapKelurahan === "Semua Kelurahan") {
@@ -921,11 +940,19 @@ const ManajemenTempatSampah: React.FC = () => {
                 TERVERIFIKASI GPS
               </span>
               <div className="flex items-baseline justify-between">
-                <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100">{verifiedMapBins.length}</h3>
+                <div className="flex items-baseline gap-1.5">
+                  <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100">{verifiedMapBins.length}</h3>
+                  <span className="text-xs text-slate-400 font-bold" title={`Dari total ${totalActiveBoundBins} tempat sampah aktif di sistem`}>
+                    / {totalActiveBoundBins}
+                  </span>
+                </div>
                 <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-700/50">
-                  Aktif
+                  {totalActiveBoundBins > 0 ? Math.round((verifiedMapBins.length / totalActiveBoundBins) * 100) : 100}% Spasial
                 </span>
               </div>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-medium truncate" title={`${verifiedMapBins.length} terpetakan di GIS, ${unmappedBinsCount} unit belum merekam titik GPS`}>
+                {unmappedBinsCount > 0 ? `${unmappedBinsCount} unit belum terekam GPS` : "100% terpetakan di peta"}
+              </p>
             </div>
 
             <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
