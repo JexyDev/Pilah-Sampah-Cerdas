@@ -3749,6 +3749,15 @@ export class KknAttendanceService {
       },
     });
 
+    // 1b. Cek presensi mandiri mahasiswa hari ini (jika mahasiswa presensi di luar radius posko)
+    const todayMandiri = await prisma.presensiMandiri.findFirst({
+      where: {
+        studentId: userId,
+        checkInAt: { gte: startOfDay, lte: endOfDay },
+      },
+      orderBy: { checkInAt: "desc" },
+    });
+
     // 2. Cari jadwal KKN yang berlaku untuk kelompok mahasiswa (atau jadwal global)
     let schedules: any[] = await prisma.schedule.findMany({
       where: {
@@ -3986,6 +3995,24 @@ export class KknAttendanceService {
           statusKehadiran = "DI_ZONA";
           isMemenuhiDurasi = isMemenuhi;
         }
+      } else if (todayMandiri) {
+        if (todayMandiri.status === "SELESAI" || todayMandiri.checkOutAt) {
+          const mandiriDurasi = todayMandiri.durasiMenit ?? 0;
+          const isMandiriMemenuhi = mandiriDurasi >= effectiveTargetMenit;
+          statusKehadiran = isMandiriMemenuhi ? "HADIR_MEMENUHI" : "HADIR";
+          isMemenuhiDurasi = isMandiriMemenuhi;
+          actualInZoneMinutes = mandiriDurasi;
+          actualInZoneSeconds = mandiriDurasi * 60;
+        } else {
+          statusKehadiran = "BERLANGSUNG";
+          isMemenuhiDurasi = false;
+          const ongoingMinutes = Math.max(
+            0,
+            Math.floor((Date.now() - new Date(todayMandiri.checkInAt).getTime()) / 60000)
+          );
+          actualInZoneMinutes = ongoingMinutes;
+          actualInZoneSeconds = ongoingMinutes * 60;
+        }
       } else if (scheduleStatus === "SELESAI") {
         // Fleksibilitas KKN: Mahasiswa yang tidak absen pada jadwal yang telah selesai TIDAK dicap ALPA
         statusKehadiran = "BELUM_ABSEN";
@@ -4196,11 +4223,15 @@ export class KknAttendanceService {
         actualInZoneMinutes,
         durasiJedaMenit: jedaMins,
         durasiJedaFormatted: jedaFormatted,
-        attendedAt: att?.attendedAt ? att.attendedAt.toISOString() : null,
-        checkOutAt: att?.checkOutAt ? att.checkOutAt.toISOString() : null,
+        attendedAt: att?.attendedAt
+          ? att.attendedAt.toISOString()
+          : (todayMandiri?.checkInAt ? todayMandiri.checkInAt.toISOString() : null),
+        checkOutAt: att?.checkOutAt
+          ? att.checkOutAt.toISOString()
+          : (todayMandiri?.checkOutAt ? todayMandiri.checkOutAt.toISOString() : null),
         earliestCheckoutTime,
         earliestCheckoutTimeString,
-        canCheckoutNow,
+        canCheckoutNow: (todayMandiri && !att) ? (actualInZoneMinutes >= 30) : canCheckoutNow,
         time: `${jamMulai} - ${jamSelesai}`,
         kelompok: {
           id: sch.kelompok?.id || student?.kelompok?.id || "KLP-001",

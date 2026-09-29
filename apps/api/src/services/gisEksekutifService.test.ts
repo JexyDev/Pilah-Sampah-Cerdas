@@ -441,7 +441,7 @@ describe("gisEksekutifService Real DB Operational Tests (Zero Baseline / 100% Re
     expect(cipaganti?.color).toBe("#ef4444"); // < 40% -> Merah
   });
 
-  it("should accurately classify manual deposits into anorganik, residu, and organik without lexical substring collision", async () => {
+  it("should accurately isolate petugas pemilah deposits from warga data to prevent double counting and hide residu", async () => {
     (prisma.kelurahan.findMany as any).mockResolvedValue([
       { id: "kel-1", name: "Dago", code: "327301", rws: [{ id: 1, name: "RW 01" }] },
     ]);
@@ -449,9 +449,32 @@ describe("gisEksekutifService Real DB Operational Tests (Zero Baseline / 100% Re
       { id: 1, name: "RW 01", kelurahan: { name: "Dago" } },
     ]);
     (prisma.facility.findMany as any).mockResolvedValue([]);
-    (prisma.setoranOtomatis.findMany as any).mockResolvedValue([]);
+    
+    // Setoran otomatis murni dari WARGA: 80 kg Organik, 20 kg Anorganik
+    (prisma.setoranOtomatis.findMany as any).mockResolvedValue([
+      {
+        id: "so-1",
+        wargaId: "w-1",
+        status: "ACCEPTED",
+        berat: 80,
+        hasilKlasifikasiAi: "organik",
+        kategoriAktual: "organik",
+        createdAt: new Date("2026-09-10T10:00:00.000Z"),
+        warga: { rw: { kelurahanId: "kel-1", kelurahan: { name: "Dago" } } },
+      },
+      {
+        id: "so-2",
+        wargaId: "w-2",
+        status: "ACCEPTED",
+        berat: 20,
+        hasilKlasifikasiAi: "anorganik",
+        kategoriAktual: "anorganik",
+        createdAt: new Date("2026-09-11T10:00:00.000Z"),
+        warga: { rw: { kelurahanId: "kel-1", kelurahan: { name: "Dago" } } },
+      },
+    ]);
 
-    // Setoran manual dengan berbagai variasi kategori
+    // Setoran manual petugas pemilah (Tercatat terpisah, TIDAK boleh mendobelkan timbulan warga)
     ((prisma as any).setoranManual.findMany as any).mockResolvedValue([
       {
         id: "sm-1",
@@ -490,23 +513,25 @@ describe("gisEksekutifService Real DB Operational Tests (Zero Baseline / 100% Re
     const res = await gisEksekutifService.getOverview({ periode: "September 2026" });
 
     expect(res.success).toBe(true);
-    // Anorganik: sm-1 (100) + sm-2 (50) = 150 kg
-    expect(res.komposisiVolume.anorganik.kgHari).toBe(150);
-    // Residu: sm-3 (30) = 30 kg
-    expect(res.komposisiVolume.residu.kgHari).toBe(30);
-    // Organik: sm-4 (70) = 70 kg
-    expect(res.komposisiVolume.organik.kgHari).toBe(70);
+    // Data Timbulan Utama MURNI DARI WARGA (Tidak tercampur data petugas):
+    expect(res.komposisiVolume.organik.kgHari).toBe(80);
+    expect(res.komposisiVolume.anorganik.kgHari).toBe(20);
+    expect(res.komposisiVolume.totalKg).toBe(100);
 
-    // Total: 250 kg
-    expect(res.komposisiVolume.totalKg).toBe(250);
+    // Persentase 100% dialokasikan murni Organik (80%) dan Anorganik (20%)
+    expect(res.komposisiVolume.organik.persen).toBe(80);
+    expect(res.komposisiVolume.anorganik.persen).toBe(20);
 
-    // Persentase:
-    // anorganik = 150 / 250 = 60%
-    // organik = 70 / 250 = 28%
-    // residu = 100 - 60 - 28 = 12%
-    expect(res.komposisiVolume.anorganik.persen).toBe(60);
-    expect(res.komposisiVolume.organik.persen).toBe(28);
-    expect(res.komposisiVolume.residu.persen).toBe(12);
+    // Kategori residu tidak digunakan lagi / selalu 0
+    expect(res.komposisiVolume.residu.kgHari).toBe(0);
+    expect(res.komposisiVolume.residu.persen).toBe(0);
+    expect(res.komposisiVolume.residu.volumeM3).toBe(0);
+
+    // Data Petugas Pemilah terpisah secara akurat dan tidak dobel:
+    expect(res.komposisiVolume.petugasPemilah).toBeDefined();
+    expect(res.komposisiVolume.petugasPemilah.anorganikKg).toBe(150);
+    expect(res.komposisiVolume.petugasPemilah.organikKg).toBe(70);
+    expect(res.komposisiVolume.petugasPemilah.totalKg).toBe(220);
   });
 });
 

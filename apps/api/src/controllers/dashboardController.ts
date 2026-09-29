@@ -95,13 +95,15 @@ export const dashboardController = {
 
       const isDevOnly = user?.role === "DEVELOPER";
       const includeTestAccounts = req.query.includeTestAccounts === "true" && isDevOnly;
+      const sourceType = (req.query.sourceType || req.query.source || req.query.source_type) as string | undefined;
 
       const kpi = await dashboardService.getKpi(
         wilayah as string,
         period as string,
         startDate as string,
         endDate as string,
-        includeTestAccounts
+        includeTestAccounts,
+        sourceType
       );
       res.status(200).json({
         success: true,
@@ -162,7 +164,7 @@ export const dashboardController = {
 
   getTrend: async (req: Request, res: Response) => {
     try {
-      let { weeks, wilayah } = req.query;
+      let { weeks, wilayah, year, range } = req.query;
       const user = req.user;
 
       const isAllWilayah = (w: any) =>
@@ -196,13 +198,65 @@ export const dashboardController = {
       }
 
       const parsedWeeks = weeks ? parseInt(weeks as string) : 8;
-      const trend = await dashboardService.getTrend(parsedWeeks, wilayah as string);
+      const parsedYear = year ? parseInt(year as string) : undefined;
+      const parsedRange = typeof range === "string" ? range : undefined;
+      const [trend, availableYears] = await Promise.all([
+        dashboardService.getTrend(parsedWeeks, wilayah as string, parsedYear, parsedRange),
+        dashboardService.getAvailableYears(wilayah as string),
+      ]);
       res.status(200).json({
         success: true,
         data: trend,
+        availableYears,
       });
     } catch (error) {
       console.error("[DashboardController] getTrend error:", error);
+      res.status(500).json({ success: false, message: "Internal server error" });
+    }
+  },
+
+  getAvailableYears: async (req: Request, res: Response) => {
+    try {
+      let { wilayah } = req.query;
+      const user = req.user;
+
+      const isAllWilayah = (w: any) =>
+        !w ||
+        w === "ALL" ||
+        w === "Semua Kelurahan" ||
+        w === "Kecamatan Coblong" ||
+        w === "semua" ||
+        w === "all";
+
+      if (user && (user.role === "DPL" || user.role === "DOSEN_PEMBIMBING")) {
+        const dplGroups = await prisma.kelompokKkn.findMany({
+          where: { dplId: user.userId || (user as any).id },
+          select: { kelurahan: true },
+        });
+        const dplKelurahans = Array.from(
+          new Set(dplGroups.map((g) => g.kelurahan).filter(Boolean))
+        ) as string[];
+
+        if (isAllWilayah(wilayah) && dplKelurahans.length > 0) {
+          wilayah = dplKelurahans.join(",");
+        }
+      } else if (!wilayah && user && user.role === "LURAH" && user.rwId) {
+        const userArea = await prisma.rw.findUnique({
+          where: { id: user.rwId },
+          include: { kelurahan: true },
+        });
+        if (userArea?.kelurahan?.name) {
+          wilayah = userArea.kelurahan.name;
+        }
+      }
+
+      const years = await dashboardService.getAvailableYears(wilayah as string);
+      res.status(200).json({
+        success: true,
+        data: years,
+      });
+    } catch (error) {
+      console.error("[DashboardController] getAvailableYears error:", error);
       res.status(500).json({ success: false, message: "Internal server error" });
     }
   },

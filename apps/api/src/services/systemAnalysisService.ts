@@ -490,18 +490,51 @@ export const systemAnalysisService = {
 
     const [totalWarga, activeManualUsers, activeAutoUsers, totalAutoSort, autoSortList] = await Promise.all([
       prisma.user.count({
-        where: { role: { name: { in: ["WARGA", "warga"] } } },
+        where: {
+          role: { name: { in: ["WARGA", "warga"] } },
+          isTestAccount: false,
+          NOT: [
+            { name: { contains: "test", mode: "insensitive" } },
+            { rw: { name: { contains: "99" } } },
+          ],
+        },
       }),
       prisma.setoranManual.findMany({
-        where: { createdAt: { gte: thirtyDaysAgo } },
+        where: {
+          createdAt: { gte: thirtyDaysAgo },
+          rw: { name: { not: { contains: "99" } } },
+          petugas: { isTestAccount: false, NOT: { name: { contains: "test", mode: "insensitive" } } },
+        },
         select: { diinputOleh: true },
       }),
       prisma.setoranOtomatis.findMany({
-        where: { createdAt: { gte: thirtyDaysAgo } },
+        where: {
+          createdAt: { gte: thirtyDaysAgo },
+          warga: { isTestAccount: false, NOT: { name: { contains: "test", mode: "insensitive" } } },
+          OR: [
+            { bin: { rw: { name: { not: { contains: "99" } } } } },
+            { warga: { rw: { name: { not: { contains: "99" } } } } },
+          ],
+        },
         select: { wargaId: true },
       }),
-      prisma.setoranOtomatis.count(),
+      prisma.setoranOtomatis.count({
+        where: {
+          warga: { isTestAccount: false, NOT: { name: { contains: "test", mode: "insensitive" } } },
+          OR: [
+            { bin: { rw: { name: { not: { contains: "99" } } } } },
+            { warga: { rw: { name: { not: { contains: "99" } } } } },
+          ],
+        },
+      }),
       prisma.setoranOtomatis.findMany({
+        where: {
+          warga: { isTestAccount: false, NOT: { name: { contains: "test", mode: "insensitive" } } },
+          OR: [
+            { bin: { rw: { name: { not: { contains: "99" } } } } },
+            { warga: { rw: { name: { not: { contains: "99" } } } } },
+          ],
+        },
         select: { confidenceAi: true, hasilKlasifikasiAi: true },
         take: 100,
       }),
@@ -522,6 +555,10 @@ export const systemAnalysisService = {
     // ── PILAR 2: Fasilitas & Infrastruktur per Wilayah (Bebas Kata Tong) ──
     const [facilities, bins, resetRequests] = await Promise.all([
       prisma.facility.findMany({
+        where: {
+          jenis: { not: "posko_kkn" },
+          rw: { name: { not: { contains: "99" } } },
+        },
         select: {
           id: true,
           nama: true,
@@ -530,6 +567,10 @@ export const systemAnalysisService = {
         },
       }),
       prisma.bin.findMany({
+        where: {
+          status: "ACTIVE_BOUND",
+          rw: { name: { not: { contains: "99" } } },
+        },
         select: {
           id: true,
           currentVolumeLiter: true,
@@ -581,9 +622,20 @@ export const systemAnalysisService = {
         orderBy: { createdAt: "desc" },
       }),
       prisma.setoranManual.findMany({
+        where: {
+          rw: { name: { not: { contains: "99" } } },
+          petugas: { isTestAccount: false, NOT: { name: { contains: "test", mode: "insensitive" } } },
+        },
         select: { berat: true, kategori: true },
       }),
       prisma.setoranOtomatis.findMany({
+        where: {
+          warga: { isTestAccount: false, NOT: { name: { contains: "test", mode: "insensitive" } } },
+          OR: [
+            { bin: { rw: { name: { not: { contains: "99" } } } } },
+            { warga: { rw: { name: { not: { contains: "99" } } } } },
+          ],
+        },
         select: { berat: true, hasilKlasifikasiAi: true, kategoriAktual: true },
       }),
     ]);
@@ -632,12 +684,16 @@ export const systemAnalysisService = {
       select: { saldoRupiah: true },
     });
 
-    const totalNilaiEkonomiRupiah = bankSampahLedgers.reduce(
+    const ledgerTotal = bankSampahLedgers.reduce(
       (acc, b) => acc + (Number(b.saldoRupiah) || 0),
       0
-    ) || 15400000;
+    );
+    // Nilai ekonomi riil: dari saldo buku kas bank sampah atau estimasi nilai rupiah sampah terpilah (anorganik Rp 3.000/kg & olahan kompos Rp 2.500/kg)
+    const totalNilaiEkonomiRupiah = ledgerTotal > 0
+      ? ledgerTotal
+      : Math.round(anorganikKg * 3000 + totalOutputFacilityKg * 2500);
 
-    // Reduksi Emisi Karbon (Formula: Kg Organik * 0.58 + Kg Anorganik * 1.45)
+    // Reduksi Emisi Karbon (Formula IPCC / KLHK: Kg Organik * 0.58 + Kg Anorganik * 1.45)
     const co2ReducedKg = Math.round((organikKg * 0.58 + anorganikKg * 1.45) * 10) / 10;
 
     return {
@@ -813,7 +869,10 @@ ${isDplQuery ? `\n${dplEntitySummary}` : ""}
       const pLower = cleanPrompt.toLowerCase();
       if (pLower.includes("sampah") || pLower.includes("bin") || pLower.includes("kritis")) {
         const binsKritis = await prisma.bin.findMany({
-          where: { status: { in: ["ACTIVE_BOUND", "PENDING_APPROVAL"] } },
+          where: {
+            status: "ACTIVE_BOUND",
+            rw: { name: { not: { contains: "99" } } },
+          },
           select: {
             qrCode: true,
             status: true,

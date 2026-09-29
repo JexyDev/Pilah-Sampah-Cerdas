@@ -254,6 +254,7 @@ const checkRouteActive = (
       "/survei/baseline",
       "/superUser/data-survei-baseline",
       "/data-survei-baseline",
+      "/survei-baseline",
     ];
     if (baselineAliases.includes(tPath) && baselineAliases.includes(cPath)) return true;
 
@@ -1288,7 +1289,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
         {
           type: "group",
           label: "Hasil Survei",
-          icon: FileText,
+          icon: ClipboardList,
           allowed: [
             "DEVELOPER",
             "SUPER_USER",
@@ -1301,7 +1302,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           children: [
             {
               to: "/hasil-survei/baseline",
-              label: "Baseline",
+              label: "Arsip Survei Baseline",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
@@ -1313,14 +1314,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               ] as UserRole[],
             },
             {
-              to: "/laporan/kkn",
-              label: "Laporan Resmi KKN",
-              allowed: ["DEVELOPER", "SUPER_USER", "PIMPINAN", "PEMIMPIN"] as UserRole[],
-            },
-            {
-              to: "/laporan/tata-kelola-sampah",
-              label: "Laporan Tata Kelola Sampah",
-              allowed: ["DEVELOPER", "SUPER_USER", "PIMPINAN", "PEMIMPIN", "ADMIN_DLH"] as UserRole[],
+              to: "/hasil-survei/data-survei",
+              label: "Unggah Data Survei",
+              allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PIMPINAN", "ADMIN_DLH"] as UserRole[],
             },
             {
               to: "/hasil-survei/endline",
@@ -1348,10 +1344,53 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "LURAH",
               ] as UserRole[],
             },
+          ],
+        },
+        {
+          type: "group",
+          label: "Laporan",
+          icon: BarChart3,
+          allowed: [
+            "DEVELOPER",
+            "SUPER_USER",
+            "PIMPINAN",
+            "PEMIMPIN",
+            "ADMIN_DLH",
+            "CAMAT",
+            "LURAH",
+            "PANITIA_TASKFORCE",
+            "DPL",
+            "DOSEN_PEMBIMBING",
+            "MPL",
+          ] as UserRole[],
+          children: [
             {
-              to: "/hasil-survei/data-survei",
-              label: "Data Survei",
-              allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PIMPINAN"] as UserRole[],
+              to: "/laporan/kkn",
+              label: "Laporan Kegiatan KKN",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "PIMPINAN",
+                "PEMIMPIN",
+                "PANITIA_TASKFORCE",
+                "DPL",
+                "DOSEN_PEMBIMBING",
+                "MPL",
+              ] as UserRole[],
+            },
+            {
+              to: "/laporan/tata-kelola-sampah",
+              label: "Laporan Tata Kelola Sampah",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "PIMPINAN",
+                "PEMIMPIN",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "PANITIA_TASKFORCE",
+              ] as UserRole[],
             },
           ],
         },
@@ -1744,27 +1783,27 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           ] as UserRole[],
           children: [
             {
-              to: "/pengguna?cluster=pejabat&role=developer",
+              to: "/pengguna?role=developer",
               label: "Developer",
               allowed: ["DEVELOPER"] as UserRole[],
             },
             {
-              to: "/pengguna?cluster=pejabat&role=su",
+              to: "/pengguna?role=su",
               label: "Super User",
               allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[],
             },
             {
-              to: "/pengguna?cluster=pejabat&role=dlh",
+              to: "/pengguna?role=dlh",
               label: "Admin DLH",
               allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PIMPINAN", "PEMIMPIN", "CAMAT", "LURAH"] as UserRole[],
             },
             {
-              to: "/pengguna?cluster=pejabat&role=pimpinan",
+              to: "/pengguna?role=pimpinan",
               label: "Pimpinan",
               allowed: ["DEVELOPER", "SUPER_USER", "PIMPINAN", "PEMIMPIN", "CAMAT", "LURAH"] as UserRole[],
             },
             {
-              to: "/pengguna?cluster=mahasiswa&role=taskforce",
+              to: "/pengguna?role=taskforce",
               label: "Task Force",
               allowed: [
                 "DEVELOPER",
@@ -1777,7 +1816,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               ] as UserRole[],
             },
             {
-              to: "/pengguna?cluster=mahasiswa&role=dpl",
+              to: "/pengguna?role=dpl",
               label: "Dosen Pembimbing Lapangan",
               allowed: [
                 "DEVELOPER",
@@ -1790,7 +1829,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               ] as UserRole[],
             },
             {
-              to: "/pengguna?cluster=mahasiswa&role=mpl",
+              to: "/pengguna?role=mpl",
               label: "Mitra Pembimbing Lapangan",
               allowed: [
                 "DEVELOPER",
@@ -1803,7 +1842,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               ] as UserRole[],
             },
             {
-              to: "/pengguna?cluster=mahasiswa&role=mahasiswa",
+              to: "/pengguna?role=mahasiswa",
               label: "Mahasiswa",
               allowed: [
                 "DEVELOPER",
@@ -1816,12 +1855,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               ] as UserRole[],
             },
             {
-              to: "/pengguna?cluster=warga&role=warga",
+              to: "/pengguna?role=warga",
               label: "Warga",
               allowed: ["DEVELOPER", "SUPER_USER", "RW", "PIMPINAN", "PEMIMPIN", "ADMIN_DLH", "CAMAT", "LURAH"] as UserRole[],
             },
             {
-              to: "/pengguna?cluster=warga&role=petugas-pemilah",
+              to: "/pengguna?role=petugas-pemilah",
               label: "Petugas Pemilah",
               allowed: ["DEVELOPER", "SUPER_USER", "RW", "PIMPINAN", "PEMIMPIN", "ADMIN_DLH", "CAMAT", "LURAH"] as UserRole[],
             },

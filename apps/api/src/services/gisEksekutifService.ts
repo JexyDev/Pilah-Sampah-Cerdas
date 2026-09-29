@@ -299,14 +299,19 @@ export const gisEksekutifService = {
       (sm) => new Date(sm.createdAt).getUTCMonth() === activeMonthIdx
     );
 
-    // Struktur agregasi riil per kelurahan
+    // Struktur agregasi riil per kelurahan (Sumber Primer: Warga)
     interface KelRealMetrics {
       totalSetoran: number;
       patuhSetoran: number;
-      organikKg: number;
-      anorganikKg: number;
-      residuKg: number;
+      organikKg: number; // Murni setoran otomatis warga
+      anorganikKg: number; // Murni setoran otomatis warga
+      residuKg: number; // Kategori residu tidak digunakan lagi (selalu 0)
       wargaAktifIds: Set<string>;
+      // Data terpisah untuk pencatatan petugas pemilah (mencegah double counting)
+      petugasOrganikKg: number;
+      petugasAnorganikKg: number;
+      petugasTotalKg: number;
+      petugasSetoranCount: number;
     }
     const realMetricsByKel: Record<string, KelRealMetrics> = {};
     const getOrInitKel = (name: string): KelRealMetrics => {
@@ -319,12 +324,16 @@ export const gisEksekutifService = {
           anorganikKg: 0,
           residuKg: 0,
           wargaAktifIds: new Set<string>(),
+          petugasOrganikKg: 0,
+          petugasAnorganikKg: 0,
+          petugasTotalKg: 0,
+          petugasSetoranCount: 0,
         };
       }
       return realMetricsByKel[key];
     };
 
-    // Agregasi setoran otomatis warga
+    // Agregasi setoran otomatis warga (Data Timbulan Riil Primer)
     setoranBulanan.forEach((s) => {
       const kelName =
         s.warga?.rw?.kelurahan?.name ||
@@ -345,12 +354,11 @@ export const gisEksekutifService = {
         m.organikKg += kg;
       } else if (kelas === "anorganik") {
         m.anorganikKg += kg;
-      } else {
-        m.residuKg += kg;
       }
+      // Residu diabaikan/tidak digunakan lagi
     });
 
-    // Agregasi setoran manual petugas
+    // Agregasi setoran manual petugas pemilah (DIPISAHKAN agar tidak dobel dengan setoran warga)
     setoranManualBulanan.forEach((sm) => {
       const kelName = sm.rw?.kelurahan?.name;
       if (!kelName) return;
@@ -358,24 +366,24 @@ export const gisEksekutifService = {
 
       const kg = Number(sm.berat || 0);
       const kat = (sm.kategori || "").toLowerCase().trim();
+      m.petugasSetoranCount += 1;
+      m.petugasTotalKg += kg;
+
       // urutan penting: "anorganik" mengandung substring "organik"
       if (kat.includes("anorganik") || kat.includes("non-organik") || kat.includes("non organik")) {
-        m.anorganikKg += kg;
-      } else if (kat.includes("residu") || kat.includes("residual")) {
-        m.residuKg += kg;
+        m.petugasAnorganikKg += kg;
       } else if (kat.includes("organik")) {
-        m.organikKg += kg;
-      } else {
-        m.organikKg += kg;
+        m.petugasOrganikKg += kg;
       }
+      // Residu diabaikan (tidak digunakan lagi)
     });
 
-    // ── 6. Kepatuhan & Volume Real per Kelurahan (Murni Real Database) ────────
+    // ── 6. Kepatuhan & Volume Real per Kelurahan (Murni Real Database Warga) ───
     const kepatuhanPerKelurahan = kelurahanNames.map((kelName) => {
       const key = kelName.toLowerCase();
       const real = realMetricsByKel[key];
       const hasRealTransactions = Boolean(
-        real && (real.totalSetoran > 0 || (real.organikKg + real.anorganikKg + real.residuKg) > 0)
+        real && (real.totalSetoran > 0 || (real.organikKg + real.anorganikKg) > 0)
       );
 
       let kepatuhan: number | null = null;
@@ -396,8 +404,8 @@ export const gisEksekutifService = {
 
       const organikKg = real ? Math.round(real.organikKg * 10) / 10 : 0;
       const anorganikKg = real ? Math.round(real.anorganikKg * 10) / 10 : 0;
-      const residuKg = real ? Math.round(real.residuKg * 10) / 10 : 0;
-      const sumKg = Math.round((organikKg + anorganikKg + residuKg) * 10) / 10;
+      const residuKg = 0; // Kategori residu tidak digunakan lagi
+      const sumKg = Math.round((organikKg + anorganikKg) * 10) / 10;
 
       // Konversi berat nyata ke volume m³/bulan (DLH/SNI: 1.000 kg = 1 m³)
       const volumeM3 = sumKg > 0 ? Math.round((sumKg / 1000) * 100) / 100 : null;
@@ -437,24 +445,29 @@ export const gisEksekutifService = {
       );
     }
 
-    // ── 7. Komposisi Volume Agregat (Real Database) ──────────────────────────
+    // ── 7. Komposisi Volume Agregat (Real Database Murni Warga) ────────────────
     const scopedKels = rawKel
       ? kepatuhanPerKelurahan.filter((k) => k.nama.toLowerCase() === rawKel.toLowerCase())
       : kepatuhanPerKelurahan;
 
     const baseOrgKg = Math.round(scopedKels.reduce((s, k) => s + (k.organikKgHari || 0), 0) * 10) / 10;
     const baseAnoKg = Math.round(scopedKels.reduce((s, k) => s + (k.anorganikKgHari || 0), 0) * 10) / 10;
-    const baseResKg = Math.round(scopedKels.reduce((s, k) => s + (k.residuKgHari || 0), 0) * 10) / 10;
-    const baseTotalKg = Math.round((baseOrgKg + baseAnoKg + baseResKg) * 10) / 10;
+    const baseResKg = 0; // Kategori residu tidak digunakan lagi
+    const baseTotalKg = Math.round((baseOrgKg + baseAnoKg) * 10) / 10;
 
     const orgM3 = baseTotalKg > 0 ? Math.round((baseOrgKg / 1000) * 100) / 100 : 0;
     const anoM3 = baseTotalKg > 0 ? Math.round((baseAnoKg / 1000) * 100) / 100 : 0;
-    const resM3 = baseTotalKg > 0 ? Math.round((baseResKg / 1000) * 100) / 100 : 0;
+    const resM3 = 0;
     const computedTotalM3 = baseTotalKg > 0 ? Math.round((baseTotalKg / 1000) * 100) / 100 : null;
 
+    // Persentase 100% dialokasikan murni Organik dan Anorganik
     let orgPct = baseTotalKg > 0 ? Math.round((baseOrgKg / baseTotalKg) * 100) : 0;
-    let anoPct = baseTotalKg > 0 ? Math.round((baseAnoKg / baseTotalKg) * 100) : 0;
-    let resPct = baseTotalKg > 0 ? Math.max(0, 100 - orgPct - anoPct) : 0;
+    let anoPct = baseTotalKg > 0 ? (100 - orgPct) : 0;
+    let resPct = 0;
+
+    const basePetugasOrgKg = Math.round(Object.values(realMetricsByKel).reduce((s, m) => s + m.petugasOrganikKg, 0) * 10) / 10;
+    const basePetugasAnoKg = Math.round(Object.values(realMetricsByKel).reduce((s, m) => s + m.petugasAnorganikKg, 0) * 10) / 10;
+    const basePetugasTotalKg = Math.round((basePetugasOrgKg + basePetugasAnoKg) * 10) / 10;
 
     let volumeTotal = computedTotalM3;
     const hasData = baseTotalKg > 0;
@@ -471,14 +484,20 @@ export const gisEksekutifService = {
         kgHari: baseAnoKg,
       },
       residu: {
-        persen: resPct,
-        volumeM3: resM3,
-        kgHari: baseResKg,
+        persen: 0,
+        volumeM3: 0,
+        kgHari: 0,
       },
       totalM3: volumeTotal,
       totalKg: baseTotalKg,
       totalKgHari: baseTotalKg,
       hasData,
+      // Metadata terpisah untuk data pencatatan petugas pemilah (terisolasi, tidak dobel)
+      petugasPemilah: {
+        totalKg: basePetugasTotalKg,
+        organikKg: basePetugasOrgKg,
+        anorganikKg: basePetugasAnoKg,
+      },
     };
 
     // ── 7. Tren Bulanan — integrasi riil transaksi bulanan + log produksi fasilitas (Agustus – Desember 2026) ──

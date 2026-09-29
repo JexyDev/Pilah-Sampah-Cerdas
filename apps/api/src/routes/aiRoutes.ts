@@ -146,4 +146,41 @@ router.post(
   aiController.detectVisionBbox
 );
 
+/**
+ * @swagger
+ * /api/v1/waste/baseline:
+ *   get:
+ *     summary: Mendapatkan Data Baseline Statis Hasil Survei Lapangan KKN Juli 2026 (6 Kelurahan Coblong)
+ *     tags: [AI, Executive & Monitoring]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil memuat data baseline statis
+ */
+router.get("/baseline", authMiddleware, aiController.getBaseline);
+
+/**
+ * @swagger
+ * /api/v1/waste/actual-trends:
+ *   get:
+ *     summary: Mendapatkan Evaluasi Tren Pemilahan Sampah Aktual Real-time
+ *     tags: [AI, Executive & Monitoring]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: weeks
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: wilayah
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Berhasil memuat data tren pemilahan aktual
+ */
+router.get("/actual-trends", authMiddleware, aiController.getActualTrends);
+
 export default router;

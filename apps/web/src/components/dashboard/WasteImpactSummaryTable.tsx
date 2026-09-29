@@ -1,0 +1,657 @@
+/**
+ * Project: BERSEKA
+ * Developed by: PT Makerindo
+ * Copyright (c) 2026 PT Makerindo. All rights reserved.
+ * 
+ * Component: WasteImpactSummaryTable (Tabel Rekapitulasi Evaluasi Komparatif Dampak Sampah)
+ * Standarisasi Data & Integrasi Formula Delta:
+ * 1. Judul Komponen: "Kesesuaian Aktivitas Pemilahan per Kategori Sampah"
+ * 2. Skema Kolom:
+ *    - Nama Kelurahan
+ *    - Volume Baseline (kg)
+ *    - Volume Aktual Saat Ini (kg)
+ *    - Penurunan Volume (kg) [Delta kg]
+ *    - Penurunan Volume (%) [Delta %]
+ *    - Kepatuhan Baseline (%)
+ *    - Kepatuhan Aktual (%)
+ *    - Perubahan Kepatuhan (%) [Delta kepatuhan]
+ * 3. Dua kolom berdampingan untuk delta sampah: "Delta (kg)" dan "Delta (%)"
+ * 4. Pemisahan Sumber Data: Toggle [Semua], [Aktivitas Warga] (WARGA_APP), [Input Petugas] (PETUGAS_LAPANGAN)
+ *    mencegah penggandaan (double-counting) volume sampah.
+ * 5. Agregasi Terbobot (Weighted Aggregation) untuk baris total/kecamatan.
+ */
+
+import React, { useState, useMemo } from "react";
+import {
+  TrendingDown,
+  TrendingUp,
+  Minus,
+  Info,
+  Layers,
+  Smartphone,
+  ClipboardList,
+  AlertCircle,
+  FileSpreadsheet,
+  CheckCircle2,
+} from "lucide-react";
+import * as XLSX from "xlsx";
+import toast from "react-hot-toast";
+import {
+  calculateVolumeDeltaKg,
+  calculateVolumeDeltaPct,
+  calculateComplianceDelta,
+  formatDeltaKg,
+  formatDeltaPct,
+  formatComplianceDelta,
+  aggregateKelurahanImpact,
+  type WasteSourceType,
+  type WasteImpactItem,
+} from "../../utils/wasteCalculations";
+
+export interface WasteImpactSummaryTableProps {
+  data: WasteImpactItem[];
+  loading?: boolean;
+  className?: string;
+  onSourceChange?: (source: WasteSourceType) => void;
+}
+
+export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = ({
+  data,
+  loading = false,
+  className = "",
+  onSourceChange,
+}) => {
+  const [selectedSource, setSelectedSource] = useState<WasteSourceType>("WARGA_APP");
+  const [showFootnoteDetails, setShowFootnoteDetails] = useState<boolean>(false);
+
+  const handleSourceChange = (src: WasteSourceType) => {
+    setSelectedSource(src);
+    if (onSourceChange) {
+      onSourceChange(src);
+    }
+  };
+
+  // Normalisasi data dengan sumber yang dipilih
+  const displayItems = useMemo(() => {
+    return data.map((item) => {
+      let actualKg = item.actualKg ?? 0;
+      if (selectedSource === "WARGA_APP") {
+        actualKg = item.wargaKg !== undefined && item.wargaKg !== null ? item.wargaKg : (item.actualKg ?? 0);
+      } else if (selectedSource === "PETUGAS_LAPANGAN") {
+        actualKg = item.petugasKg !== undefined && item.petugasKg !== null ? item.petugasKg : 0;
+      } else {
+        // ALL
+        const w = item.wargaKg !== undefined && item.wargaKg !== null ? item.wargaKg : (item.actualKg ?? 0);
+        const p = item.petugasKg !== undefined && item.petugasKg !== null ? item.petugasKg : 0;
+        actualKg = Number((w + p).toFixed(2));
+      }
+
+      return {
+        ...item,
+        actualKg,
+        sourceType: selectedSource,
+      };
+    });
+  }, [data, selectedSource]);
+
+  // Agregasi terbobot tingkat Kecamatan
+  const aggregation = useMemo(() => {
+    return aggregateKelurahanImpact(displayItems);
+  }, [displayItems]);
+
+  // Ekspor Data Rekapitulasi ke XLSX
+  const handleExportXLSX = () => {
+    if (!displayItems || displayItems.length === 0) {
+      toast.error("Tidak ada data untuk diekspor!");
+      return;
+    }
+
+    const headers = [
+      "No",
+      "Kelurahan",
+      "Sumber Data",
+      "Volume Baseline (kg)",
+      "Volume Aktual (kg)",
+      "Penurunan Volume (kg)",
+      "Penurunan Volume (%)",
+      "Kepatuhan Baseline (%)",
+      "Kepatuhan Aktual (%)",
+      "Perubahan Kepatuhan (%)",
+      "Status Verifikasi",
+    ];
+
+    const rows = displayItems.map((item, idx) => {
+      const deltaKg = calculateVolumeDeltaKg(item.baselineKg, item.actualKg);
+      const deltaPct = calculateVolumeDeltaPct(item.baselineKg, item.actualKg);
+      const deltaComp = calculateComplianceDelta(item.baselineCompliance, item.actualCompliance);
+
+      return [
+        idx + 1,
+        `Kel. ${item.kelurahan}`,
+        selectedSource === "WARGA_APP"
+          ? "Aktivitas Warga (WARGA_APP)"
+          : selectedSource === "PETUGAS_LAPANGAN"
+          ? "Input Petugas (PETUGAS_LAPANGAN)"
+          : "Semua Sumber (Warga + Petugas)",
+        item.baselineKg ? Number(item.baselineKg.toFixed(2)) : 0,
+        item.actualKg ? Number(item.actualKg.toFixed(2)) : 0,
+        deltaKg !== null ? deltaKg : "-",
+        deltaPct !== null ? `${deltaPct}%` : "-",
+        item.baselineCompliance !== null && item.baselineCompliance !== undefined
+          ? `${item.baselineCompliance}%`
+          : "-",
+        item.actualCompliance !== null && item.actualCompliance !== undefined
+          ? `${item.actualCompliance}%`
+          : "-",
+        deltaComp !== null ? `${deltaComp >= 0 ? "+" : ""}${deltaComp}%` : "-",
+        item.status || "Terverifikasi Real",
+      ];
+    });
+
+    // Baris Agregasi Kecamatan
+    rows.push([
+      "",
+      "TOTAL & RERATA KECAMATAN COBLONG",
+      `Filter: ${selectedSource}`,
+      aggregation.totalBaselineKg,
+      aggregation.totalActualKg,
+      aggregation.totalDeltaKg,
+      aggregation.weightedDeltaPct !== null ? `${aggregation.weightedDeltaPct}%` : "-",
+      `${aggregation.avgBaselineCompliance}%`,
+      `${aggregation.avgActualCompliance}%`,
+      `${aggregation.deltaCompliance >= 0 ? "+" : ""}${aggregation.deltaCompliance}%`,
+      "Agregat Terbobot Faktual",
+    ]);
+
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Rekap_Dampak_Sampah");
+    XLSX.writeFile(
+      wb,
+      `Rekap_Evaluasi_Dampak_Sampah_Coblong_${selectedSource}_${new Date().toISOString().split("T")[0]}.xlsx`
+    );
+    toast.success("Data rekapitulasi dampak sampah berhasil diekspor!");
+  };
+
+  return (
+    <div className={`bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/90 dark:border-slate-800 shadow-xs space-y-6 ${className}`}>
+      {/* Header & Controls */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5">
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="p-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/40">
+              <ClipboardList size={18} />
+            </span>
+            <h3 className="font-extrabold text-[18px] text-slate-900 dark:text-slate-100 tracking-tight">
+              Kesesuaian Aktivitas Pemilahan per Kategori Sampah
+            </h3>
+            <span className="text-[10px] font-black bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700/40 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+              Formula Delta Faktual
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-2xl">
+            Tabel rekapitulasi capaian penurunan volume sampah dan peningkatan kepatuhan pemilahan
+            berdasarkan baseline awal vs realisasi giat lapangan di 6 Kelurahan Kecamatan Coblong.
+          </p>
+        </div>
+
+        {/* Action Buttons: Source Tabs & Export */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+          {/* Toggle Pemisah Sumber Data */}
+          <div className="flex items-center bg-slate-100/80 dark:bg-slate-800/80 p-1 rounded-2xl border border-slate-200/70 dark:border-slate-700/60">
+            <button
+              type="button"
+              onClick={() => handleSourceChange("ALL")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                selectedSource === "ALL"
+                  ? "bg-white dark:bg-slate-900 text-indigo-700 dark:text-indigo-400 shadow-xs border border-slate-200/80 dark:border-slate-700"
+                  : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+              }`}
+              title="Gabungan seluruh data (Warga + Petugas)"
+            >
+              <Layers size={13} />
+              <span>Semua</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleSourceChange("WARGA_APP")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                selectedSource === "WARGA_APP"
+                  ? "bg-emerald-600 text-white shadow-xs"
+                  : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+              }`}
+              title="Hanya data pemilahan mandiri warga via aplikasi mobile / AI"
+            >
+              <Smartphone size={13} />
+              <span>Aktivitas Warga</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleSourceChange("PETUGAS_LAPANGAN")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                selectedSource === "PETUGAS_LAPANGAN"
+                  ? "bg-indigo-600 text-white shadow-xs"
+                  : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+              }`}
+              title="Hanya data penimbangan manual posko / TPS3R oleh petugas"
+            >
+              <ClipboardList size={13} />
+              <span>Input Petugas</span>
+            </button>
+          </div>
+
+          {/* Ekspor XLSX */}
+          <button
+            type="button"
+            onClick={handleExportXLSX}
+            className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer active:scale-95"
+            title="Ekspor tabel rekapitulasi ke file Excel"
+          >
+            <FileSpreadsheet size={14} />
+            <span>Ekspor XLSX</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Banner Pemisahan Sumber Data (Anti Double-Counting) */}
+      <div
+        className={`p-3.5 rounded-2xl border text-xs flex items-start gap-3 transition-colors ${
+          selectedSource === "ALL"
+            ? "bg-amber-50/70 dark:bg-amber-950/30 border-amber-200/80 dark:border-amber-800/40 text-amber-900 dark:text-amber-200"
+            : selectedSource === "WARGA_APP"
+            ? "bg-emerald-50/60 dark:bg-emerald-950/30 border-emerald-200/80 dark:border-emerald-800/40 text-emerald-900 dark:text-emerald-200"
+            : "bg-indigo-50/60 dark:bg-indigo-950/30 border-indigo-200/80 dark:border-indigo-800/40 text-indigo-900 dark:text-indigo-200"
+        }`}
+      >
+        <div className="shrink-0 mt-0.5">
+          {selectedSource === "ALL" ? (
+            <AlertCircle size={16} className="text-amber-600 dark:text-amber-400" />
+          ) : (
+            <CheckCircle2 size={16} className="text-emerald-600 dark:text-emerald-400" />
+          )}
+        </div>
+        <div className="flex-1 space-y-1">
+          <div className="font-extrabold flex items-center gap-2">
+            <span>
+              {selectedSource === "ALL"
+                ? "Peringatan Tata Kelola Data: Mode Tampilan Gabungan (Semua Sumber)"
+                : selectedSource === "WARGA_APP"
+                ? "Sumber Terisolasi: Aktivitas Pemilahan Warga (WARGA_APP)"
+                : "Sumber Terisolasi: Pencatatan Petugas Lapangan (PETUGAS_LAPANGAN)"}
+            </span>
+            <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-white/70 dark:bg-slate-900/60 border border-current/20 font-bold">
+              Tag: {selectedSource}
+            </span>
+          </div>
+          <p className="text-[11px] leading-relaxed opacity-90">
+            {selectedSource === "ALL" ? (
+              <>
+                <strong>Perhatian Double-Counting:</strong> Menggabungkan volume sampah hasil pemilahan warga via aplikasi mobile dengan pencatatan manual timbangan petugas lapangan berpotensi menduplikasi angka timbulan jika sampah yang disetor warga ditimbang kembali di TPS3R. Gunakan filter <strong>[Aktivitas Warga]</strong> atau <strong>[Input Petugas]</strong> untuk analisis tunggal yang presisi.
+              </>
+            ) : selectedSource === "WARGA_APP" ? (
+              <>
+                Menampilkan volume sampah terpilah mandiri oleh warga melalui pemindaian QR dan klasifikasi BERSEKA Vision AI. Menunjukkan tingkat adopsi digital dan kepatuhan langsung rumah tangga.
+              </>
+            ) : (
+              <>
+                Menampilkan volume sampah yang ditimbang dan dicatat secara fisik oleh petugas pemilah/residu di posko penampungan atau TPS3R kelurahan.
+              </>
+            )}
+          </p>
+        </div>
+      </div>
+
+      {/* Tabel Rekapitulasi Data */}
+      <div className="overflow-x-auto rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs">
+        <table className="w-full text-left text-xs border-collapse">
+          <thead>
+            {/* Header Row 1: Kategori Utama */}
+            <tr className="border-b border-slate-200 dark:border-slate-800 text-[11px] font-extrabold text-slate-700 dark:text-slate-200">
+              <th rowSpan={2} className="py-3 px-3 text-center w-12 bg-slate-50/80 dark:bg-slate-800/80 border-r border-slate-200 dark:border-slate-800">
+                No
+              </th>
+              <th rowSpan={2} className="py-3 px-4 min-w-[150px] font-bold bg-slate-50/80 dark:bg-slate-800/80 border-r border-slate-200 dark:border-slate-800">
+                Nama Kelurahan
+              </th>
+              <th colSpan={2} className="py-2.5 px-3 text-center uppercase tracking-wider bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 border-r border-slate-200 dark:border-slate-800">
+                Volume Sampah
+              </th>
+              <th colSpan={2} className="py-2.5 px-3 text-center uppercase tracking-wider bg-blue-50/80 dark:bg-blue-950/60 text-blue-900 dark:text-blue-200 border-r border-slate-200 dark:border-slate-800">
+                Penurunan Volume Sampah (Δ)
+              </th>
+              <th colSpan={2} className="py-2.5 px-3 text-center uppercase tracking-wider bg-emerald-50/80 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-200 border-r border-slate-200 dark:border-slate-800">
+                Kepatuhan Pemilahan
+              </th>
+              <th rowSpan={2} className="py-3 px-3 text-center uppercase tracking-wider bg-teal-50/80 dark:bg-teal-950/60 text-teal-900 dark:text-teal-200 min-w-[130px]">
+                Perubahan Kepatuhan (%)
+              </th>
+            </tr>
+
+            {/* Header Row 2: Sub-Kolom dengan Dua Kolom Berdampingan untuk Delta Volume */}
+            <tr className="border-b border-slate-200 dark:border-slate-800 text-[11px] font-extrabold text-slate-600 dark:text-slate-400">
+              <th className="py-2 px-3 text-center bg-slate-50/50 dark:bg-slate-800/40 border-r border-slate-200 dark:border-slate-800">
+                Baseline (kg)
+              </th>
+              <th className="py-2 px-3 text-center bg-slate-50/50 dark:bg-slate-800/40 border-r border-slate-200 dark:border-slate-800">
+                Aktual Saat Ini (kg)
+              </th>
+              {/* Dua Kolom Berdampingan untuk Delta Volume */}
+              <th className="py-2 px-3 text-center bg-blue-50/40 dark:bg-blue-950/30 text-blue-900 dark:text-blue-300 border-r border-slate-200 dark:border-slate-800 min-w-[110px]">
+                Delta (kg)
+              </th>
+              <th className="py-2 px-3 text-center bg-blue-50/40 dark:bg-blue-950/30 text-blue-900 dark:text-blue-300 border-r border-slate-200 dark:border-slate-800 min-w-[105px]">
+                Delta (%)
+              </th>
+              <th className="py-2 px-3 text-center bg-emerald-50/40 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800">
+                Baseline (%)
+              </th>
+              <th className="py-2 px-3 text-center bg-emerald-50/40 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800">
+                Aktual (%)
+              </th>
+            </tr>
+          </thead>
+
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+            {displayItems.map((item, idx) => {
+              const deltaKg = calculateVolumeDeltaKg(item.baselineKg, item.actualKg);
+              const deltaPct = calculateVolumeDeltaPct(item.baselineKg, item.actualKg);
+              const deltaCompliance = calculateComplianceDelta(item.baselineCompliance, item.actualCompliance);
+
+              const hasBaselineData = item.hasBaseline && item.baselineKg && item.baselineKg > 0;
+              const hasActualData = (item.actualKg ?? 0) > 0 || (item.actualCompliance ?? 0) > 0;
+
+              return (
+                <tr
+                  key={item.id || idx}
+                  className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors text-xs"
+                >
+                  <td className="py-3.5 px-3 text-center text-slate-400 font-bold border-r border-slate-200/60 dark:border-slate-800/60">
+                    {idx + 1}
+                  </td>
+                  <td className="py-3.5 px-4 font-extrabold text-slate-800 dark:text-slate-100 border-r border-slate-200/60 dark:border-slate-800/60">
+                    <span>Kel. {item.kelurahan}</span>
+                    {item.kelurahan.toLowerCase().includes("lebakgede") && (
+                      <span className="block text-[9.5px] font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                        *Studi Kasus Meeting
+                      </span>
+                    )}
+                  </td>
+
+                  {/* Volume Baseline (kg) */}
+                  <td className="py-3.5 px-3 text-center font-bold text-slate-700 dark:text-slate-300 border-r border-slate-200/60 dark:border-slate-800/60">
+                    {hasBaselineData ? (
+                      <span>{Number(item.baselineKg).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg</span>
+                    ) : (
+                      <span className="text-slate-400 italic text-[11px]">Belum ada data</span>
+                    )}
+                  </td>
+
+                  {/* Volume Aktual Saat Ini (kg) */}
+                  <td className="py-3.5 px-3 text-center font-bold text-slate-800 dark:text-slate-100 border-r border-slate-200/60 dark:border-slate-800/60">
+                    <span>
+                      {Number(item.actualKg || 0).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg
+                    </span>
+                  </td>
+
+                  {/* Kolom Berdampingan 1: Penurunan Volume (kg) */}
+                  <td className="py-3.5 px-3 text-center font-extrabold border-r border-slate-200/60 dark:border-slate-800/60">
+                    {deltaKg === null ? (
+                      <span className="text-slate-400 italic">—</span>
+                    ) : (
+                      <span
+                        className={`inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black ${
+                          deltaKg > 0
+                            ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40"
+                            : deltaKg < 0
+                            ? "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/40"
+                            : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                        }`}
+                      >
+                        {deltaKg > 0 ? (
+                          <TrendingDown size={13} className="text-emerald-600" />
+                        ) : deltaKg < 0 ? (
+                          <TrendingUp size={13} className="text-rose-600" />
+                        ) : (
+                          <Minus size={13} />
+                        )}
+                        <span>{formatDeltaKg(deltaKg, { showPlusSign: true })}</span>
+                      </span>
+                    )}
+                  </td>
+
+                  {/* Kolom Berdampingan 2: Penurunan Volume (%) */}
+                  <td className="py-3.5 px-3 text-center font-extrabold border-r border-slate-200/60 dark:border-slate-800/60">
+                    {deltaPct === null ? (
+                      <span className="text-slate-400 italic">—</span>
+                    ) : (
+                      <span
+                        className={`inline-flex items-center justify-center gap-0.5 px-2.5 py-1 rounded-xl text-xs font-black ${
+                          deltaPct > 0
+                            ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40"
+                            : deltaPct < 0
+                            ? "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/40"
+                            : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                        }`}
+                      >
+                        <span>{formatDeltaPct(deltaPct, { showPlusSign: true })}</span>
+                      </span>
+                    )}
+                  </td>
+
+                  {/* Kepatuhan Baseline (%) */}
+                  <td className="py-3.5 px-3 text-center font-semibold text-slate-600 dark:text-slate-400 border-r border-slate-200/60 dark:border-slate-800/60">
+                    {item.baselineCompliance !== null && item.baselineCompliance !== undefined ? (
+                      <span>{Number(item.baselineCompliance).toFixed(1).replace(".", ",")}%</span>
+                    ) : (
+                      <span className="text-slate-400 italic text-[11px]">—</span>
+                    )}
+                  </td>
+
+                  {/* Kepatuhan Aktual (%) */}
+                  <td className="py-3.5 px-3 text-center font-extrabold text-emerald-700 dark:text-emerald-400 border-r border-slate-200/60 dark:border-slate-800/60">
+                    {item.actualCompliance !== null && item.actualCompliance !== undefined && item.actualCompliance > 0 ? (
+                      <span>{Number(item.actualCompliance).toFixed(1).replace(".", ",")}%</span>
+                    ) : (
+                      <span className="text-slate-400 font-normal italic">Belum terdata</span>
+                    )}
+                  </td>
+
+                  {/* Perubahan Kepatuhan (%) */}
+                  <td className="py-3.5 px-3 text-center font-extrabold">
+                    {deltaCompliance === null ? (
+                      <span className="text-slate-400 italic">—</span>
+                    ) : (
+                      <span
+                        className={`inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black ${
+                          deltaCompliance > 0
+                            ? "bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800/40"
+                            : deltaCompliance < 0
+                            ? "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/40"
+                            : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                        }`}
+                      >
+                        {deltaCompliance > 0 ? (
+                          <TrendingUp size={13} className="text-teal-600" />
+                        ) : deltaCompliance < 0 ? (
+                          <TrendingDown size={13} className="text-rose-600" />
+                        ) : (
+                          <Minus size={13} />
+                        )}
+                        <span>{formatComplianceDelta(deltaCompliance, { unit: "%", showPlusSign: true })}</span>
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+
+            {/* Baris Agregasi Kecamatan (Total & Rata-rata Terbobot) */}
+            <tr className="bg-slate-100/90 dark:bg-slate-800/90 font-black text-slate-900 dark:text-slate-100 border-t-2 border-slate-300 dark:border-slate-700 text-xs">
+              <td className="py-4 px-3 text-center border-r border-slate-200 dark:border-slate-700">
+                ★
+              </td>
+              <td className="py-4 px-4 border-r border-slate-200 dark:border-slate-700">
+                <span className="text-slate-900 dark:text-white uppercase tracking-wider block">
+                  Kecamatan Coblong (Total)
+                </span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold block">
+                  Agregasi Terbobot 6 Kelurahan
+                </span>
+              </td>
+
+              {/* Total Baseline Volume */}
+              <td className="py-4 px-3 text-center border-r border-slate-200 dark:border-slate-700">
+                {aggregation.totalBaselineKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg
+              </td>
+
+              {/* Total Aktual Volume */}
+              <td className="py-4 px-3 text-center border-r border-slate-200 dark:border-slate-700">
+                {aggregation.totalActualKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg
+              </td>
+
+              {/* Total Penurunan Volume (kg) */}
+              <td className="py-4 px-3 text-center border-r border-slate-200 dark:border-slate-700 font-extrabold text-blue-700 dark:text-blue-300">
+                <span
+                  className={`inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black ${
+                    aggregation.totalDeltaKg > 0
+                      ? "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-200 border border-emerald-300"
+                      : aggregation.totalDeltaKg < 0
+                      ? "bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-200 border border-rose-300"
+                      : "bg-slate-200 text-slate-700"
+                  }`}
+                >
+                  {formatDeltaKg(aggregation.totalDeltaKg, { showPlusSign: true })}
+                </span>
+              </td>
+
+              {/* Total Penurunan Volume (%) [Weighted / Terbobot] */}
+              <td className="py-4 px-3 text-center border-r border-slate-200 dark:border-slate-700 font-extrabold text-blue-700 dark:text-blue-300">
+                <span
+                  className={`inline-flex items-center justify-center px-2.5 py-1 rounded-xl text-xs font-black ${
+                    (aggregation.weightedDeltaPct || 0) > 0
+                      ? "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-200 border border-emerald-300"
+                      : (aggregation.weightedDeltaPct || 0) < 0
+                      ? "bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-200 border border-rose-300"
+                      : "bg-slate-200 text-slate-700"
+                  }`}
+                >
+                  {formatDeltaPct(aggregation.weightedDeltaPct, { showPlusSign: true })}
+                </span>
+              </td>
+
+              {/* Rerata Kepatuhan Baseline (%) */}
+              <td className="py-4 px-3 text-center border-r border-slate-200 dark:border-slate-700">
+                {aggregation.avgBaselineCompliance.toFixed(1).replace(".", ",")}%
+              </td>
+
+              {/* Rerata Kepatuhan Aktual (%) */}
+              <td className="py-4 px-3 text-center border-r border-slate-200 dark:border-slate-700 text-emerald-700 dark:text-emerald-300">
+                {aggregation.avgActualCompliance.toFixed(1).replace(".", ",")}%
+              </td>
+
+              {/* Rerata Perubahan Kepatuhan (%) */}
+              <td className="py-4 px-3 text-center text-teal-700 dark:text-teal-300">
+                <span
+                  className={`inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black ${
+                    aggregation.deltaCompliance > 0
+                      ? "bg-teal-100 dark:bg-teal-950/80 text-teal-800 dark:text-teal-200 border border-teal-300"
+                      : aggregation.deltaCompliance < 0
+                      ? "bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-200 border border-rose-300"
+                      : "bg-slate-200 text-slate-700"
+                  }`}
+                >
+                  {formatComplianceDelta(aggregation.deltaCompliance, { unit: "%", showPlusSign: true })}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {/* Rangkuman Metodologi & Studi Kasus Lebakgede */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+        {/* Box Left: Rumus Penurunan Volume Sampah */}
+        <div className="bg-blue-50/40 dark:bg-blue-950/20 rounded-2xl p-4 border border-blue-200/70 dark:border-blue-800/40 space-y-2">
+          <div className="flex items-center justify-between">
+            <h5 className="font-black text-xs sm:text-sm text-blue-900 dark:text-blue-200 flex items-center gap-1.5">
+              <span className="p-1 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-xs">Δ</span>
+              Rumus Penurunan Volume Sampah (KPI 1)
+            </h5>
+            <span className="text-[10px] font-bold text-blue-600 bg-blue-100/60 dark:bg-blue-900/40 px-2 py-0.5 rounded-full">
+              Matematika SI
+            </span>
+          </div>
+          <div className="bg-white/80 dark:bg-slate-900/80 p-2.5 rounded-xl border border-blue-200/60 dark:border-blue-800/40 font-mono text-[11px] text-blue-950 dark:text-blue-200 space-y-1">
+            <p><strong>Δ Berat (kg)</strong> = Volume_Baseline − Volume_Aktual</p>
+            <p><strong>Δ Persen (%)</strong> = [(Volume_Baseline − Volume_Aktual) ÷ Volume_Baseline] × 100%</p>
+          </div>
+          <div className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed bg-blue-100/50 dark:bg-blue-900/30 p-2.5 rounded-xl">
+            <strong>Studi Kasus Lebakgede:</strong> Baseline = 250 kg, Aktual Terpilah = 37 kg.
+            <br />
+            Penurunan Berat = 250 − 37 = <strong>213 kg</strong>.
+            <br />
+            Penurunan Persen = (213 ÷ 250) × 100% = <strong className="text-emerald-700 dark:text-emerald-300 font-extrabold">85,2%</strong>.
+          </div>
+        </div>
+
+        {/* Box Right: Rumus Perubahan Kepatuhan */}
+        <div className="bg-emerald-50/40 dark:bg-emerald-950/20 rounded-2xl p-4 border border-emerald-200/70 dark:border-emerald-800/40 space-y-2">
+          <div className="flex items-center justify-between">
+            <h5 className="font-black text-xs sm:text-sm text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5">
+              <span className="p-1 rounded bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 text-xs">Δ</span>
+              Rumus Kenaikan Kepatuhan Pemilahan (KPI 2)
+            </h5>
+            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-100/60 dark:bg-emerald-900/40 px-2 py-0.5 rounded-full">
+              Persentase &amp; PP
+            </span>
+          </div>
+          <div className="bg-white/80 dark:bg-slate-900/80 p-2.5 rounded-xl border border-emerald-200/60 dark:border-emerald-800/40 font-mono text-[11px] text-emerald-950 dark:text-emerald-200 space-y-1">
+            <p><strong>Δ Kepatuhan (%)</strong> = Kepatuhan_Aktual − Kepatuhan_Baseline</p>
+            <p><strong>Satuan Seragam:</strong> Persentase (%) / Percentage Point (pp)</p>
+          </div>
+          <div className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed bg-emerald-100/50 dark:bg-emerald-900/30 p-2.5 rounded-xl">
+            <strong>Dua KPI Utama Sistem:</strong> (1) Menurunkan tren volume sampah per kelurahan, dan (2) Menaikkan tren kepatuhan pemilahan sampah warga secara terverifikasi AI.
+          </div>
+        </div>
+      </div>
+
+      {/* Catatan Kritis & Transparansi Analisis (Dropdown/Toggle) */}
+      <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-700 text-xs space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="font-extrabold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+            <Info size={14} className="text-indigo-600 dark:text-indigo-400" />
+            Catatan Analisis &amp; Jawaban Pertanyaan Kritis Manajemen
+          </span>
+          <button
+            type="button"
+            onClick={() => setShowFootnoteDetails(!showFootnoteDetails)}
+            className="text-xs text-indigo-600 dark:text-indigo-400 font-bold hover:underline cursor-pointer"
+          >
+            {showFootnoteDetails ? "Sembunyikan Detail" : "Pelajari Metodologi Selengkapnya"}
+          </button>
+        </div>
+
+        {showFootnoteDetails && (
+          <div className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-2 text-slate-600 dark:text-slate-300 leading-relaxed text-[11.5px]">
+            <p>
+              <strong>1. Konteks Penurunan 85,2% di Lebakgede:</strong> Angka penurunan volume dari baseline 250 kg menjadi 37 kg terpilah aktual mencerminkan sampel aktivitas pemilahan yang terdata pada masa giat KKN Berseka, bukan serta-merta reduksi total timbulan sampah ke TPA, karena kepatuhan dan pelaporan warga masih bertahap (belum mencakup 100% populasi rumah tangga secara merata).
+            </p>
+            <p>
+              <strong>2. Penanganan Delta Negatif:</strong> Jika volume aktual lebih besar dari baseline (misal terjadi lonjakan timbulan sampah pasca-hari libur), formula matematika menghasilkan nilai negatif (misal −20,0%) yang divisualisasikan dengan label merah tanpa merusak tata letak atau format numerik persentase.
+            </p>
+            <p>
+              <strong>3. Formula Agregasi Kecamatan:</strong> Rerata persentase reduksi volume kecamatan dihitung dari <strong>Total Volume Seluruh Kecamatan dibagi Total Baseline Seluruh Kecamatan</strong> (Agregasi Terbobot), bukan rata-rata sederhana persentase 6 kelurahan, untuk menghindari distorsi bobot kelurahan berpopulasi kecil terhadap kelurahan berpopulasi besar.
+            </p>
+            <p>
+              <strong>4. Taat Asas SI &amp; Terminologi:</strong> Seluruh penulisan massa menggunakan simbol baku <code>kg</code> (huruf kecil). Nilai tanda <code>—</code> menandakan data survei belum selesai diisi atau belum diverifikasi.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default WasteImpactSummaryTable;

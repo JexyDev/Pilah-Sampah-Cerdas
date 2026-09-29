@@ -144,9 +144,13 @@ export const wasteExecutiveReportService = {
     // ─────────────────────────────────────────────────────────
     // 1. DATABASE INFRASTRUKTUR PERSAMPAHAN
     // ─────────────────────────────────────────────────────────
-    const facilityWhere: any = {};
+    const facilityWhere: any = {
+      jenis: { not: "posko_kkn" },
+    };
     if (filteredRwIds.length > 0) {
       facilityWhere.rwId = { in: filteredRwIds };
+    } else if (!filters.includeTestAccounts) {
+      facilityWhere.rw = { name: { not: { contains: "99" } } };
     }
 
     const facilities = await prisma.facility.findMany({
@@ -194,6 +198,8 @@ export const wasteExecutiveReportService = {
     const binWhere: any = {};
     if (filteredRwIds.length > 0) {
       binWhere.rwId = { in: filteredRwIds };
+    } else if (!filters.includeTestAccounts) {
+      binWhere.rw = { name: { not: { contains: "99" } } };
     }
 
     const bins = await prisma.bin.findMany({
@@ -267,7 +273,14 @@ export const wasteExecutiveReportService = {
     const autoSetoranWhere: any = {};
     if (dateFilter) autoSetoranWhere.createdAt = dateFilter;
     if (!filters.includeTestAccounts) {
-      autoSetoranWhere.warga = { isTestAccount: false };
+      autoSetoranWhere.warga = {
+        isTestAccount: false,
+        NOT: { name: { contains: "test", mode: "insensitive" } },
+      };
+      autoSetoranWhere.NOT = [
+        { bin: { rw: { name: { contains: "99" } } } },
+        { warga: { rw: { name: { contains: "99" } } } },
+      ];
     }
     if (filteredRwIds.length > 0) {
       autoSetoranWhere.OR = [
@@ -298,7 +311,11 @@ export const wasteExecutiveReportService = {
     const manualSetoranWhere: any = {};
     if (dateFilter) manualSetoranWhere.createdAt = dateFilter;
     if (!filters.includeTestAccounts) {
-      manualSetoranWhere.petugas = { isTestAccount: false };
+      manualSetoranWhere.petugas = {
+        isTestAccount: false,
+        NOT: { name: { contains: "test", mode: "insensitive" } },
+      };
+      manualSetoranWhere.rw = { name: { not: { contains: "99" } } };
     }
     if (filteredRwIds.length > 0) {
       manualSetoranWhere.rwId = { in: filteredRwIds };
@@ -503,7 +520,7 @@ export const wasteExecutiveReportService = {
       let baselineRate = 0;
       if (b?.pemilahanSampah?.persentasePemilahan) {
         const val = Number(b.pemilahanSampah.persentasePemilahan);
-        baselineRate = val <= 1 ? Number((val * 100).toFixed(1)) : Number(val.toFixed(1));
+        baselineRate = val <= 1 ? Number((val * 100).toFixed(2)) : Number(val.toFixed(2));
       } else if (BASELINE_FALLBACK_RATES[normK] !== undefined) {
         baselineRate = BASELINE_FALLBACK_RATES[normK];
       }

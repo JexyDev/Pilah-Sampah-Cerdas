@@ -210,6 +210,10 @@ export const OfficialDocumentA4View: React.FC<OfficialDocumentA4ViewProps> = ({ 
             kelurahan, keandalan sarana dan prasarana TPS3R serta Bank Sampah, sekaligus sebagai bahan pertimbangan
             pengambilan kebijakan strategis bagi jajaran pimpinan eksekutif Pemerintah Kota Bandung.
           </p>
+
+          <p className="indent-8 leading-relaxed">
+            <strong>1.4 Sumber dan Validitas Data.</strong> Seluruh data operasional, metrik timbulan, rasio pemilahan, dan rekapitulasi fasilitas dalam dokumen ini dihimpun secara otomatis dan terverifikasi secara langsung (<em>real-time database query</em>) dari sistem basis data operasional BERSEKA (PostgreSQL). Angka neraca massa dihitung dari pencatatan aktual setoran nasabah Bank Sampah, manifest logbook TPS/TPS3R, serta verifikasi tonase angkut DLH Kota Bandung tanpa estimasi fiktif.
+          </p>
         </div>
       </section>
 

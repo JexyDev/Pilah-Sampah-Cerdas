@@ -232,7 +232,7 @@ export const AnalisisTataKelolaPage: React.FC = () => {
                 <div className="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden mt-3">
                   <div className="bg-[#009966] h-full rounded-full w-full" />
                 </div>
-                <span className="text-xs text-slate-500 mt-2 block">Unit TPS3R, Bank Sampah, dan Budidaya Maggot</span>
+                <span className="text-xs text-slate-500 mt-2 block">Unit TPS3R, Bank Sampah, Rumah Maggot, dan Komposter Wilayah</span>
               </div>
 
               <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 shadow-2xs">
@@ -276,7 +276,7 @@ export const AnalisisTataKelolaPage: React.FC = () => {
                       </span>
                       <FormulaTooltip
                         title="Status Kritis Sensor Tempat Sampah"
-                        formula="Kritis: Kapasitas ≥ 80% | Waspada: 50%-79% | Normal: < 50%"
+                        formula="Kritis: Kapasitas ≥ 90% | Waspada: 70%-89% | Normal: < 70%"
                         description="Klasifikasi berbasis telemetri sensor ultrasonik atau laporan petugas lapangan."
                       />
                     </div>

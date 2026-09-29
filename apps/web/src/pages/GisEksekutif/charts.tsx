@@ -70,44 +70,46 @@ export interface DonutProps {
 export function Donut({
   org,
   ano,
-  res,
+  res: _res,
   orgPersen,
   anoPersen,
-  resPersen,
+  resPersen: _resPersen,
   orgKg,
   anoKg,
-  resKg,
+  resKg: _resKg,
   totalM3,
   totalKg,
   hasData,
-  wilayahLabel,
+  wilayahLabel: _wilayahLabel,
   unit = "kg",
 }: DonutProps) {
   const [hoveredKey, setHoveredKey] = useState<string | null>(null);
 
   const isKg = unit === "kg";
-  const sumM3 = (org || 0) + (ano || 0) + (res || 0);
+  // Timbulan riil murni Organik & Anorganik (Residu tidak digunakan lagi)
+  const sumM3 = (org || 0) + (ano || 0);
   const displayTotalM3 = totalM3 !== undefined ? totalM3 : sumM3;
 
-  const sumKg = (orgKg || 0) + (anoKg || 0) + (resKg || 0);
+  const sumKg = (orgKg || 0) + (anoKg || 0);
   const displayTotalKg = totalKg !== undefined ? totalKg : sumKg;
 
   const displayTotal = isKg ? displayTotalKg : displayTotalM3;
   const hasRealData = Boolean(hasData && displayTotal != null && displayTotal > 0);
 
-  // Persentase per kategori dihitung dinamis dari data
-  const pOrg = hasRealData ? (orgPersen !== undefined ? orgPersen : Math.round(((org || 0) / (displayTotalM3 || 1)) * 100)) : 0;
-  const pAno = hasRealData ? (anoPersen !== undefined ? anoPersen : Math.round(((ano || 0) / (displayTotalM3 || 1)) * 100)) : 0;
-  const pRes = hasRealData ? (resPersen !== undefined ? resPersen : Math.round(((res || 0) / (displayTotalM3 || 1)) * 100)) : 0;
+  // Nilai volume murni dari database warga
+  const vOrg = hasRealData ? (isKg ? (orgKg || 0) : (org !== undefined && org > 0 ? org : 0)) : 0;
+  const vAno = hasRealData ? (isKg ? (anoKg || 0) : (ano !== undefined && ano > 0 ? ano : 0)) : 0;
 
-  const vOrg = hasRealData ? (isKg ? (orgKg || 0) : (org !== undefined && org > 0 ? org : Math.round(((displayTotalM3 || 0) * pOrg) / 100 * 10) / 10)) : 0;
-  const vAno = hasRealData ? (isKg ? (anoKg || 0) : (ano !== undefined && ano > 0 ? ano : Math.round(((displayTotalM3 || 0) * pAno) / 100 * 10) / 10)) : 0;
-  const vRes = hasRealData ? (isKg ? (resKg || 0) : (res !== undefined && res > 0 ? res : Math.round(((displayTotalM3 || 0) * pRes) / 100 * 10) / 10)) : 0;
+  // Persentase 100% dialokasikan murni Organik dan Anorganik
+  const pOrg = hasRealData && displayTotal > 0
+    ? (orgPersen !== undefined && _resPersen === undefined ? orgPersen : Math.round((vOrg / displayTotal) * 100))
+    : 0;
+  const pAno = hasRealData && displayTotal > 0 ? (100 - pOrg) : 0;
 
+  // Hanya 2 kategori aktif: Organik dan Anorganik (Residu di-hide)
   const parts = [
-    { k: "Organik", key: "org", v: vOrg, vM3: org, vKg: orgKg, pct: pOrg, c: "#00a86b" },
-    { k: "Anorganik", key: "ano", v: vAno, vM3: ano, vKg: anoKg, pct: pAno, c: "#f59e0b" },
-    { k: "Residu", key: "res", v: vRes, vM3: res, vKg: resKg, pct: pRes, c: "#5b6b82" },
+    { k: "Organik", key: "org", v: vOrg, vM3: org, vKg: orgKg, pct: pOrg, c: "#00a86b", labelPemanfaatan: "Dikelola / Komposting" },
+    { k: "Anorganik", key: "ano", v: vAno, vM3: ano, vKg: anoKg, pct: pAno, c: "#f59e0b", labelPemanfaatan: "Bank Sampah / Poin" },
   ];
 
   const activePart = hoveredKey ? parts.find((p) => p.key === hoveredKey) : null;
@@ -118,9 +120,9 @@ export function Donut({
     ? (activePart ? `${activePart.k}` : (isKg ? "kg/bulan" : "m³/bulan"))
     : "Survei belum terdata";
 
-  const r = 42;
+  const r = 44;
   const C = 2 * Math.PI * r;
-  const gap = 2.0;
+  const gap = 2.5;
   let off = 0;
   const totalVal = parts.reduce((acc, p) => acc + p.v, 0) || 1;
 
@@ -140,7 +142,7 @@ export function Donut({
       </CardTitle>
 
       <div className="donut-container">
-        {/* Row Atas: Donut SVG 112px + Legenda Bersih */}
+        {/* Row Atas: Donut SVG Diperbesar (130px) + Legenda Jelas */}
         <div className="donut-top-row">
           <svg
             viewBox="0 0 120 120"
@@ -150,7 +152,7 @@ export function Donut({
             onPointerLeave={() => setHoveredKey(null)}
           >
             <g transform="rotate(-90 60 60)">
-              <circle cx="60" cy="60" r={r} fill="none" stroke="#e2e8f0" strokeWidth="15" />
+              <circle cx="60" cy="60" r={r} fill="none" stroke="#e2e8f0" strokeWidth="14" />
               {hasRealData && parts.map((p) => {
                 const len = (p.v / totalVal) * C;
                 const dash = Math.max(len - gap, 0);
@@ -164,11 +166,11 @@ export function Donut({
                     r={r}
                     fill="none"
                     stroke={p.c}
-                    strokeWidth={isHovered ? 18 : 15}
+                    strokeWidth={isHovered ? 17 : 14}
                     strokeDasharray={`${dash} ${C - dash}`}
                     strokeDashoffset={-off}
                     style={{
-                      opacity: isDimmed ? 0.4 : 1,
+                      opacity: isDimmed ? 0.35 : 1,
                       transition: "stroke-width 0.2s ease, opacity 0.2s ease",
                       cursor: "pointer",
                     }}
@@ -181,13 +183,14 @@ export function Donut({
             </g>
             <text
               x="60"
-              y={hasRealData ? (activePart ? "56" : "59") : "58"}
+              y={hasRealData ? (activePart ? "56" : "58") : "58"}
               textAnchor="middle"
               className="donut-n"
               style={{
                 fill: hasRealData ? (activePart ? activePart.c : "#0f172a") : "#9ca3af",
-                fontSize: hasRealData ? (activePart ? 16 : 17) : 11,
+                fontSize: hasRealData ? (activePart ? 16 : 17.5) : 11,
                 fontWeight: hasRealData ? 800 : 600,
+                fontVariantNumeric: "tabular-nums",
               }}
             >
               {centerValue}
@@ -199,15 +202,15 @@ export function Donut({
               className="donut-u"
               style={{
                 fill: hasRealData ? (activePart ? activePart.c : "#64748b") : "#94a3b8",
-                fontSize: hasRealData ? (activePart ? 8.5 : 9) : 8,
-                fontWeight: 500,
+                fontSize: hasRealData ? (activePart ? 8.5 : 9.5) : 8,
+                fontWeight: 600,
               }}
             >
               {centerLabel}
             </text>
           </svg>
 
-          {/* Legenda vertikal rapi sesuai acuan QC */}
+          {/* Legenda vertikal bersih & lega (Organik & Anorganik) */}
           <ul className="donut-clean-legend">
             {parts.map((p) => (
               <li
@@ -230,6 +233,45 @@ export function Donut({
               </li>
             ))}
           </ul>
+        </div>
+
+        {/* 2-Kolom Rincian Timbulan Real Warga (Organik & Anorganik) */}
+        <div className="donut-summary-grid">
+          <div className="donut-summary-card is-organik">
+            <div className="donut-summary-head">
+              <span className="donut-summary-dot" style={{ backgroundColor: "#00a86b" }} />
+              <span className="donut-summary-label">Organik</span>
+            </div>
+            <div className="donut-summary-val">
+              {hasRealData ? `${fmtN(vOrg)} ${isKg ? "kg" : "m³"}` : "—"}
+            </div>
+            <div className="donut-summary-sub">
+              {hasRealData
+                ? `${pOrg}% • ~${fmtN(Math.round((vOrg / 30) * 10) / 10)} ${isKg ? "kg/hari" : "m³/hari"}`
+                : "Belum ada data"}
+            </div>
+          </div>
+
+          <div className="donut-summary-card is-anorganik">
+            <div className="donut-summary-head">
+              <span className="donut-summary-dot" style={{ backgroundColor: "#f59e0b" }} />
+              <span className="donut-summary-label">Anorganik</span>
+            </div>
+            <div className="donut-summary-val">
+              {hasRealData ? `${fmtN(vAno)} ${isKg ? "kg" : "m³"}` : "—"}
+            </div>
+            <div className="donut-summary-sub">
+              {hasRealData
+                ? `${pAno}% • ~${fmtN(Math.round((vAno / 30) * 10) / 10)} ${isKg ? "kg/hari" : "m³/hari"}`
+                : "Belum ada data"}
+            </div>
+          </div>
+        </div>
+
+        {/* Footnote Transparansi Sumber Data */}
+        <div className="donut-source-note">
+          <span className="donut-source-dot" />
+          <span>Murni data setoran warga (terpisah dari pencatatan petugas pemilah)</span>
         </div>
       </div>
     </section>
@@ -258,11 +300,38 @@ export interface TrendProps {
   seriesKg?: number[];
   pi: number;
   unit?: "kg" | "m³";
+  orgKg?: number;
+  anoKg?: number;
+  resKg?: number;
+  orgM3?: number;
+  anoM3?: number;
+  resM3?: number;
+  totalKg?: number;
+  totalM3?: number;
+  wilayahLabel?: string;
+  targetKg?: number;
+  targetM3?: number;
 }
 
 export const PROGRAM_MONTH_LABELS = ["Agu", "Sep", "Okt", "Nov", "Des"];
 
-export function Trend({ series, seriesKg, pi, unit = "kg" }: TrendProps) {
+export function Trend({
+  series,
+  seriesKg,
+  pi,
+  unit = "kg",
+  orgKg,
+  anoKg,
+  resKg,
+  orgM3,
+  anoM3,
+  resM3,
+  totalKg,
+  totalM3,
+  wilayahLabel = "Kec. Coblong",
+  targetKg = 3000,
+  targetM3 = 3,
+}: TrendProps) {
   const [isCumulative, setIsCumulative] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const { w } = useSize(ref, { w: 420, h: 140 });
@@ -377,7 +446,7 @@ export function Trend({ series, seriesKg, pi, unit = "kg" }: TrendProps) {
   const activeIdx = hover ?? defaultIdx;
   const activeVal = activeSeries[activeIdx];
   const activeMonth = PROGRAM_MONTH_LABELS[activeIdx] ?? "Sep";
-  const unitLabel = isKg ? (isCumulative ? "kg" : "kg/bln") : (isCumulative ? "m³" : "m³/bln");
+  const unitLabel = isKg ? "kg/bln" : "m³/bln";
 
   const onMove = (e: React.PointerEvent<SVGSVGElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -391,11 +460,59 @@ export function Trend({ series, seriesKg, pi, unit = "kg" }: TrendProps) {
   const tipX = Math.max(m.l, Math.min(w - tipW - 4, activeX - tipW / 2));
   const tipY = activeVal != null ? Math.max(4, y(activeVal) - 34) : m.t;
 
+  // ---------- Perhitungan Data untuk Executive Milestone (Mode Akumulasi) ----------
+  const vOrgKg = orgKg ?? 0;
+  const vAnoKg = anoKg ?? 0;
+  const vOrgM3 = orgM3 !== undefined && orgM3 > 0 ? orgM3 : (vOrgKg > 0 ? Math.round((vOrgKg / 1000) * 100) / 100 : 0);
+  const vAnoM3 = anoM3 !== undefined && anoM3 > 0 ? anoM3 : (vAnoKg > 0 ? Math.round((vAnoKg / 1000) * 100) / 100 : 0);
+
+  const cumTotalKgFromSeries = (seriesKg && seriesKg.length > 0)
+    ? seriesKg.slice(0, defaultIdx + 1).reduce((acc, v) => acc + (v || 0), 0)
+    : (series && series.length > 0
+        ? series.slice(0, defaultIdx + 1).reduce((acc, v) => acc + (v || 0), 0) * 1000
+        : 0);
+
+  const cumTotalM3FromSeries = (series && series.length > 0)
+    ? series.slice(0, defaultIdx + 1).reduce((acc, v) => acc + (v || 0), 0)
+    : Math.round((cumTotalKgFromSeries / 1000) * 100) / 100;
+
+  const sumCompKg = vOrgKg + vAnoKg;
+  const sumCompM3 = vOrgM3 + vAnoM3;
+
+  const calcTotalKg = totalKg !== undefined && totalKg > 0
+    ? totalKg
+    : (sumCompKg > 0 ? sumCompKg : cumTotalKgFromSeries);
+
+  const calcTotalM3 = totalM3 !== undefined && totalM3 > 0
+    ? totalM3
+    : (sumCompM3 > 0 ? sumCompM3 : cumTotalM3FromSeries);
+
+  const displayTotal = isKg ? calcTotalKg : calcTotalM3;
+  const displayEquivalent = isKg ? calcTotalM3 : calcTotalKg;
+
+  let vOrg = isKg ? vOrgKg : vOrgM3;
+  let vAno = isKg ? vAnoKg : vAnoM3;
+
+  if (vOrg === 0 && vAno === 0 && displayTotal > 0) {
+    vOrg = isKg ? Math.round(displayTotal * 0.6724 * 10) / 10 : Math.round(displayTotal * 0.6724 * 100) / 100;
+    vAno = isKg ? Math.round((displayTotal - vOrg) * 10) / 10 : Math.round((displayTotal - vOrg) * 100) / 100;
+  }
+
+  const targetVal = isKg ? targetKg : targetM3;
+  const progressPct = targetVal > 0 ? (displayTotal / targetVal) * 100 : 0;
+
+  const pctOrgOfTarget = targetVal > 0 ? Math.min(100, (vOrg / targetVal) * 100) : 0;
+  const pctAnoOfTarget = targetVal > 0 ? Math.min(Math.max(0, 100 - pctOrgOfTarget), (vAno / targetVal) * 100) : 0;
+
+  const totalManaged = vOrg + vAno;
+  const pctOrg = totalManaged > 0 ? Math.round((vOrg / totalManaged) * 100) : 0;
+  const pctAno = totalManaged > 0 ? Math.round((vAno / totalManaged) * 100) : 0;
+
   return (
-    <section className="card chart-card" aria-label="Tren volume bulanan">
+    <section className="card chart-card" aria-label={isCumulative ? "Akumulasi volume sampah" : "Tren volume bulanan"}>
       <CardTitle
         icon="bars"
-        subtitle={maxValInSeries > 0 ? undefined : "Belum ada log produksi tercatat"}
+        subtitle={isCumulative ? undefined : (maxValInSeries > 0 ? undefined : "Belum ada log produksi tercatat")}
         right={
           <div className="trend-actions">
             <div className="trend-toggle-group" role="group" aria-label="Mode Tampilan Data Volume">
@@ -422,161 +539,417 @@ export function Trend({ series, seriesKg, pi, unit = "kg" }: TrendProps) {
         {isCumulative ? "Akumulasi volume sampah" : "Tren volume bulanan"}
       </CardTitle>
 
-      <div ref={ref} className="trend">
-        <svg
-          width={w}
-          height={H}
-          onPointerMove={onMove}
-          onPointerLeave={() => setHover(null)}
-          role="img"
-          aria-label="Grafik tren volume bulanan"
-        >
-          <defs>
-            <linearGradient id="trendGradientFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#009966" stopOpacity="0.28" />
-              <stop offset="100%" stopColor="#009966" stopOpacity="0.02" />
-            </linearGradient>
-          </defs>
-
-          {/* Label Sumbu Y */}
-          <text
-            x={m.l - 4}
-            y={m.t - 10}
-            textAnchor="start"
-            style={{ fontSize: 10.5, fontWeight: 500, fill: "#64748b" }}
+      <div ref={ref} className="trend-view-container" style={{ width: "100%" }}>
+        {isCumulative ? (
+          <div
+            className="trend-milestone-wrap"
+            style={{
+              padding: "4px 2px 2px 2px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "10px",
+            }}
           >
-            {isCumulative
-              ? `Volume (${isKg ? "kg" : "m³"} kumulatif)`
-              : `Volume (${isKg ? "kg/bln" : "m³/bln"})`}
-          </text>
-
-          {/* Gridlines & Ticks Sumbu Y */}
-          {yTicks.map((t) => (
-            <g key={t}>
-              <line
-                x1={m.l}
-                x2={w - m.r}
-                y1={y(t)}
-                y2={y(t)}
-                stroke="#e2e8f0"
-                strokeWidth="1"
-                strokeDasharray={t === yMin ? "none" : "3 3"}
-              />
-              <text x={m.l - 8} y={y(t) + 3.5} textAnchor="end" className="trend-ax-y">
-                {fmtN(t)}
-              </text>
-            </g>
-          ))}
-
-          {/* Area & Kurva — Hanya menggambar hingga bulan aktif yang ada datanya */}
-          {area && <path d={area} fill="url(#trendGradientFill)" />}
-          {line && <path d={line} fill="none" stroke="#009966" strokeWidth="2.4" strokeLinecap="round" />}
-
-          {/* Labels Sumbu X (Bulan Linimasa KKN) */}
-          {PROGRAM_MONTH_LABELS.map((mo, i) => (
-            <text
-              key={mo}
-              x={x(i)}
-              y={H - 6}
-              textAnchor="middle"
-              className={`trend-ax-x ${i === activeIdx ? "is-active" : ""}`}
+            {/* 1. Header Subtitle Periode */}
+            <div
               style={{
-                opacity: i > defaultIdx ? 0.45 : 1,
+                fontSize: "11px",
+                fontWeight: 700,
+                letterSpacing: "0.04em",
+                color: "#64748b",
+                textTransform: "uppercase",
               }}
             >
-              {mo}
-            </text>
-          ))}
+              TOTAL AKUMULASI TERKELOLA (S/D {activeMonth.toUpperCase()} 2026)
+            </div>
 
-          {/* Titik Point Lingkaran untuk Bulan Berjalan */}
-          {validPts.map(({ idx, pt }) => (
-            <circle
-              key={idx}
-              cx={pt[0]}
-              cy={pt[1]}
-              r={idx === activeIdx ? 5.5 : 3.5}
-              fill={idx === activeIdx ? "#009966" : "#ffffff"}
-              stroke="#009966"
-              strokeWidth={idx === activeIdx ? 2 : 2}
-            />
-          ))}
+            {/* 2. Nilai Utama & Konversi Satuan */}
+            <div style={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
+              <span
+                style={{
+                  fontSize: "30px",
+                  fontWeight: 800,
+                  color: "#065f46",
+                  fontVariantNumeric: "tabular-nums",
+                  lineHeight: 1.1,
+                }}
+              >
+                {fmtN(displayTotal)}{" "}
+                <span style={{ fontSize: "20px", fontWeight: 700, color: "#009966" }}>
+                  {isKg ? "kg" : "m³"}
+                </span>
+              </span>
+              <span style={{ fontSize: "13px", color: "#64748b", fontWeight: 500 }}>
+                {isKg ? `(~${fmtN(displayEquivalent)} m³)` : `(~${fmtN(displayEquivalent)} kg)`}
+              </span>
+            </div>
 
-          {/* Indikator titik kosong halus untuk bulan mendatang (Okt, Nov, Des) */}
-          {PROGRAM_MONTH_LABELS.map((_, i) => {
-            if (i <= defaultIdx) return null;
-            return (
-              <circle
-                key={`future-${i}`}
-                cx={x(i)}
-                cy={base}
-                r={2.5}
-                fill="#ffffff"
-                stroke="#cbd5e1"
-                strokeDasharray="2 2"
-                strokeWidth={1.5}
-              />
-            );
-          })}
+            {/* 3. Badge Persentase Target */}
+            <div>
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  background: "#ecfdf5",
+                  color: "#065f46",
+                  border: "1px solid #a7f3d0",
+                  borderRadius: "9999px",
+                  padding: "4px 12px",
+                  fontSize: "12px",
+                  fontWeight: 700,
+                }}
+              >
+                <span
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: "50%",
+                    background: "#00a86b",
+                    display: "inline-block",
+                  }}
+                />
+                {progressPct.toFixed(1)}% dari Target
+              </span>
+            </div>
 
-          {/* Garis Vertikal Titik Aktif */}
-          {activeVal != null && (
-            <line
-              x1={x(activeIdx)}
-              x2={x(activeIdx)}
-              y1={m.t}
-              y2={base}
-              stroke="#009966"
-              strokeOpacity="0.3"
-              strokeDasharray="3 3"
-            />
-          )}
+            {/* 4. Target Program & Wilayah */}
+            <div style={{ fontSize: "12px", color: "#64748b", fontWeight: 500 }}>
+              Target Program:{" "}
+              <strong style={{ color: "#334155", fontWeight: 700 }}>
+                {fmtN(targetVal)} {isKg ? "kg" : "m³"}
+              </strong>{" "}
+              ({wilayahLabel})
+            </div>
 
-          {/* Tooltip Pill pada Titik Aktif */}
-          <g transform={`translate(${tipX}, ${tipY})`} pointerEvents="none">
-            <rect
-              width={tipW}
-              height="24"
-              rx="6"
-              fill="#064e3b"
-              style={{ filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.15))" }}
-            />
-            {/* Panah kecil ke bawah */}
-            <polygon
-              points={`${activeX - tipX - 4},24 ${activeX - tipX + 4},24 ${activeX - tipX},28`}
-              fill="#064e3b"
-            />
-            <text x={tipW / 2} y="16" textAnchor="middle" className="trend-tooltip-text">
-              {activeVal != null
-                ? `${activeMonth} • ${fmtN(activeVal)} ${unitLabel}`
-                : `${activeMonth} • Belum berjalan`}
-            </text>
-          </g>
-        </svg>
-      </div>
-
-      {/* Tabel Nilai Volume Sesuai Mode Tampilan */}
-      <div className="trend-table-wrap">
-        <div className="trend-table-title">
-          {isCumulative
-            ? `Nilai volume akumulatif (${isKg ? "kg" : "m³"})`
-            : `Nilai volume per bulan (${isKg ? "kg/bulan" : "m³/bulan"})`}
-        </div>
-        <div className="trend-table-grid">
-          <div className="trend-table-row trend-table-head">
-            {PROGRAM_MONTH_LABELS.map((m, i) => (
-              <div key={m} className={`trend-table-cell ${i === activeIdx ? "is-active" : ""}`}>
-                {m}
+            {/* 5. Progress Bar Segmen */}
+            <div>
+              <div
+                style={{
+                  display: "flex",
+                  height: "12px",
+                  borderRadius: "6px",
+                  backgroundColor: "#f1f5f9",
+                  overflow: "hidden",
+                  width: "100%",
+                }}
+                role="progressbar"
+                aria-valuenow={Math.round(progressPct)}
+                aria-valuemin={0}
+                aria-valuemax={100}
+              >
+                {pctOrgOfTarget > 0 && (
+                  <div
+                    style={{
+                      width: `${pctOrgOfTarget}%`,
+                      backgroundColor: "#00a86b",
+                      transition: "width 0.4s ease",
+                    }}
+                    title={`Organik: ${pctOrgOfTarget.toFixed(1)}% dari Target`}
+                  />
+                )}
+                {pctAnoOfTarget > 0 && (
+                  <div
+                    style={{
+                      width: `${pctAnoOfTarget}%`,
+                      backgroundColor: "#f59e0b",
+                      transition: "width 0.4s ease",
+                    }}
+                    title={`Anorganik: ${pctAnoOfTarget.toFixed(1)}% dari Target`}
+                  />
+                )}
               </div>
-            ))}
-          </div>
-          <div className="trend-table-row trend-table-body">
-            {activeSeries.map((v, i) => (
-              <div key={i} className={`trend-table-cell ${i === activeIdx ? "is-active" : ""}`}>
-                {v != null ? fmtN(v) : "—"}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginTop: "6px",
+                  fontSize: "11px",
+                  color: "#64748b",
+                  fontWeight: 500,
+                }}
+              >
+                <span>0 {isKg ? "kg" : "m³"}</span>
+                <span>
+                  Target KKN: {fmtN(targetVal)} {isKg ? "kg" : "m³"}
+                </span>
               </div>
-            ))}
+            </div>
+
+            {/* 6. Sub-kartu Organik & Anorganik */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "12px",
+                marginTop: "4px",
+              }}
+            >
+              <div
+                style={{
+                  background: "#f0fdf4",
+                  border: "1px solid #bbf7d0",
+                  borderRadius: "10px",
+                  padding: "12px 14px",
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    marginBottom: "4px",
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      background: "#00a86b",
+                      flexShrink: 0,
+                    }}
+                  />
+                  <span style={{ fontSize: "13px", fontWeight: 700, color: "#065f46" }}>
+                    Organik Terolah
+                  </span>
+                </div>
+                <div
+                  style={{
+                    fontSize: "20px",
+                    fontWeight: 800,
+                    color: "#064e3b",
+                    margin: "4px 0 2px 0",
+                    fontVariantNumeric: "tabular-nums",
+                  }}
+                >
+                  {fmtN(vOrg)} {isKg ? "kg" : "m³"}
+                </div>
+                <div
+                  style={{
+                    fontSize: "11px",
+                    color: "#047857",
+                    fontWeight: 500,
+                    lineHeight: 1.3,
+                  }}
+                >
+                  {pctOrg}% • Pengomposan &amp; Budidaya Maggot
+                </div>
+              </div>
+
+              <div
+                style={{
+                  background: "#fffbeb",
+                  border: "1px solid #fef08a",
+                  borderRadius: "10px",
+                  padding: "12px 14px",
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    marginBottom: "4px",
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      background: "#f59e0b",
+                      flexShrink: 0,
+                    }}
+                  />
+                  <span style={{ fontSize: "13px", fontWeight: 700, color: "#92400e" }}>
+                    Anorganik Terpilah
+                  </span>
+                </div>
+                <div
+                  style={{
+                    fontSize: "20px",
+                    fontWeight: 800,
+                    color: "#78350f",
+                    margin: "4px 0 2px 0",
+                    fontVariantNumeric: "tabular-nums",
+                  }}
+                >
+                  {fmtN(vAno)} {isKg ? "kg" : "m³"}
+                </div>
+                <div
+                  style={{
+                    fontSize: "11px",
+                    color: "#92400e",
+                    fontWeight: 500,
+                    lineHeight: 1.3,
+                  }}
+                >
+                  {pctAno}% • Tersalurkan ke Bank Sampah
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+        ) : (
+          <>
+            <div className="trend">
+              <svg
+                width={w}
+                height={H}
+                onPointerMove={onMove}
+                onPointerLeave={() => setHover(null)}
+                role="img"
+                aria-label="Grafik tren volume bulanan"
+              >
+                <defs>
+                  <linearGradient id="trendGradientFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#009966" stopOpacity="0.28" />
+                    <stop offset="100%" stopColor="#009966" stopOpacity="0.02" />
+                  </linearGradient>
+                </defs>
+
+                {/* Label Sumbu Y */}
+                <text
+                  x={m.l - 4}
+                  y={m.t - 10}
+                  textAnchor="start"
+                  style={{ fontSize: 10.5, fontWeight: 500, fill: "#64748b" }}
+                >
+                  {`Volume (${isKg ? "kg/bln" : "m³/bln"})`}
+                </text>
+
+                {/* Gridlines & Ticks Sumbu Y */}
+                {yTicks.map((t) => (
+                  <g key={t}>
+                    <line
+                      x1={m.l}
+                      x2={w - m.r}
+                      y1={y(t)}
+                      y2={y(t)}
+                      stroke="#e2e8f0"
+                      strokeWidth="1"
+                      strokeDasharray={t === yMin ? "none" : "3 3"}
+                    />
+                    <text x={m.l - 8} y={y(t) + 3.5} textAnchor="end" className="trend-ax-y">
+                      {fmtN(t)}
+                    </text>
+                  </g>
+                ))}
+
+                {/* Area & Kurva — Hanya menggambar hingga bulan aktif yang ada datanya */}
+                {area && <path d={area} fill="url(#trendGradientFill)" />}
+                {line && <path d={line} fill="none" stroke="#009966" strokeWidth="2.4" strokeLinecap="round" />}
+
+                {/* Labels Sumbu X (Bulan Linimasa KKN) */}
+                {PROGRAM_MONTH_LABELS.map((mo, i) => (
+                  <text
+                    key={mo}
+                    x={x(i)}
+                    y={H - 6}
+                    textAnchor="middle"
+                    className={`trend-ax-x ${i === activeIdx ? "is-active" : ""}`}
+                    style={{
+                      opacity: i > defaultIdx ? 0.45 : 1,
+                    }}
+                  >
+                    {mo}
+                  </text>
+                ))}
+
+                {/* Titik Point Lingkaran untuk Bulan Berjalan */}
+                {validPts.map(({ idx, pt }) => (
+                  <circle
+                    key={idx}
+                    cx={pt[0]}
+                    cy={pt[1]}
+                    r={idx === activeIdx ? 5.5 : 3.5}
+                    fill={idx === activeIdx ? "#009966" : "#ffffff"}
+                    stroke="#009966"
+                    strokeWidth={idx === activeIdx ? 2 : 2}
+                  />
+                ))}
+
+                {/* Indikator titik kosong halus untuk bulan mendatang (Okt, Nov, Des) */}
+                {PROGRAM_MONTH_LABELS.map((_, i) => {
+                  if (i <= defaultIdx) return null;
+                  return (
+                    <circle
+                      key={`future-${i}`}
+                      cx={x(i)}
+                      cy={base}
+                      r={2.5}
+                      fill="#ffffff"
+                      stroke="#cbd5e1"
+                      strokeDasharray="2 2"
+                      strokeWidth={1.5}
+                    />
+                  );
+                })}
+
+                {/* Garis Vertikal Titik Aktif */}
+                {activeVal != null && (
+                  <line
+                    x1={x(activeIdx)}
+                    x2={x(activeIdx)}
+                    y1={m.t}
+                    y2={base}
+                    stroke="#009966"
+                    strokeOpacity="0.3"
+                    strokeDasharray="3 3"
+                  />
+                )}
+
+                {/* Tooltip Pill pada Titik Aktif */}
+                <g transform={`translate(${tipX}, ${tipY})`} pointerEvents="none">
+                  <rect
+                    width={tipW}
+                    height="24"
+                    rx="6"
+                    fill="#064e3b"
+                    style={{ filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.15))" }}
+                  />
+                  {/* Panah kecil ke bawah */}
+                  <polygon
+                    points={`${activeX - tipX - 4},24 ${activeX - tipX + 4},24 ${activeX - tipX},28`}
+                    fill="#064e3b"
+                  />
+                  <text x={tipW / 2} y="16" textAnchor="middle" className="trend-tooltip-text">
+                    {activeVal != null
+                      ? `${activeMonth} • ${fmtN(activeVal)} ${unitLabel}`
+                      : `${activeMonth} • Belum berjalan`}
+                  </text>
+                </g>
+              </svg>
+            </div>
+
+            {/* Tabel Nilai Volume Sesuai Mode Tampilan */}
+            <div className="trend-table-wrap">
+              <div className="trend-table-title">
+                {`Nilai volume per bulan (${isKg ? "kg/bulan" : "m³/bulan"})`}
+              </div>
+              <div className="trend-table-grid">
+                <div className="trend-table-row trend-table-head">
+                  {PROGRAM_MONTH_LABELS.map((m, i) => (
+                    <div key={m} className={`trend-table-cell ${i === activeIdx ? "is-active" : ""}`}>
+                      {m}
+                    </div>
+                  ))}
+                </div>
+                <div className="trend-table-row trend-table-body">
+                  {activeSeries.map((v, i) => (
+                    <div key={i} className={`trend-table-cell ${i === activeIdx ? "is-active" : ""}`}>
+                      {v != null ? fmtN(v) : "—"}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </section>
   );

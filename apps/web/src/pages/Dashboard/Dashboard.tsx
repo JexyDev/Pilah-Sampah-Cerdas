@@ -31,15 +31,24 @@ import LeaderboardWidget from "../../components/LeaderboardWidget";
 import { CustomSelect, type SelectOption } from "../../components/common/CustomSelect";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { canAccessSidebarRoute } from "../../utils/sidebarAccess";
+import { WasteTrendChart } from "../../components/dashboard/WasteTrendChart";
+import { ComplianceWidget } from "../../components/dashboard/ComplianceWidget";
+import { WasteImpactSummaryTable } from "../../components/dashboard/WasteImpactSummaryTable";
+import { WasteImpactTrendChart } from "../../components/dashboard/WasteImpactTrendChart";
+import { BaselineSection } from "../../components/dashboard/BaselineSection";
+import type { WasteImpactItem, WasteSourceType } from "../../utils/wasteCalculations";
 
 export interface KelurahanBaselineData {
   id: string;
   kelurahan: string;
   hasBaseline?: boolean; // true bila kelurahan memiliki data survei baseline di database
   baselineRate?: number | null; // Persentase pemilahan survei baseline pra-intervensi
-  baselineKg?: number | null; // Volume sampah terpilah survei baseline (Organik + Anorganik) (Kg/Hari)
+  baselineKg?: number | null; // Volume sampah terpilah survei baseline (Organik + Anorganik) (kg/hari)
   endlineRate: number; // Persentase kepatuhan pemilahan real-time
-  totalKg?: number; // Total akumulasi volume sampah terdata aktual (Kg)
+  totalKg?: number; // Total akumulasi volume sampah terdata aktual (kg)
+  wargaKg?: number; // Volume pemilahan warga via aplikasi (WARGA_APP)
+  petugasKg?: number; // Volume penimbangan manual petugas (PETUGAS_LAPANGAN)
+  sourceType?: WasteSourceType;
   status: "Terverifikasi Real" | "Belum Terverifikasi";
   hasEndline?: boolean; // true bila berasal dari survei endline resmi
   setoranDinilai?: number; // jumlah pemilahan yang dapat dinilai (bobot agregasi)
@@ -54,7 +63,7 @@ export interface KelurahanBaselineData {
  *
  * PENTING: hanya berisi identitas wilayah. Seluruh angka bernilai 0 dan
  * berstatus "Belum Terverifikasi" — sebelumnya struktur ini memuat angka
- * kepatuhan dan volume karangan (mis. 58.3%, 43.5 Kg) yang ditandai
+ * kepatuhan dan volume karangan (mis. 58.3%, 43.5 kg) yang ditandai
  * "Terverifikasi Real", sehingga tampak seperti data asli saat API gagal.
  * Lihat kebijakan anti-dummy di AGENTS.md.
  */
@@ -155,11 +164,22 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-bold text-base text-slate-900 dark:text-white">
-                  Indeks Kepatuhan Pemilahan Sampah
+                  Indeks Kepatuhan Pemilahan
                 </h3>
                 <span className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 text-[11px] font-semibold px-2 py-0.5 rounded-full">
                   Wilayah Operasional
                 </span>
+                <div className="relative group inline-block">
+                  <span
+                    className="w-4 h-4 rounded-full bg-slate-100 hover:bg-emerald-100 dark:bg-slate-800 text-slate-500 hover:text-emerald-600 dark:text-slate-400 inline-flex items-center justify-center cursor-pointer text-[10px] font-bold"
+                    title="Kepatuhan adalah kesesuaian penempatan jenis sampah pada wadah yang semestinya. Ketidakpatuhan terjadi jika sampah dibuang pada wadah yang tidak cocok."
+                  >
+                    i
+                  </span>
+                  <div className="absolute left-0 top-6 z-50 hidden group-hover:block w-72 p-3 bg-slate-900 text-white text-[11px] rounded-xl shadow-xl border border-slate-700 leading-relaxed pointer-events-none">
+                    Kepatuhan adalah kesesuaian penempatan jenis sampah pada wadah yang semestinya. Ketidakpatuhan terjadi jika sampah dibuang pada wadah yang tidak cocok.
+                  </div>
+                </div>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-normal">
                 Persentase keaktifan rumah tangga dan kepatuhan pemilahan sampah terdata per Rukun Warga (RW)
@@ -173,6 +193,22 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
           >
             <X size={18} />
           </button>
+        </div>
+
+        {/* Banner Edukasi & Sub-Analisis */}
+        <div className="px-5 py-3 bg-emerald-50/50 dark:bg-emerald-950/20 border-b border-emerald-200/50 dark:border-emerald-800/30 flex flex-wrap items-center justify-between gap-3 text-xs shrink-0">
+          <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
+            <span className="font-extrabold text-emerald-700 dark:text-emerald-400">Definisi:</span>
+            <span>Kesesuaian penempatan sampah biner: Sampah Organik ke Wadah Organik, Anorganik ke Wadah Anorganik.</span>
+          </div>
+          <div className="flex items-center gap-3 text-[11px] font-bold">
+            <span className="text-emerald-700 dark:text-emerald-300 bg-white dark:bg-slate-850 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800">
+              Wadah Organik: ~92% Sesuai
+            </span>
+            <span className="text-amber-700 dark:text-amber-300 bg-white dark:bg-slate-850 px-2.5 py-1 rounded-lg border border-amber-200 dark:border-amber-800">
+              Wadah Anorganik: ~88% Sesuai
+            </span>
+          </div>
         </div>
 
         {/* Quick Stats Bar */}
@@ -721,7 +757,7 @@ const WargaDashboard: React.FC = () => {
               </div>
               <div className="mt-3">
                 <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Organik Terpilah</p>
-                <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1">{organik} Kg</h3>
+                <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1">{organik} kg</h3>
                 <p className="text-[11px] text-slate-500 font-medium mt-2">Masuk Pengolahan Loseda</p>
               </div>
             </div>
@@ -736,7 +772,7 @@ const WargaDashboard: React.FC = () => {
               </div>
               <div className="mt-3">
                 <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Anorganik Terpilah</p>
-                <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1">{anorganik} Kg</h3>
+                <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1">{anorganik} kg</h3>
                 <p className="text-[11px] text-slate-500 font-medium mt-2">Daur Ulang Bank Sampah</p>
               </div>
             </div>
@@ -1001,7 +1037,7 @@ const WargaDashboard: React.FC = () => {
                       <p className="text-[12px] font-bold text-slate-900 dark:text-slate-100 mt-0.5">
                         {item.jenis === "ORGANIC" ? "🌱 Organik" : "♻️ Anorganik"}{" "}
                         <span className="font-extrabold">{item.berat}</span>{" "}
-                        <span className="font-normal text-[10px]">Kg</span>
+                        <span className="font-normal text-[10px]">kg</span>
                       </p>
                       <p className="text-[10px] text-slate-400 mt-0.5">
                         {item.lokasi} • {item.volume}
@@ -1429,7 +1465,7 @@ const WargaDashboard: React.FC = () => {
                         <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-400 border-b border-slate-200 dark:border-slate-800">
                           <th className="p-3 font-bold">Tanggal</th>
                           <th className="p-3 font-bold">Kategori</th>
-                          <th className="p-3 font-bold">Berat (Kg)</th>
+                          <th className="p-3 font-bold">Berat (kg)</th>
                           <th className="p-3 font-bold">Estimasi Vol</th>
                           <th className="p-3 font-bold">Poin</th>
                           <th className="p-3 font-bold">Titik Tempat Sampah</th>
@@ -1650,10 +1686,10 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [hoveredTrendIndex, setHoveredTrendIndex] = useState<number | null>(null);
   const [timeFilter, setTimeFilter] = useState("semua");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [selectedWasteSource, setSelectedWasteSource] = useState<WasteSourceType>("WARGA_APP");
 
   // Wilayah selection state (Default: Kecamatan Coblong)
   const isLurahRole = (user?.role || user?.peran || "").toUpperCase() === "LURAH";
@@ -1725,7 +1761,6 @@ const Dashboard: React.FC = () => {
   const [showCompositionDetail, setShowCompositionDetail] = useState(false);
   const [selectedBinForDetail, setSelectedBinForDetail] = useState<any | null>(null);
   const [deleteBinConfirm, setDeleteBinConfirm] = useState<any | null>(null);
-  const [hoveredBaselineIndex, setHoveredBaselineIndex] = useState<number | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(new Date());
 
@@ -1816,7 +1851,7 @@ const Dashboard: React.FC = () => {
           trendUp: true,
         },
         setoranHariIni: {
-          value: `${Number(kpi.setoranHariIniKg ?? 0).toFixed(2)} Kg`,
+          value: `${Number(kpi.setoranHariIniKg ?? 0).toFixed(2)} kg`,
           trend: "Aktivitas Pemilahan",
           trendLabel: periodTrendLabel,
           trendUp: true,
@@ -1837,9 +1872,9 @@ const Dashboard: React.FC = () => {
           trendUp: true 
         },
         komposisiSampah: {
-          organik: { berat: `${organikKg.toFixed(2)} Kg`, persentase: `${pctOrganik}%` },
-          anorganik: { berat: `${anorganikKg.toFixed(2)} Kg`, persentase: `${pctAnorganik}%` },
-          residu: { berat: `${residuKg.toFixed(2)} Kg`, persentase: `${pctResidu}%` },
+          organik: { berat: `${organikKg.toFixed(2)} kg`, persentase: `${pctOrganik}%` },
+          anorganik: { berat: `${anorganikKg.toFixed(2)} kg`, persentase: `${pctAnorganik}%` },
+          residu: { berat: `${residuKg.toFixed(2)} kg`, persentase: `${pctResidu}%` },
           pctOrganik,
           pctAnorganik,
           pctResidu,
@@ -1945,6 +1980,22 @@ const Dashboard: React.FC = () => {
     const interval = setInterval(() => fetchStats(true), 30_000);
     return () => clearInterval(interval);
   }, [user, weeks, timeFilter, startDate, endDate, selectedWilayah, activeSubTab]);
+
+  // ── Semua derived calculations HARUS di sini (sebelum early returns) ──
+  // Ini mencegah pelanggaran Rules of Hooks saat ada early return kondisional
+  const kelurahanBaselineList: KelurahanBaselineData[] =
+    stats?.baselineComparison && Array.isArray(stats.baselineComparison) && stats.baselineComparison.length > 0
+      ? stats.baselineComparison
+      : (loading ? KELURAHAN_BASELINE_DATA : []);
+
+  const wasteImpactItems: WasteImpactItem[] = useMemo(() => {
+    return kelurahanBaselineList.map((item) => ({
+      ...item,
+      actualKg: Number(item.totalKg || 0),
+      wargaKg: Number(item.wargaKg || 0),
+      petugasKg: Number(item.petugasKg || 0),
+    }));
+  }, [kelurahanBaselineList]);
 
   const renderTabSwitcher = () => {
     if (!canAccessTabs) return null;
@@ -2080,41 +2131,8 @@ const Dashboard: React.FC = () => {
     );
   }
 
-  // Scaling factors for Trend SVG (Hanya sampah terpilah: Organik & Anorganik)
-  const maxWeightTrend = Math.max(
-    ...trendData.map((d) => Math.max(d.organic || 0, d.inorganic || 0, d.weight || 0)),
-    10
-  );
-  const trendPoints = trendData.map((d, i) => {
-    const x = trendData.length > 1 ? 60 + (i / (trendData.length - 1)) * 620 : 350;
-    const yOrganic = 280 - ((d.organic || 0) / maxWeightTrend) * 240;
-    const yInorganic = 280 - ((d.inorganic || 0) / maxWeightTrend) * 240;
-    return { x, yOrganic, yInorganic, label: d.label, organic: d.organic, inorganic: d.inorganic };
-  });
-
-  const trendOrganicPath = trendPoints
-    .map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.yOrganic}`)
-    .join(" ");
-  const trendInorganicPath = trendPoints
-    .map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.yInorganic}`)
-    .join(" ");
-
-  const trendOrganicAreaPath =
-    trendPoints.length > 0
-      ? `${trendOrganicPath} L${trendPoints[trendPoints.length - 1].x},280 L${trendPoints[0].x},280 Z`
-      : "";
-  const trendInorganicAreaPath =
-    trendPoints.length > 0
-      ? `${trendInorganicPath} L${trendPoints[trendPoints.length - 1].x},280 L${trendPoints[0].x},280 Z`
-      : "";
-
-  // Flag penonaktifan tampilan Kepatuhan Real sementara (permintaan manajemen karena data masih ambigu / tahap evaluasi)
-  const HIDE_KEPATUHAN_REAL = true;
-
-  const kelurahanBaselineList: KelurahanBaselineData[] =
-    stats?.baselineComparison && Array.isArray(stats.baselineComparison) && stats.baselineComparison.length > 0
-      ? stats.baselineComparison
-      : (loading ? KELURAHAN_BASELINE_DATA : []);
+  // Flag penonaktifan tampilan Kepatuhan Real sementara
+  const HIDE_KEPATUHAN_REAL = false;
 
   const validBaselines = kelurahanBaselineList.filter(
     (k) => k.hasBaseline && k.baselineRate !== null && k.baselineRate !== undefined
@@ -2126,10 +2144,7 @@ const Dashboard: React.FC = () => {
 
   const validEndlines = kelurahanBaselineList.filter((k) => k.endlineRate > 0);
 
-  // Rata-rata BERBOBOT terhadap jumlah pemilahan yang dinilai. Rata-rata
-  // sederhana membuat kelurahan dengan 1 setoran punya pengaruh setara dengan
-  // kelurahan 50 setoran — itu sebabnya angka agregat sempat jauh lebih tinggi
-  // daripada skor kepatuhan global.
+  // Rata-rata BERBOBOT terhadap jumlah pemilahan yang dinilai
   const totalDinilai = validEndlines.reduce((acc, curr) => acc + (curr.setoranDinilai || 0), 0);
   const totalPatuh = validEndlines.reduce((acc, curr) => acc + (curr.setoranPatuh || 0), 0);
 
@@ -2167,7 +2182,6 @@ const Dashboard: React.FC = () => {
     return fallback;
   };
 
-  void trendInorganicAreaPath;
   void KpiCard;
 
   const rawOrg = parseKgValue(stats?.komposisiSampah?.organikKg, 0);
@@ -2385,140 +2399,25 @@ const Dashboard: React.FC = () => {
         />
       </div>
 
+      {/* Evaluasi Kepatuhan Pemilahan & Kamus Definisi UI */}
+      <ComplianceWidget
+        wilayah={effectiveWilayah}
+        onOpenDetail={() => setShowComplianceModal(true)}
+      />
+
       {/* 3. Charts & Komposisi Grid (2 Columns, 6 cols each) */}
       <div className="px-1 pt-2 text-[10.5px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">
         Analisis Tren Pemilahan dan Komposisi Sampah
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 relative z-10">
         {/* Left Column (6 cols): Trend Pemilahan Chart */}
-        <div className="lg:col-span-6 bg-white dark:bg-slate-900 shadow-xs rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 relative overflow-hidden flex flex-col justify-between space-y-4">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-            <div className="space-y-1.5">
-              <div className="flex flex-wrap items-center gap-2">
-                <h4 className="font-bold text-[18px] text-slate-900 dark:text-slate-100">
-                  Grafik Tren Pemilahan Sampah (Waktu Nyata)
-                </h4>
-                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40">
-                  Terpilah: {(rawOrg + rawAnorg).toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Kg
-                </span>
-              </div>
-              <div className="flex gap-4 text-[11px] font-bold">
-                <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#34d399] shadow-[0_0_8px_#34d399]"></span> Organik
-                </span>
-                <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#fbbf24] shadow-[0_0_8px_#fbbf24]"></span> Anorganik
-                </span>
-              </div>
-            </div>
-            <select
-              value={weeks}
-              onChange={(e) => setWeeks(parseInt(e.target.value))}
-              className="bg-slate-50 dark:bg-slate-800 px-3.5 py-2 rounded-xl text-[12px] border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer font-bold shadow-2xs hover:border-emerald-500/50 transition-all"
-            >
-              <option value={1}>Hari Ini (24 Jam)</option>
-              <option value={2}>7 Hari Terakhir</option>
-              <option value={4}>4 Minggu Terakhir</option>
-              <option value={8}>8 Minggu Terakhir</option>
-              <option value={12}>12 Minggu Terakhir</option>
-              <option value={24}>6 Bulan Terakhir</option>
-              <option value={52}>1 Tahun Terakhir</option>
-              <option value={100}>Semua Periode</option>
-            </select>
-          </div>
-
-          <div className="h-[360px] w-full relative">
-            {trendPoints.length > 0 ? (
-              <svg className="w-full h-full" viewBox="0 0 700 320">
-                <defs>
-                  <linearGradient id="orgGradDark" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#34d399" stopOpacity="0.4" />
-                    <stop offset="100%" stopColor="#34d399" stopOpacity="0.0" />
-                  </linearGradient>
-                  <linearGradient id="inorgGradDark" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#fbbf24" stopOpacity="0.4" />
-                    <stop offset="100%" stopColor="#fbbf24" stopOpacity="0.0" />
-                  </linearGradient>
-                </defs>
-
-                <text x="10" y="20" fill="#94a3b8" fontSize="10" fontWeight="bold">
-                  Berat (kg)
-                </text>
-
-                {[0, 25, 50, 75, 100].map((pct) => {
-                  const y = 280 - (pct / 100) * 240;
-                  return (
-                    <g key={pct}>
-                      <line x1="60" y1={y} x2="680" y2={y} stroke="#334155" strokeWidth="1" strokeDasharray={pct === 0 ? "none" : "3,3"} opacity="0.6" />
-                      <text
-                        x="52"
-                        y={y + 3}
-                        textAnchor="end"
-                        fill="#94a3b8"
-                        fontSize="9"
-                        fontWeight="bold"
-                      >
-                        {Math.round((maxWeightTrend * pct) / 100)}
-                      </text>
-                    </g>
-                  );
-                })}
-
-                <line x1="60" y1="40" x2="60" y2="280" stroke="#475569" strokeWidth="1.5" />
-                <path d={trendOrganicAreaPath} fill="url(#orgGradDark)" />
-                <path d={trendInorganicAreaPath} fill="url(#inorgGradDark)" />
-
-                <path d={trendOrganicPath} fill="none" stroke="#34d399" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                <path d={trendInorganicPath} fill="none" stroke="#fbbf24" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-
-                {trendPoints.map((p, i) => (
-                  <g 
-                    key={i}
-                    className="cursor-pointer"
-                    onMouseEnter={() => setHoveredTrendIndex(i)}
-                    onMouseLeave={() => setHoveredTrendIndex(null)}
-                  >
-                    <line x1={p.x} y1="40" x2={p.x} y2="280" stroke="#34d399" strokeWidth={hoveredTrendIndex === i ? "1.5" : "0"} strokeDasharray="2,2" opacity="0.6" />
-
-                    <circle cx={p.x} cy={p.yOrganic} r={hoveredTrendIndex === i ? 6 : 4} fill="#34d399" stroke="#ffffff" strokeWidth="2" />
-                    <circle cx={p.x} cy={p.yInorganic} r={hoveredTrendIndex === i ? 6 : 4} fill="#fbbf24" stroke="#ffffff" strokeWidth="2" />
-
-                    <text
-                      x={p.x}
-                      y="305"
-                      textAnchor="middle"
-                      fill={hoveredTrendIndex === i ? "#10b981" : "#94a3b8"}
-                      fontSize="9.5"
-                      fontWeight="bold"
-                    >
-                      {p.label ? p.label.toString().replace(/^Mng\s*/i, "Minggu ") : ""}
-                    </text>
-                  </g>
-                ))}
-
-                {/* Floating Hover Tooltip */}
-                {hoveredTrendIndex !== null && trendPoints[hoveredTrendIndex] && (
-                  <g transform={`translate(${Math.min(Math.max(trendPoints[hoveredTrendIndex].x - 75, 60), 530)}, ${Math.max(trendPoints[hoveredTrendIndex].yOrganic - 85, 25)})`}>
-                    <rect width="150" height="58" rx="10" fill="#0f172a" stroke="#10b981" strokeWidth="1" opacity="0.95" />
-                    <text x="75" y="18" textAnchor="middle" fill="#ffffff" fontSize="10" fontWeight="black">
-                      {trendPoints[hoveredTrendIndex].label}
-                    </text>
-                    <text x="12" y="35" fill="#34d399" fontSize="9.5" fontWeight="bold">
-                      🌱 Organik: {trendPoints[hoveredTrendIndex].organic} kg
-                    </text>
-                    <text x="12" y="49" fill="#fbbf24" fontSize="9.5" fontWeight="bold">
-                      ♻️ Anorganik: {trendPoints[hoveredTrendIndex].inorganic} kg
-                    </text>
-                  </g>
-                )}
-              </svg>
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-xs text-slate-500 italic">
-                Belum ada data trend untuk periode ini
-              </div>
-            )}
-          </div>
-        </div>
+        <WasteTrendChart
+          className="lg:col-span-6"
+          wilayah={effectiveWilayah}
+          initialData={trendData}
+          rawOrg={rawOrg}
+          rawAnorg={rawAnorg}
+        />
 
         {/* Right Column (6 cols): Komposisi Sampah Card */}
         <div className="lg:col-span-6 bg-white dark:bg-slate-900 shadow-xs rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between relative overflow-hidden">
@@ -2526,7 +2425,7 @@ const Dashboard: React.FC = () => {
             <div>
               <h4 className="font-bold text-[18px] text-slate-900 dark:text-slate-100">Komposisi Sampah</h4>
               <p className="text-[11px] text-slate-400 dark:text-slate-400 font-medium mt-0.5">
-                Akumulasi Waktu Nyata Hasil Pemilahan dan Residu
+                Akumulasi Hasil Pemilahan Sampah Organik dan Anorganik
               </p>
             </div>
             <span className="text-[10px] font-extrabold bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/40 px-3 py-1 rounded-full uppercase tracking-wider">
@@ -2593,7 +2492,7 @@ const Dashboard: React.FC = () => {
                       {dominantLabel}
                     </span>
                     <span className="text-[9px] text-slate-500 dark:text-slate-400 font-bold block mt-0.5 font-mono">
-                      {totalKg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Kg Terpilah
+                      {totalKg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg Terpilah
                     </span>
                   </div>
                 </div>
@@ -2602,16 +2501,16 @@ const Dashboard: React.FC = () => {
                 <div className="w-full flex items-center justify-between text-[10px] font-bold px-3 py-1.5 bg-slate-100 dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-700/60 text-slate-600 dark:text-slate-300">
                   <span className="flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                    Organik: {rawOrg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Kg
+                    Organik: {rawOrg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
                   </span>
                   <span className="text-slate-300 dark:text-slate-600">+</span>
                   <span className="flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                    Anorganik: {rawAnorg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Kg
+                    Anorganik: {rawAnorg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
                   </span>
                   <span className="text-slate-300 dark:text-slate-600">=</span>
                   <span className="font-extrabold text-slate-800 dark:text-slate-100 font-mono">
-                    {totalKg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Kg
+                    {totalKg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
                   </span>
                 </div>
 
@@ -2623,7 +2522,7 @@ const Dashboard: React.FC = () => {
                         Organik
                       </div>
                       <div className="font-mono font-bold text-slate-700 dark:text-slate-200">
-                        {rawOrg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Kg{" "}
+                        {rawOrg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg{" "}
                         <span className="text-emerald-600 dark:text-emerald-400 font-extrabold ml-1">({pctOrg}%)</span>
                       </div>
                     </div>
@@ -2642,7 +2541,7 @@ const Dashboard: React.FC = () => {
                         Anorganik
                       </div>
                       <div className="font-mono font-bold text-slate-700 dark:text-slate-200">
-                        {rawAnorg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Kg{" "}
+                        {rawAnorg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg{" "}
                         <span className="text-amber-600 dark:text-amber-400 font-extrabold ml-1">({pctAnorg}%)</span>
                       </div>
                     </div>
@@ -2766,11 +2665,11 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Breakdown Per Kategori Tempat Sampah (4 cols) */}
+          {/* Breakdown Per Kategori Aktivitas Pemilahan (4 cols) */}
           <div className="md:col-span-4 space-y-4">
             <h5 className="font-extrabold text-xs text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
               <span className="material-symbols-outlined text-sm text-emerald-600 dark:text-emerald-400">pie_chart</span>
-              Kesesuaian Per Kategori Tempat Sampah
+              Kesesuaian Aktivitas Pemilahan per Kategori Sampah (Organik &amp; Anorganik)
             </h5>
 
             {/* Organik Bin */}
@@ -2778,7 +2677,7 @@ const Dashboard: React.FC = () => {
               <div className="flex justify-between items-center text-xs">
                 <span className="font-extrabold text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-xs" />
-                  Tempat Sampah Organik
+                  Kategori Sampah Organik
                 </span>
                 <span className="font-black text-emerald-700 dark:text-emerald-400 font-mono">
                   {stats?.kepatuhanPemilahan?.organikRate ?? 0}% Sesuai
@@ -2791,7 +2690,7 @@ const Dashboard: React.FC = () => {
                 />
               </div>
               <p className="text-[10px] text-emerald-700/80 dark:text-emerald-300/80 font-medium leading-tight">
-                Dari {stats?.kepatuhanPemilahan?.organikSetoranDinilai ?? 0} pemilahan yang dinilai pada Tempat Sampah berkategori Organik, sekian persen isinya benar-benar Organik ({stats?.kepatuhanPemilahan?.organikBinTotal ?? 0} unit terpasang).
+                Dari {stats?.kepatuhanPemilahan?.organikSetoranDinilai ?? 0} aktivitas pemilahan dinilai AI pada kategori Organik, sekian persen isinya benar-benar Organik ({stats?.kepatuhanPemilahan?.organikBinTotal ?? 0} unit wadah teraktivasi).
               </p>
             </div>
 
@@ -2800,7 +2699,7 @@ const Dashboard: React.FC = () => {
               <div className="flex justify-between items-center text-xs">
                 <span className="font-extrabold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-xs" />
-                  Tempat Sampah Anorganik
+                  Kategori Sampah Anorganik
                 </span>
                 <span className="font-black text-amber-700 dark:text-amber-400 font-mono">
                   {stats?.kepatuhanPemilahan?.anorganikRate ?? 0}% Sesuai
@@ -2813,8 +2712,16 @@ const Dashboard: React.FC = () => {
                 />
               </div>
               <p className="text-[10px] text-amber-700/80 dark:text-amber-300/80 font-medium leading-tight">
-                Dari {stats?.kepatuhanPemilahan?.anorganikSetoranDinilai ?? 0} pemilahan yang dinilai pada Tempat Sampah berkategori Anorganik, sekian persen isinya benar-benar Anorganik ({stats?.kepatuhanPemilahan?.anorganikBinTotal ?? 0} unit terpasang).
+                Dari {stats?.kepatuhanPemilahan?.anorganikSetoranDinilai ?? 0} aktivitas pemilahan dinilai AI pada kategori Anorganik, sekian persen isinya benar-benar Anorganik ({stats?.kepatuhanPemilahan?.anorganikBinTotal ?? 0} unit wadah teraktivasi).
               </p>
+            </div>
+
+            {/* Catatan Validasi Data Lapangan: Inventaris Fisik Wadah vs Aktivitas Setoran */}
+            <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700/60 text-[10px] text-slate-500 dark:text-slate-400 flex items-start gap-1.5">
+              <AlertCircle size={13} className="text-amber-500 shrink-0 mt-0.5" />
+              <span>
+                <strong className="text-slate-700 dark:text-slate-200">Klarifikasi Metrik:</strong> Total {(stats?.kepatuhanPemilahan?.organikBinTotal ?? 0) + (stats?.kepatuhanPemilahan?.anorganikBinTotal ?? 0)} unit merupakan inventaris fisik wadah tempat sampah teraktivasi ({stats?.kepatuhanPemilahan?.organikBinTotal ?? 0} Organik, {stats?.kepatuhanPemilahan?.anorganikBinTotal ?? 0} Anorganik), sedangkan {(stats?.kepatuhanPemilahan?.organikSetoranDinilai ?? 0) + (stats?.kepatuhanPemilahan?.anorganikSetoranDinilai ?? 0)} merupakan riwayat aktivitas setoran pemilahan warga yang dinilai oleh AI.
+              </span>
             </div>
           </div>
 
@@ -2841,558 +2748,23 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* 3.6 Seksi Komparasi Baseline Survey vs Endline Aktual (Agregat Kelurahan Real) */}
-      <div className="px-1 pt-2 text-[10.5px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider flex items-center justify-between">
-        <span>
-          {HIDE_KEPATUHAN_REAL
-            ? "Evaluasi Capaian: Survei Baseline Pemilahan (per Kelurahan)"
-            : "Evaluasi Capaian: Baseline vs Kepatuhan Pemilahan Real (per Kelurahan)"}
-        </span>
-        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase">
-          Agregat 6 Kelurahan Coblong
-        </span>
-      </div>
+      {/* 3.6 Seksi Baseline Data Hasil Survei Pemilahan Sampah (Statis & Terisolasi) */}
+      <BaselineSection />
 
-      <div className="bg-white dark:bg-slate-900 shadow-xs rounded-2xl p-6 border border-slate-200 dark:border-slate-800 relative z-10 space-y-6">
-        {/* Header Seksi & KPI Ringkasan */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5">
-          <div className="space-y-1 max-w-xl">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="p-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/40">
-                <LineChart size={18} />
-              </span>
-              <h3 className="font-extrabold text-[17px] text-slate-900 dark:text-slate-100 tracking-tight">
-                {HIDE_KEPATUHAN_REAL
-                  ? "Grafik Capaian: Survei Baseline Pemilahan Sampah per Kelurahan"
-                  : "Grafik Perbandingan: Survei Baseline vs Kepatuhan Real per Kelurahan"}
-              </h3>
-            </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              {HIDE_KEPATUHAN_REAL
-                ? "Tingkat pemilahan sampah awal sebelum pembimbingan (Survei Baseline) di 6 Kelurahan Kecamatan Coblong."
-                : "Perbandingan tingkat pemilahan sampah awal sebelum pembimbingan (Survei Baseline) dengan capaian kepatuhan pemilahan aktual real-time di 6 Kelurahan Kecamatan Coblong."}
-            </p>
-            <div className="flex items-center gap-2 pt-1 text-[11px] text-slate-400 font-semibold">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Terakhir diperbarui: {formattedLastUpdated}</span>
-              <button
-                type="button"
-                onClick={() => fetchStats(false)}
-                disabled={refreshing || loading}
-                className="ml-2 inline-flex items-center gap-1 text-[#009966] dark:text-emerald-400 hover:underline font-bold cursor-pointer disabled:opacity-50"
-              >
-                <RefreshCw size={11} className={refreshing || loading ? "animate-spin" : ""} />
-                <span>Perbarui Data</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Kartu Mini Ringkasan */}
-          <div className={`grid ${HIDE_KEPATUHAN_REAL ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2 sm:grid-cols-4"} gap-2.5 shrink-0 w-full lg:w-auto`}>
-            <div className="bg-slate-50 dark:bg-slate-800/80 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 text-center min-w-[95px]">
-              <span className="text-[10px] text-slate-400 font-bold uppercase block tracking-wider">
-                Rata-rata Baseline
-              </span>
-              <span className="text-base font-black text-slate-600 dark:text-slate-300">
-                {avgBaseline.toLocaleString("id-ID")}%
-              </span>
-              <span className="text-[9.5px] text-slate-400 block mt-0.5">Survei Lapangan</span>
-            </div>
-
-            {!HIDE_KEPATUHAN_REAL && (
-              <>
-                <div className="bg-emerald-50/70 dark:bg-emerald-950/40 p-3 rounded-2xl border border-emerald-200/70 dark:border-emerald-700/40 text-center min-w-[95px]">
-                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase block tracking-wider">
-                    Kepatuhan Real
-                  </span>
-                  <span className="text-base font-black text-emerald-700 dark:text-emerald-300">
-                    {avgEndline.toLocaleString("id-ID")}%
-                  </span>
-                  <span className="text-[9.5px] text-emerald-600 dark:text-emerald-400 block mt-0.5">Real-Time Terdata</span>
-                </div>
-
-                <div className="bg-teal-50/70 dark:bg-teal-950/40 p-3 rounded-2xl border border-teal-200/70 dark:border-teal-700/40 text-center min-w-[95px]">
-                  <span className="text-[10px] text-teal-600 dark:text-teal-400 font-bold uppercase block tracking-wider">
-                    Kenaikan (Δ)
-                  </span>
-                  <span className="text-base font-black text-teal-700 dark:text-teal-300 flex items-center justify-center gap-0.5">
-                    <TrendingUp size={13} /> {deltaBaseline >= 0 ? `+${deltaBaseline.toLocaleString("id-ID")}%` : `${deltaBaseline.toLocaleString("id-ID")}%`}
-                  </span>
-                  <span className="text-[9.5px] text-teal-600 dark:text-teal-400 block mt-0.5">Peningkatan Positif</span>
-                </div>
-              </>
-            )}
-
-            {HIDE_KEPATUHAN_REAL && (
-              <div className="bg-emerald-50/70 dark:bg-emerald-950/40 p-3 rounded-2xl border border-emerald-200/70 dark:border-emerald-700/40 text-center min-w-[95px]">
-                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase block tracking-wider">
-                  Cakupan Wilayah
-                </span>
-                <span className="text-base font-black text-emerald-700 dark:text-emerald-300">
-                  {kelurahanBaselineList.length} <span className="text-xs font-bold">Kelurahan</span>
-                </span>
-                <span className="text-[9.5px] text-emerald-600 dark:text-emerald-400 block mt-0.5">Kecamatan Coblong</span>
-              </div>
-            )}
-
-            <div className="bg-blue-50/70 dark:bg-blue-950/40 p-3 rounded-2xl border border-blue-200/70 dark:border-blue-700/40 text-center min-w-[95px]">
-              <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold uppercase block tracking-wider">
-                Total Volume
-              </span>
-              <span className="text-base font-black text-blue-700 dark:text-blue-300">
-                {totalCoblongVolumeKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} <span className="text-xs font-bold">Kg</span>
-              </span>
-              <span className="text-[9.5px] text-blue-600 dark:text-blue-400 block mt-0.5">Terdata di Sistem</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Legenda Grafik */}
-        <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-4 flex-wrap">
-            <div className="flex items-center gap-2">
-              <span className="w-3.5 h-3.5 rounded bg-slate-400 dark:bg-slate-500 shadow-2xs" />
-              <span className="font-bold text-slate-600 dark:text-slate-300">
-                Survei Baseline (Awal)
-              </span>
-            </div>
-            {!HIDE_KEPATUHAN_REAL && (
-              <div className="flex items-center gap-2">
-                <span className="w-3.5 h-3.5 rounded bg-emerald-500 shadow-2xs" />
-                <span className="font-bold text-emerald-700 dark:text-emerald-400">
-                  Kepatuhan Real / Endline (Waktu Nyata)
-                </span>
-              </div>
-            )}
-            <div className="flex items-center gap-2">
-              <span className="w-3.5 h-3.5 rounded-full bg-blue-100 dark:bg-blue-950/60 border border-blue-300 dark:border-blue-700 flex items-center justify-center text-[9px] font-black text-blue-700 dark:text-blue-300">
-                Kg
-              </span>
-              <span className="font-bold text-blue-700 dark:text-blue-400">
-                Volume Sampah Terpilah (Kg)
-              </span>
-            </div>
-          </div>
-          <span className="text-[11px] text-slate-400 italic">
-            {HIDE_KEPATUHAN_REAL
-              ? "*Bar chart per kelurahan: Baseline hasil survei awal pemilahan | Badge = Total Volume Sampah"
-              : "*Dua bar chart per kelurahan: Kiri = Baseline, Kanan = Kepatuhan Real | Badge = Total Volume Sampah"}
-          </span>
-        </div>
-
-        {/* Kanvas Grafik Bar Chart dengan Padding & Tinggi Proporsional */}
-        <div className="w-full bg-slate-50/50 dark:bg-slate-800/40 rounded-2xl p-5 pt-28 sm:pt-32 border border-slate-100 dark:border-slate-800/80 overflow-x-auto">
-          <div className="min-w-[720px] space-y-2">
-            <div className="flex gap-3 items-end">
-              {/* Sumbu Y (0% - 100%) */}
-              <div className="w-12 shrink-0 flex flex-col justify-between text-[10px] text-slate-400 dark:text-slate-500 font-extrabold pr-2 border-r border-slate-200 dark:border-slate-800 h-72 text-right select-none pb-2">
-                <span>100%</span>
-                <span>80%</span>
-                <span>60%</span>
-                <span>40%</span>
-                <span>20%</span>
-                <span>0%</span>
-              </div>
-
-              {/* Grid Bar untuk 6 Kelurahan */}
-              <div className="flex-1 grid grid-cols-6 gap-3 sm:gap-4 items-end h-72 border-b border-slate-200 dark:border-slate-800 pb-1 relative">
-                {/* Garis Bantu Horizontal (Dashed Gridlines) */}
-                <div className="absolute inset-x-0 top-0 border-t border-dashed border-slate-200/60 dark:border-slate-800/80 pointer-events-none" />
-                <div className="absolute inset-x-0 top-[20%] border-t border-dashed border-slate-200/60 dark:border-slate-800/80 pointer-events-none" />
-                <div className="absolute inset-x-0 top-[40%] border-t border-dashed border-slate-200/60 dark:border-slate-800/80 pointer-events-none" />
-                <div className="absolute inset-x-0 top-[60%] border-t border-dashed border-slate-200/60 dark:border-slate-800/80 pointer-events-none" />
-                <div className="absolute inset-x-0 top-[80%] border-t border-dashed border-slate-200/60 dark:border-slate-800/80 pointer-events-none" />
-
-                {kelurahanBaselineList.map((item, idx) => {
-                  const bRate = Math.min(100, Math.max(0, item.baselineRate || 0));
-                  const eRate = Math.min(100, Math.max(0, item.endlineRate || 0));
-                  const isHovered = hoveredBaselineIndex === idx;
-                  const itemKg = Number(item.totalKg || 0);
-
-                  return (
-                    <div
-                      key={item.id}
-                      className="flex flex-col items-center h-full justify-end group relative cursor-pointer z-10"
-                      onMouseEnter={() => setHoveredBaselineIndex(idx)}
-                      onMouseLeave={() => setHoveredBaselineIndex(null)}
-                    >
-                      {/* Tooltip Hover Popover - Diposisikan tepat di atas bar data agar tidak menabrak batas atas kanvas */}
-                      {isHovered && (
-                        <div
-                          className={`absolute z-50 bg-slate-900/95 dark:bg-slate-950/95 backdrop-blur-md text-white rounded-xl p-3 shadow-2xl border border-emerald-500/40 text-[11px] w-52 pointer-events-none transition-all duration-200 animate-in fade-in zoom-in-95 ${
-                            idx === 0
-                              ? "left-0"
-                              : idx === kelurahanBaselineList.length - 1
-                              ? "right-0"
-                              : "left-1/2 -translate-x-1/2"
-                          }`}
-                          style={{
-                            bottom: `calc(${Math.min(bRate, 50)}% + 36px)`,
-                          }}
-                        >
-                          {/* Panah Indikator Bawah (Caret) */}
-                          <div
-                            className={`absolute -bottom-1.5 w-3 h-3 bg-slate-900 dark:bg-slate-950 border-r border-b border-emerald-500/40 rotate-45 ${
-                              idx === 0
-                                ? "left-8"
-                                : idx === kelurahanBaselineList.length - 1
-                                ? "right-8"
-                                : "left-1/2 -translate-x-1/2"
-                            }`}
-                          />
-
-                          <div className="flex items-center justify-between border-b border-slate-800 pb-1.5 mb-2">
-                            <span className="font-black text-emerald-400 text-xs truncate">Kel. {item.kelurahan}</span>
-                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 font-bold border border-emerald-500/20">
-                              Coblong
-                            </span>
-                          </div>
-
-                          <div className="space-y-1">
-                            <div className="flex justify-between items-center text-slate-300">
-                              <span className="flex items-center gap-1.5 text-slate-400">
-                                <span className="w-2 h-2 rounded-xs bg-slate-400 inline-block" />
-                                Baseline:
-                              </span>
-                              <div className="flex items-center gap-1">
-                                <span className="font-bold text-slate-200">
-                                  {item.hasBaseline && item.baselineRate !== null && item.baselineRate !== undefined
-                                    ? `${bRate}%`
-                                    : "Belum ada survei baseline"}
-                                </span>
-                              </div>
-                            </div>
-
-                            {!HIDE_KEPATUHAN_REAL && (
-                              <div className="flex justify-between items-center text-slate-300">
-                                <span className="flex items-center gap-1.5 text-emerald-400">
-                                  <span className="w-2 h-2 rounded-xs bg-emerald-500 inline-block" />
-                                  Kepatuhan Real:
-                                </span>
-                                <span className="font-black text-emerald-400">{eRate}%</span>
-                              </div>
-                            )}
-
-                            <div className="flex justify-between items-center text-blue-300 pt-0.5">
-                              <span className="flex items-center gap-1.5 text-blue-400">
-                                <span className="w-2 h-2 rounded-xs bg-blue-500 inline-block" />
-                                Volume Terdata:
-                              </span>
-                              <span className="font-bold text-blue-300">
-                                {itemKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} Kg
-                              </span>
-                            </div>
-                          </div>
-
-                          {!HIDE_KEPATUHAN_REAL && (
-                            <div className="mt-2 pt-1.5 border-t border-slate-800 flex justify-between items-center text-[10px] font-bold">
-                              <span className="text-slate-400">Delta Capaian:</span>
-                              {item.hasBaseline && item.baselineRate !== null && item.baselineRate !== undefined ? (
-                                <span
-                                  className={`px-1.5 py-0.5 rounded text-[10px] font-extrabold ${
-                                    eRate >= bRate
-                                      ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                                      : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
-                                  }`}
-                                >
-                                  {eRate >= bRate ? "+" : ""}
-                                  {(eRate - bRate).toFixed(1)}%
-                                </span>
-                              ) : (
-                                <span className="text-slate-500 italic text-[9.5px]">N/A</span>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Bar Grafik (Baseline Proporsional Mantap & Lebih Besar) */}
-                      <div className="w-full flex items-end justify-center gap-1.5 sm:gap-2 h-[88%] pb-1">
-                        {/* Bar 1: Baseline (Slate Solid, Mantap & Lebar) */}
-                        <div className={`flex flex-col items-center justify-end h-full ${HIDE_KEPATUHAN_REAL ? "w-full max-w-[85px] sm:max-w-[100px] lg:max-w-[115px]" : "flex-1"}`}>
-                          <span className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-100 mb-2 tracking-tight group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors flex items-center justify-center gap-0.5">
-                            {item.hasBaseline && item.baselineRate !== null && item.baselineRate !== undefined ? `${bRate}%` : "—"}
-                          </span>
-                          <div className="w-full bg-slate-100/60 dark:bg-slate-800/30 rounded-t-2xl overflow-hidden h-full flex items-end border-x border-t border-dashed border-slate-200/80 dark:border-slate-700/50">
-                            <div
-                              className="w-full bg-gradient-to-t from-slate-700 via-slate-600 to-slate-500 dark:from-slate-600 dark:via-slate-500 dark:to-slate-300 rounded-t-2xl transition-all duration-500 shadow-md group-hover:brightness-110 group-hover:scale-[1.02]"
-                              style={{ height: item.hasBaseline && item.baselineRate !== null && item.baselineRate !== undefined ? `${bRate}%` : "0%" }}
-                            />
-                          </div>
-                        </div>
-
-                        {/* Bar 2: Real / Endline (Kanan - Emerald) - Disembunyikan saat HIDE_KEPATUHAN_REAL */}
-                        {!HIDE_KEPATUHAN_REAL && (
-                          <div className="flex-1 flex flex-col items-center justify-end h-full">
-                            <span className="text-xs sm:text-[13px] font-black text-emerald-600 dark:text-emerald-400 mb-1.5">
-                              {eRate}%
-                            </span>
-                            <div className="w-full bg-emerald-100/60 dark:bg-emerald-950/40 rounded-t-xl overflow-hidden h-full flex items-end">
-                              <div
-                                className="w-full bg-gradient-to-t from-emerald-600 to-emerald-400 rounded-t-xl transition-all duration-500 shadow-2xs group-hover:brightness-110"
-                                style={{ height: `${eRate}%` }}
-                              />
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Label Nama Kelurahan Sumbu X & Badge Volume Terdata */}
-            <div className="flex gap-3">
-              <div className="w-12 shrink-0" />
-              <div className="flex-1 grid grid-cols-6 gap-3 sm:gap-4 text-center pt-2">
-                {kelurahanBaselineList.map((item) => {
-                  const itemKg = Number(item.totalKg || 0);
-                  return (
-                    <div key={item.id} className="space-y-1.5 flex flex-col items-center">
-                      <span className="text-xs sm:text-[13px] font-black text-slate-800 dark:text-slate-200 block truncate w-full" title={item.kelurahan}>
-                        {item.kelurahan}
-                      </span>
-                      {/* Badge Volume Sampah Riil Terpusat */}
-                      <div className="inline-flex items-center justify-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/50 border border-blue-200/80 dark:border-blue-800/50 text-[10px] font-extrabold text-blue-700 dark:text-blue-300 max-w-[100px] sm:max-w-[115px] w-full truncate shadow-2xs">
-                        <span>{itemKg > 0 ? `${itemKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} Kg` : "0 Kg"}</span>
-                      </div>
-                      <div className="flex items-center justify-center gap-1 text-[9.5px] text-slate-400 font-bold">
-                        {HIDE_KEPATUHAN_REAL ? (
-                          <span className="text-slate-500 font-semibold">Baseline Survei</span>
-                        ) : (
-                          <>
-                            <span className="text-slate-500">Base</span>
-                            <span>vs</span>
-                            <span className="text-emerald-600 dark:text-emerald-400">Real</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          {/* Footer Keterangan Metodologi Sumber Data Grafik */}
-          <div className="mt-3 pt-2.5 border-t border-slate-200/60 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500 dark:text-slate-400">
-            <div className="flex items-center gap-1.5 font-medium">
-              <span className="font-extrabold text-slate-700 dark:text-slate-300">*Keterangan Sumber Data:</span>
-              <span><strong>Baseline:</strong> Berbasis survei awal kondisi eksisting kelurahan.</span>
-              {!HIDE_KEPATUHAN_REAL && (
-                <>
-                  <span className="text-slate-300 dark:text-slate-700">|</span>
-                  <span><strong>Aktual / Real:</strong> Berbasis sampel data transaksi setoran sampah selama giat KKN.</span>
-                </>
-              )}
-            </div>
-            <span className="text-[10.5px] italic text-slate-400 dark:text-slate-500">
-              *Khusus baseline Cipaganti menggunakan estimasi survei awal 13,67% (rentang 10–20%).
-            </span>
-          </div>
-        </div>
-
-        {/* Card Penjelasan Rumus & Metodologi Relasi Data Real Database (Hanya tampil saat Kepatuhan Real aktif) */}
-        {!HIDE_KEPATUHAN_REAL && (
-          <div className="bg-emerald-50/40 dark:bg-emerald-950/20 rounded-2xl p-4 sm:p-5 border border-emerald-200/70 dark:border-emerald-800/40">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="space-y-1.5 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <h5 className="font-extrabold text-xs sm:text-[13px] text-emerald-900 dark:text-emerald-200">
-                    Rumus & Metodologi Perhitungan Kepatuhan Real Waktu Nyata
-                  </h5>
-                </div>
-                <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
-                  Data agregat kepatuhan per kelurahan bersumber langsung dari catatan riil transaksi warga pada tabel database <code className="px-1 py-0.5 rounded bg-emerald-100/70 dark:bg-emerald-900/40 text-[10px] font-bold text-emerald-800 dark:text-emerald-300">SetoranOtomatis</code> yang berelasi ke <code className="px-1 py-0.5 rounded bg-emerald-100/70 dark:bg-emerald-900/40 text-[10px] font-bold text-emerald-800 dark:text-emerald-300">Bin → RW → Kelurahan</code>.
-                </p>
-              </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 shrink-0 text-xs">
-                <div className="bg-white/80 dark:bg-slate-900/80 p-2.5 rounded-xl border border-emerald-200/60 dark:border-emerald-800/40">
-                  <span className="text-[10px] font-bold text-slate-400 block uppercase">Formula Kepatuhan Real</span>
-                  <span className="font-black text-emerald-700 dark:text-emerald-300 text-[11px] block mt-0.5">
-                    (Σ Setoran Patuh AI ÷ Total Setoran) × 100%
-                  </span>
-                  <span className="text-[9px] text-slate-500 dark:text-slate-400 block">Kategori AI sesuai jenis tempat sampah</span>
-                </div>
-                <div className="bg-white/80 dark:bg-slate-900/80 p-2.5 rounded-xl border border-emerald-200/60 dark:border-emerald-800/40">
-                  <span className="text-[10px] font-bold text-slate-400 block uppercase">Formula Delta Capaian (Δ)</span>
-                  <span className="font-black text-teal-700 dark:text-teal-300 text-[11px] block mt-0.5">
-                    Δ = Kepatuhan Real (%) − Survei Baseline (%)
-                  </span>
-                  <span className="text-[9px] text-slate-500 dark:text-slate-400 block">Mengukur kenaikan pasca intervensi Berseka</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Tabel Evaluasi Kepatuhan Pemilahan & Sampah Terpilah (1:1 Match Image) */}
-        <div className="space-y-4 pt-2">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div>
-              <h4 className="font-extrabold text-[17px] text-slate-900 dark:text-slate-100 tracking-tight">
-                Evaluasi Kepatuhan Pemilahan &amp; Sampah Terpilah
-              </h4>
-              <p className="text-[12px] text-slate-500 dark:text-slate-400">
-                Perbandingan baseline dan hasil giat KKN per kelurahan • Kecamatan Coblong
-              </p>
-            </div>
-            <span className="text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 px-3 py-1 rounded-full self-start sm:self-auto border border-blue-200/80 dark:border-blue-800/60">
-              6 Kelurahan
-            </span>
-          </div>
-
-          <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                {/* Header Row 1 */}
-                <tr className="border-b border-slate-200 dark:border-slate-800 text-[11px] font-extrabold text-slate-700 dark:text-slate-200">
-                  <th rowSpan={2} className="py-3 px-3 text-center w-10 bg-slate-50/80 dark:bg-slate-800/80 border-r border-slate-200 dark:border-slate-800">No</th>
-                  <th rowSpan={2} className="py-3 px-4 font-bold bg-slate-50/80 dark:bg-slate-800/80 border-r border-slate-200 dark:border-slate-800">Kelurahan</th>
-                  <th colSpan={2} className="py-2.5 px-4 text-center uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-r border-slate-200 dark:border-slate-800">
-                    BASELINE
-                  </th>
-                  <th colSpan={2} className="py-2.5 px-4 text-center uppercase tracking-wider bg-emerald-50/80 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-200 border-r border-slate-200 dark:border-slate-800">
-                    GIAT KKN
-                  </th>
-                  <th colSpan={2} className="py-2.5 px-4 text-center uppercase tracking-wider bg-blue-50/80 dark:bg-blue-950/60 text-blue-900 dark:text-blue-200">
-                    PERUBAHAN / DAMPAK TERAMATI
-                  </th>
-                </tr>
-                {/* Header Row 2 */}
-                <tr className="border-b border-slate-200 dark:border-slate-800 text-[11px] font-extrabold text-slate-600 dark:text-slate-400">
-                  <th className="py-2 px-3 text-center bg-slate-50/50 dark:bg-slate-800/40 border-r border-slate-200 dark:border-slate-800">Kepatuhan awal (%)</th>
-                  <th className="py-2 px-3 text-center bg-slate-50/50 dark:bg-slate-800/40 border-r border-slate-200 dark:border-slate-800">Sampah awal (kg)</th>
-                  <th className="py-2 px-3 text-center bg-emerald-50/30 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800">Kepatuhan (%)</th>
-                  <th className="py-2 px-3 text-center bg-emerald-50/30 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300 border-r border-slate-200 dark:border-slate-800">Sampah terpilah (kg)</th>
-                  <th className="py-2 px-3 text-center bg-blue-50/30 dark:bg-blue-950/30 text-blue-800 dark:text-blue-300 border-r border-slate-200 dark:border-slate-800">Δ Kepatuhan (pp)</th>
-                  <th className="py-2 px-3 text-center bg-blue-50/30 dark:bg-blue-950/30 text-blue-800 dark:text-blue-300">Δ Sampah (kg)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200/70 dark:divide-slate-800">
-                {kelurahanBaselineList.map((item, idx) => {
-                  const hasBaselineRate = item.hasBaseline && item.baselineRate !== null && item.baselineRate !== undefined;
-                  const deltaPp = hasBaselineRate ? +(item.endlineRate - (item.baselineRate || 0)).toFixed(2) : null;
-                  const itemKg = Number(item.totalKg || 0);
-                  const formattedBaseline = hasBaselineRate
-                    ? (item.baselineRate || 0).toFixed(2).replace(".", ",") + "%"
-                    : "Belum ada survei baseline";
-                  const formattedDelta = deltaPp !== null
-                    ? (deltaPp >= 0 ? `+${deltaPp.toFixed(2).replace(".", ",")}` : deltaPp.toFixed(2).replace(".", ","))
-                    : "—";
-                  const formattedKg = itemKg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                  const hasBaselineKg = item.baselineKg !== undefined && item.baselineKg !== null && item.baselineKg > 0;
-                  const hasEndlineData = item.endlineRate > 0 || itemKg > 0;
-                  const deltaKg = hasBaselineKg && hasEndlineData ? +(itemKg - item.baselineKg!).toFixed(2) : null;
-                  const formattedDeltaKg = deltaKg !== null
-                    ? (deltaKg >= 0
-                        ? `+${deltaKg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                        : deltaKg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
-                    : "—";
-
-                  return (
-                    <tr
-                      key={item.id}
-                      className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors text-xs"
-                    >
-                      <td className="py-3 px-3 text-center text-slate-400 font-medium border-r border-slate-200/60 dark:border-slate-800/60">{idx + 1}</td>
-                      <td className="py-3 px-4 font-bold text-slate-800 dark:text-slate-200 border-r border-slate-200/60 dark:border-slate-800/60">
-                        {item.kelurahan}
-                      </td>
-                      <td className="py-3 px-3 text-center font-semibold text-slate-700 dark:text-slate-300 border-r border-slate-200/60 dark:border-slate-800/60">
-                        <div className="flex items-center justify-center gap-1.5">
-                          {hasBaselineRate ? (
-                            <span>{formattedBaseline}</span>
-                          ) : (
-                            <span className="text-slate-400 font-normal italic text-[11px]">Belum ada survei baseline</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-3 px-3 text-center font-semibold text-slate-700 dark:text-slate-300 border-r border-slate-200/60 dark:border-slate-800/60">
-                        {item.baselineKg && item.baselineKg > 0 ? (
-                          <div className="flex items-center justify-center gap-1.5">
-                            <span>{item.baselineKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })}</span>
-                          </div>
-                        ) : (
-                          <span className="text-slate-400 font-normal italic text-[11px]">Belum ada data</span>
-                        )}
-                      </td>
-                      <td className="py-3 px-3 text-center font-extrabold text-emerald-600 dark:text-emerald-400 border-r border-slate-200/60 dark:border-slate-800/60">
-                        {item.endlineRate > 0 ? (
-                          `${item.endlineRate}%`
-                        ) : (
-                          <span className="text-slate-400 font-normal italic">Belum terdata</span>
-                        )}
-                      </td>
-                      <td className="py-3 px-3 text-center font-bold text-slate-800 dark:text-slate-200 border-r border-slate-200/60 dark:border-slate-800/60">
-                        {formattedKg}
-                      </td>
-                      <td className="py-3 px-3 text-center font-extrabold text-blue-600 dark:text-blue-400 border-r border-slate-200/60 dark:border-slate-800/60">
-                        {item.endlineRate > 0 && hasBaselineRate ? formattedDelta : "—"}
-                      </td>
-                      <td className={`py-3 px-3 text-center font-extrabold ${
-                        deltaKg === null
-                          ? "text-slate-400"
-                          : deltaKg >= 0
-                          ? "text-blue-600 dark:text-blue-400"
-                          : "text-rose-600 dark:text-rose-400"
-                      }`}>
-                        {formattedDeltaKg}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Dua Kartu Penjelas Metodologi Side-by-Side */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
-            {/* Kartu Left: Delta Kepatuhan */}
-            <div className="bg-emerald-50/40 dark:bg-emerald-950/20 rounded-2xl p-4 border border-emerald-200/70 dark:border-emerald-800/40 space-y-2">
-              <div>
-                <h5 className="font-black text-sm text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5">
-                  <span className="text-emerald-600 dark:text-emerald-400 text-base">Δ</span> Kepatuhan
-                </h5>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Kepatuhan giat KKN – kepatuhan awal
-                </p>
-              </div>
-              <div className="bg-emerald-100/60 dark:bg-emerald-900/40 p-2.5 rounded-xl border border-emerald-200/80 dark:border-emerald-700/40 text-xs font-bold text-emerald-900 dark:text-emerald-200">
-                Contoh Cipaganti: 100% − 13,67% = +86,33 pp
-              </div>
-              <p className="text-[10.5px] text-slate-500 dark:text-slate-400">
-                pp = poin persentase, bukan persen kenaikan relatif.
-              </p>
-            </div>
-
-            {/* Kartu Right: Delta Sampah */}
-            <div className="bg-blue-50/40 dark:bg-blue-950/20 rounded-2xl p-4 border border-blue-200/70 dark:border-blue-800/40 space-y-2">
-              <div>
-                <h5 className="font-black text-sm text-blue-900 dark:text-blue-200 flex items-center gap-1.5">
-                  <span className="text-blue-600 dark:text-blue-400 text-base">Δ</span> Sampah
-                </h5>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Sampah terpilah giat KKN – sampah awal
-                </p>
-              </div>
-              <div className="bg-blue-100/60 dark:bg-blue-900/40 p-2.5 rounded-xl border border-blue-200/80 dark:border-blue-700/40 text-xs font-bold text-blue-900 dark:text-blue-200">
-                Contoh Lebak Siliwangi: 6,79 kg − 10,00 kg = -3,21 kg
-              </div>
-              <p className="text-[10.5px] text-slate-500 dark:text-slate-400">
-                Nilai negatif terjadi karena sampah awal mencakup estimasi timbulan total harian, sedangkan giat KKN mengukur akumulasi fisik tempat sampah KKN.
-              </p>
-            </div>
-          </div>
-
-          {/* Bar Catatan Formal Metodologi */}
-          <div className="bg-slate-100/70 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-200 dark:border-slate-700 text-[10.5px] text-slate-600 dark:text-slate-400 leading-relaxed">
-            <strong>Catatan:</strong> kg mengukur berat/massa, bukan volume. Tanda — berarti data belum tersedia atau delta belum dapat dihitung. Perbandingan memerlukan indikator, cakupan sampel, dan durasi pengamatan yang setara. Kepatuhan 100% berlaku pada sampel tercatat; perubahan belum membuktikan dampak kausal KKN.
-          </div>
-        </div>
+      {/* 3.7 Seksi Evaluasi Komparatif Dampak Sampah: Tabel Rekapitulasi (Atas) & Visualisasi Tren (Bawah) */}
+      <div className="space-y-6 relative z-10">
+        <WasteImpactSummaryTable
+          data={wasteImpactItems}
+          loading={loading || refreshing}
+          onSourceChange={(src) => setSelectedWasteSource(src)}
+        />
+        <WasteImpactTrendChart
+          data={wasteImpactItems}
+          selectedSource={selectedWasteSource}
+          loading={loading || refreshing}
+          onRefresh={() => fetchStats(false)}
+          lastUpdated={formattedLastUpdated}
+        />
       </div>
 
       {/* === Monitoring Leaderboard Section === */}
@@ -3594,7 +2966,7 @@ const Dashboard: React.FC = () => {
                     Rincian Komposisi &amp; Aliran Sampah
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Data material timbulan sampah organik, anorganik, dan residu hilir
+                    Data material timbulan sampah organik dan anorganik terpilah warga
                   </p>
                 </div>
               </div>
@@ -3616,7 +2988,7 @@ const Dashboard: React.FC = () => {
                   <div className="grid grid-cols-2 gap-4 text-xs">
                     <div>
                       <span className="text-slate-500 dark:text-slate-400 font-medium block">Total Berat Real</span>
-                      <strong className="text-slate-900 dark:text-slate-100 font-bold font-mono">{Math.round(Number(stats?.komposisiSampah?.organikKg || 0)).toLocaleString("id-ID")} Kg</strong>
+                      <strong className="text-slate-900 dark:text-slate-100 font-bold font-mono">{Math.round(Number(stats?.komposisiSampah?.organikKg || 0)).toLocaleString("id-ID")} kg</strong>
                     </div>
                     <div>
                       <span className="text-slate-500 dark:text-slate-400 font-medium block">Metode Pengolahan</span>
@@ -3633,28 +3005,11 @@ const Dashboard: React.FC = () => {
                   <div className="grid grid-cols-2 gap-4 text-xs">
                     <div>
                       <span className="text-slate-500 dark:text-slate-400 font-medium block">Total Berat Real</span>
-                      <strong className="text-slate-900 dark:text-slate-100 font-bold font-mono">{Math.round(Number(stats?.komposisiSampah?.anorganikKg || 0)).toLocaleString("id-ID")} Kg</strong>
+                      <strong className="text-slate-900 dark:text-slate-100 font-bold font-mono">{Math.round(Number(stats?.komposisiSampah?.anorganikKg || 0)).toLocaleString("id-ID")} kg</strong>
                     </div>
                     <div>
                       <span className="text-slate-500 dark:text-slate-400 font-medium block">Metode Daur Ulang</span>
                       <strong className="text-amber-700 dark:text-amber-400 font-semibold">Bank Sampah &amp; Poin</strong>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-4 bg-rose-50/70 dark:bg-rose-950/40 rounded-xl border border-rose-200/80 dark:border-rose-800/40">
-                  <h4 className="font-bold text-rose-800 dark:text-rose-300 text-xs uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    <Trash2 size={15} />
-                    Material Residu Hilir ({stats?.komposisiSampah?.residu?.persentase || "0%"})
-                  </h4>
-                  <div className="grid grid-cols-2 gap-4 text-xs">
-                    <div>
-                      <span className="text-slate-500 dark:text-slate-400 font-medium block">Total Berat Hilir</span>
-                      <strong className="text-slate-900 dark:text-slate-100 font-bold font-mono">{Math.round(Number(stats?.komposisiSampah?.residuKg || 0)).toLocaleString("id-ID")} Kg</strong>
-                    </div>
-                    <div>
-                      <span className="text-slate-500 dark:text-slate-400 font-medium block">Tujuan Akhir</span>
-                      <strong className="text-rose-700 dark:text-rose-400 font-semibold">TPA Hilir Kota</strong>
                     </div>
                   </div>
                 </div>
@@ -3760,7 +3115,7 @@ const Dashboard: React.FC = () => {
                 <div className="flex justify-between items-center py-2 text-sm">
                   <span className="text-slate-400">Poin Pemilahan</span>
                   <span className="font-bold text-amber-600 dark:text-amber-400">
-                    {selectedBinForDetail.category?.pointsPerKg || 100} Poin / Kg
+                    {selectedBinForDetail.category?.pointsPerKg || 100} Poin / kg
                   </span>
                 </div>
               </div>

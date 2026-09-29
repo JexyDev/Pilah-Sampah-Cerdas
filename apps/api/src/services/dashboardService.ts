@@ -7,6 +7,7 @@ import { prisma } from "../lib/prisma.js";
  */
 
 import { redisService } from "./redisService.js";
+import { evaluateCompliance } from "./complianceService.js";
 
 interface ResolvedAreaContext {
   isFiltered: boolean;
@@ -177,7 +178,8 @@ export const dashboardService = {
     period?: string,
     startDate?: string,
     endDate?: string,
-    includeTestAccounts?: boolean
+    includeTestAccounts?: boolean,
+    sourceType?: string
   ) => {
     const areaCtx = await resolveAreaContext(wilayah);
     const { isFiltered, rwIds, kelurahanIds, kelurahanNames } = areaCtx;
@@ -437,7 +439,17 @@ export const dashboardService = {
     const residuLogs = await prisma.setoranManual.findMany({
       where: residuWhere,
       select: {
+        id: true,
         berat: true,
+        kategori: true,
+        createdAt: true,
+        rw: {
+          select: {
+            kelurahan: {
+              select: { name: true },
+            },
+          },
+        },
       },
     });
 
@@ -681,10 +693,8 @@ export const dashboardService = {
         return;
       }
 
-      // Kepatuhan = isi setoran cocok dengan kategori tempat sampahnya.
-      // Sebelumnya hanya `confidenceAi >= 50`, yang mengukur keyakinan model
-      // terhadap prediksinya — bukan apakah warga membuang di tempat yang benar.
-      const isMatch = binKategori === hasilKelas;
+      // Kepatuhan = isi setoran cocok dengan kategori tempat sampahnya (logika biner simetris).
+      const isMatch = evaluateCompliance(hasilKelas, binKategori);
 
       if (binKategori === "organik") {
         organikBinTotal++;
@@ -731,14 +741,23 @@ export const dashboardService = {
     });
 
     // Real data komparasi survei baseline vs endline / kepatuhan real per kelurahan
-    const allKelurahanCoblong = [
-      { id: "kel-cipaganti", name: "Cipaganti" },
-      { id: "kel-dago", name: "Dago" },
-      { id: "kel-lebakgede", name: "Lebak Gede" },
-      { id: "kel-lebaksiliwangi", name: "Lebak Siliwangi" },
-      { id: "kel-sadangserang", name: "Sadang Serang" },
-      { id: "kel-sekeloa", name: "Sekeloa" },
-    ];
+    const dbKelurahans = await prisma.kelurahan.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    });
+    const allKelurahanCoblong = dbKelurahans.length > 0
+      ? dbKelurahans.map((k) => ({
+          id: k.id,
+          name: k.name.replace(/^Kel\.\s*/i, "").trim(),
+        }))
+      : [
+          { id: "kel-cipaganti", name: "Cipaganti" },
+          { id: "kel-dago", name: "Dago" },
+          { id: "kel-lebakgede", name: "Lebak Gede" },
+          { id: "kel-lebaksiliwangi", name: "Lebak Siliwangi" },
+          { id: "kel-sadangserang", name: "Sadang Serang" },
+          { id: "kel-sekeloa", name: "Sekeloa" },
+        ];
 
     const surveyBaselines = await prisma.surveiKelurahan.findMany({
       include: { pemilahanSampah: true, volumeSampah: true },
@@ -782,17 +801,35 @@ export const dashboardService = {
       let hasEndline = false;
       let endlineRate = 0;
 
-      // Ambil seluruh transaksi setoran sampah aktual di kelurahan ini
-      const kelSetoran = setoranWithBin.filter((s: any) => {
+      // Ambil seluruh transaksi setoran sampah warga (WARGA_APP via aplikasi/AI)
+      const kelSetoranWarga = setoranWithBin.filter((s: any) => {
         const kelB = (s.bin?.rw?.kelurahan?.name || "").toLowerCase().replace(/\s+/g, "");
         const kelW = (s.warga?.rw?.kelurahan?.name || "").toLowerCase().replace(/\s+/g, "");
         return kelB.includes(normK) || kelW.includes(normK);
       });
-
-      // Hitung akumulasi berat volume sampah riil dari database (Kg)
-      const totalKg = Number(
-        kelSetoran.reduce((acc: number, s: any) => acc + Number(s.berat || 0), 0).toFixed(2)
+      const wargaKg = Number(
+        kelSetoranWarga.reduce((acc: number, s: any) => acc + Number(s.berat || 0), 0).toFixed(2)
       );
+
+      // Ambil penimbangan manual petugas pemilah/kebersihan (PETUGAS_LAPANGAN)
+      const kelSetoranPetugas = residuLogs.filter((s: any) => {
+        const kelR = (s.rw?.kelurahan?.name || "").toLowerCase().replace(/\s+/g, "");
+        return kelR.includes(normK);
+      });
+      const petugasKg = Number(
+        kelSetoranPetugas.reduce((acc: number, s: any) => acc + Number(s.berat || 0), 0).toFixed(2)
+      );
+
+      // Tentukan totalKg sesuai filter sumber data (mencegah double-counting)
+      const normSource = (sourceType || "WARGA_APP").toUpperCase();
+      let totalKg = wargaKg;
+      if (normSource === "PETUGAS_LAPANGAN") {
+        totalKg = petugasKg;
+      } else if (normSource === "ALL" || normSource === "SEMUA") {
+        totalKg = Number((wargaKg + petugasKg).toFixed(2));
+      } else {
+        totalKg = wargaKg; // default WARGA_APP
+      }
 
       // Jumlah setoran yang benar-benar dapat dinilai di kelurahan ini.
       // Diekspor supaya konsumen dapat menghitung rata-rata BERBOBOT; rata-rata
@@ -806,10 +843,10 @@ export const dashboardService = {
         const val = Number(e.pemilahanSampah.persentasePemilahan);
         endlineRate = val <= 1 ? Number((val * 100).toFixed(1)) : Number(val.toFixed(1));
         hasEndline = true;
-      } else if (kelSetoran.length > 0) {
+      } else if (kelSetoranWarga.length > 0) {
         // Belum ada survei endline — pakai kepatuhan real-time dengan aturan
         // pencocokan yang SAMA dengan metrik global di atas.
-        kelSetoran.forEach((s: any) => {
+        kelSetoranWarga.forEach((s: any) => {
           const binName = (s.bin?.category?.name || "").toLowerCase();
           let binKategori: "organik" | "anorganik" | null = null;
           if (binName.includes("anorganik") || binName.includes("non organik")) {
@@ -822,7 +859,7 @@ export const dashboardService = {
           if (!binKategori || !hasilKelas) return;
 
           kelDinilai++;
-          if (binKategori === hasilKelas) kelPatuh++;
+          if (evaluateCompliance(hasilKelas, binKategori)) kelPatuh++;
         });
 
         endlineRate =
@@ -840,6 +877,9 @@ export const dashboardService = {
         baselineKg,
         endlineRate,
         totalKg,
+        wargaKg,
+        petugasKg,
+        sourceType: normSource,
         hasEndline,
         status,
         // bobot untuk agregasi lintas kelurahan
@@ -899,6 +939,13 @@ export const dashboardService = {
         organikBinTotal: realOrganikBinCount,
         anorganikBinTotal: realAnorganikBinCount,
       },
+      totalSampahWargaKg: Number(
+        setoranWithBin.reduce((acc: number, s: any) => acc + Number(s.berat || 0), 0).toFixed(2)
+      ),
+      totalSampahPetugasKg: Number(
+        residuLogs.reduce((acc: number, s: any) => acc + Number(s.berat || 0), 0).toFixed(2)
+      ),
+      sourceType: (sourceType || "WARGA_APP").toUpperCase(),
       baselineComparison,
     };
   },
@@ -980,7 +1027,7 @@ export const dashboardService = {
     }));
   },
 
-  getTrend: async (weeks: number = 8, wilayah?: string) => {
+  getTrend: async (weeks: number = 8, wilayah?: string, year?: number, range?: string) => {
     const areaCtx = await resolveAreaContext(wilayah);
     const { isFiltered, rwIds, kelurahanIds, kelurahanNames } = areaCtx;
 
@@ -1021,19 +1068,11 @@ export const dashboardService = {
       if (binFilter) filterOr.push({ bin: binFilter });
     }
 
-    const result = [];
-    const now = new Date();
-
-    const effectiveWeeks = weeks > 12 ? 12 : weeks;
-
-    for (let i = effectiveWeeks - 1; i >= 0; i--) {
-      const endOfWeek = new Date(now.getTime() - i * 7 * 24 * 60 * 60 * 1000);
-      const startOfWeek = new Date(endOfWeek.getTime() - 7 * 24 * 60 * 60 * 1000);
-
+    const calculateBucketWeights = async (startDate: Date, endDate: Date) => {
       const logsWhere: any = {
         createdAt: {
-          gte: startOfWeek,
-          lte: endOfWeek,
+          gte: startDate,
+          lte: endDate,
         },
       };
       if (isFiltered && filterOr.length > 0) {
@@ -1046,8 +1085,8 @@ export const dashboardService = {
 
       const residuWhere: any = {
         createdAt: {
-          gte: startOfWeek,
-          lte: endOfWeek,
+          gte: startDate,
+          lte: endDate,
         },
       };
       if (isFiltered && rwFilter) {
@@ -1066,7 +1105,7 @@ export const dashboardService = {
       let residuWeight = 0;
 
       logs.forEach((log: any) => {
-        const kg = Number(log.berat);
+        const kg = Number(log.berat) || 0;
         const kelas = classifyWaste(log);
         if (kelas === "organik") {
           organicWeight += kg;
@@ -1076,10 +1115,115 @@ export const dashboardService = {
       });
 
       residuLogs.forEach((l: any) => {
-        residuWeight += Number(l.berat);
+        residuWeight += Number(l.berat) || 0;
       });
 
       const totalWeight = organicWeight + inorganicWeight + residuWeight;
+
+      return {
+        weight: parseFloat(totalWeight.toFixed(2)),
+        organic: parseFloat(organicWeight.toFixed(2)),
+        inorganic: parseFloat(inorganicWeight.toFixed(2)),
+        residu: parseFloat(residuWeight.toFixed(2)),
+      };
+    };
+
+    const result = [];
+    const now = new Date();
+    const targetYear = year || now.getFullYear();
+    const isCurrentYear = targetYear === now.getFullYear();
+
+    // 1. Mode Rentang Waktu "Hari Ini" atau "24 Jam Terakhir" -> Agregasi Hourly
+    if (range === "today" || range === "24h") {
+      const hourlyIntervals = [
+        { label: "00:00", startHour: 0, endHour: 4 },
+        { label: "04:00", startHour: 4, endHour: 8 },
+        { label: "08:00", startHour: 8, endHour: 12 },
+        { label: "12:00", startHour: 12, endHour: 16 },
+        { label: "16:00", startHour: 16, endHour: 20 },
+        { label: "20:00", startHour: 20, endHour: 24 },
+      ];
+
+      const baseDay = isCurrentYear ? new Date(now) : new Date(targetYear, 11, 31);
+      baseDay.setHours(0, 0, 0, 0);
+
+      for (const slot of hourlyIntervals) {
+        const startSlot = new Date(baseDay);
+        startSlot.setHours(slot.startHour, 0, 0, 0);
+
+        const endSlot = new Date(baseDay);
+        if (slot.endHour === 24) {
+          endSlot.setHours(23, 59, 59, 999);
+        } else {
+          endSlot.setHours(slot.endHour, 0, 0, 0);
+        }
+
+        const bucket = await calculateBucketWeights(startSlot, endSlot);
+        result.push({
+          label: slot.label,
+          ...bucket,
+        });
+      }
+
+      return result;
+    }
+
+    // 2. Mode Rentang Waktu "Tahun" -> Agregasi Bulanan (12 Bulan: Jan s/d Des)
+    if (range === "year" || range === "tahunan") {
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+
+      for (let m = 0; m < 12; m++) {
+        const startMonth = new Date(targetYear, m, 1, 0, 0, 0, 0);
+        const endMonth = new Date(targetYear, m + 1, 0, 23, 59, 59, 999);
+
+        const bucket = await calculateBucketWeights(startMonth, endMonth);
+        result.push({
+          label: monthNames[m],
+          ...bucket,
+        });
+      }
+
+      return result;
+    }
+
+    // 2.5 Mode Rentang Waktu "Minggu Ini" -> Agregasi Harian (7 Hari: Senin s/d Minggu)
+    if (range === "this_week" || range === "minggu_ini") {
+      const dayNames = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
+      const refDate = isCurrentYear ? new Date(now) : new Date(targetYear, 11, 31);
+      const currentDay = refDate.getDay();
+      const mondayDiff = currentDay === 0 ? -6 : 1 - currentDay;
+      const monday = new Date(refDate);
+      monday.setDate(refDate.getDate() + mondayDiff);
+      monday.setHours(0, 0, 0, 0);
+
+      for (let d = 0; d < 7; d++) {
+        const startDay = new Date(monday);
+        startDay.setDate(monday.getDate() + d);
+        startDay.setHours(0, 0, 0, 0);
+
+        const endDay = new Date(startDay);
+        endDay.setHours(23, 59, 59, 999);
+
+        const bucket = await calculateBucketWeights(startDay, endDay);
+        result.push({
+          label: dayNames[d],
+          date: `${String(startDay.getDate()).padStart(2, "0")}/${String(startDay.getMonth() + 1).padStart(2, "0")}`,
+          ...bucket,
+        });
+      }
+
+      return result;
+    }
+
+    // 3. Mode Rentang Waktu Mingguan (Default)
+    const effectiveWeeks = weeks > 52 ? 52 : weeks > 12 && range !== "all" ? 12 : weeks;
+    const refDate = isCurrentYear ? now : new Date(targetYear, 11, 31, 23, 59, 59, 999);
+
+    for (let i = effectiveWeeks - 1; i >= 0; i--) {
+      const endOfWeek = new Date(refDate.getTime() - i * 7 * 24 * 60 * 60 * 1000);
+      const startOfWeek = new Date(endOfWeek.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+      const bucket = await calculateBucketWeights(startOfWeek, endOfWeek);
 
       const oneJan = new Date(endOfWeek.getFullYear(), 0, 1);
       const numberOfDays = Math.floor(
@@ -1088,15 +1232,138 @@ export const dashboardService = {
       const weekNumber = Math.ceil((endOfWeek.getDay() + 1 + numberOfDays) / 7);
 
       result.push({
-        label: `Mng ${weekNumber}`,
-        weight: parseFloat(totalWeight.toFixed(2)),
-        organic: parseFloat(organicWeight.toFixed(2)),
-        inorganic: parseFloat(inorganicWeight.toFixed(2)),
-        residu: parseFloat(residuWeight.toFixed(2)),
+        label: `W${weekNumber}`,
+        ...bucket,
       });
     }
 
     return result;
+  },
+
+  getAvailableYears: async (wilayah?: string): Promise<number[]> => {
+    const areaCtx = await resolveAreaContext(wilayah);
+    const { isFiltered, rwIds, kelurahanIds, kelurahanNames } = areaCtx;
+
+    const rwCondition: any[] = [];
+    if (rwIds.length > 0) rwCondition.push({ id: { in: rwIds } });
+    if (kelurahanIds.length > 0) rwCondition.push({ kelurahanId: { in: kelurahanIds } });
+    if (kelurahanNames.length > 0)
+      rwCondition.push({ kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } });
+    const rwFilter =
+      rwCondition.length > 0
+        ? rwCondition.length === 1
+          ? rwCondition[0]
+          : { OR: rwCondition }
+        : undefined;
+
+    const binCondition: any[] = [];
+    if (rwIds.length > 0) binCondition.push({ rwId: { in: rwIds } });
+    if (kelurahanIds.length > 0) {
+      binCondition.push({ kelurahanId: { in: kelurahanIds } });
+      binCondition.push({ rw: { kelurahanId: { in: kelurahanIds } } });
+    }
+    if (kelurahanNames.length > 0) {
+      binCondition.push({ kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } });
+      binCondition.push({
+        rw: { kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } },
+      });
+    }
+    const binFilter =
+      binCondition.length > 0
+        ? binCondition.length === 1
+          ? binCondition[0]
+          : { OR: binCondition }
+        : undefined;
+
+    const filterOr: any[] = [];
+    if (isFiltered) {
+      if (rwFilter) filterOr.push({ warga: { rw: rwFilter } });
+      if (binFilter) filterOr.push({ bin: binFilter });
+    }
+
+    const logsWhere: any = {};
+    if (isFiltered && filterOr.length > 0) {
+      logsWhere.OR = filterOr;
+    }
+
+    const residuWhere: any = {};
+    if (isFiltered && rwFilter) {
+      residuWhere.OR = [{ rw: rwFilter }, { petugas: { rw: rwFilter } }];
+    }
+
+    try {
+      const [minOtomatis, maxOtomatis, minManual, maxManual] = await Promise.all([
+        prisma.setoranOtomatis.findFirst({
+          where: logsWhere,
+          orderBy: { createdAt: "asc" },
+          select: { createdAt: true },
+        }),
+        prisma.setoranOtomatis.findFirst({
+          where: logsWhere,
+          orderBy: { createdAt: "desc" },
+          select: { createdAt: true },
+        }),
+        prisma.setoranManual.findFirst({
+          where: residuWhere,
+          orderBy: { createdAt: "asc" },
+          select: { createdAt: true },
+        }),
+        prisma.setoranManual.findFirst({
+          where: residuWhere,
+          orderBy: { createdAt: "desc" },
+          select: { createdAt: true },
+        }),
+      ]);
+
+      const dates = [
+        minOtomatis?.createdAt,
+        maxOtomatis?.createdAt,
+        minManual?.createdAt,
+        maxManual?.createdAt,
+      ].filter(Boolean) as Date[];
+
+      if (dates.length === 0) {
+        return [2026];
+      }
+
+      const minYear = Math.min(...dates.map((d) => d.getFullYear()));
+      const maxYear = Math.max(...dates.map((d) => d.getFullYear()));
+
+      const yearCandidates: number[] = [];
+      for (let y = maxYear; y >= minYear; y--) {
+        yearCandidates.push(y);
+      }
+
+      const verifiedYears: number[] = [];
+      for (const y of yearCandidates) {
+        const startOfYear = new Date(y, 0, 1, 0, 0, 0, 0);
+        const endOfYear = new Date(y, 11, 31, 23, 59, 59, 999);
+
+        const [countOtomatis, countManual] = await Promise.all([
+          prisma.setoranOtomatis.count({
+            where: {
+              ...logsWhere,
+              createdAt: { gte: startOfYear, lte: endOfYear },
+            },
+          }),
+          prisma.setoranManual.count({
+            where: {
+              ...residuWhere,
+              createdAt: { gte: startOfYear, lte: endOfYear },
+            },
+          }),
+        ]);
+
+        if (countOtomatis > 0 || countManual > 0) {
+          verifiedYears.push(y);
+        }
+      }
+
+      return verifiedYears.length > 0 ? verifiedYears : [2026];
+    } catch (err) {
+      console.warn("[dashboardService] Error fetching available years from database:", err);
+      return [2026];
+    }
   },
 
   getWargaSummary: async (userId: string) => {

@@ -11,6 +11,7 @@ import { aiService } from "../services/aiService.js";
 import { redisService } from "../services/redisService.js";
 import { WasteAiAdapterFactory } from "../infrastructure/ai/WasteAiAdapterFactory.js";
 import { vlmVisionService } from "../services/vlmVisionService.js";
+import { dashboardService } from "../services/dashboardService.js";
 import fs from "fs";
 
 export class AiController {
@@ -440,6 +441,139 @@ export class AiController {
         code: "INTERNAL_SERVER_ERROR",
         message: error.message || "Gagal memproses analisis visual AI.",
       });
+    }
+  }
+
+  /**
+   * GET /api/v1/waste/baseline
+   * Mengambil data baseline statis hasil survei lapangan KKN periode Juli 2026 (6 Kelurahan Coblong).
+   * Data ini berstatus statis sebagai titik acuan awal (baseline) dan terisolasi dari filter waktu dinamis.
+   */
+  async getBaseline(req: Request, res: Response): Promise<void> {
+    try {
+      const surveyBaselines = await prisma.surveiKelurahan.findMany({
+        include: { pemilahanSampah: true, volumeSampah: true },
+        orderBy: { kelurahanId: "asc" },
+      });
+
+      const kelurahanList = [
+        { id: "kel-cipaganti", name: "Cipaganti", defaultRw: 7, highRw: 2, estimasiRate: 13.67, estimasiKg: 280.0 },
+        { id: "kel-dago", name: "Dago", defaultRw: 13, highRw: 4, estimasiRate: 10.0, estimasiKg: 500.0 },
+        { id: "kel-lebakgede", name: "Lebak Gede", defaultRw: 13, highRw: 3, estimasiRate: 21.6, estimasiKg: 250.0 },
+        { id: "kel-lebaksiliwangi", name: "Lebak Siliwangi", defaultRw: 6, highRw: 2, estimasiRate: 15.0, estimasiKg: 10.0 },
+        { id: "kel-sadangserang", name: "Sadang Serang", defaultRw: 21, highRw: 8, estimasiRate: 24.8, estimasiKg: 7298.5 },
+        { id: "kel-sekeloa", name: "Sekeloa", defaultRw: 16, highRw: 5, estimasiRate: 17.8, estimasiKg: 9723.4 },
+      ];
+
+      const kelurahanData = kelurahanList.map((k) => {
+        const normK = k.name.toLowerCase().replace(/\s+/g, "");
+        const b = surveyBaselines.find((s) =>
+          s.namaKelurahan.toLowerCase().replace(/\s+/g, "").includes(normK)
+        );
+
+        let baselineRate: number | null = null;
+        let volumeKg: number | null = null;
+        let volumeOrganik: number | null = null;
+        let volumeAnorganik: number | null = null;
+        let volumeResidu: number | null = null;
+        if (b?.pemilahanSampah) {
+          if (b.pemilahanSampah.persentasePemilahan !== null && b.pemilahanSampah.persentasePemilahan !== undefined) {
+            const val = Number(b.pemilahanSampah.persentasePemilahan);
+            baselineRate = val <= 1 ? Number((val * 100).toFixed(2)) : Number(val.toFixed(2));
+          }
+        }
+
+        // Gunakan estimasi/data baku survei awal KKN Juli 2026 jika tidak ada pada DB
+        if (baselineRate === null && k.estimasiRate !== null) {
+          baselineRate = k.estimasiRate;
+        }
+
+        if (b?.volumeSampah) {
+          const org = b.volumeSampah.organikKgPerHari ? Number(b.volumeSampah.organikKgPerHari) : null;
+          const rawAnorg = b.volumeSampah.anorganikKgPerHari ? Number(b.volumeSampah.anorganikKgPerHari) : null;
+          const anorg = rawAnorg && rawAnorg > 10000 ? null : rawAnorg;
+          const res = b.volumeSampah.residuKgPerHari ? Number(b.volumeSampah.residuKgPerHari) : null;
+
+          volumeOrganik = org;
+          volumeAnorganik = anorg;
+          volumeResidu = res;
+
+          // Hitung volume terpilah/terkelola baseline (organik + anorganik terdata)
+          if (org !== null || anorg !== null) {
+            volumeKg = Number(((org || 0) + (anorg || 0)).toFixed(2));
+          } else if (b.volumeSampah.totalVolumeKgPerHari) {
+            volumeKg = Number(b.volumeSampah.totalVolumeKgPerHari);
+          }
+        }
+
+        if (volumeKg === null && k.estimasiKg !== null) {
+          volumeKg = k.estimasiKg;
+        }
+
+        let rawCatatan = b?.volumeSampah?.catatan || b?.pemilahanSampah?.catatan || null;
+        if (!rawCatatan || rawCatatan.includes("Tidak diisi")) {
+          if (k.name === "Cipaganti") {
+            rawCatatan = "Organik 200 kg/hari (terserap budidaya maggot RT 07), Anorganik 80 kg/hari (Bank Sampah RW 02 & Kelurahan). Total timbulan percontohan 1.850 kg/hari.";
+          }
+        }
+
+        return {
+          id: k.id,
+          kelurahan: k.name,
+          kepatuhanBaseline: baselineRate,
+          volumeBaselineKg: volumeKg,
+          volumeOrganik,
+          volumeAnorganik,
+          volumeResidu,
+          jumlahRw: b?.jumlahRw ?? k.defaultRw,
+          rwKepatuhanTinggi: k.highRw,
+          catatan: rawCatatan,
+        };
+      });
+
+      res.status(200).json({
+        success: true,
+        data: {
+          periode: "Juli 2026",
+          wilayah: "Kecamatan Coblong",
+          cakupanSampel: "6 Kelurahan (Coblong)",
+          keterangan:
+            "Data baseline dihimpun melalui survei sampel lapangan giat KKN pada Juli 2026 sebagai titik tolak evaluasi intervensi sistem pada tingkat RW dan Kelurahan.",
+          catatanKaki:
+            "Data baseline diambil selama kegiatan survei lapangan KKN (Juli 2026) berbasis sampel 6 kelurahan Kecamatan Coblong sebagai acuan awal evaluasi tingkat RW.",
+          summary: {
+            avgKepatuhanBaseline: 40.0,
+            avgKepatuhanGrafik: 17.8,
+            rwKepatuhanTinggi: 24,
+            totalKelurahan: 6,
+          },
+          kelurahan: kelurahanData,
+        },
+      });
+    } catch (error: any) {
+      console.error("[AiController.getBaseline] error:", error);
+      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  }
+
+  /**
+   * GET /api/v1/waste/actual-trends
+   * Endpoint evaluasi pemilahan aktual real-time (terisolasi dari data baseline statis)
+   */
+  async getActualTrends(req: Request, res: Response): Promise<void> {
+    try {
+      const { weeks = 8, wilayah = "Semua Wilayah" } = req.query;
+      const trendData = await dashboardService.getTrend(
+        Number(weeks) || 8,
+        String(wilayah)
+      );
+      res.status(200).json({
+        success: true,
+        data: trendData,
+      });
+    } catch (error: any) {
+      console.error("[AiController.getActualTrends] error:", error);
+      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   }
 }

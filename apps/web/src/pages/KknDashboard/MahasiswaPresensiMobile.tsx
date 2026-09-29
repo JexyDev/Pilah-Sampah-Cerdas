@@ -525,11 +525,17 @@ export const MahasiswaPresensiMobile: React.FC = () => {
           });
         } else {
           setIsLiveActiveInZone(false);
-          setActiveSession(null);
+          setActiveSession((prev: any) => {
+            const isMandiriActive = prev && !prev.scheduleId && (prev.status === "AKTIF" || prev.status === "BERLANGSUNG");
+            return isMandiriActive ? prev : null;
+          });
         }
       } else {
         setIsLiveActiveInZone(false);
-        setActiveSession(null);
+        setActiveSession((prev: any) => {
+          const isMandiriActive = prev && !prev.scheduleId && (prev.status === "AKTIF" || prev.status === "BERLANGSUNG");
+          return isMandiriActive ? prev : null;
+        });
       }
     } catch (err) {
       console.error("Gagal memuat kegiatan aktif", err);
@@ -566,11 +572,13 @@ export const MahasiswaPresensiMobile: React.FC = () => {
           }
           return {
             id: active.presensiId || active.id,
+            presensiId: active.presensiId || active.id,
             jamMasuk: active.checkInAt || active.jamMasuk || active.waktuCheckin || active.waktuAbsen,
             jamPulang: active.checkOutAt || active.jamPulang || active.waktuCheckout,
             deskripsiKegiatan: active.deskripsiKegiatan,
             fotoBuktiUrl: active.fotoUrl || active.fotoBuktiUrl,
-            status: active.status || active.statusPresensi || "BERLANGSUNG",
+            status: active.status || active.statusPresensi || "AKTIF",
+            source: active.source || "PRESENSI_MANDIRI",
             ...active,
           };
         });
@@ -804,11 +812,17 @@ export const MahasiswaPresensiMobile: React.FC = () => {
     setShowCheckOutModal(false);
     let checkOutDone = false;
     try {
-      // 1. Selesaikan sesi jadwal kegiatan resmi KKN
-      if (
+      // 1. Selesaikan sesi jadwal kegiatan resmi KKN HANYA jika mahasiswa terdaftar/sedang mengikuti kegiatan resmi ini
+      const isOfficialOngoing =
         primaryKegiatan &&
-        primaryKegiatan.id
-      ) {
+        primaryKegiatan.id &&
+        (primaryKegiatan.statusKehadiran === "BERLANGSUNG" ||
+          primaryKegiatan.statusKehadiran === "TERJEDA" ||
+          primaryKegiatan.statusKehadiran === "DI_ZONA" ||
+          Boolean(primaryKegiatan.attendedAt) ||
+          Boolean(activeSession?.scheduleId));
+
+      if (isOfficialOngoing) {
         try {
           const res = await api.post(`/kkn/kegiatan/${primaryKegiatan.id}/selesai`, {
             latitude: coords?.latitude,
@@ -825,37 +839,53 @@ export const MahasiswaPresensiMobile: React.FC = () => {
           const errCode = errResp?.error || errResp?.code;
           const errMsg = errResp?.message || "";
 
+          // Jika mahasiswa juga punya presensi mandiri aktif, jangan abort return jika official gagal
+          const hasMandiriFallback = Boolean(
+            activeSession &&
+            (activeSession.id || activeSession.presensiId) &&
+            !activeSession.scheduleId
+          );
+
           if (
             officialErr?.response?.status === 422 ||
             errCode === "EARLY_CHECKOUT_RESTRICTED"
           ) {
-            showToast.error(
-              errMsg || "Belum dapat presensi pulang. Minimal 30 menit sebelum jam pulang."
-            );
-            setIsSubmitting(false);
-            return;
+            if (!hasMandiriFallback) {
+              showToast.error(
+                errMsg || "Belum dapat presensi pulang. Minimal 30 menit sebelum jam pulang."
+              );
+              setIsSubmitting(false);
+              return;
+            }
           }
 
           if (
             errCode === "OUT_OF_GEOFENCE" ||
             errMsg.includes("OUT_OF_GEOFENCE")
           ) {
-            // Bersihkan prefix teknis 'OUT_OF_GEOFENCE:' jika ada
-            const cleanMsg = errMsg.replace(/^OUT_OF_GEOFENCE:\s*/, "");
-            showToast.error(
-              cleanMsg || "Gagal check-out: Posisi Anda berada di luar area posko KKN. Presensi pulang wajib dilakukan di area posko sebelum meninggalkan lokasi.",
-              { duration: 7000 }
-            );
-            setIsSubmitting(false);
-            return;
+            if (!hasMandiriFallback) {
+              // Bersihkan prefix teknis 'OUT_OF_GEOFENCE:' jika ada
+              const cleanMsg = errMsg.replace(/^OUT_OF_GEOFENCE:\s*/, "");
+              showToast.error(
+                cleanMsg || "Gagal check-out: Posisi Anda berada di luar area posko KKN. Presensi pulang wajib dilakukan di area posko sebelum meninggalkan lokasi.",
+                { duration: 7000 }
+              );
+              setIsSubmitting(false);
+              return;
+            }
           }
         }
       }
 
       // 2. Selesaikan sesi presensi mandiri jika ada
       if (activeSession) {
-        const targetId = activeSession.id || activeSession.presensiId;
-        if (targetId) {
+        const targetId = activeSession.presensiId || activeSession.id;
+        if (
+          targetId &&
+          (activeSession.status === "AKTIF" ||
+            activeSession.status === "BERLANGSUNG" ||
+            !activeSession.scheduleId)
+        ) {
           try {
             const res = await api.patch(`/presensi/mandiri/${targetId}/checkout`, {
               deskripsiKegiatan: activeSession.deskripsiKegiatan || deskripsi.trim(),

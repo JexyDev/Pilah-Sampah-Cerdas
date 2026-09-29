@@ -34,7 +34,6 @@ export const LAYERS: LayerItem[] = [
   { id: "kep", label: "Kepatuhan" },
   { id: "org", label: "Organik" },
   { id: "ano", label: "Anorganik" },
-  { id: "res", label: "Residu" },
   { id: "total", label: "Volume total" },
 ];
 

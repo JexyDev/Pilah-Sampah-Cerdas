@@ -31,7 +31,14 @@ import {
   Building2,
   Users,
   Globe,
-  Edit2
+  Edit2,
+  LayoutGrid,
+  Table2,
+  Navigation,
+  Database,
+  Info,
+  Sparkles,
+  Filter
 } from "lucide-react";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
@@ -234,6 +241,7 @@ export const PemanfaatanSampah: React.FC = () => {
   const { user } = useAuthStore();
   const isDeveloper = user?.peran === "DEVELOPER" || user?.peran === "SUPER_USER";
   const [editingFacility, setEditingFacility] = useState<FacilityItem | null>(null);
+  const [viewMode, setViewMode] = useState<"split" | "table">("split");
 
 
 
@@ -425,8 +433,10 @@ export const PemanfaatanSampah: React.FC = () => {
     }
     setMapTargetCenter([latNum, lngNum]);
     setMapTargetZoom(17);
-    if (mapSectionRef.current) {
-      mapSectionRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (viewMode === "table" || (typeof window !== "undefined" && window.innerWidth < 1024)) {
+      if (mapSectionRef.current) {
+        mapSectionRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
     }
   };
 
@@ -439,6 +449,624 @@ export const PemanfaatanSampah: React.FC = () => {
     setTimeout(() => setCopiedCoordId(null), 2000);
   };
 
+  // Render Compact Metrics (Untuk Split-View Right Pane)
+  const renderCompactMetrics = () => (
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+      {/* 1. Semua Data */}
+      <button
+        type="button"
+        onClick={() => handleCardFilterClick("ALL")}
+        className={`p-2.5 rounded-xl border text-left transition-all duration-150 cursor-pointer flex flex-col justify-between ${
+          selectedJenis === "ALL"
+            ? "bg-emerald-50 dark:bg-emerald-950/60 border-emerald-500 text-emerald-950 dark:text-emerald-50 shadow-xs ring-2 ring-emerald-500/20"
+            : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-emerald-400"
+        }`}
+      >
+        <div className="flex items-center justify-between w-full mb-1">
+          <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            Total
+          </span>
+          <div className="p-1 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400">
+            <Layers size={13} />
+          </div>
+        </div>
+        <div className="text-lg font-black text-slate-900 dark:text-white leading-tight">
+          {metrics.total}
+        </div>
+        <span className="text-[9.5px] font-semibold text-slate-400 dark:text-slate-500 truncate">
+          Semua Titik
+        </span>
+      </button>
+
+      {/* 2. Bank Sampah */}
+      <button
+        type="button"
+        onClick={() => handleCardFilterClick("bank_sampah")}
+        className={`p-2.5 rounded-xl border text-left transition-all duration-150 cursor-pointer flex flex-col justify-between ${
+          selectedJenis === "bank_sampah"
+            ? "bg-teal-50 dark:bg-teal-950/60 border-teal-500 text-teal-950 dark:text-teal-50 shadow-xs ring-2 ring-teal-500/20"
+            : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-teal-400"
+        }`}
+      >
+        <div className="flex items-center justify-between w-full mb-1">
+          <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            Bank Sampah
+          </span>
+          <div className="p-1 rounded-lg bg-teal-100 dark:bg-teal-950 text-teal-700 dark:text-teal-400">
+            <Recycle size={13} />
+          </div>
+        </div>
+        <div className="text-lg font-black text-slate-900 dark:text-white leading-tight">
+          {metrics.bankSampah}
+        </div>
+        <span className="text-[9.5px] font-semibold text-slate-400 dark:text-slate-500 truncate">
+          Unit Aktif
+        </span>
+      </button>
+
+      {/* 3. Inovasi Organik */}
+      <button
+        type="button"
+        onClick={() => handleCardFilterClick("organik_group")}
+        className={`p-2.5 rounded-xl border text-left transition-all duration-150 cursor-pointer flex flex-col justify-between ${
+          selectedJenis === "organik_group"
+            ? "bg-amber-50 dark:bg-amber-950/60 border-amber-500 text-amber-950 dark:text-amber-50 shadow-xs ring-2 ring-amber-500/20"
+            : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-amber-400"
+        }`}
+      >
+        <div className="flex items-center justify-between w-full mb-1">
+          <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            Organik
+          </span>
+          <div className="p-1 rounded-lg bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400">
+            <Sprout size={13} />
+          </div>
+        </div>
+        <div className="text-lg font-black text-slate-900 dark:text-white leading-tight">
+          {metrics.inovasiOrganik}
+        </div>
+        <span className="text-[9.5px] font-semibold text-slate-400 dark:text-slate-500 truncate">
+          Loseda / Maggot
+        </span>
+      </button>
+
+      {/* 4. Buruan Sae */}
+      <button
+        type="button"
+        onClick={() => handleCardFilterClick("buruan_sae")}
+        className={`p-2.5 rounded-xl border text-left transition-all duration-150 cursor-pointer flex flex-col justify-between ${
+          selectedJenis === "buruan_sae"
+            ? "bg-lime-50 dark:bg-lime-950/60 border-lime-500 text-lime-950 dark:text-lime-50 shadow-xs ring-2 ring-lime-500/20"
+            : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-lime-400"
+        }`}
+      >
+        <div className="flex items-center justify-between w-full mb-1">
+          <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            Buruan Sae
+          </span>
+          <div className="p-1 rounded-lg bg-lime-100 dark:bg-lime-950 text-lime-700 dark:text-lime-400">
+            <Leaf size={13} />
+          </div>
+        </div>
+        <div className="text-lg font-black text-slate-900 dark:text-white leading-tight">
+          {metrics.buruanSae}
+        </div>
+        <span className="text-[9.5px] font-semibold text-slate-400 dark:text-slate-500 truncate">
+          Kebun Warga
+        </span>
+      </button>
+
+      {/* 5. TPS */}
+      <button
+        type="button"
+        onClick={() => handleCardFilterClick("tps")}
+        className={`p-2.5 rounded-xl border text-left transition-all duration-150 cursor-pointer flex flex-col justify-between ${
+          selectedJenis === "tps"
+            ? "bg-slate-100 dark:bg-slate-800 border-slate-500 text-slate-950 dark:text-slate-50 shadow-xs ring-2 ring-slate-500/20"
+            : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-400"
+        }`}
+      >
+        <div className="flex items-center justify-between w-full mb-1">
+          <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            TPS
+          </span>
+          <div className="p-1 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+            <Trash2 size={13} />
+          </div>
+        </div>
+        <div className="text-lg font-black text-slate-900 dark:text-white leading-tight">
+          {metrics.tps}
+        </div>
+        <span className="text-[9.5px] font-semibold text-slate-400 dark:text-slate-500 truncate">
+          Penampungan
+        </span>
+      </button>
+
+      {/* 6. Kapasitas Olah */}
+      <div className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-left flex flex-col justify-between">
+        <div className="flex items-center justify-between w-full mb-1">
+          <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            Kapasitas
+          </span>
+          <div className="p-1 rounded-lg bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-400">
+            <Boxes size={13} />
+          </div>
+        </div>
+        <div className="text-lg font-black text-slate-900 dark:text-white leading-tight">
+          {metrics.totalKapasitas > 0 ? `${metrics.totalKapasitas} Kg` : "-"}
+        </div>
+        <span className="text-[9.5px] font-semibold text-slate-400 dark:text-slate-500 truncate">
+          Total Kapasitas
+        </span>
+      </div>
+    </div>
+  );
+
+  // Render Filter Toolbar untuk Split-View
+  const renderCompactFilters = () => (
+    <div className="p-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-2.5">
+      {/* Search Bar */}
+      <div className="relative w-full">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+        <input
+          type="text"
+          placeholder="Cari fasilitas, PIC, alamat, RW..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full pl-8 pr-7 py-1.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-slate-800 dark:text-slate-100 placeholder-slate-400"
+        />
+        {searchQuery && (
+          <button
+            type="button"
+            onClick={() => setSearchQuery("")}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer"
+          >
+            <X size={12} />
+          </button>
+        )}
+      </div>
+
+      {/* Dropdown Filters (2 Kolom) */}
+      <div className="grid grid-cols-2 gap-2">
+        {/* Filter Kelurahan */}
+        <select
+          value={selectedKelurahan}
+          onChange={(e) => {
+            setSelectedKelurahan(e.target.value);
+            setSelectedRwId("ALL");
+            setCurrentPage(1);
+          }}
+          className="w-full px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-[11px] font-semibold outline-none focus:border-emerald-500 text-slate-800 dark:text-slate-200 truncate cursor-pointer"
+        >
+          <option value="ALL">Semua Kelurahan</option>
+          {masterKelurahanList.map((k) => (
+            <option key={k.id} value={k.name}>
+              Kel. {formatWilayahName(k.name)}
+            </option>
+          ))}
+        </select>
+
+        {/* Filter RW */}
+        <select
+          value={selectedRwId}
+          onChange={(e) => { setSelectedRwId(e.target.value); setCurrentPage(1); }}
+          className="w-full px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-[11px] font-semibold outline-none focus:border-emerald-500 text-slate-800 dark:text-slate-200 truncate cursor-pointer"
+        >
+          <option value="ALL">Semua RW</option>
+          {rwFilterOptions.map((rw) => (
+            <option key={rw} value={rw}>
+              {formatRwLabel(rw)}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Reset Filter Button if active */}
+      {(selectedJenis !== "ALL" || selectedKelurahan !== "ALL" || selectedRwId !== "ALL" || selectedKelompokId !== "ALL" || searchQuery) && (
+        <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800 text-[11px]">
+          <span className="text-slate-500 dark:text-slate-400 font-medium">
+            Ditemukan: <strong className="text-emerald-600 dark:text-emerald-400">{filteredItems.length}</strong> fasilitas
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              setSearchQuery("");
+              setSelectedJenis("ALL");
+              setSelectedKelurahan("ALL");
+              setSelectedRwId("ALL");
+              setSelectedKelompokId("ALL");
+              setCurrentPage(1);
+            }}
+            className="inline-flex items-center gap-1 text-rose-600 hover:text-rose-700 font-bold transition cursor-pointer"
+          >
+            <X size={12} /> Reset Filter
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
+  // Render Interactive Cards List untuk Split-View Right Pane
+  const renderFacilityCardsList = () => {
+    if (loading) {
+      return (
+        <div className="p-8 text-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <Loader2 size={28} className="text-emerald-600 animate-spin mx-auto mb-2" />
+          <p className="text-xs font-semibold text-slate-500">Memuat fasilitas...</p>
+        </div>
+      );
+    }
+
+    if (paginatedItems.length === 0) {
+      return (
+        <div className="p-8 text-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <Sprout size={32} className="text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+          <p className="font-bold text-xs text-slate-700 dark:text-slate-300">Tidak ada fasilitas ditemukan</p>
+          <p className="text-[11px] text-slate-400 mt-1">Coba sesuaikan kata kunci pencarian atau reset filter.</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-3">
+        {paginatedItems.map((item) => {
+          const picInfo = getDisplayPic(item);
+          const resolvedFoto = resolveImageUrl(item.foto);
+          const TypeIcon = getFacilityTypeIcon(item.jenis);
+          const latNum = Number(item.latitude);
+          const lngNum = Number(item.longitude);
+          const hasValidCoords = !isNaN(latNum) && !isNaN(lngNum) && latNum !== 0 && lngNum !== 0;
+
+          return (
+            <div
+              key={item.id}
+              className="bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs hover:border-emerald-300 dark:hover:border-emerald-700/60 transition-all space-y-2.5"
+            >
+              {/* Header: Foto + Nama & Badge */}
+              <div className="flex items-start gap-3">
+                {resolvedFoto ? (
+                  <div
+                    className="relative group cursor-pointer overflow-hidden rounded-xl shrink-0 w-14 h-14 border border-slate-200 dark:border-slate-700"
+                    onClick={() => setPreviewImage({ url: resolvedFoto, title: item.nama, subtitle: item.alamat })}
+                    title="Klik perbesar foto"
+                  >
+                    <img
+                      src={resolvedFoto}
+                      alt={item.nama}
+                      className="w-full h-full object-cover group-hover:scale-110 transition duration-300"
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = "none";
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition">
+                      <Eye size={13} />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-14 h-14 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-100 dark:border-emerald-900/60 flex items-center justify-center shrink-0">
+                    <TypeIcon size={22} className="text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                )}
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold border ${getFacilityBadgeClass(item.jenis)}`}>
+                      <TypeIcon size={11} className="shrink-0" />
+                      {formatFacilityTypeLabel(item.jenis)}
+                    </span>
+                    {item.kapasitas && item.kapasitas > 0 ? (
+                      <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
+                        {item.kapasitas} Kg
+                      </span>
+                    ) : null}
+                  </div>
+                  <h4 className="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white leading-snug line-clamp-1">
+                    {item.nama}
+                  </h4>
+                  <div className="flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    <MapPin size={11} className="text-emerald-600 shrink-0" />
+                    <span className="truncate">
+                      {item.rw?.name ? (item.rw.name.startsWith("RW") || item.rw.name.startsWith("Kel.") ? item.rw.name : `RW ${item.rw.name}`) : "Wilayah Binaan"}
+                      {item.alamat ? ` • ${item.alamat}` : ""}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* PIC Info & WhatsApp */}
+              <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-100 dark:border-slate-800/80">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <User size={12} className="text-slate-400 shrink-0" />
+                  <span className="font-bold text-slate-800 dark:text-slate-200 text-xs truncate max-w-[130px]">
+                    {picInfo.name}
+                  </span>
+                  <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded border shrink-0 ${
+                    picInfo.isWarga
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
+                      : "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800"
+                  }`}>
+                    {picInfo.roleBadge}
+                  </span>
+                </div>
+
+                {picInfo.contact && picInfo.contact !== "-" && (
+                  <a
+                    href={`https://wa.me/${picInfo.contact.replace(/\D/g, '')}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 text-[11px] font-mono text-emerald-600 dark:text-emerald-400 hover:underline shrink-0"
+                    title="Hubungi via WhatsApp"
+                  >
+                    <Phone size={11} />
+                    <span>{picInfo.contact}</span>
+                  </a>
+                )}
+              </div>
+
+              {/* Action Buttons: Fokus Peta + Copy GPS + Admin */}
+              <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+                <div className="flex items-center gap-1.5">
+                  {hasValidCoords && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyCoordinate(item.id, latNum, lngNum)}
+                        className="inline-flex items-center gap-1 text-[10px] font-mono text-slate-500 hover:text-emerald-600 px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 cursor-pointer transition"
+                        title="Salin Koordinat"
+                      >
+                        {copiedCoordId === item.id ? <Check size={11} className="text-emerald-600" /> : <Copy size={11} />}
+                        <span>{latNum.toFixed(4)}, {lngNum.toFixed(4)}</span>
+                      </button>
+
+                      <a
+                        href={`https://www.google.com/maps?q=${latNum},${lngNum}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="p-1 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800"
+                        title="Buka di Google Maps"
+                      >
+                        <ExternalLink size={12} />
+                      </a>
+                    </>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  {hasValidCoords && (
+                    <button
+                      type="button"
+                      onClick={() => handleViewOnMap(latNum, lngNum)}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold transition cursor-pointer shadow-2xs"
+                      title="Sorot lokasi titik ini di peta GIS sebelah kiri tanpa scroll halaman"
+                    >
+                      <Navigation size={12} />
+                      <span>Fokus Peta</span>
+                    </button>
+                  )}
+
+                  {isDeveloper && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setEditingFacility(item)}
+                        className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 transition cursor-pointer"
+                        title="Edit Fasilitas"
+                      >
+                        <Edit2 size={12} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteFacility(item.id)}
+                        className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition cursor-pointer"
+                        title="Hapus Fasilitas"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  // Render Map GIS Section
+  const renderMapSection = (isSplit: boolean = false) => (
+    <div
+      ref={mapSectionRef}
+      className={`bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-3 relative overflow-hidden ${
+        isSplit ? "lg:sticky lg:top-20" : ""
+      }`}
+    >
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-2 py-1 mb-2 border-b border-slate-100 dark:border-slate-800">
+        <div className="flex items-center gap-2">
+          <span className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
+            <MapPin size={16} />
+          </span>
+          <div>
+            <h3 className="font-bold text-sm text-slate-800 dark:text-slate-100">
+              Peta Sebaran Fasilitas Pengelolaan Sampah
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Cakupan Wilayah Binaan ({filteredItems.length} titik aktif)
+            </p>
+          </div>
+        </div>
+
+        {selectedJenis !== "ALL" && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700">
+              Filter Aktif: {selectedJenis === "organik_group" ? "Inovasi Organik" : formatFacilityTypeLabel(selectedJenis)}
+            </span>
+            <button
+              type="button"
+              onClick={() => setSelectedJenis("ALL")}
+              className="text-xs text-slate-500 hover:text-rose-600 flex items-center gap-1 font-medium transition cursor-pointer"
+            >
+              <X size={13} /> Reset Filter
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div
+        className={`relative rounded-xl overflow-hidden ${
+          isSplit
+            ? "h-[450px] sm:h-[500px] lg:h-[calc(100vh-220px)] min-h-[450px]"
+            : "h-[440px] sm:h-[480px]"
+        } z-0 border border-slate-200/80 dark:border-slate-800`}
+      >
+        {/* Legenda Monitoring Floating Card */}
+        <div className="absolute top-3 right-3 z-[999] max-w-[280px] pointer-events-auto">
+          <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-xl rounded-xl p-3 border border-slate-200 dark:border-slate-800 flex flex-col gap-2.5">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-1.5">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[10.5px] font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider">
+                  Legenda Simbol Peta
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-2.5">
+              {/* Fasilitas */}
+              <div className="space-y-1">
+                <span className="text-[9px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+                  Jenis Fasilitas
+                </span>
+                <div className="grid grid-cols-2 gap-x-2 gap-y-1.5 text-[10px]">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-xs bg-[#65a30d] shrink-0" />
+                    <span className="font-bold text-slate-700 dark:text-slate-300 truncate">Buruan Sae</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-xs bg-[#2563eb] shrink-0" />
+                    <span className="font-bold text-slate-700 dark:text-slate-300 truncate">Bank Sampah</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-xs bg-[#0d9488] shrink-0" />
+                    <span className="font-bold text-slate-700 dark:text-slate-300 truncate">Loseda</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-xs bg-[#f59e0b] shrink-0" />
+                    <span className="font-bold text-slate-700 dark:text-slate-300 truncate">Bata Terawang</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-xs bg-[#7c3aed] shrink-0" />
+                    <span className="font-bold text-slate-700 dark:text-slate-300 truncate">Rumah Maggot</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-xs bg-[#06b6d4] shrink-0" />
+                    <span className="font-bold text-slate-700 dark:text-slate-300 truncate">POC</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-xs bg-[#64748b] shrink-0" />
+                    <span className="font-bold text-slate-700 dark:text-slate-300 truncate">TPS</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Batas Kelurahan */}
+              <div className="space-y-1 border-t border-slate-100 dark:border-slate-800 pt-1.5">
+                <span className="text-[9px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+                  Batas 6 Kelurahan Coblong
+                </span>
+                <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[10px]">
+                  <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-xs bg-[#10b981]" /><span className="font-medium text-slate-600 dark:text-slate-400">Dago</span></div>
+                  <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-xs bg-[#3b82f6]" /><span className="font-medium text-slate-600 dark:text-slate-400">L. Siliwangi</span></div>
+                  <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-xs bg-[#8b5cf6]" /><span className="font-medium text-slate-600 dark:text-slate-400">Lebak Gede</span></div>
+                  <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-xs bg-[#f59e0b]" /><span className="font-medium text-slate-600 dark:text-slate-400">Sekeloa</span></div>
+                  <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-xs bg-[#ec4899]" /><span className="font-medium text-slate-600 dark:text-slate-400">Sadang Serang</span></div>
+                  <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-xs bg-[#06b6d4]" /><span className="font-medium text-slate-600 dark:text-slate-400">Cipaganti</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <MapContainer
+          center={[-6.8903, 107.611]}
+          zoom={14}
+          style={{ height: '100%', width: '100%' }}
+          className="z-0"
+        >
+          <ThemeTileLayer lightUrl={GOOGLE_SATELLITE_URL} darkUrl={GOOGLE_SATELLITE_URL} />
+          <MapFlyToController center={mapTargetCenter} zoom={mapTargetZoom} />
+
+          {/* Render Kelurahan Boundaries */}
+          {Object.values(KELURAHAN_GEODATA).map((kg) => (
+            <Polygon
+              key={kg.id}
+              positions={kg.bounds as any}
+              pathOptions={{
+                color: kg.color,
+                weight: 2.5,
+                fillColor: kg.color,
+                fillOpacity: 0.08,
+              }}
+            />
+          ))}
+
+          {filteredItems.map(fac => {
+            if (!fac.latitude || !fac.longitude) return null;
+            const latNum = Number(fac.latitude);
+            const lngNum = Number(fac.longitude);
+            if (isNaN(latNum) || isNaN(lngNum) || latNum === 0) return null;
+            const icon = createFacilityIcon(fac.jenis, fac.nama);
+            const picInfo = getDisplayPic(fac);
+            const resolvedFoto = resolveImageUrl(fac.foto);
+
+            return (
+              <Marker key={fac.id} position={[latNum, lngNum]} icon={icon}>
+                <Popup className="custom-popup">
+                  <div className="p-1 min-w-[220px]">
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <span className={`inline-block px-2 py-0.5 rounded text-[9.5px] font-bold border ${getFacilityBadgeClass(fac.jenis)}`}>
+                        {formatFacilityTypeLabel(fac.jenis)}
+                      </span>
+                    </div>
+                    <h3 className="font-bold text-slate-900 text-sm mb-1.5 leading-snug">{fac.nama}</h3>
+                    {resolvedFoto && (
+                      <div
+                        className="relative group cursor-pointer overflow-hidden rounded-lg mb-2"
+                        onClick={() => setPreviewImage({ url: resolvedFoto, title: fac.nama, subtitle: fac.alamat })}
+                      >
+                        <img
+                          src={resolvedFoto}
+                          alt={fac.nama}
+                          className="w-full h-28 object-cover rounded-lg shadow-xs hover:scale-105 transition duration-300"
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.display = "none";
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-semibold gap-1 transition">
+                          <Eye size={13} /> Lihat Foto
+                        </div>
+                      </div>
+                    )}
+                    <div className="space-y-1 text-xs text-slate-700 border-t border-slate-100 pt-1.5">
+                      <p><strong className="text-slate-900">PIC:</strong> {picInfo.name}</p>
+                      {picInfo.contact && picInfo.contact !== "-" && (
+                        <p><strong className="text-slate-900">Kontak:</strong> {picInfo.contact}</p>
+                      )}
+                      <p><strong className="text-slate-900">Wilayah:</strong> {fac.rw?.name || fac.alamat || "-"}</p>
+                      <p className="text-[10.5px] text-slate-500 font-mono">
+                        {latNum.toFixed(5)}, {lngNum.toFixed(5)}
+                      </p>
+                    </div>
+                  </div>
+                </Popup>
+              </Marker>
+            );
+          })}
+        </MapContainer>
+      </div>
+    </div>
+  );
+
   return (
     <div className="pb-24 lg:pb-8">
       <PageHeader
@@ -449,6 +1077,122 @@ export const PemanfaatanSampah: React.FC = () => {
 
       <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-6">
         
+        {/* Banner Penjelasan Data Real-Time & Tata Letak */}
+        <div className="bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 rounded-2xl p-4 sm:p-4.5 flex flex-col md:flex-row items-start md:items-center justify-between gap-3.5 shadow-2xs">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-xl bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 shrink-0 mt-0.5">
+              <Database size={18} />
+            </div>
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-bold text-emerald-900 dark:text-emerald-200">
+                  Data Inventaris Operasional Terverifikasi
+                </span>
+                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-200/70 dark:bg-emerald-800/70 text-emerald-950 dark:text-emerald-100 border border-emerald-300 dark:border-emerald-700">
+                  100% Real-Time Database
+                </span>
+              </div>
+              <p className="text-xs text-emerald-800/90 dark:text-emerald-300/90 leading-relaxed">
+                Menampilkan direktori 87 fasilitas pengelolaan sampah (Bank Sampah, Inovasi Organik Loseda/Bata Terawang/POC/Maggot, Buruan Sae, dan TPS) di 6 kelurahan Kecamatan Coblong. Data dihimpun langsung dari basis data operasional BERSEKA hasil verifikasi bersama tim KKN Tematik UNIKOM dan aparat kewilayahan.
+              </p>
+            </div>
+          </div>
+
+          {/* Switcher Tampilan (Split vs Table) */}
+          <div className="inline-flex items-center p-1 bg-white dark:bg-slate-800 rounded-xl border border-emerald-200 dark:border-slate-700 shadow-2xs shrink-0 self-stretch sm:self-auto justify-center">
+            <button
+              type="button"
+              onClick={() => setViewMode("split")}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                viewMode === "split"
+                  ? "bg-emerald-600 text-white shadow-xs"
+                  : "text-slate-600 dark:text-slate-300 hover:text-emerald-600"
+              }`}
+              title="Tampilan berdampingan peta dan daftar untuk efisiensi monitoring"
+            >
+              <LayoutGrid size={14} />
+              <span>Split-View (Anti-Scroll)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("table")}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                viewMode === "table"
+                  ? "bg-emerald-600 text-white shadow-xs"
+                  : "text-slate-600 dark:text-slate-300 hover:text-emerald-600"
+              }`}
+              title="Tampilan tabel tabular penuh konvensional"
+            >
+              <Table2 size={14} />
+              <span>Tabel Lengkap</span>
+            </button>
+          </div>
+        </div>
+
+        {/* ========================================================================= */}
+        {/* TAMPILAN 1: MODE SPLIT-VIEW (PETA STICKY & DAFTAR KARTU FASILITAS)        */}
+        {/* ========================================================================= */}
+        {viewMode === "split" && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+            {/* Kolom Kiri: Peta GIS Leaflet Sticky */}
+            <div className="lg:col-span-7 xl:col-span-7 2xl:col-span-8">
+              {renderMapSection(true)}
+            </div>
+
+            {/* Kolom Kanan: Panel Mandiri Ringkasan + Filter + Daftar Fasilitas */}
+            <div className="lg:col-span-5 xl:col-span-5 2xl:col-span-4 space-y-3.5 lg:max-h-[calc(100vh-140px)] lg:overflow-y-auto lg:pr-1 custom-scrollbar">
+              {/* Ringkasan Agregat Ringkas (Quick Filter) */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between px-0.5">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Ringkasan Fasilitas
+                  </span>
+                  <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                    Klik untuk filter
+                  </span>
+                </div>
+                {renderCompactMetrics()}
+              </div>
+
+              {/* Toolbar Pencarian & Filter */}
+              {renderCompactFilters()}
+
+              {/* Daftar Kartu Fasilitas Interaktif */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between px-0.5">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Direktori Fasilitas
+                  </span>
+                  <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                    Hal {currentPage} dari {totalPages} ({filteredItems.length} total)
+                  </span>
+                </div>
+                {renderFacilityCardsList()}
+              </div>
+
+              {/* Paginasi Kartu */}
+              {!loading && filteredItems.length > 0 && (
+                <div className="bg-white dark:bg-slate-900 p-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    totalItems={filteredItems.length}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={setCurrentPage}
+                    onItemsPerPageChange={setItemsPerPage}
+                    itemsPerPageOptions={[10, 20, 30, 50]}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAMPILAN 2: MODE TABEL PENUH (METRIK LENGKAP & PETA LEBAR)                */}
+        {/* ========================================================================= */}
+        {viewMode === "table" && (
+          <>
         {/* ========================================================================= */}
         {/* 1. CARD JUMLAH FASILITAS (METRIC & QUICK FILTER CARDS - CLEAN LOOK)       */}
         {/* ========================================================================= */}
@@ -619,192 +1363,16 @@ export const PemanfaatanSampah: React.FC = () => {
         </div>
 
         {/* ========================================================================= */}
-        {/* 2. PETA GIS INTERAKTIF (DENGAN LEGENDA LENGKAP FASILITAS PERSAMPAHAN)     */}
+        {/* 2. PETA GIS INTERAKTIF (TABLE VIEW MODE)                                  */}
         {/* ========================================================================= */}
-        <div ref={mapSectionRef} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-3 relative overflow-hidden">
-          
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-2 py-1 mb-2 border-b border-slate-100 dark:border-slate-800">
-            <div className="flex items-center gap-2">
-              <span className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
-                <MapPin size={16} />
-              </span>
-              <div>
-                <h3 className="font-bold text-sm text-slate-800 dark:text-slate-100">
-                  Peta Sebaran Fasilitas Pengelolaan Sampah
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Cakupan Wilayah Binaan ({filteredItems.length} titik aktif)
-                </p>
-              </div>
-            </div>
-
-            {selectedJenis !== "ALL" && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700">
-                  Filter Aktif: {selectedJenis === "organik_group" ? "Inovasi Organik" : formatFacilityTypeLabel(selectedJenis)}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setSelectedJenis("ALL")}
-                  className="text-xs text-slate-500 hover:text-rose-600 flex items-center gap-1 font-medium transition cursor-pointer"
-                >
-                  <X size={13} /> Reset Filter
-                </button>
-              </div>
-            )}
-          </div>
-
-          <div className="relative rounded-xl overflow-hidden h-[440px] sm:h-[480px] z-0 border border-slate-200/80 dark:border-slate-800">
-            {/* Legenda Monitoring Floating Card */}
-            <div className="absolute top-3 right-3 z-[999] max-w-[280px] pointer-events-auto">
-              <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-xl rounded-xl p-3 border border-slate-200 dark:border-slate-800 flex flex-col gap-2.5">
-                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-1.5">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-[10.5px] font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider">
-                      Legenda Simbol Peta
-                    </span>
-                  </div>
-                </div>
-
-                <div className="space-y-2.5">
-                  {/* Fasilitas */}
-                  <div className="space-y-1">
-                    <span className="text-[9px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
-                      Jenis Fasilitas
-                    </span>
-                    <div className="grid grid-cols-2 gap-x-2 gap-y-1.5 text-[10px]">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-xs bg-[#65a30d] shrink-0" />
-                        <span className="font-bold text-slate-700 dark:text-slate-300 truncate">Buruan Sae</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-xs bg-[#2563eb] shrink-0" />
-                        <span className="font-bold text-slate-700 dark:text-slate-300 truncate">Bank Sampah</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-xs bg-[#0d9488] shrink-0" />
-                        <span className="font-bold text-slate-700 dark:text-slate-300 truncate">Loseda</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-xs bg-[#f59e0b] shrink-0" />
-                        <span className="font-bold text-slate-700 dark:text-slate-300 truncate">Bata Terawang</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-xs bg-[#7c3aed] shrink-0" />
-                        <span className="font-bold text-slate-700 dark:text-slate-300 truncate">Rumah Maggot</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-xs bg-[#06b6d4] shrink-0" />
-                        <span className="font-bold text-slate-700 dark:text-slate-300 truncate">POC</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-xs bg-[#64748b] shrink-0" />
-                        <span className="font-bold text-slate-700 dark:text-slate-300 truncate">TPS</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Batas Kelurahan */}
-                  <div className="space-y-1 border-t border-slate-100 dark:border-slate-800 pt-1.5">
-                    <span className="text-[9px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
-                      Batas 6 Kelurahan Coblong
-                    </span>
-                    <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[10px]">
-                      <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-xs bg-[#10b981]" /><span className="font-medium text-slate-600 dark:text-slate-400">Dago</span></div>
-                      <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-xs bg-[#3b82f6]" /><span className="font-medium text-slate-600 dark:text-slate-400">L. Siliwangi</span></div>
-                      <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-xs bg-[#8b5cf6]" /><span className="font-medium text-slate-600 dark:text-slate-400">Lebak Gede</span></div>
-                      <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-xs bg-[#f59e0b]" /><span className="font-medium text-slate-600 dark:text-slate-400">Sekeloa</span></div>
-                      <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-xs bg-[#ec4899]" /><span className="font-medium text-slate-600 dark:text-slate-400">Sadang Serang</span></div>
-                      <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-xs bg-[#06b6d4]" /><span className="font-medium text-slate-600 dark:text-slate-400">Cipaganti</span></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <MapContainer
-              center={[-6.8903, 107.611]}
-              zoom={14}
-              style={{ height: '100%', width: '100%' }}
-              className="z-0"
-            >
-              <ThemeTileLayer lightUrl={GOOGLE_SATELLITE_URL} darkUrl={GOOGLE_SATELLITE_URL} />
-              <MapFlyToController center={mapTargetCenter} zoom={mapTargetZoom} />
-              
-              {/* Render Kelurahan Boundaries */}
-              {Object.values(KELURAHAN_GEODATA).map((kg) => (
-                <Polygon
-                  key={kg.id}
-                  positions={kg.bounds as any}
-                  pathOptions={{
-                    color: kg.color,
-                    weight: 2.5,
-                    fillColor: kg.color,
-                    fillOpacity: 0.08,
-                  }}
-                />
-              ))}
-
-              {filteredItems.map(fac => {
-                if (!fac.latitude || !fac.longitude) return null;
-                const latNum = Number(fac.latitude);
-                const lngNum = Number(fac.longitude);
-                if (isNaN(latNum) || isNaN(lngNum) || latNum === 0) return null;
-                const icon = createFacilityIcon(fac.jenis, fac.nama);
-                const picInfo = getDisplayPic(fac);
-                const resolvedFoto = resolveImageUrl(fac.foto);
-
-                return (
-                  <Marker key={fac.id} position={[latNum, lngNum]} icon={icon}>
-                    <Popup className="custom-popup">
-                      <div className="p-1 min-w-[220px]">
-                        <div className="flex items-center gap-1.5 mb-1.5">
-                          <span className={`inline-block px-2 py-0.5 rounded text-[9.5px] font-bold border ${getFacilityBadgeClass(fac.jenis)}`}>
-                            {formatFacilityTypeLabel(fac.jenis)}
-                          </span>
-                        </div>
-                        <h3 className="font-bold text-slate-900 text-sm mb-1.5 leading-snug">{fac.nama}</h3>
-                        {resolvedFoto && (
-                          <div 
-                            className="relative group cursor-pointer overflow-hidden rounded-lg mb-2"
-                            onClick={() => setPreviewImage({ url: resolvedFoto, title: fac.nama, subtitle: fac.alamat })}
-                          >
-                            <img 
-                              src={resolvedFoto} 
-                              alt={fac.nama} 
-                              className="w-full h-28 object-cover rounded-lg shadow-xs hover:scale-105 transition duration-300"
-                              onError={(e) => {
-                                (e.target as HTMLElement).style.display = "none";
-                              }}
-                            />
-                            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-semibold gap-1 transition">
-                              <Eye size={13} /> Lihat Foto
-                            </div>
-                          </div>
-                        )}
-                        <div className="space-y-1 text-xs text-slate-700 border-t border-slate-100 pt-1.5">
-                          <p><strong className="text-slate-900">PIC:</strong> {picInfo.name}</p>
-                          {picInfo.contact && picInfo.contact !== "-" && (
-                            <p><strong className="text-slate-900">Kontak:</strong> {picInfo.contact}</p>
-                          )}
-                          <p><strong className="text-slate-900">Wilayah:</strong> {fac.rw?.name || fac.alamat || "-"}</p>
-                          <p className="text-[10.5px] text-slate-500 font-mono">
-                            {latNum.toFixed(5)}, {lngNum.toFixed(5)}
-                          </p>
-                        </div>
-                      </div>
-                    </Popup>
-                  </Marker>
-                );
-              })}
-            </MapContainer>
-          </div>
-        </div>
+        {renderMapSection(false)}
+        </>
+        )}
 
         {/* ========================================================================= */}
         {/* 3. TABEL DATA INVENTARIS FASILITAS PERSAMPAHAN (TERPADU & RAPI)            */}
         {/* ========================================================================= */}
+        {viewMode === "table" && (
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden space-y-0">
           
           {/* Toolbar Pencarian & Filter */}
@@ -1239,6 +1807,7 @@ export const PemanfaatanSampah: React.FC = () => {
           )}
 
         </div>
+        )}
 
       </div>
 

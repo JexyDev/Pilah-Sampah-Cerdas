@@ -17,8 +17,8 @@ vi.mock("../lib/prisma.js", () => ({
     user: { count: vi.fn(), findMany: vi.fn() },
     warga: { count: vi.fn() },
     household: { count: vi.fn() },
-    setoranOtomatis: { findMany: vi.fn(), aggregate: vi.fn() },
-    setoranManual: { findMany: vi.fn() },
+    setoranOtomatis: { findMany: vi.fn(), aggregate: vi.fn(), findFirst: vi.fn(), count: vi.fn() },
+    setoranManual: { findMany: vi.fn(), findFirst: vi.fn(), count: vi.fn() },
     bin: { findMany: vi.fn(), count: vi.fn() },
     schedule: { findMany: vi.fn(), count: vi.fn() },
     pointHistory: { aggregate: vi.fn() },
@@ -50,7 +50,11 @@ describe("dashboardService Baseline Anti-Dummy & Fallback Metadata Tests", () =>
     (prisma.household.count as any).mockResolvedValue(0);
     (prisma.setoranOtomatis.findMany as any).mockResolvedValue([]);
     (prisma.setoranOtomatis.aggregate as any).mockResolvedValue({ _sum: { berat: 0 } });
+    (prisma.setoranOtomatis.findFirst as any).mockResolvedValue(null);
+    (prisma.setoranOtomatis.count as any).mockResolvedValue(0);
     (prisma.setoranManual.findMany as any).mockResolvedValue([]);
+    (prisma.setoranManual.findFirst as any).mockResolvedValue(null);
+    (prisma.setoranManual.count as any).mockResolvedValue(0);
     (prisma.bin.findMany as any).mockResolvedValue([]);
     (prisma.bin.count as any).mockResolvedValue(0);
     (prisma.schedule.findMany as any).mockResolvedValue([]);
@@ -107,4 +111,76 @@ describe("dashboardService Baseline Anti-Dummy & Fallback Metadata Tests", () =>
     expect(cipaganti.baselineKg).toBeNull();
     expect(cipaganti.isFallback).toBe(false);
   });
+
+  describe("dashboardService getTrend Hierarchical Time Filter Tests", () => {
+    it("should return 6 hourly interval buckets for 'today' or '24h' range with factual 0 kg baseline when empty", async () => {
+      const trend = await dashboardService.getTrend(1, undefined, undefined, "today");
+
+      expect(trend).toHaveLength(6);
+      expect(trend.map((t: any) => t.label)).toEqual([
+        "00:00",
+        "04:00",
+        "08:00",
+        "12:00",
+        "16:00",
+        "20:00",
+      ]);
+      trend.forEach((slot: any) => {
+        expect(slot.organic).toBe(0);
+        expect(slot.inorganic).toBe(0);
+        expect(slot.weight).toBe(0);
+      });
+    });
+
+    it("should return 12 monthly buckets for 'year' range", async () => {
+      const trend = await dashboardService.getTrend(52, undefined, 2026, "year");
+
+      expect(trend).toHaveLength(12);
+      expect(trend.map((t: any) => t.label)).toEqual([
+        "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
+        "Jul", "Agu", "Sep", "Okt", "Nov", "Des"
+      ]);
+    });
+
+    it("should return 7 daily buckets for 'this_week' range", async () => {
+      const trend = await dashboardService.getTrend(1, undefined, undefined, "this_week");
+
+      expect(trend).toHaveLength(7);
+      expect(trend.map((t: any) => t.label)).toEqual([
+        "Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"
+      ]);
+      trend.forEach((d: any) => {
+        expect(d.date).toBeDefined();
+        expect(d.organic).toBe(0);
+        expect(d.inorganic).toBe(0);
+      });
+    });
+
+    it("should return weekly buckets for default/7d range", async () => {
+      const trend = await dashboardService.getTrend(2, undefined, undefined, "7d");
+
+      expect(trend).toHaveLength(2);
+      trend.forEach((w: any) => {
+        expect(w.label).toMatch(/^W\d+$/);
+      });
+    });
+  });
+
+  describe("dashboardService getAvailableYears Relational Database Tests", () => {
+    it("should return fallback [2026] when no setoran records exist in DB", async () => {
+      const years = await dashboardService.getAvailableYears();
+      expect(years).toEqual([2026]);
+    });
+
+    it("should return actual verified years based on setoran records in DB", async () => {
+      (prisma.setoranOtomatis.findFirst as any)
+        .mockResolvedValueOnce({ createdAt: new Date("2026-09-01T00:00:00.000Z") }) // asc
+        .mockResolvedValueOnce({ createdAt: new Date("2026-09-29T00:00:00.000Z") }); // desc
+      (prisma.setoranOtomatis.count as any).mockResolvedValue(10);
+
+      const years = await dashboardService.getAvailableYears();
+      expect(years).toEqual([2026]);
+    });
+  });
 });
+

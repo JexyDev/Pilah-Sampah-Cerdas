@@ -1,4 +1,4 @@
-import { Search, Loader2, EyeOff, Eye, UserPlus, Upload, User, Users, Trash2, X, AlertTriangle, Pencil, Phone, CheckCircle, Shield, Lock, Info, ChevronDown, MapPin, ArrowRightLeft, GraduationCap, UserCheck, Home, ShieldCheck, Building2 } from "lucide-react";
+import { Search, Loader2, EyeOff, Eye, UserPlus, Upload, User, Users, Trash2, X, AlertTriangle, Pencil, Phone, CheckCircle, Shield, Lock, Info, ChevronDown, MapPin, ArrowRightLeft, GraduationCap, UserCheck } from "lucide-react";
 /**
  * Project: BERSEKA
  * Developed by: PT Makerindo
@@ -136,198 +136,26 @@ const normalizeRoleFromUrl = (param: string | null): string => {
   return param.toUpperCase();
 };
 
-// Helper function for extracting degree level
-export const extractJenjang = (prodi?: string, fallbackJenjang?: string) => {
-  if (fallbackJenjang && ["S1", "S2", "S3", "D3", "D4"].includes(fallbackJenjang)) return fallbackJenjang;
-  if (!prodi) return "S1";
-  const match = prodi.match(/\b(S1|S2|S3|D3|D4)\b/i);
-  return match ? match[1].toUpperCase() : "S1";
-};
-
-// Helper function for cleaning redundant degree prefix from Program Studi name
-export const cleanProdiName = (prodi?: string) => {
-  if (!prodi || prodi.trim() === "" || prodi.trim() === "-") return "-";
-  const cleaned = prodi.replace(/\b(S1|S2|S3|D3|D4)\s*/gi, "").trim();
-  return cleaned.length > 0 ? cleaned : prodi;
-};
-
-// Helper function for cleaning redundant KKN Group names
-export const cleanKknDisplayName = (name?: string) => {
-  if (!name || name === "-") return "-";
-  let clean = name.trim();
-  clean = clean.replace(/\s*\([^)]*\)/g, ""); // strip existing parenthesized suffix e.g. (Dago) or (Kel. Dago)
-  clean = clean.replace(/\s+-\s+/g, " - "); // normalize dashes
-
-  // Normalize informal pattern like "Dago 1", "Dago 4", "Cipaganti 4" -> "Kelompok 1 Dago", "Kelompok 4 Dago"
-  const informalMatch = clean.match(/^([A-Za-z\s]+?)\s+(\d+)$/);
-  if (informalMatch) {
-    const place = informalMatch[1].replace(/^Kel\s*/i, "").trim();
-    const num = informalMatch[2];
-    return `Kelompok ${num} ${place}`;
-  }
-  return clean;
-};
-
-export const formatCleanRw = (rwStr?: string): string => {
-  if (!rwStr || rwStr === "-") return "-";
-  const rawClean = rwStr.split("(")[0].trim();
-  const rwNum = rawClean.replace(/\D/g, "").padStart(2, "0");
-  return rwNum && rwNum !== "00" ? `RW ${rwNum}` : rawClean;
-};
-
-export type UserCluster = "all" | "warga" | "mahasiswa" | "pejabat";
-
-const CLUSTER_CONFIG: Record<
-  UserCluster,
-  {
-    label: string;
-    description: string;
-    roles: string[];
-  }
-> = {
-  all: {
-    label: "Semua Pengguna",
-    description: "Seluruh pengguna terdaftar di sistem BERSEKA",
-    roles: [
-      "DEVELOPER",
-      "SUPER_USER",
-      "ADMIN_DLH",
-      "PEMIMPIN",
-      "PANITIA_TASKFORCE",
-      "CAMAT",
-      "LURAH",
-      "RW",
-      "RT",
-      "DPL",
-      "MPL",
-      "PETUGAS_RESIDU",
-      "MAHASISWA_KKN",
-      "WARGA",
-    ],
-  },
-  warga: {
-    label: "Warga",
-    description: "Warga masyarakat terdaftar & petugas pemilah di level RW",
-    roles: ["WARGA", "PETUGAS_RESIDU"],
-  },
-  mahasiswa: {
-    label: "Mahasiswa KKN",
-    description: "Mahasiswa pelaksana KKN, DPL pembimbing, MPL, & Panitia Task Force",
-    roles: ["MAHASISWA_KKN", "DPL", "MPL", "PANITIA_TASKFORCE"],
-  },
-  pejabat: {
-    label: "Pimpinan & Pejabat",
-    description: "Pimpinan eksekutif UNIKOM, pejabat kewilayahan (Camat/Lurah/RW/RT), & Administrator",
-    roles: ["PEMIMPIN", "CAMAT", "LURAH", "RW", "RT", "ADMIN_DLH", "SUPER_USER", "DEVELOPER"],
-  },
-};
-
-const getClusterForRole = (role: string): UserCluster => {
-  const norm = role.toUpperCase() === "PIMPINAN" ? "PEMIMPIN" : role.toUpperCase();
-  if (["WARGA", "PETUGAS_RESIDU"].includes(norm)) return "warga";
-  if (["MAHASISWA_KKN", "DPL", "MPL", "PANITIA_TASKFORCE"].includes(norm)) return "mahasiswa";
-  if (["PEMIMPIN", "CAMAT", "LURAH", "RW", "RT", "ADMIN_DLH", "SUPER_USER", "DEVELOPER"].includes(norm)) return "pejabat";
-  return "all";
-};
-
-const renderRoleBadge = (roleName?: string) => {
-  const r = (roleName || "").toUpperCase();
-  const norm = r === "PIMPINAN" ? "PEMIMPIN" : r;
-  const label = ROLE_LABEL_MAP[norm] || norm || "Pengguna";
-
-  if (norm === "PEMIMPIN") {
-    return (
-      <span className="inline-flex items-center gap-1 bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 px-2.5 py-1 rounded-lg text-[10px] font-extrabold border border-purple-200/80 dark:border-purple-800/80 shadow-2xs whitespace-nowrap">
-        <ShieldCheck size={11} className="text-purple-500" />
-        {label}
-      </span>
-    );
-  }
-  if (["CAMAT", "LURAH"].includes(norm)) {
-    return (
-      <span className="inline-flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2.5 py-1 rounded-lg text-[10px] font-extrabold border border-emerald-200/80 dark:border-emerald-800/80 shadow-2xs whitespace-nowrap">
-        <Building2 size={11} className="text-emerald-500" />
-        {label}
-      </span>
-    );
-  }
-  if (["RW", "RT"].includes(norm)) {
-    return (
-      <span className="inline-flex items-center gap-1 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-lg text-[10px] font-extrabold border border-blue-200/80 dark:border-blue-800/80 shadow-2xs whitespace-nowrap">
-        <Home size={11} className="text-blue-500" />
-        {label}
-      </span>
-    );
-  }
-  if (norm === "MAHASISWA_KKN") {
-    return (
-      <span className="inline-flex items-center gap-1 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-lg text-[10px] font-extrabold border border-blue-200/80 dark:border-blue-800/80 shadow-2xs whitespace-nowrap">
-        <GraduationCap size={11} className="text-blue-500" />
-        {label}
-      </span>
-    );
-  }
-  if (["DPL", "MPL", "PANITIA_TASKFORCE"].includes(norm)) {
-    return (
-      <span className="inline-flex items-center gap-1 bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 px-2.5 py-1 rounded-lg text-[10px] font-extrabold border border-teal-200/80 dark:border-teal-800/80 shadow-2xs whitespace-nowrap">
-        <UserCheck size={11} className="text-teal-500" />
-        {label}
-      </span>
-    );
-  }
-  if (norm === "PETUGAS_RESIDU") {
-    return (
-      <span className="inline-flex items-center gap-1 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 px-2.5 py-1 rounded-lg text-[10px] font-extrabold border border-amber-200/80 dark:border-amber-800/80 shadow-2xs whitespace-nowrap">
-        <User size={11} className="text-amber-500" />
-        {label}
-      </span>
-    );
-  }
-  if (norm === "WARGA") {
-    return (
-      <span className="inline-flex items-center gap-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2.5 py-1 rounded-lg text-[10px] font-extrabold border border-slate-200 dark:border-slate-700 shadow-2xs whitespace-nowrap">
-        <Home size={11} className="text-slate-400" />
-        {label}
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center gap-1 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 px-2.5 py-1 rounded-lg text-[10px] font-extrabold border border-indigo-200/80 dark:border-indigo-800/80 shadow-2xs whitespace-nowrap">
-      <Shield size={11} className="text-indigo-500" />
-      {label}
-    </span>
-  );
-};
-
 const ManajemenPengguna: React.FC = () => {
   const { user, updateUser: updateStoreUser } = useAuthStore();
   const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "RT", "PETUGAS_RESIDU", "MAHASISWA_KKN", "WARGA"].includes(user?.peran || "");
   const canReassign = ["DEVELOPER", "SUPER_USER", "ADMIN_DLH"].includes(
     String(user?.peran || user?.role || "").toUpperCase()
   );
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  // Metrics State from /users/metrics
-  const [metrics, setMetrics] = useState({
-    totalWarga: 0,
-    totalMahasiswaAktif: 0,
-    totalPimpinanPejabat: 0,
-    totalSemua: 0,
-  });
-  const [loadingMetrics, setLoadingMetrics] = useState(false);
+  const [searchParams] = useSearchParams();
 
   const allowedRoleTabs = useMemo(() => {
     const peran = user?.peran || "";
     if (peran === "DEVELOPER") {
       return [
         "DEVELOPER", "SUPER_USER", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL", "MPL",
-        "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PETUGAS_RESIDU", "MAHASISWA_KKN", "WARGA"
+        "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "MAHASISWA_KKN", "WARGA"
       ];
     }
     if (peran === "SUPER_USER") {
       return [
         "SUPER_USER", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL", "MPL",
-        "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PETUGAS_RESIDU", "MAHASISWA_KKN", "WARGA"
+        "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "MAHASISWA_KKN", "WARGA"
       ];
     }
     if (peran === "PEMIMPIN" || peran === "PIMPINAN") {
@@ -339,22 +167,10 @@ const ManajemenPengguna: React.FC = () => {
         "MAHASISWA_KKN",
         "WARGA",
         "PETUGAS_RESIDU",
-        "CAMAT",
-        "LURAH",
-        "RW",
       ];
     }
     if (peran === "PANITIA_TASKFORCE") {
       return ["PANITIA_TASKFORCE", "DPL", "MPL", "MAHASISWA_KKN"];
-    }
-    if (peran === "LURAH") {
-      return ["LURAH", "RW", "RT", "PETUGAS_RESIDU", "MAHASISWA_KKN", "WARGA"];
-    }
-    if (peran === "CAMAT") {
-      return ["CAMAT", "LURAH", "RW", "RT", "PETUGAS_RESIDU", "MAHASISWA_KKN", "WARGA"];
-    }
-    if (peran === "ADMIN_DLH") {
-      return ["ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PETUGAS_RESIDU", "MAHASISWA_KKN", "WARGA"];
     }
     if (peran === "RW") {
       return ["WARGA", "PETUGAS_RESIDU"];
@@ -362,47 +178,8 @@ const ManajemenPengguna: React.FC = () => {
     return ["WARGA"];
   }, [user?.peran]);
 
-  // Cluster & Sub-Role State
-  const rawClusterParam = searchParams.get("cluster");
   const rawRoleParam = searchParams.get("role") || searchParams.get("roleName") || searchParams.get("type");
-
-  const [activeCluster, setActiveCluster] = useState<UserCluster>(() => {
-    if (rawClusterParam && ["all", "warga", "mahasiswa", "pejabat"].includes(rawClusterParam)) {
-      return rawClusterParam as UserCluster;
-    }
-    if (rawRoleParam) {
-      const norm = normalizeRoleFromUrl(rawRoleParam);
-      return getClusterForRole(norm);
-    }
-    return "all";
-  });
-
-  const [selectedRole, setSelectedRole] = useState<string>(() => {
-    if (rawRoleParam) {
-      return normalizeRoleFromUrl(rawRoleParam);
-    }
-    return "Semua";
-  });
-  const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
-
-  useEffect(() => {
-    if (rawClusterParam && ["all", "warga", "mahasiswa", "pejabat"].includes(rawClusterParam)) {
-      if (rawClusterParam !== activeCluster) {
-        setActiveCluster(rawClusterParam as UserCluster);
-      }
-    }
-    if (rawRoleParam) {
-      const norm = normalizeRoleFromUrl(rawRoleParam);
-      if (norm !== selectedRole) {
-        setSelectedRole(norm);
-        if (!rawClusterParam) {
-          setActiveCluster(getClusterForRole(norm));
-        }
-      }
-    } else if (rawClusterParam && selectedRole !== "Semua") {
-      setSelectedRole("Semua");
-    }
-  }, [rawClusterParam, rawRoleParam]);
+  const roleFromUrl = rawRoleParam ? normalizeRoleFromUrl(rawRoleParam) : (allowedRoleTabs[0] || "SUPER_USER");
 
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -410,6 +187,18 @@ const ManajemenPengguna: React.FC = () => {
 
   // Filters State
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedRole, setSelectedRole] = useState(roleFromUrl);
+
+  useEffect(() => {
+    if (rawRoleParam) {
+      const normalized = normalizeRoleFromUrl(rawRoleParam);
+      if (normalized !== selectedRole) {
+        setSelectedRole(normalized);
+      }
+    } else if (!allowedRoleTabs.includes(selectedRole)) {
+      setSelectedRole(allowedRoleTabs[0] || "SUPER_USER");
+    }
+  }, [rawRoleParam, allowedRoleTabs]);
   const [selectedStatus, setSelectedStatus] = useState("Semua");
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
   // Modal state
@@ -521,14 +310,6 @@ const ManajemenPengguna: React.FC = () => {
   const [selectedKelurahanFilter, setSelectedKelurahanFilter] = useState<string>("Semua");
   const [isKelurahanDropdownOpen, setIsKelurahanDropdownOpen] = useState(false);
 
-  // RW Filter State (Dinamis sesuai Kelurahan)
-  const [selectedRwFilter, setSelectedRwFilter] = useState<string>("Semua");
-  const [isRwDropdownOpen, setIsRwDropdownOpen] = useState(false);
-
-  // Kelompok KKN Filter State (Kelompok 1 - 32)
-  const [selectedKelompokFilter, setSelectedKelompokFilter] = useState<string>("Semua");
-  const [isKelompokDropdownOpen, setIsKelompokDropdownOpen] = useState(false);
-
   // Delete Modal State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<any>(null);
@@ -544,81 +325,26 @@ const ManajemenPengguna: React.FC = () => {
   const [isSubmittingReassign, setIsSubmittingReassign] = useState(false);
   const [studentSearchFilter, setStudentSearchFilter] = useState("");
 
-  const fetchMetrics = async () => {
-    try {
-      setLoadingMetrics(true);
-      const res = await api.get("/users/metrics");
-      if (res.data?.success && res.data?.data) {
-        setMetrics(res.data.data);
-      }
-    } catch (err) {
-      console.error("[ManajemenPengguna] fetchMetrics error:", err);
-    } finally {
-      setLoadingMetrics(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchMetrics();
-  }, []);
-
-  const handleClusterChange = (clusterId: UserCluster) => {
-    setActiveCluster(clusterId);
-    setSelectedRole("Semua");
-    setSelectedKelompokFilter("Semua");
-    setSelectedRwFilter("Semua");
-    setCurrentPage(1);
-
-    const newParams: Record<string, string> = {};
-    if (clusterId !== "all") {
-      newParams.cluster = clusterId;
-    }
-    setSearchParams(newParams);
-  };
-
-  const handleRoleSelect = (roleValue: string) => {
-    setSelectedRole(roleValue);
-    setIsRoleDropdownOpen(false);
-    setCurrentPage(1);
-
-    const newParams: Record<string, string> = {};
-    if (activeCluster !== "all") {
-      newParams.cluster = activeCluster;
-    }
-    if (roleValue !== "Semua") {
-      newParams.role = roleValue.toLowerCase();
-    }
-    setSearchParams(newParams);
-  };
-
   const fetchUsers = async () => {
     try {
       setLoading(true);
       setError("");
       const params: any = {};
       if (searchQuery) params.search = searchQuery;
-      if (activeCluster !== "all") params.cluster = activeCluster;
       if (selectedRole !== "Semua") params.roleName = selectedRole;
       if (selectedStatus !== "Semua") params.status = selectedStatus;
-      if (selectedKelurahanFilter !== "Semua") params.kelurahan = selectedKelurahanFilter;
-      if (selectedRwFilter !== "Semua") params.rw = selectedRwFilter;
-      if (selectedKelompokFilter !== "Semua") params.kelompokId = selectedKelompokFilter;
 
       const response = await api.get("/users", { params });
-      let dataUsers = response.data?.data || response.data || [];
+      let dataUsers = response.data.data || [];
 
-      // Clean Lurah data formatting if Lurah role selected or present
-      dataUsers = dataUsers.map((u: any) => {
-        const r = (u.role || u.roleName || u.role?.name || "").toUpperCase();
-        if (r === "LURAH") {
-          return {
-            ...u,
-            kelurahan: cleanKelurahanName(u.kelurahan || u.address),
-            address: cleanKelurahanName(u.address || u.kelurahan),
-          };
-        }
-        return u;
-      });
+      // Clean Lurah data formatting if Lurah role selected
+      if (selectedRole === "LURAH") {
+        dataUsers = dataUsers.map((u: any) => ({
+          ...u,
+          kelurahan: cleanKelurahanName(u.kelurahan || u.address),
+          address: cleanKelurahanName(u.address || u.kelurahan),
+        }));
+      }
 
       setUsers(dataUsers);
     } catch (err: any) {
@@ -632,15 +358,7 @@ const ManajemenPengguna: React.FC = () => {
   useEffect(() => {
     setCurrentPage(1); // Reset page on filter change
     fetchUsers();
-  }, [
-    searchQuery,
-    activeCluster,
-    selectedRole,
-    selectedStatus,
-    selectedKelurahanFilter,
-    selectedRwFilter,
-    selectedKelompokFilter,
-  ]);
+  }, [searchQuery, selectedRole, selectedStatus]);
 
   const filteredRwsByKelurahan = useMemo(() => {
     const targetClean = getCleanKelName(modalKelurahan).toLowerCase();
@@ -740,109 +458,6 @@ const ManajemenPengguna: React.FC = () => {
     }
     return opts;
   }, [kelurahanList]);
-
-  // Dynamic RW filter options based on selected Kelurahan
-  const rwFilterOptions = useMemo(() => {
-    const opts = [{ value: "Semua", label: "Semua RW" }];
-    const targetClean = getCleanKelName(selectedKelurahanFilter).toLowerCase();
-    const list = areasList.filter((a: any) => {
-      if (!targetClean || targetClean === "unassigned" || targetClean === "semua") return true;
-      const areaKel = (a.kelurahan?.name || "").toLowerCase().replace(/^kel\.\s*/i, "").trim();
-      return areaKel === targetClean || areaKel.includes(targetClean) || targetClean.includes(areaKel);
-    });
-
-    const seen = new Set<string>();
-    const uniqueRws: { value: string; label: string }[] = [];
-    for (const item of (list.length > 0 ? list : areasList)) {
-      const rawName = (item.name || "").split("(")[0].trim();
-      const rwNum = rawName.replace(/\D/g, "").padStart(2, "0");
-      if (rwNum && rwNum !== "00" && !seen.has(rwNum)) {
-        seen.add(rwNum);
-        uniqueRws.push({
-          value: `RW ${rwNum}`,
-          label: `RW ${rwNum}`,
-        });
-      }
-    }
-
-    uniqueRws.sort((a, b) => {
-      const numA = parseInt(a.value.replace(/\D/g, "") || "0", 10);
-      const numB = parseInt(b.value.replace(/\D/g, "") || "0", 10);
-      return numA - numB;
-    });
-
-    return [...opts, ...uniqueRws];
-  }, [areasList, selectedKelurahanFilter]);
-
-  // Dynamic Kelompok KKN filter options (Kelompok 1 - 32)
-  const kelompokFilterOptions = useMemo(() => {
-    const opts = [{ value: "Semua", label: "Semua Kelompok KKN" }];
-    if (Array.isArray(kelompokList) && kelompokList.length > 0) {
-      kelompokList.forEach((k: any) => {
-        const name = cleanKknDisplayName(k.name || k.nama || "");
-        if (name && name !== "-") {
-          opts.push({
-            value: String(k.id || name),
-            label: name,
-          });
-        }
-      });
-    }
-    return opts;
-  }, [kelompokList]);
-
-  // Dynamic Sub-Role options corresponding to active cluster
-  const clusterRoleOptions = useMemo(() => {
-    const baseRoles = CLUSTER_CONFIG[activeCluster].roles.filter((r) =>
-      allowedRoleTabs.includes(r)
-    );
-    const options = [
-      {
-        value: "Semua",
-        label:
-          activeCluster === "all"
-            ? "Semua Peran"
-            : activeCluster === "warga"
-            ? "Semua Peran Warga"
-            : activeCluster === "mahasiswa"
-            ? "Semua Peran Mahasiswa"
-            : "Semua Pimpinan & Pejabat",
-      },
-      ...baseRoles.map((r) => ({
-        value: r,
-        label: ROLE_LABEL_MAP[r] || r,
-      })),
-    ];
-    return options;
-  }, [activeCluster, allowedRoleTabs]);
-
-  // Available clusters for the current user based on RBAC
-  const availableClusters = useMemo(() => {
-    const clusters: {
-      id: UserCluster;
-      label: string;
-      icon: any;
-      countKey: "totalSemua" | "totalWarga" | "totalMahasiswaAktif" | "totalPimpinanPejabat";
-    }[] = [];
-    clusters.push({ id: "all", label: "Semua Pengguna", icon: Users, countKey: "totalSemua" });
-
-    const hasWarga = CLUSTER_CONFIG.warga.roles.some((r) => allowedRoleTabs.includes(r));
-    if (hasWarga) {
-      clusters.push({ id: "warga", label: "Warga", icon: Home, countKey: "totalWarga" });
-    }
-
-    const hasMahasiswa = CLUSTER_CONFIG.mahasiswa.roles.some((r) => allowedRoleTabs.includes(r));
-    if (hasMahasiswa) {
-      clusters.push({ id: "mahasiswa", label: "Mahasiswa KKN", icon: GraduationCap, countKey: "totalMahasiswaAktif" });
-    }
-
-    const hasPejabat = CLUSTER_CONFIG.pejabat.roles.some((r) => allowedRoleTabs.includes(r));
-    if (hasPejabat) {
-      clusters.push({ id: "pejabat", label: "Pimpinan & Pejabat", icon: ShieldCheck, countKey: "totalPimpinanPejabat" });
-    }
-
-    return clusters;
-  }, [allowedRoleTabs]);
 
   const handleProvinsiSelect = (newProv: string) => {
     const selectedProvObj = provinsiList.find(
@@ -1284,7 +899,7 @@ const ManajemenPengguna: React.FC = () => {
         }
       }
       handleCloseModal();
-      await Promise.all([fetchUsers(), fetchMetrics()]);
+      await fetchUsers();
     } catch (error: any) {
       showToast.error(error.response?.data?.message || "Terjadi kesalahan");
     } finally {
@@ -1304,7 +919,7 @@ const ManajemenPengguna: React.FC = () => {
       showToast.success("Pengguna berhasil dihapus!");
       setIsDeleteModalOpen(false);
       setUserToDelete(null);
-      await Promise.all([fetchUsers(), fetchMetrics()]);
+      await fetchUsers();
     } catch (error: any) {
       showToast.error(error.response?.data?.message || "Gagal menghapus pengguna");
     }
@@ -1368,7 +983,7 @@ const ManajemenPengguna: React.FC = () => {
       if (res.data?.success) {
         showToast.success(res.data.message || "Mahasiswa pendamping berhasil dialihkan.");
         handleCloseReassignModal();
-        await Promise.all([fetchUsers(), fetchMetrics()]);
+        fetchUsers();
       } else {
         showToast.error(res.data?.message || "Gagal mengalihkan mahasiswa pendamping.");
       }
@@ -1392,90 +1007,18 @@ const ManajemenPengguna: React.FC = () => {
     });
   }, [studentsList, studentSearchFilter]);
 
-  // Comprehensive client-side filtered users (fallback & immediate UI responsiveness)
+  // Kelurahan filtered users
   const filteredUsers = useMemo(() => {
-    let result = users;
-
-    // Filter by cluster
-    if (activeCluster !== "all") {
-      const allowedRoles = CLUSTER_CONFIG[activeCluster].roles;
-      result = result.filter((u: any) => {
-        const r = (u.role || u.roleName || u.role?.name || "").toUpperCase();
-        const norm = r === "PIMPINAN" ? "PEMIMPIN" : r;
-        return allowedRoles.includes(norm);
-      });
-    }
-
-    // Role sub-filter
-    if (selectedRole !== "Semua") {
-      result = result.filter((u: any) => {
-        const r = (u.role || u.roleName || u.role?.name || "").toUpperCase();
-        const norm = r === "PIMPINAN" ? "PEMIMPIN" : r;
-        return norm === selectedRole;
-      });
-    }
-
-    // Status filter
-    if (selectedStatus !== "Semua") {
-      result = result.filter((u: any) => {
-        const st = u.status || "Aktif";
-        if (selectedStatus === "Aktif") {
-          return st === "Aktif" || st === "ACTIVE";
-        }
-        return st !== "Aktif" && st !== "ACTIVE";
-      });
-    }
-
-    // Kelurahan filter
-    if (selectedKelurahanFilter !== "Semua") {
-      const target = selectedKelurahanFilter.toLowerCase().trim();
-      result = result.filter((u: any) => {
-        const kel = detectKelurahanName(u).toLowerCase();
-        const rawKel = (u.kelurahan || "").toLowerCase();
-        const addr = (u.address || "").toLowerCase();
-        const wil = (u.wilayah || "").toLowerCase();
-        return kel.includes(target) || rawKel.includes(target) || addr.includes(target) || wil.includes(target);
-      });
-    }
-
-    // RW filter
-    if (selectedRwFilter !== "Semua") {
-      const rwTarget = selectedRwFilter.replace(/\D/g, "");
-      result = result.filter((u: any) => {
-        const userRw = String(u.rw || u.address || "").replace(/\D/g, "");
-        return userRw === rwTarget || (u.rw && String(u.rw).toLowerCase().includes(selectedRwFilter.toLowerCase()));
-      });
-    }
-
-    // Kelompok filter
-    if (selectedKelompokFilter !== "Semua") {
-      result = result.filter((u: any) => {
-        const kelId = u.studentProfile?.kelompokId || u.studentProfile?.kelompok?.id;
-        const kelName = u.studentProfile?.kelompok?.name || "";
-        const isMatchDpl = u.dplKelompok?.some(
-          (k: any) => String(k.id) === selectedKelompokFilter || k.name === selectedKelompokFilter
-        );
-        return String(kelId) === selectedKelompokFilter || kelName.toLowerCase().includes(selectedKelompokFilter.toLowerCase()) || isMatchDpl;
-      });
-    }
-
-    return result;
-  }, [
-    users,
-    activeCluster,
-    selectedRole,
-    selectedStatus,
-    selectedKelurahanFilter,
-    selectedRwFilter,
-    selectedKelompokFilter,
-  ]);
-
-  // Effective cluster to determine adaptive table columns
-  const effectiveCluster: UserCluster = useMemo(() => {
-    if (activeCluster !== "all") return activeCluster;
-    if (selectedRole !== "Semua") return getClusterForRole(selectedRole);
-    return "all";
-  }, [activeCluster, selectedRole]);
+    if (selectedKelurahanFilter === "Semua") return users;
+    const target = selectedKelurahanFilter.toLowerCase().trim();
+    return users.filter((u: any) => {
+      const kel = detectKelurahanName(u).toLowerCase();
+      const rawKel = (u.kelurahan || "").toLowerCase();
+      const addr = (u.address || "").toLowerCase();
+      const wil = (u.wilayah || "").toLowerCase();
+      return kel.includes(target) || rawKel.includes(target) || addr.includes(target) || wil.includes(target);
+    });
+  }, [users, selectedKelurahanFilter]);
 
   // Pagination calculation
   const totalPages = Math.ceil(filteredUsers.length / rowsPerPage) || 1;
@@ -1483,6 +1026,45 @@ const ManajemenPengguna: React.FC = () => {
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage
   );
+
+  // Helper function for extracting degree level
+  const extractJenjang = (prodi?: string, fallbackJenjang?: string) => {
+    if (fallbackJenjang && ["S1", "S2", "S3", "D3", "D4"].includes(fallbackJenjang)) return fallbackJenjang;
+    if (!prodi) return "S1";
+    const match = prodi.match(/\b(S1|S2|S3|D3|D4)\b/i);
+    return match ? match[1].toUpperCase() : "S1";
+  };
+
+  // Helper function for cleaning redundant degree prefix from Program Studi name
+  const cleanProdiName = (prodi?: string) => {
+    if (!prodi || prodi.trim() === "" || prodi.trim() === "-") return "-";
+    const cleaned = prodi.replace(/\b(S1|S2|S3|D3|D4)\s*/gi, "").trim();
+    return cleaned.length > 0 ? cleaned : prodi;
+  };
+
+  // Helper function for cleaning redundant KKN Group names
+  const cleanKknDisplayName = (name?: string) => {
+    if (!name || name === "-") return "-";
+    let clean = name.trim();
+    clean = clean.replace(/\s*\([^)]*\)/g, ""); // strip existing parenthesized suffix e.g. (Dago) or (Kel. Dago)
+    clean = clean.replace(/\s+-\s+/g, " - "); // normalize dashes
+
+    // Normalize informal pattern like "Dago 1", "Dago 4", "Cipaganti 4" -> "Kelompok 1 Dago", "Kelompok 4 Dago"
+    const informalMatch = clean.match(/^([A-Za-z\s]+?)\s+(\d+)$/);
+    if (informalMatch) {
+      const place = informalMatch[1].replace(/^Kel\s*/i, "").trim();
+      const num = informalMatch[2];
+      return `Kelompok ${num} ${place}`;
+    }
+    return clean;
+  };
+
+  const formatCleanRw = (rwStr?: string): string => {
+    if (!rwStr || rwStr === "-") return "-";
+    const rawClean = rwStr.split("(")[0].trim();
+    const rwNum = rawClean.replace(/\D/g, "").padStart(2, "0");
+    return rwNum && rwNum !== "00" ? `RW ${rwNum}` : rawClean;
+  };
 
   // Helper function for rendering Wilayah Penugasan as RW & Kelurahan badges
   const renderWilayahBadges = (raw?: string) => {
@@ -1737,181 +1319,75 @@ const ManajemenPengguna: React.FC = () => {
         )}
       </div>
 
-      {/* 2. Navigasi Segmented Tabs (Cluster Filter) */}
-      <div className="flex flex-wrap items-center gap-2 p-1.5 bg-slate-100/90 dark:bg-slate-800/80 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 shadow-inner">
-        {availableClusters.map((tab) => {
-          const isActive = activeCluster === tab.id;
-          const Icon = tab.icon;
-          const count = metrics[tab.countKey];
-
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => handleClusterChange(tab.id)}
-              className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl font-extrabold text-xs transition-all cursor-pointer ${
-                isActive
-                  ? "bg-white dark:bg-slate-900 text-[#009966] dark:text-emerald-400 shadow-xs border border-slate-200/60 dark:border-slate-800"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-700/50"
-              }`}
-            >
-              <Icon size={16} className={isActive ? "text-[#009966] dark:text-emerald-400" : "text-slate-400"} />
-              <span>{tab.label}</span>
-              <span
-                className={`px-2 py-0.5 rounded-full text-[10px] font-black transition-colors ${
-                  isActive
-                    ? "bg-[#009966]/10 text-[#009966] dark:text-emerald-400"
-                    : "bg-slate-200/70 dark:bg-slate-700/70 text-slate-600 dark:text-slate-400"
-                }`}
-              >
-                {loadingMetrics ? "..." : count}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* 3. 4 Kartu Metrik Ringkas */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Pengguna */}
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center justify-between">
           <div>
-            <p className="text-[11px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+            <p className="text-xs font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
               Total Pengguna
             </p>
             <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100 mt-1">
-              {loadingMetrics ? "..." : metrics.totalSemua}
+              {filteredUsers.length}
             </h3>
-            <p className="text-[10px] font-medium text-slate-400 mt-0.5">Seluruh akun terdaftar</p>
           </div>
-          <div className="w-11 h-11 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center border border-slate-200/60 dark:border-slate-700/60 shadow-2xs">
-            <Users size={22} />
+          <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-200/60 dark:border-blue-800/60">
+            <User size={20} />
           </div>
         </div>
 
-        {/* Total Warga Terdaftar */}
         <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center justify-between">
           <div>
-            <p className="text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
-              Warga Terdaftar
+            <p className="text-xs font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+              Status Aktif
             </p>
             <h3 className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
-              {loadingMetrics ? "..." : metrics.totalWarga}
+              {filteredUsers.filter((u) => u.status === "Aktif" || u.status === "ACTIVE" || !u.status).length}
             </h3>
-            <p className="text-[10px] font-medium text-slate-400 mt-0.5">Warga & Petugas Pemilah</p>
           </div>
-          <div className="w-11 h-11 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 flex items-center justify-center border border-emerald-200/60 dark:border-emerald-800/60 shadow-2xs">
-            <Home size={22} />
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-200/60 dark:border-emerald-800/60">
+            <CheckCircle size={20} />
           </div>
         </div>
 
-        {/* Total Mahasiswa Aktif */}
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-extrabold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
-              Mahasiswa KKN
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-[10.5px] sm:text-xs font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+              Peran Terfilter
             </p>
-            <h3 className="text-2xl font-black text-blue-600 dark:text-blue-400 mt-1">
-              {loadingMetrics ? "..." : metrics.totalMahasiswaAktif}
+            <h3 className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-100 mt-1 leading-snug break-words">
+              {ROLE_LABEL_MAP[selectedRole] || selectedRole}
             </h3>
-            <p className="text-[10px] font-medium text-slate-400 mt-0.5">Mahasiswa, DPL, & MPL</p>
           </div>
-          <div className="w-11 h-11 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-200/60 dark:border-blue-800/60 shadow-2xs">
-            <GraduationCap size={22} />
-          </div>
-        </div>
-
-        {/* Total Pimpinan & Pejabat */}
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-extrabold text-purple-600 dark:text-purple-400 uppercase tracking-wider">
-              Pimpinan & Pejabat
-            </p>
-            <h3 className="text-2xl font-black text-purple-600 dark:text-purple-400 mt-1">
-              {loadingMetrics ? "..." : metrics.totalPimpinanPejabat}
-            </h3>
-            <p className="text-[10px] font-medium text-slate-400 mt-0.5">UNIKOM & Pejabat Wilayah</p>
-          </div>
-          <div className="w-11 h-11 rounded-2xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center border border-purple-200/60 dark:border-purple-800/60 shadow-2xs">
-            <ShieldCheck size={22} />
+          <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 flex items-center justify-center border border-purple-200/60 dark:border-purple-800/60 shrink-0">
+            <User size={20} />
           </div>
         </div>
       </div>
 
-      {/* 4. Filter Bar */}
+
+      {/* Filter Bar */}
       <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
-        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-3">
           {/* Search Box */}
-          <div className="relative w-full lg:w-72 shrink-0">
+          <div className="relative w-full md:w-80">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="Cari nama, No. HP, NIM, NIP, institusi..."
+              placeholder="Cari nama, No. HP, NIP, institusi, wilayah..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-500 focus:bg-white dark:focus:bg-slate-800 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
             />
           </div>
 
-          {/* Action Filters: Peran, Kelurahan, RW, Kelompok, Status */}
-          <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-start lg:justify-end">
-            {/* Filter Sub-Peran (Sesuai Klaster Aktif) */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsRoleDropdownOpen(!isRoleDropdownOpen);
-                  setIsKelurahanDropdownOpen(false);
-                  setIsRwDropdownOpen(false);
-                  setIsKelompokDropdownOpen(false);
-                  setIsStatusDropdownOpen(false);
-                }}
-                className={`flex items-center gap-2 px-3.5 py-2 border rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
-                  selectedRole !== "Semua"
-                    ? "bg-purple-50 dark:bg-purple-950/60 border-purple-300 dark:border-purple-800 text-purple-700 dark:text-purple-300"
-                    : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60"
-                }`}
-              >
-                <Shield size={13} className={selectedRole !== "Semua" ? "text-purple-600 dark:text-purple-400" : "text-slate-400"} />
-                <span className="truncate max-w-[140px]">
-                  {selectedRole === "Semua" ? clusterRoleOptions[0]?.label || "Semua Peran" : ROLE_LABEL_MAP[selectedRole] || selectedRole}
-                </span>
-                <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 shrink-0 ${isRoleDropdownOpen ? "rotate-180" : ""}`} />
-              </button>
-
-              {isRoleDropdownOpen && (
-                <>
-                  <div className="fixed inset-0 z-20" onClick={() => setIsRoleDropdownOpen(false)} />
-                  <div className="absolute left-0 mt-1.5 w-56 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl shadow-lg z-30 p-1 space-y-0.5 animate-in fade-in zoom-in-95 duration-150 max-h-60 overflow-y-auto">
-                    {clusterRoleOptions.map((opt) => (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => handleRoleSelect(opt.value)}
-                        className={`flex items-center justify-between w-full px-3 py-2 text-xs font-extrabold rounded-lg transition-all text-left cursor-pointer ${
-                          selectedRole === opt.value
-                            ? "bg-[#009966]/10 text-[#009966] dark:text-emerald-400 font-black"
-                            : "text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
-                        }`}
-                      >
-                        <span className="truncate">{opt.label}</span>
-                        {selectedRole === opt.value && <CheckCircle size={12} className="text-[#009966] shrink-0" />}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-
+          {/* Action Filters: Kelurahan & Status */}
+          <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto justify-end">
             {/* Filter Kelurahan (6 Kelurahan di Coblong) */}
             <div className="relative">
               <button
                 type="button"
                 onClick={() => {
                   setIsKelurahanDropdownOpen(!isKelurahanDropdownOpen);
-                  setIsRoleDropdownOpen(false);
-                  setIsRwDropdownOpen(false);
-                  setIsKelompokDropdownOpen(false);
                   setIsStatusDropdownOpen(false);
                 }}
                 className={`flex items-center gap-2 px-3.5 py-2 border rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
@@ -1921,21 +1397,20 @@ const ManajemenPengguna: React.FC = () => {
                 }`}
               >
                 <MapPin size={13} className={selectedKelurahanFilter !== "Semua" ? "text-[#009966] dark:text-emerald-400" : "text-slate-400"} />
-                <span className="truncate max-w-[130px]">{selectedKelurahanFilter === "Semua" ? "Semua Kelurahan" : `Kel. ${selectedKelurahanFilter}`}</span>
-                <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 shrink-0 ${isKelurahanDropdownOpen ? "rotate-180" : ""}`} />
+                <span>{selectedKelurahanFilter === "Semua" ? "Semua Kelurahan" : `Kel. ${selectedKelurahanFilter}`}</span>
+                <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 ${isKelurahanDropdownOpen ? "rotate-180" : ""}`} />
               </button>
 
               {isKelurahanDropdownOpen && (
                 <>
                   <div className="fixed inset-0 z-20" onClick={() => setIsKelurahanDropdownOpen(false)} />
-                  <div className="absolute right-0 mt-1.5 w-48 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl shadow-lg z-30 p-1 space-y-0.5 animate-in fade-in zoom-in-95 duration-150 max-h-60 overflow-y-auto">
+                  <div className="absolute right-0 mt-1.5 w-48 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl shadow-lg z-30 p-1 space-y-0.5 animate-in fade-in zoom-in-95 duration-150">
                     {kelurahanFilterOptions.map((opt) => (
                       <button
                         key={opt.value}
                         type="button"
                         onClick={() => {
                           setSelectedKelurahanFilter(opt.value);
-                          setSelectedRwFilter("Semua");
                           setIsKelurahanDropdownOpen(false);
                           setCurrentPage(1);
                         }}
@@ -1956,122 +1431,13 @@ const ManajemenPengguna: React.FC = () => {
               )}
             </div>
 
-            {/* Filter RW (Dinamis sesuai Kelurahan) */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsRwDropdownOpen(!isRwDropdownOpen);
-                  setIsRoleDropdownOpen(false);
-                  setIsKelurahanDropdownOpen(false);
-                  setIsKelompokDropdownOpen(false);
-                  setIsStatusDropdownOpen(false);
-                }}
-                className={`flex items-center gap-2 px-3.5 py-2 border rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
-                  selectedRwFilter !== "Semua"
-                    ? "bg-blue-50 dark:bg-blue-950/60 border-blue-300 dark:border-blue-800 text-blue-700 dark:text-blue-300"
-                    : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60"
-                }`}
-              >
-                <Home size={13} className={selectedRwFilter !== "Semua" ? "text-blue-600 dark:text-blue-400" : "text-slate-400"} />
-                <span>{selectedRwFilter}</span>
-                <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 shrink-0 ${isRwDropdownOpen ? "rotate-180" : ""}`} />
-              </button>
-
-              {isRwDropdownOpen && (
-                <>
-                  <div className="fixed inset-0 z-20" onClick={() => setIsRwDropdownOpen(false)} />
-                  <div className="absolute right-0 mt-1.5 w-44 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl shadow-lg z-30 p-1 space-y-0.5 animate-in fade-in zoom-in-95 duration-150 max-h-60 overflow-y-auto">
-                    {rwFilterOptions.map((opt) => (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => {
-                          setSelectedRwFilter(opt.value);
-                          setIsRwDropdownOpen(false);
-                          setCurrentPage(1);
-                        }}
-                        className={`flex items-center justify-between w-full px-3 py-2 text-xs font-extrabold rounded-lg transition-all text-left cursor-pointer ${
-                          selectedRwFilter === opt.value
-                            ? "bg-blue-50 text-blue-700 dark:text-blue-400 font-black"
-                            : "text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
-                        }`}
-                      >
-                        <span>{opt.label}</span>
-                        {selectedRwFilter === opt.value && <CheckCircle size={12} className="text-blue-600 shrink-0" />}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Filter Kelompok KKN (Aktif saat tab Mahasiswa atau role Mahasiswa/DPL) */}
-            {(activeCluster === "mahasiswa" || ["MAHASISWA_KKN", "DPL"].includes(selectedRole)) && (
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsKelompokDropdownOpen(!isKelompokDropdownOpen);
-                    setIsRoleDropdownOpen(false);
-                    setIsKelurahanDropdownOpen(false);
-                    setIsRwDropdownOpen(false);
-                    setIsStatusDropdownOpen(false);
-                  }}
-                  className={`flex items-center gap-2 px-3.5 py-2 border rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
-                    selectedKelompokFilter !== "Semua"
-                      ? "bg-blue-50 dark:bg-blue-950/60 border-blue-300 dark:border-blue-800 text-blue-700 dark:text-blue-300"
-                      : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60"
-                  }`}
-                >
-                  <GraduationCap size={13} className={selectedKelompokFilter !== "Semua" ? "text-blue-600 dark:text-blue-400" : "text-slate-400"} />
-                  <span className="truncate max-w-[130px]">
-                    {selectedKelompokFilter === "Semua"
-                      ? "Semua Kelompok"
-                      : (kelompokFilterOptions.find((o) => o.value === selectedKelompokFilter)?.label || `Kelompok ${selectedKelompokFilter}`)}
-                  </span>
-                  <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 shrink-0 ${isKelompokDropdownOpen ? "rotate-180" : ""}`} />
-                </button>
-
-                {isKelompokDropdownOpen && (
-                  <>
-                    <div className="fixed inset-0 z-20" onClick={() => setIsKelompokDropdownOpen(false)} />
-                    <div className="absolute right-0 mt-1.5 w-56 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl shadow-lg z-30 p-1 space-y-0.5 animate-in fade-in zoom-in-95 duration-150 max-h-60 overflow-y-auto">
-                      {kelompokFilterOptions.map((opt) => (
-                        <button
-                          key={opt.value}
-                          type="button"
-                          onClick={() => {
-                            setSelectedKelompokFilter(opt.value);
-                            setIsKelompokDropdownOpen(false);
-                            setCurrentPage(1);
-                          }}
-                          className={`flex items-center justify-between w-full px-3 py-2 text-xs font-extrabold rounded-lg transition-all text-left cursor-pointer ${
-                            selectedKelompokFilter === opt.value
-                              ? "bg-blue-50 text-blue-700 dark:text-blue-400 font-black"
-                              : "text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
-                          }`}
-                        >
-                          <span className="truncate">{opt.label}</span>
-                          {selectedKelompokFilter === opt.value && <CheckCircle size={12} className="text-blue-600 shrink-0" />}
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-
             {/* Status Akun Filter Dropdown */}
             <div className="relative">
               <button
                 type="button"
                 onClick={() => {
                   setIsStatusDropdownOpen(!isStatusDropdownOpen);
-                  setIsRoleDropdownOpen(false);
                   setIsKelurahanDropdownOpen(false);
-                  setIsRwDropdownOpen(false);
-                  setIsKelompokDropdownOpen(false);
                 }}
                 className="flex items-center gap-2 px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-extrabold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-all cursor-pointer"
               >
@@ -2079,7 +1445,7 @@ const ManajemenPengguna: React.FC = () => {
                   selectedStatus === "Aktif" ? "bg-emerald-500 shadow-xs shadow-emerald-500/50" : selectedStatus === "Nonaktif" ? "bg-rose-500 shadow-xs shadow-rose-500/50" : "bg-slate-400"
                 }`} />
                 <span>{selectedStatus === "Semua" ? "Semua Status" : selectedStatus}</span>
-                <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 shrink-0 ${isStatusDropdownOpen ? "rotate-180" : ""}`} />
+                <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 ${isStatusDropdownOpen ? "rotate-180" : ""}`} />
               </button>
 
               {isStatusDropdownOpen && (
@@ -2097,7 +1463,6 @@ const ManajemenPengguna: React.FC = () => {
                         onClick={() => {
                           setSelectedStatus(opt.value);
                           setIsStatusDropdownOpen(false);
-                          setCurrentPage(1);
                         }}
                         className={`flex items-center gap-2.5 w-full px-3 py-2 text-xs font-extrabold rounded-lg transition-all text-left cursor-pointer ${
                           selectedStatus === opt.value
@@ -2123,48 +1488,118 @@ const ManajemenPengguna: React.FC = () => {
           <table className="w-full text-left border-collapse">
             <thead className="sticky top-0 z-10 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-md">
               <tr className="text-[10.5px] font-black uppercase text-slate-400 dark:text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-800">
-                {effectiveCluster === "mahasiswa" ? (
+                {["DEVELOPER", "SUPER_USER"].includes(selectedRole) ? (
                   <>
                     <th className="py-3 px-4">NAMA LENGKAP</th>
-                    <th className="py-3 px-4">PERAN SISTEM</th>
-                    <th className="py-3 px-4">NIM / NIP</th>
-                    <th className="py-3 px-4">PROGRAM STUDI</th>
-                    <th className="py-3 px-4">KELOMPOK KKN</th>
-                    <th className="py-3 px-4">DOSEN PEMBIMBING</th>
-                    <th className="py-3 px-4">WILAYAH TUGAS</th>
-                    <th className="py-3 px-4">BEBAN SKS</th>
+                    <th className="py-3 px-4">NO. HP</th>
                     <th className="py-3 px-4 text-center">STATUS</th>
                     {!isReadOnly && <th className="py-3 px-4 text-center">AKSI</th>}
                   </>
-                ) : effectiveCluster === "warga" ? (
+                ) : ["PEMIMPIN", "PANITIA_TASKFORCE"].includes(selectedRole) ? (
                   <>
-                    <th className="py-3 px-4">NAMA WARGA / PETUGAS</th>
-                    <th className="py-3 px-4">PERAN SISTEM</th>
+                    <th className="py-3 px-4">NAMA LENGKAP</th>
+                    <th className="py-3 px-4">NIP</th>
+                    <th className="py-3 px-4">NO. HP</th>
+                    <th className="py-3 px-4">INSTITUSI</th>
+                    <th className="py-3 px-4">JABATAN</th>
+                    <th className="py-3 px-4 text-center">STATUS</th>
+                    {!isReadOnly && <th className="py-3 px-4 text-center">AKSI</th>}
+                  </>
+                ) : selectedRole === "DPL" ? (
+                  <>
+                    <th className="py-3 px-4">NAMA LENGKAP</th>
+                    <th className="py-3 px-4">NIP</th>
+                    <th className="py-3 px-4">NO. HP</th>
+                    <th className="py-3 px-4">PEMBIMBING KELOMPOK</th>
+                    <th className="py-3 px-4">MENGAJAR JENJANG</th>
+                    <th className="py-3 px-4">PROGRAM STUDI</th>
+                    <th className="py-3 px-4 text-center">STATUS</th>
+                    {!isReadOnly && <th className="py-3 px-4 text-center">AKSI</th>}
+                  </>
+                ) : selectedRole === "MPL" ? (
+                  <>
+                    <th className="py-3 px-4">NAMA LENGKAP</th>
+                    <th className="py-3 px-4">NO. HP</th>
+                    <th className="py-3 px-4">KELURAHAN PENUGASAN</th>
+                    <th className="py-3 px-4">KECAMATAN</th>
+                    <th className="py-3 px-4 text-center">STATUS</th>
+                    {!isReadOnly && <th className="py-3 px-4 text-center">AKSI</th>}
+                  </>
+                ) : selectedRole === "ADMIN_DLH" ? (
+                  <>
+                    <th className="py-3 px-4">NAMA LENGKAP</th>
+                    <th className="py-3 px-4">NO. HP</th>
+                    <th className="py-3 px-4">PROVINSI</th>
+                    <th className="py-3 px-4">KOTA / KABUPATEN</th>
+                    <th className="py-3 px-4 text-center">STATUS</th>
+                    {!isReadOnly && <th className="py-3 px-4 text-center">AKSI</th>}
+                  </>
+                ) : selectedRole === "CAMAT" ? (
+                  <>
+                    <th className="py-3 px-4">NAMA LENGKAP</th>
+                    <th className="py-3 px-4">NO. HP</th>
+                    <th className="py-3 px-4">KOTA / KABUPATEN</th>
+                    <th className="py-3 px-4">KECAMATAN</th>
+                    <th className="py-3 px-4">KELURAHAN</th>
+                    <th className="py-3 px-4 text-center">STATUS</th>
+                    {!isReadOnly && <th className="py-3 px-4 text-center">AKSI</th>}
+                  </>
+                ) : selectedRole === "LURAH" ? (
+                  <>
+                    <th className="py-3 px-4">NAMA LENGKAP</th>
+                    <th className="py-3 px-4">NO. HP</th>
+                    <th className="py-3 px-4">KECAMATAN</th>
+                    <th className="py-3 px-4">KELURAHAN</th>
+                    <th className="py-3 px-4">RUKUN WARGA</th>
+                    <th className="py-3 px-4 text-center">STATUS</th>
+                    {!isReadOnly && <th className="py-3 px-4 text-center">AKSI</th>}
+                  </>
+                ) : selectedRole === "RW" ? (
+                  <>
+                    <th className="py-3 px-4">NAMA LENGKAP</th>
                     <th className="py-3 px-4">NO. HP</th>
                     <th className="py-3 px-4">KELURAHAN</th>
                     <th className="py-3 px-4">RUKUN WARGA</th>
+                    <th className="py-3 px-4">PETUGAS PEMILAH</th>
                     <th className="py-3 px-4">ALAMAT LENGKAP</th>
-                    <th className="py-3 px-4 text-center">ANGGOTA KELUARGA</th>
                     <th className="py-3 px-4 text-center">STATUS</th>
                     {!isReadOnly && <th className="py-3 px-4 text-center">AKSI</th>}
                   </>
-                ) : effectiveCluster === "pejabat" ? (
+                ) : selectedRole === "PETUGAS_RESIDU" ? (
                   <>
-                    <th className="py-3 px-4">NAMA LENGKAP & GELAR</th>
-                    <th className="py-3 px-4">PERAN SISTEM</th>
-                    <th className="py-3 px-4">JABATAN & INSTITUSI</th>
-                    <th className="py-3 px-4">WILAYAH WEWENANG</th>
+                    <th className="py-3 px-4">NAMA PETUGAS WILAYAH</th>
                     <th className="py-3 px-4">NO. HP</th>
+                    <th className="py-3 px-4">KECAMATAN</th>
+                    <th className="py-3 px-4">KELURAHAN</th>
+                    <th className="py-3 px-4">RUKUN WARGA</th>
+                    <th className="py-3 px-4">WILAYAH PENUGASAN</th>
+                    <th className="py-3 px-4">ALAMAT LENGKAP</th>
+                    <th className="py-3 px-4 text-center">STATUS</th>
+                    {!isReadOnly && <th className="py-3 px-4 text-center">AKSI</th>}
+                  </>
+                ) : selectedRole === "MAHASISWA_KKN" ? (
+                  <>
+                    <th className="py-3 px-4">NAMA LENGKAP</th>
+                    <th className="py-3 px-4">NIM</th>
+                    <th className="py-3 px-4">JENJANG PENDIDIKAN</th>
+                    <th className="py-3 px-4">PROGRAM STUDI</th>
+                    <th className="py-3 px-4">NO. HP</th>
+                    <th className="py-3 px-4">KELOMPOK KKN</th>
+                    <th className="py-3 px-4">DOSEN PEMBIMBING</th>
+                    <th className="py-3 px-4">WILAYAH PENUGASAN</th>
+                    <th className="py-3 px-4">BEBAN SKS</th>
                     <th className="py-3 px-4 text-center">STATUS</th>
                     {!isReadOnly && <th className="py-3 px-4 text-center">AKSI</th>}
                   </>
                 ) : (
                   <>
-                    <th className="py-3 px-4">NAMA PENGGUNA</th>
-                    <th className="py-3 px-4">PERAN SISTEM</th>
-                    <th className="py-3 px-4">IDENTITAS (NIM/NIP)</th>
-                    <th className="py-3 px-4">WILAYAH / INSTITUSI</th>
+                    <th className="py-3 px-4">NAMA LENGKAP</th>
                     <th className="py-3 px-4">NO. HP</th>
+                    <th className="py-3 px-4">KECAMATAN</th>
+                    <th className="py-3 px-4">KELURAHAN</th>
+                    <th className="py-3 px-4">RUKUN WARGA</th>
+                    <th className="py-3 px-4">ALAMAT LENGKAP</th>
+                    <th className="py-3 px-4 text-center">JUMLAH ANGGOTA KELUARGA</th>
                     <th className="py-3 px-4 text-center">STATUS</th>
                     {!isReadOnly && <th className="py-3 px-4 text-center">AKSI</th>}
                   </>
@@ -2188,232 +1623,295 @@ const ManajemenPengguna: React.FC = () => {
                   </td>
                 </tr>
               ) : paginatedUsers.length > 0 ? (
-                paginatedUsers.map((u) => {
-                  const isSelf = user && (u.id === user.id || (u.phone && user.phone && u.phone === user.phone));
-                  const isDevTarget = (u.role || u.roleName || u.role?.name) === "DEVELOPER";
-                  const canEdit =
-                    user?.peran === "DEVELOPER" ||
-                    (user?.peran === "SUPER_USER" && !isDevTarget) ||
-                    (user?.peran === "PANITIA_TASKFORCE" && ["MAHASISWA_KKN", "DPL", "MPL"].includes(u.role || u.roleName));
-                  const canDelete =
-                    !isSelf &&
-                    (user?.peran === "DEVELOPER" ||
-                      (user?.peran === "SUPER_USER" && !isDevTarget) ||
-                      (user?.peran === "PANITIA_TASKFORCE" && ["MAHASISWA_KKN", "DPL", "MPL"].includes(u.role || u.roleName)));
-
-                  return (
-                    <tr key={u.id} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                      {/* 1. Nama & Avatar Cell */}
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-3">
-                          {renderAvatar(u)}
-                          <div>
-                            <span className="font-bold text-slate-800 dark:text-slate-100 text-xs block">{u.name}</span>
-                            {(u.role === "PETUGAS_RESIDU" || selectedRole === "PETUGAS_RESIDU") && (u.namaAsli || u.petugasProfile?.nama) && (u.namaAsli || u.petugasProfile?.nama) !== u.name && (
-                              <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800/80 shadow-2xs">
-                                <span className="text-emerald-500">👤 Personil:</span>
-                                <span className="font-extrabold">{u.namaAsli || u.petugasProfile?.nama}</span>
-                              </span>
-                            )}
-                            {(u.role === "WARGA" || selectedRole === "WARGA") && (
-                              <div className="mt-1">
-                                {u.pendampingKkn ? (
-                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded-md border border-blue-200 dark:border-blue-800/80 shadow-2xs">
-                                    <GraduationCap size={11} className="text-blue-500 shrink-0" />
-                                    <span>Pendamping: {u.pendampingKkn.name}</span>
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-400 dark:text-slate-500 bg-slate-100/70 dark:bg-slate-800/50 px-2 py-0.5 rounded-md border border-slate-200/60 dark:border-slate-700/50">
-                                    <span>Tanpa Pendamping</span>
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                          </div>
+                paginatedUsers.map((u) => (
+                  <tr key={u.id} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-3">
+                        {renderAvatar(u)}
+                        <div>
+                          <span className="font-bold text-slate-800 dark:text-slate-100 text-xs block">{u.name}</span>
+                          {(selectedRole === "PETUGAS_RESIDU" || u.role === "PETUGAS_RESIDU") && (u.namaAsli || u.petugasProfile?.nama) && (u.namaAsli || u.petugasProfile?.nama) !== u.name && (
+                            <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800/80 shadow-2xs">
+                              <span className="text-emerald-500">👤 Personil:</span>
+                              <span className="font-extrabold">{u.namaAsli || u.petugasProfile?.nama}</span>
+                            </span>
+                          )}
+                          {(selectedRole === "WARGA" || u.role === "WARGA") && (
+                            <div className="mt-1">
+                              {u.pendampingKkn ? (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded-md border border-blue-200 dark:border-blue-800/80 shadow-2xs">
+                                  <GraduationCap size={11} className="text-blue-500 shrink-0" />
+                                  <span>Pendamping: {u.pendampingKkn.name}</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-400 dark:text-slate-500 bg-slate-100/70 dark:bg-slate-800/50 px-2 py-0.5 rounded-md border border-slate-200/60 dark:border-slate-700/50">
+                                  <span>Tanpa Pendamping</span>
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </div>
-                      </td>
+                      </div>
+                    </td>
 
-                      {/* 2. Peran Sistem Badge */}
-                      <td className="py-3 px-4">
-                        {renderRoleBadge(u.role || u.roleName)}
-                      </td>
-
-                      {/* 3. Cluster-Adaptive Columns */}
-                      {effectiveCluster === "mahasiswa" ? (
-                        <>
-                          <td className="py-3 px-4 font-mono font-bold text-slate-700 dark:text-slate-300">{u.nim || u.studentProfile?.nim || u.nip || "-"}</td>
-                          <td className="py-3 px-4 text-slate-700 dark:text-slate-300">
-                            <span className="font-bold block text-xs">{extractJenjang(u.studentProfile?.jurusan || u.prodi || u.programStudi, u.jenjangPendidikan)}</span>
-                            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block">{cleanProdiName(u.studentProfile?.jurusan || u.prodi || u.programStudi)}</span>
-                          </td>
-                          <td className="py-3 px-4">
-                            {u.studentProfile?.kelompok?.name && u.studentProfile.kelompok.name !== "-" ? (
-                              <span className="bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-md text-[10px] border border-blue-200 dark:border-blue-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
-                                {cleanKknDisplayName(u.studentProfile.kelompok.name)}
-                              </span>
-                            ) : u.dplKelompok && u.dplKelompok.length > 0 ? (
-                              <div className="flex flex-wrap gap-1 max-w-xs">
-                                {Array.from(
-                                  new Map(
-                                    u.dplKelompok.map((k: any) => {
-                                      const cleaned = cleanKknDisplayName(k.name);
-                                      return [cleaned.toLowerCase(), cleaned];
-                                    })
-                                  ).values()
-                                ).map((groupName: any, i: number) => (
-                                  <span key={i} className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-md text-[10px] border border-emerald-200/80 dark:border-emerald-800/80 font-extrabold whitespace-nowrap inline-flex items-center gap-1 shadow-2xs">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                    {groupName}
+                    {["DEVELOPER", "SUPER_USER"].includes(selectedRole) ? (
+                      <>
+                        <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
+                      </>
+                    ) : ["PEMIMPIN", "PANITIA_TASKFORCE"].includes(selectedRole) ? (
+                      <>
+                        <td className="py-3 px-4 font-mono font-bold text-slate-700 dark:text-slate-300">{u.nip || "-"}</td>
+                        <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-semibold">{u.institusi || u.prodi || "Universitas Komputer Indonesia"}</td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-bold">{u.jabatan || (selectedRole === "PEMIMPIN" ? "Rektor" : "Anggota Task Force")}</td>
+                      </>
+                    ) : selectedRole === "DPL" ? (
+                      <>
+                        <td className="py-3 px-4 font-mono font-bold text-slate-700 dark:text-slate-300">{u.nip || "-"}</td>
+                        <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-semibold">
+                          {u.dplKelompok && u.dplKelompok.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {Array.from(
+                                new Map(
+                                  u.dplKelompok.map((k: any) => {
+                                    const cleaned = cleanKknDisplayName(k.name);
+                                    return [cleaned.toLowerCase(), cleaned];
+                                  })
+                                ).values()
+                              ).map((groupName: any, i: number) => (
+                                <span key={i} className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2.5 py-1 rounded-lg text-[11px] border border-emerald-200/80 dark:border-emerald-800/80 font-extrabold whitespace-nowrap inline-flex items-center gap-1.5 shadow-2xs">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                  {groupName}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 dark:text-slate-500 font-medium text-xs">-</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-bold">{extractJenjang(u.programStudi || u.prodi, u.jenjangPendidikan)}</td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-semibold">{cleanProdiName(u.programStudi || u.prodi)}</td>
+                      </>
+                    ) : selectedRole === "MPL" ? (
+                      <>
+                        <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <span className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2.5 py-1 rounded-lg text-[11px] border border-emerald-200/80 dark:border-emerald-800/80 font-extrabold whitespace-nowrap inline-flex items-center gap-1.5 shadow-2xs">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                            {detectKelurahanName(u) !== "-" ? detectKelurahanName(u) : cleanKelurahanName(u.address) !== "-" ? cleanKelurahanName(u.address) : (u.kelurahan ? `Kel. ${u.kelurahan}` : "Kel. Coblong")}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-semibold">
+                          {formatKecamatanName(u.kecamatan, u) !== "-" ? formatKecamatanName(u.kecamatan, u) : "Kecamatan Coblong"}
+                        </td>
+                      </>
+                    ) : selectedRole === "ADMIN_DLH" ? (
+                      <>
+                        <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <span className="bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 px-2.5 py-0.5 rounded-md text-[10px] border border-teal-200/80 dark:border-teal-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
+                            {u.provinsi || "Jawa Barat"}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <span className="bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 px-2.5 py-0.5 rounded-md text-[10px] border border-sky-200/80 dark:border-sky-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
+                            {getCleanKabupatenName(u.kabupaten || u.wilayah)}
+                          </span>
+                        </td>
+                      </>
+                    ) : selectedRole === "CAMAT" ? (
+                      <>
+                        <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <span className="bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 px-2.5 py-0.5 rounded-md text-[10px] border border-sky-200/80 dark:border-sky-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
+                            {getCleanKabupatenName(u.kabupaten || u.wilayah)}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <span className="bg-[#e5f7ed] dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-300 px-2.5 py-0.5 rounded-md text-[10px] border border-[#009966]/20 dark:border-emerald-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
+                            {formatKecamatanName(u.kecamatan)}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          {(() => {
+                            const isCoblongKec = (u.kecamatan || "").toLowerCase().includes("coblong");
+                            const kels = isCoblongKec ? ["Cipaganti", "Dago", "Lebak Gede", "Lebak Siliwangi", "Sadang Serang", "Sekeloa"] : [];
+                            return kels.length > 0 ? (
+                              <div className="flex flex-wrap gap-1 max-w-md">
+                                {kels.map((kel, i) => (
+                                  <span key={i} className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-md text-[10px] border border-emerald-200 dark:border-emerald-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
+                                    Kel. {kel}
                                   </span>
                                 ))}
                               </div>
                             ) : (
                               <span className="text-slate-400 dark:text-slate-500 font-medium text-xs">-</span>
-                            )}
-                          </td>
-                          <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-semibold">
-                            {renderDplCell(
-                              u.studentProfile?.kelompok?.dplName || u.studentProfile?.kelompok?.dpl?.name,
-                              u.studentProfile?.kelompok?.dplFotoProfil || u.studentProfile?.kelompok?.dpl?.fotoProfil
-                            )}
-                          </td>
-                          <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-semibold">{renderWilayahBadges(getMahasiswaWilayahStr(u))}</td>
-                          <td className="py-3 px-4">
-                            <span className="bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 px-2.5 py-1 rounded-lg border border-sky-200 dark:border-sky-800/80 font-bold text-[10px] whitespace-nowrap inline-block shadow-2xs">
-                              {(u.studentProfile?.sks && u.studentProfile.sks > 0) || (u.sks && u.sks > 0)
-                                ? `${u.studentProfile?.sks || u.sks} SKS`
-                                : "Reguler (0 SKS)"}
-                            </span>
-                          </td>
-                        </>
-                      ) : effectiveCluster === "warga" ? (
-                        <>
-                          <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
-                          <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
-                            <span className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2.5 py-0.5 rounded-md text-[10px] border border-emerald-200 dark:border-emerald-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
-                              {detectKelurahanName(u)}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                            );
+                          })()}
+                        </td>
+                      </>
+                    ) : selectedRole === "LURAH" ? (
+                      <>
+                        <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <span className="bg-[#e5f7ed] dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-300 px-2.5 py-0.5 rounded-md text-[10px] border border-[#009966]/20 dark:border-emerald-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
+                            {formatKecamatanName(u.kecamatan)}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <span className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2.5 py-0.5 rounded-md text-[10px] border border-emerald-200 dark:border-emerald-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
+                            {detectKelurahanName(u)}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <div className="flex flex-wrap gap-1 max-w-md">
+                            {getRwListForKelurahan(u.kelurahan || u.address).map((rwItem: string, i: number) => (
+                              <span key={i} className="bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded-md text-[10px] border border-blue-200 dark:border-blue-800/80 font-extrabold whitespace-nowrap inline-block shadow-2xs">
+                                {rwItem}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                      </>
+                    ) : selectedRole === "RW" ? (
+                      <>
+                        <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <span className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2.5 py-0.5 rounded-md text-[10px] border border-emerald-200 dark:border-emerald-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
+                            {detectKelurahanName(u)}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          {u.rw && u.rw !== "-" ? (
                             <span className="bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded-md text-[10px] border border-blue-200 dark:border-blue-800/80 font-extrabold whitespace-nowrap inline-block shadow-2xs">
                               {formatCleanRw(u.rw)}
                             </span>
-                          </td>
-                          <td className="py-3 px-4 text-slate-700 dark:text-slate-300 max-w-[240px] break-words whitespace-normal leading-relaxed">{u.address || "-"}</td>
-                          <td className="py-3 px-4 text-center font-bold text-slate-800 dark:text-slate-100">
-                            {u.jumlahAnggotaKeluarga != null && u.jumlahAnggotaKeluarga !== "" ? `${u.jumlahAnggotaKeluarga} Jiwa` : "-"}
-                          </td>
-                        </>
-                      ) : effectiveCluster === "pejabat" ? (
-                        <>
-                          <td className="py-3 px-4">
-                            <span className="font-bold text-slate-800 dark:text-slate-100 text-xs block">
-                              {u.jabatan ||
-                                (u.role === "PEMIMPIN" ? "Pimpinan Eksekutif" :
-                                 u.role === "CAMAT" ? "Camat Coblong" :
-                                 u.role === "LURAH" ? `Lurah ${detectKelurahanName(u)}` :
-                                 u.role === "RW" ? `Ketua ${formatCleanRw(u.rw)}` :
-                                 u.role === "RT" ? `Ketua RT` :
-                                 u.role === "ADMIN_DLH" ? "Admin DLH Kota Bandung" :
-                                 u.role === "SUPER_USER" ? "Super Administrator" :
-                                 u.role === "DEVELOPER" ? "Pengembang Sistem" : "-")}
-                            </span>
-                            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block">
-                              {u.institusi ||
-                                (["PEMIMPIN", "PANITIA_TASKFORCE"].includes(u.role) ? "Universitas Komputer Indonesia" :
-                                 ["CAMAT", "LURAH", "RW", "RT"].includes(u.role) ? "Pemerintah Kota Bandung" :
-                                 u.role === "ADMIN_DLH" ? "Dinas Lingkungan Hidup" : "BERSEKA Core Team")}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4">
-                            {["PEMIMPIN", "SUPER_USER", "DEVELOPER"].includes((u.role || "").toUpperCase()) ? (
-                              <span className="bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 px-2.5 py-1 rounded-lg text-[10px] font-extrabold border border-purple-200/80 dark:border-purple-800/80 shadow-2xs whitespace-nowrap inline-flex items-center gap-1">
-                                <ShieldCheck size={11} className="text-purple-500" />
-                                Lintas Wilayah (Eksekutif)
-                              </span>
-                            ) : (u.role || "").toUpperCase() === "CAMAT" ? (
-                              <span className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2.5 py-1 rounded-lg text-[10px] font-extrabold border border-emerald-200/80 dark:border-emerald-800/80 shadow-2xs whitespace-nowrap inline-flex items-center gap-1">
-                                <Building2 size={11} className="text-emerald-500" />
-                                Kecamatan Coblong (6 Kelurahan)
-                              </span>
-                            ) : (u.role || "").toUpperCase() === "LURAH" ? (
-                              <span className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2.5 py-1 rounded-lg text-[10px] font-extrabold border border-emerald-200/80 dark:border-emerald-800/80 shadow-2xs whitespace-nowrap inline-flex items-center gap-1">
-                                <Building2 size={11} className="text-emerald-500" />
-                                {detectKelurahanName(u)}
-                              </span>
-                            ) : ["RW", "RT"].includes((u.role || "").toUpperCase()) ? (
-                              <div className="flex flex-wrap gap-1">
-                                {u.rw && u.rw !== "-" && (
-                                  <span className="bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-md text-[10px] border border-blue-200 dark:border-blue-800/80 font-extrabold whitespace-nowrap shadow-2xs">
-                                    {formatCleanRw(u.rw)}
-                                  </span>
-                                )}
-                                {detectKelurahanName(u) !== "-" && (
-                                  <span className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-md text-[10px] border border-emerald-200 dark:border-emerald-800/80 font-bold whitespace-nowrap shadow-2xs">
-                                    {detectKelurahanName(u)}
-                                  </span>
-                                )}
-                              </div>
-                            ) : (
-                              <span className="text-slate-400 font-medium text-xs">-</span>
-                            )}
-                          </td>
-                          <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
-                        </>
-                      ) : (
-                        <>
-                          <td className="py-3 px-4 font-mono font-bold text-slate-700 dark:text-slate-300">{u.nim || u.studentProfile?.nim || u.nip || u.jabatan || "-"}</td>
-                          <td className="py-3 px-4">
-                            {detectKelurahanName(u) !== "-" ? (
-                              <span className="font-bold text-slate-800 dark:text-slate-100 text-xs block">
-                                {detectKelurahanName(u)} {u.rw ? `(${formatCleanRw(u.rw)})` : ""}
-                              </span>
-                            ) : (
-                              <span className="font-bold text-slate-800 dark:text-slate-100 text-xs block">
-                                {u.institusi || u.wilayah || "-"}
-                              </span>
-                            )}
-                          </td>
-                          <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
-                        </>
-                      )}
-
-                      {/* 4. Status Column */}
-                      <td className="py-3 px-4 text-center">
-                        <div className="flex flex-col items-center gap-1">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
-                            (u.status === "Aktif" || u.status === "ACTIVE" || !u.status)
-                              ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80"
-                              : "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/80"
-                          }`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${
-                              (u.status === "Aktif" || u.status === "ACTIVE" || !u.status) ? "bg-emerald-500" : "bg-rose-500"
-                            }`} />
-                            {u.status || "Aktif"}
-                          </span>
-                          {user?.peran === "DEVELOPER" && Boolean(u.isTestAccount) && (
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60">
-                              TEST
-                            </span>
+                          ) : (
+                            <span className="text-slate-400 dark:text-slate-500 font-medium">-</span>
                           )}
-                        </div>
-                      </td>
+                        </td>
+                        <td className="py-3 px-4">{renderPetugasResiduCell(u.petugasResidu)}</td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300">{u.address || "-"}</td>
+                      </>
+                    ) : selectedRole === "PETUGAS_RESIDU" ? (
+                      <>
+                        <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <span className="bg-[#e5f7ed] dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-300 px-2.5 py-0.5 rounded-md text-[10px] border border-[#009966]/20 dark:border-emerald-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
+                            {formatKecamatanName(u.kecamatan)}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <span className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2.5 py-0.5 rounded-md text-[10px] border border-emerald-200 dark:border-emerald-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
+                            {detectKelurahanName(u)}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          {u.rw && u.rw !== "-" ? (
+                            <span className="bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded-md text-[10px] border border-blue-200 dark:border-blue-800/80 font-extrabold whitespace-nowrap inline-block shadow-2xs">
+                              {formatCleanRw(u.rw)}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 dark:text-slate-500 font-medium">-</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300">{u.wilayah || (u.rw ? `${formatCleanRw(u.rw)}, ${detectKelurahanName(u)}` : detectKelurahanName(u)) || "-"}</td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300">{u.address || "-"}</td>
+                      </>
+                    ) : selectedRole === "MAHASISWA_KKN" ? (
+                      <>
+                        <td className="py-3 px-4 font-mono font-bold text-slate-700 dark:text-slate-300">{u.nim || u.studentProfile?.nim || "-"}</td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-bold">{extractJenjang(u.studentProfile?.jurusan || u.prodi || u.programStudi, u.jenjangPendidikan || u.studentProfile?.jenjangPendidikan)}</td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-semibold">{cleanProdiName(u.studentProfile?.jurusan || u.prodi || u.programStudi)}</td>
+                        <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
+                        <td className="py-3 px-4">
+                          {u.studentProfile?.kelompok?.name && u.studentProfile.kelompok.name !== "-" ? (
+                            <span className="bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-md text-[10px] border border-blue-200 dark:border-blue-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
+                              {cleanKknDisplayName(u.studentProfile.kelompok.name)}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 dark:text-slate-500 font-medium">-</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-semibold">
+                          {renderDplCell(u.studentProfile?.kelompok?.dplName || u.studentProfile?.kelompok?.dpl?.name, u.studentProfile?.kelompok?.dplFotoProfil || u.studentProfile?.kelompok?.dpl?.fotoProfil)}
+                        </td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-semibold">{renderWilayahBadges(getMahasiswaWilayahStr(u))}</td>
+                        <td className="py-3 px-4">
+                          <span className="bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 px-2.5 py-1 rounded-lg border border-sky-200 dark:border-sky-800/80 font-bold text-[10px] whitespace-nowrap inline-block shadow-2xs">
+                            {(u.studentProfile?.sks && u.studentProfile.sks > 0) || (u.sks && u.sks > 0)
+                              ? `${u.studentProfile?.sks || u.sks} SKS`
+                              : "Reguler (0 SKS)"}
+                          </span>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <span className="bg-[#e5f7ed] dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-300 px-2.5 py-0.5 rounded-md text-[10px] border border-[#009966]/20 dark:border-emerald-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
+                            {formatKecamatanName(u.kecamatan, u)}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <span className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2.5 py-0.5 rounded-md text-[10px] border border-emerald-200 dark:border-emerald-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
+                            {detectKelurahanName(u)}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <span className="bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded-md text-[10px] border border-blue-200 dark:border-blue-800/80 font-extrabold whitespace-nowrap inline-block shadow-2xs">
+                            {formatCleanRw(u.rw)}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300 max-w-[240px] break-words whitespace-normal leading-relaxed">{u.address || "-"}</td>
+                        <td className="py-3 px-4 text-center font-bold text-slate-800 dark:text-slate-100">{u.jumlahAnggotaKeluarga != null && u.jumlahAnggotaKeluarga !== "" ? u.jumlahAnggotaKeluarga : "-"}</td>
+                      </>
+                    )}
 
-                      {/* 5. Aksi Column */}
-                      {!isReadOnly && (
-                        <td className="py-3 px-4 text-center">
-                          <div className="flex justify-center gap-1.5">
-                            {/* Reassign Pendamping (Warga only) */}
-                            {canReassign && (u.role === "WARGA" || selectedRole === "WARGA") && (
-                              <button
-                                onClick={() => handleOpenReassignModal(u)}
-                                className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 hover:bg-blue-100/80 dark:hover:bg-blue-900/60 border border-blue-200/80 dark:border-blue-900/40 transition-all flex items-center justify-center cursor-pointer active:scale-95 shadow-2xs"
-                                title="Ganti Mahasiswa Pendamping KKN"
-                              >
-                                <ArrowRightLeft size={14} />
-                              </button>
-                            )}
-                            {canEdit && (
+                    <td className="py-3 px-4 text-center">
+                      <div className="flex flex-col items-center gap-1">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
+                          (u.status === "Aktif" || u.status === "ACTIVE" || !u.status)
+                            ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80"
+                            : "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/80"
+                        }`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${
+                            (u.status === "Aktif" || u.status === "ACTIVE" || !u.status) ? "bg-emerald-500" : "bg-rose-500"
+                          }`} />
+                          {u.status || "Aktif"}
+                        </span>
+                        {user?.peran === "DEVELOPER" && Boolean(u.isTestAccount) && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60">
+                            TEST
+                          </span>
+                        )}
+                      </div>
+                    </td>
+
+                    {!isReadOnly && (
+                      <td className="py-3 px-4 text-center">
+                        <div className="flex justify-center gap-1.5">
+                          {/* Reassign Pendamping (Warga only) */}
+                          {canReassign && (u.role === "WARGA" || selectedRole === "WARGA") && (
+                            <button
+                              onClick={() => handleOpenReassignModal(u)}
+                              className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 hover:bg-blue-100/80 dark:hover:bg-blue-900/60 border border-blue-200/80 dark:border-blue-900/40 transition-all flex items-center justify-center cursor-pointer active:scale-95 shadow-2xs"
+                              title="Ganti Mahasiswa Pendamping KKN"
+                            >
+                              <ArrowRightLeft size={14} />
+                            </button>
+                          )}
+                          {(() => {
+                            const isDevTarget = (u.role || u.roleName || u.role?.name) === "DEVELOPER";
+                            const canEdit =
+                              user?.peran === "DEVELOPER" ||
+                              (user?.peran === "SUPER_USER" && !isDevTarget) ||
+                              (user?.peran === "PANITIA_TASKFORCE" && ["MAHASISWA_KKN", "DPL", "MPL"].includes(u.role || u.roleName));
+
+                            if (!canEdit) return null;
+
+                            return (
                               <button
                                 onClick={() => handleOpenEditModal(u)}
                                 className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 hover:bg-amber-100/80 dark:hover:bg-amber-900/60 border border-amber-200/80 dark:border-amber-900/40 transition-all flex items-center justify-center cursor-pointer active:scale-95 shadow-2xs"
@@ -2421,8 +1919,20 @@ const ManajemenPengguna: React.FC = () => {
                               >
                                 <Pencil size={14} />
                               </button>
-                            )}
-                            {canDelete && (
+                            );
+                          })()}
+                          {(() => {
+                            const isSelf = user && (u.id === user.id || (u.phone && user.phone && u.phone === user.phone));
+                            const isDevTarget = (u.role || u.roleName || u.role?.name) === "DEVELOPER";
+                            const canDelete =
+                              !isSelf &&
+                              (user?.peran === "DEVELOPER" ||
+                                (user?.peran === "SUPER_USER" && !isDevTarget) ||
+                                (user?.peran === "PANITIA_TASKFORCE" && ["MAHASISWA_KKN", "DPL", "MPL"].includes(u.role || u.roleName)));
+
+                            if (!canDelete && !isSelf) return null;
+
+                            return (
                               <button
                                 disabled={isSelf}
                                 onClick={() => {
@@ -2438,29 +1948,22 @@ const ManajemenPengguna: React.FC = () => {
                               >
                                 <Trash2 size={14} />
                               </button>
-                            )}
-                          </div>
-                        </td>
-                      )}
-                    </tr>
-                  );
-                })
+                            );
+                          })()}
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                ))
               ) : (
                 <EmptyTableState
                   colSpan={10}
-                  entityName={
-                    selectedRole !== "Semua"
-                      ? (ROLE_LABEL_MAP[selectedRole] || selectedRole)
-                      : (CLUSTER_CONFIG[activeCluster]?.label || "Pengguna")
-                  }
-                  isSearch={!!(searchQuery || selectedStatus !== "Semua" || selectedKelurahanFilter !== "Semua" || selectedRwFilter !== "Semua" || selectedKelompokFilter !== "Semua")}
+                  entityName={ROLE_LABEL_MAP[selectedRole] || "Pengguna"}
+                  isSearch={!!(searchQuery || selectedStatus !== "Semua")}
                   searchQuery={searchQuery}
                   onResetSearch={() => {
                     setSearchQuery("");
                     setSelectedStatus("Semua");
-                    setSelectedKelurahanFilter("Semua");
-                    setSelectedRwFilter("Semua");
-                    setSelectedKelompokFilter("Semua");
                   }}
                 />
               )}
@@ -2469,11 +1972,11 @@ const ManajemenPengguna: React.FC = () => {
         </div>
 
         {/* Pagination Controls */}
-        {filteredUsers.length > 0 && !loading && !error && (
+        {users.length > 0 && !loading && !error && (
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
-            totalItems={filteredUsers.length}
+            totalItems={users.length}
             itemsPerPage={rowsPerPage}
             onPageChange={setCurrentPage}
             onItemsPerPageChange={setRowsPerPage}
@@ -2481,7 +1984,7 @@ const ManajemenPengguna: React.FC = () => {
         )}
       </div>
 
-      {/* Mobile Card List (Mobile View <768px) */}
+      {/* Mobile Card List (Mobile View <640px) */}
       <div className="block md:hidden space-y-4">
         {loading ? (
           <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 text-center flex flex-col items-center gap-3">
@@ -2495,19 +1998,12 @@ const ManajemenPengguna: React.FC = () => {
         ) : paginatedUsers.length === 0 ? (
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs overflow-hidden">
             <EmptyTableState
-              entityName={
-                selectedRole !== "Semua"
-                  ? (ROLE_LABEL_MAP[selectedRole] || selectedRole)
-                  : (CLUSTER_CONFIG[activeCluster]?.label || "Pengguna")
-              }
-              isSearch={!!(searchQuery || selectedStatus !== "Semua" || selectedKelurahanFilter !== "Semua" || selectedRwFilter !== "Semua" || selectedKelompokFilter !== "Semua")}
+              entityName={ROLE_LABEL_MAP[selectedRole] || "Pengguna"}
+              isSearch={!!(searchQuery || selectedStatus !== "Semua")}
               searchQuery={searchQuery}
               onResetSearch={() => {
                 setSearchQuery("");
                 setSelectedStatus("Semua");
-                setSelectedKelurahanFilter("Semua");
-                setSelectedRwFilter("Semua");
-                setSelectedKelompokFilter("Semua");
               }}
             />
           </div>
@@ -2529,17 +2025,17 @@ const ManajemenPengguna: React.FC = () => {
               <div key={u.id} className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-4">
                 {/* Profile Card Header */}
                 <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex items-center gap-3">
                     {renderAvatar(u)}
-                    <div className="min-w-0">
-                      <h4 className="font-bold text-slate-800 dark:text-slate-100 text-xs truncate">{u.name}</h4>
-                      <div className="mt-1">
-                        {renderRoleBadge(u.role || u.roleName)}
-                      </div>
+                    <div>
+                      <h4 className="font-bold text-slate-800 dark:text-slate-100 text-xs">{u.name}</h4>
+                      <span className="text-[10px] bg-slate-50 dark:bg-slate-850 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-extrabold mt-1 inline-block">
+                        {ROLE_LABEL_MAP[u.role || selectedRole] || u.role}
+                      </span>
                     </div>
                   </div>
 
-                  <div className="flex flex-col items-end gap-1 shrink-0">
+                  <div className="flex flex-col items-end gap-1">
                     <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-extrabold uppercase ${
                       (u.status === "Aktif" || u.status === "ACTIVE" || !u.status)
                         ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80"
@@ -2569,45 +2065,53 @@ const ManajemenPengguna: React.FC = () => {
                     </div>
                   )}
 
-                  {(u.nim || u.studentProfile?.nim) && (
+                  {u.nim && (
                     <div>
                       <span className="font-extrabold text-slate-400 uppercase tracking-wider block text-[9px] mb-0.5">NIM</span>
-                      <span className="font-bold font-mono text-slate-800 dark:text-slate-100 block">{u.nim || u.studentProfile?.nim}</span>
+                      <span className="font-bold font-mono text-slate-800 dark:text-slate-100 block">{u.nim}</span>
                     </div>
                   )}
 
-                  {u.studentProfile?.kelompok?.name && (
+                  {u.kecamatan && (
                     <div>
-                      <span className="font-extrabold text-slate-400 uppercase tracking-wider block text-[9px] mb-0.5">Kelompok KKN</span>
-                      <span className="font-semibold block text-slate-800 dark:text-slate-100">{cleanKknDisplayName(u.studentProfile.kelompok.name)}</span>
+                      <span className="font-extrabold text-slate-400 uppercase tracking-wider block text-[9px] mb-0.5">Kecamatan</span>
+                      <span className="font-semibold block text-slate-800 dark:text-slate-100">{formatKecamatanName(u.kecamatan)}</span>
                     </div>
                   )}
 
-                  {detectKelurahanName(u) !== "-" && (
+                  {u.kelurahan && (
                     <div>
                       <span className="font-extrabold text-slate-400 uppercase tracking-wider block text-[9px] mb-0.5">Kelurahan</span>
                       <span className="font-semibold block text-slate-800 dark:text-slate-100">{detectKelurahanName(u)}</span>
                     </div>
                   )}
 
-                  {u.rw && u.rw !== "-" && (
+                  {u.rw && (
                     <div>
                       <span className="font-extrabold text-slate-400 uppercase tracking-wider block text-[9px] mb-0.5">Rukun Warga</span>
-                      <span className="font-semibold block text-slate-800 dark:text-slate-100">{formatCleanRw(u.rw)}</span>
+                      <span className="font-semibold block text-slate-800 dark:text-slate-100">
+                        {formatCleanRw(u.rw)}
+                      </span>
                     </div>
                   )}
 
-                  {u.jabatan && (
+                  {u.wilayah && (
                     <div className="col-span-2">
-                      <span className="font-extrabold text-slate-400 uppercase tracking-wider block text-[9px] mb-0.5">Jabatan</span>
-                      <span className="font-semibold block text-slate-800 dark:text-slate-100">{u.jabatan}</span>
+                      <span className="font-extrabold text-slate-400 uppercase tracking-wider block text-[9px] mb-0.5">
+                        {u.role === "WARGA" ? "Wilayah Domisili" : "Wilayah Penugasan"}
+                      </span>
+                      <span className="font-semibold block text-slate-800 dark:text-slate-100">{renderWilayahBadges(u.wilayah)}</span>
                     </div>
                   )}
 
-                  {u.institusi && (
-                    <div className="col-span-2">
-                      <span className="font-extrabold text-slate-400 uppercase tracking-wider block text-[9px] mb-0.5">Institusi</span>
-                      <span className="font-semibold block text-slate-800 dark:text-slate-100">{u.institusi}</span>
+                  {(u.role === "MAHASISWA_KKN" || selectedRole === "MAHASISWA_KKN") && (
+                    <div>
+                      <span className="font-extrabold text-slate-400 uppercase tracking-wider block text-[9px] mb-0.5">Beban SKS</span>
+                      <span className="bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 px-2.5 py-0.5 rounded-md border border-sky-200 dark:border-sky-800/80 font-bold text-[10px] inline-block">
+                        {(u.studentProfile?.sks && u.studentProfile.sks > 0) || (u.sks && u.sks > 0)
+                          ? `${u.studentProfile?.sks || u.sks} SKS`
+                          : "Reguler (0 SKS)"}
+                      </span>
                     </div>
                   )}
 
@@ -2618,13 +2122,26 @@ const ManajemenPengguna: React.FC = () => {
                     </div>
                   )}
 
-                  {u.pendampingKkn && (
+                  {(u.role === "WARGA" || selectedRole === "WARGA") && (
                     <div className="col-span-2">
-                      <span className="font-extrabold text-slate-400 uppercase tracking-wider block text-[9px] mb-0.5">Mahasiswa Pendamping</span>
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900/40 text-[11px] font-bold">
-                        <GraduationCap size={13} className="text-blue-500" />
-                        <span>{u.pendampingKkn.name}</span>
+                      <span className="font-extrabold text-slate-400 uppercase tracking-wider block text-[9px] mb-0.5">
+                        Mahasiswa Pendamping
                       </span>
+                      {u.pendampingKkn ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900/40 text-[11px] font-bold">
+                          <GraduationCap size={13} className="text-blue-500" />
+                          <span>{u.pendampingKkn.name}</span>
+                          {u.pendampingKkn.kelompokName && (
+                            <span className="text-[9px] font-semibold text-blue-600/80 dark:text-blue-400/80">
+                              • {u.pendampingKkn.kelompokName}
+                            </span>
+                          )}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 dark:text-slate-500 font-medium text-xs">
+                          Belum Ada (Pendaftaran Mandiri)
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>

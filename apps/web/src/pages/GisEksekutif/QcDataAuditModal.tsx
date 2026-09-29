@@ -91,13 +91,11 @@ export function QcDataAuditModal({
 ### A. Volume Sampah Bulanan (m³/bulan)
 * **Rumus Acuan**:
   Volume (m³/bulan) = Total Berat Terkumpul (kg) / Faktor Densitas Padat (1.000 kg/m³)
-* **Faktor Konversi**: 1.000 kg = 1 m³ (Standar Kompaksi Timbulan Padat DLH Kota Bandung & SNI 19-3964-1994).
-* **Sumber Data**: 100% dari transaksi operasional riil \`setoran_otomatis\` (Smart Bin IoT) dan \`setoran_manual\` (petugas).
+* **Sumber Data**: Murni dari transaksi operasional riil \`setoran_otomatis\` (Warga). Data pencatatan petugas pemilah dipisahkan untuk mencegah double counting.
 * **Perhitungan Nilai Aktual**:
   - Organik: ${fmtN(vOrg)} m³/bulan (${pOrg}%)
   - Anorganik: ${fmtN(vAno)} m³/bulan (${pAno}%)
-  - Residu: ${fmtN(vRes)} m³/bulan (${pRes}%)
-  - Total Akumulasi: ${fmtN(vOrg)} + ${fmtN(vAno)} + ${fmtN(vRes)} = ${fmtN(totalVolM3)} m³/bulan
+  - Total Akumulasi: ${fmtN(vOrg)} + ${fmtN(vAno)} = ${fmtN(totalVolM3)} m³/bulan
   - Ekivalensi Berat: ~${fmtN(totalTonHari)} ton (~${fmtInt(totalKgHari)} kg)
 
 ### B. Kepatuhan Pemilahan Sampah (${kepatuhanRata}%)
@@ -376,15 +374,9 @@ ORDER BY "jumlah_titik" DESC;`;
                           <span className="qc-calc-math">{fmtInt(kgAno)} kg/hari × 30 / 1.000 =</span>
                           <span className="qc-calc-res"><strong>{fmtN(vAno)} m³/bln</strong> ({pAno}%)</span>
                         </div>
-                        <div className="qc-calc-row">
-                          <span className="qc-calc-bullet gray">●</span>
-                          <span className="qc-calc-label">Residu:</span>
-                          <span className="qc-calc-math">{fmtInt(kgRes)} kg/hari × 30 / 1.000 =</span>
-                          <span className="qc-calc-res"><strong>{fmtN(vRes)} m³/bln</strong> ({pRes}%)</span>
-                        </div>
                         <div className="qc-calc-total">
                           <span>∑ Total Akumulasi:</span>
-                          <span>{fmtN(vOrg)} + {fmtN(vAno)} + {fmtN(vRes)} = <strong>{fmtN(totalVolM3)} m³/bulan</strong> (~{fmtN(totalTonHari)} ton/hari)</span>
+                          <span>{fmtN(vOrg)} + {fmtN(vAno)} = <strong>{fmtN(totalVolM3)} m³/bulan</strong> (~{fmtN(totalTonHari)} ton/hari)</span>
                         </div>
                       </div>
                     ) : (
@@ -548,7 +540,6 @@ ORDER BY "jumlah_titik" DESC;`;
                       <th>Nama Kelurahan</th>
                       <th>Organik (m³/bln)</th>
                       <th>Anorganik (m³/bln)</th>
-                      <th>Residu (m³/bln)</th>
                       <th>Total Volume</th>
                       <th>Kepatuhan</th>
                       <th>Fasilitas</th>
@@ -559,13 +550,11 @@ ORDER BY "jumlah_titik" DESC;`;
                     {(data?.kepatuhanPerKelurahan ?? []).map((k) => {
                       const o = k.organikKgHari ? `${Math.round((k.organikKgHari * 30 / 1000) * 10) / 10} m³` : "—";
                       const a = k.anorganikKgHari ? `${Math.round((k.anorganikKgHari * 30 / 1000) * 10) / 10} m³` : "—";
-                      const r = k.residuKgHari ? `${Math.round((k.residuKgHari * 30 / 1000) * 10) / 10} m³` : "—";
                       return (
                         <tr key={k.nama}>
                           <td><strong>{k.nama}</strong></td>
                           <td>{o}</td>
                           <td>{a}</td>
-                          <td>{r}</td>
                           <td><strong>{k.volume != null ? `${fmtN(k.volume)} m³/bln` : "—"}</strong></td>
                           <td>
                             <span className="qc-pill-kep" style={{ backgroundColor: `${k.color}15`, color: k.color }}>

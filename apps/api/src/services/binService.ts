@@ -1620,16 +1620,40 @@ export class BinService {
 
     const binQr = request.bin?.qrCode || "Tempat Sampah";
 
+    const wargaNotifTitle = "Pengajuan Pengosongan Terkirim";
+    const wargaNotifBody = `Pengajuan pengosongan tempat sampah ${binQr} telah terkirim ke Petugas Pemilah. Menunggu verifikasi di hilir.`;
+
     // Notifikasi konfirmasi pengajuan ke warga (Volume di-reset ke 0L saat verifikasi Petugas Hilir)
     await prisma.notification
       .create({
         data: {
           userId,
-          title: "Pengajuan Pengosongan Terkirim",
-          message: `Pengajuan pengosongan tempat sampah ${binQr} telah terkirim ke Petugas Pemilah. Menunggu verifikasi di hilir.`,
+          title: wargaNotifTitle,
+          message: wargaNotifBody,
         },
       })
       .catch(() => {});
+
+    // Push notification konfirmasi via FCM ke token Warga jika tersedia
+    if (request.user?.fcmToken) {
+      await notificationIntegrationService
+        .sendPushNotification(
+          request.user.fcmToken,
+          wargaNotifTitle,
+          wargaNotifBody,
+          "PENGAJUAN_PENGOSONGAN_TERKIRIM",
+          {
+            event: "RESET_REQUEST_SUBMITTED",
+            click_action: "FLUTTER_NOTIFICATION_CLICK",
+            requestId: request.id,
+            binId: request.binId,
+            binQr,
+          }
+        )
+        .catch((err) =>
+          console.error("[FCM createResetRequest] Error sending push to warga:", err)
+        );
+    }
 
     // Notifikasi ke petugas pemilah yang bertugas di RW tersebut
     if (resolvedPetugasId) {

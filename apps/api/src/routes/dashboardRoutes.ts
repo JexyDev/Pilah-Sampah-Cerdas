@@ -10,6 +10,7 @@ import { dashboardController } from "../controllers/dashboardController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
 import { kknExecutiveService } from "../services/kknExecutiveService.js";
+import { complianceService } from "../services/complianceService.js";
 
 const router = Router();
 
@@ -130,6 +131,20 @@ router.get("/regions", authMiddleware, dashboardController.getRegions);
  *         description: Success
  */
 router.get("/trend", authMiddleware, dashboardController.getTrend);
+
+/**
+ * @swagger
+ * /api/v1/dashboard/years:
+ *   get:
+ *     summary: Mendapatkan Daftar Tahun Tersedia Berdasarkan Data Transaksi Pemilahan Riil
+ *     tags: [Executive & Monitoring (Camat, Lurah, Admin DLH)]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Success
+ */
+router.get("/years", authMiddleware, dashboardController.getAvailableYears);
 
 /**
  * @swagger
@@ -306,5 +321,42 @@ router.get(
   roleMiddleware(["PIMPINAN", "PEMIMPIN", "SUPER_USER", "DEVELOPER"]),
   dashboardController.exportWasteExecutiveReport
 );
+
+/**
+ * @swagger
+ * /api/v1/dashboard/compliance/metrics:
+ *   get:
+ *     summary: Mendapatkan metrik evaluasi kepatuhan pemilahan sampah biner (Organik vs Anorganik)
+ *     tags: [Executive & Monitoring, Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get("/compliance/metrics", authMiddleware, async (req, res) => {
+  try {
+    const { kelurahan, rwId, startDate, endDate, userId } = req.query as {
+      kelurahan?: string;
+      rwId?: string;
+      startDate?: string;
+      endDate?: string;
+      userId?: string;
+    };
+
+    const metrics = await complianceService.getComplianceMetrics({
+      kelurahan,
+      rwId: rwId ? parseInt(rwId, 10) : undefined,
+      startDate,
+      endDate,
+      userId,
+    });
+
+    return res.status(200).json({ success: true, data: metrics });
+  } catch (error: any) {
+    console.error("[DashboardRoutes] getComplianceMetrics error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error?.message || "Gagal mengambil data metrik kepatuhan",
+    });
+  }
+});
 
 export default router;

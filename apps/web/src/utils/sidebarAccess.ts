@@ -187,6 +187,7 @@ export function canAccessSidebarRoute(
   // 6. Rute Fasilitas Pengelolaan Sampah
   const isFasilitasRoute =
     cleanPath === "/monitoring-pengelolaan/fasilitas" ||
+    cleanPath === "/fasilitas" ||
     cleanPath === "/pengelolaan-sampah" ||
     cleanPath === "/fasilitas-dan-posko";
 

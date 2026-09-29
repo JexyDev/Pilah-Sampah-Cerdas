@@ -43,6 +43,7 @@ import {
 } from "recharts";
 
 import { ThemeTileLayer } from "../../components/common/ThemeTileLayer";
+import { useAuthStore } from "../../store/useAuthStore";
 import {
   iotApiService,
   type IoTDevice,
@@ -175,6 +176,10 @@ const COBLONG_KELURAHANS = [
 ];
 
 export const ManajemenIotPage: React.FC = () => {
+  const { user } = useAuthStore();
+  const userRole = String(user?.peran || user?.role || "").toUpperCase();
+  const isTechOrAdmin = ["DEVELOPER", "SUPER_USER", "ADMIN_DLH"].includes(userRole);
+
   const [devices, setDevices] = useState<IoTDevice[]>([]);
   const [summary, setSummary] = useState<IoTDashboardSummary | null>(null);
   const [officers, setOfficers] = useState<OfficerUser[]>([]);
@@ -277,6 +282,7 @@ export const ManajemenIotPage: React.FC = () => {
   };
 
   const handleOpenCreateModal = () => {
+    if (!isTechOrAdmin) return;
     setEditingDevice(null);
     setFormData({
       name: "",
@@ -293,6 +299,7 @@ export const ManajemenIotPage: React.FC = () => {
   };
 
   const handleOpenEditModal = (dev: IoTDevice) => {
+    if (!isTechOrAdmin) return;
     setEditingDevice(dev);
     setFormData({
       name: dev.name,
@@ -310,6 +317,7 @@ export const ManajemenIotPage: React.FC = () => {
 
   const handleSubmitDevice = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isTechOrAdmin) return;
     try {
       if (editingDevice) {
         await iotApiService.updateDevice(editingDevice.id, formData);
@@ -326,6 +334,7 @@ export const ManajemenIotPage: React.FC = () => {
   };
 
   const handleDeleteDevice = async (id: string, name: string) => {
+    if (!isTechOrAdmin) return;
     if (!window.confirm(`Yakin ingin menghapus node perangkat ${name}?`)) return;
     try {
       await iotApiService.deleteDevice(id);
@@ -414,13 +423,15 @@ export const ManajemenIotPage: React.FC = () => {
             <span>Segarkan</span>
           </button>
 
-          <button
-            onClick={handleOpenCreateModal}
-            className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-500/20 transition-all"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Tambah Node Baru</span>
-          </button>
+          {isTechOrAdmin && (
+            <button
+              onClick={handleOpenCreateModal}
+              className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-500/20 transition-all cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Tambah Node Baru</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -675,7 +686,7 @@ export const ManajemenIotPage: React.FC = () => {
               {devices.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-4 py-8 text-center text-slate-400 italic">
-                    Belum ada perangkat IoT yang didaftarkan. Klik "Tambah Node Baru" di atas.
+                    Belum ada perangkat IoT yang didaftarkan.{isTechOrAdmin ? ' Klik "Tambah Node Baru" di atas.' : ''}
                   </td>
                 </tr>
               ) : (
@@ -793,27 +804,31 @@ export const ManajemenIotPage: React.FC = () => {
                           >
                             <TrendingUp className="w-4 h-4" />
                           </button>
-                          <button
-                            onClick={() => setKeyModalDevice(device)}
-                            className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/50 rounded-lg transition-colors"
-                            title="Lihat / Salin API Key"
-                          >
-                            <Key className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleOpenEditModal(device)}
-                            className="p-1.5 text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
-                            title="Edit Perangkat"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteDevice(device.id, device.name)}
-                            className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50 rounded-lg transition-colors"
-                            title="Hapus Perangkat"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          {isTechOrAdmin && (
+                            <>
+                              <button
+                                onClick={() => setKeyModalDevice(device)}
+                                className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/50 rounded-lg transition-colors cursor-pointer"
+                                title="Lihat / Salin API Key"
+                              >
+                                <Key className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleOpenEditModal(device)}
+                                className="p-1.5 text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
+                                title="Edit Perangkat"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteDevice(device.id, device.name)}
+                                className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50 rounded-lg transition-colors cursor-pointer"
+                                title="Hapus Perangkat"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>

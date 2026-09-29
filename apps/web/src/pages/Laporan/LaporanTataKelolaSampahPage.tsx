@@ -31,6 +31,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Sparkles,
+  Database,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -332,6 +333,28 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
           </div>
         </div>
       </header>
+
+      {/* ─────────────────────────────────────────────────────────────
+          KOTAK INFORMASI SUMBER DATA (DATA PROVENANCE & VALIDITAS)
+      ───────────────────────────────────────────────────────────── */}
+      <div className="print:hidden bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200/90 dark:border-emerald-800/70 rounded-2xl p-4 sm:p-4.5 flex flex-col sm:flex-row items-start sm:items-center gap-3.5 shadow-2xs">
+        <div className="p-2.5 rounded-xl bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 shrink-0">
+          <Database size={20} />
+        </div>
+        <div className="space-y-1 flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h4 className="text-xs sm:text-sm font-extrabold text-emerald-950 dark:text-emerald-100">
+              Penjelasan Sumber &amp; Integritas Data Laporan
+            </h4>
+            <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-emerald-200/70 dark:bg-emerald-800/70 text-emerald-950 dark:text-emerald-100 border border-emerald-300 dark:border-emerald-700">
+              Live Database PostgreSQL
+            </span>
+          </div>
+          <p className="text-xs text-emerald-900/90 dark:text-emerald-200/90 leading-relaxed">
+            Seluruh indikator kinerja, tonase sampah tereduksi, rasio pemilahan, dan matriks kepatuhan kewilayahan diambil langsung secara <em>real-time</em> dari basis data operasional BERSEKA. Data bersumber dari catatan penimbangan setoran warga di Bank Sampah, logbook harian pengolahan TPS/TPS3R, serta verifikasi tonase pengangkutan DLH Kota Bandung di 6 kelurahan Kecamatan Coblong.
+          </p>
+        </div>
+      </div>
 
       {/* ─────────────────────────────────────────────────────────────
           BILAH FILTER & KONTROL AKSI (DISEMBUNYIKAN SAAT PRINT)

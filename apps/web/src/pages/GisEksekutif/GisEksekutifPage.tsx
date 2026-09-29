@@ -514,6 +514,27 @@ export default function GisEksekutifPage() {
     [data]
   );
 
+  // Snapshot data fasilitas penuh saat facType === "Semua" agar distribusi per kategori selalu akurat
+  const [allFacilitiesSnapshot, setAllFacilitiesSnapshot] = useState<FacilityForMap[]>([]);
+
+  useEffect(() => {
+    if (data?.titikFasilitas && facType === "Semua") {
+      setAllFacilitiesSnapshot((data.titikFasilitas ?? []).map(toFacilityForMap));
+    }
+  }, [data?.titikFasilitas, facType]);
+
+  const sourceFacilities = allFacilitiesSnapshot.length > 0 ? allFacilitiesSnapshot : facilities;
+  const totalFacilitiesCount = data?.kpi?.fasilitasTerdata ?? sourceFacilities.length;
+
+  const facilityCountsByType = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const f of sourceFacilities) {
+      const norm = normalizeFacilityType(f.tipe);
+      map[norm] = (map[norm] || 0) + 1;
+    }
+    return map;
+  }, [sourceFacilities]);
+
   // kelRows per kelurahan (untuk Compliance chart & MapView)
   const kelRows = useMemo<KelRowForMap[]>(() => {
     if (!data) return [];
@@ -524,17 +545,15 @@ export default function GisEksekutifPage() {
       const defaultLL: [number, number] = [-6.885, 107.615];
       const labelLL = (ringCoords.length > 0 && Array.isArray(ringCoords[0])) ? ringCoords[0] : defaultLL;
 
-      // Hitung volume spesifik per kelurahan dari data transaksi riil
+      // Hitung volume spesifik per kelurahan dari data transaksi riil murni warga (Residu tidak digunakan)
       const orgM3 = kd?.organikKgHari != null
         ? Math.round((Number(kd.organikKgHari) / 1000) * 100) / 100
         : (kd?.volume != null ? Math.round(Number(kd.volume) * 0.84 * 10) / 10 : 0);
       const anoM3 = kd?.anorganikKgHari != null
         ? Math.round((Number(kd.anorganikKgHari) / 1000) * 100) / 100
         : (kd?.volume != null ? Math.round(Number(kd.volume) * 0.16 * 10) / 10 : 0);
-      const resM3 = kd?.residuKgHari != null
-        ? Math.round((Number(kd.residuKgHari) / 1000) * 100) / 100
-        : 0;
-      const totalM3 = kd?.volume != null ? Number(kd.volume) : Math.round((orgM3 + anoM3 + resM3) * 100) / 100;
+      const resM3 = 0; // Kategori residu tidak digunakan lagi
+      const totalM3 = kd?.volume != null ? Number(kd.volume) : Math.round((orgM3 + anoM3) * 100) / 100;
 
       // Pseudo KelurahanData shape for MapView compatibility
       const kShape = {
@@ -1213,9 +1232,9 @@ export default function GisEksekutifPage() {
                 orgPersen={data?.komposisiVolume.organik.persen}
                 anoPersen={data?.komposisiVolume.anorganik.persen}
                 resPersen={data?.komposisiVolume.residu.persen}
-                orgKg={data?.komposisiVolume.organik.kgHari}
-                anoKg={data?.komposisiVolume.anorganik.kgHari}
-                resKg={data?.komposisiVolume.residu.kgHari}
+                orgKg={data?.komposisiVolume.organik.totalKg ?? data?.komposisiVolume.organik.kgHari ?? 0}
+                anoKg={data?.komposisiVolume.anorganik.totalKg ?? data?.komposisiVolume.anorganik.kgHari ?? 0}
+                resKg={data?.komposisiVolume.residu.totalKg ?? data?.komposisiVolume.residu.kgHari ?? 0}
                 totalM3={data?.komposisiVolume.totalM3 ?? undefined}
                 totalKg={data?.komposisiVolume.totalKg ?? (data?.kpi?.volumeTotalKg ?? undefined)}
                 hasData={data?.komposisiVolume.hasData}
@@ -1235,6 +1254,15 @@ export default function GisEksekutifPage() {
                 }
                 pi={selectedMonthIndex}
                 unit={volumeUnit}
+                orgKg={data?.komposisiVolume.organik.totalKg ?? data?.komposisiVolume.organik.kgHari ?? 0}
+                anoKg={data?.komposisiVolume.anorganik.totalKg ?? data?.komposisiVolume.anorganik.kgHari ?? 0}
+                resKg={data?.komposisiVolume.residu.totalKg ?? data?.komposisiVolume.residu.kgHari ?? 0}
+                orgM3={data?.komposisiVolume.organik.volumeM3 ?? 0}
+                anoM3={data?.komposisiVolume.anorganik.volumeM3 ?? 0}
+                resM3={data?.komposisiVolume.residu.volumeM3 ?? 0}
+                totalKg={data?.komposisiVolume.totalKg ?? (data?.kpi?.volumeTotalKg ?? undefined)}
+                totalM3={data?.komposisiVolume.totalM3 ?? undefined}
+                wilayahLabel={kel !== "Semua" ? kel : "Kec. Coblong"}
               />
               <Compliance
                 rows={kelRows as any}
@@ -1270,13 +1298,44 @@ export default function GisEksekutifPage() {
               <select value={facType} onChange={(e) => setFacType(e.target.value)} aria-label="Jenis fasilitas">
                 {filterOptions.tipeFasilitas.map((t) => {
                   const tipeInfo = TIPE_BY_ID[t] || TIPE_BY_ID[normalizeFacilityType(t)];
-                  const label = t === "Semua" ? "Semua Fasilitas" : (tipeInfo?.nama ?? t.replace(/_/g, " ").toUpperCase());
-                  return <option key={t} value={t}>{label}</option>;
+                  const baseLabel = t === "Semua" ? "Semua Fasilitas" : (tipeInfo?.nama ?? t.replace(/_/g, " ").toUpperCase());
+                  const normT = normalizeFacilityType(t);
+                  const countForType = t === "Semua" ? totalFacilitiesCount : (facilityCountsByType[normT] ?? 0);
+                  return <option key={t} value={t}>{baseLabel} ({countForType})</option>;
                 })}
               </select>
               <Icon name="chevron" size={13} className="pill-c" />
             </span>
           </label>
+
+          {/* Badge Total Angka Fasilitas Terpilih (UX Proximity) */}
+          <div
+            className={`fac-total-badge ${facType !== "Semua" || query.trim() !== "" ? "is-filtered" : ""}`}
+            title="Total titik fasilitas yang ditampilkan pada peta"
+          >
+            <span className="fac-total-dot" />
+            <span className="fac-total-text">
+              {facType === "Semua" && !query.trim() ? (
+                <>Total: <strong>{visibleFac.length}</strong> Fasilitas</>
+              ) : (
+                <>
+                  Ditampilkan: <strong>{visibleFac.length}</strong> dari {totalFacilitiesCount}
+                </>
+              )}
+            </span>
+            {(facType !== "Semua" || query.trim() !== "") && (
+              <button
+                type="button"
+                className="fac-total-reset"
+                onClick={clearFilters}
+                title="Reset filter (Tampilkan Semua)"
+                aria-label="Reset filter fasilitas"
+              >
+                <Icon name="close" size={10} />
+              </button>
+            )}
+          </div>
+
           <div className="tabs" role="group" aria-label="Lapisan overlay">
             {LAYERS.map((l) => (
               <button key={l.id} type="button" className={layer === l.id ? "on" : ""}
@@ -1294,7 +1353,7 @@ export default function GisEksekutifPage() {
               base={base}
               setBase={setBase}
               facilities={visibleFac as any}
-              allCount={facilities.length}
+              allCount={totalFacilitiesCount}
               selectedKel={kel !== "Semua" ? kel.toLowerCase().replace(/\s+/g, "-") : null}
               onSelectKel={(id: string) => {
                 const kelName = (data?.poligonKelurahan ?? []).find(
@@ -1310,20 +1369,34 @@ export default function GisEksekutifPage() {
             />
             <aside className="card side" aria-label="Legenda">
               <div className="side-sec">
-                <h4 className="side-h">Fasilitas dan fungsi</h4>
+                <div className="side-h-row">
+                  <h4 className="side-h">Fasilitas dan fungsi</h4>
+                  <span className="side-total-pill">{totalFacilitiesCount} Titik</span>
+                </div>
                 <ul className="fac-list" role="list">
                   {TIPE.map((t) => {
-                    const isOn = normalizeFacilityType(facType) === normalizeFacilityType(t.id);
+                    const normT = normalizeFacilityType(t.id);
+                    const isOn = normalizeFacilityType(facType) === normT;
+                    const count = facilityCountsByType[normT] ?? 0;
                     return (
                       <li key={t.id}>
-                        <div className={`fac-item ${isOn ? "is-selected" : ""}`}>
+                        <button
+                          type="button"
+                          className={`fac-item ${isOn ? "is-selected" : ""}`}
+                          onClick={() => setFacType(isOn ? "Semua" : t.id)}
+                          title={`Klik untuk memfilter ${t.nama} (${count} titik)`}
+                          aria-pressed={isOn}
+                        >
                           <span className="fac-ico" style={{ background: t.warna }}>
                             <Icon name={TIPE_ICON[t.id]} size={14} stroke={2} />
                           </span>
                           <span className="fac-n">{t.nama}</span>
+                          <span className={`fac-count-badge ${isOn ? "is-active" : ""}`}>
+                            {count}
+                          </span>
                           <span className="fac-d">—</span>
                           <span className="fac-f">{t.fungsi}</span>
-                        </div>
+                        </button>
                       </li>
                     );
                   })}
@@ -1334,7 +1407,6 @@ export default function GisEksekutifPage() {
                   {layer === "kep" && "Kepatuhan Pemilahan (%)"}
                   {layer === "org" && "Intensitas Sampah Organik (m³)"}
                   {layer === "ano" && "Intensitas Sampah Anorganik (m³)"}
-                  {layer === "res" && "Intensitas Sampah Residu (m³)"}
                   {layer === "total" && "Intensitas Volume Total (m³)"}
                 </h4>
                 {layer === "kep" ? (
@@ -1357,8 +1429,6 @@ export default function GisEksekutifPage() {
                         ? "linear-gradient(to right, #dcfce7, #15803d)"
                         : layer === "ano"
                         ? "linear-gradient(to right, #dbeafe, #1d4ed8)"
-                        : layer === "res"
-                        ? "linear-gradient(to right, #fee2e2, #b91c1c)"
                         : "linear-gradient(to right, #f3e8ff, #7e22ce)"
                     }} />
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10.5, color: "#64748b" }}>

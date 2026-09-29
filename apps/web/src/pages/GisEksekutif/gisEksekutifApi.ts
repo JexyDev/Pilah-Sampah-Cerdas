@@ -80,6 +80,11 @@ export interface GisOverviewApiResponse {
     totalKg?: number | null;
     totalKgHari?: number;
     hasData?: boolean;
+    petugasPemilah?: {
+      totalKg: number;
+      organikKg: number;
+      anorganikKg: number;
+    };
   };
   trenBulanan: Array<{ bulan: string; volume: number | null; volumeKg?: number | null }>;
   kepatuhanPerKelurahan: Array<{
