@@ -27,6 +27,8 @@ vi.mock("../lib/prisma.js", () => ({
     refreshToken: { findMany: vi.fn() },
     surveiKelurahan: { findMany: vi.fn() },
     endlineSurveiKelurahan: { findMany: vi.fn() },
+    kelompokKkn: { findMany: vi.fn() },
+    studentKkn: { count: vi.fn() },
   },
 }));
 
@@ -64,6 +66,8 @@ describe("dashboardService Baseline Anti-Dummy & Fallback Metadata Tests", () =>
     (prisma.dispatchTask.count as any).mockResolvedValue(0);
     (prisma.refreshToken.findMany as any).mockResolvedValue([]);
     (prisma.endlineSurveiKelurahan.findMany as any).mockResolvedValue([]);
+    (prisma.kelompokKkn.findMany as any).mockResolvedValue([]);
+    (prisma.studentKkn.count as any).mockResolvedValue(0);
   });
 
   it("should have deactivated static fallback constants in compliance with anti-dummy governance", () => {
