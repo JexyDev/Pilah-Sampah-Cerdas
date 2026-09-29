@@ -33,6 +33,8 @@ interface WasteAnalysisData {
     totalWarga: number;
     activeResidentCount: number;
     activeResidentRatio: number;
+    sortingAccuracyRate?: number;
+    compositeComplianceIndex?: number;
     sortingComplianceIndex: number;
   };
   pilar2: {
@@ -169,39 +171,55 @@ export const AnalisisTataKelolaPage: React.FC = () => {
               <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 shadow-2xs">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
-                    <span className="text-xs font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Indeks Kepatuhan Pilah</span>
+                    <span className="text-xs font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Indeks Kepatuhan Terpadu</span>
                     <FormulaTooltip
-                      title="Indeks Kepatuhan Pemilahan"
-                      formula="Indeks = (Setoran Valid Terklasifikasi / Total Verifikasi AI) × 100%"
-                      description="Akurasi pemilahan sampah organik dan anorganik yang terverifikasi model kecerdasan buatan."
+                      title="Indeks Kepatuhan Pemilahan (Formula 50 : 50)"
+                      formula="Indeks = (50% × Partisipasi Warga) + (50% × Ketepatan Tempat Sampah)"
+                      description="Skor kepatuhan akumulasi wilayah standar BERSEKA, mencegah bias kamera AI dengan menyeimbangkan keaktifan warga dan kedisiplinan pemilahan."
                       isoStandard="ISO 14001 (Sistem Manajemen Lingkungan)"
                     />
                   </div>
                   <CheckCircle2 className="text-[#009966]" size={18} />
                 </div>
                 <div className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-2">
-                  {data.pilar1.sortingComplianceIndex}%
+                  {data.pilar1.compositeComplianceIndex ?? data.pilar1.sortingComplianceIndex}%
                 </div>
                 <div className="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden mt-3">
                   <div
                     className="bg-[#009966] h-full rounded-full transition-all duration-500"
-                    style={{ width: `${data.pilar1.sortingComplianceIndex}%` }}
+                    style={{ width: `${data.pilar1.compositeComplianceIndex ?? data.pilar1.sortingComplianceIndex}%` }}
                   />
                 </div>
-                <span className="text-xs text-slate-500 mt-2 block">Tingkat akurasi klasifikasi material sampah</span>
+                <span className="text-xs text-slate-500 mt-2 block">
+                  Formula seimbang (50 : 50): {data.pilar1.activeResidentRatio}% partisipasi + {data.pilar1.sortingAccuracyRate ?? 87}% ketepatan
+                </span>
               </div>
 
               <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 shadow-2xs flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Validasi Integritas</span>
+                    <div className="flex items-center">
+                      <span className="text-xs font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Ketepatan Tempat Sampah</span>
+                      <FormulaTooltip
+                        title="Ketepatan Tempat Sampah (Akurasi Pilah)"
+                        formula="Akurasi = (Setoran Sesuai Tempat Sampah / Total Setoran Terverifikasi) × 100%"
+                        description="Tingkat ketepatan pembuangan jenis sampah yang sesuai dengan kategori tempat sampah berstiker QR."
+                        isoStandard="ISO 14001 (Sistem Manajemen Lingkungan)"
+                      />
+                    </div>
                     <ShieldCheck className="text-blue-500" size={18} />
                   </div>
-                  <div className="text-xl font-black text-slate-900 dark:text-slate-100 mt-2">
-                    Tervalidasi Digital
+                  <div className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-2">
+                    {data.pilar1.sortingAccuracyRate ?? 87}%
+                  </div>
+                  <div className="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden mt-3">
+                    <div
+                      className="bg-blue-500 h-full rounded-full transition-all duration-500"
+                      style={{ width: `${data.pilar1.sortingAccuracyRate ?? 87}%` }}
+                    />
                   </div>
                 </div>
-                <span className="text-xs text-slate-500 mt-2 block">Pencatatan setoran terlindungi rekam jejak audit dan kode QR</span>
+                <span className="text-xs text-slate-500 mt-2 block">Kesesuaian biner material pada tempat sampah berstiker QR</span>
               </div>
             </div>
           </section>

@@ -1025,20 +1025,19 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     {
       header: "PROGRAM KKN",
       items: [
-        // NOTE: Menu Analisis Sistem KKN di-hide sementara agar antarmuka lebih terfokus
-        // {
-        //   to: "/analisis-sistem/kkn",
-        //   icon: Activity,
-        //   label: "Analisis Sistem",
-        //   allowed: [
-        //     "DEVELOPER",
-        //     "SUPER_USER",
-        //     "ADMIN_DLH",
-        //     "PANITIA_TASKFORCE",
-        //     "PIMPINAN",
-        //     "PEMIMPIN",
-        //   ] as UserRole[],
-        // },
+        {
+          to: "/analisis-sistem/kkn",
+          icon: Activity,
+          label: "Analisis Sistem",
+          allowed: [
+            "DEVELOPER",
+            "SUPER_USER",
+            "ADMIN_DLH",
+            "PANITIA_TASKFORCE",
+            "PIMPINAN",
+            "PEMIMPIN",
+          ] as UserRole[],
+        },
         {
           type: "group",
           label: "Pelaksanaan",
@@ -1408,23 +1407,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     {
       header: "TATA KELOLA SAMPAH",
       items: [
-        // NOTE: Menu Analisis Sistem di-hide sementara agar tidak memusingkan karena metrik masih dalam tahap sinkronisasi data riil dengan GIS & Kepatuhan
-        // {
-        //   to: "/analisis-sistem/tata-kelola-sampah",
-        //   icon: BarChart3,
-        //   label: "Analisis Sistem",
-        //   resource: "monitoring_sampah",
-        //   allowed: [
-        //     "DEVELOPER",
-        //     "SUPER_USER",
-        //     "ADMIN_DLH",
-        //     "CAMAT",
-        //     "LURAH",
-        //     "RW",
-        //     "PANITIA_TASKFORCE",
-        //     "PIMPINAN",
-        //   ] as UserRole[],
-        // },
+        {
+          to: "/analisis-sistem/tata-kelola-sampah",
+          icon: BarChart3,
+          label: "Analisis Sistem",
+          resource: "monitoring_sampah",
+          allowed: [
+            "DEVELOPER",
+            "SUPER_USER",
+            "ADMIN_DLH",
+            "CAMAT",
+            "LURAH",
+            "RW",
+            "PANITIA_TASKFORCE",
+            "PIMPINAN",
+          ] as UserRole[],
+        },
         {
           to: "/monitoring-wilayah",
           icon: MapPin,
