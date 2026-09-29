@@ -509,18 +509,18 @@ export function Trend({
   const pctAno = totalManaged > 0 ? Math.round((vAno / totalManaged) * 100) : 0;
 
   return (
-    <section className="card chart-card" aria-label={isCumulative ? "Akumulasi volume sampah" : "Tren volume bulanan"}>
+    <section className="card chart-card" aria-label={isCumulative ? "Akumulasi berat sampah" : "Tren berat bulanan"}>
       <CardTitle
         icon="bars"
         subtitle={isCumulative ? undefined : (maxValInSeries > 0 ? undefined : "Belum ada log produksi tercatat")}
         right={
           <div className="trend-actions">
-            <div className="trend-toggle-group" role="group" aria-label="Mode Tampilan Data Volume">
+            <div className="trend-toggle-group" role="group" aria-label="Mode Tampilan Data Berat">
               <button
                 type="button"
                 className={`trend-toggle-btn ${!isCumulative ? "is-active" : ""}`}
                 onClick={() => setIsCumulative(false)}
-                title={`Tampilkan volume per bulan (${isKg ? "kg/bulan" : "m³/bulan"})`}
+                title={`Tampilkan berat per bulan (${isKg ? "kg/bulan" : "m³/bulan"})`}
               >
                 Per Bulan
               </button>
@@ -528,7 +528,7 @@ export function Trend({
                 type="button"
                 className={`trend-toggle-btn ${isCumulative ? "is-active" : ""}`}
                 onClick={() => setIsCumulative(true)}
-                title={`Tampilkan total akumulasi volume sampah tahun berjalan (${isKg ? "kg" : "m³"})`}
+                title={`Tampilkan total akumulasi berat sampah tahun berjalan (${isKg ? "kg" : "m³"})`}
               >
                 Akumulasi
               </button>
@@ -536,7 +536,7 @@ export function Trend({
           </div>
         }
       >
-        {isCumulative ? "Akumulasi volume sampah" : "Tren volume bulanan"}
+        {isCumulative ? "Akumulasi berat sampah" : "Tren berat bulanan"}
       </CardTitle>
 
       <div ref={ref} className="trend-view-container" style={{ width: "100%" }}>

@@ -103,7 +103,7 @@ export const PolygonGeofenceMap: React.FC<{ onSelectArea?: (area: PolygonData) =
                     <p>📍 Status: <span className="font-semibold text-emerald-700">Ter-Geofence</span></p>
                     <p>🗑️ Total Tempat Sampah: <span className="font-semibold">{poly.stats?.totalBins || 0} unit</span></p>
                     <p>👥 Warga Aktif: <span className="font-semibold">{poly.stats?.activeWarga || 0} KK</span></p>
-                    <p>⚖️ Volume Sampah: <span className="font-semibold text-blue-700">{poly.stats?.wasteVolumeKg || 0} kg</span></p>
+                    <p>⚖️ Berat Sampah: <span className="font-semibold text-blue-700">{poly.stats?.wasteVolumeKg || 0} kg</span></p>
                   </div>
                 </div>
               </Popup>

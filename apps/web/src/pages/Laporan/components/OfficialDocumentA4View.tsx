@@ -245,7 +245,7 @@ export const OfficialDocumentA4View: React.FC<OfficialDocumentA4ViewProps> = ({
           (TPS3R), Bank Sampah Unit (BSU), dan wadah sampah pintar (<em>IoT Smart Bins</em>), total akumulasi timbulan
           sampah yang tercatat di wilayah <strong>{metadata.wilayahCakupan}</strong> selama periode evaluasi ini mencapai{" "}
           <strong>{kpiSummary.dampakDanReduksi.totalTimbulanSampahKg.toLocaleString("id-ID")} Kilogram</strong> (setara
-          dengan <strong>{kpiSummary.dampakDanReduksi.totalTimbulanSampahTon} Ton</strong>). Dari volume tersebut,
+          dengan <strong>{kpiSummary.dampakDanReduksi.totalTimbulanSampahTon} Ton</strong>). Dari berat timbulan tersebut,
           pengolahan sumber berhasil mereduksi sampah ke TPA sebesar{" "}
           <strong>{kpiSummary.dampakDanReduksi.tonaseTereduksiDariTpaKg.toLocaleString("id-ID")} Kilogram</strong> (
           <strong>{kpiSummary.dampakDanReduksi.tonaseTereduksiDariTpaTon} Ton</strong>) atau mencapai tingkat efektivitas
@@ -449,7 +449,7 @@ export const OfficialDocumentA4View: React.FC<OfficialDocumentA4ViewProps> = ({
         <p className="indent-8 text-[10.5pt] leading-relaxed">
           Dalam rangka pembinaan kewilayahan yang berkeadilan, audit kinerja berkala dilaksanakan terhadap 6 (enam)
           kelurahan di lingkungan Kecamatan Coblong. Evaluasi membandingkan capaian indeks kepatuhan berjalan terhadap
-          target awal (<em>baseline</em>), volume material sampah yang terpilah, ketersediaan fasilitas aktif, serta
+          target awal (<em>baseline</em>), berat material sampah yang terpilah, ketersediaan fasilitas aktif, serta
           status verifikasi lapangan sebagai dasar pemberian penghargaan (*reward*) atau pendampingan intensif.
         </p>
 

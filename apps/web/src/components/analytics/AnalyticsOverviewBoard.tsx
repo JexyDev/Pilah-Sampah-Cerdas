@@ -4,7 +4,7 @@
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * 
  * Component: Rekapitulasi & Analitik Performa Wilayah
- * - 2 Recharts Bar Charts: Kepatuhan Pemilahan per Kelurahan & Volume Sampah per Kelurahan
+ * - 2 Recharts Bar Charts: Kepatuhan Pemilahan per Kelurahan & Berat Sampah per Kelurahan
  * - Tabel Terpisah ber-Pagination untuk setiap kategori (Warga, Petugas, Rukun Warga, Kelurahan, Mahasiswa, Kelompok, DPL)
  */
 
@@ -495,7 +495,7 @@ export const AnalyticsOverviewBoard: React.FC = () => {
           </div>
         </div>
 
-        {/* Chart 2: Volume Sampah per Kelurahan */}
+        {/* Chart 2: Berat Sampah per Kelurahan */}
         <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-sm space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
             <div className="flex items-center gap-3">

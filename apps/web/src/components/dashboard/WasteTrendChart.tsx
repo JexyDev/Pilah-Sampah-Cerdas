@@ -622,7 +622,7 @@ export const WasteTrendChart: React.FC<WasteTrendChartProps> = ({
               Belum ada aktivitas pemilahan tercatat (0 kg)
             </p>
             <p className="text-[11px] text-slate-400">
-              Tidak ada volume sampah organik maupun anorganik pada periode tahun {selectedYear} ({currentRangeConfig.label}).
+              Tidak ada berat sampah organik maupun anorganik pada periode tahun {selectedYear} ({currentRangeConfig.label}).
             </p>
           </div>
         )}

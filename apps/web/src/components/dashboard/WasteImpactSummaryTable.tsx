@@ -602,7 +602,7 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
 
       {/* Rangkuman Metodologi & Studi Kasus Lebakgede */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
-        {/* Box Left: Rumus Penurunan Volume Sampah */}
+        {/* Box Left: Rumus Penurunan Berat Sampah */}
         <div className="bg-blue-50/40 dark:bg-blue-950/20 rounded-2xl p-4 border border-blue-200/70 dark:border-blue-800/40 space-y-2">
           <div className="flex items-center justify-between">
             <h5 className="font-black text-xs sm:text-sm text-blue-900 dark:text-blue-200 flex items-center gap-1.5">

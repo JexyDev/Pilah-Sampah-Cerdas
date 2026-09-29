@@ -220,7 +220,7 @@ export const BaselineSection: React.FC<BaselineSectionProps> = ({ className = ""
     fetchBaseline();
   }, []);
 
-  // Hitung batas skala volume sampah (kg) secara dinamis dari data
+  // Hitung batas skala berat sampah (kg) secara dinamis dari data
   const maxVolumeKg = useMemo(() => {
     const list = data?.kelurahan || [];
     const maxVal = Math.max(...list.map((k) => Number(k.volumeBaselineKg || 0)), 1000);
@@ -1055,7 +1055,7 @@ export const BaselineSection: React.FC<BaselineSectionProps> = ({ className = ""
           </div>
         )}
 
-        {/* Kasus C: Single View (Volume Sampah Penuh) */}
+        {/* Kasus C: Single View (Berat Sampah Penuh) */}
         {activeTab === "volume" && (
           <div className="bg-slate-50/70 dark:bg-slate-800/40 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 relative overflow-visible z-20">
             <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-200/60 dark:border-slate-700">

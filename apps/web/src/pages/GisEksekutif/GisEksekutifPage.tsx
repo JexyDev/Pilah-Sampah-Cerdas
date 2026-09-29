@@ -1092,14 +1092,14 @@ export default function GisEksekutifPage() {
                 </div>
               </div>
 
-              {/* Card 2: Volume sampah bulanan */}
+              {/* Card 2: Berat sampah bulanan */}
               <div className="kpi-card-qc">
                 <div className="kpi-circle-icon mint">
                   <Icon name="bars" size={22} stroke={2.5} />
                 </div>
                 <div className="kpi-qc-content">
                   <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", width: "100%" }}>
-                    <span className="kpi-qc-label">Volume sampah bulanan</span>
+                    <span className="kpi-qc-label">Berat sampah bulanan</span>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       {/* Unit Switcher: kg | m³ */}
                       <div className="trend-toggle-group" style={{ height: 22, padding: 1 }} role="group" aria-label="Pilih satuan volume">

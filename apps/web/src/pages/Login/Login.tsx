@@ -239,7 +239,7 @@ const Login: React.FC = () => {
                 </div>
                 <div>
                   <p className="font-extrabold text-white text-xs">Pemantauan Real-Time</p>
-                  <p className="text-[11px] text-emerald-200/80 font-medium">Pemantauan volume sampah organik &amp; anorganik.</p>
+                  <p className="text-[11px] text-emerald-200/80 font-medium">Pemantauan berat sampah organik &amp; anorganik.</p>
                 </div>
               </div>
 
