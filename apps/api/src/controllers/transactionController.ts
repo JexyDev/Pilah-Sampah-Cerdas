@@ -249,6 +249,20 @@ export const transactionController = {
       }
 
       const dep = deposit as any;
+      const requestingUser = req.user;
+
+      // Ownership check: role terbatas hanya bisa lihat transaksi miliknya sendiri
+      const restrictedRoles = ["WARGA", "MAHASISWA_KKN"];
+      if (requestingUser && restrictedRoles.includes(requestingUser.role)) {
+        const ownerId = dep.wargaId || dep.mahasiswaId;
+        if (ownerId && ownerId !== requestingUser.userId) {
+          res.status(403).json({
+            success: false,
+            message: "Akses ditolak: Anda hanya dapat melihat data setoran milik Anda sendiri.",
+          });
+          return;
+        }
+      }
 
       if (dep.isManual) {
         const mappedManual = {

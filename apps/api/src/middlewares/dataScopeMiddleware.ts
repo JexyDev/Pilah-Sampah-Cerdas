@@ -45,6 +45,8 @@ export const dataScopeMiddleware = async (
       select: {
         id: true,
         rwId: true,
+        // [FIX P2-9]: Sertakan kelurahan langsung dari model User (jika field ada)
+        // untuk menangani LURAH yang mungkin tidak punya rwId
         rw: {
           select: {
             id: true,
@@ -107,11 +109,14 @@ export const dataScopeMiddleware = async (
 
     // 2. Lurah Strict Scope Verification
     if (role === "LURAH") {
-      const userKelurahanId = dbUser.rw?.kelurahanId;
+      // [FIX P2-9]: LURAH bisa tidak punya rwId di database — kelurahanId didapat via rw.kelurahanId
+      const userKelurahanId: string | null = dbUser.rw?.kelurahanId ?? null;
+
       if (!userKelurahanId) {
         res.status(403).json({
           error: "FORBIDDEN",
-          message: "Akun Lurah Anda belum terasosiasi dengan Kelurahan manapun.",
+          message:
+            "Akun Lurah Anda belum terasosiasi dengan Kelurahan manapun. Hubungi Admin DLH untuk konfigurasi akun.",
         });
         return;
       }

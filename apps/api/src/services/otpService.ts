@@ -9,6 +9,7 @@ import { prisma } from "../lib/prisma.js";
  */
 
 import { hashPassword } from "../utils/hashUtils.js";
+import { randomInt, randomBytes } from "crypto";
 
 /** ─── In-memory OTP store (fallback jika Redis offline) ─── */
 const memStore = new Map<string, { value: string; expiresAt: number }>();
@@ -40,9 +41,12 @@ function normalizePhone(phone: string): string {
   return p;
 }
 
-/** ─── Generate 6-digit OTP numerik ─── */
+/**
+ * Generate 6-digit OTP numerik menggunakan CSPRNG (crypto.randomInt).
+ * Menggantikan Math.random() yang non-cryptographic dan predictable.
+ */
 function generateOtp(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  return randomInt(100000, 999999).toString();
 }
 
 /** ─── Kirim pesan WA via Fonnte API ─── */
@@ -119,9 +123,11 @@ export class OtpService {
 
     const sent = await sendFonnteMessage(normalized, message);
 
-    if (process.env.NODE_ENV !== "production") {
-      return { sent, devOtp: otp };
+    // Di development tanpa FONNTE_TOKEN: log OTP ke server console (tidak pernah ke response client)
+    if (!sent && process.env.NODE_ENV === "development") {
+      console.info(`[OTP DEV] OTP untuk ${normalized}: ${otp} (hanya tampil di server log development)`);
     }
+
     return { sent };
   }
 
@@ -143,7 +149,8 @@ export class OtpService {
     // Hapus OTP agar single-use
     memDel("otp:reset:" + normalized);
 
-    const resetToken = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    // Reset token menggunakan crypto.randomBytes untuk keamanan kriptografis
+    const resetToken = randomBytes(32).toString("hex");
     memSet("reset:token:" + normalized, resetToken, this.RESET_TTL);
 
     return { resetToken };

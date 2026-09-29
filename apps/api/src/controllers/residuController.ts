@@ -258,6 +258,7 @@ export class ResiduController {
         binId: req.body.binId,
         latitude: req.body.latitude,
         longitude: req.body.longitude,
+        inputMethod: req.body.inputMethod || req.body.input_method,
       });
 
       res.status(201).json({ success: true, data });

@@ -331,7 +331,22 @@ router.get(
  *     security:
  *       - bearerAuth: []
  */
-router.get("/compliance/metrics", authMiddleware, async (req, res) => {
+router.get(
+  "/compliance/metrics",
+  authMiddleware,
+  roleMiddleware([
+    "DEVELOPER",
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "CAMAT",
+    "LURAH",
+    "RW",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+  ]),
+  async (req, res) => {
   try {
     const { kelurahan, rwId, startDate, endDate, userId } = req.query as {
       kelurahan?: string;

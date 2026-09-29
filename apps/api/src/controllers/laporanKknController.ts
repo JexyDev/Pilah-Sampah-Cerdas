@@ -16,12 +16,17 @@ export const laporanKknController = {
    */
   getLaporanSummary: async (req: Request, res: Response) => {
     try {
-      const { kelurahan, rw, periode, kelompok } = req.query;
+      const { kelurahan, rw, periode, kelompok, startDate, endDate, hari, jamMulai, jamSelesai } = req.query;
       const data = await laporanKknService.getLaporanSummary({
         kelurahan: kelurahan as string,
         rw: rw as string,
         periode: periode as string,
         kelompok: kelompok as string,
+        startDate: startDate as string,
+        endDate: endDate as string,
+        hari: hari as string,
+        jamMulai: jamMulai as string,
+        jamSelesai: jamSelesai as string,
       });
 
       res.status(200).json({

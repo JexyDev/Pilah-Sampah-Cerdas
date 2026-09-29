@@ -1106,7 +1106,26 @@ const AppRoutes: React.FC = () => {
           }
         />
         <Route path="/rekap-setoran" element={<Navigate to="/rekapitulasi-setoran" replace />} />
-        <Route path="/poin-warga" element={<PoinWarga />} />
+        <Route
+          path="/poin-warga"
+          element={
+            <ProtectedRoute
+              allowedRoles={[
+                "DEVELOPER",
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "RW",
+                "RT",
+                "LURAH",
+                "CAMAT",
+                "PEMIMPIN",
+                "PANITIA_TASKFORCE",
+              ]}
+            >
+              <PoinWarga />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/dataset/hasil-klasifikasi"
           element={
@@ -1299,7 +1318,11 @@ const AppRoutes: React.FC = () => {
         />
         <Route
           path="/kurasi-landing"
-          element={<KurasiLandingPage />}
+          element={
+            <ProtectedRoute allowedRoles={["DEVELOPER", "SUPER_USER"]}>
+              <KurasiLandingPage />
+            </ProtectedRoute>
+          }
         />
         <Route path="/kelola-landing" element={<Navigate to="/kurasi-landing" replace />} />
         <Route path="/master-data/kurasi-landing" element={<Navigate to="/kurasi-landing" replace />} />

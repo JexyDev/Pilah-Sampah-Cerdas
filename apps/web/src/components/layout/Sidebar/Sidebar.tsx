@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo.
@@ -869,11 +869,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
   const { user, can } = useAuthStore();
   const rawRole = ((user?.peran || (user as any)?.role || "WARGA") as string).toUpperCase();
   let normalizedRoleStr = rawRole;
-  if (["PEMIMPIN", "PIMPINAN", "PEMIMPIN", "PIMPINAN"].includes(rawRole))
+  if (["PEMIMPIN", "PIMPINAN"].includes(rawRole))
     normalizedRoleStr = "PIMPINAN";
   if (["MPL", "MITRA_PEMBIMBING_LAPANGAN", "MITRA_PENDAMPING_LAPANGAN", "MITRA"].includes(rawRole))
     normalizedRoleStr = "MPL";
   if (["DPL", "DOSEN_PEMBIMBING", "DOSEN_PENDAMPING"].includes(rawRole)) normalizedRoleStr = "DPL";
+  if (["PANITIA_TASKFORCE", "TASK_FORCE", "TASKFORCE"].includes(rawRole)) normalizedRoleStr = "TASK_FORCE";
   const userRole = normalizedRoleStr as UserRole;
   const isDpl =
     userRole === "DPL" || rawRole === "DOSEN_PEMBIMBING" || rawRole === "DOSEN_PENDAMPING";
@@ -882,7 +883,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     rawRole === "MITRA_PEMBIMBING_LAPANGAN" ||
     rawRole === "MITRA_PENDAMPING_LAPANGAN";
   const isPimpinan = userRole === "PIMPINAN";
+  // [FIX P2-6]: Tambah cek userRole === "TASK_FORCE" agar user yang ter-normalisasi ke TASK_FORCE terdeteksi
   const isTaskforce =
+    userRole === "TASK_FORCE" ||
     userRole === "PANITIA_TASKFORCE" ||
     rawRole === "PANITIA_TASKFORCE" ||
     rawRole === "TASK_FORCE" ||
@@ -924,7 +927,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     }
 
     // 2. Fallback static allowed role check
-    if (!allowed) return true;
+    // PENTING: jika `allowed` tidak didefinisikan, default ke false (deny) untuk keamanan.
+    // Item menu yang tidak mendefinisikan `allowed` hanya terlihat untuk DEVELOPER/SUPER_USER (sudah ditangani di atas).
+    if (!allowed) return false;
     if (userRole === "PIMPINAN" || (userRole as string) === "PEMIMPIN") {
       return allowed.includes("PIMPINAN") || (allowed as any).includes("PEMIMPIN");
     }
@@ -1870,11 +1875,31 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "ADMIN_DLH",
               ] as UserRole[],
               children: [
-                { to: "/wilayah/provinsi", label: "Provinsi" },
-                { to: "/wilayah/kota-kabupaten", label: "Kota / Kabupaten" },
-                { to: "/wilayah/kecamatan", label: "Kecamatan" },
-                { to: "/wilayah/kelurahan", label: "Kelurahan" },
-                { to: "/wilayah/rw", label: "Rukun Warga" },
+                {
+                  to: "/wilayah/provinsi",
+                  label: "Provinsi",
+                  allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH"] as UserRole[],
+                },
+                {
+                  to: "/wilayah/kota-kabupaten",
+                  label: "Kota / Kabupaten",
+                  allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH"] as UserRole[],
+                },
+                {
+                  to: "/wilayah/kecamatan",
+                  label: "Kecamatan",
+                  allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH"] as UserRole[],
+                },
+                {
+                  to: "/wilayah/kelurahan",
+                  label: "Kelurahan",
+                  allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH"] as UserRole[],
+                },
+                {
+                  to: "/wilayah/rw",
+                  label: "Rukun Warga",
+                  allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH"] as UserRole[],
+                },
               ],
             },
             {

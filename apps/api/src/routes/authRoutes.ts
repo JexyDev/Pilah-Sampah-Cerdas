@@ -9,7 +9,7 @@ import { Router } from "express";
 import { authController } from "../controllers/authController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
-import { loginRateLimiter } from "../middlewares/rateLimiter.js";
+import { loginRateLimiter, otpRateLimiter, registerRateLimiter } from "../middlewares/rateLimiter.js";
 import { uploadAvatarMiddleware } from "../middlewares/uploadMiddleware.js";
 
 const router = Router();
@@ -92,7 +92,7 @@ router.post("/login", loginRateLimiter, authController.login);
  *       200:
  *         description: Kode OTP berhasil dikirimkan via WhatsApp
  */
-router.post("/request-otp", authController.requestOtp);
+router.post("/request-otp", otpRateLimiter, authController.requestOtp);
 
 /**
  * @swagger
@@ -120,7 +120,7 @@ router.post("/request-otp", authController.requestOtp);
  *       200:
  *         description: Verifikasi OTP berhasil
  */
-router.post("/verify-otp", authController.verifyOtp);
+router.post("/verify-otp", otpRateLimiter, authController.verifyOtp);
 
 /**
  * @swagger
@@ -148,7 +148,7 @@ router.post("/verify-otp", authController.verifyOtp);
  *       200:
  *         description: Password berhasil diperbarui
  */
-router.post("/reset-password", authController.resetPassword);
+router.post("/reset-password", otpRateLimiter, authController.resetPassword);
 
 /**
  * @swagger
@@ -404,7 +404,7 @@ router.post("/change-password", authMiddleware, authController.changePassword);
  *       200:
  *         description: OTP berhasil dikirim
  */
-router.post("/forgot-password", authController.requestOtp);
+router.post("/forgot-password", otpRateLimiter, authController.requestOtp);
 
 router.post(
   "/register/admin-dlh",

@@ -1440,7 +1440,7 @@ const WargaDashboard: React.FC = () => {
 
             <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
               <div className="flex gap-2">
-                {["ALL", "ORGANIC", "NON_ORGANIC"].map((type) => (
+                {["ALL", "ORGANIC", "ANORGANIK"].map((type) => (
                   <button
                     key={type}
                     onClick={() => setFilterWasteType(type)}
@@ -2497,7 +2497,7 @@ const Dashboard: React.FC = () => {
               </p>
             </div>
             <span className="text-[10px] font-extrabold bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/40 px-3 py-1 rounded-full uppercase tracking-wider">
-              Persentase Volume
+              Persentase Berat
             </span>
           </div>
 

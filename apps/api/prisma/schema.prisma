@@ -817,6 +817,7 @@ model SetoranManual {
   kategori         String   @default("residu") @map("kategori")
   status           String   @default("PENDING") @map("status")
   catatanPenolakan String?  @map("catatan_penolakan")
+  inputMethod      String?  @map("input_method")
   createdAt        DateTime @default(now()) @map("created_at")
   petugas          User     @relation("PetugasSetoranManual", fields: [petugasResiduId], references: [id], onDelete: Cascade)
   rw               Rw       @relation(fields: [rwId], references: [id], onDelete: Cascade)

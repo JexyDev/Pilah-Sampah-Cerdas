@@ -414,17 +414,36 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const { user: backendUser, accessToken, refreshToken } = payload;
       const normalizedRole = normalizeRole(backendUser.role);
 
+      // [FIX P2-1a] Gunakan clearAllStoredItems() — bukan manual localStorage.removeItem —
+      // agar sessionStorage juga dibersihkan jika ada sisa token lama
       if (WEB_DISABLED_ROLES.includes(normalizedRole)) {
-        localStorage.removeItem("psc_access_token");
-        localStorage.removeItem("psc_refresh_token");
-        localStorage.removeItem("psc_user");
+        clearAllStoredItems();
         set({ isLoading: false, error: "ROLE_NOT_ALLOWED_ON_WEB", isAuthenticated: false, user: null });
         return false;
       }
 
-      localStorage.setItem("psc_access_token", accessToken);
+      // [FIX P2-1b] iOS Safari gate untuk MAHASISWA_KKN — sama dengan login()
+      // Mencegah MAHASISWA_KKN login via OTP dari browser non-iOS Safari
+      if (normalizedRole === "MAHASISWA_KKN") {
+        const devCheck = checkIsIOSSafari();
+        if (!devCheck.isValid) {
+          clearAllStoredItems();
+          set({
+            isLoading: false,
+            error: "MAHASISWA_MUST_USE_IOS_SAFARI",
+            isAuthenticated: false,
+            user: null,
+          });
+          return false;
+        }
+      }
+
+      // [FIX P2-1c] Ganti localStorage.setItem hardcode dengan setStoredItem()
+      // OTP login default rememberMe=true (pengguna sudah memilih login via OTP yang lebih panjang)
+      const rememberMe = true;
+      setStoredItem("psc_access_token", accessToken, rememberMe);
       if (refreshToken) {
-        localStorage.setItem("psc_refresh_token", refreshToken);
+        setStoredItem("psc_refresh_token", refreshToken, rememberMe);
       }
 
       const avatarConfig = getAvatarConfig(normalizedRole);
@@ -458,7 +477,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         ...avatarConfig,
       };
 
-      localStorage.setItem("psc_user", JSON.stringify(user));
+      setStoredItem("psc_user", JSON.stringify(user), rememberMe);
       set({ user, isAuthenticated: true, isLoading: false, error: null });
       useThemeStore.getState().initTheme();
       get().fetchPermissions().catch(() => {});
