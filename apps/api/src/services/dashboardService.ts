@@ -301,10 +301,12 @@ export const dashboardService = {
       sampahUserWhere.OR = [{ rw: rtRwMatch }, { households: { some: { rw: rtRwMatch } } }];
     }
 
-    const sampahUsersList = await prisma.user.findMany({
-      where: sampahUserWhere,
-      select: { role: { select: { name: true } } },
-    });
+    const sampahUsersList = typeof prisma?.user?.findMany === "function"
+      ? await prisma.user.findMany({
+          where: sampahUserWhere,
+          select: { role: { select: { name: true } } },
+        })
+      : [];
 
     const totalWargaSampah = sampahUsersList.filter((u) => u.role?.name === "WARGA").length;
     const totalPetugasResidu = sampahUsersList.filter((u) => u.role?.name === "PETUGAS_RESIDU").length;
@@ -328,12 +330,15 @@ export const dashboardService = {
       kelompokWhere.kelurahan = { in: kelurahanNames, mode: "insensitive" };
     }
 
-    let kelompokList = await prisma.kelompokKkn.findMany({
-      where: kelompokWhere,
-      select: { id: true, name: true, kelurahan: true, cakupanRw: true, dplId: true, mplId: true },
-    });
+    let kelompokList: any[] = [];
+    if (typeof prisma?.kelompokKkn?.findMany === "function") {
+      kelompokList = await prisma.kelompokKkn.findMany({
+        where: kelompokWhere,
+        select: { id: true, name: true, kelurahan: true, cakupanRw: true, dplId: true, mplId: true },
+      });
+    }
 
-    if (isFiltered && rwIds.length > 0) {
+    if (isFiltered && rwIds.length > 0 && typeof prisma?.rw?.findMany === "function") {
       const targetRwRows = await prisma.rw.findMany({
         where: { id: { in: rwIds } },
         select: { name: true },
@@ -363,9 +368,11 @@ export const dashboardService = {
       studentWhere.kelompokId = kelompokIds.length > 0 ? { in: kelompokIds } : "__none__";
     }
 
-    const totalMahasiswaKkn = await prisma.studentKkn.count({
-      where: studentWhere,
-    });
+    const totalMahasiswaKkn = typeof prisma?.studentKkn?.count === "function"
+      ? await prisma.studentKkn.count({
+          where: studentWhere,
+        })
+      : 0;
 
     let totalDplKkn = 0;
     let totalMplKkn = 0;
@@ -373,7 +380,7 @@ export const dashboardService = {
 
     if (isFiltered) {
       const dplIds = Array.from(new Set(kelompokList.map((k) => k.dplId).filter(Boolean))) as string[];
-      totalDplKkn = dplIds.length > 0
+      totalDplKkn = dplIds.length > 0 && typeof prisma?.user?.count === "function"
         ? await prisma.user.count({
             where: {
               id: { in: dplIds },
@@ -383,7 +390,7 @@ export const dashboardService = {
         : 0;
 
       const mplIds = Array.from(new Set(kelompokList.map((k) => k.mplId).filter(Boolean))) as string[];
-      totalMplKkn = mplIds.length > 0
+      totalMplKkn = mplIds.length > 0 && typeof prisma?.user?.count === "function"
         ? await prisma.user.count({
             where: {
               id: { in: mplIds },
@@ -392,26 +399,32 @@ export const dashboardService = {
           })
         : 0;
     } else {
-      totalDplKkn = await prisma.user.count({
-        where: {
-          role: { name: { in: ["DPL", "DOSEN_PEMBIMBING"] } },
-          ...(!includeTestAccounts ? { isTestAccount: false } : {}),
-        },
-      });
+      totalDplKkn = typeof prisma?.user?.count === "function"
+        ? await prisma.user.count({
+            where: {
+              role: { name: { in: ["DPL", "DOSEN_PEMBIMBING"] } },
+              ...(!includeTestAccounts ? { isTestAccount: false } : {}),
+            },
+          })
+        : 0;
 
-      totalMplKkn = await prisma.user.count({
-        where: {
-          role: { name: "MPL" },
-          ...(!includeTestAccounts ? { isTestAccount: false } : {}),
-        },
-      });
+      totalMplKkn = typeof prisma?.user?.count === "function"
+        ? await prisma.user.count({
+            where: {
+              role: { name: "MPL" },
+              ...(!includeTestAccounts ? { isTestAccount: false } : {}),
+            },
+          })
+        : 0;
 
-      totalPanitiaTaskforce = await prisma.user.count({
-        where: {
-          role: { name: "PANITIA_TASKFORCE" },
-          ...(!includeTestAccounts ? { isTestAccount: false } : {}),
-        },
-      });
+      totalPanitiaTaskforce = typeof prisma?.user?.count === "function"
+        ? await prisma.user.count({
+            where: {
+              role: { name: "PANITIA_TASKFORCE" },
+              ...(!includeTestAccounts ? { isTestAccount: false } : {}),
+            },
+          })
+        : 0;
     }
 
     const totalPartisipanKkn = totalMahasiswaKkn + totalDplKkn + totalMplKkn + totalPanitiaTaskforce;
