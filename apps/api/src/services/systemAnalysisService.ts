@@ -596,7 +596,6 @@ export const systemAnalysisService = {
       prisma.bin.findMany({
         where: {
           status: "ACTIVE_BOUND",
-          rw: { name: { not: { contains: "99" } } },
         },
         select: {
           id: true,
@@ -925,7 +924,6 @@ ${isDplQuery ? `\n${dplEntitySummary}` : ""}
         const binsKritis = await prisma.bin.findMany({
           where: {
             status: "ACTIVE_BOUND",
-            rw: { name: { not: { contains: "99" } } },
           },
           select: {
             qrCode: true,
