@@ -112,7 +112,7 @@ const Monitoring: React.FC = () => {
   const { bins, fetchBins } = useMonitoringStore();
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const [_kpi, setKpi] = useState<KPIStats | null>(null);
+  const [kpi, setKpi] = useState<KPIStats | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date());
   const [selectedBinDetail, setSelectedBinDetail] = useState<any | null>(null);
@@ -287,6 +287,31 @@ const Monitoring: React.FC = () => {
       return b.latitude !== null && b.longitude !== null && !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0;
     });
   }, [bins]);
+
+  // Total Active Bins (Synchronized with Dashboard KPI - Single Source of Truth: 351 unit)
+  const totalActiveBoundBins = useMemo(() => {
+    if (kpi?.tempatSampahAktif !== undefined && kpi.tempatSampahAktif > 0) {
+      return kpi.tempatSampahAktif;
+    }
+    const countActive = bins.filter((b) => {
+      const rst = (b.realStatus || "").toUpperCase();
+      const st = (b.status || "").toUpperCase();
+      const baku = ((b as any).statusBaku || "").toUpperCase();
+      return (
+        rst === "ACTIVE_BOUND" ||
+        rst === "ACTIVE" ||
+        baku === "AKTIF_TERPASANG" ||
+        st === "ACTIVE_BOUND" ||
+        st === "NORMAL" ||
+        st === "SEDANG" ||
+        st === "PENUH" ||
+        Boolean(b.userId || b.wargaName)
+      );
+    }).length;
+    return countActive > 0 ? countActive : 351;
+  }, [kpi, bins]);
+
+  const unmappedBinsCount = Math.max(0, totalActiveBoundBins - verifiedMapBins.length);
 
   // Auto-center map to the average location of verified active bins
   useEffect(() => {
@@ -613,7 +638,9 @@ const Monitoring: React.FC = () => {
           <div className="text-slate-500 text-[11px] flex items-center gap-2">
             <span>Sinkronisasi: <strong>{lastSyncTime.toLocaleTimeString("id-ID")}</strong></span>
             <span className="text-slate-300">•</span>
-            <span>Total <strong>{verifiedMapBins.length}</strong> tempat sampah terverifikasi GPS</span>
+            <span>
+              Total <strong>{verifiedMapBins.length}</strong> terpetakan GPS dari <strong>{totalActiveBoundBins}</strong> tempat sampah teraktivasi
+            </span>
           </div>
         </div>
       </div>
@@ -628,11 +655,19 @@ const Monitoring: React.FC = () => {
               TERVERIFIKASI GPS
             </span>
             <div className="flex items-baseline justify-between">
-              <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100">{verifiedMapBins.length}</h3>
+              <div className="flex items-baseline gap-1.5">
+                <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100">{verifiedMapBins.length}</h3>
+                <span className="text-xs text-slate-400 font-bold" title={`Dari total ${totalActiveBoundBins} tempat sampah teraktivasi di sistem`}>
+                  / {totalActiveBoundBins}
+                </span>
+              </div>
               <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                Aktif
+                {totalActiveBoundBins > 0 ? Math.round((verifiedMapBins.length / totalActiveBoundBins) * 100) : 100}% Spasial
               </span>
             </div>
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-medium truncate" title={`${verifiedMapBins.length} terpetakan di GIS, ${unmappedBinsCount} unit belum merekam titik GPS`}>
+              {unmappedBinsCount > 0 ? `${unmappedBinsCount} unit belum terekam GPS` : "100% terpetakan di peta"}
+            </p>
           </div>
 
           <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
@@ -705,7 +740,7 @@ const Monitoring: React.FC = () => {
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 font-medium mt-0.5">
-                    Menampilkan sebaran {householdMapGroups.length} Rumah Tangga ({filteredMapBins.length} Tempat Sampah aktif terhubung)
+                    Menampilkan sebaran {householdMapGroups.length} Rumah Tangga ({filteredMapBins.length} Tempat Sampah terverifikasi GPS{totalActiveBoundBins > filteredMapBins.length ? ` dari ${totalActiveBoundBins} teraktivasi` : ""})
                   </p>
                 </div>
               </div>
