@@ -1467,7 +1467,7 @@ const Monitoring: React.FC = () => {
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 font-medium mt-0.5">
-                  Daftar inventaris tempat sampah terdaftar dan terpantau di server real-time PostgreSQL.
+                  Daftar inventaris tempat sampah terdaftar dan terpantau secara real-time.
                 </p>
               </div>
             </div>

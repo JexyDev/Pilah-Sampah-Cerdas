@@ -887,7 +887,7 @@ export default function GisEksekutifPage() {
                   <div><strong>Target Endpoint:</strong> <code>/api/v1/gis-eksekutif/overview</code></div>
                   <div><strong>Waktu Deteksi:</strong> {new Date().toLocaleTimeString()} WIB</div>
                   <div style={{ marginTop: 4, color: "#64748b", fontSize: 11 }}>
-                    Saran Pemulihan: Pastikan server API aktif (`npm run dev:all`) dan database PostgreSQL terhubung. Klik 'Buka Peta Dasar Coblong' untuk tetap melihat visualisasi batas wilayah.
+                    Saran Pemulihan: Silakan muat ulang halaman atau periksa koneksi jaringan sistem. Klik 'Buka Peta Dasar Coblong' untuk tetap melihat visualisasi batas wilayah.
                   </div>
                 </div>
               )}

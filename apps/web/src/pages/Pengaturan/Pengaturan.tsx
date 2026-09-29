@@ -536,14 +536,14 @@ const Pengaturan: React.FC = () => {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <h2 className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Telemetri & Basis Data</h2>
-                  <p className="text-xs text-slate-500 font-medium mt-1">Metrik real-time CPU, RAM, PostgreSQL, dan Redis.</p>
+                  <p className="text-xs text-slate-500 font-medium mt-1">Metrik real-time CPU, RAM, Basis Data, dan Memori Cache.</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
                 <div className="bg-[#f8fafc] dark:bg-slate-850 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1">
                   <div className="flex items-center justify-between text-slate-400 mb-1">
-                    <span className="text-[10px] font-black uppercase">PostgreSQL</span> <Database size={16} className="text-[#009966]" />
+                    <span className="text-[10px] font-black uppercase">Basis Data</span> <Database size={16} className="text-[#009966]" />
                   </div>
                   <p className="font-extrabold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />{vpsHealth?.database.status || "TERHUBUNG"}</p>
                   <p className="text-slate-500 dark:text-slate-400 font-medium">Latensi: {vpsHealth?.database.queryLatencyMs || 62} ms</p>

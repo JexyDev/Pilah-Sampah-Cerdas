@@ -914,7 +914,7 @@ export default function SetorSampah() {
               {/* Verified Full-Stack Footer Box */}
               <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-300 text-xs font-semibold flex items-center gap-2">
                 <CheckCheck size={16} className="text-[#009966] shrink-0" />
-                <span>Terverifikasi real-time terintegrasi penuh: Aplikasi Mobile &rarr; Backend Express API &rarr; Database PostgreSQL.</span>
+                <span>Terverifikasi dan tersinkronisasi langsung secara real-time ke dalam sistem.</span>
               </div>
             </div>
 

@@ -670,7 +670,7 @@ export const LaporanResmiKknPage: React.FC = () => {
           )}
 
           <div className="ml-auto text-xs text-slate-400 dark:text-slate-500 font-medium hidden lg:block">
-            Status Data: <span className="font-bold text-emerald-600">100% Real PostgreSQL</span>
+            Status Data: <span className="font-bold text-emerald-600">100% Data Riil Terverifikasi</span>
           </div>
         </div>
       </div>
@@ -786,7 +786,7 @@ export const LaporanResmiKknPage: React.FC = () => {
                   <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                     Integritas Naskah:
                   </span>
-                  <span className="font-bold text-emerald-700">100% Real PostgreSQL</span>
+                  <span className="font-bold text-emerald-700">100% Data Riil Terverifikasi</span>
                 </div>
               </div>
             </div>

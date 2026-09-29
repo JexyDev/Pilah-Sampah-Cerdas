@@ -400,7 +400,7 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
             </span>
             <span className="font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5 mt-0.5 print:text-black">
               <CheckCircle2 size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0 print:text-black" />
-              100% Real PostgreSQL
+              100% Data Riil Terverifikasi
             </span>
           </div>
         </div>
@@ -419,7 +419,7 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
               Penjelasan Sumber &amp; Integritas Data Laporan
             </h4>
             <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-emerald-200/70 dark:bg-emerald-800/70 text-emerald-950 dark:text-emerald-100 border border-emerald-300 dark:border-emerald-700">
-              Live Database PostgreSQL
+              Data Riil Terverifikasi
             </span>
           </div>
           <p className="text-xs text-emerald-900/90 dark:text-emerald-200/90 leading-relaxed">

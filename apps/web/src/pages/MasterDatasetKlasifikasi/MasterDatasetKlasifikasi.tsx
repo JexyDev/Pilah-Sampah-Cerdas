@@ -383,7 +383,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
             </div>
 
             <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-1">
-              <span className="text-[10px] font-black uppercase text-slate-400">PostgreSQL DB</span>
+              <span className="text-[10px] font-black uppercase text-slate-400">Basis Data</span>
               <p className="text-xl font-black text-slate-800 dark:text-slate-100">{vpsData?.database.queryLatencyMs || 62} ms</p>
               <p className="text-[10px] text-emerald-600 font-bold">Connected Active</p>
             </div>
@@ -830,9 +830,9 @@ const MasterDatasetKlasifikasi: React.FC = () => {
                 </div>
 
                 <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-1">
-                  <span className="text-[10px] font-black uppercase text-slate-400">Metadata VPS Host</span>
-                  <p className="font-extrabold text-slate-800 dark:text-slate-100">{vpsData?.os.hostname || "BERSEKA VPS"}</p>
-                  <p className="text-emerald-700 font-bold">PostgreSQL DB: {vpsData?.database.queryLatencyMs || 62} ms</p>
+                  <span className="text-[10px] font-black uppercase text-slate-400">Metadata Host</span>
+                  <p className="font-extrabold text-slate-800 dark:text-slate-100">{vpsData?.os.hostname || "BERSEKA Server"}</p>
+                  <p className="text-emerald-700 font-bold">Basis Data: {vpsData?.database.queryLatencyMs || 62} ms</p>
                 </div>
 
                 <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-1">
@@ -844,7 +844,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
 
               <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold flex items-center gap-2">
                 <CheckCheck size={16} className="text-[#009966] shrink-0" />
-                <span>Terverifikasi real-time terintegrasi penuh: Aplikasi Mobile &rarr; Mesin ONNX VPS &rarr; API &rarr; Database.</span>
+                <span>Terverifikasi dan tersinkronisasi langsung secara real-time ke dalam sistem.</span>
               </div>
             </div>
           </div>
