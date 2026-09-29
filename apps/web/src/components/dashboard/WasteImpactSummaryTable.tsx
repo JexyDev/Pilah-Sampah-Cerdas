@@ -439,7 +439,11 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
                         ) : (
                           <Minus size={13} />
                         )}
-                        <span>{formatDeltaKg(deltaKg, { showPlusSign: true })}</span>
+                        <span>
+                          {deltaKg < 0
+                            ? `+${Math.abs(deltaKg).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg`
+                            : formatDeltaKg(deltaKg, { showPlusSign: false })}
+                        </span>
                       </span>
                     )}
                   </td>
@@ -450,7 +454,7 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
                       <span className="text-slate-400 italic">—</span>
                     ) : (
                       <span
-                        className={`inline-flex items-center justify-center gap-0.5 px-2.5 py-1 rounded-xl text-xs font-black ${
+                        className={`inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black ${
                           deltaPct > 0
                             ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40"
                             : deltaPct < 0
@@ -458,7 +462,18 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
                             : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
                         }`}
                       >
-                        <span>{formatDeltaPct(deltaPct, { showPlusSign: true })}</span>
+                        {deltaPct > 0 ? (
+                          <TrendingDown size={13} className="text-emerald-600" />
+                        ) : deltaPct < 0 ? (
+                          <TrendingUp size={13} className="text-rose-600" />
+                        ) : (
+                          <Minus size={13} />
+                        )}
+                        <span>
+                          {deltaPct < 0
+                            ? `+${Math.abs(deltaPct).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`
+                            : formatDeltaPct(deltaPct, { showPlusSign: false })}
+                        </span>
                       </span>
                     )}
                   </td>
@@ -552,14 +567,25 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
                       : "bg-slate-200 text-slate-700"
                   }`}
                 >
-                  {formatDeltaKg(aggregation.totalDeltaKg, { showPlusSign: true })}
+                  {aggregation.totalDeltaKg > 0 ? (
+                    <TrendingDown size={13} className="text-emerald-600" />
+                  ) : aggregation.totalDeltaKg < 0 ? (
+                    <TrendingUp size={13} className="text-rose-600" />
+                  ) : (
+                    <Minus size={13} />
+                  )}
+                  <span>
+                    {aggregation.totalDeltaKg < 0
+                      ? `+${Math.abs(aggregation.totalDeltaKg).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg`
+                      : formatDeltaKg(aggregation.totalDeltaKg, { showPlusSign: false })}
+                  </span>
                 </span>
               </td>
 
               {/* Total Penurunan Berat (%) [Weighted / Terbobot] */}
               <td className="py-4 px-3 text-center border-r border-slate-200 dark:border-slate-700 font-extrabold text-blue-700 dark:text-blue-300">
                 <span
-                  className={`inline-flex items-center justify-center px-2.5 py-1 rounded-xl text-xs font-black ${
+                  className={`inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black ${
                     (aggregation.weightedDeltaPct || 0) > 0
                       ? "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-200 border border-emerald-300"
                       : (aggregation.weightedDeltaPct || 0) < 0
@@ -567,7 +593,18 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
                       : "bg-slate-200 text-slate-700"
                   }`}
                 >
-                  {formatDeltaPct(aggregation.weightedDeltaPct, { showPlusSign: true })}
+                  {(aggregation.weightedDeltaPct || 0) > 0 ? (
+                    <TrendingDown size={13} className="text-emerald-600" />
+                  ) : (aggregation.weightedDeltaPct || 0) < 0 ? (
+                    <TrendingUp size={13} className="text-rose-600" />
+                  ) : (
+                    <Minus size={13} />
+                  )}
+                  <span>
+                    {(aggregation.weightedDeltaPct || 0) < 0
+                      ? `+${Math.abs(aggregation.weightedDeltaPct || 0).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`
+                      : formatDeltaPct(aggregation.weightedDeltaPct, { showPlusSign: false })}
+                  </span>
                 </span>
               </td>
 

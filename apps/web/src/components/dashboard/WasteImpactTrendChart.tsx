@@ -364,7 +364,7 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
               <div className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800">
                 <span className="block text-[10px] text-emerald-500 font-bold uppercase">Reduksi Timbulan</span>
                 <span className="font-black text-emerald-600 dark:text-emerald-400">
-                  {formatDeltaKg(volumeSummary.totalDeltaKg, { showPlusSign: true })} ({volumeSummary.totalDeltaPct}%)
+                  {formatDeltaKg(volumeSummary.totalDeltaKg, { showPlusSign: false })} ({volumeSummary.totalDeltaPct}%)
                 </span>
               </div>
             </div>
