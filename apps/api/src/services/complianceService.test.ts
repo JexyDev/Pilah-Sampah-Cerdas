@@ -282,5 +282,27 @@ describe("ComplianceService - Logika & Definisi Kepatuhan Pemilahan", () => {
       expect(result.wadahOrganik.kesesuaianPersen).toBe(50.0);
       expect(result.wadahOrganik.kontaminasiPersen).toBe(50.0);
     });
+
+    it("harus menghitung akumulasi kepatuhan sistem dari data seluruh warga (50% partisipasi + 50% akurasi pilah)", () => {
+      // 10 transaksi murni: 10 patuh = akurasi 100% (seperti kamera AI >99%)
+      const logs = Array(10).fill({
+        wasteCategory: "ORGANIK",
+        binCategory: "ORGANIK",
+        weightKg: 1.0,
+      });
+
+      // Namun dari 100 warga terdaftar, yang aktif memilah baru 60 warga (60% partisipasi)
+      const result = calculateComplianceMetrics(logs, {
+        totalWargaTerdaftar: 100,
+        wargaAktifMemilah: 60,
+      });
+
+      // Akurasi pilah wadah = 100%, Partisipasi warga = 60%
+      expect(result.akurasiPilahPersen).toBe(100.0);
+      expect(result.partisipasiWarga.partisipasiPersen).toBe(60.0);
+      // Indeks Kepatuhan Riil Warga = (60 * 0.5) + (100 * 0.5) = 80.0% (bukan 100% AI flat)
+      expect(result.indeksKepatuhan).toBe(80.0);
+      expect(result.penjelasanSistem).toContain("keaktifan partisipasi warga");
+    });
   });
 });

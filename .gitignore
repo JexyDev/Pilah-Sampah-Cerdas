@@ -28,6 +28,8 @@ apps/web/dist/
 *.crt
 credentials.json
 service-account*.json
+*firebase-service-account*.json
+firebase-service-account.json
 
 # Database & Data Dumps (STRICTLY FORBIDDEN FROM GIT / NEVER COMMIT / NEVER PUSH)
 *.sql

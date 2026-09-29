@@ -156,6 +156,12 @@ jobs:
               cp /tmp/apps_api_env_backup "$REPO_DIR/.env"
             fi
 
+            # Restore Firebase Service Account credentials for push notification
+            if [ -f /home/maker/firebase-service-account.json ]; then
+              cp /home/maker/firebase-service-account.json "$REPO_DIR/apps/api/firebase-service-account.json" 2>/dev/null || true
+              cp /home/maker/firebase-service-account.json "$REPO_DIR/firebase-service-account.json" 2>/dev/null || true
+            fi
+
             if [ ! -f "$REPO_DIR/apps/api/.env" ]; then
               echo "Recreating production .env for backend on VPS..."
               echo "DATABASE_URL=postgresql://psc_user:psc_password@localhost:5432/psc_db" > "$REPO_DIR/apps/api/.env"

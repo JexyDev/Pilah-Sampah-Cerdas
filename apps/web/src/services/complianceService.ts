@@ -38,12 +38,24 @@ export interface BinCategoryMetrics {
   beratKontaminasiKg: number;
 }
 
+export interface CitizenParticipationMetrics {
+  totalWargaTerdaftar: number;
+  wargaAktifMemilah: number;
+  partisipasiPersen: number;
+}
+
 export interface ComplianceMetricsResult {
   indeksKepatuhan: number;
   indeksKetidakpatuhan: number;
   kepatuhanBobotPersen: number;
-  predikat: "Sangat Baik" | "Cukup" | "Perlu Peningkatan";
+  predikat: "Sangat Baik" | "Cukup Baik" | "Cukup" | "Perlu Peningkatan";
   ringkasanEksekutif: string;
+
+  // Akumulasi Sistem Data Warga Riil (Anti-Bias Kamera AI)
+  partisipasiWarga: CitizenParticipationMetrics;
+  akurasiPilahPersen: number;
+  kepatuhanAiRate: number;
+  penjelasanSistem: string;
 
   totalAktivitas: number;
   totalDinilai: number;
@@ -185,7 +197,11 @@ export function calculateComplianceMetrics(
     binCategory?: string | null;
     weightKg?: number | string | null;
     createdAt?: Date | string | null;
-  }>
+  }>,
+  wargaStats?: {
+    totalWargaTerdaftar?: number;
+    wargaAktifMemilah?: number;
+  }
 ): ComplianceMetricsResult {
   let totalAktivitas = 0;
   let totalDinilai = 0;
@@ -258,10 +274,31 @@ export function calculateComplianceMetrics(
     }
   });
 
-  const indeksKepatuhan =
+  const akurasiPilahPersen =
     totalDinilai > 0 ? parseFloat(((totalPatuh / totalDinilai) * 100).toFixed(2)) : 0;
+  const kepatuhanAiRate = akurasiPilahPersen;
+
+  const totalWargaTerdaftar = Math.max(0, Number(wargaStats?.totalWargaTerdaftar || 0));
+  const wargaAktifMemilah = Math.max(0, Number(wargaStats?.wargaAktifMemilah || 0));
+
+  let partisipasiPersen = 0;
+  let indeksKepatuhan = akurasiPilahPersen;
+
+  if (totalWargaTerdaftar > 0) {
+    partisipasiPersen = Math.min(
+      100,
+      parseFloat(((wargaAktifMemilah / totalWargaTerdaftar) * 100).toFixed(2))
+    );
+    indeksKepatuhan = parseFloat(
+      ((partisipasiPersen * 0.5) + (akurasiPilahPersen * 0.5)).toFixed(2)
+    );
+  }
+
   const indeksKetidakpatuhan =
-    totalDinilai > 0 ? parseFloat(((totalTidakPatuh / totalDinilai) * 100).toFixed(2)) : 0;
+    totalDinilai > 0 || totalWargaTerdaftar > 0
+      ? parseFloat((Math.max(0, 100 - indeksKepatuhan)).toFixed(2))
+      : 0;
+
   const kepatuhanBobotPersen =
     totalBeratKg > 0 ? parseFloat(((totalBeratPatuhKg / totalBeratKg) * 100).toFixed(2)) : 0;
 
@@ -275,19 +312,28 @@ export function calculateComplianceMetrics(
   const anorgKontaminasiPersen =
     anorgBinTotal > 0 ? parseFloat(((anorgBinKontaminasi / anorgBinTotal) * 100).toFixed(2)) : 0;
 
-  let predikat: "Sangat Baik" | "Cukup" | "Perlu Peningkatan" = "Perlu Peningkatan";
+  let predikat: "Sangat Baik" | "Cukup Baik" | "Cukup" | "Perlu Peningkatan" = "Perlu Peningkatan";
   let ringkasanEksekutif =
     "Tingkat kepatuhan pemilahan memerlukan penguatan edukasi warga di posko dan penempelan stiker panduan.";
 
   if (indeksKepatuhan >= 80) {
     predikat = "Sangat Baik";
     ringkasanEksekutif =
-      "Warga telah memilah sampah secara tepat dengan kontaminasi wadah sangat rendah (standar hijau DLH tercapai).";
-  } else if (indeksKepatuhan >= 60) {
+      "Warga telah berpartisipasi aktif dan memilah sampah secara tepat dengan kontaminasi wadah sangat rendah (standar hijau DLH tercapai).";
+  } else if (indeksKepatuhan >= 65) {
+    predikat = "Cukup Baik";
+    ringkasanEksekutif =
+      "Kepatuhan pemilahan dan partisipasi warga cukup baik, sosialisasi dapat ditingkatkan agar seluruh warga konsisten memilah.";
+  } else if (indeksKepatuhan >= 50) {
     predikat = "Cukup";
     ringkasanEksekutif =
-      "Kepatuhan pemilahan cukup baik, namun masih terdapat kontaminasi silang antar wadah yang perlu disosialisasikan.";
+      "Akurasi pemilahan sudah berjalan, namun keaktifan warga masih perlu didorong melalui posko dan pendampingan kader.";
   }
+
+  const penjelasanSistem =
+    totalWargaTerdaftar > 0
+      ? `Skor kepatuhan diakumulasikan dari keaktifan partisipasi warga (${partisipasiPersen}%) dan akurasi pemilahan wadah (${akurasiPilahPersen}%), merefleksikan kedisiplinan riil masyarakat tanpa bias kamera AI.`
+      : "Skor kepatuhan dihitung berdasarkan kesesuaian biner penempatan jenis sampah pada wadah yang semestinya.";
 
   return {
     indeksKepatuhan,
@@ -295,6 +341,15 @@ export function calculateComplianceMetrics(
     kepatuhanBobotPersen,
     predikat,
     ringkasanEksekutif,
+
+    partisipasiWarga: {
+      totalWargaTerdaftar,
+      wargaAktifMemilah,
+      partisipasiPersen,
+    },
+    akurasiPilahPersen,
+    kepatuhanAiRate,
+    penjelasanSistem,
 
     totalAktivitas,
     totalDinilai,

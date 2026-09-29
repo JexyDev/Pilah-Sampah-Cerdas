@@ -335,7 +335,7 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
                 Baseline (kg)
               </th>
               <th className="py-2 px-3 text-center bg-slate-50/50 dark:bg-slate-800/40 border-r border-slate-200 dark:border-slate-800">
-                Aktual Saat Ini (kg)
+                Aktual Terkelola (kg)
               </th>
               {/* Dua Kolom Berdampingan untuk Delta Volume */}
               <th className="py-2 px-3 text-center bg-blue-50/40 dark:bg-blue-950/30 text-blue-900 dark:text-blue-300 border-r border-slate-200 dark:border-slate-800 min-w-[110px]">
@@ -636,10 +636,10 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
         {showFootnoteDetails && (
           <div className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-2 text-slate-600 dark:text-slate-300 leading-relaxed text-[11.5px]">
             <p>
-              <strong>1. Konteks Penurunan 85,2% di Lebakgede:</strong> Angka penurunan volume dari baseline 250 kg menjadi 37 kg terpilah aktual mencerminkan sampel aktivitas pemilahan yang terdata pada masa giat KKN Berseka, bukan serta-merta reduksi total timbulan sampah ke TPA, karena kepatuhan dan pelaporan warga masih bertahap (belum mencakup 100% populasi rumah tangga secara merata).
+              <strong>1. Standarisasi Data Baseline:</strong> Angka baseline menggunakan total volume timbulan sampah resmi hasil survei lapangan KKN Juli 2026 dan proyeksi demografi BPS (4.172 jiwa &times; 0,63 kg/hari di Lebak Siliwangi) untuk memastikan perbandingan yang konsisten dan akuntabel di 6 kelurahan.
             </p>
             <p>
-              <strong>2. Penanganan Delta Negatif:</strong> Jika volume aktual lebih besar dari baseline (misal terjadi lonjakan timbulan sampah pasca-hari libur), formula matematika menghasilkan nilai negatif (misal −20,0%) yang divisualisasikan dengan label merah tanpa merusak tata letak atau format numerik persentase.
+              <strong>2. Konteks Aktual Terkelola:</strong> Angka volume aktual mencerminkan akumulasi sampah terpilah yang tercatat aktif melalui penimbangan warga via aplikasi BERSEKA dan input manual petugas pemilah di wilayah binaan/percontohan.
             </p>
             <p>
               <strong>3. Formula Agregasi Kecamatan:</strong> Rerata persentase reduksi volume kecamatan dihitung dari <strong>Total Volume Seluruh Kecamatan dibagi Total Baseline Seluruh Kecamatan</strong> (Agregasi Terbobot), bukan rata-rata sederhana persentase 6 kelurahan, untuk menghindari distorsi bobot kelurahan berpopulasi kecil terhadap kelurahan berpopulasi besar.

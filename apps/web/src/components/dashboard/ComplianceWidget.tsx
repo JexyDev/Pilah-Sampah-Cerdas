@@ -123,13 +123,16 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
       {/* Header Widget */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="text-emerald-600 dark:text-emerald-400 p-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200/60 dark:border-emerald-800/40">
               <ShieldCheck size={18} />
             </span>
             <h4 className="font-extrabold text-[17px] text-slate-900 dark:text-slate-100 tracking-tight">
-              Indeks Kepatuhan Pemilahan
+              Indeks Kepatuhan Pemilahan Warga
             </h4>
+            <span className="text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-2.5 py-0.5 rounded-full">
+              Akumulasi Sistem Warga
+            </span>
 
             {/* Info Icon dengan Popover/Tooltip Edukatif */}
             <div className="relative inline-block">
@@ -149,10 +152,10 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
               {showTooltip && (
                 <div className="absolute left-6 top-0 z-30 w-72 p-3 bg-slate-900 dark:bg-slate-800 text-white text-[11px] rounded-2xl shadow-xl border border-slate-700 leading-relaxed pointer-events-none animate-in fade-in zoom-in-95 duration-150">
                   <p className="font-semibold text-emerald-400 mb-1 flex items-center gap-1.5">
-                    <Sparkles size={12} /> Definisi Singkat Kepatuhan:
+                    <Sparkles size={12} /> Definisi Akumulasi Sistem:
                   </p>
                   <p className="text-slate-200">
-                    "Kepatuhan adalah kesesuaian penempatan jenis sampah pada wadah yang semestinya. Ketidakpatuhan terjadi jika sampah dibuang pada wadah yang tidak cocok."
+                    "Kepatuhan warga diukur dari perpaduan tingkat partisipasi aktif masyarakat dan ketepatan pemilahan sampah pada wadah yang sesuai, bukan semata-mata klaim deteksi kamera AI."
                   </p>
                   <span className="block mt-2 text-[9.5px] text-slate-400 italic">
                     Klik ikon (i) untuk membaca kamus istilah &amp; matriks lengkap.
@@ -163,7 +166,7 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
           </div>
 
           <p className="text-[11.5px] text-slate-500 dark:text-slate-400 font-medium mt-1">
-            Kesesuaian biner jenis sampah hasil scan warga terhadap wadah berstiker QR
+            Evaluasi riil berbasis keaktifan partisipasi seluruh warga dan ketepatan pemilahan wadah
           </p>
         </div>
 
@@ -217,7 +220,7 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                {activeTab === "frekuensi" ? "Tingkat Kepatuhan (Aktivitas)" : "Kemurnian Tonase (Massa)"}
+                {activeTab === "frekuensi" ? "Tingkat Kepatuhan (Akumulasi Warga)" : "Kemurnian Tonase (Massa)"}
               </span>
               <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border uppercase tracking-wider ${statusBadgeColor}`}>
                 {statusPredikat}
@@ -229,13 +232,17 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
                 {loading ? "..." : `${displayRate.toFixed(1)}%`}
               </span>
               <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                {activeTab === "frekuensi" ? "dari total setoran terverifikasi" : "dari total massa sampah terdata"}
+                {activeTab === "frekuensi"
+                  ? (metrics?.partisipasiWarga && metrics.partisipasiWarga.totalWargaTerdaftar > 0
+                      ? "Akumulasi partisipasi & ketepatan wadah"
+                      : "dari total setoran terverifikasi")
+                  : "dari total massa sampah terdata"}
               </span>
             </div>
           </div>
 
           {/* Bar Progress Representasi Visual */}
-          <div className="space-y-2 mt-4">
+          <div className="space-y-2 mt-3">
             <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3 overflow-hidden flex">
               <div
                 className={`h-full transition-all duration-700 ${
@@ -251,16 +258,39 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
               />
             </div>
 
-            <div className="flex justify-between items-center text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 pt-0.5">
-              <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
-                Patuh: {metrics ? (activeTab === "frekuensi" ? `${metrics.totalPatuh} setoran` : `${metrics.totalBeratPatuhKg} kg`) : "0"}
-              </span>
-              <span className="flex items-center gap-1 text-rose-600 dark:text-rose-400">
-                <span className="w-2 h-2 rounded-full bg-rose-500 inline-block" />
-                Salah Wadah: {metrics ? (activeTab === "frekuensi" ? `${metrics.totalTidakPatuh} setoran` : `${metrics.totalBeratKontaminasiKg} kg`) : "0"}
-              </span>
-            </div>
+            {metrics?.partisipasiWarga && metrics.partisipasiWarga.totalWargaTerdaftar > 0 && activeTab === "frekuensi" ? (
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/80 dark:border-slate-700/80 text-[10.5px]">
+                <div className="bg-white/80 dark:bg-slate-800/80 p-2 rounded-xl border border-slate-200/80 dark:border-slate-700/80">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase block">Partisipasi Warga</span>
+                  <span className="text-xs font-black text-emerald-600 dark:text-emerald-400">
+                    {metrics.partisipasiWarga.partisipasiPersen}%
+                  </span>
+                  <span className="text-[9.5px] text-slate-400 block truncate" title={`${metrics.partisipasiWarga.wargaAktifMemilah} dari ${metrics.partisipasiWarga.totalWargaTerdaftar} warga aktif`}>
+                    {metrics.partisipasiWarga.wargaAktifMemilah} dari {metrics.partisipasiWarga.totalWargaTerdaftar} warga aktif
+                  </span>
+                </div>
+                <div className="bg-white/80 dark:bg-slate-800/80 p-2 rounded-xl border border-slate-200/80 dark:border-slate-700/80">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase block">Ketepatan Wadah</span>
+                  <span className="text-xs font-black text-emerald-600 dark:text-emerald-400">
+                    {metrics.akurasiPilahPersen ?? (metrics.wadahOrganik.kesesuaianPersen || 0)}%
+                  </span>
+                  <span className="text-[9.5px] text-slate-400 block truncate" title={`${metrics.totalPatuh} tepat, ${metrics.totalTidakPatuh} salah wadah`}>
+                    {metrics.totalPatuh} tepat, {metrics.totalTidakPatuh} salah
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="flex justify-between items-center text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 pt-0.5">
+                <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+                  Patuh: {metrics ? (activeTab === "frekuensi" ? `${metrics.totalPatuh} setoran` : `${metrics.totalBeratPatuhKg} kg`) : "0"}
+                </span>
+                <span className="flex items-center gap-1 text-rose-600 dark:text-rose-400">
+                  <span className="w-2 h-2 rounded-full bg-rose-500 inline-block" />
+                  Salah Wadah: {metrics ? (activeTab === "frekuensi" ? `${metrics.totalTidakPatuh} setoran` : `${metrics.totalBeratKontaminasiKg} kg`) : "0"}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -341,6 +371,25 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({
               </span>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Penjelasan Sederhana Akumulasi Sistem (Bahasa Manusia & Transparan) */}
+      <div className="mt-2.5 p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex items-start gap-3 text-xs">
+        <div className="p-1.5 rounded-xl bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 shrink-0 mt-0.5">
+          <Sparkles size={16} />
+        </div>
+        <div className="space-y-0.5 flex-1">
+          <div className="font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-2 text-xs">
+            <span>Penjelasan Sederhana Akumulasi Kepatuhan:</span>
+            <span className="text-[10px] bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-300/50 dark:border-emerald-700/50 font-bold">
+              Real Data Warga
+            </span>
+          </div>
+          <p className="text-slate-600 dark:text-slate-300 leading-relaxed text-[11px]">
+            {metrics?.penjelasanSistem ||
+              "Skor kepatuhan ini diakumulasikan dari seluruh data warga di sistem: menggabungkan keaktifan partisipasi warga yang rutin memilah dengan ketepatan pemilahan ke wadah yang sesuai, bukan sekadar klaim deteksi kamera AI."}
+          </p>
         </div>
       </div>
 

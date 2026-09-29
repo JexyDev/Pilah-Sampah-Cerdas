@@ -44,6 +44,8 @@ export interface KelurahanBaselineData {
   hasBaseline?: boolean; // true bila kelurahan memiliki data survei baseline di database
   baselineRate?: number | null; // Persentase pemilahan survei baseline pra-intervensi
   baselineKg?: number | null; // Volume sampah terpilah survei baseline (Organik + Anorganik) (kg/hari)
+  baselineCompliance?: number | null; // Persentase kepatuhan pemilahan baseline (%)
+  actualCompliance?: number | null; // Persentase kepatuhan pemilahan aktual (%)
   endlineRate: number; // Persentase kepatuhan pemilahan real-time
   totalKg?: number; // Total akumulasi volume sampah terdata aktual (kg)
   wargaKg?: number; // Volume pemilahan warga via aplikasi (WARGA_APP)
@@ -1994,6 +1996,14 @@ const Dashboard: React.FC = () => {
       actualKg: Number(item.totalKg || 0),
       wargaKg: Number(item.wargaKg || 0),
       petugasKg: Number(item.petugasKg || 0),
+      baselineCompliance:
+        item.baselineCompliance !== undefined && item.baselineCompliance !== null
+          ? item.baselineCompliance
+          : (item.baselineRate ?? null),
+      actualCompliance:
+        item.actualCompliance !== undefined && item.actualCompliance !== null
+          ? item.actualCompliance
+          : (item.endlineRate ?? null),
     }));
   }, [kelurahanBaselineList]);
 
@@ -2563,188 +2573,6 @@ const Dashboard: React.FC = () => {
           >
             Lihat Detail Komposisi
           </button>
-        </div>
-      </div>
-
-      {/* 3.5 Card Tingkat Kepatuhan Pemilahan Sampah (Verifikasi AI vs Kategori Tempat Sampah) */}
-      <div className="px-1 pt-2 text-[10.5px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">
-        Verifikasi AI vs Kategori Tempat Sampah
-      </div>
-      <div className="bg-white dark:bg-slate-900 shadow-xs rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 relative overflow-hidden z-10 space-y-5">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 flex items-center justify-center border border-emerald-200 dark:border-emerald-700/40 shrink-0 font-bold">
-              <span className="material-symbols-outlined text-2xl">verified</span>
-            </div>
-            <div>
-              <h4 className="font-extrabold text-[18px] text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
-                Tingkat Kepatuhan Pemilahan Sampah
-                <span className="text-[10px] font-black bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/40 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                  Pencocokan AI Waktu Nyata
-                </span>
-              </h4>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                Kesesuaian antara kategori tempat sampah (Organik/Anorganik/Residu) dengan hasil klasifikasi AI dari pemilahan warga.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className={`px-3 py-1.5 rounded-xl text-xs font-black border flex items-center gap-1.5 ${
-              (stats?.kepatuhanPemilahan?.totalCount ?? 0) === 0
-                ? "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700"
-                : (stats?.kepatuhanPemilahan?.rate ?? 0) >= 80
-                ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/40"
-                : (stats?.kepatuhanPemilahan?.rate ?? 0) >= 60
-                ? "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700/40"
-                : "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-700/40"
-            }`}>
-              <span className={`w-2 h-2 rounded-full ${
-                (stats?.kepatuhanPemilahan?.totalCount ?? 0) === 0
-                  ? "bg-slate-400"
-                  : (stats?.kepatuhanPemilahan?.rate ?? 0) >= 80
-                  ? "bg-emerald-500 animate-pulse"
-                  : (stats?.kepatuhanPemilahan?.rate ?? 0) >= 60
-                  ? "bg-amber-500"
-                  : "bg-rose-500 animate-bounce"
-              }`} />
-              Status Kepatuhan: {
-                (stats?.kepatuhanPemilahan?.totalCount ?? 0) === 0
-                  ? "Belum Ada Pemilahan"
-                  : (stats?.kepatuhanPemilahan?.rate ?? 0) >= 80
-                  ? "Sangat Baik"
-                  : (stats?.kepatuhanPemilahan?.rate ?? 0) >= 60
-                  ? "Cukup Patuh"
-                  : "Perlu Perhatian"
-              }
-            </span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
-          {/* Gauge / Rating Circle (4 cols) */}
-          <div className="md:col-span-4 bg-slate-50/70 dark:bg-slate-800/70 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80 flex flex-col items-center justify-center text-center relative overflow-hidden">
-            <div className="relative w-36 h-36 flex items-center justify-center">
-              <svg className="w-36 h-36 transform -rotate-90">
-                <circle cx="72" cy="72" r="54" fill="transparent" stroke="#e2e8f0" className="dark:stroke-slate-700" strokeWidth="10" />
-                <circle
-                  cx="72"
-                  cy="72"
-                  r="54"
-                  fill="transparent"
-                  stroke={(stats?.kepatuhanPemilahan?.rate ?? 0) >= 80 ? "#10b981" : (stats?.kepatuhanPemilahan?.rate ?? 0) >= 60 ? "#f59e0b" : (stats?.kepatuhanPemilahan?.totalCount ?? 0) === 0 ? "#64748b" : "#ef4444"}
-                  strokeWidth="10"
-                  strokeDasharray={`${(((stats?.kepatuhanPemilahan?.rate ?? 0)) / 100) * (2 * Math.PI * 54)} ${2 * Math.PI * 54}`}
-                  strokeLinecap="round"
-                  className="transition-all duration-700"
-                />
-              </svg>
-              <div className="absolute text-center flex flex-col items-center">
-                <span className="text-3xl font-black text-slate-800 dark:text-slate-100 leading-none">
-                  {stats?.kepatuhanPemilahan?.rate ?? 0}%
-                </span>
-                <span className="text-[10px] text-slate-400 uppercase font-extrabold mt-1">
-                  Skor Kepatuhan
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-3 grid grid-cols-2 gap-2 w-full text-center pt-2 border-t border-slate-200/80 dark:border-slate-700/80">
-              <div className="bg-white dark:bg-slate-800 p-2 rounded-xl border border-emerald-100 dark:border-emerald-700/30 shadow-2xs">
-                <span className="text-[10px] text-slate-400 font-bold uppercase block">Patuh (Sesuai)</span>
-                <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">
-                  {stats?.kepatuhanPemilahan?.compliantCount ?? 0} <span className="text-[10px] font-normal text-slate-400">pemilahan</span>
-                </span>
-              </div>
-              <div className="bg-white dark:bg-slate-800 p-2 rounded-xl border border-rose-100 dark:border-rose-700/30 shadow-2xs">
-                <span className="text-[10px] text-slate-400 font-bold uppercase block">Salah Tempat Sampah</span>
-                <span className="text-sm font-black text-rose-600 dark:text-rose-400">
-                  {stats?.kepatuhanPemilahan?.nonCompliantCount ?? 0} <span className="text-[10px] font-normal text-slate-400">pemilahan</span>
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Breakdown Per Kategori Aktivitas Pemilahan (4 cols) */}
-          <div className="md:col-span-4 space-y-4">
-            <h5 className="font-extrabold text-xs text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-sm text-emerald-600 dark:text-emerald-400">pie_chart</span>
-              Kesesuaian Aktivitas Pemilahan per Kategori Sampah (Organik &amp; Anorganik)
-            </h5>
-
-            {/* Organik Bin */}
-            <div className="bg-emerald-50/60 dark:bg-emerald-950/40 p-3.5 rounded-2xl border border-emerald-100 dark:border-emerald-700/30 space-y-1.5">
-              <div className="flex justify-between items-center text-xs">
-                <span className="font-extrabold text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-xs" />
-                  Kategori Sampah Organik
-                </span>
-                <span className="font-black text-emerald-700 dark:text-emerald-400 font-mono">
-                  {stats?.kepatuhanPemilahan?.organikRate ?? 0}% Sesuai
-                </span>
-              </div>
-              <div className="h-2 w-full bg-emerald-200/50 dark:bg-emerald-900/50 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-emerald-500 rounded-full transition-all duration-500"
-                  style={{ width: `${stats?.kepatuhanPemilahan?.organikRate ?? 0}%` }}
-                />
-              </div>
-              <p className="text-[10px] text-emerald-700/80 dark:text-emerald-300/80 font-medium leading-tight">
-                Dari {stats?.kepatuhanPemilahan?.organikSetoranDinilai ?? 0} aktivitas pemilahan dinilai AI pada kategori Organik, sekian persen isinya benar-benar Organik ({stats?.kepatuhanPemilahan?.organikBinTotal ?? 0} unit wadah teraktivasi).
-              </p>
-            </div>
-
-            {/* Anorganik Bin */}
-            <div className="bg-amber-50/60 dark:bg-amber-950/40 p-3.5 rounded-2xl border border-amber-100 dark:border-amber-700/30 space-y-1.5">
-              <div className="flex justify-between items-center text-xs">
-                <span className="font-extrabold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-xs" />
-                  Kategori Sampah Anorganik
-                </span>
-                <span className="font-black text-amber-700 dark:text-amber-400 font-mono">
-                  {stats?.kepatuhanPemilahan?.anorganikRate ?? 0}% Sesuai
-                </span>
-              </div>
-              <div className="h-2 w-full bg-amber-200/50 dark:bg-amber-900/50 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-amber-500 rounded-full transition-all duration-500"
-                  style={{ width: `${stats?.kepatuhanPemilahan?.anorganikRate ?? 0}%` }}
-                />
-              </div>
-              <p className="text-[10px] text-amber-700/80 dark:text-amber-300/80 font-medium leading-tight">
-                Dari {stats?.kepatuhanPemilahan?.anorganikSetoranDinilai ?? 0} aktivitas pemilahan dinilai AI pada kategori Anorganik, sekian persen isinya benar-benar Anorganik ({stats?.kepatuhanPemilahan?.anorganikBinTotal ?? 0} unit wadah teraktivasi).
-              </p>
-            </div>
-
-            {/* Catatan Validasi Data Lapangan: Inventaris Fisik Wadah vs Aktivitas Setoran */}
-            <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700/60 text-[10px] text-slate-500 dark:text-slate-400 flex items-start gap-1.5">
-              <AlertCircle size={13} className="text-amber-500 shrink-0 mt-0.5" />
-              <span>
-                <strong className="text-slate-700 dark:text-slate-200">Klarifikasi Metrik:</strong> Total {(stats?.kepatuhanPemilahan?.organikBinTotal ?? 0) + (stats?.kepatuhanPemilahan?.anorganikBinTotal ?? 0)} unit merupakan inventaris fisik wadah tempat sampah teraktivasi ({stats?.kepatuhanPemilahan?.organikBinTotal ?? 0} Organik, {stats?.kepatuhanPemilahan?.anorganikBinTotal ?? 0} Anorganik), sedangkan {(stats?.kepatuhanPemilahan?.organikSetoranDinilai ?? 0) + (stats?.kepatuhanPemilahan?.anorganikSetoranDinilai ?? 0)} merupakan riwayat aktivitas setoran pemilahan warga yang dinilai oleh AI.
-              </span>
-            </div>
-          </div>
-
-          {/* Edukasi & Deteksi Kontaminasi (4 cols) */}
-          <div className="md:col-span-4 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs space-y-3 flex flex-col justify-between h-full">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-extrabold text-xs">
-                <span className="material-symbols-outlined text-base text-amber-600 dark:text-amber-400">warning</span>
-                Deteksi Kontaminasi &amp; Edukasi
-              </div>
-              <p className="text-[11px] text-slate-600 dark:text-slate-300 font-normal leading-relaxed">
-                Jika tempat sampah berkategori <strong className="text-emerald-700 dark:text-emerald-400 font-bold">Organik</strong> tetapi hasil deteksi AI pemilahan warga teridentifikasi didominasi <strong className="text-amber-700 dark:text-amber-400 font-bold">Anorganik/Residu</strong>, maka tingkat kepatuhan pada lokasi tersebut dianggap <strong className="text-rose-600 dark:text-rose-400 font-bold">Rendah (Tercampur)</strong>.
-              </p>
-            </div>
-
-            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10.5px]">
-              <span className="text-slate-500 dark:text-slate-400 font-medium">Auto-Audit AI BERSEKA</span>
-              <span className="text-emerald-700 dark:text-emerald-400 font-bold flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-600 dark:bg-emerald-400" />
-                Aktif
-              </span>
-            </div>
-          </div>
         </div>
       </div>
 
