@@ -742,7 +742,7 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
                 <span className="text-xs font-semibold text-slate-500">Ton</span>
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800 truncate">
-                Setara {(data.kpiSummary.dampakDanReduksi.totalSampahTerpilahKg ?? 0).toLocaleString("id-ID")} Kg terkelola
+                Setara {(data.kpiSummary.dampakDanReduksi.totalSampahTerpilahKg ?? 0).toLocaleString("id-ID")} kg terkelola
               </p>
             </div>
 
@@ -881,7 +881,7 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
                       {data.kpiSummary.dampakDanReduksi.rasioPemilahan.organikPersen}%
                     </span>
                     <span className="text-[10px] text-slate-400 block mt-0.5">
-                      {(data.kpiSummary.dampakDanReduksi.rasioPemilahan.organikKg ?? 0).toLocaleString("id-ID")} Kg
+                      {(data.kpiSummary.dampakDanReduksi.rasioPemilahan.organikKg ?? 0).toLocaleString("id-ID")} kg
                     </span>
                   </div>
 
@@ -891,7 +891,7 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
                       {data.kpiSummary.dampakDanReduksi.rasioPemilahan.anorganikPersen}%
                     </span>
                     <span className="text-[10px] text-slate-400 block mt-0.5">
-                      {(data.kpiSummary.dampakDanReduksi.rasioPemilahan.anorganikKg ?? 0).toLocaleString("id-ID")} Kg
+                      {(data.kpiSummary.dampakDanReduksi.rasioPemilahan.anorganikKg ?? 0).toLocaleString("id-ID")} kg
                     </span>
                   </div>
 
@@ -901,7 +901,7 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
                       {data.kpiSummary.dampakDanReduksi.rasioPemilahan.residuPersen}%
                     </span>
                     <span className="text-[10px] text-slate-400 block mt-0.5">
-                      {(data.kpiSummary.dampakDanReduksi.rasioPemilahan.residuKg ?? 0).toLocaleString("id-ID")} Kg
+                      {(data.kpiSummary.dampakDanReduksi.rasioPemilahan.residuKg ?? 0).toLocaleString("id-ID")} kg
                     </span>
                   </div>
                 </div>
@@ -933,7 +933,7 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
                     <span className="text-xl font-black text-slate-900 dark:text-white">
                       {(data.kpiSummary.operasional.materialOrganikMasukKg ?? 0).toLocaleString("id-ID")}
                     </span>
-                    <span className="text-xs font-bold text-slate-500">Kg</span>
+                    <span className="text-xs font-bold text-slate-500">kg</span>
                   </div>
                   <span className="text-[10px] text-slate-500 block mt-1">
                     Diserap ke reaktor kompos &amp; maggot
@@ -948,7 +948,7 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
                     <span className="text-xl font-black text-emerald-700 dark:text-emerald-400">
                       {(data.kpiSummary.operasional.outputProdukOrganikKg ?? 0).toLocaleString("id-ID")}
                     </span>
-                    <span className="text-xs font-bold text-emerald-600">Kg</span>
+                    <span className="text-xs font-bold text-emerald-600">kg</span>
                   </div>
                   <span className="text-[10px] text-slate-500 block mt-1">
                     Produk bernilai ekonomi
@@ -961,14 +961,14 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
                 <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-800">
                   <span className="font-semibold text-slate-700 dark:text-slate-300">Kompos Organik (Buruan Sae/Bata Terawang)</span>
                   <span className="font-black text-slate-900 dark:text-white">
-                    {(data.kpiSummary.operasional.outputKomposKg ?? 0).toLocaleString("id-ID")} Kg
+                    {(data.kpiSummary.operasional.outputKomposKg ?? 0).toLocaleString("id-ID")} kg
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-800">
                   <span className="font-semibold text-slate-700 dark:text-slate-300">Larva Maggot BSF &amp; Kasgot</span>
                   <span className="font-black text-slate-900 dark:text-white">
-                    {(data.kpiSummary.operasional.outputMaggotKg ?? 0).toLocaleString("id-ID")} Kg
+                    {(data.kpiSummary.operasional.outputMaggotKg ?? 0).toLocaleString("id-ID")} kg
                   </span>
                 </div>
 
@@ -1062,8 +1062,8 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
                     <th className="py-3.5 px-4 text-center">Baseline (%)</th>
                     <th className="py-3.5 px-4 text-center">Capaian Terkini (%)</th>
                     <th className="py-3.5 px-4 text-center">Pertumbuhan (&Delta;)</th>
-                    <th className="py-3.5 px-4 text-right">Terpilah (Kg)</th>
-                    <th className="py-3.5 px-4 text-right">Residu (Kg)</th>
+                    <th className="py-3.5 px-4 text-right">Terpilah (kg)</th>
+                    <th className="py-3.5 px-4 text-right">Residu (kg)</th>
                     <th className="py-3.5 px-4 text-center">TPS3R / Bank</th>
                     <th className="py-3.5 px-4 text-center">Bin Aktif</th>
                     <th className="py-3.5 px-4 text-center">Status</th>
@@ -1148,7 +1148,7 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
                   <h2 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
                     Tren Timbulan &amp; Reduksi Sampah (8 Pekan)
                   </h2>
-                  <p className="text-xs text-slate-500">Berat sampah organik, anorganik, dan residu (Kg)</p>
+                  <p className="text-xs text-slate-500">Berat sampah organik, anorganik, dan residu (kg)</p>
                 </div>
               </div>
 
@@ -1160,9 +1160,9 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
                     <YAxis fontSize={11} />
                     <RechartsTooltip />
                     <Legend />
-                    <Bar dataKey="organikKg" name="Organik (Kg)" fill="#10b981" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="anorganikKg" name="Anorganik (Kg)" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="residuKg" name="Residu ke TPA (Kg)" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="organikKg" name="Organik (kg)" fill="#10b981" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="anorganikKg" name="Anorganik (kg)" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="residuKg" name="Residu ke TPA (kg)" fill="#ef4444" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

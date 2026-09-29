@@ -809,7 +809,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
                       </div>
                       <div className="flex justify-between text-[11px] font-bold text-slate-400 pt-1">
                         <span>Tingkat Kepercayaan: {Math.max(org, inorg)}%</span>
-                        <span>Estimasi Berat: {selectedItemForDetail.beratKg} Kg</span>
+                        <span>Estimasi Berat: {selectedItemForDetail.beratKg} kg</span>
                       </div>
                     </div>
                   );

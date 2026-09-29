@@ -198,7 +198,7 @@ export default function RekapSetoran() {
       "Rukun Warga",
       "Kelurahan",
       "Jenis Sampah",
-      "Berat (Kg)",
+      "Berat (kg)",
       "Poin",
       "Waktu Setor",
       "Akurasi AI (%)",
@@ -347,7 +347,7 @@ export default function RekapSetoran() {
             <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider">Total Berat Sampah</p>
             <p className="text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5">
               {totalWeight >= 1000 ? (totalWeight / 1000).toFixed(2) : totalWeight.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
-              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{totalWeight >= 1000 ? "Ton" : "Kg"}</span>
+              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{totalWeight >= 1000 ? "Ton" : "kg"}</span>
             </p>
           </div>
         </div>
@@ -541,7 +541,7 @@ export default function RekapSetoran() {
                   <th className="py-3.5 px-4">Nama Warga</th>
                   <th className="py-3.5 px-4">Rukun Warga</th>
                   <th className="py-3.5 px-4">Kategori Sampah</th>
-                  <th className="py-3.5 px-4 text-right">Berat Timbangan (Kg)</th>
+                  <th className="py-3.5 px-4 text-right">Berat Timbangan (kg)</th>
                   <th className="py-3.5 px-4 text-center">Poin Terdistribusi</th>
                   <th className="py-3.5 px-4">Waktu Setor</th>
                   <th className="py-3.5 px-4 text-center rounded-r-2xl">Aksi</th>
@@ -753,7 +753,7 @@ export default function RekapSetoran() {
                       </div>
                       <div className="flex justify-between text-[11px] font-bold text-slate-400 dark:text-slate-400 pt-1">
                         <span>Akurasi Confidence: {conf}%</span>
-                        <span>Estimasi Berat: {selectedDeposit.berat} Kg</span>
+                        <span>Estimasi Berat: {selectedDeposit.berat} kg</span>
                       </div>
                     </div>
                   );
@@ -764,7 +764,7 @@ export default function RekapSetoran() {
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700 space-y-1">
                   <span className="text-[10px] font-black uppercase text-slate-400">Berat Timbangan</span>
-                  <p className="font-mono font-black text-[#009966] dark:text-emerald-400 text-sm">{selectedDeposit.berat} Kg</p>
+                  <p className="font-mono font-black text-[#009966] dark:text-emerald-400 text-sm">{selectedDeposit.berat} kg</p>
                 </div>
 
                 <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700 space-y-1">

@@ -593,7 +593,7 @@ export const PemanfaatanSampah: React.FC = () => {
           </div>
         </div>
         <div className="text-lg font-black text-slate-900 dark:text-white leading-tight">
-          {metrics.totalKapasitas > 0 ? `${metrics.totalKapasitas} Kg` : "-"}
+          {metrics.totalKapasitas > 0 ? `${metrics.totalKapasitas} kg` : "-"}
         </div>
         <span className="text-[9.5px] font-semibold text-slate-400 dark:text-slate-500 truncate">
           Total Kapasitas
@@ -756,7 +756,7 @@ export const PemanfaatanSampah: React.FC = () => {
                     </span>
                     {item.kapasitas && item.kapasitas > 0 ? (
                       <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
-                        {item.kapasitas} Kg
+                        {item.kapasitas} kg
                       </span>
                     ) : null}
                   </div>
@@ -1352,7 +1352,7 @@ export const PemanfaatanSampah: React.FC = () => {
             </div>
             <div>
               <div className="text-2xl sm:text-[26px] font-black tracking-tight text-slate-900 dark:text-white">
-                {metrics.totalKapasitas > 0 ? `${metrics.totalKapasitas} Kg` : "-"}
+                {metrics.totalKapasitas > 0 ? `${metrics.totalKapasitas} kg` : "-"}
               </div>
               <p className="text-xs font-semibold mt-1 truncate text-slate-500 dark:text-slate-400">
                 Kapasitas Fasilitas
@@ -1599,7 +1599,7 @@ export const PemanfaatanSampah: React.FC = () => {
                               <div className="flex flex-wrap items-center gap-1.5 mt-1">
                                 {item.kapasitas !== undefined && item.kapasitas !== null && item.kapasitas > 0 && (
                                   <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                                    <Building2 size={10} /> Kapasitas: {item.kapasitas} Kg
+                                    <Building2 size={10} /> Kapasitas: {item.kapasitas} kg
                                   </span>
                                 )}
                                 <span className="inline-block text-[10px] font-semibold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
@@ -1953,7 +1953,7 @@ const EditFacilityModal: React.FC<{
               <input type="text" value={formData.kontak} onChange={e => setFormData({...formData, kontak: e.target.value})} className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Kapasitas (Kg)</label>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Kapasitas (kg)</label>
               <input type="number" value={formData.kapasitas} onChange={e => setFormData({...formData, kapasitas: e.target.value})} className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200" />
             </div>
             <div>

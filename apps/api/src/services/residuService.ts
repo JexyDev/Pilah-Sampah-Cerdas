@@ -770,7 +770,7 @@ export class ResiduService {
         fotoResiduUrl: data.imagePhotoUrl || "/uploads/default-residu.jpg",
         imageTimbanganUrl: data.imageTimbanganUrl || null,
         berat: weightKg,
-        unit: "Kg",
+        unit: "kg",
         kategori: data.classification || "Residu",
         lokasiGps: lokasiGps,
         inputMethod: data.inputMethod || "MANUAL",

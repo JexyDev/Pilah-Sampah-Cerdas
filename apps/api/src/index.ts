@@ -931,7 +931,7 @@ if (isPrimaryWorker) {
         "id" SERIAL PRIMARY KEY,
         "nama" TEXT UNIQUE NOT NULL,
         "kategori" TEXT NOT NULL DEFAULT 'ORGANIK',
-        "satuan_default" TEXT NOT NULL DEFAULT 'Kg',
+        "satuan_default" TEXT NOT NULL DEFAULT 'kg',
         "deskripsi" TEXT,
         "is_active" BOOLEAN NOT NULL DEFAULT true,
         "dibuat_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,

@@ -367,7 +367,7 @@ const ResiduDashboard: React.FC = () => {
           <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
             <h3 className="font-extrabold text-lg text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
               <BarChart2 className="text-emerald-600 dark:text-emerald-400 w-5 h-5" />
-              Berat Residu Agregat Mingguan (Kg)
+              Berat Residu Agregat Mingguan (kg)
             </h3>
             <div className="flex items-end gap-3 h-48 pt-4">
               {analytics?.trend.map((t: any) => (
@@ -381,7 +381,7 @@ const ResiduDashboard: React.FC = () => {
                       style={{ height: "100%" }}
                     ></div>
                     <div className="absolute top-[-20px] left-0 right-0 text-center font-bold text-[9px] text-red-700 dark:text-red-400">
-                      {Math.round(Number(t.weightKg || 0))} Kg
+                      {Math.round(Number(t.weightKg || 0))} kg
                     </div>
                   </div>
                   <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">{t.date}</span>
@@ -736,7 +736,7 @@ const ResiduDashboard: React.FC = () => {
 
               <div className="flex flex-col gap-1">
                 <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-                  Berat Aktual Timbangan (Kg) *
+                  Berat Aktual Timbangan (kg) *
                 </label>
                 <input
                   type="number"

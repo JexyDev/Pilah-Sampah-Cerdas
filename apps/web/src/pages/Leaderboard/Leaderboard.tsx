@@ -204,7 +204,7 @@ const Leaderboard: React.FC = () => {
             rank: i + 1,
             name: formattedName,
             subtitle: k.kecamatanName ? (k.kecamatanName.toLowerCase().startsWith("kec") ? k.kecamatanName : `Kec. ${k.kecamatanName}`) : "Kec. Coblong",
-            extraInfo: k.totalRw ? `${k.totalRw} RW Terdaftar` : (k.totalKg ? `Total Tonase: ${k.totalKg} Kg` : undefined),
+            extraInfo: k.totalRw ? `${k.totalRw} RW Terdaftar` : (k.totalKg ? `Total Tonase: ${k.totalKg} kg` : undefined),
             points: Number(k.totalPoints ?? k.totalKg ?? 0),
           };
         });

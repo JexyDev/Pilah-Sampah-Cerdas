@@ -162,7 +162,7 @@ export const RwDashboard: React.FC = () => {
           <form onSubmit={handleMaggotSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-gray-600 dark:text-slate-300 uppercase mb-1">Berat Panen (Kg)</label>
+                <label className="block text-xs font-bold text-gray-600 dark:text-slate-300 uppercase mb-1">Berat Panen (kg)</label>
                 <input 
                   type="number" 
                   required 
@@ -193,9 +193,9 @@ export const RwDashboard: React.FC = () => {
             <h4 className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase mb-3">Histori Panen Terakhir</h4>
             <div className="space-y-2">
               {[
-                { date: "15 Jul 2026", weight: "14.5 Kg" },
-                { date: "08 Jul 2026", weight: "12.0 Kg" },
-                { date: "01 Jul 2026", weight: "13.2 Kg" },
+                { date: "15 Jul 2026", weight: "14.5 kg" },
+                { date: "08 Jul 2026", weight: "12.0 kg" },
+                { date: "01 Jul 2026", weight: "13.2 kg" },
               ].map((h, i) => (
                 <div key={i} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-slate-800 rounded-lg text-sm border border-gray-100 dark:border-slate-700">
                   <span className="font-medium text-gray-700 dark:text-slate-300">{h.date}</span>
@@ -219,7 +219,7 @@ export const RwDashboard: React.FC = () => {
                   <span className="text-xl">🗑️</span>
                 </div>
                 <p className="text-[10px] font-bold text-gray-600 dark:text-slate-400">Sampah Organik</p>
-                <p className="text-xs font-black text-blue-700 dark:text-blue-300">120 Kg</p>
+                <p className="text-xs font-black text-blue-700 dark:text-blue-300">120 kg</p>
               </div>
               <ArrowRight className="w-5 h-5 text-blue-300 dark:text-blue-500" />
               <div className="text-center">
@@ -235,7 +235,7 @@ export const RwDashboard: React.FC = () => {
                   <span className="text-xl">🐟</span>
                 </div>
                 <p className="text-[10px] font-bold text-gray-600 dark:text-slate-400">Peternakan/Lele</p>
-                <p className="text-xs font-black text-emerald-600 dark:text-emerald-400">35 Kg Pakan</p>
+                <p className="text-xs font-black text-emerald-600 dark:text-emerald-400">35 kg Pakan</p>
               </div>
             </div>
           </div>
@@ -341,7 +341,7 @@ export const RwDashboard: React.FC = () => {
                 Riwayat Penimbangan Residu Hilir RW Hari Ini
               </h4>
               <span className="text-xs text-emerald-700 dark:text-emerald-300 font-bold bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-1 rounded-lg border border-emerald-100 dark:border-emerald-700/40">
-                Total: 48.5 Kg Residu Terinput
+                Total: 48.5 kg Residu Terinput
               </span>
             </div>
 
@@ -352,15 +352,15 @@ export const RwDashboard: React.FC = () => {
                     <th className="p-3">Waktu Input</th>
                     <th className="p-3">Diinput Oleh</th>
                     <th className="p-3">Kategori Residu</th>
-                    <th className="p-3">Berat (Kg)</th>
+                    <th className="p-3">Berat (kg)</th>
                     <th className="p-3">Status Monitoring</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-900 font-medium">
                   {[
-                    { time: "07:30 WIB", pet: "Bpk. Agus Supriatna", kat: "Residu Non-Recyclable", kg: "18.5 Kg", status: "VERIFIED_HILIR" },
-                    { time: "06:45 WIB", pet: "Bpk. Agus Supriatna", kat: "Residu B3 / Popok", kg: "16.0 Kg", status: "VERIFIED_HILIR" },
-                    { time: "Kemarin", pet: "Bpk. Agus Supriatna", kat: "Residu TPA Hilir", kg: "14.0 Kg", status: "VERIFIED_HILIR" },
+                    { time: "07:30 WIB", pet: "Bpk. Agus Supriatna", kat: "Residu Non-Recyclable", kg: "18.5 kg", status: "VERIFIED_HILIR" },
+                    { time: "06:45 WIB", pet: "Bpk. Agus Supriatna", kat: "Residu B3 / Popok", kg: "16.0 kg", status: "VERIFIED_HILIR" },
+                    { time: "Kemarin", pet: "Bpk. Agus Supriatna", kat: "Residu TPA Hilir", kg: "14.0 kg", status: "VERIFIED_HILIR" },
                   ].map((row, idx) => (
                     <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                       <td className="p-3 font-semibold text-slate-700 dark:text-slate-300">{row.time}</td>

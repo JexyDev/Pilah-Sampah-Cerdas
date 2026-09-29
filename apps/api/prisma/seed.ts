@@ -590,13 +590,13 @@ async function main() {
   // 12. MASTER LUARAN SAMPAH
   // ─────────────────────────────────────────────
   const masterLuaran = [
-    { nama: "Kompos Organik (Buruan Sae)", kategori: "ORGANIK", satuanDefault: "Kg", deskripsi: "Pupuk kompos padat hasil pengomposan mandiri & komposter warga" },
+    { nama: "Kompos Organik (Buruan Sae)", kategori: "ORGANIK", satuanDefault: "kg", deskripsi: "Pupuk kompos padat hasil pengomposan mandiri & komposter warga" },
     { nama: "Pupuk Organik Cair (POC)", kategori: "ORGANIK", satuanDefault: "Liter", deskripsi: "Pupuk cair fermentasi dari sisa sayur dan buah warga" },
-    { nama: "Maggot BSF", kategori: "ORGANIK", satuanDefault: "Kg", deskripsi: "Larva Black Soldier Fly biokonversi sampah organik" },
-    { nama: "Kasgot (Bekas Maggot)", kategori: "ORGANIK", satuanDefault: "Kg", deskripsi: "Residu pupuk organik kaya hara dari media budidaya maggot" },
-    { nama: "Bank Sampah Anorganik", kategori: "ANORGANIK", satuanDefault: "Kg", deskripsi: "Pencacahan botol plastik, kardus, dan daur ulang bernilai ekonomi" },
-    { nama: "Loseda (Lorong Sisa Dapur)", kategori: "ORGANIK", satuanDefault: "Kg", deskripsi: "Pengolahan sisa makanan basah rumah tangga via pipa paralon" },
-    { nama: "Bata Terawang", kategori: "ORGANIK", satuanDefault: "Kg", deskripsi: "Komposter bata porus untuk resapan dedaunan dan sisa kebun" },
+    { nama: "Maggot BSF", kategori: "ORGANIK", satuanDefault: "kg", deskripsi: "Larva Black Soldier Fly biokonversi sampah organik" },
+    { nama: "Kasgot (Bekas Maggot)", kategori: "ORGANIK", satuanDefault: "kg", deskripsi: "Residu pupuk organik kaya hara dari media budidaya maggot" },
+    { nama: "Bank Sampah Anorganik", kategori: "ANORGANIK", satuanDefault: "kg", deskripsi: "Pencacahan botol plastik, kardus, dan daur ulang bernilai ekonomi" },
+    { nama: "Loseda (Lorong Sisa Dapur)", kategori: "ORGANIK", satuanDefault: "kg", deskripsi: "Pengolahan sisa makanan basah rumah tangga via pipa paralon" },
+    { nama: "Bata Terawang", kategori: "ORGANIK", satuanDefault: "kg", deskripsi: "Komposter bata porus untuk resapan dedaunan dan sisa kebun" },
   ];
 
   for (const luaran of masterLuaran) {

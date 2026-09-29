@@ -22,9 +22,9 @@ describe("Pemanfaatan Service CRUD & Business Logic Tests", () => {
       teknologi: "Kompos Organik",
       bahanBaku: "Sampah Organik Dapur",
       volumeBahanBaku: 50.0,
-      unitBahanBaku: "Kg",
+      unitBahanBaku: "kg",
       hasil: 10.0,
-      unitHasil: "Kg",
+      unitHasil: "kg",
       fotoDokumentasiUrl: "https://picsum.photos/400/300",
       tanggalPencatatan: new Date(),
     });

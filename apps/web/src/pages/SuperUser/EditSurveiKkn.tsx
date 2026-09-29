@@ -203,16 +203,16 @@ export default function EditSurveiKkn() {
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 relative z-10">
                 <div className="bg-slate-50 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
-                  <InputLabel label="Organik (Kg/Hari)"/><TextInput type="number" name="organikKgPerHari" value={vs.organikKgPerHari} onChange={(e:any) => handleNestedNumberChange("volumeSampah", e)} />
+                  <InputLabel label="Organik (kg/hari)"/><TextInput type="number" name="organikKgPerHari" value={vs.organikKgPerHari} onChange={(e:any) => handleNestedNumberChange("volumeSampah", e)} />
                 </div>
                 <div className="bg-slate-50 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
-                  <InputLabel label="Anorganik (Kg/Hari)"/><TextInput type="number" name="anorganikKgPerHari" value={vs.anorganikKgPerHari} onChange={(e:any) => handleNestedNumberChange("volumeSampah", e)} />
+                  <InputLabel label="Anorganik (kg/hari)"/><TextInput type="number" name="anorganikKgPerHari" value={vs.anorganikKgPerHari} onChange={(e:any) => handleNestedNumberChange("volumeSampah", e)} />
                 </div>
                 <div className="bg-slate-50 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
-                  <InputLabel label="Residu (Kg/Hari)"/><TextInput type="number" name="residuKgPerHari" value={vs.residuKgPerHari} onChange={(e:any) => handleNestedNumberChange("volumeSampah", e)} />
+                  <InputLabel label="Residu (kg/hari)"/><TextInput type="number" name="residuKgPerHari" value={vs.residuKgPerHari} onChange={(e:any) => handleNestedNumberChange("volumeSampah", e)} />
                 </div>
                 <div className="bg-emerald-50/50 p-5 rounded-2xl border border-emerald-100">
-                  <InputLabel label="Total Sampah (Kg/Hari)"/><TextInput type="number" name="totalTimbulanSampahKgPerHari" value={vs.totalTimbulanSampahKgPerHari} onChange={(e:any) => handleNestedNumberChange("volumeSampah", e)} />
+                  <InputLabel label="Total Sampah (kg/hari)"/><TextInput type="number" name="totalTimbulanSampahKgPerHari" value={vs.totalTimbulanSampahKgPerHari} onChange={(e:any) => handleNestedNumberChange("volumeSampah", e)} />
                 </div>
               </div>
             </div>

@@ -271,9 +271,9 @@ export const OfficialDocumentA4View: React.FC<OfficialDocumentA4ViewProps> = ({
               <tr>
                 <td className="border border-black px-2 py-1 text-center">1</td>
                 <td className="border border-black px-3 py-1 font-semibold">Total Estimasi Timbulan Sampah</td>
-                <td className="border border-black px-3 py-1 text-center">Kg / Ton</td>
+                <td className="border border-black px-3 py-1 text-center">kg / Ton</td>
                 <td className="border border-black px-3 py-1 text-right font-mono font-bold">
-                  {kpiSummary.dampakDanReduksi.totalTimbulanSampahKg.toLocaleString("id-ID")} Kg ({kpiSummary.dampakDanReduksi.totalTimbulanSampahTon} T)
+                  {kpiSummary.dampakDanReduksi.totalTimbulanSampahKg.toLocaleString("id-ID")} kg ({kpiSummary.dampakDanReduksi.totalTimbulanSampahTon} T)
                 </td>
                 <td className="border border-black px-3 py-1 text-slate-700 print:text-black">
                   Akumulasi timbulan terukur pada wilayah evaluasi
@@ -282,9 +282,9 @@ export const OfficialDocumentA4View: React.FC<OfficialDocumentA4ViewProps> = ({
               <tr>
                 <td className="border border-black px-2 py-1 text-center">2</td>
                 <td className="border border-black px-3 py-1 font-semibold">Tonase Berhasil Direduksi dari TPA</td>
-                <td className="border border-black px-3 py-1 text-center">Kg / Ton</td>
+                <td className="border border-black px-3 py-1 text-center">kg / Ton</td>
                 <td className="border border-black px-3 py-1 text-right font-mono font-bold text-emerald-800 print:text-black">
-                  {kpiSummary.dampakDanReduksi.tonaseTereduksiDariTpaKg.toLocaleString("id-ID")} Kg ({kpiSummary.dampakDanReduksi.tonaseTereduksiDariTpaTon} T)
+                  {kpiSummary.dampakDanReduksi.tonaseTereduksiDariTpaKg.toLocaleString("id-ID")} kg ({kpiSummary.dampakDanReduksi.tonaseTereduksiDariTpaTon} T)
                 </td>
                 <td className="border border-black px-3 py-1 text-slate-700 print:text-black">
                   Material tertahan di hulu melalui daur ulang &amp; komposting
@@ -293,9 +293,9 @@ export const OfficialDocumentA4View: React.FC<OfficialDocumentA4ViewProps> = ({
               <tr>
                 <td className="border border-black px-2 py-1 text-center">3</td>
                 <td className="border border-black px-3 py-1 font-semibold">Residu Terangkut ke TPA Sarimukti</td>
-                <td className="border border-black px-3 py-1 text-center">Kg / Ton</td>
+                <td className="border border-black px-3 py-1 text-center">kg / Ton</td>
                 <td className="border border-black px-3 py-1 text-right font-mono font-bold text-amber-800 print:text-black">
-                  {kpiSummary.dampakDanReduksi.residuKeTpaKg.toLocaleString("id-ID")} Kg ({kpiSummary.dampakDanReduksi.residuKeTpaTon} T)
+                  {kpiSummary.dampakDanReduksi.residuKeTpaKg.toLocaleString("id-ID")} kg ({kpiSummary.dampakDanReduksi.residuKeTpaTon} T)
                 </td>
                 <td className="border border-black px-3 py-1 text-slate-700 print:text-black">
                   Fraksi sampah yang tidak dapat diproses lokal
@@ -317,9 +317,9 @@ export const OfficialDocumentA4View: React.FC<OfficialDocumentA4ViewProps> = ({
               <tr>
                 <td className="border border-black px-2 py-1 text-center">5</td>
                 <td className="border border-black px-3 py-1">Fraksi Terpilah Sampah Organik</td>
-                <td className="border border-black px-3 py-1 text-center">Kg (%)</td>
+                <td className="border border-black px-3 py-1 text-center">kg (%)</td>
                 <td className="border border-black px-3 py-1 text-right font-mono">
-                  {kpiSummary.dampakDanReduksi.rasioPemilahan.organikKg.toLocaleString("id-ID")} Kg ({kpiSummary.dampakDanReduksi.rasioPemilahan.organikPersen}%)
+                  {kpiSummary.dampakDanReduksi.rasioPemilahan.organikKg.toLocaleString("id-ID")} kg ({kpiSummary.dampakDanReduksi.rasioPemilahan.organikPersen}%)
                 </td>
                 <td className="border border-black px-3 py-1 text-slate-700 print:text-black">
                   Dialihkan ke biokonversi maggot &amp; komposter
@@ -328,9 +328,9 @@ export const OfficialDocumentA4View: React.FC<OfficialDocumentA4ViewProps> = ({
               <tr>
                 <td className="border border-black px-2 py-1 text-center">6</td>
                 <td className="border border-black px-3 py-1">Fraksi Terpilah Sampah Anorganik</td>
-                <td className="border border-black px-3 py-1 text-center">Kg (%)</td>
+                <td className="border border-black px-3 py-1 text-center">kg (%)</td>
                 <td className="border border-black px-3 py-1 text-right font-mono">
-                  {kpiSummary.dampakDanReduksi.rasioPemilahan.anorganikKg.toLocaleString("id-ID")} Kg ({kpiSummary.dampakDanReduksi.rasioPemilahan.anorganikPersen}%)
+                  {kpiSummary.dampakDanReduksi.rasioPemilahan.anorganikKg.toLocaleString("id-ID")} kg ({kpiSummary.dampakDanReduksi.rasioPemilahan.anorganikPersen}%)
                 </td>
                 <td className="border border-black px-3 py-1 text-slate-700 print:text-black">
                   Tersalurkan ke jejaring Bank Sampah Unit &amp; daur ulang
@@ -361,9 +361,9 @@ export const OfficialDocumentA4View: React.FC<OfficialDocumentA4ViewProps> = ({
               <tr>
                 <td className="border border-black px-2 py-1 text-center">9</td>
                 <td className="border border-black px-3 py-1 font-semibold">Estimasi Reduksi Emisi Gas Rumah Kaca</td>
-                <td className="border border-black px-3 py-1 text-center">Kg CO₂e</td>
+                <td className="border border-black px-3 py-1 text-center">kg CO₂e</td>
                 <td className="border border-black px-3 py-1 text-right font-mono font-bold text-emerald-800 print:text-black">
-                  {kpiSummary.dampakDanReduksi.reduksiEmisiCo2Kg.toLocaleString("id-ID")} Kg CO₂e
+                  {kpiSummary.dampakDanReduksi.reduksiEmisiCo2Kg.toLocaleString("id-ID")} kg CO₂e
                 </td>
                 <td className="border border-black px-3 py-1 text-slate-700 print:text-black">
                   Kontribusi terhadap target Net-Zero Emission Kota Bandung
@@ -408,19 +408,19 @@ export const OfficialDocumentA4View: React.FC<OfficialDocumentA4ViewProps> = ({
             <div>
               <span className="font-semibold text-slate-700 print:text-black">&bull; Total Input Bahan Baku Organik: </span>
               <span className="font-mono font-bold">
-                {kpiSummary.operasional.materialOrganikMasukKg.toLocaleString("id-ID")} Kg
+                {kpiSummary.operasional.materialOrganikMasukKg.toLocaleString("id-ID")} kg
               </span>
             </div>
             <div>
               <span className="font-semibold text-slate-700 print:text-black">&bull; Output Pupuk Kompos Matang: </span>
               <span className="font-mono font-bold">
-                {kpiSummary.operasional.outputKomposKg.toLocaleString("id-ID")} Kg
+                {kpiSummary.operasional.outputKomposKg.toLocaleString("id-ID")} kg
               </span>
             </div>
             <div>
               <span className="font-semibold text-slate-700 print:text-black">&bull; Output Biomassa Maggot Segar: </span>
               <span className="font-mono font-bold">
-                {kpiSummary.operasional.outputMaggotKg.toLocaleString("id-ID")} Kg
+                {kpiSummary.operasional.outputMaggotKg.toLocaleString("id-ID")} kg
               </span>
             </div>
             <div>
@@ -466,7 +466,7 @@ export const OfficialDocumentA4View: React.FC<OfficialDocumentA4ViewProps> = ({
                 <th className="border border-black px-2 py-1 text-center">Baseline</th>
                 <th className="border border-black px-2 py-1 text-center">Aktual</th>
                 <th className="border border-black px-2 py-1 text-center">Deviasi</th>
-                <th className="border border-black px-2 py-1 text-right">Terpilah (Kg)</th>
+                <th className="border border-black px-2 py-1 text-right">Terpilah (kg)</th>
                 <th className="border border-black px-2 py-1 text-right">Organik</th>
                 <th className="border border-black px-2 py-1 text-right">Anorganik</th>
                 <th className="border border-black px-2 py-1 text-right">Residu</th>
@@ -555,7 +555,7 @@ export const OfficialDocumentA4View: React.FC<OfficialDocumentA4ViewProps> = ({
                 <th className="border border-black px-2 py-1 text-center">Klasifikasi Unit</th>
                 <th className="border border-black px-2 py-1 text-left">Lokasi Wilayah</th>
                 <th className="border border-black px-2 py-1 text-left">Penanggung Jawab (PIC)</th>
-                <th className="border border-black px-2 py-1 text-right">Kapasitas (Kg/Hr)</th>
+                <th className="border border-black px-2 py-1 text-right">Kapasitas (kg/hr)</th>
                 <th className="border border-black px-2 py-1 text-center">Log Produksi</th>
                 <th className="border border-black px-2 py-1 text-center">Status Operasional</th>
               </tr>
@@ -619,7 +619,7 @@ export const OfficialDocumentA4View: React.FC<OfficialDocumentA4ViewProps> = ({
               aliran pembuangan residu menuju TPA Sarimukti dengan rasio reduksi mencapai{" "}
               <strong>{kpiSummary.dampakDanReduksi.rasioReduksiTpaPersen}%</strong>, setara dengan penghematan biaya ritase
               pengangkutan dan pencegahan emisi karbon sebesar{" "}
-              <strong>{kpiSummary.dampakDanReduksi.reduksiEmisiCo2Kg.toLocaleString("id-ID")} Kg CO₂e</strong>.
+              <strong>{kpiSummary.dampakDanReduksi.reduksiEmisiCo2Kg.toLocaleString("id-ID")} kg CO₂e</strong>.
             </li>
             <li>
               Integrasi sistem sensor cerdas (IoT) dan verifikasi otomatisasi kecerdasan buatan (AI Vision) mampu

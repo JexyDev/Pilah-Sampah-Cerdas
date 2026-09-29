@@ -303,7 +303,7 @@ export class BinRepository {
           hasilKlasifikasiAi: isAnorganic ? "anorganik" : "organik",
           confidenceAi: aiConfidence!,
           berat: weightKg,
-          unit: "Kg",
+          unit: "kg",
           poin: pointsAwarded,
           qrTempatSampahId: binId,
           lokasiGps: null,

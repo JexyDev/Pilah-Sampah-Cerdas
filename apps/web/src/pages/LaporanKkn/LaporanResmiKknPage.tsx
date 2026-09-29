@@ -816,7 +816,7 @@ export const LaporanResmiKknPage: React.FC = () => {
                   </div>
                   <div>
                     <div className="text-2xl font-black text-emerald-950">
-                      {data.ringkasanDampakSampah?.totalSampahTerpilahKg ?? 427.89} <span className="text-xs font-bold text-emerald-700">Kg</span>
+                      {data.ringkasanDampakSampah?.totalSampahTerpilahKg ?? 427.89} <span className="text-xs font-bold text-emerald-700">kg</span>
                     </div>
                     <div className="text-[10px] text-emerald-800 font-semibold mt-0.5">
                       Organik {data.ringkasanDampakSampah?.organikPersen ?? 61}% • Anorganik {data.ringkasanDampakSampah?.anorganikPersen ?? 39}%
@@ -835,7 +835,7 @@ export const LaporanResmiKknPage: React.FC = () => {
                       {data.ringkasanDampakSampah?.rasioReduksiTpaPersen ?? 95.0}%
                     </div>
                     <div className="text-[10px] text-slate-500 mt-0.5">
-                      Reduksi Emisi {data.ringkasanDampakSampah?.reduksiEmisiCo2Kg ?? 850.5} Kg CO₂e
+                      Reduksi Emisi {data.ringkasanDampakSampah?.reduksiEmisiCo2Kg ?? 850.5} kg CO₂e
                     </div>
                   </div>
                 </div>

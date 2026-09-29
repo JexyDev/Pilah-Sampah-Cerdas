@@ -437,7 +437,7 @@ export const dashboardService = {
       panitia: totalPanitiaTaskforce,
     };
 
-    // 2. Sampah Terkumpul (Kg)
+    // 2. Sampah Terkumpul (kg)
     const wasteLogsWhere: any = {};
     if (!includeTestAccounts) {
       wasteLogsWhere.warga = { isTestAccount: false };
@@ -528,12 +528,12 @@ export const dashboardService = {
       lokasiTerdaftar = await prisma.rw.count();
     }
 
-    // 7. Setoran pada periode terpilih (Kg).
+    // 7. Setoran pada periode terpilih (kg).
     // Kartu ini ADAPTIF: labelnya di UI ikut berubah mengikuti filter periode
     // ("Total Pemilahan" saat semua waktu, "Pemilahan Hari Ini" saat harian,
     // dst). Jadi nilainya memang harus mengikuti dateFilter yang sama —
     // mengunci ke hari berjalan akan membuat label "Total Pemilahan"
-    // menampilkan 0 Kg padahal data sepanjang masa tersedia.
+    // menampilkan 0 kg padahal data sepanjang masa tersedia.
     const setoranPeriodeWhere: any = { ...wasteLogsWhere };
 
     const wasteLogsPeriode = await prisma.setoranOtomatis.aggregate({

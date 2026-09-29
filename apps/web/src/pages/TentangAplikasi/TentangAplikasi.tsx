@@ -367,7 +367,7 @@ const Informasi: React.FC = () => {
                       <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100">2. Input Timbangan Fisik</h3>
                     </div>
                     <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                      Timbang sampah residu menggunakan timbangan industri fisik di titik kumpul, kemudian catat bobot riil (Kg) pada menu <strong>Pengumpulan &amp; Pengangkutan</strong>.
+                      Timbang sampah residu menggunakan timbangan industri fisik di titik kumpul, kemudian catat bobot riil (kg) pada menu <strong>Pengumpulan &amp; Pengangkutan</strong>.
                     </p>
                   </div>
                 </div>

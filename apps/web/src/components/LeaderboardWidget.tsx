@@ -145,7 +145,7 @@ const ColumnCard: React.FC<ColumnCardProps> = ({
                     )}
                     {item.totalKg != null && item.totalKg > 0 && (
                       <span className="inline-flex items-center px-1.5 py-0.2 rounded-md bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 text-[9.5px] font-bold border border-sky-200 dark:border-sky-800/40">
-                        {item.totalKg.toFixed(1)} Kg
+                        {item.totalKg.toFixed(1)} kg
                       </span>
                     )}
                   </div>

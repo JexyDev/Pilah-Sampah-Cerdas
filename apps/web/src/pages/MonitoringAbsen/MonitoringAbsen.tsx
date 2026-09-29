@@ -3499,7 +3499,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         )}
                         {fac.kapasitas && (
                           <p className="text-[11px] text-slate-600 dark:text-slate-400">
-                            <span className="font-bold">Kapasitas:</span> {fac.kapasitas} Kg
+                            <span className="font-bold">Kapasitas:</span> {fac.kapasitas} kg
                           </p>
                         )}
                       </div>

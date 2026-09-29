@@ -379,9 +379,9 @@ async function main() {
           teknologi: 'Kompos',
           bahanBaku: 'Organik',
           volumeBahanBaku: 50 + Math.random()*50,
-          unitBahanBaku: 'Kg',
+          unitBahanBaku: 'kg',
           hasil: 20 + Math.random()*20,
-          unitHasil: 'Kg',
+          unitHasil: 'kg',
           fotoDokumentasiUrl: 'https://dummyimage.com/600x400/000/fff&text=Pemanfaatan',
           tanggalPencatatan: new Date()
         }

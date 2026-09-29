@@ -702,7 +702,7 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
                 <div className="space-y-4 text-xs">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block font-bold text-emerald-700 mb-1">Organik (Kg/Hari)</label>
+                      <label className="block font-bold text-emerald-700 mb-1">Organik (kg/hari)</label>
                       <input
                         type="number"
                         step="0.01"
@@ -720,7 +720,7 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
                       />
                     </div>
                     <div>
-                      <label className="block font-bold text-blue-700 mb-1">Anorganik (Kg/Hari)</label>
+                      <label className="block font-bold text-blue-700 mb-1">Anorganik (kg/hari)</label>
                       <input
                         type="number"
                         step="0.01"
@@ -738,7 +738,7 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
                       />
                     </div>
                     <div>
-                      <label className="block font-bold text-rose-700 mb-1">Residu (Kg/Hari)</label>
+                      <label className="block font-bold text-rose-700 mb-1">Residu (kg/hari)</label>
                       <input
                         type="number"
                         step="0.01"
@@ -756,7 +756,7 @@ export const EditSurveiModal: React.FC<EditSurveiModalProps> = ({
                       />
                     </div>
                     <div className="md:col-span-3">
-                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Total Berat Sampah (Kg/Hari)</label>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Total Berat Sampah (kg/hari)</label>
                       <input
                         type="number"
                         step="0.01"

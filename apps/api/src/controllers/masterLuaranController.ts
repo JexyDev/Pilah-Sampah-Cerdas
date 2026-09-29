@@ -66,7 +66,7 @@ export const masterLuaranController = {
         data: {
           nama: nama.trim(),
           kategori: kategori || "ORGANIK",
-          satuanDefault: satuanDefault || "Kg",
+          satuanDefault: satuanDefault || "kg",
           deskripsi: deskripsi || null,
           isActive: isActive !== undefined ? Boolean(isActive) : true,
         },

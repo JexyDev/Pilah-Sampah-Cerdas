@@ -95,7 +95,7 @@ export interface ComplianceMetricsResult {
   totalTidakPatuh: number;
   totalTakTerverifikasi: number;
 
-  // Massa / Berat (Kg)
+  // Massa / Berat (kg)
   totalBeratKg: number;
   totalBeratPatuhKg: number;
   totalBeratKontaminasiKg: number;

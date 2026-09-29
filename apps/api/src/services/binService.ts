@@ -15,7 +15,7 @@ import { notificationIntegrationService } from "./notificationIntegrationService
 import { generateNextQrCode } from "../utils/qrGenerator.js";
 import { evaluateSortingStatus } from "../utils/sortingEvaluation.js";
 
-// Density configurations (Kg per Liter)
+// Density configurations (kg per Liter)
 const DENSITY = {
   ORGANIC: 0.4, // Organic waste is denser
   NON_ORGANIC: 0.2, // Non-organic is lighter

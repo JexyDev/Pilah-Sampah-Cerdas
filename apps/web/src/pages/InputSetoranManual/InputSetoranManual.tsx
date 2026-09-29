@@ -213,15 +213,15 @@ const InputSetoranManual: React.FC = () => {
                 <option value="">-- Pilih Kategori --</option>
                 {categoriesList.map((cat) => (
                   <option key={cat.id} value={cat.id}>
-                    {cat.name} (Poin Dasar: {cat.pointsPerKg}/Kg)
+                    {cat.name} (Poin Dasar: {cat.pointsPerKg}/kg)
                   </option>
                 ))}
               </select>
             </div>
 
-            {/* Berat Kg */}
+            {/* Berat kg */}
             <div>
-              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Berat Setoran (Kg) *</label>
+              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Berat Setoran (kg) *</label>
               <input
                 type="number"
                 step="0.01"

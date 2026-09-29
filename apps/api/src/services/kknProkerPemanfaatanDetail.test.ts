@@ -142,7 +142,7 @@ describe("KKN Service - getProgramKerjaById Pemanfaatan Aggregation & Grouping",
     });
     createdPemanfaatanIds.push(log2.id);
 
-    // 3. Record Panen Hasil for log1 (Maggot BSF: 15 Kg, Nilai Ekonomi Rp 120.000)
+    // 3. Record Panen Hasil for log1 (Maggot BSF: 15 kg, Nilai Ekonomi Rp 120.000)
     await kknService.createPanenHasil(studentUser.id, {
       pemanfaatanId: log1.id,
       beratOutputKg: 15.0,

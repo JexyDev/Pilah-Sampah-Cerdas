@@ -190,7 +190,7 @@ describe("Mobile Findings Backend Tests", () => {
         jenisPemanfaatan: "Loseda Kompos",
         kategoriSampah: "Organik",
         jumlah: 15,
-        satuan: "Kg",
+        satuan: "kg",
         fotoDokumentasiUrl: "/uploads/my-photo.jpg",
       });
 

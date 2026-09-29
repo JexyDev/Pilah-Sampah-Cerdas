@@ -740,7 +740,7 @@ export const systemAnalysisService = {
       ? ledgerTotal
       : Math.round(anorganikKg * 3000 + totalOutputFacilityKg * 2500);
 
-    // Reduksi Emisi Karbon (Formula IPCC / KLHK: Kg Organik * 0.58 + Kg Anorganik * 1.45)
+    // Reduksi Emisi Karbon (Formula IPCC / KLHK: kg Organik * 0.58 + kg Anorganik * 1.45)
     const co2ReducedKg = Math.round((organikKg * 0.58 + anorganikKg * 1.45) * 10) / 10;
 
     // Indeks Resiliensi Komunitas (Dihitung dinamis dari kepengurusan wilayah aktif & mahasiswa KKN)

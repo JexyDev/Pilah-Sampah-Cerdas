@@ -2328,7 +2328,7 @@ export const KurasiLandingPage: React.FC = () => {
                   type="text"
                   value={campaignForm.impactHighlight}
                   onChange={(e) => setCampaignForm({ ...campaignForm, impactHighlight: e.target.value })}
-                  placeholder="Contoh: Menghasilkan 80kg pupuk kasgot untuk petani lokal."
+                  placeholder="Contoh: Menghasilkan 80 kg pupuk kasgot untuk petani lokal."
                   className="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold"
                 />
               </div>

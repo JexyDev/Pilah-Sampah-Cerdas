@@ -168,10 +168,10 @@ async function run() {
     console.log(">>> KOMPARASI TATA KELOLA SAMPAH:");
     console.log("  [Total Warga] Dashboard:", kpiDashboard.totalWarga, "vs Analisis Sistem:", wasteAnalysis.pilar1.totalWarga);
     console.log("  [Tempat Sampah Aktif] Dashboard:", kpiDashboard.tempatSampahAktif, "vs Analisis Sistem:", wasteAnalysis.pilar2.kritisitasTempatSampah.total);
-    console.log("  [Total Sampah Masuk Kg] Dashboard:", kpiDashboard.totalSampahKg, "vs Analisis Sistem:", wasteAnalysis.pilar3.totalSampahMasukKg);
-    console.log("  [Organik Kg] Dashboard:", kpiDashboard.komposisiSampah?.organikKg, "vs Analisis Sistem:", wasteAnalysis.pilar3.organikKg);
-    console.log("  [Anorganik Kg] Dashboard:", kpiDashboard.komposisiSampah?.anorganikKg, "vs Analisis Sistem:", wasteAnalysis.pilar3.anorganikKg);
-    console.log("  [Residu Kg] Dashboard:", kpiDashboard.komposisiSampah?.residuKg);
+    console.log("  [Total Sampah Masuk kg] Dashboard:", kpiDashboard.totalSampahKg, "vs Analisis Sistem:", wasteAnalysis.pilar3.totalSampahMasukKg);
+    console.log("  [Organik kg] Dashboard:", kpiDashboard.komposisiSampah?.organikKg, "vs Analisis Sistem:", wasteAnalysis.pilar3.organikKg);
+    console.log("  [Anorganik kg] Dashboard:", kpiDashboard.komposisiSampah?.anorganikKg, "vs Analisis Sistem:", wasteAnalysis.pilar3.anorganikKg);
+    console.log("  [Residu kg] Dashboard:", kpiDashboard.komposisiSampah?.residuKg);
 
     console.log("\\n>>> KOMPARASI KKN:");
     console.log("  [Total Mahasiswa] Dashboard KKN:", kknDashboard.totalMahasiswa, "vs Analisis Sistem:", kknAnalysis.pilar4.totalStudents);

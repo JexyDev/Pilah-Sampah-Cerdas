@@ -57,14 +57,14 @@ describe("Batch 4 Penyempurnaan Features", () => {
       mockCreate.mockResolvedValue({
         id: "post-1",
         tipe: "MAGGOT_HARVEST",
-        deskripsi: "Harvested 5kg maggot",
+        deskripsi: "Harvested 5 kg maggot",
       });
       mockFindMany.mockResolvedValue([{ id: "post-1", tipe: "MAGGOT_HARVEST" }]);
 
       const created = await systemService.createSocialFeed(
         "user-1",
         "MAGGOT_HARVEST",
-        "Harvested 5kg maggot"
+        "Harvested 5 kg maggot"
       );
       const feed = await systemService.getSocialFeed();
 

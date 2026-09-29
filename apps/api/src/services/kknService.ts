@@ -3655,7 +3655,7 @@ export class KknService {
       jenisPemanfaatan = "Kompos Organik",
       kategoriSampah = "Organik",
       jumlah = 10,
-      satuan = "Kg",
+      satuan = "kg",
       deskripsi = "",
       rwTerkait,
       dplId,
@@ -3703,9 +3703,9 @@ export class KknService {
         teknologi: cleanTeknologi,
         bahanBaku: cleanBahanBaku,
         volumeBahanBaku: Number(jumlah) || 0,
-        unitBahanBaku: satuan || "Kg",
+        unitBahanBaku: satuan || "kg",
         hasil: 0,
-        unitHasil: satuan || "Kg",
+        unitHasil: satuan || "kg",
         fotoDokumentasiUrl: fotoDokumentasiUrl || "/uploads/default-pemanfaatan.jpg",
         tanggalPencatatan: payload.timestamp ? new Date(payload.timestamp) : new Date(),
       },
@@ -5120,7 +5120,7 @@ export class KknService {
       const nilaiEkonomi =
         recordedEkonomi > 0 && beratOutput > 0
           ? recordedEkonomi
-          : calculateNilaiEkonomi(p.program, p.teknologi, beratOutput, p.unitHasil || "Kg");
+          : calculateNilaiEkonomi(p.program, p.teknologi, beratOutput, p.unitHasil || "kg");
 
       totalBeratInputKg += beratInput;
       totalBeratOutputKg += beratOutput;
@@ -5150,10 +5150,10 @@ export class KknService {
         bahanBaku: p.bahanBaku || "Sampah Organik",
         beratInputKg: beratInput,
         volumeBahanBaku: beratInput,
-        unitBahanBaku: p.unitBahanBaku || "Kg",
+        unitBahanBaku: p.unitBahanBaku || "kg",
         beratOutputKg: beratOutput,
         hasil: beratOutput,
-        unitHasil: p.unitHasil || "Kg",
+        unitHasil: p.unitHasil || "kg",
         nilaiEkonomiRp: nilaiEkonomi,
         fotoDokumentasiUrl: p.fotoDokumentasiUrl,
         tanggalPencatatan: p.tanggalPencatatan
@@ -5863,9 +5863,9 @@ export class KknService {
         teknologi: cleanTeknologi,
         bahanBaku: bahanBaku || "Sampah Organik",
         volumeBahanBaku: Number(beratInputKg) || 0,
-        unitBahanBaku: "Kg",
+        unitBahanBaku: "kg",
         hasil: 0, // Pilar 2: Hasil panen 0 karena baru pemrosesan awal
-        unitHasil: "Kg",
+        unitHasil: "kg",
         fotoDokumentasiUrl: fotoDokumentasiUrl || "/uploads/default-pemanfaatan.jpg",
         tanggalPencatatan: new Date(),
         jenisKomoditas: facilityName

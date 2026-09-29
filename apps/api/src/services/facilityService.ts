@@ -278,14 +278,14 @@ export const facilityService = {
         },
       });
 
-      // Award gamification points: 1 Kg = 10 Poin default
+      // Award gamification points: 1 kg = 10 Poin default
       if (userId && Number(outputKg) > 0) {
         const points = Math.floor(Number(outputKg) * 10);
         await tx.pointHistory.create({
           data: {
             userId,
             points,
-            description: `Produksi ${jenisOutput} dari ${facility.nama} (${outputKg} Kg)`,
+            description: `Produksi ${jenisOutput} dari ${facility.nama} (${outputKg} kg)`,
             kategori: "PEMANFAATAN",
             redeemable: true,
           },

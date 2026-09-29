@@ -398,8 +398,8 @@ export const RwFacilityInput: React.FC = () => {
       "Nama Fasilitas",
       "Jenis Fasilitas",
       "Periode",
-      "Material Masuk (Kg)",
-      "Hasil Panen/Output (Kg)",
+      "Material Masuk (kg)",
+      "Hasil Panen/Output (kg)",
       "Jenis Output",
       "Tanggal Catat"
     ];
@@ -551,7 +551,7 @@ export const RwFacilityInput: React.FC = () => {
             <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-slate-100">
               {totalMaterialMasukKg.toLocaleString("id-ID")}
             </span>
-            <span className="text-xs text-slate-400 font-semibold">Kg Masuk</span>
+            <span className="text-xs text-slate-400 font-semibold">kg Masuk</span>
           </div>
           <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-medium truncate">
             Akumulasi input sampah organik &amp; bahan olahan
@@ -572,7 +572,7 @@ export const RwFacilityInput: React.FC = () => {
             <span className="text-2xl sm:text-3xl font-black text-purple-700 dark:text-purple-300">
               {totalOutputKg.toLocaleString("id-ID")}
             </span>
-            <span className="text-xs text-purple-600/80 font-bold">Kg Panen ({overallConversionEfficiency}%)</span>
+            <span className="text-xs text-purple-600/80 font-bold">kg Panen ({overallConversionEfficiency}%)</span>
           </div>
           <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-medium truncate">
             Kompos matang, maggot pupa, kasgot, dan POC
@@ -761,7 +761,7 @@ export const RwFacilityInput: React.FC = () => {
                               <div>
                                 <span className="text-slate-400 block text-[9px] uppercase font-bold">Kapasitas</span>
                                 <span className="font-bold text-slate-700">
-                                  {fac.kapasitas ? `${fac.kapasitas} Kg` : "-"}
+                                  {fac.kapasitas ? `${fac.kapasitas} kg` : "-"}
                                 </span>
                               </div>
                             </div>
@@ -915,7 +915,7 @@ export const RwFacilityInput: React.FC = () => {
                 {selectedFacilityObj && (
                   <p className="mt-1 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
                     📍 {selectedFacilityObj.alamat || "Lokasi RW bersangkutan"} &bull; Kapasitas:{" "}
-                    {selectedFacilityObj.kapasitas ? `${selectedFacilityObj.kapasitas} Kg` : "Tidak dibatasi"}
+                    {selectedFacilityObj.kapasitas ? `${selectedFacilityObj.kapasitas} kg` : "Tidak dibatasi"}
                   </p>
                 )}
               </div>
@@ -939,7 +939,7 @@ export const RwFacilityInput: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                    Material Masuk (Kg) <span className="text-rose-500">*</span>
+                    Material Masuk (kg) <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="number"
@@ -955,7 +955,7 @@ export const RwFacilityInput: React.FC = () => {
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                    Hasil Output (Kg) <span className="text-rose-500">*</span>
+                    Hasil Output (kg) <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="number"
@@ -1138,8 +1138,8 @@ export const RwFacilityInput: React.FC = () => {
                 <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-400 font-bold uppercase tracking-wider">
                   <tr>
                     <th className="px-3.5 py-2.5">Fasilitas &amp; Periode</th>
-                    <th className="px-3.5 py-2.5 text-right">Masuk (Kg)</th>
-                    <th className="px-3.5 py-2.5 text-right">Panen (Kg)</th>
+                    <th className="px-3.5 py-2.5 text-right">Masuk (kg)</th>
+                    <th className="px-3.5 py-2.5 text-right">Panen (kg)</th>
                     <th className="px-3.5 py-2.5">Jenis Output</th>
                     <th className="px-3.5 py-2.5 text-center">Status</th>
                   </tr>
@@ -1539,7 +1539,7 @@ export const RwFacilityInput: React.FC = () => {
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
-                    Kapasitas (Kg)
+                    Kapasitas (kg)
                   </label>
                   <input
                     type="number"

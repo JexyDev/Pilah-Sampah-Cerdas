@@ -281,12 +281,12 @@ export const ReviewDiscrepancy: React.FC = () => {
                   <span className="text-[9px] uppercase font-bold text-gray-400">Model AI</span>
                   <div className="text-sm font-bold text-indigo-700 font-mono">{selectedLog.aiClassification}</div>
                   <span className="text-[10px] text-gray-500 block">Conf: {Number(selectedLog.aiConfidence).toFixed(2)}%</span>
-                  <span className="text-[10px] text-gray-500 block">Berat: {Number(selectedLog.weightKg || 0).toFixed(2)} Kg</span>
+                  <span className="text-[10px] text-gray-500 block">Berat: {Number(selectedLog.weightKg || 0).toFixed(2)} kg</span>
                 </div>
                 <div className="space-y-1 border-l border-gray-200 pl-4">
                   <span className="text-[9px] uppercase font-bold text-gray-400">Fisik Petugas</span>
                   <div className="text-sm font-bold text-orange-700 font-mono">{selectedLog.petugasClassification}</div>
-                  <span className="text-[10px] text-gray-500 block">Actual: {Number(selectedLog.actualWeightPetugas || selectedLog.weightKg || 0).toFixed(2)} Kg</span>
+                  <span className="text-[10px] text-gray-500 block">Actual: {Number(selectedLog.actualWeightPetugas || selectedLog.weightKg || 0).toFixed(2)} kg</span>
                   <span className="text-[10px] text-gray-500 block truncate" title={selectedLog.geolocation}>Lokasi: {selectedLog.geolocation || "-"}</span>
                 </div>
               </div>
@@ -401,7 +401,7 @@ export const ReviewDiscrepancy: React.FC = () => {
 
               <div>
                 <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1.5">
-                  Berat Aktual (Kg)
+                  Berat Aktual (kg)
                 </label>
                 <input
                   type="number"

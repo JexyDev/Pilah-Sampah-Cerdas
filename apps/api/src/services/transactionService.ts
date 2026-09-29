@@ -163,7 +163,7 @@ export class TransactionService {
           rwId: finalRwId,
           fotoResiduUrl,
           berat,
-          unit: "Kg",
+          unit: "kg",
           lokasiGps,
           kategori: "residu",
           status: "ACCEPTED",

@@ -385,7 +385,7 @@ export function Trend({
   let yTicks: number[] = [];
 
   if (isKg) {
-    // Sumbu Y untuk satuan KG
+    // Sumbu Y untuk satuan kg
     const targetMax = Math.max(100, Math.ceil(maxValInSeries * 1.2));
     let step = 500;
     if (targetMax <= 200) step = 50;

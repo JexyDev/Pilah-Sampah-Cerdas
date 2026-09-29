@@ -442,7 +442,7 @@ export const AnalisisTataKelolaPage: React.FC = () => {
                     <span className="text-xs font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Reduksi Emisi Karbon (CO₂e)</span>
                     <FormulaTooltip
                       title="Reduksi Emisi Gas Rumah Kaca (Panduan IPCC / KLHK)"
-                      formula="Reduksi (kg CO₂e) = (Kg Organik × 0.58) + (Kg Anorganik × 1.45)"
+                      formula="Reduksi (kg CO₂e) = (kg Organik × 0.58) + (kg Anorganik × 1.45)"
                       description="Estimasi mitigasi emisi gas rumah kaca berbasis faktor IPCC / KLHK (0.58 kg CO₂e/kg dari pengolahan kompos/maggot & 1.45 kg CO₂e/kg dari daur ulang anorganik)."
                       isoStandard="ISO 14064 (Gas Rumah Kaca)"
                     />

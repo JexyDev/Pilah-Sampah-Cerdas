@@ -282,7 +282,7 @@ export const AktivitasMonitoring: React.FC = () => {
             <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider">Sampah Organik</p>
             <p className="text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5">
               {totalOrganik >= 1000 ? (totalOrganik / 1000).toFixed(2) : totalOrganik.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
-              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{totalOrganik >= 1000 ? "Ton" : "Kg"}</span>
+              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{totalOrganik >= 1000 ? "Ton" : "kg"}</span>
             </p>
           </div>
         </div>
@@ -296,7 +296,7 @@ export const AktivitasMonitoring: React.FC = () => {
             <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider">Sampah Anorganik</p>
             <p className="text-lg font-black text-amber-700 dark:text-amber-400 mt-0.5">
               {totalAnorganik >= 1000 ? (totalAnorganik / 1000).toFixed(2) : totalAnorganik.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
-              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{totalAnorganik >= 1000 ? "Ton" : "Kg"}</span>
+              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{totalAnorganik >= 1000 ? "Ton" : "kg"}</span>
             </p>
           </div>
         </div>
@@ -310,7 +310,7 @@ export const AktivitasMonitoring: React.FC = () => {
             <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider">Residu Non-Terpilah</p>
             <p className="text-lg font-black text-rose-600 dark:text-rose-400 mt-0.5">
               {totalResidu >= 1000 ? (totalResidu / 1000).toFixed(2) : totalResidu.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
-              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{totalResidu >= 1000 ? "Ton" : "Kg"}</span>
+              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{totalResidu >= 1000 ? "Ton" : "kg"}</span>
             </p>
           </div>
         </div>
@@ -366,7 +366,7 @@ export const AktivitasMonitoring: React.FC = () => {
                           <div className="bg-slate-900 text-white p-3 rounded-2xl shadow-xl text-xs font-bold border border-slate-700">
                             <p className="text-slate-300 font-medium">{data.name}</p>
                             <p className="text-emerald-400 text-sm font-extrabold mt-0.5">
-                              {data.total.toLocaleString("id-ID")} Kg
+                              {data.total.toLocaleString("id-ID")} kg
                             </p>
                           </div>
                         );
@@ -423,7 +423,7 @@ export const AktivitasMonitoring: React.FC = () => {
                         const data = payload[0].payload;
                         return (
                           <div className="bg-slate-900 text-white px-3 py-1.5 rounded-xl shadow-lg text-xs font-bold border border-slate-700">
-                            {data.name}: {data.value.toLocaleString("id-ID")} Kg
+                            {data.name}: {data.value.toLocaleString("id-ID")} kg
                           </div>
                         );
                       }
@@ -437,7 +437,7 @@ export const AktivitasMonitoring: React.FC = () => {
               <div className="absolute flex flex-col items-center justify-center pointer-events-none">
                 <span className="text-[10px] text-slate-500 dark:text-slate-400 font-black uppercase">Total</span>
                 <span className="text-base font-black text-slate-900 dark:text-slate-100">
-                  {grandTotalKg >= 1000 ? `${Math.round(grandTotalKg / 1000).toLocaleString("id-ID")} Ton` : `${Math.round(grandTotalKg).toLocaleString("id-ID")} Kg`}
+                  {grandTotalKg >= 1000 ? `${Math.round(grandTotalKg / 1000).toLocaleString("id-ID")} Ton` : `${Math.round(grandTotalKg).toLocaleString("id-ID")} kg`}
                 </span>
               </div>
             )}
@@ -447,15 +447,15 @@ export const AktivitasMonitoring: React.FC = () => {
           <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-center">
             <div className="p-2 bg-emerald-50 dark:bg-emerald-950/60 rounded-2xl border border-emerald-100 dark:border-emerald-700/50">
               <span className="text-[10px] font-black text-emerald-800 dark:text-emerald-300 block">Organik</span>
-              <span className="text-xs font-black text-emerald-700 dark:text-emerald-400">{Math.round(totalOrganik).toLocaleString("id-ID")} Kg</span>
+              <span className="text-xs font-black text-emerald-700 dark:text-emerald-400">{Math.round(totalOrganik).toLocaleString("id-ID")} kg</span>
             </div>
             <div className="p-2 bg-amber-50 dark:bg-amber-950/60 rounded-2xl border border-amber-100 dark:border-amber-700/50">
               <span className="text-[10px] font-black text-amber-800 dark:text-amber-300 block">Anorganik</span>
-              <span className="text-xs font-black text-amber-700 dark:text-amber-400">{Math.round(totalAnorganik).toLocaleString("id-ID")} Kg</span>
+              <span className="text-xs font-black text-amber-700 dark:text-amber-400">{Math.round(totalAnorganik).toLocaleString("id-ID")} kg</span>
             </div>
             <div className="p-2 bg-rose-50 dark:bg-rose-950/60 rounded-2xl border border-rose-100 dark:border-rose-700/50">
               <span className="text-[10px] font-black text-rose-800 dark:text-rose-300 block">Residu</span>
-              <span className="text-xs font-black text-rose-700 dark:text-rose-400">{Math.round(totalResidu).toLocaleString("id-ID")} Kg</span>
+              <span className="text-xs font-black text-rose-700 dark:text-rose-400">{Math.round(totalResidu).toLocaleString("id-ID")} kg</span>
             </div>
           </div>
         </div>

@@ -27,7 +27,7 @@ export function calculateNilaiEkonomi(
   const combined = `${t} ${p}`;
 
   if (combined.includes("maggot") || combined.includes("bsf")) {
-    return Math.round(h * 8000); // Rp 8.000 / Kg
+    return Math.round(h * 8000); // Rp 8.000 / kg
   }
   if (combined.includes("poc") || combined.includes("cair") || combined.includes("pupuk cair")) {
     return Math.round(h * 15000); // Rp 15.000 / Liter
@@ -38,9 +38,9 @@ export function calculateNilaiEkonomi(
     combined.includes("dino") ||
     combined.includes("hinodutro")
   ) {
-    return Math.round(h * 3000); // Rp 3.000 / Kg
+    return Math.round(h * 3000); // Rp 3.000 / kg
   }
-  return Math.round(h * 2500); // Rp 2.500 / Kg default kompos
+  return Math.round(h * 2500); // Rp 2.500 / kg default kompos
 }
 
 export function normalizeJenisOlahan(rawTeknologi?: string, rawProgram?: string): string {
@@ -157,7 +157,7 @@ function formatPemanfaatanRecord(item: any) {
         : "ORGANIK",
     jumlahBahanMasukKg: bahanMasuk,
     jumlahHasilKg: hasil,
-    unitHasil: item.unitHasil || "Kg",
+    unitHasil: item.unitHasil || "kg",
     lokasiFasilitas,
     penanggungJawab: "Pengelola RW & Mahasiswa KKN",
     targetPenerimaManfaat: item.jenisKomoditas

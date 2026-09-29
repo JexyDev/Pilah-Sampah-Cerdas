@@ -428,7 +428,7 @@ export const DEFAULT_TIMELINE_COBLONG = [
     bidangKegiatan: "Edukasi Warga & Sosialisasi",
     rekomendasiAksi: [
       "Bimbing warga RT pilot dalam membuang sampah: foto sampah AI -> scan QR -> verifikasi poin.",
-      "Uji coba integrasi timbangan IoT di pos pengumpulan dan validasi berat sampah (Kg) yang masuk ke dashboard.",
+      "Uji coba integrasi timbangan IoT di pos pengumpulan dan validasi berat sampah (kg) yang masuk ke dashboard.",
       "Evaluasi hasil uji coba 1 minggu di RT pilot: data kepatuhan pemilahan, kesalahan pilah (mismatch), dan kepuasan warga.",
     ],
     pertanyaanKritis: [

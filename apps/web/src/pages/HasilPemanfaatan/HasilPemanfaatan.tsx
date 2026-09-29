@@ -354,7 +354,7 @@ export const HasilPemanfaatan: React.FC = () => {
             </p>
             <p className="text-base sm:text-lg font-black text-emerald-700 dark:text-emerald-400 mt-0.5 truncate">
               {totalPanenKg.toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}{" "}
-              <span className="text-xs font-semibold text-slate-400">Kg / L</span>
+              <span className="text-xs font-semibold text-slate-400">kg / L</span>
             </p>
           </div>
         </div>
@@ -383,7 +383,7 @@ export const HasilPemanfaatan: React.FC = () => {
             </p>
             <p className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5 truncate">
               {totalBahanMasukKg.toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}{" "}
-              <span className="text-xs font-semibold text-slate-400">Kg</span>
+              <span className="text-xs font-semibold text-slate-400">kg</span>
             </p>
           </div>
         </div>
@@ -591,15 +591,14 @@ export const HasilPemanfaatan: React.FC = () => {
                       {Number(p.jumlahBahanMasukKg || 0).toLocaleString("id-ID", {
                         minimumFractionDigits: 0,
                         maximumFractionDigits: 2,
-                      })}{" "}
-                      Kg
+                      })}{" "} kg
                     </td>
                     <td className="px-4 py-3.5 text-center font-extrabold text-emerald-700 dark:text-emerald-400">
                       {Number(p.jumlahHasilKg || 0).toLocaleString("id-ID", {
                         minimumFractionDigits: 0,
                         maximumFractionDigits: 2,
                       })}{" "}
-                      {p.unitHasil || "Kg"}
+                      {p.unitHasil || "kg"}
                     </td>
                     <td className="px-4 py-3.5 text-center font-extrabold text-amber-600 dark:text-amber-400">
                       {p.nilaiEkonomiRp ? `Rp ${Number(p.nilaiEkonomiRp).toLocaleString("id-ID")}` : "-"}

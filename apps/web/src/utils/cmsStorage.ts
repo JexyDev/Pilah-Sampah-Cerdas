@@ -460,7 +460,7 @@ export const DEFAULT_CMS_CONTENT: LandingContentPayload = {
       readTime: "4 min baca",
       location: "Kecamatan Coblong, Kota Bandung",
       imageUrl: "/image/activity-2.webp",
-      summary: "Kolaborasi civitas akademika UNIKOM bersama aparat desa mewujudkan fasilitas biokonversi sampah organik berkapasitas 500kg per hari.",
+      summary: "Kolaborasi civitas akademika UNIKOM bersama aparat desa mewujudkan fasilitas biokonversi sampah organik berkapasitas 500 kg per hari.",
       content: "Universitas Komputer Indonesia (UNIKOM) bersama warga meresmikan Rumah Kompos Terpadu yang dilengkapi sistem monitoring digital BERSEKA. Melalui teknologi ini, suhu fermentasi kompos dan bobot timbulan sampah tercatat secara otomatis ke server cloud.\n\nKetua KKN Tematik menyampaikan bahwa fasilitas ini mampu mengolah hingga 500 kg sisa makanan per minggu, mencegah sampah membusuk di saluran drainase perumahan.",
       author: "Tim Humas KKN UNIKOM",
       isPublished: true,
@@ -493,7 +493,7 @@ export const DEFAULT_CMS_CONTENT: LandingContentPayload = {
     },
     {
       id: "news-04",
-      title: "Panen Perdana Kasgot Organik Binaan KKN Hasilkan 120 Kg Pupuk Berkualitas",
+      title: "Panen Perdana Kasgot Organik Binaan KKN Hasilkan 120 kg Pupuk Berkualitas",
       category: "Ekonomi Sirkular",
       date: "10 Mei 2026",
       readTime: "4 min baca",

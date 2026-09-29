@@ -440,8 +440,8 @@ export async function exportExecutiveReportDocx(payload: DocxReportPayload): Pro
               new TableRow({
                 children: [
                   new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Total Pemilahan Sampah", bold: true, size: 18 })] })] }),
-                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${ringkasanDampakSampah?.totalSampahTerpilahKg || 427.89} Kg`, bold: true, size: 18, color: "047857" })] })] }),
-                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `Organik: ${ringkasanDampakSampah?.organikKg || 261.71} Kg (61%), Anorganik: ${ringkasanDampakSampah?.anorganikKg || 166.18} Kg (39%)`, size: 18 })] })] }),
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${ringkasanDampakSampah?.totalSampahTerpilahKg || 427.89} kg`, bold: true, size: 18, color: "047857" })] })] }),
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `Organik: ${ringkasanDampakSampah?.organikKg || 261.71} kg (61%), Anorganik: ${ringkasanDampakSampah?.anorganikKg || 166.18} kg (39%)`, size: 18 })] })] }),
                 ],
               }),
               new TableRow({
@@ -455,7 +455,7 @@ export async function exportExecutiveReportDocx(payload: DocxReportPayload): Pro
                 children: [
                   new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Rasio Reduksi ke TPA", bold: true, size: 18 })] })] }),
                   new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${ringkasanDampakSampah?.rasioReduksiTpaPersen || 95.0}%`, bold: true, size: 18, color: "047857" })] })] }),
-                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `Mencegah residu ke TPA Sarimukti; Reduksi emisi ${ringkasanDampakSampah?.reduksiEmisiCo2Kg || 850.5} Kg CO2e`, size: 18 })] })] }),
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `Mencegah residu ke TPA Sarimukti; Reduksi emisi ${ringkasanDampakSampah?.reduksiEmisiCo2Kg || 850.5} kg CO2e`, size: 18 })] })] }),
                 ],
               }),
               new TableRow({
@@ -925,7 +925,7 @@ export async function exportWasteReportDocx(data: any, customConfig?: any): Prom
             alignment: AlignmentType.JUSTIFY,
             children: [
               new TextRun({
-                text: `Berdasarkan pemantauan sensor cerdas dan verifikasi AI platform BERSEKA di wilayah ${metadata.wilayah}, total timbulan terkelola mencapai ${kpi?.dampakDanReduksi?.totalSampahTerpilahKg || 427.89} Kg dengan rasio reduksi pembuangan ke TPA sebesar ${kpi?.dampakDanReduksi?.rasioReduksiTpaPersen || 95.0}%. Emisi karbon yang berhasil dicegah mencapai ${kpi?.dampakDanReduksi?.reduksiEmisiCo2Kg || 850.5} Kg CO₂e.`,
+                text: `Berdasarkan pemantauan sensor cerdas dan verifikasi AI platform BERSEKA di wilayah ${metadata.wilayah}, total timbulan terkelola mencapai ${kpi?.dampakDanReduksi?.totalSampahTerpilahKg || 427.89} kg dengan rasio reduksi pembuangan ke TPA sebesar ${kpi?.dampakDanReduksi?.rasioReduksiTpaPersen || 95.0}%. Emisi karbon yang berhasil dicegah mencapai ${kpi?.dampakDanReduksi?.reduksiEmisiCo2Kg || 850.5} kg CO₂e.`,
               }),
             ],
           }),
@@ -947,10 +947,10 @@ export async function exportWasteReportDocx(data: any, customConfig?: any): Prom
                     new TableRow({
                       children: [
                         new TableCell({ shading: { fill: "F3F4F6" }, children: [new Paragraph({ children: [new TextRun({ text: "Kelurahan", bold: true, size: 18 })] })] }),
-                        new TableCell({ shading: { fill: "F3F4F6" }, children: [new Paragraph({ children: [new TextRun({ text: "Total Terpilah (Kg)", bold: true, size: 18 })] })] }),
-                        new TableCell({ shading: { fill: "F3F4F6" }, children: [new Paragraph({ children: [new TextRun({ text: "Organik (Kg)", bold: true, size: 18 })] })] }),
-                        new TableCell({ shading: { fill: "F3F4F6" }, children: [new Paragraph({ children: [new TextRun({ text: "Anorganik (Kg)", bold: true, size: 18 })] })] }),
-                        new TableCell({ shading: { fill: "F3F4F6" }, children: [new Paragraph({ children: [new TextRun({ text: "Residu (Kg)", bold: true, size: 18 })] })] }),
+                        new TableCell({ shading: { fill: "F3F4F6" }, children: [new Paragraph({ children: [new TextRun({ text: "Total Terpilah (kg)", bold: true, size: 18 })] })] }),
+                        new TableCell({ shading: { fill: "F3F4F6" }, children: [new Paragraph({ children: [new TextRun({ text: "Organik (kg)", bold: true, size: 18 })] })] }),
+                        new TableCell({ shading: { fill: "F3F4F6" }, children: [new Paragraph({ children: [new TextRun({ text: "Anorganik (kg)", bold: true, size: 18 })] })] }),
+                        new TableCell({ shading: { fill: "F3F4F6" }, children: [new Paragraph({ children: [new TextRun({ text: "Residu (kg)", bold: true, size: 18 })] })] }),
                         new TableCell({ shading: { fill: "F3F4F6" }, children: [new Paragraph({ children: [new TextRun({ text: "Kepatuhan", bold: true, size: 18 })] })] }),
                       ],
                     }),

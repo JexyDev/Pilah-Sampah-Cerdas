@@ -802,17 +802,17 @@ export const wasteExecutiveReportService = {
       ["Periode Evaluasi", data.metadata.periodeEvaluasi],
       [],
       ["NERACA SIRKULARITAS & DAMPAK REDUKSI KE TPA", "NILAI", "SATUAN"],
-      ["Total Sampah Terpilah", data.kpiSummary.dampakDanReduksi.totalSampahTerpilahKg, "Kg"],
+      ["Total Sampah Terpilah", data.kpiSummary.dampakDanReduksi.totalSampahTerpilahKg, "kg"],
       ["Total Sampah Terpilah (Ton)", data.kpiSummary.dampakDanReduksi.totalSampahTerpilahTon, "Ton"],
-      ["Estimasi Tonase Tereduksi dari TPA", data.kpiSummary.dampakDanReduksi.tonaseTereduksiDariTpaKg, "Kg"],
+      ["Estimasi Tonase Tereduksi dari TPA", data.kpiSummary.dampakDanReduksi.tonaseTereduksiDariTpaKg, "kg"],
       ["Estimasi Tonase Tereduksi dari TPA (Ton)", data.kpiSummary.dampakDanReduksi.tonaseTereduksiDariTpaTon, "Ton"],
-      ["Residu Terangkut ke TPA", data.kpiSummary.dampakDanReduksi.residuKeTpaKg, "Kg"],
-      ["Total Timbulan Sampah", data.kpiSummary.dampakDanReduksi.totalTimbulanSampahKg, "Kg"],
+      ["Residu Terangkut ke TPA", data.kpiSummary.dampakDanReduksi.residuKeTpaKg, "kg"],
+      ["Total Timbulan Sampah", data.kpiSummary.dampakDanReduksi.totalTimbulanSampahKg, "kg"],
       ["Persentase Reduksi Sampah dari TPA", `${data.kpiSummary.dampakDanReduksi.rasioReduksiTpaPersen}%`, "Persen"],
       ["Rata-Rata Kepatuhan Pemilahan Warga", `${data.kpiSummary.dampakDanReduksi.rataRataKepatuhanPersen}%`, "Persen"],
-      ["Estimasi Reduksi Emisi Gas Rumah Kaca", data.kpiSummary.dampakDanReduksi.reduksiEmisiCo2Kg, "Kg CO2e"],
+      ["Estimasi Reduksi Emisi Gas Rumah Kaca", data.kpiSummary.dampakDanReduksi.reduksiEmisiCo2Kg, "kg CO2e"],
       [],
-      ["KOMPOSISI TIMBULAN SAMPAH", "BERAT (KG)", "PERSENTASE"],
+      ["KOMPOSISI TIMBULAN SAMPAH", "BERAT (kg)", "PERSENTASE"],
       ["Sampah Organik", data.kpiSummary.dampakDanReduksi.rasioPemilahan.organikKg, `${data.kpiSummary.dampakDanReduksi.rasioPemilahan.organikPersen}%`],
       ["Sampah Anorganik", data.kpiSummary.dampakDanReduksi.rasioPemilahan.anorganikKg, `${data.kpiSummary.dampakDanReduksi.rasioPemilahan.anorganikPersen}%`],
       ["Sampah Residu (ke TPA)", data.kpiSummary.dampakDanReduksi.rasioPemilahan.residuKg, `${data.kpiSummary.dampakDanReduksi.rasioPemilahan.residuPersen}%`],
@@ -834,10 +834,10 @@ export const wasteExecutiveReportService = {
         "BASELINE AWAL (%)",
         "KEPATUHAN SAAT INI (%)",
         "DELTA PERTUMBUHAN (%)",
-        "TOTAL TERPILAH (KG)",
-        "ORGANIK (KG)",
-        "ANORGANIK (KG)",
-        "RESIDU (KG)",
+        "TOTAL TERPILAH (kg)",
+        "ORGANIK (kg)",
+        "ANORGANIK (kg)",
+        "RESIDU (kg)",
         "TOTAL FASILITAS",
         "TPS3R",
         "BANK SAMPAH",
@@ -867,7 +867,7 @@ export const wasteExecutiveReportService = {
 
     // Sheet 3: Database Fasilitas Infrastruktur
     const fasilitasRows = [
-      ["NAMA FASILITAS", "JENIS FASILITAS", "KELURAHAN", "RW", "PIC / PENANGGUNG JAWAB", "KONTAK", "KAPASITAS (KG/HARI)", "LOG PRODUKSI"],
+      ["NAMA FASILITAS", "JENIS FASILITAS", "KELURAHAN", "RW", "PIC / PENANGGUNG JAWAB", "KONTAK", "KAPASITAS (kg/hari)", "LOG PRODUKSI"],
       ...data.fasilitasDetail.map((f) => [
         f.nama,
         f.jenis,
@@ -884,7 +884,7 @@ export const wasteExecutiveReportService = {
 
     // Sheet 4: Tren Berkala Mingguan
     const trenRows = [
-      ["PEKAN", "ORGANIK (KG)", "ANORGANIK (KG)", "RESIDU KE TPA (KG)", "KEPATUHAN PEMILAHAN (%)"],
+      ["PEKAN", "ORGANIK (kg)", "ANORGANIK (kg)", "RESIDU KE TPA (kg)", "KEPATUHAN PEMILAHAN (%)"],
       ...data.trenBerkala.map((t) => [
         t.pekan,
         t.organikKg,

@@ -354,7 +354,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
                         : "-"}
                     </td>
                     <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
-                      {item.volumeSampah?.totalVolumeKgPerHari ? `${Number(item.volumeSampah.totalVolumeKgPerHari).toFixed(2)} Kg` : "-"}
+                      {item.volumeSampah?.totalVolumeKgPerHari ? `${Number(item.volumeSampah.totalVolumeKgPerHari).toFixed(2)} kg` : "-"}
                     </td>
                     <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
                       {item.bankSampahPengolahan?.bankSampahAktif !== null && item.bankSampahPengolahan?.bankSampahAktif !== undefined
@@ -490,7 +490,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
                     <div className="flex items-baseline gap-2">
                       <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100">
                         {avgDeltaVolume > 0 ? "+" : ""}
-                        {avgDeltaVolume.toFixed(2)} Kg
+                        {avgDeltaVolume.toFixed(2)} kg
                       </h3>
                       <span
                         className={`text-xs font-bold flex items-center gap-0.5 ${
@@ -569,7 +569,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
             {/* Chart: Berat Sampah */}
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm">
               <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
-                <Weight size={16} className="text-rose-600" /> Komparasi Berat Sampah (Kg/Hari)
+                <Weight size={16} className="text-rose-600" /> Komparasi Berat Sampah (kg/hari)
               </h3>
               <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -578,7 +578,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
                     <XAxis dataKey="namaKelurahan" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b', fontWeight: 600 }} />
                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
                     <RechartsTooltip 
-                      formatter={(val: any) => [`${val} Kg`, '']}
+                      formatter={(val: any) => [`${val} kg`, '']}
                       cursor={{fill: '#f1f5f9'}} 
                       contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.1)', fontWeight: 600 }}
                     />
@@ -633,7 +633,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
                           {item.volumeSampah.delta !== null ? (
                             <span className={item.volumeSampah.delta < 0 ? "text-emerald-600 flex items-center gap-1" : item.volumeSampah.delta > 0 ? "text-rose-600 flex items-center gap-1" : "text-slate-500 flex items-center gap-1"}>
                                {item.volumeSampah.delta > 0 ? <TrendingUp size={14}/> : item.volumeSampah.delta < 0 ? <TrendingDown size={14}/> : <Minus size={14}/>}
-                               {item.volumeSampah.delta > 0 ? '+' : ''}{Number(item.volumeSampah.delta).toFixed(2)} Kg
+                               {item.volumeSampah.delta > 0 ? '+' : ''}{Number(item.volumeSampah.delta).toFixed(2)} kg
                             </span>
                           ) : "-"}
                         </td>

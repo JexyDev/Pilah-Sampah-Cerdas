@@ -63,7 +63,7 @@ export const BarChartRace: React.FC = () => {
   };
 
   const getUnit = () => {
-    if (metricTab === "TONASE") return "Kg";
+    if (metricTab === "TONASE") return "kg";
     if (metricTab === "KEPATUHAN") return "%";
     return "Poin";
   };
@@ -102,7 +102,7 @@ export const BarChartRace: React.FC = () => {
             }`}
           >
             <Scale size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-            Tonase (Kg)
+            Tonase (kg)
           </button>
 
           <button

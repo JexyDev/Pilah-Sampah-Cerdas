@@ -133,7 +133,7 @@ export default function SetorSampah() {
         setRecentlyAddedId(null);
       }, 4000);
 
-      showToast.success(`Setoran baru: ${newDeposit.warga} (${newDeposit.berat} Kg ${newDeposit.jenis})`);
+      showToast.success(`Setoran baru: ${newDeposit.warga} (${newDeposit.berat} kg ${newDeposit.jenis})`);
     });
 
     return () => {
@@ -425,7 +425,7 @@ export default function SetorSampah() {
               ? (totalBerat / 1000).toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
               : totalBerat.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
             <span className="text-xs font-normal text-slate-500 dark:text-slate-400">
-              {totalBerat >= 1000 ? "Ton" : "Kg"}
+              {totalBerat >= 1000 ? "Ton" : "kg"}
             </span>
           </div>
         </div>
@@ -600,7 +600,7 @@ export default function SetorSampah() {
                   <th className="py-3 px-3">Nama Pemilah</th>
                   <th className="py-3 px-3">Wilayah</th>
                   <th className="py-3 px-3">Kategori</th>
-                  <th className="py-3 px-3 text-right">Berat (Kg)</th>
+                  <th className="py-3 px-3 text-right">Berat (kg)</th>
                   <th className="py-3 px-3 text-right">Poin</th>
                   <th className="py-3 px-3 text-center">Akurasi AI</th>
                   <th className="py-3 px-3 text-center">Status</th>
@@ -834,7 +834,7 @@ export default function SetorSampah() {
                     <Scale size={12} className="text-[#009966]" /> Berat Timbangan
                   </div>
                   <div className="font-mono font-black text-[#009966] text-sm">
-                    {selectedLog.berat} Kg
+                    {selectedLog.berat} kg
                   </div>
                 </div>
 
