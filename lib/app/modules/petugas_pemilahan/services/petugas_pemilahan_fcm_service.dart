@@ -4,10 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/providers/repository_providers.dart';
 
 import '../../../core/values/api_constants.dart';
-import '../../../data/services/notification_engine.dart';
-import '../../../data/services/local_notification_cache_service.dart';
-import '../../auth/controllers/auth_controller.dart';
-import '../controllers/petugas_pemilahan_notifikasi_controller.dart';
 
 class PetugasPemilahanFcmService {
   PetugasPemilahanFcmService(this.ref);
@@ -36,51 +32,8 @@ class PetugasPemilahanFcmService {
         await _sendTokenToBackend(token);
       }
 
-      // Listen perubahan token secara berkala
-      messaging.onTokenRefresh.listen((newToken) {
-        _sendTokenToBackend(newToken);
-      });
-
-      // Meneruskan pesan FCM (Push Notification) yang masuk ke NotificationEngine & Cache
-      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-        debugPrint(
-          '[PetugasPemilahanFCM] Menerima pesan di foreground: ${message.messageId}',
-        );
-
-        final title = message.notification?.title ??
-            message.data['title']?.toString() ??
-            'Info Petugas';
-        final body = message.notification?.body ??
-            message.data['body']?.toString() ??
-            message.data['desc']?.toString() ??
-            message.data['message']?.toString() ??
-            'Ada pembaruan data';
-        final type =
-            (message.data['event']?.toString() ??
-                    message.data['type']?.toString() ??
-                    'TIMBANGAN_PEMILAHAN')
-                .toUpperCase();
-
-        final user = ref.read(authProvider).user;
-        if (user != null) {
-          LocalNotificationCacheService().addNotification(
-            userId: user.id,
-            role: 'PETUGAS_PEMILAHAN',
-            title: title,
-            desc: body,
-            type: type,
-            id: message.messageId,
-          );
-        }
-
-        ref.invalidate(petugasPemilahanNotificationsProvider);
-
-        NotificationEngine().showGenericNotification(
-          id: message.messageId.hashCode,
-          title: title,
-          body: body,
-        );
-      });
+      // ponytail: FCM foreground listener sudah terpusat di main.dart; tidak perlu listener dobel di sini
+      debugPrint('[PetugasPemilahanFCM] Token registered. Foreground listener handled by main.dart.');
     } catch (e) {
       debugPrint('[PetugasPemilahanFCM] Error registering FCM token: $e');
     }

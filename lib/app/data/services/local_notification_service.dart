@@ -1,9 +1,8 @@
-import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
+import '../../routes/app_routes.dart';
 
 class LocalNotificationService {
   LocalNotificationService._();
@@ -42,81 +41,37 @@ class LocalNotificationService {
         if (response.payload == 'scan_sampah') {
           // Navigasi ke scan sampah via navigator key
           if (navigatorKey.currentState != null) {
-            navigatorKey.currentState!.pushNamed('/scan');
+            navigatorKey.currentState!.pushNamed(AppRoutes.scan);
           }
         }
       },
     );
 
+    final androidPlugin = _notificationsPlugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+    if (androidPlugin != null) {
+      // ponytail: pre-create backend_channel so high-priority FCM background notifications pop up on Android 8+
+      await androidPlugin.createNotificationChannel(
+        const AndroidNotificationChannel(
+          'backend_channel',
+          'Notifikasi Sistem Backend',
+          description: 'Notifikasi resmi dari backend & atasan',
+          importance: Importance.max,
+          playSound: true,
+          enableVibration: true,
+        ),
+      );
+    }
+
     _isInitialized = true;
     debugPrint('[LocalNotif] Initialized successfully');
   }
 
-  /// Jadwalkan pengingat sore (16:00)
+  /// Batalkan sisa jadwal lokal lama — notifikasi jadwal harian kini murni dikirim backend via FCM
   Future<void> scheduleDailyReminders() async {
     if (!_isInitialized) return;
-
-    // Batalkan jadwal yang mungkin ada sebelumnya
     await _notificationsPlugin.cancelAll();
-
-    // Pengingat Sore (16:00) untuk Petugas Pemilahan
-    await _scheduleDailyAtTime(
-      id: 2,
-      title: 'Cek Tempat Sampah Warga! 🚮',
-      body: 'Waktunya mengecek dan verifikasi status tempat sampah warga di aplikasi.',
-      hour: 16,
-      minute: 0,
-    );
-
-    debugPrint('[LocalNotif] Reminders scheduled for 16:00');
-  }
-
-  Future<void> _scheduleDailyAtTime({
-    required int id,
-    required String title,
-    required String body,
-    required int hour,
-    required int minute,
-  }) async {
-    if (kIsWeb || (!Platform.isAndroid && !Platform.isIOS)) return;
-    final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
-    tz.TZDateTime scheduledDate = tz.TZDateTime(
-      tz.local,
-      now.year,
-      now.month,
-      now.day,
-      hour,
-      minute,
-    );
-
-    // Jika waktu sudah lewat hari ini, jadwalkan untuk besok
-    if (scheduledDate.isBefore(now)) {
-      scheduledDate = scheduledDate.add(const Duration(days: 1));
-    }
-
-    await _notificationsPlugin.zonedSchedule(
-      id: id,
-      title: title,
-      body: body,
-      scheduledDate: scheduledDate,
-      notificationDetails: const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'daily_reminders',
-          'Pengingat Harian',
-          channelDescription: 'Notifikasi pengingat untuk buang sampah',
-          importance: Importance.max,
-          priority: Priority.high,
-          icon: '@mipmap/ic_launcher',
-        ),
-        iOS: DarwinNotificationDetails(
-          presentAlert: true,
-          presentBadge: true,
-          presentSound: true,
-        ),
-      ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      matchDateTimeComponents: DateTimeComponents.time,
-      payload: 'scan_sampah',
-    );
+    debugPrint('[LocalNotif] Cleared legacy daily reminders. Driven purely by backend.');
   }
 }

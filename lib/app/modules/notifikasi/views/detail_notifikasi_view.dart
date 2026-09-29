@@ -11,6 +11,7 @@ class DetailNotifikasiView extends StatelessWidget {
     switch (type.toUpperCase()) {
       case 'POIN_BERTAMBAH':
         return const Color(0xFFFEF3C7); // Light Amber
+      case 'TEMPAT_SAMPAH_PENUH':
       case 'TONG_PENUH':
         return const Color(0xFFFEE2E2); // Light Red
       case 'PENGAJUAN_PENGOSONGAN':
@@ -29,6 +30,7 @@ class DetailNotifikasiView extends StatelessWidget {
     switch (type.toUpperCase()) {
       case 'POIN_BERTAMBAH':
         return const Color(0xFFD97706); // Amber
+      case 'TEMPAT_SAMPAH_PENUH':
       case 'TONG_PENUH':
         return const Color(0xFFDC2626); // Red
       case 'PENGAJUAN_PENGOSONGAN':

@@ -1,3 +1,4 @@
+import 'dart:async' as dart_async;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -60,6 +61,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   final NotificationRepository _notificationRepository;
   final Ref _ref;
   late final Future<void> _initFuture;
+  dart_async.StreamSubscription<String>? _tokenRefreshSub;
 
   Future<void> get initialized => _initFuture;
 
@@ -132,8 +134,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
           await _notificationRepository.registerDeviceToken(token);
         }
 
-        // Dengarkan perubahan token (rotasi FCM)
-        FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
+        // Dengarkan perubahan token (rotasi FCM) — cancel dulu yg lama agar tidak menumpuk
+        _tokenRefreshSub?.cancel();
+        _tokenRefreshSub = FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
           _notificationRepository.registerDeviceToken(newToken);
         });
       }

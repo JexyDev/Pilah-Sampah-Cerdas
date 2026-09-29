@@ -47,6 +47,7 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 /// Background message handler â€” harus top-level function (bukan method class).
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  WidgetsFlutterBinding.ensureInitialized();
   final title = message.notification?.title ??
       message.data['title']?.toString() ??
       'Notifikasi Baru';
@@ -61,14 +62,14 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   try {
     final type = message.data['type']?.toString() ?? 'SYSTEM';
     String role = message.data['role']?.toString() ?? 'WARGA';
-    String userId = message.data['userId']?.toString() ?? 'system';
+    String? userId;
 
     try {
       const storage = SafeStorage();
       final userData = await storage.read(key: AppConfig.userDataKey);
       if (userData != null) {
         final decoded = jsonDecode(userData);
-        userId = decoded['id']?.toString() ?? userId;
+        userId = decoded['id']?.toString();
         role = (decoded['role'] ??
                 decoded['userRole'] ??
                 decoded['roleName'] ??
@@ -77,6 +78,12 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
             .toUpperCase();
       }
     } catch (_) {}
+
+    // ponytail: skip save jika userId tidak bisa di-resolve; mencegah notifikasi orphan di key 'system'
+    if (userId == null || userId.isEmpty) {
+      debugPrint('[FCM Background] Skipped save: userId not resolved from storage');
+      return;
+    }
 
     await FirebaseNotificationService().saveNotification(
       userId: userId,
@@ -225,6 +232,15 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
             ref.invalidate(userLeaderboardRankProvider);
             ref.invalidate(binsProvider);
             debugPrint('-> Warga providers invalidated in background.');
+          } else if (event == 'BIN_EMPTIED' ||
+              event == 'RESET_APPROVED' ||
+              event == 'RESET_REQUEST_REVIEWED' ||
+              event.contains('RESET') ||
+              event.contains('BIN') ||
+              event.contains('KOSONG')) {
+            ref.invalidate(binsProvider);
+            ref.invalidate(petugasPemilahanNotificationsProvider);
+            debugPrint('-> Tempat Sampah & Petugas provider invalidated in background.');
           } else if (event == 'REFRESH_KEGIATAN_MAHASISWA') {
             ref.invalidate(riwayatKknControllerProvider);
             ref.invalidate(logbookListProvider);
@@ -263,14 +279,11 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
         final titleUpper = title.toUpperCase();
         final bodyUpper = body.toUpperCase();
 
-        // Blokir sama sekali notifikasi penjemputan & seed dummy dari System Notification Tray
-        if (type.contains('JADWAL') ||
-            type.contains('JEMPUT') ||
+        // Blokir hanya notifikasi penjemputan lama & seed dummy — JANGAN blokir 'JADWAL' karena backend cron mengirim jadwal sah
+        if (type.contains('JEMPUT') ||
             type.contains('PENGANGKUTAN') ||
-            titleUpper.contains('JADWAL') ||
             titleUpper.contains('JEMPUT') ||
             titleUpper.contains('PENGANGKUTAN') ||
-            titleUpper.contains('TERDAPAT TEMPAT SAMPAH WARGA') ||
             titleUpper.contains('HARUS DIAMBIL') ||
             bodyUpper.contains('HARUS DIAMBIL') ||
             bodyUpper.contains('ORG004520')) {
@@ -282,14 +295,14 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
 
         debugPrint('[FCM Foreground] Menerima notifikasi: $title');
 
+        final notifId =
+            message.data['notificationId']?.toString() ??
+            message.messageId ??
+            'fcm_${DateTime.now().millisecondsSinceEpoch}';
+
         // Catat push notification ke FirebaseNotificationService & LocalCache agar tersimpan di disk Halaman Notifikasi in-app
         final user = ref.read(authProvider).user;
         if (user != null && (title.isNotEmpty || body.isNotEmpty)) {
-          final notifId =
-              message.data['notificationId']?.toString() ??
-              message.messageId ??
-              'fcm_${DateTime.now().millisecondsSinceEpoch}';
-
           await FirebaseNotificationService().saveNotification(
             userId: user.id,
             role: user.role.name,
@@ -311,15 +324,28 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
 
         final isPoin = type.contains('POIN') || titleUpper.contains('POIN');
         final isHistory = type.contains('LEAVE_') || type.contains('PROKER_') || type.contains('KEGIATAN_');
-        final payloadRoute = isPoin 
-            ? 'ROUTE_POIN' 
-            : (isHistory ? 'ROUTE_HISTORY' : 'ROUTE_NOTIF');
+        final isReset = type.contains('RESET') || type.contains('PENGAJUAN') || type.contains('TEMPAT SAMPAH');
 
-        // Tampilkan notifikasi sistem di luar aplikasi (system notification tray)
-        // Gunakan type.hashCode sebagai ID agar notifikasi dari batch yang sama (misal: Approve 20 logbook) 
-        // saling menimpa (overwrite) dan tidak melakukan spam getar/bunyi bertubi-tubi di HP.
+        final String payloadRoute;
+        if (isReset && user?.role == UserRole.petugasPemilahan) {
+          payloadRoute = 'ROUTE_PENGAJUAN_WARGA';
+        } else if (isPoin) {
+          payloadRoute = 'ROUTE_POIN';
+        } else if (isHistory) {
+          payloadRoute = 'ROUTE_HISTORY';
+        } else if (user?.role == UserRole.petugasPemilahan) {
+          payloadRoute = 'ROUTE_PETUGAS_NOTIF';
+        } else if (user?.role == UserRole.warga) {
+          payloadRoute = 'ROUTE_WARGA_NOTIF';
+        } else {
+          payloadRoute = 'ROUTE_NOTIF';
+        }
+
+        // Tampilkan notifikasi sistem di luar aplikasi dengan ID unik per notifikasi
+        // agar tiap notifikasi berdiri sendiri di tray Android tanpa saling menimpa
+        final uniqueNotifId = notifId.hashCode.remainder(2147483647).abs();
         NotificationEngine().showGenericNotification(
-          id: type.hashCode,
+          id: uniqueNotifId,
           title: title,
           body: body,
           payload: payloadRoute,
@@ -331,16 +357,33 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
         ref.invalidate(mahasiswaNotificationsProvider);
         ref.invalidate(petugasPemilahanNotificationsProvider);
 
+        // Jika user warga menerima push notifikasi apapun, otomatis refresh tempat sampah
+        if (user?.role == UserRole.warga) {
+          ref.invalidate(binsProvider);
+        }
+
         // Jika FCM membawa data payload event, invalidate provider terkait
         // agar data di Beranda, Riwayat, dan Poin langsung segar.
-        final event = message.data['event'] as String?;
+        final event = (message.data['event']?.toString() ??
+                message.data['type']?.toString() ??
+                message.data['triggerType']?.toString() ??
+                '')
+            .toUpperCase();
         if (event == 'TRANSACTION_SUCCESS') {
           ref.invalidate(wasteLogsProvider);
           ref.invalidate(totalPointsProvider);
           ref.invalidate(pointHistoryProvider);
           ref.invalidate(dailyPointsProvider);
           ref.invalidate(binsProvider);
-        } else if (event == 'BIN_EMPTIED' || event == 'RESET_APPROVED') {
+        } else if (event == 'BIN_EMPTIED' ||
+            event == 'RESET_APPROVED' ||
+            event == 'RESET_REQUEST_REVIEWED' ||
+            event.contains('RESET') ||
+            event.contains('BIN') ||
+            event.contains('KOSONG') ||
+            type.contains('RESET') ||
+            type.contains('BIN') ||
+            type.contains('KOSONG')) {
           ref.invalidate(binsProvider);
         } else if (event == 'REFRESH_KEGIATAN_MAHASISWA') {
           ref.invalidate(riwayatKknControllerProvider);
@@ -371,8 +414,8 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
           debugPrint(
             '[FCM Terminated Tap] Tapped notification: ${message.notification?.title}',
           );
-          // Kasih delay sedikit agar app selesai render dulu
-          Future.delayed(const Duration(seconds: 2), () {
+          // Delay cukup agar splash selesai render (splash butuh 2-3.5 detik)
+          Future.delayed(const Duration(seconds: 4), () {
             _handleNotificationRoute(message);
           });
         }
@@ -383,23 +426,29 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
   }
 
   void _handleNotificationRoute(RemoteMessage message) async {
+    // ponytail: refresh bins and notifications when app opens from push notification
+    ref.invalidate(binsProvider);
+    ref.invalidate(wargaNotificationsProvider);
+    ref.invalidate(notificationsProvider);
+
     const storage = SafeStorage();
     final userData = await storage.read(key: AppConfig.userDataKey);
+    if (userData == null) {
+      debugPrint('[FCM Route] Aborted: user is not logged in');
+      return;
+    }
 
     String role = 'WARGA'; // Default
-
-    if (userData != null) {
-      try {
-        final decoded = jsonDecode(userData);
-        role =
-            (decoded['role'] ??
-                    decoded['userRole'] ??
-                    decoded['roleName'] ??
-                    'WARGA')
-                .toString()
-                .toUpperCase();
-      } catch (_) {}
-    }
+    try {
+      final decoded = jsonDecode(userData);
+      role =
+          (decoded['role'] ??
+                  decoded['userRole'] ??
+                  decoded['roleName'] ??
+                  'WARGA')
+              .toString()
+              .toUpperCase();
+    } catch (_) {}
 
     if (role == 'MAHASISWA_KKN' || role == 'MAHASISWA') {
       final type = (message.data['type'] ?? '').toString().toUpperCase();
@@ -426,8 +475,18 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
 
       navigatorKey.currentState?.pushNamed(AppRoutes.mahasiswaNotifikasi);
     } else if (role == 'PETUGAS_RESIDU' || role == 'PETUGAS_PEMILAHAN') {
+      final event = (message.data['event'] ?? message.data['type'] ?? '').toString().toUpperCase();
+      if (event == 'NEW_RESET_REQUEST' || event.contains('RESET') || event.contains('PENGAJUAN')) {
+        navigatorKey.currentState?.pushNamed(AppRoutes.pengajuanWarga);
+        return;
+      }
       navigatorKey.currentState?.pushNamed(AppRoutes.petugasNotifikasi);
     } else {
+      final event = (message.data['event'] ?? message.data['type'] ?? '').toString().toUpperCase();
+      if (event == 'RESET_APPROVED' || event == 'BIN_EMPTIED' || event.contains('RESET') || event.contains('KOSONG')) {
+        navigatorKey.currentState?.pushNamed(AppRoutes.main);
+        return;
+      }
       navigatorKey.currentState?.pushNamed(AppRoutes.notifikasi);
     }
   }

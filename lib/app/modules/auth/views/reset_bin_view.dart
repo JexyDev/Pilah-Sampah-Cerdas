@@ -169,8 +169,8 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
     final String userId = user?.id ?? '';
 
     // Error listener
-    ref.listen(resetBinProvider, (_, next) {
-      if (next.errorCode != null && !next.isLoading) {
+    ref.listen(resetBinProvider, (previous, next) {
+      if (next.errorCode != null && previous?.errorCode != next.errorCode && !next.isLoading) {
         _showThrottledSnackBar(
           _mapError(next.errorCode!, next.errorMessage),
           backgroundColor: AppColors.dangerRed,
@@ -178,7 +178,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
         ref.read(resetBinProvider.notifier).reset();
       }
       // AUTO-REFRESH: setelah pengajuan berhasil, refresh data tempat sampah & notifikasi
-      if (next.isSuccess && !next.isLoading) {
+      if (previous?.isSuccess != true && next.isSuccess && !next.isLoading) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
             setState(() {
@@ -213,7 +213,13 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
       },
       child: Scaffold(
         backgroundColor: AppColors.backgroundCanvas,
-        appBar: AppBar(title: const Text(AppStrings.resetTitle)),
+        appBar: AppBar(
+          title: const FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(AppStrings.resetTitle),
+          ),
+        ),
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(AppDimensions.md),
@@ -325,6 +331,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
             )
           else if (listPetugas.isNotEmpty) ...[
             DropdownButtonFormField<String>(
+              isExpanded: true,
               initialValue: listPetugas.any((p) => p.id == _selectedPetugasId)
                   ? _selectedPetugasId
                   : listPetugas.first.id,
@@ -349,10 +356,13 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                         color: AppColors.primaryGreen,
                       ),
                       const SizedBox(width: 8),
-                      Text(
-                        petugas.name.isNotEmpty
-                            ? petugas.name
-                            : 'Petugas ${petugas.id}',
+                      Expanded(
+                        child: Text(
+                          petugas.name.isNotEmpty
+                              ? petugas.name
+                              : 'Petugas ${petugas.id}',
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                   ),
@@ -556,6 +566,14 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                     return;
                   }
 
+                  if (bin.currentVolumeL <= 0.0) {
+                    _showThrottledSnackBar(
+                      'Tempat Sampah ${bin.binType.displayName} sudah kosong (0%), tidak perlu dikosongkan.',
+                      backgroundColor: AppColors.primaryBlue,
+                    );
+                    return;
+                  }
+
                   setState(() {
                     if (_selectedBinIds.contains(bin.id)) {
                       _selectedBinIds.remove(bin.id);
@@ -654,6 +672,27 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                                           fontSize: 10,
                                           fontWeight: FontWeight.bold,
                                           color: AppColors.warningYellow,
+                                        ),
+                                      ),
+                                    ),
+                                  ] else if (bin.currentVolumeL <= 0.0) ...[
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 3,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.green.shade50,
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(color: Colors.green.shade200),
+                                      ),
+                                      child: const Text(
+                                        'KOSONG (0%)',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.primaryGreen,
                                         ),
                                       ),
                                     ),

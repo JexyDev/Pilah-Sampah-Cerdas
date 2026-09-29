@@ -15,8 +15,6 @@ import '../../core/utils/image_compressor.dart';
 import '../../core/utils/network_exception_helper.dart';
 import '../../core/values/api_constants.dart';
 import '../../core/values/app_config.dart';
-import '../services/notification_engine.dart';
-import '../services/local_notification_cache_service.dart';
 
 /// Implementasi BinRepository yang terhubung ke backend Express.js.
 ///
@@ -766,17 +764,7 @@ class ApiBinRepository implements BinRepository {
               await apiClient.secureStorage.delete(
                 key: 'active_reset_request_$userId',
               );
-              // ponytail: Trigger notifikasi selesai pengosongan ke Warga
-              NotificationEngine().showResetCompletedNotification();
-              LocalNotificationCacheService().addNotification(
-                userId: userId,
-                role: 'WARGA',
-                title: 'Tempat Sampah Telah Dikosongkan! 🗑️',
-                desc:
-                    'Pengajuan pengosongan tempat sampah Anda telah selesai diproses oleh petugas. Kapasitas kembali 0%.',
-                type: 'PENGAJUAN_PENGOSONGAN',
-                icon: 'delete_sweep',
-              );
+              // ponytail: notifikasi selesai pengosongan dikirim murni via backend FCM
               return null;
             }
           }
@@ -801,16 +789,7 @@ class ApiBinRepository implements BinRepository {
             await apiClient.secureStorage.delete(
               key: 'active_reset_request_$userId',
             );
-            NotificationEngine().showResetCompletedNotification();
-            LocalNotificationCacheService().addNotification(
-              userId: userId,
-              role: 'WARGA',
-              title: 'Tempat Sampah Telah Dikosongkan! 🗑️',
-              desc:
-                  'Pengajuan pengosongan tempat sampah Anda telah selesai diproses oleh petugas. Kapasitas kembali 0%.',
-              type: 'PENGAJUAN_PENGOSONGAN',
-              icon: 'delete_sweep',
-            );
+            // ponytail: notifikasi selesai pengosongan dikirim murni via backend FCM
             return null;
           }
         } catch (e) {
@@ -998,8 +977,11 @@ class ApiBinRepository implements BinRepository {
 
     final bool isResetPending =
         json['isResetPending'] == true ||
+        json['isPendingReset'] == true ||
+        json['resetRequestStatus']?.toString().toUpperCase() == 'PENDING' ||
         json['resetStatus']?.toString().toUpperCase() == 'PENDING' ||
-        json['status']?.toString().toUpperCase() == 'RESET_PENDING';
+        json['status']?.toString().toUpperCase() == 'RESET_PENDING' ||
+        json['status']?.toString().toUpperCase() == 'PENDING PENGOSONGAN';
 
     return BinEntity(
       id: json['id']?.toString() ?? '',

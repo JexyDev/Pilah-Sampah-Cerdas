@@ -228,10 +228,11 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
                     }
                     if (_selectedFilter == 'Kapasitas Tempat Sampah') {
                       return typeUpper.contains('KAPASITAS') ||
+                          typeUpper.contains('TEMPAT_SAMPAH') ||
                           typeUpper.contains('TONG') ||
                           typeUpper.contains('PENUH') ||
                           titleLower.contains('kapasitas') ||
-                          titleLower.contains('tong') ||
+                          titleLower.contains('tempat sampah') ||
                           titleLower.contains('penuh');
                     }
                     if (_selectedFilter == 'Pengajuan Pengosongan') {
@@ -492,7 +493,8 @@ class _NotificationTile extends StatelessWidget {
     if (typeUpper.contains('DITOLAK') || iconName == 'cancel') {
       return Icon(Icons.cancel_rounded, color: iconColor, size: 22);
     }
-    if (typeUpper.contains('TONG') ||
+    if (typeUpper.contains('TEMPAT_SAMPAH') ||
+        typeUpper.contains('TONG') ||
         typeUpper.contains('PENUH') ||
         typeUpper.contains('KAPASITAS')) {
       return Icon(Icons.delete_rounded, color: iconColor, size: 22);
@@ -528,6 +530,7 @@ class _NotificationTile extends StatelessWidget {
       return const Color(0xFFF59E0B);
     }
     if (t.contains('PENUH') ||
+        t.contains('TEMPAT_SAMPAH') ||
         t.contains('TONG') ||
         t.contains('KAPASITAS') ||
         t.contains('DITOLAK')) {
@@ -552,6 +555,7 @@ class _NotificationTile extends StatelessWidget {
       return const Color(0xFFFEF3C7);
     }
     if (t.contains('PENUH') ||
+        t.contains('TEMPAT_SAMPAH') ||
         t.contains('TONG') ||
         t.contains('KAPASITAS') ||
         t.contains('DITOLAK')) {

@@ -217,9 +217,9 @@ class AppPages {
         return _buildRoute(const DataLogbookHarianView(), settings);
 
       case AppRoutes.editLogbookKkn:
-        final args = settings.arguments as Map<String, dynamic>;
+        final args = settings.arguments as Map<String, dynamic>?;
         return _buildRoute(
-          EditLogbookKknView(logbookId: args['id'] as String),
+          EditLogbookKknView(logbookId: args?['id']?.toString() ?? ''),
           settings,
         );
 
@@ -227,16 +227,16 @@ class AppPages {
         return _buildRoute(const DataProkerView(), settings);
 
       case AppRoutes.editProgramKerja:
-        final editArgs = settings.arguments as Map<String, dynamic>;
+        final editArgs = settings.arguments as Map<String, dynamic>?;
         return _buildRoute(
-          EditProgramKerjaView(prokerId: editArgs['id'] as String),
+          EditProgramKerjaView(prokerId: editArgs?['id']?.toString() ?? ''),
           settings,
         );
 
       case AppRoutes.prokerDetail:
-        final detailArgs = settings.arguments as Map<String, dynamic>;
+        final detailArgs = settings.arguments as Map<String, dynamic>?;
         return _buildRoute(
-          ProkerDetailView(prokerId: detailArgs['id'] as String),
+          ProkerDetailView(prokerId: detailArgs?['id']?.toString() ?? ''),
           settings,
         );
 

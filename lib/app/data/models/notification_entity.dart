@@ -15,7 +15,7 @@ class NotificationEntity extends Equatable {
 
   final String id;
 
-  /// Tipe notifikasi: POIN_BERTAMBAH, TONG_PENUH, PENGAJUAN_PENGOSONGAN,
+  /// Tipe notifikasi: POIN_BERTAMBAH, TEMPAT_SAMPAH_PENUH, PENGAJUAN_PENGOSONGAN,
   /// PENGAJUAN_DISETUJUI, PENGAJUAN_DITOLAK, INFO
   final String type;
 

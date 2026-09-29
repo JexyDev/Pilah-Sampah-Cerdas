@@ -55,6 +55,8 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
     // Warm-up GPS secara senyap dan cepat sejak halaman dibuka
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initGps();
+      // Selalu refresh binsProvider saat scan dibuka agar status pengosongan tempat sampah selalu mutakhir dari server
+      ref.invalidate(binsProvider);
     });
   }
 
@@ -148,8 +150,11 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
 
   /// Memastikan koordinat GPS realtime valid dan bukan 0.0 sebelum transaksi dikirim ke backend.
   Future<bool> _ensureRealtimeGps() async {
-    // Selalu paksa sinkronisasi dengan lokasi GPS terkini saat mendeteksi QR.
-    // Hal ini untuk mencegah validasi "di luar 50 meter" jika menggunakan koordinat lama.
+    // Jika koordinat GPS sudah didapatkan saat warm-up halaman scan, gunakan langsung (instant 0 ms)
+    if (_userLat != null && _userLng != null && _userLat != 0.0 && _userLng != 0.0) {
+      return true;
+    }
+    // Jika belum ada, baru fetch dengan timeout
     final pos = await _fetchGps(requestPermissionIfNeeded: true);
     return pos != null && _userLat != null && _userLat != 0.0;
   }
@@ -762,15 +767,24 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                   }
 
                   // CEK LOKAL JIKA BIN SEDANG PENGAJUAN (isResetPending)
-                  final bins = ref.read(binsProvider).value ?? [];
+                  // Gunakan cached bins seketika (0 ms) jika sudah tersedia, fallback fetch jika belum
+                  // ponytail: simple future read; upgrade to dedicated single-bin endpoint if latency matters
+                  final cachedBins = ref.read(binsProvider).value;
+                  final bins = cachedBins ??
+                      await ref.read(binsProvider.future).timeout(
+                        const Duration(seconds: 3),
+                        onTimeout: () => ref.read(binsProvider).value ?? [],
+                      );
                   final foundBin = bins
                       .where((b) => b.qrSerial == qrCode)
                       .firstOrNull;
                   if (foundBin != null && foundBin.isResetPending) {
-                    _showPendingResetDialog(
-                      context,
-                      'Ganti QR karena sedang diajukan pengosongan ke petugas pemilah.',
-                    );
+                    if (context.mounted) {
+                      _showPendingResetDialog(
+                        context,
+                        'Ganti QR karena sedang diajukan pengosongan ke petugas pemilah.',
+                      );
+                    }
                     return false;
                   }
 

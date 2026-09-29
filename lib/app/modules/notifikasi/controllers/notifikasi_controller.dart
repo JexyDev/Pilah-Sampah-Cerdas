@@ -10,8 +10,6 @@ import '../../petugas_pemilahan/controllers/petugas_pemilahan_notifikasi_control
 import 'warga_notifikasi_controller.dart' as warga_ctrl;
 
 import '../../../data/services/local_notification_cache_service.dart';
-import '../../mahasiswa/controllers/mahasiswa_notifikasi_controller.dart';
-import '../../petugas_pemilahan/controllers/petugas_pemilahan_notifikasi_controller.dart';
 import '../../../data/services/firebase_notification_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -81,10 +79,11 @@ bool _isWargaNotification(NotificationEntity notif) {
   final isWargaTopic =
       isPengosonganTopic ||
       type.contains('TONG_PENUH') ||
+      type.contains('TEMPAT_SAMPAH_PENUH') ||
       type.contains('PENGAJUAN') ||
       type.contains('POIN') ||
       title.contains('PENUH') ||
-      title.contains('TONG') ||
+      title.contains('TEMPAT SAMPAH') ||
       title.contains('SAMPAH') ||
       title.contains('PENGAJUAN') ||
       title.contains('POIN') ||
@@ -315,8 +314,6 @@ class MarkReadNotifier extends StateNotifier<MarkReadState> {
       _ref.invalidate(warga_ctrl.wargaNotificationsProvider);
       _ref.invalidate(mhs_ctrl.mahasiswaNotificationsProvider);
       _ref.invalidate(ptgs_ctrl.petugasPemilahanNotificationsProvider);
-      _ref.invalidate(mahasiswaNotificationsProvider);
-      _ref.invalidate(petugasPemilahanNotificationsProvider);
       state = const MarkReadState();
     }
   }
@@ -350,8 +347,6 @@ class MarkReadNotifier extends StateNotifier<MarkReadState> {
       _ref.invalidate(warga_ctrl.wargaNotificationsProvider);
       _ref.invalidate(mhs_ctrl.mahasiswaNotificationsProvider);
       _ref.invalidate(ptgs_ctrl.petugasPemilahanNotificationsProvider);
-      _ref.invalidate(mahasiswaNotificationsProvider);
-      _ref.invalidate(petugasPemilahanNotificationsProvider);
       state = const MarkReadState();
     }
   }

@@ -44,7 +44,7 @@ class LocalNotificationCacheService {
       title: title,
       desc: desc,
       isRead: false,
-      time: 'Baru saja',
+      time: DateTime.now().toIso8601String(),
       icon: icon ?? _resolveDefaultIcon(type),
       createdAt: DateTime.now(),
     );
@@ -157,7 +157,7 @@ class LocalNotificationCacheService {
   String _resolveDefaultIcon(String type) {
     final typeUpper = type.toUpperCase();
     if (typeUpper.contains('POIN')) return 'star';
-    if (typeUpper.contains('TONG') || typeUpper.contains('KRITIS')) {
+    if (typeUpper.contains('TEMPAT_SAMPAH') || typeUpper.contains('TONG') || typeUpper.contains('KRITIS')) {
       return 'warning';
     }
     if (typeUpper.contains('TIMBANGAN') || typeUpper.contains('PEMILAHAN')) {

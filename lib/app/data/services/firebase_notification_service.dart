@@ -181,7 +181,7 @@ class FirebaseNotificationService {
   String _resolveIcon(String type) {
     final t = type.toUpperCase();
     if (t.contains('POIN')) return 'star';
-    if (t.contains('TONG') || t.contains('KRITIS')) return 'warning';
+    if (t.contains('TEMPAT_SAMPAH') || t.contains('TONG') || t.contains('KRITIS')) return 'warning';
     if (t.contains('TIMBANGAN') || t.contains('PEMILAHAN')) return 'scale';
     if (t.contains('IZIN') || t.contains('DPL')) return 'assignment_turned_in';
     if (t.contains('PRESENSI')) return 'location_on';

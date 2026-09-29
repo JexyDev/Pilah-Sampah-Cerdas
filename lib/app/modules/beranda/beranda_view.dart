@@ -62,6 +62,9 @@ class _BerandaViewState extends ConsumerState<BerandaView>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _checkLocationIfNeeded();
+      // ponytail: instant sync on app resume; upgrade to event-driven push listener if lifecycle reload causes flicker
+      ref.invalidate(binsProvider);
+      ref.invalidate(wargaNotificationsProvider);
     }
   }
 
