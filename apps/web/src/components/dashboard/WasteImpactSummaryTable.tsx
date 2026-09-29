@@ -5,7 +5,7 @@
  * 
  * Component: WasteImpactSummaryTable (Tabel Rekapitulasi Evaluasi Komparatif Dampak Sampah)
  * Standarisasi Data & Integrasi Formula Delta:
- * 1. Judul Komponen: "Kesesuaian Aktivitas Pemilahan per Kategori Sampah"
+ * 1. Judul Komponen: "Aktivitas Pemilahan oleh Warga dan Penimbangan oleh Petugas"
  * 2. Skema Kolom:
  *    - Nama Kelurahan
  *    - Berat Baseline (kg)
@@ -203,15 +203,15 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
               <ClipboardList size={18} />
             </span>
             <h3 className="font-extrabold text-[18px] text-slate-900 dark:text-slate-100 tracking-tight">
-              Kesesuaian Aktivitas Pemilahan per Kategori Sampah
+              Aktivitas Pemilahan oleh Warga dan Penimbangan oleh Petugas
             </h3>
             <span className="text-[10px] font-black bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700/40 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
               Formula Delta Faktual
             </span>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-2xl">
-            Tabel rekapitulasi capaian penurunan berat sampah dan peningkatan kepatuhan pemilahan
-            berdasarkan baseline awal vs realisasi giat lapangan di 6 Kelurahan Kecamatan Coblong.
+            Tabel rekapitulasi capaian penurunan berat sampah dan peningkatan kepatuhan pemilahan.
+            Nilai kepatuhan pemilahan dihasilkan dari aktivitas warga, sedangkan perhitungan berat sampah dihasilkan dari aktivitas petugas di 6 Kelurahan Kecamatan Coblong.
           </p>
         </div>
 
@@ -635,6 +635,14 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
             </tr>
           </tbody>
         </table>
+      </div>
+
+      {/* Footer Catatan Sumber Data */}
+      <div className="flex items-center gap-2 px-1 text-[11.5px] text-slate-500 dark:text-slate-400 italic">
+        <Info size={14} className="shrink-0 text-slate-400 dark:text-slate-500" />
+        <span>
+          *Catatan Sumber Data: Nilai kepatuhan pemilahan dihasilkan dari aktivitas warga, sedangkan perhitungan berat sampah dihasilkan dari aktivitas petugas.
+        </span>
       </div>
 
       {/* Rangkuman Metodologi & Studi Kasus Lebakgede */}
