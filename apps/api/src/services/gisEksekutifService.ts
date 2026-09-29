@@ -64,10 +64,10 @@ const KELURAHAN_GEOMETRIES: Record<string, [number, number][]> = {
   ],
 };
 
-// Label warna kepatuhan sesuai standar QC (≥ 80% Hijau, 50-79% Kuning, < 50% Merah)
+// Label warna kepatuhan sesuai standar QC (≥ 60% Hijau, 40-59% Kuning, < 40% Merah)
 function kepColor(pct: number): string {
-  if (pct >= 80) return "#00a86b";
-  if (pct >= 50) return "#f59e0b";
+  if (pct >= 60) return "#00a86b";
+  if (pct >= 40) return "#f59e0b";
   return "#ef4444";
 }
 
@@ -150,16 +150,28 @@ export const gisEksekutifService = {
       select: { id: true, name: true, code: true, rws: { select: { id: true, name: true } } },
     });
 
-    // ── 2. Daftar RW dari DB ─────────────────────────────────────────────────
-    const rwWhere: Record<string, unknown> = {};
-    if (rawKel) {
-      rwWhere["kelurahan"] = { name: { equals: rawKel, mode: "insensitive" } };
-    }
-    const rwList = await prisma.rw.findMany({
-      where: rwWhere,
+    // ── 2. Daftar RW & Total Warga dari DB ──────────────────────────────────
+    const allRwList = await prisma.rw.findMany({
       orderBy: { name: "asc" },
-      select: { id: true, name: true, kelurahan: { select: { name: true } } },
+      select: {
+        id: true,
+        name: true,
+        kelurahan: { select: { name: true } },
+        _count: { select: { users: { where: { isTestAccount: false } } } },
+      },
     });
+
+    const totalWargaByKel: Record<string, number> = {};
+    allRwList.forEach((r) => {
+      const kelName = r.kelurahan?.name;
+      if (!kelName) return;
+      const key = kelName.toLowerCase();
+      totalWargaByKel[key] = (totalWargaByKel[key] || 0) + (r._count?.users || 0);
+    });
+
+    const rwList = rawKel
+      ? allRwList.filter((r) => r.kelurahan?.name?.toLowerCase() === rawKel.toLowerCase())
+      : allRwList;
 
     // ── 3. Fasilitas aktual dari DB ──────────────────────────────────────────
     const facilityWhere: Record<string, unknown> = {
@@ -241,6 +253,7 @@ export const gisEksekutifService = {
       },
       select: {
         id: true,
+        wargaId: true,
         status: true,
         berat: true,
         hasilKlasifikasiAi: true,
@@ -293,6 +306,7 @@ export const gisEksekutifService = {
       organikKg: number;
       anorganikKg: number;
       residuKg: number;
+      wargaAktifIds: Set<string>;
     }
     const realMetricsByKel: Record<string, KelRealMetrics> = {};
     const getOrInitKel = (name: string): KelRealMetrics => {
@@ -304,6 +318,7 @@ export const gisEksekutifService = {
           organikKg: 0,
           anorganikKg: 0,
           residuKg: 0,
+          wargaAktifIds: new Set<string>(),
         };
       }
       return realMetricsByKel[key];
@@ -319,6 +334,7 @@ export const gisEksekutifService = {
       const m = getOrInitKel(kelName);
 
       m.totalSetoran += 1;
+      if (s.wargaId) m.wargaAktifIds.add(s.wargaId);
       if (s.status === "ACCEPTED") {
         m.patuhSetoran += 1;
       }
@@ -363,8 +379,19 @@ export const gisEksekutifService = {
       );
 
       let kepatuhan: number | null = null;
+      let partisipasi: number | null = null;
+      let akurasiPilah: number | null = null;
+
       if (real && real.totalSetoran > 0) {
-        kepatuhan = Math.round((real.patuhSetoran / real.totalSetoran) * 100);
+        const rawAkurasi = (real.patuhSetoran / real.totalSetoran) * 100;
+        const wargaAktif = real.wargaAktifIds.size;
+        const totalWarga = totalWargaByKel[key] || 1; // Hindari division by zero
+        const rawPartisipasi = Math.min((wargaAktif / totalWarga) * 100, 100);
+
+        partisipasi = Math.round(rawPartisipasi);
+        akurasiPilah = Math.round(rawAkurasi);
+        // Indeks Gabungan (50:50)
+        kepatuhan = Math.round((rawPartisipasi * 0.5) + (rawAkurasi * 0.5));
       }
 
       const organikKg = real ? Math.round(real.organikKg * 10) / 10 : 0;
@@ -378,6 +405,8 @@ export const gisEksekutifService = {
       return {
         nama: kelName,
         kepatuhan,
+        partisipasi,
+        akurasiPilah,
         totalSetoran: real ? real.totalSetoran : 0,
         patuhSetoran: real ? real.patuhSetoran : 0,
         volume: volumeM3,
@@ -588,7 +617,7 @@ export const gisEksekutifService = {
         volumeUnit: "kg",
         volumeUnitM3: "m³/bulan",
         kepatuhanPemilahan: avgKepatuhan,
-        kepatuhanTarget: 80,
+        kepatuhanTarget: 60,
         kepatuhanSubtext: "Sampel selama giat KKN",
         kepatuhanDeltaPoin: 0,
         sensorCh4OnlineCount: 0,

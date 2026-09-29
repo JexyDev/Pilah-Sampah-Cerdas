@@ -72,6 +72,8 @@ export interface StatsKelResult {
   share: number;
   totalSetoran?: number;
   patuhSetoran?: number;
+  partisipasi?: number | null;
+  akurasiPilah?: number | null;
 }
 
 export interface StatsAllResult {

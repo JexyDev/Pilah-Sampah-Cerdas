@@ -48,8 +48,8 @@ describe("gisEksekutifService Real DB Operational Tests (Zero Baseline / 100% Re
     ]);
 
     (prisma.rw.findMany as any).mockResolvedValue([
-      { id: 1, name: "RW 01", kelurahan: { name: "Dago" } },
-      { id: 2, name: "RW 01", kelurahan: { name: "Sekeloa" } },
+      { id: 1, name: "RW 01", kelurahan: { name: "Dago" }, _count: { users: 1 } },
+      { id: 2, name: "RW 01", kelurahan: { name: "Sekeloa" }, _count: { users: 1 } },
     ]);
 
     (prisma.facility.findMany as any).mockResolvedValue([
@@ -72,6 +72,7 @@ describe("gisEksekutifService Real DB Operational Tests (Zero Baseline / 100% Re
     (prisma.setoranOtomatis.findMany as any).mockResolvedValue([
       {
         id: "so-1",
+        wargaId: "warga-dago-1",
         status: "ACCEPTED",
         berat: 150,
         hasilKlasifikasiAi: "organik",
@@ -82,6 +83,7 @@ describe("gisEksekutifService Real DB Operational Tests (Zero Baseline / 100% Re
       },
       {
         id: "so-2",
+        wargaId: "warga-dago-1",
         status: "ACCEPTED",
         berat: 200,
         hasilKlasifikasiAi: "anorganik",
@@ -110,9 +112,11 @@ describe("gisEksekutifService Real DB Operational Tests (Zero Baseline / 100% Re
     expect(result.kpi.volumeTotal).toBe(expectedSum);
     expect(result.kpi.volumeTotalKg).toBe(350);
     expect(result.kpi.kepatuhanSubtext).toBe("Sampel selama giat KKN");
-    expect(result.kpi.kepatuhanPemilahan).toBe(100); // 2 dari 2 ACCEPTED = 100%
-    expect(result.kpi.kepatuhanTarget).toBe(80);
-    expect(result.kepatuhanPerKelurahan[0].color).toBe("#00a86b"); // 100% >= 80% -> Hijau
+    expect(result.kpi.kepatuhanPemilahan).toBe(100); // 100% partisipasi + 100% akurasi -> 100%
+    expect(result.kpi.kepatuhanTarget).toBe(60);
+    expect(result.kepatuhanPerKelurahan[0].partisipasi).toBe(100);
+    expect(result.kepatuhanPerKelurahan[0].akurasiPilah).toBe(100);
+    expect(result.kepatuhanPerKelurahan[0].color).toBe("#00a86b"); // 100% >= 60% -> Hijau
     expect(result.kepatuhanPerKelurahan[0].volumeKg).toBe(350);
   });
 
@@ -159,7 +163,7 @@ describe("gisEksekutifService Real DB Operational Tests (Zero Baseline / 100% Re
       { id: "kel-1", name: "Dago", code: "327301", rws: [{ id: 1, name: "RW 01" }] },
     ]);
     (prisma.rw.findMany as any).mockResolvedValue([
-      { id: 1, name: "RW 01", kelurahan: { name: "Dago" } },
+      { id: 1, name: "RW 01", kelurahan: { name: "Dago" }, _count: { users: 1 } },
     ]);
     (prisma.facility.findMany as any).mockResolvedValue([
       { id: "f1", nama: "Fasilitas 1", jenis: "tps", latitude: -6.8, longitude: 107.6, rw: { name: "RW 01", kelurahan: { name: "Dago" } } },
@@ -169,6 +173,7 @@ describe("gisEksekutifService Real DB Operational Tests (Zero Baseline / 100% Re
     (prisma.setoranOtomatis.findMany as any).mockResolvedValue([
       {
         id: "so-dago",
+        wargaId: "w-dago-1",
         status: "ACCEPTED",
         berat: 350,
         hasilKlasifikasiAi: "organik",
@@ -256,11 +261,14 @@ describe("gisEksekutifService Real DB Operational Tests (Zero Baseline / 100% Re
     (prisma.kelurahan.findMany as any).mockResolvedValue([
       { id: "kel-1", name: "Dago", code: "327301", rws: [{ id: 1, name: "RW 01" }] },
     ]);
-    (prisma.rw.findMany as any).mockResolvedValue([]);
+    (prisma.rw.findMany as any).mockResolvedValue([
+      { id: 1, name: "RW 01", kelurahan: { name: "Dago" }, _count: { users: 1 } },
+    ]);
     (prisma.facility.findMany as any).mockResolvedValue([]);
     (prisma.setoranOtomatis.findMany as any).mockResolvedValue([
       {
         id: "so-sep",
+        wargaId: "w-sep-1",
         status: "ACCEPTED",
         berat: 500, // 0.5 m3
         hasilKlasifikasiAi: "organik",
@@ -350,22 +358,27 @@ describe("gisEksekutifService Real DB Operational Tests (Zero Baseline / 100% Re
     expect(resOkt.kpi.fasilitasTerdata).toBe(1);
   });
 
-  it("should categorize compliance colors correctly: >= 80% green, 50-79% amber, < 50% red", async () => {
+  it("should categorize compliance colors correctly: >= 60% green, 40-59% amber, < 40% red", async () => {
     (prisma.kelurahan.findMany as any).mockResolvedValue([
       { id: "kel-1", name: "Dago", code: "327301", rws: [{ id: 1, name: "RW 01" }] },
       { id: "kel-2", name: "Sekeloa", code: "327302", rws: [{ id: 2, name: "RW 01" }] },
       { id: "kel-3", name: "Cipaganti", code: "327303", rws: [{ id: 3, name: "RW 01" }] },
     ]);
-    (prisma.rw.findMany as any).mockResolvedValue([]);
+    (prisma.rw.findMany as any).mockResolvedValue([
+      { id: 1, name: "RW 01", kelurahan: { name: "Dago" }, _count: { users: 10 } },
+      { id: 2, name: "RW 01", kelurahan: { name: "Sekeloa" }, _count: { users: 10 } },
+      { id: 3, name: "RW 01", kelurahan: { name: "Cipaganti" }, _count: { users: 10 } },
+    ]);
     (prisma.facility.findMany as any).mockResolvedValue([]);
 
-    // Dago: 80% (8 accepted, 2 rejected) -> Hijau (#00a86b)
-    // Sekeloa: 60% (6 accepted, 4 rejected) -> Amber (#f59e0b)
-    // Cipaganti: 40% (4 accepted, 6 rejected) -> Merah (#ef4444)
+    // Dago: Part 80% (8 warga unik / 10 warga), Akur 80% (8 accepted / 10) -> Composite 80% -> Hijau (#00a86b)
+    // Sekeloa: Part 50% (5 warga unik / 10 warga), Akur 50% (5 accepted / 10) -> Composite 50% -> Amber (#f59e0b)
+    // Cipaganti: Part 30% (3 warga unik / 10 warga), Akur 30% (3 accepted / 10) -> Composite 30% -> Merah (#ef4444)
     const deposits: any[] = [];
     for (let i = 0; i < 10; i++) {
       deposits.push({
         id: `so-dago-${i}`,
+        wargaId: `w-dago-${Math.min(i, 7)}`, // 8 distinct citizens
         status: i < 8 ? "ACCEPTED" : "REJECTED",
         berat: 10,
         hasilKlasifikasiAi: "organik",
@@ -376,7 +389,8 @@ describe("gisEksekutifService Real DB Operational Tests (Zero Baseline / 100% Re
       });
       deposits.push({
         id: `so-sekeloa-${i}`,
-        status: i < 6 ? "ACCEPTED" : "REJECTED",
+        wargaId: `w-sekeloa-${Math.min(i, 4)}`, // 5 distinct citizens
+        status: i < 5 ? "ACCEPTED" : "REJECTED",
         berat: 10,
         hasilKlasifikasiAi: "organik",
         kategoriAktual: "organik",
@@ -386,7 +400,8 @@ describe("gisEksekutifService Real DB Operational Tests (Zero Baseline / 100% Re
       });
       deposits.push({
         id: `so-cipaganti-${i}`,
-        status: i < 4 ? "ACCEPTED" : "REJECTED",
+        wargaId: `w-cipaganti-${Math.min(i, 2)}`, // 3 distinct citizens
+        status: i < 3 ? "ACCEPTED" : "REJECTED",
         berat: 10,
         hasilKlasifikasiAi: "organik",
         kategoriAktual: "organik",
@@ -404,20 +419,26 @@ describe("gisEksekutifService Real DB Operational Tests (Zero Baseline / 100% Re
     const sekeloa = res.kepatuhanPerKelurahan.find((k) => k.nama === "Sekeloa");
     const cipaganti = res.kepatuhanPerKelurahan.find((k) => k.nama === "Cipaganti");
 
+    expect(dago?.partisipasi).toBe(80);
+    expect(dago?.akurasiPilah).toBe(80);
     expect(dago?.kepatuhan).toBe(80);
     expect(dago?.totalSetoran).toBe(10);
     expect(dago?.patuhSetoran).toBe(8);
-    expect(dago?.color).toBe("#00a86b"); // >= 80% -> Hijau
+    expect(dago?.color).toBe("#00a86b"); // >= 60% -> Hijau
 
-    expect(sekeloa?.kepatuhan).toBe(60);
+    expect(sekeloa?.partisipasi).toBe(50);
+    expect(sekeloa?.akurasiPilah).toBe(50);
+    expect(sekeloa?.kepatuhan).toBe(50);
     expect(sekeloa?.totalSetoran).toBe(10);
-    expect(sekeloa?.patuhSetoran).toBe(6);
-    expect(sekeloa?.color).toBe("#f59e0b"); // 50-79% -> Amber
+    expect(sekeloa?.patuhSetoran).toBe(5);
+    expect(sekeloa?.color).toBe("#f59e0b"); // 40-59% -> Amber
 
-    expect(cipaganti?.kepatuhan).toBe(40);
+    expect(cipaganti?.partisipasi).toBe(30);
+    expect(cipaganti?.akurasiPilah).toBe(30);
+    expect(cipaganti?.kepatuhan).toBe(30);
     expect(cipaganti?.totalSetoran).toBe(10);
-    expect(cipaganti?.patuhSetoran).toBe(4);
-    expect(cipaganti?.color).toBe("#ef4444"); // < 50% -> Merah
+    expect(cipaganti?.patuhSetoran).toBe(3);
+    expect(cipaganti?.color).toBe("#ef4444"); // < 40% -> Merah
   });
 
   it("should accurately classify manual deposits into anorganik, residu, and organik without lexical substring collision", async () => {

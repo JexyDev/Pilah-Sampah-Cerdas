@@ -68,7 +68,7 @@ function createOfflineFallbackData(kelurahanFilter = "Semua"): GisOverviewApiRes
       volumeUnit: "kg",
       volumeUnitM3: "m³/bulan",
       kepatuhanPemilahan: null,
-      kepatuhanTarget: 80,
+      kepatuhanTarget: 60,
       kepatuhanDeltaPoin: 0,
       sensorCh4OnlineCount: 0,
       sensorCh4TotalCount: 0,
@@ -553,6 +553,8 @@ export default function GisEksekutifPage() {
       };
       const sShape = {
         kep: kd?.kepatuhan ?? (null as any),
+        partisipasi: kd?.partisipasi ?? null,
+        akurasiPilah: kd?.akurasiPilah ?? null,
         org: orgM3,
         ano: anoM3,
         res: resM3,
@@ -1153,7 +1155,7 @@ export default function GisEksekutifPage() {
                       {data?.kpi?.kepatuhanPemilahan != null ? `${data.kpi.kepatuhanPemilahan}%` : "—"}
                     </span>
                     <span className="kpi-qc-target-pill" style={{ background: "#ecfdf5", color: "#065f46", border: "1px solid #a7f3d0" }}>
-                      Target: 80%
+                      Target: {data?.kpi?.kepatuhanTarget ?? 60}%
                     </span>
                   </div>
                   <div className="kpi-qc-subtext">
