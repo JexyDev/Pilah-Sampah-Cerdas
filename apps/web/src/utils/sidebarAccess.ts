@@ -168,19 +168,36 @@ export function canAccessSidebarRoute(
   const isPenggunaRoute =
     cleanPath.startsWith("/pengguna") ||
     cleanPath.startsWith("/master-data-pengguna") ||
-    cleanPath.startsWith("/manajemen-pengguna");
+    cleanPath.startsWith("/manajemen-pengguna") ||
+    cleanPath.startsWith("/users") ||
+    cleanPath.startsWith("/admin/users");
 
   if (isPenggunaRoute) {
+    if (role === "PIMPINAN") return false;
     return (
       role === "ADMIN_DLH" ||
       role === "CAMAT" ||
       role === "LURAH" ||
-      role === "PIMPINAN" ||
-      role === "PEMIMPIN" ||
       role === "PANITIA_TASKFORCE" ||
       role === "TASK_FORCE" ||
       role === "RW" ||
       canView("manajemen_pengguna")
+    );
+  }
+
+  // 5.1. Rute Peraturan & Master Rule Engine
+  const isPeraturanRoute =
+    cleanPath === "/peraturan" ||
+    cleanPath === "/master-rule-engine" ||
+    cleanPath === "/master-data/rule-engine" ||
+    cleanPath === "/dataset/peraturan";
+
+  if (isPeraturanRoute) {
+    if (role === "PIMPINAN") return false;
+    return (
+      role === "ADMIN_DLH" ||
+      role === "SUPER_USER" ||
+      role === "DEVELOPER"
     );
   }
 

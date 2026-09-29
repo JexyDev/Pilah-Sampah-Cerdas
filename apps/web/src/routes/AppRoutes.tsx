@@ -461,7 +461,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/pengguna"
           element={
-            <ProtectedRoute resource="manajemen_pengguna" allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "PIMPINAN", "PANITIA_TASKFORCE", "RW", "DEVELOPER"]}>
+            <ProtectedRoute resource="manajemen_pengguna" allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "PANITIA_TASKFORCE", "RW", "DEVELOPER"]}>
               <ManajemenPengguna />
             </ProtectedRoute>
           }
@@ -470,7 +470,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/master-data-pengguna"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "PIMPINAN", "PANITIA_TASKFORCE", "RW", "DEVELOPER"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "PANITIA_TASKFORCE", "RW", "DEVELOPER"]}>
               <ManajemenPengguna />
             </ProtectedRoute>
           }
@@ -478,7 +478,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/manajemen-pengguna"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "PIMPINAN", "PANITIA_TASKFORCE", "RW", "DEVELOPER"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE", "RW", "DEVELOPER"]}>
               <ManajemenPengguna />
             </ProtectedRoute>
           }
@@ -486,7 +486,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/users"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "PIMPINAN", "PANITIA_TASKFORCE", "RW"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE", "RW"]}>
               <ManajemenPengguna />
             </ProtectedRoute>
           }
@@ -494,7 +494,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/admin/users"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "PIMPINAN", "PANITIA_TASKFORCE", "RW"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE", "RW"]}>
               <ManajemenPengguna />
             </ProtectedRoute>
           }
@@ -581,7 +581,6 @@ const AppRoutes: React.FC = () => {
                 "RW",
                 "PETUGAS_RESIDU",
                 "MAHASISWA_KKN",
-                "PIMPINAN",
                 "PANITIA_TASKFORCE",
                 "DEVELOPER",
               ]}

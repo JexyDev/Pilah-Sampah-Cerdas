@@ -41,6 +41,16 @@ describe("sidebarAccess utility", () => {
       false
     );
 
+    // Master Data Pengguna
+    expect(canAccessSidebarRoute("/pengguna", pimpinan, mockCan)).toBe(false);
+    expect(canAccessSidebarRoute("/pengguna?role=dlh", pimpinan, mockCan)).toBe(false);
+    expect(canAccessSidebarRoute("/master-data-pengguna", pimpinan, mockCan)).toBe(false);
+    expect(canAccessSidebarRoute("/manajemen-pengguna", pimpinan, mockCan)).toBe(false);
+
+    // Master Data Peraturan & Rule Engine
+    expect(canAccessSidebarRoute("/peraturan", pimpinan, mockCan)).toBe(false);
+    expect(canAccessSidebarRoute("/master-rule-engine", pimpinan, mockCan)).toBe(false);
+
     // Tempat Sampah Teraktivasi
     expect(
       canAccessSidebarRoute(
