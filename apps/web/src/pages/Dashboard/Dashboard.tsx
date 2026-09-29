@@ -2037,6 +2037,10 @@ const Dashboard: React.FC = () => {
         item.actualCompliance !== undefined && item.actualCompliance !== null
           ? item.actualCompliance
           : (item.endlineRate ?? null),
+      partisipasiWarga: (item as any).partisipasiWarga ?? null,
+      akurasiPilah: (item as any).akurasiPilah ?? null,
+      wargaAktif: (item as any).wargaAktif ?? null,
+      totalWarga: (item as any).totalWarga ?? null,
     }));
   }, [kelurahanBaselineList]);
 

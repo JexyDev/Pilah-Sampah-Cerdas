@@ -28,6 +28,10 @@ export interface WasteImpactItem {
   status?: string;
   setoranDinilai?: number;
   setoranPatuh?: number;
+  partisipasiWarga?: number | null;
+  akurasiPilah?: number | null;
+  wargaAktif?: number | null;
+  totalWarga?: number | null;
 }
 
 export interface WasteImpactAggregation {
