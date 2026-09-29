@@ -1566,6 +1566,9 @@ const renderKpiIcon = (name: string) => {
     case "stars":
     case "award":
       return <Award size={22} />;
+    case "graduation-cap":
+    case "school":
+      return <GraduationCap size={22} />;
     default:
       return <IconRenderer name={name} size={22} />;
   }
@@ -1833,7 +1836,37 @@ const Dashboard: React.FC = () => {
           ? "Total Keseluruhan"
           : `Periode ${timeFilter}`;
 
+      const totalPenggunaSampahVal = Number(kpi.totalPenggunaSampah ?? kpi.penggunaSampah?.total ?? 0);
+      const totalPartisipanKknVal = Number(kpi.totalPartisipanKkn ?? kpi.partisipanKkn?.total ?? 0);
+
+      const wargaCount = Number(kpi.penggunaSampah?.warga ?? 0);
+      const petugasCount = Number(kpi.penggunaSampah?.petugas ?? 0);
+      const aparaturCount = Number(kpi.penggunaSampah?.aparatur ?? 0);
+
+      const mhsCount = Number(kpi.partisipanKkn?.mahasiswa ?? 0);
+      const dplCount = Number(kpi.partisipanKkn?.dpl ?? 0);
+
+      const sampahTrendLabel = aparaturCount > 0
+        ? `${wargaCount} Warga • ${petugasCount} Petugas • ${aparaturCount} RW/RT`
+        : `${wargaCount} Warga • ${petugasCount} Petugas`;
+
+      const kknTrendLabel = dplCount > 0
+        ? `${mhsCount} Mahasiswa • ${dplCount} DPL`
+        : `${mhsCount} Mahasiswa`;
+
       setStats({
+        penggunaSampah: {
+          value: totalPenggunaSampahVal.toLocaleString("id-ID"),
+          trend: "Terdaftar",
+          trendLabel: sampahTrendLabel,
+          trendUp: true,
+        },
+        partisipanKkn: {
+          value: totalPartisipanKknVal.toLocaleString("id-ID"),
+          trend: "Sivitas KKN",
+          trendLabel: kknTrendLabel,
+          trendUp: true,
+        },
         totalPengguna: {
           value: (kpi.totalUsers ?? 0).toLocaleString("id-ID"),
           trend: "Terdaftar",
@@ -2330,19 +2363,40 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. KPI Section (5 Cards for BERSEKA Domain) */}
+      {/* 2. KPI Section (6 Cards for BERSEKA Domain) */}
       <div className="px-1 text-[10.5px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">
-        Ringkasan Operasional Pemilahan Sampah
+        Ringkasan Operasional Pemilahan Sampah & Program KKN
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 relative z-10">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 relative z-10">
         <KpiCard
-          iconName="group"
+          iconName="users"
           color="blue"
-          label="Total Pengguna"
-          value={stats?.totalPengguna?.value}
-          trend={stats?.totalPengguna?.trend}
-          trendLabel={stats?.totalPengguna?.trendLabel}
-          trendUp={stats?.totalPengguna?.trendUp}
+          label="Pengguna Kelola Sampah"
+          value={stats?.penggunaSampah?.value}
+          trend={stats?.penggunaSampah?.trend}
+          trendLabel={stats?.penggunaSampah?.trendLabel}
+          trendUp={stats?.penggunaSampah?.trendUp}
+          linkTo={
+            canAccessSidebarRoute("/manajemen-pengguna", user, can)
+              ? "/manajemen-pengguna"
+              : undefined
+          }
+        />
+        <KpiCard
+          iconName="graduation-cap"
+          color="indigo"
+          label="Partisipan Program KKN"
+          value={stats?.partisipanKkn?.value}
+          trend={stats?.partisipanKkn?.trend}
+          trendLabel={stats?.partisipanKkn?.trendLabel}
+          trendUp={stats?.partisipanKkn?.trendUp}
+          linkTo={
+            canAccessSidebarRoute("/kkn-executive", user, can)
+              ? "/kkn-executive"
+              : canAccessSidebarRoute("/dpl/dashboard", user, can)
+              ? "/dpl/dashboard"
+              : undefined
+          }
         />
         <KpiCard
           iconName="delete"
@@ -2360,7 +2414,7 @@ const Dashboard: React.FC = () => {
         />
         <KpiCard
           iconName="location_on"
-          color="indigo"
+          color="cyan"
           label="Lokasi Terdaftar (RW)"
           value={stats?.lokasiTerdaftar?.value}
           trend={stats?.lokasiTerdaftar?.trend}
