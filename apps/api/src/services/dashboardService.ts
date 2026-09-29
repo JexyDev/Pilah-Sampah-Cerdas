@@ -289,6 +289,141 @@ export const dashboardService = {
       where: usersWhere,
     });
 
+    // 1b. Pengguna Tata Kelola Sampah (Opsi 2: WARGA, PETUGAS_RESIDU, RW, RT)
+    const sampahRoles = ["WARGA", "PETUGAS_RESIDU", "RW", "RT"];
+    const sampahUserWhere: any = {
+      role: { name: { in: sampahRoles } },
+    };
+    if (!includeTestAccounts) {
+      sampahUserWhere.isTestAccount = false;
+    }
+    if (isFiltered && rtRwMatch) {
+      sampahUserWhere.OR = [{ rw: rtRwMatch }, { households: { some: { rw: rtRwMatch } } }];
+    }
+
+    const sampahUsersList = await prisma.user.findMany({
+      where: sampahUserWhere,
+      select: { role: { select: { name: true } } },
+    });
+
+    const totalWargaSampah = sampahUsersList.filter((u) => u.role?.name === "WARGA").length;
+    const totalPetugasResidu = sampahUsersList.filter((u) => u.role?.name === "PETUGAS_RESIDU").length;
+    const totalRwAparatur = sampahUsersList.filter((u) => u.role?.name === "RW").length;
+    const totalRtAparatur = sampahUsersList.filter((u) => u.role?.name === "RT").length;
+    const totalAparaturWilayah = totalRwAparatur + totalRtAparatur;
+    const totalPenggunaSampah = sampahUsersList.length;
+
+    const penggunaSampah = {
+      total: totalPenggunaSampah,
+      warga: totalWargaSampah,
+      petugas: totalPetugasResidu,
+      rw: totalRwAparatur,
+      rt: totalRtAparatur,
+      aparatur: totalAparaturWilayah,
+    };
+
+    // 1c. Partisipan Program KKN (MAHASISWA_KKN, DPL, MPL, PANITIA_TASKFORCE)
+    let kelompokWhere: any = {};
+    if (isFiltered && kelurahanNames.length > 0) {
+      kelompokWhere.kelurahan = { in: kelurahanNames, mode: "insensitive" };
+    }
+
+    let kelompokList = await prisma.kelompokKkn.findMany({
+      where: kelompokWhere,
+      select: { id: true, name: true, kelurahan: true, cakupanRw: true, dplId: true, mplId: true },
+    });
+
+    if (isFiltered && rwIds.length > 0) {
+      const targetRwRows = await prisma.rw.findMany({
+        where: { id: { in: rwIds } },
+        select: { name: true },
+      });
+      const targetRwNumbers = targetRwRows
+        .map((r) => parseInt(r.name.replace(/\D/g, ""), 10))
+        .filter((n) => !isNaN(n));
+
+      if (targetRwNumbers.length > 0) {
+        kelompokList = kelompokList.filter((k) => {
+          if (!Array.isArray(k.cakupanRw)) return false;
+          return k.cakupanRw.some((r) => {
+            const num = parseInt(String(r).replace(/\D/g, ""), 10);
+            return targetRwNumbers.includes(num);
+          });
+        });
+      }
+    }
+
+    const kelompokIds = kelompokList.map((k) => k.id);
+
+    const studentWhere: any = {};
+    if (!includeTestAccounts) {
+      studentWhere.user = { isTestAccount: false };
+    }
+    if (isFiltered) {
+      studentWhere.kelompokId = kelompokIds.length > 0 ? { in: kelompokIds } : "__none__";
+    }
+
+    const totalMahasiswaKkn = await prisma.studentKkn.count({
+      where: studentWhere,
+    });
+
+    let totalDplKkn = 0;
+    let totalMplKkn = 0;
+    let totalPanitiaTaskforce = 0;
+
+    if (isFiltered) {
+      const dplIds = Array.from(new Set(kelompokList.map((k) => k.dplId).filter(Boolean))) as string[];
+      totalDplKkn = dplIds.length > 0
+        ? await prisma.user.count({
+            where: {
+              id: { in: dplIds },
+              ...(!includeTestAccounts ? { isTestAccount: false } : {}),
+            },
+          })
+        : 0;
+
+      const mplIds = Array.from(new Set(kelompokList.map((k) => k.mplId).filter(Boolean))) as string[];
+      totalMplKkn = mplIds.length > 0
+        ? await prisma.user.count({
+            where: {
+              id: { in: mplIds },
+              ...(!includeTestAccounts ? { isTestAccount: false } : {}),
+            },
+          })
+        : 0;
+    } else {
+      totalDplKkn = await prisma.user.count({
+        where: {
+          role: { name: { in: ["DPL", "DOSEN_PEMBIMBING"] } },
+          ...(!includeTestAccounts ? { isTestAccount: false } : {}),
+        },
+      });
+
+      totalMplKkn = await prisma.user.count({
+        where: {
+          role: { name: "MPL" },
+          ...(!includeTestAccounts ? { isTestAccount: false } : {}),
+        },
+      });
+
+      totalPanitiaTaskforce = await prisma.user.count({
+        where: {
+          role: { name: "PANITIA_TASKFORCE" },
+          ...(!includeTestAccounts ? { isTestAccount: false } : {}),
+        },
+      });
+    }
+
+    const totalPartisipanKkn = totalMahasiswaKkn + totalDplKkn + totalMplKkn + totalPanitiaTaskforce;
+
+    const partisipanKkn = {
+      total: totalPartisipanKkn,
+      mahasiswa: totalMahasiswaKkn,
+      dpl: totalDplKkn,
+      mpl: totalMplKkn,
+      panitia: totalPanitiaTaskforce,
+    };
+
     // 2. Sampah Terkumpul (Kg)
     const wasteLogsWhere: any = {};
     if (!includeTestAccounts) {
@@ -912,6 +1047,10 @@ export const dashboardService = {
       totalWarga,
       totalRumahTangga,
       totalUsers,
+      totalPenggunaSampah,
+      totalPartisipanKkn,
+      penggunaSampah,
+      partisipanKkn,
       totalSampahKg,
       averageAiAccuracy,
       alertTongPenuh: fullBinsCount,

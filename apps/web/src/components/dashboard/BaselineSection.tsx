@@ -22,15 +22,11 @@
 import React, { useState, useEffect, useMemo } from "react";
 import {
   BarChart3,
-  Calendar,
   CheckCircle2,
-  Download,
   FileSpreadsheet,
   Info,
-  MapPin,
   Printer,
   RefreshCw,
-  Scale,
   ShieldCheck,
   X,
   HelpCircle,
@@ -313,11 +309,6 @@ export const BaselineSection: React.FC<BaselineSectionProps> = ({ className = ""
                 <h3 className="font-extrabold text-[18px] text-slate-900 dark:text-slate-100 tracking-tight">
                   Baseline Data &amp; Hasil Survei Pemilahan Sampah
                 </h3>
-                {/* Label Periode Tetap di Header */}
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-100/80 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-800">
-                  <Calendar size={11} />
-                  Survei Baseline: Juli 2026
-                </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
                 Titik tolak evaluasi intervensi sistem pemilahan sampah cerdas berbasis survei sampel lapangan giat KKN pada 6 kelurahan Kecamatan Coblong.
@@ -369,8 +360,8 @@ export const BaselineSection: React.FC<BaselineSectionProps> = ({ className = ""
         </div>
       </div>
 
-      {/* ── 2. Kartu Mini Ringkasan KPI Eksekutif (4 Metrik Kunci) ───────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      {/* ── 2. Kartu Mini Ringkasan KPI Eksekutif (3 Metrik Kunci) ───────────── */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {/* KPI 1: Rata-rata Kepatuhan Baseline (40%) */}
         <div className="bg-emerald-50/70 dark:bg-emerald-950/40 p-3.5 rounded-2xl border border-emerald-200/80 dark:border-emerald-800/50 flex flex-col justify-between">
           <div>
@@ -423,25 +414,6 @@ export const BaselineSection: React.FC<BaselineSectionProps> = ({ className = ""
           </div>
           <p className="text-[10px] text-amber-700 dark:text-amber-400 mt-1 font-medium">
             Dari seluruh akumulasi RW target
-          </p>
-        </div>
-
-        {/* KPI 4: Cakupan Wilayah = 6 Kelurahan */}
-        <div className="bg-indigo-50/70 dark:bg-indigo-950/40 p-3.5 rounded-2xl border border-indigo-200/80 dark:border-indigo-800/50 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between text-[10px] font-extrabold text-indigo-700 dark:text-indigo-400 uppercase tracking-wider">
-              <span>Cakupan Sampel</span>
-              <span className="px-1.5 py-0.2 rounded bg-indigo-200/60 dark:bg-indigo-900 text-[9px]">Coblong</span>
-            </div>
-            <div className="mt-1 flex items-baseline gap-1">
-              <span className="text-2xl font-black text-indigo-900 dark:text-indigo-100">
-                {summary.totalKelurahan}
-              </span>
-              <span className="text-xs font-bold text-indigo-800 dark:text-indigo-300">Kelurahan</span>
-            </div>
-          </div>
-          <p className="text-[10px] text-indigo-700 dark:text-indigo-400 mt-1 font-medium">
-            Kecamatan Coblong, Kota Bandung
           </p>
         </div>
       </div>
