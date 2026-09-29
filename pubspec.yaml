@@ -32,6 +32,9 @@ dependencies:
   # Image Compression
   flutter_image_compress: ^2.3.0
 
+  # OCR — On-device text recognition for scale display reading
+  google_mlkit_text_recognition: ^0.14.0
+
   # GPS / Geolocation / Maps
   geolocator: ^13.0.4
   flutter_foreground_task: ^8.13.3
@@ -42,6 +45,7 @@ dependencies:
   flutter_secure_storage: ^9.2.4
 
   # Push Notification
+  firebase_core: ^3.12.1
   firebase_messaging: ^15.2.5
 
   # Connectivity Monitor

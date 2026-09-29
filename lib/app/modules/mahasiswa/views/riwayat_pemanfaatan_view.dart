@@ -85,7 +85,7 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
         item['beratInputKg'] ??
         0;
     final hasil = item['jumlahHasilKg'] ?? 0;
-    final unit = item['unitHasil']?.toString() ?? 'Kg';
+    final unit = item['unitHasil']?.toString() ?? 'kg';
     final status = item['status']?.toString() ?? 'PROSES';
 
     DateTime? tgl;
@@ -156,7 +156,7 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
             ),
             if (bahanMasuk != null)
               Text(
-                'Input Sampah: $bahanMasuk Kg',
+                'Input Sampah: $bahanMasuk kg',
                 style: const TextStyle(fontSize: 13, color: Colors.black87),
               ),
             if (isPanen)
@@ -340,7 +340,7 @@ class _EditPemanfaatanScreenState extends ConsumerState<EditPemanfaatanScreen> {
       text: widget.item['jumlahBahanMasukKg']?.toString() ?? '',
     );
     tcUnit = TextEditingController(
-      text: widget.item['unitBahanBaku']?.toString() ?? 'Kg',
+      text: widget.item['unitBahanBaku']?.toString() ?? 'kg',
     );
     _loadPrograms();
   }
@@ -503,7 +503,7 @@ class _EditPemanfaatanScreenState extends ConsumerState<EditPemanfaatanScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const Text(
-                                'Volume / Berat',
+                                'Berat',
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
                               const SizedBox(height: 8),

@@ -501,7 +501,7 @@ class _LogbookPemanfaatanViewState
                       inputFormatters: [ThousandsFormatter()],
                       decoration: _inputDecoration(
                         '',
-                      ).copyWith(suffixText: 'Kg'),
+                      ).copyWith(suffixText: 'kg'),
                       validator: (val) =>
                           val == null || val.isEmpty ? 'Wajib diisi' : null,
                     ),

@@ -1,10 +1,13 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/network_exception_helper.dart';
 import '../../../data/models/petugas_pemilahan_models.dart';
 import '../../../data/models/point_history_entity.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../data/services/local_notification_cache_service.dart';
+import '../../../data/services/offline_queue_service.dart';
 import '../../auth/controllers/auth_controller.dart';
+import '../../shared/controllers/connectivity_controller.dart';
 import '../services/petugas_pemilahan_fcm_service.dart';
 import 'petugas_pemilahan_notifikasi_controller.dart';
 
@@ -68,9 +71,45 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
 
     // Inisialisasi notifikasi latar belakang khusus role Petugas Pemilahan
     _ref.read(petugasPemilahanFcmServiceProvider).registerFcmToken();
+
+    // Auto-sync offline queue saat koneksi kembali
+    _ref.listen<bool>(isOnlineProvider, (prev, isOnline) {
+      if (isOnline && prev == false) {
+        syncOfflineQueue();
+      }
+    });
   }
 
   final Ref _ref;
+
+  /// Flush antrean offline FIFO ke backend saat kembali online.
+  Future<void> syncOfflineQueue() async {
+    final queue = await OfflineQueueService.getAll();
+    if (queue.isEmpty) return;
+    debugPrint('[PetugasPemilahan] Syncing ${queue.length} offline items...');
+
+    final repo = _ref.read(petugasPemilahanRepositoryProvider);
+    for (final item in queue) {
+      try {
+        await repo.submitLog(
+          binId: item['bin_id']?.toString() ?? 'GLOBAL_BIN_RT_RW',
+          actualWeightKg: (item['weight_kg'] as num?)?.toDouble() ?? 0.0,
+          classification: item['classification']?.toString() ?? 'Organik',
+          photoPath: item['photo_path']?.toString() ?? '',
+          photoTimbanganPath: item['evidence_photo_path']?.toString() ?? '',
+          inputMethod: item['input_method']?.toString() ?? 'MANUAL',
+          latitude: (item['latitude'] as num?)?.toDouble(),
+          longitude: (item['longitude'] as num?)?.toDouble(),
+        );
+        await OfflineQueueService.dequeue();
+        debugPrint('[PetugasPemilahan] Synced offline item OK');
+      } catch (e) {
+        debugPrint('[PetugasPemilahan] Offline sync error: $e — will retry later');
+        break; // Stop FIFO — retry remaining on next connectivity change
+      }
+    }
+    if (mounted) refreshAll();
+  }
 
   /// Filter defensif client-side agar jadwal penjemputan hanya mencakup RW & Kelurahan petugas
   List<PemilahanBinPickup> _filterJadwalByRw(
@@ -233,6 +272,7 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
     required String classification,
     required String photoPath,
     required String photoTimbanganPath,
+    String inputMethod = 'MANUAL',
     double? latitude,
     double? longitude,
   }) async {
@@ -245,6 +285,7 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
         classification: classification,
         photoPath: photoPath,
         photoTimbanganPath: photoTimbanganPath,
+        inputMethod: inputMethod,
         latitude: latitude,
         longitude: longitude,
       );

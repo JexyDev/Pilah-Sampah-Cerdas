@@ -115,59 +115,7 @@ final petugasPemilahanNotificationsProvider =
       final markAllTimestamp =
           prefs.getInt('mark_all_notifs_${userId}_$role') ?? 0;
 
-      // Tambahkan riwayat poin non-duplikat (PointHistory) agar tampil di Notification Page
-      try {
-        final pointRepo = ref.read(wasteLogRepositoryProvider);
-        final pointHistory = await pointRepo.getPointHistoryByUser(userId);
-
-        for (final ph in pointHistory) {
-          if (ph.points != 0) {
-            // Hindari duplikasi: log timbangan sudah dibuatkan notifikasi resmi oleh server
-            final descLower = ph.description.toLowerCase();
-            if (descLower.contains('setoran timbangan') ||
-                descLower.contains('log timbangan')) {
-              continue;
-            }
-
-            final notifId = 'point_${ph.id}';
-            final isRead =
-                readSet.contains(notifId) ||
-                ph.createdAt.millisecondsSinceEpoch <= markAllTimestamp ||
-                LocalNotificationCacheService().isRead(
-                  userId,
-                  role,
-                  notifId,
-                  ph.createdAt,
-                );
-
-            final isPunishment = ph.points < 0;
-            final cleanDesc = _sanitizePetugasText(ph.description);
-
-            list.add(
-              NotificationEntity(
-                id: notifId,
-                type: isPunishment ? 'PUNISHMENT' : 'POIN_BERTAMBAH',
-                title: isPunishment
-                    ? 'Penalti Pengurangan Poin'
-                    : 'Poin Insentif Bertambah!',
-                desc: cleanDesc.isNotEmpty
-                    ? cleanDesc
-                    : (isPunishment
-                          ? 'Anda mendapatkan penalti ${ph.points} poin.'
-                          : 'Anda mendapatkan tambahan +${ph.points} poin.'),
-                isRead: isRead,
-                time: ph.createdAt
-                    .toLocal()
-                    .toIso8601String()
-                    .substring(0, 16)
-                    .replaceAll('T', ' '),
-                icon: isPunishment ? 'warning' : 'star',
-                createdAt: ph.createdAt,
-              ),
-            );
-          }
-        }
-      } catch (_) {}
+      // ponytail: Notifikasi murni dari backend API & FCM. Tidak lagi mensintesis dari PointHistory.
 
       final List<NotificationEntity> result = [];
 

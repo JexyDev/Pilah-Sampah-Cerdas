@@ -1739,7 +1739,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
             type: 'PRESENSI_KKN_SUKSES',
           );
           NotificationEngine().showGenericNotification(
-            id: DateTime.now().millisecondsSinceEpoch.remainder(10000),
+            id: DateTime.now().millisecondsSinceEpoch.remainder(2147483647).abs(),
             title: 'Selesai Kegiatan KKN Berhasil ✅',
             body:
                 'Presensi Selesai Kegiatan di $kelurahan ($rw) berhasil tercatat (+3 PTS).',

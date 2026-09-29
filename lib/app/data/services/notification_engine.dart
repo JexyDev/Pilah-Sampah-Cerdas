@@ -74,6 +74,7 @@ class NotificationEngine {
             importance: Importance.max,
             playSound: true,
             enableVibration: true,
+            showBadge: true,
           ),
         );
         await androidPlugin.createNotificationChannel(
@@ -131,22 +132,6 @@ class NotificationEngine {
       debugPrint('[NotificationEngine] Cleanup error: $e');
     }
   }
-
-  // ponytail: Notifikasi murni dari server backend via FCM.
-  // Dilarang membuat notifikasi tiruan di mobile agar data 100% konsisten dari backend.
-  Future<void> showPointsNotification(int points) async {}
-  Future<void> showActivationNotification(int points) async {}
-  Future<void> showPunishmentNotification(int points) async {}
-  Future<void> showResetPendingNotification() async {}
-  Future<void> showResetCompletedNotification({String? binName}) async {}
-  Future<void> showSubmitLogTimbanganNotification({
-    required double weightKg,
-    required String type,
-  }) async {}
-  Future<void> showProkerNotification({
-    required String title,
-    required String body,
-  }) async {}
 
   Future<void> showGenericNotification({
     required int id,

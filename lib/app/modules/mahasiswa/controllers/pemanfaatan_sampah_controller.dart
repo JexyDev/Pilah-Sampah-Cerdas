@@ -85,7 +85,7 @@ class PemanfaatanSampahNotifier extends StateNotifier<PemanfaatanSampahState> {
         }
 
         NotificationEngine().showGenericNotification(
-          id: DateTime.now().millisecondsSinceEpoch.remainder(10000),
+          id: DateTime.now().millisecondsSinceEpoch.remainder(2147483647).abs(),
           title: 'Laporan Pemanfaatan Sampah Tersimpan ♻️',
           body:
               'Laporan ${request.jenisPemanfaatan} berhasil dikirim dan ditambahkan ke poin Anda.',

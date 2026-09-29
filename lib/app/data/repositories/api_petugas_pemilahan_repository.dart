@@ -8,7 +8,6 @@ import '../../core/utils/image_compressor.dart';
 import '../../core/values/api_constants.dart';
 import '../models/petugas_pemilahan_models.dart';
 import '../providers/api_client.dart';
-import '../services/notification_engine.dart';
 import 'petugas_pemilahan_repository.dart';
 
 class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
@@ -147,6 +146,7 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
     required String classification,
     required String photoPath,
     required String photoTimbanganPath,
+    String inputMethod = 'MANUAL',
     double? latitude,
     double? longitude,
   }) async {
@@ -166,18 +166,20 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
       );
 
       debugPrint('[ApiPetugasPemilahanRepository] Creating FormData...');
+      final dateStamp = DateTime.now().toIso8601String().substring(0, 10).replaceAll('-', '');
       final formData = FormData.fromMap({
         'binId': binId,
         'actualWeightKg': actualWeightKg,
         'classification': classification,
+        'inputMethod': inputMethod,
         'image': await MultipartFile.fromFile(
           compressedPhotoPath,
-          filename: compressedPhotoPath.split(RegExp(r'[\\/]')).last,
+          filename: 'PHOTO_${dateStamp}_$binId.jpg',
           contentType: MediaType('image', 'jpeg'),
         ),
         'imageTimbangan': await MultipartFile.fromFile(
           compressedTimbanganPath,
-          filename: compressedTimbanganPath.split(RegExp(r'[\\/]')).last,
+          filename: 'EVIDENCE_${dateStamp}_$binId.jpg',
           contentType: MediaType('image', 'jpeg'),
         ),
         'isGlobalBin': true,
@@ -202,12 +204,6 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
             ? (response.data['data'] as Map<String, dynamic>? ??
                   response.data as Map<String, dynamic>)
             : <String, dynamic>{};
-
-        // Tampilkan push notification sistem
-        NotificationEngine().showSubmitLogTimbanganNotification(
-          weightKg: actualWeightKg,
-          type: classification,
-        );
 
         return responseData;
       }

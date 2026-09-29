@@ -124,61 +124,7 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
   final readSet = readList.toSet();
   final markAllTimestamp = prefs.getInt('mark_all_notifs_${userId}_$role') ?? 0;
 
-  try {
-    final pointRepo = ref.read(wasteLogRepositoryProvider);
-    final pointHistory = await pointRepo.getPointHistoryByUser(userId);
-
-    for (final ph in pointHistory) {
-      if (ph.points > 0) {
-        final descLower = ph.description.toLowerCase();
-        final katLower = (ph.kategori ?? '').toLowerCase();
-        // Skip aktivitas penalti/pelanggaran dan non-poin (pemanfaatan dan panen)
-        if (katLower.contains('penalty') ||
-            descLower.contains('penalti') ||
-            descLower.contains('punishment') ||
-            descLower.contains('pelanggaran')) {
-          continue;
-        }
-        if (descLower.contains('pemanfaatan') ||
-            katLower.contains('pemanfaatan') ||
-            descLower.contains('panen') ||
-            katLower.contains('panen')) {
-          continue;
-        }
-
-        final notifId = 'point_${ph.id}';
-        final isRead =
-            readSet.contains(notifId) ||
-            ph.createdAt.millisecondsSinceEpoch <= markAllTimestamp ||
-            LocalNotificationCacheService().isRead(
-              userId,
-              role,
-              notifId,
-              ph.createdAt,
-            );
-
-        final cleanDesc = InputSanitizer.cleanSystemMessage(ph.description);
-        list.add(
-          NotificationEntity(
-            id: notifId,
-            type: 'POIN_KKN',
-            title: 'Poin KKN Bertambah!',
-            desc: cleanDesc.isNotEmpty
-                ? cleanDesc
-                : 'Anda mendapatkan +${ph.points} poin.',
-            isRead: isRead,
-            time: ph.createdAt
-                .toLocal()
-                .toIso8601String()
-                .substring(0, 16)
-                .replaceAll('T', ' '),
-            icon: 'star',
-            createdAt: ph.createdAt,
-          ),
-        );
-      }
-    }
-  } catch (_) {}
+  // ponytail: Notifikasi murni dari backend API & FCM. Tidak lagi mensintesis dari PointHistory.
 
   // Tambahkan notifikasi laporan pemanfaatan & catat panen (Non-Poin)
   try {

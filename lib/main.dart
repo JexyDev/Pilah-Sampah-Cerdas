@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'app/core/theme/app_theme.dart';
 import 'app/routes/app_routes.dart';
@@ -17,7 +18,6 @@ import 'app/core/utils/platform_utils.dart';
 import 'app/modules/scan/controllers/scan_controller.dart';
 import 'app/modules/notifikasi/controllers/notifikasi_controller.dart';
 import 'app/modules/riwayat/controllers/riwayat_controller.dart';
-import 'app/data/services/local_notification_service.dart';
 import 'app/data/services/notification_engine.dart';
 import 'app/modules/mahasiswa/services/kkn_background_task_handler.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
@@ -35,7 +35,6 @@ import 'app/modules/notifikasi/controllers/warga_notifikasi_controller.dart';
 import 'app/modules/mahasiswa/controllers/mahasiswa_notifikasi_controller.dart';
 import 'app/modules/petugas_pemilahan/controllers/petugas_pemilahan_notifikasi_controller.dart';
 import 'app/modules/auth/controllers/auth_controller.dart';
-import 'app/data/services/local_notification_cache_service.dart';
 import 'app/data/services/firebase_notification_service.dart';
 import 'app/modules/mahasiswa/views/data_logbook_harian_view.dart';
 import 'app/modules/mahasiswa/views/data_proker_view.dart';
@@ -48,6 +47,9 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await Firebase.initializeApp();
+  } catch (_) {}
   final title = message.notification?.title ??
       message.data['title']?.toString() ??
       'Notifikasi Baru';
@@ -163,21 +165,20 @@ void main() async {
   // jika Firebase belum dikonfigurasi.
   if (PlatformUtils.supportsFcm) {
     try {
+      await Firebase.initializeApp();
       // Daftarkan background handler
       FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-      debugPrint('[FCM] Firebase Messaging ready');
+      debugPrint('[FCM] Firebase initialized & Messaging ready');
     } catch (e) {
-      debugPrint('[FCM] Firebase not configured yet: $e');
+      debugPrint('[FCM] Firebase initialization failed: $e');
     }
   }
 
-  // Inisialisasi Local Notification & Jadwalkan Reminders
+  // Inisialisasi Local Notification Engine
   try {
-    await LocalNotificationService.instance.init(navigatorKey);
-    // Background fixed schedule notification engine (New Requirement)
     await NotificationEngine().init(navigatorKey: navigatorKey);
   } catch (e) {
-    debugPrint('[LocalNotif] Setup failed: $e');
+    debugPrint('[NotificationEngine] Setup failed: $e');
   }
 
   runApp(
@@ -304,15 +305,6 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
         final user = ref.read(authProvider).user;
         if (user != null && (title.isNotEmpty || body.isNotEmpty)) {
           await FirebaseNotificationService().saveNotification(
-            userId: user.id,
-            role: user.role.name,
-            title: title,
-            desc: body,
-            type: type,
-            id: notifId,
-          );
-
-          LocalNotificationCacheService().addNotification(
             userId: user.id,
             role: user.role.name,
             title: title,

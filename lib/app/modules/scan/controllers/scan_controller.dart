@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../data/services/notification_engine.dart';
 import '../../../data/models/bin_entity.dart';
 import '../../../data/models/ai_detection_entity.dart';
 import '../../../data/models/bin_reset_entity.dart';
@@ -151,11 +150,6 @@ class ScanFlowNotifier extends StateNotifier<ScanFlowState> {
         scanResult: result,
         currentStep: 3,
       );
-
-      // Panggil notifikasi latar belakang
-      if (result.pointsAwarded > 0) {
-        NotificationEngine().showPointsNotification(result.pointsAwarded);
-      }
     } on BinException catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -375,8 +369,6 @@ class ResetBinNotifier extends StateNotifier<ResetBinState> {
         );
       }
       state = ResetBinState(result: lastResult);
-      // Panggil notifikasi latar belakang
-      NotificationEngine().showResetPendingNotification();
     } on BinException catch (e) {
       state = ResetBinState(errorCode: e.code, errorMessage: e.message);
     }

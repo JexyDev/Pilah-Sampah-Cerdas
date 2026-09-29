@@ -10,7 +10,6 @@ import '../../scan/controllers/scan_controller.dart';
 import '../../notifikasi/controllers/notifikasi_controller.dart';
 import '../../shared/widgets/app_loading.dart';
 import '../../shared/widgets/qr_scanner_widget.dart';
-import '../../../data/services/notification_engine.dart' as import_engine;
 import '../../riwayat/controllers/riwayat_controller.dart';
 
 /// Aktivasi Tempat Sampah — sesuai desain:
@@ -385,7 +384,6 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
 
       // Trigger notification when success transitions from false to true
       if (!(prev?.isSuccess ?? false) && next.isSuccess) {
-        import_engine.NotificationEngine().showActivationNotification(10);
         // Refresh point providers if they exist globally
         ref.invalidate(pointHistoryProvider);
       }

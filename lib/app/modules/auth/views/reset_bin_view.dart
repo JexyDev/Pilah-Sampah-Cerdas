@@ -12,7 +12,6 @@ import '../../scan/controllers/scan_controller.dart';
 import '../../notifikasi/controllers/notifikasi_controller.dart';
 import '../../shared/widgets/app_loading.dart';
 import '../../../data/models/user_entity.dart';
-import '../../../data/services/notification_engine.dart';
 
 /// Halaman pengajuan pengosongan tempat sampah.
 /// Sesuai prd.md §3.1 dan ui_ux_flow.md §3: failed_scan_step_1.png
@@ -186,7 +185,6 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
             });
             ref.invalidate(binsProvider);
             ref.invalidate(notificationsProvider);
-            NotificationEngine().showResetPendingNotification();
             ScaffoldMessenger.of(context).clearSnackBars();
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(

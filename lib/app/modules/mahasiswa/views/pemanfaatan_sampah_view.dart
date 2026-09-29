@@ -45,8 +45,8 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
   final _volBahanBakuCtrl = TextEditingController();
   final _hasilCtrl = TextEditingController();
   final _catatanCtrl = TextEditingController();
-  String _unitBahanBaku = 'Kg';
-  String _unitHasil = 'Kg';
+  String _unitBahanBaku = 'kg';
+  String _unitHasil = 'kg';
   File? _selectedImage1;
 
   final _formKey2 = GlobalKey<FormState>();
@@ -59,7 +59,7 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
   String _sumberProker = 'MAHASISWA';
   File? _selectedImage2;
 
-  final List<String> _unitList = ['Kg', 'Liter', 'Gram', 'Unit'];
+  final List<String> _unitList = ['kg', 'Liter', 'Gram', 'Unit'];
   final List<String> _kategoriProkerList = ['FISIK', 'NON_FISIK', 'LAINNYA'];
   final List<String> _sumberProkerList = [
     'MAHASISWA',
