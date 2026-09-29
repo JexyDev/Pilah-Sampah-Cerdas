@@ -271,7 +271,7 @@ export function Donut({
         {/* Footnote Transparansi Sumber Data */}
         <div className="donut-source-note">
           <span className="donut-source-dot" />
-          <span>Murni data setoran warga (terpisah dari pencatatan petugas pemilah)</span>
+          <span>Murni data setoran warga (Smart Bin IoT / AI)</span>
         </div>
       </div>
     </section>
@@ -1024,7 +1024,7 @@ export function Compliance({ rows, selected, onSelect }: ComplianceProps) {
       </CardTitle>
 
       <div style={{ fontSize: "11px", color: "#64748b", margin: "-6px 0 10px 0" }}>
-        *Indeks gabungan tingkat partisipasi warga membuang sampah dan akurasi pemilahannya berdasarkan transaksi IoT &amp; Manual.
+        *Indeks gabungan tingkat partisipasi warga membuang sampah dan akurasi pemilahannya berdasarkan transaksi setoran warga.
       </div>
 
       <div className="compliance-container">

@@ -91,7 +91,7 @@ export function QcDataAuditModal({
 ### A. Volume Sampah Bulanan (m³/bulan)
 * **Rumus Acuan**:
   Volume (m³/bulan) = Total Berat Terkumpul (kg) / Faktor Densitas Padat (1.000 kg/m³)
-* **Sumber Data**: Murni dari transaksi operasional riil \`setoran_otomatis\` (Warga). Data pencatatan petugas pemilah dipisahkan untuk mencegah double counting.
+* **Sumber Data**: Murni dari transaksi operasional riil \`setoran_otomatis\` (Warga via Smart Bin IoT/AI). Tidak menggunakan data pencatatan manual / petugas pemilah.
 * **Perhitungan Nilai Aktual**:
   - Organik: ${fmtN(vOrg)} m³/bulan (${pOrg}%)
   - Anorganik: ${fmtN(vAno)} m³/bulan (${pAno}%)
@@ -122,31 +122,21 @@ ${(data?.kepatuhanPerKelurahan ?? []).map(k => `  - ${k.nama}: ${k.kepatuhan != 
 | No | Metrik Dashboard | Tabel Database Sumber | Kolom Sumber |
 |---|---|---|---|
 | 1 | Transaksi Setoran Otomatis Warga | setoran_otomatis | berat, status (ACCEPTED/PENDING/REJECTED), hasilKlasifikasiAi, createdAt |
-| 2 | Transaksi Setoran Manual Petugas | setoran_manual | berat, kategori (organik/anorganik/residu), status, createdAt |
-| 3 | Tingkat Kepatuhan Pemilahan | setoran_otomatis | COUNT(status='ACCEPTED') / COUNT(*) * 100 (Sampel Giat KKN) |
-| 4 | Titik Fasilitas Persampahan | fasilitas (Facility) | id, nama, jenis, latitude, longitude, rwId (Filter: jenis != 'posko_kkn') |
-| 5 | Log Produksi Fasilitas | catatan_produksi_fasilitas | outputKg, createdAt |
+| 2 | Tingkat Kepatuhan Pemilahan | setoran_otomatis | COUNT(status='ACCEPTED') / COUNT(*) * 100 (Sampel Giat KKN) |
+| 3 | Titik Fasilitas Persampahan | fasilitas (Facility) | id, nama, jenis, latitude, longitude, rwId (Filter: jenis != 'posko_kkn') |
 
 ---
 
 ## 3. QUERY SQL UNTUK VERIFIKASI MANDIRI TIM QC
 
 \`\`\`sql
--- Query 1: Verifikasi Transaksi Setoran Riil Warga & Petugas (Bulan Berjalan)
+-- Query 1: Verifikasi Transaksi Setoran Riil Warga (Bulan Berjalan)
 SELECT 
-  'setoran_otomatis' AS sumber,
+  'setoran_otomatis (Warga)' AS sumber,
   COUNT(*) AS total_transaksi,
   ROUND(SUM(berat)::numeric, 2) AS total_kg,
   ROUND((SUM(berat) / 1000)::numeric, 3) AS volume_m3
 FROM setoran_otomatis
-WHERE created_at >= '2026-09-01' AND created_at <= '2026-09-30 23:59:59'
-UNION ALL
-SELECT 
-  'setoran_manual' AS sumber,
-  COUNT(*) AS total_transaksi,
-  ROUND(SUM(berat)::numeric, 2) AS total_kg,
-  ROUND((SUM(berat) / 1000)::numeric, 3) AS volume_m3
-FROM setoran_manual
 WHERE created_at >= '2026-09-01' AND created_at <= '2026-09-30 23:59:59';
 
 -- Query 2: Verifikasi Kepatuhan Pemilahan (Sampel Warga Selama Giat KKN)
@@ -206,21 +196,13 @@ ${(data?.kepatuhanPerKelurahan ?? []).map((k) => {
     URL.revokeObjectURL(url);
   };
 
-  const sqlVolume = `-- Query 1: Verifikasi Transaksi Setoran Riil Warga & Petugas (Bulan Berjalan)
+  const sqlVolume = `-- Query 1: Verifikasi Transaksi Setoran Riil Warga (Bulan Berjalan)
 SELECT 
-  'setoran_otomatis' AS sumber,
+  'setoran_otomatis (Warga)' AS sumber,
   COUNT(*) AS total_transaksi,
   ROUND(SUM(berat)::numeric, 2) AS total_kg,
   ROUND((SUM(berat) / 1000)::numeric, 3) AS volume_m3
 FROM setoran_otomatis
-WHERE created_at >= '2026-09-01' AND created_at <= '2026-09-30 23:59:59'
-UNION ALL
-SELECT 
-  'setoran_manual' AS sumber,
-  COUNT(*) AS total_transaksi,
-  ROUND(SUM(berat)::numeric, 2) AS total_kg,
-  ROUND((SUM(berat) / 1000)::numeric, 3) AS volume_m3
-FROM setoran_manual
 WHERE created_at >= '2026-09-01' AND created_at <= '2026-09-30 23:59:59';`;
 
   const sqlKepatuhan = `-- Query 2: Verifikasi Kepatuhan Pemilahan (Sampel Warga Selama Giat KKN)
@@ -474,8 +456,8 @@ ORDER BY "jumlah_titik" DESC;`;
               <div className="qc-sql-card">
                 <div className="qc-sql-head">
                   <div>
-                    <h4 className="qc-sql-title">Query 1: Verifikasi Transaksi & Volume Sampah (m³/bln)</h4>
-                    <span className="qc-sql-target">Tabel: <code>setoran_otomatis</code> + <code>setoran_manual</code></span>
+                    <h4 className="qc-sql-title">Query 1: Verifikasi Transaksi & Volume Sampah Warga (m³/bln)</h4>
+                    <span className="qc-sql-target">Tabel: <code>setoran_otomatis</code> (Warga)</span>
                   </div>
                   <button
                     type="button"

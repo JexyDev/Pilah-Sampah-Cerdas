@@ -474,49 +474,14 @@ describe("gisEksekutifService Real DB Operational Tests (Zero Baseline / 100% Re
       },
     ]);
 
-    // Setoran manual petugas pemilah (Tercatat terpisah, TIDAK boleh mendobelkan timbulan warga)
-    ((prisma as any).setoranManual.findMany as any).mockResolvedValue([
-      {
-        id: "sm-1",
-        status: "APPROVED",
-        berat: 100,
-        kategori: "Anorganik",
-        createdAt: new Date("2026-09-12T10:00:00.000Z"),
-        rw: { kelurahanId: "kel-1", kelurahan: { name: "Dago" } },
-      },
-      {
-        id: "sm-2",
-        status: "APPROVED",
-        berat: 50,
-        kategori: "non-organik",
-        createdAt: new Date("2026-09-13T10:00:00.000Z"),
-        rw: { kelurahanId: "kel-1", kelurahan: { name: "Dago" } },
-      },
-      {
-        id: "sm-3",
-        status: "APPROVED",
-        berat: 30,
-        kategori: "Residu",
-        createdAt: new Date("2026-09-14T10:00:00.000Z"),
-        rw: { kelurahanId: "kel-1", kelurahan: { name: "Dago" } },
-      },
-      {
-        id: "sm-4",
-        status: "APPROVED",
-        berat: 70,
-        kategori: "Organik",
-        createdAt: new Date("2026-09-15T10:00:00.000Z"),
-        rw: { kelurahanId: "kel-1", kelurahan: { name: "Dago" } },
-      },
-    ]);
-
     const res = await gisEksekutifService.getOverview({ periode: "September 2026" });
 
     expect(res.success).toBe(true);
-    // Data Timbulan Utama MURNI DARI WARGA (Tidak tercampur data petugas):
+    // Data Timbulan Utama MURNI DARI WARGA (Tidak tercampur data petugas pemilah / manual):
     expect(res.komposisiVolume.organik.kgHari).toBe(80);
     expect(res.komposisiVolume.anorganik.kgHari).toBe(20);
     expect(res.komposisiVolume.totalKg).toBe(100);
+    expect(res.komposisiVolume.totalM3).toBe(0.1);
 
     // Persentase 100% dialokasikan murni Organik (80%) dan Anorganik (20%)
     expect(res.komposisiVolume.organik.persen).toBe(80);
@@ -527,11 +492,15 @@ describe("gisEksekutifService Real DB Operational Tests (Zero Baseline / 100% Re
     expect(res.komposisiVolume.residu.persen).toBe(0);
     expect(res.komposisiVolume.residu.volumeM3).toBe(0);
 
-    // Data Petugas Pemilah terpisah secara akurat dan tidak dobel:
-    expect(res.komposisiVolume.petugasPemilah).toBeDefined();
-    expect(res.komposisiVolume.petugasPemilah.anorganikKg).toBe(150);
-    expect(res.komposisiVolume.petugasPemilah.organikKg).toBe(70);
-    expect(res.komposisiVolume.petugasPemilah.totalKg).toBe(220);
+    // Sinkronisasi KPI dan Tren Bulanan Murni dari Warga
+    expect(res.kpi.volumeTotal).toBe(0.1);
+    expect(res.kpi.volumeTotalKg).toBe(100);
+    expect((res.komposisiVolume as any).petugasPemilah).toBeUndefined();
+
+    // Tren bulan September murni dari transaksi warga (100 kg = 0.1 m3)
+    const sepTrend = res.trenBulanan.find((t) => t.bulan === "Sep");
+    expect(sepTrend?.volumeKg).toBe(100);
+    expect(sepTrend?.volume).toBe(0.1);
   });
 });
 

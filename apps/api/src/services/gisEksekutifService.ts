@@ -240,12 +240,12 @@ export const gisEksekutifService = {
       ? kelurahanList.map((k) => k.name)
       : Object.keys(KELURAHAN_GEOMETRIES);
 
-    // ── 5. Data Transaksi Riil Sistem (Setoran Otomatis & Setoran Manual) ───
+    // ── 5. Data Transaksi Riil Sistem Murni Warga (Setoran Otomatis / Smart Bin) ───
     // Rentang waktu program KKN (Agustus - Desember 2026)
     const programStart = new Date("2026-08-01T00:00:00.000Z");
     const programEnd = new Date("2026-12-31T23:59:59.999Z");
 
-    // A. Setoran Otomatis Warga (Smart Bin IoT & AI)
+    // Murni Setoran Otomatis Warga (Smart Bin IoT & AI) — tidak menggunakan pencatatan manual / petugas pemilah
     const setoranAllWindow = await prisma.setoranOtomatis.findMany({
       where: {
         createdAt: { gte: programStart, lte: programEnd },
@@ -273,33 +273,12 @@ export const gisEksekutifService = {
       },
     });
 
-    // B. Setoran Manual Petugas Pengangkut
-    const setoranManualAllWindow = await prisma.setoranManual.findMany({
-      where: {
-        createdAt: { gte: programStart, lte: programEnd },
-        petugas: { isTestAccount: false },
-      },
-      select: {
-        id: true,
-        status: true,
-        berat: true,
-        kategori: true,
-        createdAt: true,
-        rw: {
-          select: { kelurahanId: true, kelurahan: { select: { name: true } } },
-        },
-      },
-    });
-
     // Filter transaksi untuk bulan aktif (activeMonthIdx)
     const setoranBulanan = setoranAllWindow.filter(
       (s) => new Date(s.createdAt).getUTCMonth() === activeMonthIdx
     );
-    const setoranManualBulanan = setoranManualAllWindow.filter(
-      (sm) => new Date(sm.createdAt).getUTCMonth() === activeMonthIdx
-    );
 
-    // Struktur agregasi riil per kelurahan (Sumber Primer: Warga)
+    // Struktur agregasi riil per kelurahan (Sumber Primer: Murni Warga)
     interface KelRealMetrics {
       totalSetoran: number;
       patuhSetoran: number;
@@ -307,11 +286,6 @@ export const gisEksekutifService = {
       anorganikKg: number; // Murni setoran otomatis warga
       residuKg: number; // Kategori residu tidak digunakan lagi (selalu 0)
       wargaAktifIds: Set<string>;
-      // Data terpisah untuk pencatatan petugas pemilah (mencegah double counting)
-      petugasOrganikKg: number;
-      petugasAnorganikKg: number;
-      petugasTotalKg: number;
-      petugasSetoranCount: number;
     }
     const realMetricsByKel: Record<string, KelRealMetrics> = {};
     const getOrInitKel = (name: string): KelRealMetrics => {
@@ -324,10 +298,6 @@ export const gisEksekutifService = {
           anorganikKg: 0,
           residuKg: 0,
           wargaAktifIds: new Set<string>(),
-          petugasOrganikKg: 0,
-          petugasAnorganikKg: 0,
-          petugasTotalKg: 0,
-          petugasSetoranCount: 0,
         };
       }
       return realMetricsByKel[key];
@@ -356,26 +326,6 @@ export const gisEksekutifService = {
         m.anorganikKg += kg;
       }
       // Residu diabaikan/tidak digunakan lagi
-    });
-
-    // Agregasi setoran manual petugas pemilah (DIPISAHKAN agar tidak dobel dengan setoran warga)
-    setoranManualBulanan.forEach((sm) => {
-      const kelName = sm.rw?.kelurahan?.name;
-      if (!kelName) return;
-      const m = getOrInitKel(kelName);
-
-      const kg = Number(sm.berat || 0);
-      const kat = (sm.kategori || "").toLowerCase().trim();
-      m.petugasSetoranCount += 1;
-      m.petugasTotalKg += kg;
-
-      // urutan penting: "anorganik" mengandung substring "organik"
-      if (kat.includes("anorganik") || kat.includes("non-organik") || kat.includes("non organik")) {
-        m.petugasAnorganikKg += kg;
-      } else if (kat.includes("organik")) {
-        m.petugasOrganikKg += kg;
-      }
-      // Residu diabaikan (tidak digunakan lagi)
     });
 
     // ── 6. Kepatuhan & Volume Real per Kelurahan (Murni Real Database Warga) ───
@@ -465,10 +415,6 @@ export const gisEksekutifService = {
     let anoPct = baseTotalKg > 0 ? (100 - orgPct) : 0;
     let resPct = 0;
 
-    const basePetugasOrgKg = Math.round(Object.values(realMetricsByKel).reduce((s, m) => s + m.petugasOrganikKg, 0) * 10) / 10;
-    const basePetugasAnoKg = Math.round(Object.values(realMetricsByKel).reduce((s, m) => s + m.petugasAnorganikKg, 0) * 10) / 10;
-    const basePetugasTotalKg = Math.round((basePetugasOrgKg + basePetugasAnoKg) * 10) / 10;
-
     let volumeTotal = computedTotalM3;
     const hasData = baseTotalKg > 0;
 
@@ -492,35 +438,9 @@ export const gisEksekutifService = {
       totalKg: baseTotalKg,
       totalKgHari: baseTotalKg,
       hasData,
-      // Metadata terpisah untuk data pencatatan petugas pemilah (terisolasi, tidak dobel)
-      petugasPemilah: {
-        totalKg: basePetugasTotalKg,
-        organikKg: basePetugasOrgKg,
-        anorganikKg: basePetugasAnoKg,
-      },
     };
 
-    // ── 7. Tren Bulanan — integrasi riil transaksi bulanan + log produksi fasilitas (Agustus – Desember 2026) ──
-    const prodLogs = await prisma.facilityProductionLog.findMany({
-      where: {
-        createdAt: { gte: programStart, lte: programEnd },
-        ...(rawKel
-          ? {
-              facility: {
-                rw: { kelurahan: { name: { equals: rawKel, mode: "insensitive" } } },
-              },
-            }
-          : {}),
-      },
-      select: { createdAt: true, outputKg: true },
-    });
-
-    const prodMap: Record<number, number> = {};
-    prodLogs.forEach((log) => {
-      const month = new Date(log.createdAt).getUTCMonth(); // 7=Agu, 8=Sep, 9=Okt, 10=Nov, 11=Des
-      prodMap[month] = (prodMap[month] ?? 0) + Number(log.outputKg ?? 0);
-    });
-
+    // ── 7. Tren Bulanan Murni dari Transaksi Warga (Agustus – Desember 2026) ──
     const trenBulanan = PROGRAM_MONTHS.map(({ label, monthIdx }) => {
       const autoInMonth = setoranAllWindow.filter((s) => {
         if (new Date(s.createdAt).getUTCMonth() !== monthIdx) return false;
@@ -532,21 +452,12 @@ export const gisEksekutifService = {
         return kelName?.toLowerCase() === rawKel.toLowerCase();
       });
 
-      const manualInMonth = setoranManualAllWindow.filter((sm) => {
-        if (new Date(sm.createdAt).getUTCMonth() !== monthIdx) return false;
-        if (!rawKel) return true;
-        const kelName = sm.rw?.kelurahan?.name;
-        return kelName?.toLowerCase() === rawKel.toLowerCase();
-      });
-
-      const autoKg = autoInMonth.reduce((acc, s) => acc + Number(s.berat || 0), 0);
-      const manualKg = manualInMonth.reduce((acc, sm) => acc + Number(sm.berat || 0), 0);
-      const prodKg = prodMap[monthIdx] ?? 0;
-      const totalKgMonth = autoKg + manualKg + prodKg;
+      const autoKg = Math.round(autoInMonth.reduce((acc, s) => acc + Number(s.berat || 0), 0) * 10) / 10;
+      const totalKgMonth = autoKg;
 
       // Konversi berat nyata ke volume m³ (1.000 kg = 1 m³ standar DLH Kota Bandung / SNI)
       const volumeM3 = totalKgMonth > 0 ? Math.round((totalKgMonth / 1000) * 100) / 100 : 0;
-      const volumeKg = totalKgMonth > 0 ? Math.round(totalKgMonth * 10) / 10 : 0;
+      const volumeKg = totalKgMonth > 0 ? totalKgMonth : 0;
       return { bulan: label, volume: volumeM3, volumeKg };
     });
 
