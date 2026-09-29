@@ -778,41 +778,44 @@ export const dashboardService = {
       activeAdmin + activeOperator + activeRw + activeDpl + activeResidu + activeKkn + activeWarga;
 
     // 12. Tingkat Kepatuhan Pemilahan Sampah (Verifikasi Tempat Sampah vs Deteksi AI)
-    const setoranWithBin = await prisma.setoranOtomatis.findMany({
-      where: catWhere,
-      select: {
-        id: true,
-        berat: true,
-        confidenceAi: true,
-        hasilKlasifikasiAi: true,
-        kategoriAktual: true,
-        bin: {
+    const setoranWithBin = typeof prisma?.setoranOtomatis?.findMany === "function"
+      ? await prisma.setoranOtomatis.findMany({
+          where: catWhere,
           select: {
-            category: {
-              select: { name: true },
-            },
-            rw: {
+            id: true,
+            wargaId: true,
+            berat: true,
+            confidenceAi: true,
+            hasilKlasifikasiAi: true,
+            kategoriAktual: true,
+            bin: {
               select: {
-                kelurahan: {
+                category: {
                   select: { name: true },
+                },
+                rw: {
+                  select: {
+                    kelurahan: {
+                      select: { name: true },
+                    },
+                  },
+                },
+              },
+            },
+            warga: {
+              select: {
+                rw: {
+                  select: {
+                    kelurahan: {
+                      select: { name: true },
+                    },
+                  },
                 },
               },
             },
           },
-        },
-        warga: {
-          select: {
-            rw: {
-              select: {
-                kelurahan: {
-                  select: { name: true },
-                },
-              },
-            },
-          },
-        },
-      },
-    });
+        })
+      : [];
 
     let compliantCount = 0;
     let nonCompliantCount = 0;
@@ -889,10 +892,12 @@ export const dashboardService = {
     });
 
     // Real data komparasi survei baseline vs endline / kepatuhan real per kelurahan
-    const dbKelurahans = await prisma.kelurahan.findMany({
-      orderBy: { name: "asc" },
-      select: { id: true, name: true },
-    });
+    const dbKelurahans = typeof prisma?.kelurahan?.findMany === "function"
+      ? await prisma.kelurahan.findMany({
+          orderBy: { name: "asc" },
+          select: { id: true, name: true },
+        })
+      : [];
     const allKelurahanCoblong = dbKelurahans.length > 0
       ? dbKelurahans.map((k) => ({
           id: k.id,
@@ -907,11 +912,42 @@ export const dashboardService = {
           { id: "kel-sekeloa", name: "Sekeloa" },
         ];
 
-    const surveyBaselines = await prisma.surveiKelurahan.findMany({
-      include: { pemilahanSampah: true, volumeSampah: true },
-    });
-    const surveyEndlines = await prisma.endlineSurveiKelurahan.findMany({
-      include: { pemilahanSampah: true },
+    const surveyBaselines = typeof prisma?.surveiKelurahan?.findMany === "function"
+      ? await prisma.surveiKelurahan.findMany({
+          include: { pemilahanSampah: true, volumeSampah: true },
+        })
+      : [];
+    const surveyEndlines = typeof prisma?.endlineSurveiKelurahan?.findMany === "function"
+      ? await prisma.endlineSurveiKelurahan.findMany({
+          include: { pemilahanSampah: true },
+        })
+      : [];
+
+    // Ambil rekap total warga terdaftar per kelurahan (untuk pembagi partisipasi riil)
+    const allRwWithWarga = typeof prisma?.rw?.findMany === "function"
+      ? await prisma.rw.findMany({
+          select: {
+            kelurahan: { select: { name: true } },
+            _count: {
+              select: {
+                users: {
+                  where: {
+                    role: { name: "WARGA" },
+                    ...(!includeTestAccounts ? { isTestAccount: false } : {}),
+                  },
+                },
+              },
+            },
+          },
+        })
+      : [];
+
+    const totalWargaByKel: Record<string, number> = {};
+    allRwWithWarga.forEach((r: any) => {
+      const kelName = r.kelurahan?.name;
+      if (!kelName) return;
+      const key = kelName.toLowerCase().replace(/^kel(urahan)?\.\s*/i, "").replace(/\s+/g, "");
+      totalWargaByKel[key] = (totalWargaByKel[key] || 0) + (r._count?.users || 0);
     });
 
     const baselineComparison = allKelurahanCoblong.map((k) => {
@@ -994,11 +1030,40 @@ export const dashboardService = {
       }
 
       // Jumlah setoran yang benar-benar dapat dinilai di kelurahan ini.
-      // Diekspor supaya konsumen dapat menghitung rata-rata BERBOBOT; rata-rata
-      // sederhana antar kelurahan membuat kelurahan bervolume kecil punya
-      // pengaruh setara dengan yang bervolume besar.
       let kelDinilai = 0;
       let kelPatuh = 0;
+
+      kelSetoranWarga.forEach((s: any) => {
+        const binName = (s.bin?.category?.name || "").toLowerCase();
+        let binKategori: "organik" | "anorganik" | null = null;
+        if (binName.includes("anorganik") || binName.includes("non organik")) {
+          binKategori = "anorganik";
+        } else if (binName.includes("organik")) {
+          binKategori = "organik";
+        }
+
+        const hasilKelas = classifyWaste(s);
+        if (!binKategori || !hasilKelas) return;
+
+        kelDinilai++;
+        if (evaluateCompliance(hasilKelas, binKategori)) kelPatuh++;
+      });
+
+      const akurasiRate =
+        kelDinilai > 0 ? (kelPatuh / kelDinilai) * 100 : 0;
+
+      // Hitung partisipasi warga riil (warga unik yang aktif memilah)
+      const activeWargaIds = new Set(
+        kelSetoranWarga.map((s: any) => s.wargaId).filter(Boolean)
+      );
+      const wargaAktif = activeWargaIds.size;
+      let totalWarga = totalWargaByKel[normK] || 0;
+      if (totalWarga < wargaAktif) {
+        totalWarga = wargaAktif;
+      }
+
+      const partisipasiRate =
+        totalWarga > 0 ? Math.min(100, (wargaAktif / totalWarga) * 100) : 0;
 
       // Jika ada input survei endline resmi
       if (e?.pemilahanSampah?.persentasePemilahan) {
@@ -1006,26 +1071,14 @@ export const dashboardService = {
         endlineRate = val <= 1 ? Number((val * 100).toFixed(1)) : Number(val.toFixed(1));
         hasEndline = true;
       } else if (kelSetoranWarga.length > 0) {
-        // Belum ada survei endline — pakai kepatuhan real-time dengan aturan
-        // pencocokan yang SAMA dengan metrik global di atas.
-        kelSetoranWarga.forEach((s: any) => {
-          const binName = (s.bin?.category?.name || "").toLowerCase();
-          let binKategori: "organik" | "anorganik" | null = null;
-          if (binName.includes("anorganik") || binName.includes("non organik")) {
-            binKategori = "anorganik";
-          } else if (binName.includes("organik")) {
-            binKategori = "organik";
-          }
-
-          const hasilKelas = classifyWaste(s);
-          if (!binKategori || !hasilKelas) return;
-
-          kelDinilai++;
-          if (evaluateCompliance(hasilKelas, binKategori)) kelPatuh++;
-        });
-
-        endlineRate =
-          kelDinilai > 0 ? Number(((kelPatuh / kelDinilai) * 100).toFixed(1)) : 0;
+        // Standarisasi Skor Kepatuhan Komposit (Anti-Bias Kamera AI):
+        // 50% Partisipasi Warga Aktif + 50% Ketepatan Pemilahan Wadah
+        // Mencegah klaim instan 100% jika warga yang menyetor baru sebagian
+        if (totalWarga > 0) {
+          endlineRate = Number(((partisipasiRate * 0.5) + (akurasiRate * 0.5)).toFixed(1));
+        } else {
+          endlineRate = Number(akurasiRate.toFixed(1));
+        }
       }
 
       const status: "Terverifikasi Real" | "Belum Terverifikasi" =
@@ -1040,6 +1093,24 @@ export const dashboardService = {
         baselineCompliance: baselineRate,
         actualCompliance: endlineRate,
         endlineRate,
+        partisipasiWarga: Number(partisipasiRate.toFixed(1)),
+        akurasiPilah: Number(akurasiRate.toFixed(1)),
+        wargaAktif,
+        totalWarga,
+        totalKg,
+        wargaKg,
+        petugasKg,
+        sourceType: normSource,
+        hasEndline,
+        status,
+        // bobot untuk agregasi lintas kelurahan
+        setoranDinilai: kelDinilai,
+        setoranPatuh: kelPatuh,
+        // Metadata transparansi asal data (Anti-Dummy Policy: 100% fakta sistem)
+        isFallbackBaselineRate: false,
+        isFallbackBaselineKg: false,
+        isFallback: false,
+      };
         totalKg,
         wargaKg,
         petugasKg,
