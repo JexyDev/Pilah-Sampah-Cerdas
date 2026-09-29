@@ -146,10 +146,10 @@ export const EvaluasiDampakKkn: React.FC = () => {
         "Rumah Memilah",
         "Total Rumah",
         "Tingkat Pemilahan (%)",
-        "Volume Organik (kg/hari)",
-        "Volume Anorganik (kg/hari)",
-        "Volume Residu (kg/hari)",
-        "Total Volume (kg/hari)",
+        "Berat Organik (kg/hari)",
+        "Berat Anorganik (kg/hari)",
+        "Berat Residu (kg/hari)",
+        "Total Berat (kg/hari)",
         "Status Validasi",
       ];
       rows = filtered.map((item, idx) => [
@@ -174,8 +174,8 @@ export const EvaluasiDampakKkn: React.FC = () => {
         "Baseline Pemilahan (%)",
         "Endline Pemilahan (%)",
         "Delta Pemilahan (%)",
-        "Baseline Vol (kg/hari)",
-        "Endline Vol (kg/hari)",
+        "Baseline Berat (kg/hari)",
+        "Endline Berat (kg/hari)",
         "Reduksi Residu (kg/hari)",
         "Status Dampak",
       ];
@@ -331,7 +331,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
                   <th className="px-4 py-3 font-bold">Kelurahan</th>
                   <th className="px-4 py-3 font-bold">Tgl Survei</th>
                   <th className="px-4 py-3 font-bold">Pemilahan</th>
-                  <th className="px-4 py-3 font-bold">Vol. Sampah/Hari</th>
+                  <th className="px-4 py-3 font-bold">Berat Sampah/Hari</th>
                   <th className="px-4 py-3 font-bold">Bank Sampah</th>
                   <th className="px-4 py-3 font-bold">Status Validasi</th>
                   <th className="px-4 py-3 font-bold text-center">Aksi</th>
@@ -476,11 +476,11 @@ export const EvaluasiDampakKkn: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Delta 2: Volume Sampah */}
+                {/* Delta 2: Berat Sampah */}
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm flex flex-col justify-between">
                   <div className="flex items-center justify-between">
                     <span className="text-xs uppercase font-extrabold text-rose-600 tracking-wider">
-                      2. Δ Volume Sampah
+                      2. Δ Berat Sampah
                     </span>
                     <div className="p-2 bg-rose-50 text-rose-600 rounded-xl">
                       <Weight size={18} />
@@ -566,10 +566,10 @@ export const EvaluasiDampakKkn: React.FC = () => {
               </div>
             </div>
 
-            {/* Chart: Volume Sampah */}
+            {/* Chart: Berat Sampah */}
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm">
               <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
-                <Weight size={16} className="text-rose-600" /> Komparasi Volume Sampah (Kg/Hari)
+                <Weight size={16} className="text-rose-600" /> Komparasi Berat Sampah (Kg/Hari)
               </h3>
               <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -604,7 +604,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
                       <th className="px-4 py-3">Kelurahan</th>
                       <th className="px-4 py-3">Status Data</th>
                       <th className="px-4 py-3">Metrik Kepatuhan Pemilahan</th>
-                      <th className="px-4 py-3">Metrik Volume Sampah</th>
+                      <th className="px-4 py-3">Metrik Berat Sampah</th>
                       <th className="px-4 py-3">Metrik Kegiatan Pemanfaatan</th>
                     </tr>
                   </thead>

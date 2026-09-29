@@ -56,6 +56,24 @@ export const DEFAULT_REPORT_CONFIG: ReportCustomConfig = {
   },
 };
 
+export const DEFAULT_WASTE_REPORT_CONFIG: ReportCustomConfig = {
+  judulLaporan: "LAPORAN EVALUASI & AKUNTABILITAS TATA KELOLA PERSAMPAHAN",
+  subjudul: "PENGELOLAAN PERSAMPAHAN KECAMATAN COBLONG BERBASIS PLATFORM CERDAS BERSEKA",
+  nomorDokumen: "005/BERSEKA-DLH/EVAL/IX/2026",
+  sifatDokumen: "Penting / Kedinasan Terbuka",
+  lampiranDokumen: "1 (Satu) Berkas Rekapitulasi Lengkap",
+  perihalDokumen: "Laporan Akuntabilitas dan Evaluasi Kinerja Tata Kelola Persampahan Berbasis Ekonomi Sirkular",
+  wilayahCakupan: "Kecamatan Coblong (6 Kelurahan, 86 RW)",
+  tanggalPengesahan: "29 September 2026",
+  penandatangan: {
+    preset: "KETUA_PELAKSANA",
+    jabatan: "Ketua Tim Pelaksana Task Force BERSEKA",
+    instansi: "Universitas Komputer Indonesia x BERSEKA",
+    nama: "Ketua Tim Pelaksana",
+    nip: "19800512 200501 1 004",
+  },
+};
+
 export const SIGNATORY_PRESETS = {
   KETUA_PELAKSANA: {
     jabatan: "Ketua Tim Pelaksana Task Force KKN BERSEKA",

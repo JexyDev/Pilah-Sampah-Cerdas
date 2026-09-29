@@ -190,7 +190,7 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
             </span>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-2xl">
-            Tabel rekapitulasi capaian penurunan volume sampah dan peningkatan kepatuhan pemilahan
+            Tabel rekapitulasi capaian penurunan berat sampah dan peningkatan kepatuhan pemilahan
             berdasarkan baseline awal vs realisasi giat lapangan di 6 Kelurahan Kecamatan Coblong.
           </p>
         </div>
@@ -288,15 +288,15 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
           <p className="text-[11px] leading-relaxed opacity-90">
             {selectedSource === "ALL" ? (
               <>
-                <strong>Perhatian Double-Counting:</strong> Menggabungkan volume sampah hasil pemilahan warga via aplikasi mobile dengan pencatatan manual timbangan petugas lapangan berpotensi menduplikasi angka timbulan jika sampah yang disetor warga ditimbang kembali di TPS3R. Gunakan filter <strong>[Aktivitas Warga]</strong> atau <strong>[Input Petugas]</strong> untuk analisis tunggal yang presisi.
+                <strong>Perhatian Double-Counting:</strong> Menggabungkan berat sampah hasil pemilahan warga via aplikasi mobile dengan pencatatan manual timbangan petugas lapangan berpotensi menduplikasi angka timbulan jika sampah yang disetor warga ditimbang kembali di TPS3R. Gunakan filter <strong>[Aktivitas Warga]</strong> atau <strong>[Input Petugas]</strong> untuk analisis tunggal yang presisi.
               </>
             ) : selectedSource === "WARGA_APP" ? (
               <>
-                Menampilkan volume sampah terpilah mandiri oleh warga melalui pemindaian QR dan klasifikasi BERSEKA Vision AI. Menunjukkan tingkat adopsi digital dan kepatuhan langsung rumah tangga.
+                Menampilkan berat sampah terpilah mandiri oleh warga melalui pemindaian QR dan klasifikasi BERSEKA Vision AI. Menunjukkan tingkat adopsi digital dan kepatuhan langsung rumah tangga.
               </>
             ) : (
               <>
-                Menampilkan volume sampah yang ditimbang dan dicatat secara fisik oleh petugas pemilah/residu di posko penampungan atau TPS3R kelurahan.
+                Menampilkan berat sampah yang ditimbang dan dicatat secara fisik oleh petugas pemilah/residu di posko penampungan atau TPS3R kelurahan.
               </>
             )}
           </p>

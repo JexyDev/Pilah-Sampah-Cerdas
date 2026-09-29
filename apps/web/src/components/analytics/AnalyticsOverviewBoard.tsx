@@ -423,7 +423,7 @@ export const AnalyticsOverviewBoard: React.FC = () => {
       return (
         <div className="bg-slate-900 text-white p-2.5 rounded-xl shadow-xl border border-slate-800 text-xs font-bold space-y-0.5">
           <p className="text-sky-400 font-extrabold">{data.name}</p>
-          <p className="text-[11px] text-slate-300">Volume Sampah: <strong className="text-white">{data.val} kg</strong></p>
+          <p className="text-[11px] text-slate-300">Berat Sampah: <strong className="text-white">{data.val} kg</strong></p>
         </div>
       );
     }
@@ -504,10 +504,10 @@ export const AnalyticsOverviewBoard: React.FC = () => {
               </div>
               <div>
                 <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100 leading-snug">
-                  Grafik Volume Sampah per Kelurahan
+                  Grafik Berat Sampah per Kelurahan
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                  Total volume sampah terkumpul
+                  Total berat sampah terkumpul
                 </p>
               </div>
             </div>
@@ -522,7 +522,7 @@ export const AnalyticsOverviewBoard: React.FC = () => {
           <div className="h-64 w-full pt-2">
             {volumeData.length === 0 ? (
               <div className="h-full flex items-center justify-center text-slate-400 dark:text-slate-500 text-xs font-bold">
-                Memuat data volume sampah kelurahan...
+                Memuat data berat sampah kelurahan...
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">

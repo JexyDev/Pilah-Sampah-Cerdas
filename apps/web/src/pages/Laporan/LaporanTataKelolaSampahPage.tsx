@@ -979,7 +979,7 @@ export const LaporanTataKelolaSampahPage: React.FC = () => {
                   <h2 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
                     Tren Timbulan &amp; Reduksi Sampah (8 Pekan)
                   </h2>
-                  <p className="text-xs text-slate-500">Volume sampah organik, anorganik, dan residu (Kg)</p>
+                  <p className="text-xs text-slate-500">Berat sampah organik, anorganik, dan residu (Kg)</p>
                 </div>
               </div>
 

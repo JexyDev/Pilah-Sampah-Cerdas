@@ -10,12 +10,19 @@
 
 import React from "react";
 import type { WasteReportData } from "../types";
+import type { ReportCustomConfig } from "../../../components/laporan/PengaturanLaporanModal";
 
 interface OfficialDocumentA4ViewProps {
   data: WasteReportData;
+  customConfig?: ReportCustomConfig;
+  orientation?: "portrait" | "landscape";
 }
 
-export const OfficialDocumentA4View: React.FC<OfficialDocumentA4ViewProps> = ({ data }) => {
+export const OfficialDocumentA4View: React.FC<OfficialDocumentA4ViewProps> = ({
+  data,
+  customConfig,
+  orientation = "portrait",
+}) => {
   const { metadata, kpiSummary, kelurahanAudit, fasilitasDetail, signatories } = data;
 
   const formatDateFormal = (dateStr: string | null) => {
@@ -48,29 +55,37 @@ export const OfficialDocumentA4View: React.FC<OfficialDocumentA4ViewProps> = ({ 
       ? `Rentang Khusus (${formatDateFormal(metadata.tanggalMulai)} s/d ${formatDateFormal(metadata.tanggalSelesai)})`
       : "Periode Berjalan";
 
+  const nomorDok = customConfig?.nomorDokumen || metadata.nomorDokumen || "005/BERSEKA-DLH/EVAL/IX/2026";
+  const sifatDok = customConfig?.sifatDokumen || "Penting / Kedinasan Terbuka";
+  const lampiranDok = customConfig?.lampiranDokumen || "1 (Satu) Berkas Rekapitulasi Lengkap";
+  const perihalDok = customConfig?.perihalDokumen || "Laporan Akuntabilitas dan Evaluasi Kinerja Tata Kelola Persampahan Berbasis Ekonomi Sirkular";
+  const judulDok = customConfig?.judulLaporan || "LAPORAN EVALUASI & AKUNTABILITAS TATA KELOLA SAMPAH PERKOTAAN";
+  const subjudulDok = customConfig?.subjudul || `WILAYAH: ${(customConfig?.wilayahCakupan || metadata.wilayahCakupan).toUpperCase()} • PERIODE EVALUASI: ${periodeTeks.toUpperCase()}`;
+  const tglPengesahan = customConfig?.tanggalPengesahan || tanggalTerbitFormal;
+
   return (
-    <article className="official-document-sheet bg-white text-black font-serif leading-relaxed text-[11pt] w-full max-w-[210mm] mx-auto p-4 sm:p-8 md:p-[15mm] lg:p-[20mm] border border-slate-200 shadow-2xl rounded-sm print:max-w-none print:w-full print:p-0 print:border-none print:shadow-none print:rounded-none">
+    <article className={`official-document-sheet bg-white text-black font-serif leading-relaxed text-[11pt] w-full ${orientation === "landscape" ? "max-w-[297mm]" : "max-w-[210mm]"} mx-auto p-4 sm:p-8 md:p-[15mm] lg:p-[20mm] border border-slate-200 shadow-2xl rounded-sm print:max-w-none print:w-full print:p-0 print:border-none print:shadow-none print:rounded-none`}>
       {/* ─────────────────────────────────────────────────────────────
-          1. KOP SURAT KEDINASAN RESMI PEMERINTAH DAERAH KOTA BANDUNG
+          1. KOP SURAT KEDINASAN RESMI: LOGO UNIKOM KIRI, LOGO BERSEKA KANAN (TANPA LPPM)
       ───────────────────────────────────────────────────────────── */}
       <header className="avoid-break pb-2 mb-4 border-b-0">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 print:flex-row print:justify-between">
-          {/* Logo Lambang Kota Bandung */}
+          {/* Logo UNIKOM di Kiri Sesuai Mandat Pengguna */}
           <div className="w-16 sm:w-20 md:w-24 shrink-0 flex items-center justify-center">
             <img
-              src="/image/mitra/pemkot-bandung.png"
-              alt="Lambang Pemerintah Kota Bandung"
+              src="/image/mitra/unikom.png"
+              alt="Logo Universitas Komputer Indonesia (UNIKOM)"
               className="h-14 sm:h-16 md:h-20 w-auto object-contain"
             />
           </div>
 
-          {/* Teks Lembaga Kedinasan Berpusat */}
+          {/* Teks Lembaga & Kedinasan Berpusat (Bebas LPPM Sesuai Mandat) */}
           <div className="text-center flex-1 px-1 sm:px-2 space-y-0.5">
             <h3 className="text-[10pt] sm:text-[12pt] md:text-[13pt] print:text-[13pt] font-bold tracking-wide uppercase text-black leading-tight">
-              PEMERINTAH DAERAH KOTA BANDUNG
+              UNIVERSITAS KOMPUTER INDONESIA (UNIKOM)
             </h3>
             <h2 className="text-[11pt] sm:text-[13pt] md:text-[14pt] print:text-[14pt] font-black tracking-wider uppercase text-black leading-tight">
-              DINAS LINGKUNGAN HIDUP
+              PEMERINTAH DAERAH KOTA BANDUNG &bull; DINAS LINGKUNGAN HIDUP
             </h2>
             <h4 className="text-[9.5pt] sm:text-[11pt] md:text-[12pt] print:text-[12pt] font-bold tracking-wide uppercase text-black leading-tight">
               KECAMATAN COBLONG
@@ -79,13 +94,13 @@ export const OfficialDocumentA4View: React.FC<OfficialDocumentA4ViewProps> = ({ 
               TIM KOORDINASI PLATFORM CERDAS BERSEKA
             </h1>
             <p className="text-[7.5pt] sm:text-[8.5pt] md:text-[9pt] print:text-[9pt] font-normal text-slate-800 print:text-black leading-tight pt-1">
-              Sekretariat Operasional: Jl. Cigadung Raya Barat No. 28, Kel. Cigadung, Kota Bandung, Jawa Barat 40134
+              Sekretariat Operasional: Jl. Dipati Ukur No. 112-116 &amp; Jl. Cigadung Raya Barat No. 28, Kota Bandung, Jawa Barat 40134
               <br />
-              Laman Resmi: <span className="underline">https://berseka.bandung.go.id</span> &bull; Pos-el: <span className="underline">dlh@bandung.go.id</span> / <span className="underline">sekretariat@berseka.id</span>
+              Laman Resmi: <span className="underline">https://berseka.bandung.go.id</span> &bull; Pos-el: <span className="underline">info@unikom.ac.id</span> / <span className="underline">sekretariat@berseka.id</span>
             </p>
           </div>
 
-          {/* Logo Platform BERSEKA */}
+          {/* Logo Platform BERSEKA di Kanan Sesuai Mandat Pengguna */}
           <div className="w-16 sm:w-20 md:w-24 shrink-0 flex items-center justify-center">
             <img
               src="/image/berseka-logo-full.png"
@@ -101,7 +116,7 @@ export const OfficialDocumentA4View: React.FC<OfficialDocumentA4ViewProps> = ({ 
       </header>
 
       {/* ─────────────────────────────────────────────────────────────
-          2. IDENTITAS & NOMOR NASKAH DINAS
+          2. IDENTITAS & NOMOR NASKAH DINAS (CRUD DINAMIS)
       ───────────────────────────────────────────────────────────── */}
       <section className="avoid-break mb-6 text-[10.5pt]">
         <div className="flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-2 print:flex-row print:justify-between">
@@ -111,31 +126,31 @@ export const OfficialDocumentA4View: React.FC<OfficialDocumentA4ViewProps> = ({ 
                 <td className="pr-3 py-0.5 font-bold align-top w-24 border-none p-0">Nomor</td>
                 <td className="px-1 py-0.5 align-top border-none p-0">:</td>
                 <td className="py-0.5 font-mono font-bold align-top border-none p-0">
-                  {metadata.nomorDokumen || "005/BERSEKA-DLH/EVAL/IX/2026"}
+                  {nomorDok}
                 </td>
               </tr>
               <tr>
                 <td className="pr-3 py-0.5 font-bold align-top border-none p-0">Sifat</td>
                 <td className="px-1 py-0.5 align-top border-none p-0">:</td>
-                <td className="py-0.5 align-top border-none p-0">Penting / Kedinasan Terbuka</td>
+                <td className="py-0.5 align-top border-none p-0">{sifatDok}</td>
               </tr>
               <tr>
                 <td className="pr-3 py-0.5 font-bold align-top border-none p-0">Lampiran</td>
                 <td className="px-1 py-0.5 align-top border-none p-0">:</td>
-                <td className="py-0.5 align-top border-none p-0">1 (Satu) Berkas Rekapitulasi Lengkap</td>
+                <td className="py-0.5 align-top border-none p-0">{lampiranDok}</td>
               </tr>
               <tr>
                 <td className="pr-3 py-0.5 font-bold align-top border-none p-0">Perihal</td>
                 <td className="px-1 py-0.5 align-top border-none p-0">:</td>
                 <td className="py-0.5 font-bold align-top border-none p-0 leading-snug">
-                  Laporan Akuntabilitas dan Evaluasi Kinerja Tata Kelola Persampahan Berbasis Ekonomi Sirkular
+                  {perihalDok}
                 </td>
               </tr>
             </tbody>
           </table>
 
           <div className="text-right text-[10.5pt]">
-            <p className="font-semibold">Bandung, {tanggalTerbitFormal}</p>
+            <p className="font-semibold">Bandung, {tglPengesahan}</p>
             <div className="mt-2 text-left inline-block">
               <p className="font-bold">Kepada Yth.</p>
               <ol className="list-decimal list-inside text-[10pt] space-y-0.5 font-medium pl-1">
@@ -152,10 +167,10 @@ export const OfficialDocumentA4View: React.FC<OfficialDocumentA4ViewProps> = ({ 
         {/* Judul Laporan Kedinasan Berpusat */}
         <div className="text-center my-6 py-2 border-y border-black/40">
           <h2 className="text-[13pt] font-black uppercase tracking-wider leading-snug">
-            LAPORAN EVALUASI &amp; AKUNTABILITAS TATA KELOLA SAMPAH PERKOTAAN
+            {judulDok}
           </h2>
           <h3 className="text-[11pt] font-bold uppercase tracking-wide text-slate-800 print:text-black">
-            WILAYAH: {metadata.wilayahCakupan.toUpperCase()} &bull; PERIODE EVALUASI: {periodeTeks.toUpperCase()}
+            {subjudulDok}
           </h3>
         </div>
       </section>
@@ -643,7 +658,7 @@ export const OfficialDocumentA4View: React.FC<OfficialDocumentA4ViewProps> = ({ 
       </section>
 
       {/* ─────────────────────────────────────────────────────────────
-          7. LEMBAR PENGESAHAN DOKUMEN KEDINASAN (3 PIHAK OTORISASI)
+          7. LEMBAR PENGESAHAN DOKUMEN RESMI (1 TTD TENGAH BAWAH)
       ───────────────────────────────────────────────────────────── */}
       <section className="avoid-break mt-10 pt-4 border-t border-black/40 text-[10.5pt]">
         <div className="text-center mb-6">
@@ -651,74 +666,34 @@ export const OfficialDocumentA4View: React.FC<OfficialDocumentA4ViewProps> = ({ 
             LEMBAR PENGESAHAN LAPORAN KEDINASAN
           </p>
           <p className="text-[10pt] text-slate-700 print:text-black">
-            Ditetapkan di Kota Bandung pada tanggal: <strong>{tanggalTerbitFormal}</strong>
+            Ditetapkan di Kota Bandung pada tanggal: <strong>{tglPengesahan}</strong>
           </p>
         </div>
 
-        {/* 3 Kolom Tanda Tangan Kedinasan */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 print:grid-cols-3 gap-6 text-center text-[10pt]">
-          {/* Kolom 1: Camat Coblong */}
-          <div className="flex flex-col justify-between h-44">
+        {/* 1 Penandatangan Tunggal di Tengah Bawah Sesuai Mandat */}
+        <div className="flex flex-col items-center justify-center text-center">
+          <div className="flex flex-col justify-between min-h-[170px] w-80 max-w-full">
             <div>
               <p className="font-bold text-slate-700 print:text-black">Mengetahui / Mengesahkan,</p>
-              <p className="font-black uppercase tracking-tight text-[10.5pt] leading-tight mt-0.5">
-                {signatories.camat.jabatan}
+              <p className="font-black uppercase tracking-tight text-[11pt] leading-tight mt-1">
+                {customConfig?.penandatangan?.jabatan || signatories.pimpinan.jabatan}
               </p>
-              <p className="text-[9pt] text-slate-600 print:text-black leading-tight">
-                {signatories.camat.instansi}
-              </p>
-            </div>
-
-            <div className="border-t border-black w-44 mx-auto pt-1">
-              <p className="font-black text-[10pt] underline leading-tight">
-                {signatories.camat.nama}
-              </p>
-              <p className="text-[8.5pt] font-mono text-slate-700 print:text-black leading-tight">
-                NIP. {signatories.camat.nip}
-              </p>
-            </div>
-          </div>
-
-          {/* Kolom 2: DLH Kota Bandung */}
-          <div className="flex flex-col justify-between h-44">
-            <div>
-              <p className="font-bold text-slate-700 print:text-black">Pemeriksa Teknis Kedinasan,</p>
-              <p className="font-black uppercase tracking-tight text-[10.5pt] leading-tight mt-0.5">
-                {signatories.dlh.jabatan}
-              </p>
-              <p className="text-[9pt] text-slate-600 print:text-black leading-tight">
-                {signatories.dlh.instansi}
+              <p className="text-[9.5pt] text-slate-600 print:text-black leading-tight mt-0.5">
+                {customConfig?.penandatangan?.instansi || signatories.pimpinan.instansi}
               </p>
             </div>
 
-            <div className="border-t border-black w-44 mx-auto pt-1">
-              <p className="font-black text-[10pt] underline leading-tight">
-                {signatories.dlh.nama}
-              </p>
-              <p className="text-[8.5pt] font-mono text-slate-700 print:text-black leading-tight">
-                NIP. {signatories.dlh.nip}
-              </p>
-            </div>
-          </div>
-
-          {/* Kolom 3: Pimpinan Eksekutif Berseka */}
-          <div className="flex flex-col justify-between h-44">
-            <div>
-              <p className="font-bold text-slate-700 print:text-black">Pengesah Eksekutif Sistem,</p>
-              <p className="font-black uppercase tracking-tight text-[10.5pt] leading-tight mt-0.5">
-                {signatories.pimpinan.jabatan}
-              </p>
-              <p className="text-[9pt] text-slate-600 print:text-black leading-tight">
-                {signatories.pimpinan.instansi}
-              </p>
+            <div className="h-16 flex items-center justify-center">
+              {/* Ruang TTD */}
+              <div className="w-36 border-b border-dashed border-slate-300 print:border-transparent opacity-60"></div>
             </div>
 
-            <div className="border-t border-black w-44 mx-auto pt-1">
-              <p className="font-black text-[10pt] underline leading-tight">
-                {signatories.pimpinan.nama}
+            <div className="border-t border-black w-64 mx-auto pt-1">
+              <p className="font-black text-[10.5pt] underline leading-tight">
+                {customConfig?.penandatangan?.nama || signatories.pimpinan.nama}
               </p>
-              <p className="text-[8.5pt] font-mono text-slate-700 print:text-black leading-tight">
-                NIP/ID. {signatories.pimpinan.nip}
+              <p className="text-[9pt] font-mono text-slate-700 print:text-black leading-tight mt-0.5">
+                {customConfig?.penandatangan?.nip ? `NIP/NIDN. ${customConfig.penandatangan.nip}` : `ID. ${signatories.pimpinan.nip}`}
               </p>
             </div>
           </div>
@@ -726,7 +701,7 @@ export const OfficialDocumentA4View: React.FC<OfficialDocumentA4ViewProps> = ({ 
 
         {/* Footer Dokumen Resmi Kedinasan */}
         <footer className="mt-8 pt-2 border-t border-black/20 text-center text-[8pt] text-slate-500 print:text-black/70">
-          Dokumen ini diterbitkan secara sah melalui modul pelaporan digital BERSEKA &bull; Divalidasi oleh Pemerintah Daerah Kota Bandung &bull; Hak Cipta &copy; 2026 PT Makerindo.
+          Dokumen ini diterbitkan secara sah melalui modul pelaporan digital BERSEKA &bull; Divalidasi oleh Universitas Komputer Indonesia &amp; Pemerintah Kota Bandung &bull; Hak Cipta &copy; 2026 PT Makerindo.
         </footer>
       </section>
     </article>
