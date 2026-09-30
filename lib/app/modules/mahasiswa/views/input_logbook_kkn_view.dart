@@ -393,9 +393,10 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
       }
     } catch (e) {
       if (mounted) {
+        final errText = e.toString().replaceFirst(RegExp(r'^Exception:\s*'), '');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString()),
+            content: Text(errText),
             backgroundColor: AppColors.dangerRed,
           ),
         );

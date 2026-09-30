@@ -2,15 +2,22 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import '../models/pemanfaatan_entity.dart';
 import '../providers/api_client.dart';
+import '../../core/utils/network_exception_helper.dart';
 import '../../core/values/api_constants.dart';
 import 'pemanfaatan_repository.dart';
 
-String? _extractErrorMessage(dynamic data, String? fallback) {
+String? _extractErrorMessage(dynamic data, String? fallback, {DioException? error}) {
+  if (error != null) {
+    final netMsg = NetworkExceptionHelper.getErrorMessage(error);
+    if (netMsg.isNotEmpty && netMsg != 'Terjadi kesalahan sistem. Harap coba beberapa saat lagi.') {
+      return netMsg;
+    }
+  }
   if (data is Map<String, dynamic>) {
     final msg = data['message']?.toString() ?? data['error']?.toString();
-    if (msg != null && msg.isNotEmpty) return msg;
+    if (msg != null && msg.isNotEmpty && !msg.startsWith('<!DOCTYPE') && !msg.startsWith('<html')) return msg;
   } else if (data is String && data.isNotEmpty) {
-    if (data.length > 200) return fallback;
+    if (data.contains('<!DOCTYPE') || data.contains('<html') || data.length > 200) return fallback;
     return data;
   }
   return fallback;
@@ -184,6 +191,7 @@ class ApiPemanfaatanRepository implements PemanfaatanRepository {
         final msg = _extractErrorMessage(
           e.response?.data,
           'Gagal mengirim kritik & saran',
+          error: e,
         );
         throw Exception(msg);
       }
@@ -216,6 +224,7 @@ class ApiPemanfaatanRepository implements PemanfaatanRepository {
         final msg = _extractErrorMessage(
           e.response?.data,
           'Gagal memberikan tanggapan',
+          error: e,
         );
         throw Exception(msg);
       }
@@ -235,6 +244,7 @@ class ApiPemanfaatanRepository implements PemanfaatanRepository {
         final msg = _extractErrorMessage(
           e.response?.data,
           'Gagal menghapus kritik & saran',
+          error: e,
         );
         throw Exception(msg);
       }

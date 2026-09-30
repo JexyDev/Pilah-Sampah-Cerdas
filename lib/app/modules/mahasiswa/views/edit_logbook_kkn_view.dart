@@ -3,6 +3,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
+import '../../../core/values/app_config.dart';
 import '../../../data/providers/repository_providers.dart';
 
 class EditLogbookKknView extends ConsumerStatefulWidget {
@@ -174,9 +175,10 @@ class _EditLogbookKknViewState extends ConsumerState<EditLogbookKknView> {
       }
     } catch (e) {
       if (!mounted) return;
+      final errText = e.toString().replaceFirst(RegExp(r'^(Exception|Error):\s*'), '');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error: $e'),
+          content: Text(errText),
           backgroundColor: AppColors.dangerRed,
         ),
       );
@@ -619,7 +621,7 @@ class _EditLogbookKknViewState extends ConsumerState<EditLogbookKknView> {
                         itemBuilder: (_, i) => ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: Image.network(
-                            _existingPhotoUrls[i],
+                            AppConfig.getImageUrl(_existingPhotoUrls[i]),
                             width: 90,
                             height: 90,
                             fit: BoxFit.cover,

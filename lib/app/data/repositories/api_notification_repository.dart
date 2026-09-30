@@ -4,6 +4,7 @@ import 'notification_repository.dart';
 import '../providers/api_client.dart';
 import '../../core/values/api_constants.dart';
 import '../../core/utils/input_sanitizer.dart';
+import '../../core/utils/network_exception_helper.dart';
 
 /// Implementasi NotificationRepository yang terhubung ke backend Express.js.
 ///
@@ -40,7 +41,7 @@ class ApiNotificationRepository implements NotificationRepository {
     } on DioException catch (e) {
       throw NotificationException(
         'NETWORK_ERROR',
-        'Gagal memuat notifikasi: ${e.message}',
+        NetworkExceptionHelper.getErrorMessage(e),
       );
     } catch (e) {
       if (e is NotificationException) rethrow;
@@ -56,7 +57,7 @@ class ApiNotificationRepository implements NotificationRepository {
     } on DioException catch (e) {
       throw NotificationException(
         'NETWORK_ERROR',
-        'Gagal menandai notifikasi: ${e.message}',
+        NetworkExceptionHelper.getErrorMessage(e),
       );
     }
   }
@@ -69,7 +70,7 @@ class ApiNotificationRepository implements NotificationRepository {
     } on DioException catch (e) {
       throw NotificationException(
         'NETWORK_ERROR',
-        'Gagal menandai semua notifikasi: ${e.message}',
+        NetworkExceptionHelper.getErrorMessage(e),
       );
     }
   }
@@ -82,7 +83,7 @@ class ApiNotificationRepository implements NotificationRepository {
     } on DioException catch (e) {
       throw NotificationException(
         'NETWORK_ERROR',
-        'Gagal menghapus semua notifikasi: ${e.message}',
+        NetworkExceptionHelper.getErrorMessage(e),
       );
     }
   }

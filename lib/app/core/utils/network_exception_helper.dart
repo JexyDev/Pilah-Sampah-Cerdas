@@ -8,16 +8,36 @@ class NetworkExceptionHelper {
     if (error is DioException) {
       switch (error.type) {
         case DioExceptionType.connectionTimeout:
+          return 'Gagal terhubung ke server (waktu koneksi habis). Server mungkin sedang offline atau mengalami gangguan.';
         case DioExceptionType.sendTimeout:
+          return 'Pengiriman data ke server timeout. Harap periksa jaringan internet Anda atau coba sesaat lagi.';
         case DioExceptionType.receiveTimeout:
-          return 'Koneksi ke server timeout. Harap periksa jaringan internet Anda.';
+          return 'Server tidak merespons (waktu tunggu habis). Server sedang sibuk atau mengalami gangguan.';
 
         case DioExceptionType.connectionError:
-          return 'Gagal terhubung ke server. Pastikan HP Anda terhubung ke internet.';
+          return 'Gagal terhubung ke server. Server sedang offline/gangguan atau periksa koneksi internet Anda.';
 
         case DioExceptionType.badResponse:
           final statusCode = error.response?.statusCode;
           final responseData = error.response?.data;
+
+          // Deteksi error 5xx (Server error / VPS down / Bad Gateway)
+          if (statusCode == 502) {
+            return 'Server sedang mengalami gangguan atau dalam proses pemeliharaan (502 Bad Gateway). Silakan coba beberapa saat lagi.';
+          } else if (statusCode == 503) {
+            return 'Layanan server sedang tidak tersedia atau dalam pemeliharaan (503 Service Unavailable). Harap coba beberapa saat lagi.';
+          } else if (statusCode == 504) {
+            return 'Server tidak merespons tepat waktu (504 Gateway Timeout). Harap coba beberapa saat lagi.';
+          } else if (statusCode != null && statusCode >= 500) {
+            // Periksa jika server mengembalikan pesan JSON spesifik, jika HTML gunakan pesan ramah
+            if (responseData is Map<String, dynamic> && responseData['message'] != null) {
+              final m = responseData['message'].toString().trim();
+              if (m.isNotEmpty && !m.startsWith('<!DOCTYPE') && !m.startsWith('<html')) {
+                return m;
+              }
+            }
+            return 'Server backend sedang mengalami kendala (HTTP $statusCode). Harap coba beberapa saat lagi.';
+          }
 
           // Periksa errorCode spesifik dari backend sebelum pesan generik
           if (responseData is Map<String, dynamic>) {
@@ -65,29 +85,36 @@ class NetworkExceptionHelper {
           } else if (statusCode == 403) {
             return 'Anda tidak memiliki hak akses untuk tindakan ini.';
           } else if (statusCode == 404) {
-            return 'Data atau layanan tidak ditemukan.';
-          } else if (statusCode != null && statusCode >= 500) {
-            return 'Server backend sedang mengalami kendala. Harap coba beberapa saat lagi.';
+            return 'Data atau layanan tidak ditemukan di server.';
           }
-          return 'Terjadi kendala pada respon server ($statusCode).';
+          return statusCode != null
+              ? 'Terjadi kendala pada respon server ($statusCode).'
+              : 'Terjadi kendala pada respon server.';
 
         case DioExceptionType.cancel:
           return 'Permintaan dibatalkan.';
 
         case DioExceptionType.unknown:
         default:
-          if (error.message != null &&
-              error.message!.contains('SocketException')) {
-            return 'Tidak ada koneksi internet. Aktifkan paket data atau Wi-Fi.';
+          final raw = '${error.error} ${error.message}';
+          if (raw.contains('Connection refused') ||
+              raw.contains('Failed host lookup')) {
+            return 'Gagal terhubung ke server. Server sedang offline atau dalam pemeliharaan.';
           }
-          return 'Terjadi masalah jaringan yang tidak diketahui.';
+          if (raw.contains('SocketException')) {
+            return 'Gagal terhubung ke server. Periksa jaringan internet Anda atau server sedang tidak aktif.';
+          }
+          return 'Gagal terhubung ke server atau terjadi masalah jaringan.';
       }
     }
     if (error is Exception) {
       final str = error.toString();
-      if (str.contains('SocketException') ||
-          str.contains('Connection refused')) {
-        return 'Tidak ada koneksi internet atau server sedang mati.';
+      if (str.contains('Connection refused') ||
+          str.contains('Failed host lookup')) {
+        return 'Gagal terhubung ke server. Server sedang offline atau dalam pemeliharaan.';
+      }
+      if (str.contains('SocketException')) {
+        return 'Gagal terhubung ke server. Periksa jaringan internet Anda atau server sedang tidak aktif.';
       }
       if (str.contains('TimeoutException')) {
         final msgMatch = RegExp(r'TimeoutException: (.+)').firstMatch(str);

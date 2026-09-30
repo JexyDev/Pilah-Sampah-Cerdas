@@ -9,6 +9,8 @@ import '../models/kkn_timeline_models.dart';
 import '../models/wilayah_kelompok_model.dart';
 import '../models/kelompok_qr_models.dart';
 import '../providers/api_client.dart';
+import '../../core/utils/image_compressor.dart';
+import '../../core/utils/network_exception_helper.dart';
 import '../../core/values/api_constants.dart';
 import 'kkn_repository.dart';
 
@@ -25,6 +27,14 @@ String? _extractError(dynamic data, String? fallback) {
     return data;
   }
   return fallback;
+}
+
+String _handleDioError(DioException e, String defaultMessage) {
+  final msg = NetworkExceptionHelper.getErrorMessage(e);
+  if (msg.isNotEmpty && msg != 'Terjadi kesalahan sistem. Harap coba beberapa saat lagi.') {
+    return msg;
+  }
+  return defaultMessage;
 }
 
 /// Implementasi [KknRepository] menggunakan Dio HTTP client.
@@ -92,11 +102,7 @@ class ApiKknRepository implements KknRepository {
       throw Exception('Status ${response.statusCode}: ${response.data}');
     } catch (e) {
       if (e is DioException) {
-        final msg = _extractError(
-          e.response?.data,
-          'Dio Error [${e.response?.statusCode}]: ${e.message}',
-        );
-        throw Exception(msg);
+        throw Exception(_handleDioError(e, 'Gagal mengambil timeline KKN'));
       }
       throw Exception('Error tak terduga: $e');
     }
@@ -938,13 +944,13 @@ class ApiKknRepository implements KknRepository {
       throw Exception('Gagal memulai kegiatan');
     } on DioException catch (e) {
       final statusCode = e.response?.statusCode;
-      final msg = _extractError(e.response?.data, '');
+      final msg = _extractError(e.response?.data, null);
       if (statusCode == 409) {
         throw Exception(
           'CONFLICT:${msg ?? 'Anda masih memiliki kegiatan aktif lain'}',
         );
       }
-      throw Exception(msg ?? 'Gagal memulai kegiatan ($statusCode)');
+      throw Exception(msg ?? 'Gagal memulai kegiatan${statusCode != null ? ' ($statusCode)' : ''}');
     }
   }
 
@@ -964,7 +970,7 @@ class ApiKknRepository implements KknRepository {
       throw Exception('Gagal menandai tidak ada kegiatan');
     } on DioException catch (e) {
       final statusCode = e.response?.statusCode;
-      final msg = _extractError(e.response?.data, '');
+      final msg = _extractError(e.response?.data, null);
       if (statusCode == 403) {
         throw Exception(
           'FORBIDDEN:${msg ?? 'Hanya DPL atau Ketua Kelompok yang dapat melewati kegiatan.'}',
@@ -974,7 +980,7 @@ class ApiKknRepository implements KknRepository {
           'CONFLICT:${msg ?? 'Tidak dapat melewati kegiatan yang sudah dimulai atau selesai.'}',
         );
       }
-      throw Exception(msg ?? 'Gagal menandai tidak ada kegiatan ($statusCode)');
+      throw Exception(msg ?? 'Gagal menandai tidak ada kegiatan${statusCode != null ? ' ($statusCode)' : ''}');
     } catch (e) {
       throw Exception('Gagal melewati kegiatan: $e');
     }
@@ -1052,8 +1058,7 @@ class ApiKknRepository implements KknRepository {
       throw Exception('Gagal mengakhiri kegiatan');
     } catch (e) {
       if (e is DioException) {
-        final msg = _extractError(e.response?.data, '');
-        throw Exception(msg ?? 'Gagal mengakhiri kegiatan');
+        throw Exception(_handleDioError(e, 'Gagal mengakhiri kegiatan'));
       }
       rethrow;
     }
@@ -1075,8 +1080,7 @@ class ApiKknRepository implements KknRepository {
       throw Exception('Gagal menjeda kegiatan');
     } catch (e) {
       if (e is DioException) {
-        final msg = _extractError(e.response?.data, '');
-        throw Exception(msg ?? 'Gagal menjeda kegiatan');
+        throw Exception(_handleDioError(e, 'Gagal menjeda kegiatan'));
       }
       rethrow;
     }
@@ -1099,8 +1103,7 @@ class ApiKknRepository implements KknRepository {
       throw Exception('Gagal melanjutkan kegiatan');
     } catch (e) {
       if (e is DioException) {
-        final msg = _extractError(e.response?.data, '');
-        throw Exception(msg ?? 'Gagal melanjutkan kegiatan');
+        throw Exception(_handleDioError(e, 'Gagal melanjutkan kegiatan'));
       }
       rethrow;
     }
@@ -1163,9 +1166,7 @@ class ApiKknRepository implements KknRepository {
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
       if (e is DioException) {
-        throw Exception(
-          _extractError(e.response?.data, 'Gagal mengajukan program kerja'),
-        );
+        throw Exception(_handleDioError(e, 'Gagal mengajukan program kerja'));
       }
       rethrow;
     }
@@ -1194,9 +1195,7 @@ class ApiKknRepository implements KknRepository {
       return response.statusCode == 200;
     } catch (e) {
       if (e is DioException) {
-        throw Exception(
-          _extractError(e.response?.data, 'Gagal mengedit program kerja'),
-        );
+        throw Exception(_handleDioError(e, 'Gagal mengedit program kerja'));
       }
       rethrow;
     }
@@ -1216,10 +1215,7 @@ class ApiKknRepository implements KknRepository {
     } catch (e) {
       if (e is DioException) {
         throw Exception(
-          _extractError(
-            e.response?.data,
-            'Gagal memperbarui status program kerja',
-          ),
+          _handleDioError(e, 'Gagal memperbarui status program kerja'),
         );
       }
       rethrow;
@@ -1295,6 +1291,20 @@ class ApiKknRepository implements KknRepository {
         for (int i = 0; i < allImagePaths.length; i++) {
           final p = allImagePaths[i];
           final fileExt = p.split('.').last.toLowerCase();
+          String uploadPath = p;
+          if (fileExt != 'pdf') {
+            try {
+              uploadPath = await ImageCompressor.compressImage(
+                p,
+                maxSizeBytes: 1024 * 1024,
+                maxWidth: 1280,
+                maxHeight: 1280,
+              );
+            } catch (err) {
+              debugPrint('[ApiKknRepository] Kompresi foto dilewati: $err');
+            }
+          }
+
           String mimeType = 'image/jpeg';
           if (fileExt == 'png') mimeType = 'image/png';
           if (fileExt == 'webp') mimeType = 'image/webp';
@@ -1302,7 +1312,7 @@ class ApiKknRepository implements KknRepository {
 
           files.add(
             await MultipartFile.fromFile(
-              p,
+              uploadPath,
               filename:
                   'logbook_pemanfaatan_${DateTime.now().millisecondsSinceEpoch}_$i.$fileExt',
               contentType: MediaType.parse(mimeType),
@@ -1318,16 +1328,18 @@ class ApiKknRepository implements KknRepository {
       final response = await apiClient.dio.post(
         ApiEndpoints.kknPemanfaatanSampah,
         data: requestData,
+        options: requestData is FormData
+            ? Options(
+                contentType: 'multipart/form-data',
+                sendTimeout: const Duration(seconds: 60),
+                receiveTimeout: const Duration(seconds: 60),
+              )
+            : null,
       );
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
       if (e is DioException) {
-        throw Exception(
-          _extractError(
-            e.response?.data,
-            'Gagal menyimpan logbook pemanfaatan',
-          ),
-        );
+        throw Exception(_handleDioError(e, 'Gagal menyimpan logbook pemanfaatan'));
       }
       rethrow;
     }
@@ -1344,12 +1356,26 @@ class ApiKknRepository implements KknRepository {
       if (imagePath != null && imagePath.trim().isNotEmpty) {
         final formMap = Map<String, dynamic>.from(data);
         final fileExt = imagePath.split('.').last.toLowerCase();
+        String uploadPath = imagePath;
+        if (fileExt != 'pdf') {
+          try {
+            uploadPath = await ImageCompressor.compressImage(
+              imagePath,
+              maxSizeBytes: 1024 * 1024,
+              maxWidth: 1280,
+              maxHeight: 1280,
+            );
+          } catch (err) {
+            debugPrint('[ApiKknRepository] Kompresi foto dilewati: $err');
+          }
+        }
+
         String mimeType = 'image/jpeg';
         if (fileExt == 'png') mimeType = 'image/png';
         if (fileExt == 'webp') mimeType = 'image/webp';
 
         formMap['fotoDokumentasi'] = await MultipartFile.fromFile(
-          imagePath,
+          uploadPath,
           filename:
               'logbook_pemanfaatan_edit_${DateTime.now().millisecondsSinceEpoch}.$fileExt',
           contentType: MediaType.parse(mimeType),
@@ -1362,13 +1388,18 @@ class ApiKknRepository implements KknRepository {
       final response = await apiClient.dio.put(
         '${ApiEndpoints.kknPemanfaatanSampah}/$id',
         data: requestData,
+        options: requestData is FormData
+            ? Options(
+                contentType: 'multipart/form-data',
+                sendTimeout: const Duration(seconds: 60),
+                receiveTimeout: const Duration(seconds: 60),
+              )
+            : null,
       );
       return response.statusCode == 200;
     } catch (e) {
       if (e is DioException) {
-        throw Exception(
-          _extractError(e.response?.data, 'Gagal mengedit logbook pemanfaatan'),
-        );
+        throw Exception(_handleDioError(e, 'Gagal mengedit logbook pemanfaatan'));
       }
       rethrow;
     }
@@ -1393,6 +1424,20 @@ class ApiKknRepository implements KknRepository {
         for (int i = 0; i < allImagePaths.length; i++) {
           final p = allImagePaths[i];
           final fileExt = p.split('.').last.toLowerCase();
+          String uploadPath = p;
+          if (fileExt != 'pdf') {
+            try {
+              uploadPath = await ImageCompressor.compressImage(
+                p,
+                maxSizeBytes: 1024 * 1024,
+                maxWidth: 1280,
+                maxHeight: 1280,
+              );
+            } catch (err) {
+              debugPrint('[ApiKknRepository] Kompresi foto dilewati: $err');
+            }
+          }
+
           String mimeType = 'image/jpeg';
           if (fileExt == 'png') mimeType = 'image/png';
           if (fileExt == 'webp') mimeType = 'image/webp';
@@ -1400,7 +1445,7 @@ class ApiKknRepository implements KknRepository {
 
           files.add(
             await MultipartFile.fromFile(
-              p,
+              uploadPath,
               filename:
                   'logbook_harian_${DateTime.now().millisecondsSinceEpoch}_$i.$fileExt',
               contentType: MediaType.parse(mimeType),
@@ -1416,6 +1461,13 @@ class ApiKknRepository implements KknRepository {
       final response = await apiClient.dio.post(
         ApiEndpoints.logbookMahasiswa,
         data: requestData,
+        options: requestData is FormData
+            ? Options(
+                contentType: 'multipart/form-data',
+                sendTimeout: const Duration(seconds: 60),
+                receiveTimeout: const Duration(seconds: 60),
+              )
+            : null,
       );
       if (response.statusCode == 200 || response.statusCode == 201) {
         return response.data as Map<String, dynamic>;
@@ -1423,15 +1475,7 @@ class ApiKknRepository implements KknRepository {
       return {'success': false, 'message': 'Unknown error'};
     } catch (e) {
       if (e is DioException) {
-        final rawData = e.response?.data?.toString() ?? 'null';
-        final snippet = rawData.length > 50
-            ? rawData.substring(0, 50)
-            : rawData;
-        final msg = _extractError(
-          e.response?.data,
-          'HTTP ${e.response?.statusCode}: $snippet',
-        );
-        throw Exception(msg);
+        throw Exception(_handleDioError(e, 'Gagal mengirim logbook harian'));
       }
       rethrow;
     }
@@ -1457,6 +1501,20 @@ class ApiKknRepository implements KknRepository {
         for (int i = 0; i < allImagePaths.length; i++) {
           final p = allImagePaths[i];
           final fileExt = p.split('.').last.toLowerCase();
+          String uploadPath = p;
+          if (fileExt != 'pdf') {
+            try {
+              uploadPath = await ImageCompressor.compressImage(
+                p,
+                maxSizeBytes: 1024 * 1024,
+                maxWidth: 1280,
+                maxHeight: 1280,
+              );
+            } catch (err) {
+              debugPrint('[ApiKknRepository] Kompresi foto dilewati: $err');
+            }
+          }
+
           String mimeType = 'image/jpeg';
           if (fileExt == 'png') mimeType = 'image/png';
           if (fileExt == 'webp') mimeType = 'image/webp';
@@ -1464,7 +1522,7 @@ class ApiKknRepository implements KknRepository {
 
           files.add(
             await MultipartFile.fromFile(
-              p,
+              uploadPath,
               filename:
                   'logbook_harian_edit_${DateTime.now().millisecondsSinceEpoch}_$i.$fileExt',
               contentType: MediaType.parse(mimeType),
@@ -1480,19 +1538,18 @@ class ApiKknRepository implements KknRepository {
       final response = await apiClient.dio.put(
         '${ApiEndpoints.logbookMahasiswa}/$id',
         data: requestData,
+        options: requestData is FormData
+            ? Options(
+                contentType: 'multipart/form-data',
+                sendTimeout: const Duration(seconds: 60),
+                receiveTimeout: const Duration(seconds: 60),
+              )
+            : null,
       );
       return response.statusCode == 200;
     } catch (e) {
       if (e is DioException) {
-        final rawData = e.response?.data?.toString() ?? 'null';
-        final snippet = rawData.length > 50
-            ? rawData.substring(0, 50)
-            : rawData;
-        final msg = _extractError(
-          e.response?.data,
-          'HTTP ${e.response?.statusCode}: $snippet',
-        );
-        throw Exception(msg);
+        throw Exception(_handleDioError(e, 'Gagal mengedit logbook harian'));
       }
       rethrow;
     }
@@ -1573,6 +1630,20 @@ class ApiKknRepository implements KknRepository {
         for (int i = 0; i < allImagePaths.length; i++) {
           final p = allImagePaths[i];
           final fileExt = p.split('.').last.toLowerCase();
+          String uploadPath = p;
+          if (fileExt != 'pdf') {
+            try {
+              uploadPath = await ImageCompressor.compressImage(
+                p,
+                maxSizeBytes: 1024 * 1024,
+                maxWidth: 1280,
+                maxHeight: 1280,
+              );
+            } catch (err) {
+              debugPrint('[ApiKknRepository] Kompresi foto dilewati: $err');
+            }
+          }
+
           String mimeType = 'image/jpeg';
           if (fileExt == 'png') mimeType = 'image/png';
           if (fileExt == 'webp') mimeType = 'image/webp';
@@ -1580,7 +1651,7 @@ class ApiKknRepository implements KknRepository {
 
           files.add(
             await MultipartFile.fromFile(
-              p,
+              uploadPath,
               filename:
                   'panen_${DateTime.now().millisecondsSinceEpoch}_$i.$fileExt',
               contentType: MediaType.parse(mimeType),
@@ -1596,13 +1667,18 @@ class ApiKknRepository implements KknRepository {
       final response = await apiClient.dio.post(
         ApiEndpoints.kknPanenHasil,
         data: requestData,
+        options: requestData is FormData
+            ? Options(
+                contentType: 'multipart/form-data',
+                sendTimeout: const Duration(seconds: 60),
+                receiveTimeout: const Duration(seconds: 60),
+              )
+            : null,
       );
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
       if (e is DioException) {
-        throw Exception(
-          _extractError(e.response?.data, 'Gagal menyimpan panen hasil'),
-        );
+        throw Exception(_handleDioError(e, 'Gagal menyimpan panen hasil'));
       }
       rethrow;
     }
@@ -1618,9 +1694,7 @@ class ApiKknRepository implements KknRepository {
       throw Exception('Gagal memuat riwayat pemanfaatan');
     } catch (e) {
       if (e is DioException) {
-        throw Exception(
-          _extractError(e.response?.data, 'Gagal memuat riwayat pemanfaatan'),
-        );
+        throw Exception(_handleDioError(e, 'Gagal memuat riwayat pemanfaatan'));
       }
       rethrow;
     }
@@ -1646,6 +1720,20 @@ class ApiKknRepository implements KknRepository {
         for (int i = 0; i < allImagePaths.length; i++) {
           final p = allImagePaths[i];
           final fileExt = p.split('.').last.toLowerCase();
+          String uploadPath = p;
+          if (fileExt != 'pdf') {
+            try {
+              uploadPath = await ImageCompressor.compressImage(
+                p,
+                maxSizeBytes: 1024 * 1024,
+                maxWidth: 1280,
+                maxHeight: 1280,
+              );
+            } catch (err) {
+              debugPrint('[ApiKknRepository] Kompresi foto dilewati: $err');
+            }
+          }
+
           String mimeType = 'image/jpeg';
           if (fileExt == 'png') mimeType = 'image/png';
           if (fileExt == 'webp') mimeType = 'image/webp';
@@ -1653,7 +1741,7 @@ class ApiKknRepository implements KknRepository {
 
           files.add(
             await MultipartFile.fromFile(
-              p,
+              uploadPath,
               filename:
                   'update_pemanfaatan_${DateTime.now().millisecondsSinceEpoch}_$i.$fileExt',
               contentType: MediaType.parse(mimeType),
@@ -1669,13 +1757,18 @@ class ApiKknRepository implements KknRepository {
       final response = await apiClient.dio.put(
         '${ApiEndpoints.kknPemanfaatanSampah}/$id',
         data: requestData,
+        options: requestData is FormData
+            ? Options(
+                contentType: 'multipart/form-data',
+                sendTimeout: const Duration(seconds: 60),
+                receiveTimeout: const Duration(seconds: 60),
+              )
+            : null,
       );
       return response.statusCode == 200;
     } catch (e) {
       if (e is DioException) {
-        throw Exception(
-          _extractError(e.response?.data, 'Gagal update pemanfaatan'),
-        );
+        throw Exception(_handleDioError(e, 'Gagal update pemanfaatan'));
       }
       rethrow;
     }
@@ -1690,9 +1783,7 @@ class ApiKknRepository implements KknRepository {
       return response.statusCode == 200;
     } catch (e) {
       if (e is DioException) {
-        throw Exception(
-          _extractError(e.response?.data, 'Gagal hapus pemanfaatan'),
-        );
+        throw Exception(_handleDioError(e, 'Gagal hapus pemanfaatan'));
       }
       rethrow;
     }
@@ -1718,6 +1809,20 @@ class ApiKknRepository implements KknRepository {
         for (int i = 0; i < allImagePaths.length; i++) {
           final p = allImagePaths[i];
           final fileExt = p.split('.').last.toLowerCase();
+          String uploadPath = p;
+          if (fileExt != 'pdf') {
+            try {
+              uploadPath = await ImageCompressor.compressImage(
+                p,
+                maxSizeBytes: 1024 * 1024,
+                maxWidth: 1280,
+                maxHeight: 1280,
+              );
+            } catch (err) {
+              debugPrint('[ApiKknRepository] Kompresi foto dilewati: $err');
+            }
+          }
+
           String mimeType = 'image/jpeg';
           if (fileExt == 'png') mimeType = 'image/png';
           if (fileExt == 'webp') mimeType = 'image/webp';
@@ -1725,7 +1830,7 @@ class ApiKknRepository implements KknRepository {
 
           files.add(
             await MultipartFile.fromFile(
-              p,
+              uploadPath,
               filename:
                   'update_panen_${DateTime.now().millisecondsSinceEpoch}_$i.$fileExt',
               contentType: MediaType.parse(mimeType),
@@ -1741,11 +1846,18 @@ class ApiKknRepository implements KknRepository {
       final response = await apiClient.dio.put(
         '${ApiEndpoints.kknPanenHasil}/$id',
         data: requestData,
+        options: requestData is FormData
+            ? Options(
+                contentType: 'multipart/form-data',
+                sendTimeout: const Duration(seconds: 60),
+                receiveTimeout: const Duration(seconds: 60),
+              )
+            : null,
       );
       return response.statusCode == 200;
     } catch (e) {
       if (e is DioException) {
-        throw Exception(_extractError(e.response?.data, 'Gagal update panen'));
+        throw Exception(_handleDioError(e, 'Gagal update panen'));
       }
       rethrow;
     }
@@ -1760,7 +1872,7 @@ class ApiKknRepository implements KknRepository {
       return response.statusCode == 200;
     } catch (e) {
       if (e is DioException) {
-        throw Exception(_extractError(e.response?.data, 'Gagal hapus panen'));
+        throw Exception(_handleDioError(e, 'Gagal hapus panen'));
       }
       rethrow;
     }
