@@ -964,6 +964,13 @@ if (isPrimaryWorker) {
           ALTER TABLE "pengguna" ADD CONSTRAINT "pengguna_id_universitas_fkey" FOREIGN KEY ("id_universitas") REFERENCES "universitas_mitra"("id") ON DELETE SET NULL ON UPDATE CASCADE;
         END IF;
       END $$;`,
+      `INSERT INTO "universitas_mitra" ("id", "nama", "dibuat_pada", "diperbarui_pada")
+       SELECT 'unikom-indonesia', 'Universitas Komputer Indonesia (UNIKOM)', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+       WHERE NOT EXISTS (SELECT 1 FROM "universitas_mitra" LIMIT 1);`,
+      `UPDATE "pengguna" 
+       SET "id_universitas" = (SELECT "id" FROM "universitas_mitra" WHERE "nama" ILIKE '%unikom%' OR "nama" ILIKE '%komputer indonesia%' LIMIT 1)
+       WHERE "id_universitas" IS NULL 
+         AND ("institusi" ILIKE '%unikom%' OR "institusi" ILIKE '%komputer indonesia%');`,
     ];
 
     await Promise.allSettled(alterStatements.map((stmt) => prisma.$executeRawUnsafe(stmt)));

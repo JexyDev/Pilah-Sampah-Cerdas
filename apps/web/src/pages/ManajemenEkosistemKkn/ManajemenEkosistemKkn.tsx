@@ -271,13 +271,13 @@ export const ManajemenEkosistemKkn: React.FC = () => {
   };
 
   useEffect(() => {
+    // Selalu pastikan universitas termuat untuk sinkronisasi stat card & tab
+    fetchUniversitas();
     if (activeTab === "kelompok") {
       fetchKelompok();
       fetchDpls();
     } else if (activeTab === "dpl") {
       fetchDpls();
-    } else if (activeTab === "universitas") {
-      fetchUniversitas();
     }
   }, [activeTab]);
 
@@ -567,13 +567,43 @@ export const ManajemenEkosistemKkn: React.FC = () => {
     if (!newUniName.trim()) return;
     
     try {
-      await api.post("/universitas", { nama: newUniName.trim() });
+      await api.post("/universitas", { 
+        name: newUniName.trim(),
+        nama: newUniName.trim() 
+      });
       setNewUniName("");
       toast.success("Universitas berhasil ditambahkan!");
       fetchUniversitas();
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Gagal menambahkan universitas");
     }
+  };
+
+  const handleStartEditUni = (uni: any) => {
+    setEditingUni({ id: uni.id, name: uni.name || uni.nama || "" });
+    setEditUniName(uni.name || uni.nama || "");
+  };
+
+  const handleSaveEditUni = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUni || !editUniName.trim()) return;
+    try {
+      await api.put(`/universitas/${editingUni.id}`, {
+        name: editUniName.trim(),
+        nama: editUniName.trim(),
+      });
+      toast.success("Universitas berhasil diperbarui!");
+      setEditingUni(null);
+      setEditUniName("");
+      fetchUniversitas();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Gagal memperbarui universitas");
+    }
+  };
+
+  const handleCancelEditUni = () => {
+    setEditingUni(null);
+    setEditUniName("");
   };
 
   const handleRemoveUni = (id: string, name: string) => {
@@ -708,8 +738,10 @@ export const ManajemenEkosistemKkn: React.FC = () => {
             </div>
             <div className="mt-4">
               <h3 className="text-3xl font-black text-slate-900 dark:text-slate-100">{uniList.length}</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 truncate" title={uniList[0]?.nama || "UNIKOM"}>
-                {uniList[0]?.nama || "UNIKOM"}
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 truncate" title={uniList.map((u) => u.name || u.nama).join(", ") || "Universitas Komputer Indonesia (UNIKOM)"}>
+                {uniList.length > 0
+                  ? (uniList.map((u) => u.name || u.nama).slice(0, 2).join(", ") + (uniList.length > 2 ? ` +${uniList.length - 2}` : ""))
+                  : "Universitas Komputer Indonesia"}
               </p>
             </div>
           </div>
@@ -1176,11 +1208,12 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                   placeholder="Nama Universitas Mitra Baru..."
                   value={newUniName}
                   onChange={(e) => setNewUniName(e.target.value)}
-                  className="flex-1 px-4 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                  className="flex-1 px-4 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all bg-white dark:bg-slate-900"
                 />
                 <button
                   type="submit"
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition-all cursor-pointer shadow-xs active:scale-[0.98]"
+                  disabled={!newUniName.trim()}
+                  className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition-all cursor-pointer shadow-xs active:scale-[0.98]"
                 >
                   Tambah Mitra
                 </button>
@@ -1190,19 +1223,77 @@ export const ManajemenEkosistemKkn: React.FC = () => {
             <div className="space-y-3">
               <h2 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Daftar Universitas Mitra</h2>
               <div className="divide-y divide-slate-100 dark:divide-slate-800 border border-slate-100 dark:border-slate-800 rounded-xl overflow-hidden bg-slate-50/20 dark:bg-slate-800/20">
-                {uniList.map((uni: any) => (
-                  <div key={uni.id || uni.name || uni} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
-                    <span className="font-semibold text-slate-700 dark:text-slate-300 text-sm">{uni.name || uni}</span>
-                    {!isReadOnly && (
-                      <button
-                        onClick={() => handleRemoveUni(uni.id, uni.name)}
-                        className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
+                {uniList.map((uni: any) => {
+                  const uniName = uni.name || uni.nama || uni;
+                  const isEditing = editingUni?.id === uni.id;
+
+                  if (isEditing) {
+                    return (
+                      <form
+                        key={uni.id || uniName}
+                        onSubmit={handleSaveEditUni}
+                        className="p-3.5 flex items-center gap-3 bg-emerald-50/40 dark:bg-emerald-950/20"
                       >
-                        <Trash2 size={16} />
-                      </button>
-                    )}
+                        <input
+                          type="text"
+                          value={editUniName}
+                          onChange={(e) => setEditUniName(e.target.value)}
+                          className="flex-1 px-3 py-1.5 border border-emerald-300 dark:border-emerald-700 rounded-lg text-sm bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 font-medium"
+                          autoFocus
+                        />
+                        <button
+                          type="submit"
+                          className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg cursor-pointer transition-all"
+                        >
+                          Simpan
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleCancelEditUni}
+                          className="px-3.5 py-1.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-lg cursor-pointer transition-all"
+                        >
+                          Batal
+                        </button>
+                      </form>
+                    );
+                  }
+
+                  return (
+                    <div key={uni.id || uniName} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
+                          <BookOpen size={16} />
+                        </div>
+                        <span className="font-semibold text-slate-700 dark:text-slate-300 text-sm">{uniName}</span>
+                      </div>
+                      {!isReadOnly && (
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleStartEditUni(uni)}
+                            className="text-slate-400 hover:text-emerald-600 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
+                            title="Edit Nama Universitas"
+                          >
+                            <Pencil size={15} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveUni(uni.id, uniName)}
+                            className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
+                            title="Hapus Universitas"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+                {uniList.length === 0 && !loadingUni && (
+                  <div className="p-8 text-center text-slate-400 text-sm">
+                    Belum ada universitas mitra yang terdaftar
                   </div>
-                ))}
+                )}
               </div>
             </div>
           </div>
