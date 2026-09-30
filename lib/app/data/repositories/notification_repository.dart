@@ -19,6 +19,10 @@ abstract class NotificationRepository {
   /// DELETE /api/v1/notifications/all
   Future<void> deleteAllNotifications();
 
+  /// Hapus satu notifikasi.
+  /// DELETE /api/v1/notifications/:id
+  Future<void> deleteNotification(String id);
+
   /// Simpan FCM device token ke server.
   /// POST /api/v1/notifications/device-token
   Future<void> registerDeviceToken(String token);

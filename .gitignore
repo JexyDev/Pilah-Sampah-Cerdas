@@ -83,3 +83,6 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
+
+# Firebase Admin SDK Credentials
+berseka-*-firebase-adminsdk-*.json

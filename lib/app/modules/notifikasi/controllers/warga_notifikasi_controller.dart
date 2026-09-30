@@ -149,28 +149,32 @@ final wargaNotificationsProvider = FutureProvider<List<NotificationEntity>>((
 
   // FORCE override isRead based on persistent local cache
   // AND hapus notifikasi yang lebih lama dari deleteAllTimestamp
+  // AND hapus notifikasi yang di-delete single
   final deleteAllTimestamp =
       prefs.getInt('delete_all_notifs_${userId}_$role') ?? 0;
+  final deletedSingleList = 
+      prefs.getStringList('deleted_single_notifs_${userId}_$role') ?? [];
 
   final List<NotificationEntity> finalResult = [];
   for (int i = 0; i < result.length; i++) {
     final dt = result[i].createdAt;
+    final item = result[i];
 
     // Skip if deleted
-    if (dt.millisecondsSinceEpoch <= deleteAllTimestamp) {
+    if (dt.millisecondsSinceEpoch <= deleteAllTimestamp || deletedSingleList.contains(item.id)) {
       continue;
     }
 
-    var item = result[i];
+    var itemToModify = item;
     final isReadLocally =
-        readSet.contains(item.id) ||
+        readSet.contains(itemToModify.id) ||
         dt.millisecondsSinceEpoch <= markAllTimestamp ||
-        LocalNotificationCacheService().isRead(userId, role, item.id, dt);
+        LocalNotificationCacheService().isRead(userId, role, itemToModify.id, dt);
 
-    if (isReadLocally && !item.isRead) {
-      item = item.copyWith(isRead: true);
+    if (isReadLocally && !itemToModify.isRead) {
+      itemToModify = itemToModify.copyWith(isRead: true);
     }
-    finalResult.add(item);
+    finalResult.add(itemToModify);
   }
 
   // Urutkan: terbaru di atas

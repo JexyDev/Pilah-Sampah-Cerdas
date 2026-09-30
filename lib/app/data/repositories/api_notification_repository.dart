@@ -88,6 +88,19 @@ class ApiNotificationRepository implements NotificationRepository {
     }
   }
 
+  // ─── Delete Single Notification ───────────────────────────────────────────
+  @override
+  Future<void> deleteNotification(String id) async {
+    try {
+      await apiClient.dio.delete(ApiEndpoints.notificationsDeleteSingle(id));
+    } on DioException catch (e) {
+      throw NotificationException(
+        'NETWORK_ERROR',
+        'Gagal menghapus notifikasi: ${e.message}',
+      );
+    }
+  }
+
   // ─── Register FCM Device Token ────────────────────────────────────────────
   @override
   Future<void> registerDeviceToken(String token) async {

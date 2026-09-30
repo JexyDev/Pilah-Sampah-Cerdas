@@ -14,7 +14,6 @@ import '../mahasiswa/controllers/mahasiswa_controller.dart';
 import '../../core/widgets/profile_photo_cropper_view.dart';
 
 import '../../data/models/user_entity.dart';
-import '../../data/models/bin_entity.dart';
 
 /// Halaman profil — sesuai desain:
 /// Header biru, avatar rumah dalam lingkaran, nama+RW, Data RT, Tempat Sampah Saya, Keluar.
@@ -785,48 +784,6 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                             onTap: () => Navigator.of(
                               context,
                             ).pushNamed(AppRoutes.editProfilMahasiswa),
-                          ),
-                          const Divider(height: 1, indent: 56),
-                        ],
-                        if (user?.role == UserRole.warga && !isUnjoined) ...[
-                          // Tambah Tempat Sampah Baru
-                          _MenuTile(
-                            icon: Icons.qr_code_scanner_rounded,
-                            iconColor: AppColors.primaryGreen,
-                            iconBgColor: AppColors.primaryGreen.withValues(
-                              alpha: 0.1,
-                            ),
-                            label: 'Tambah Tempat Sampah Baru',
-                            onTap: () {
-                              final bins = ref.read(binsProvider).value ?? [];
-                              final hasOrganic = bins.any(
-                                (b) =>
-                                    b.binType == WasteType.organic && b.isActive,
-                              );
-                              final hasNonOrganic = bins.any(
-                                (b) =>
-                                    b.binType == WasteType.nonOrganic &&
-                                    b.isActive,
-                              );
-                              if (hasOrganic && !hasNonOrganic) {
-                                Navigator.of(context).pushNamed(
-                                  AppRoutes.ukurKapasitas,
-                                  arguments: {'targetType': 'non_organic'},
-                                );
-                              } else if (!hasOrganic && hasNonOrganic) {
-                                Navigator.of(context).pushNamed(
-                                  AppRoutes.ukurKapasitas,
-                                  arguments: {'targetType': 'organic'},
-                                );
-                              } else if (hasOrganic && hasNonOrganic) {
-                                Navigator.of(context).pushNamed(AppRoutes.kelolaBin);
-                              } else {
-                                Navigator.of(context).pushNamed(
-                                  AppRoutes.ukurKapasitas,
-                                  arguments: {'targetType': 'both'},
-                                );
-                              }
-                            },
                           ),
                           const Divider(height: 1, indent: 56),
                         ],
