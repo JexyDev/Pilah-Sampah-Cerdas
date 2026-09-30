@@ -23,6 +23,14 @@ import {
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
+// Cache for KKN Leaderboard to avoid repeated heavy queries
+let cachedLeaderboardKkn: { data: any; expiry: number } | null = null;
+const LEADERBOARD_CACHE_TTL_MS = 45 * 1000; // 45 seconds
+
+export function invalidateLeaderboardKknCache(): void {
+  cachedLeaderboardKkn = null;
+}
+
 export const gamificationService = {
   /**
    * Submit new recycle idea
@@ -394,6 +402,11 @@ export const gamificationService = {
   },
 
   getLeaderboardKkn: async () => {
+    const now = Date.now();
+    if (cachedLeaderboardKkn && cachedLeaderboardKkn.expiry > now) {
+      return cachedLeaderboardKkn.data;
+    }
+
     const studentsRaw = await prisma.studentKkn.findMany({
       include: {
         user: {
@@ -481,29 +494,40 @@ export const gamificationService = {
     // 100% Data Aktual: Filter kelompok testing/dummy
     const groups = groupsRaw.filter((g: any) => !isTestKelompok(g));
 
-    const kelompokLeaderboard = await Promise.all(
-      groups.map(async (g: any) => {
-        // Filter student list to non-test students
-        const realStudents = (g.students || []).filter((s: any) => !isTestStudent(s));
-        const studentUserIds = realStudents.map((s: any) => s.userId).filter(Boolean);
-        const groupPointsData = await calculateGroupPoints(g.id, undefined, studentUserIds);
-        const dplName = g.dpl?.name || g.dplNamaMentah || null;
+    // Memoize group points calculation to prevent massive duplicate queries during DPL calculation
+    const groupPointsMap = new Map<string, any>();
 
-        return {
-          id: g.id,
-          name: g.name,
-          dplName: dplName
-            ? dplName.toLowerCase().startsWith("dpl")
-              ? dplName
-              : `DPL: ${dplName}`
-            : "DPL: Belum Ditugaskan",
-          avgScore: groupPointsData.totalGroupPoints,
-          poinProker: groupPointsData.poinProker,
-          rataRataPoinAnggota: groupPointsData.rataRataPoinAnggota,
-          membersCount: studentUserIds.length,
-        };
-      })
-    );
+    // Execute group calculations in controlled batches of 5 to protect the database connection pool
+    const kelompokLeaderboard: any[] = [];
+    const BATCH_SIZE = 5;
+    for (let i = 0; i < groups.length; i += BATCH_SIZE) {
+      const batch = groups.slice(i, i + BATCH_SIZE);
+      const batchResults = await Promise.all(
+        batch.map(async (g: any) => {
+          const realStudents = (g.students || []).filter((s: any) => !isTestStudent(s));
+          const studentUserIds = realStudents.map((s: any) => s.userId).filter(Boolean);
+          const groupPointsData = await calculateGroupPoints(g.id, undefined, studentUserIds);
+          groupPointsMap.set(g.id, groupPointsData);
+
+          const dplName = g.dpl?.name || g.dplNamaMentah || null;
+
+          return {
+            id: g.id,
+            name: g.name,
+            dplName: dplName
+              ? dplName.toLowerCase().startsWith("dpl")
+                ? dplName
+                : `DPL: ${dplName}`
+              : "DPL: Belum Ditugaskan",
+            avgScore: groupPointsData.totalGroupPoints,
+            poinProker: groupPointsData.poinProker,
+            rataRataPoinAnggota: groupPointsData.rataRataPoinAnggota,
+            membersCount: studentUserIds.length,
+          };
+        })
+      );
+      kelompokLeaderboard.push(...batchResults);
+    }
 
     kelompokLeaderboard.sort((a, b) => b.avgScore - a.avgScore);
 
@@ -542,47 +566,65 @@ export const gamificationService = {
     // 100% Data Aktual: Filter akun DPL testing/dummy
     const dplUsers = dplUsersRaw.filter((d: any) => !isTestUser(d));
 
-    const dplLeaderboard = await Promise.all(
-      dplUsers.map(async (d: any) => {
-        let totalGroupPointsSum = 0;
-        let totalStudentCount = 0;
+    const dplLeaderboard: any[] = [];
+    for (let i = 0; i < dplUsers.length; i += BATCH_SIZE) {
+      const batch = dplUsers.slice(i, i + BATCH_SIZE);
+      const batchResults = await Promise.all(
+        batch.map(async (d: any) => {
+          let totalGroupPointsSum = 0;
+          let totalStudentCount = 0;
 
-        // Filter kelompok milik DPL dari kelompok testing
-        const cleanKelompokList = (d.dplKelompok || []).filter((k: any) => !isTestKelompok(k));
+          // Filter kelompok milik DPL dari kelompok testing
+          const cleanKelompokList = (d.dplKelompok || []).filter((k: any) => !isTestKelompok(k));
 
-        for (const kel of cleanKelompokList) {
-          const realStudents = (kel.students || []).filter((s: any) => !isTestStudent(s));
-          totalStudentCount += realStudents.length;
-          const studentUserIds = realStudents.map((s: any) => s.userId).filter(Boolean);
-          const grpRes = await calculateGroupPoints(kel.id, undefined, studentUserIds);
-          totalGroupPointsSum += grpRes.totalGroupPoints;
-        }
+          for (const kel of cleanKelompokList) {
+            const realStudents = (kel.students || []).filter((s: any) => !isTestStudent(s));
+            totalStudentCount += realStudents.length;
 
-        const avgGroupPoints =
-          cleanKelompokList.length > 0 ? totalGroupPointsSum / cleanKelompokList.length : 0;
+            // Use memoized group points to avoid re-querying the database
+            let grpRes = groupPointsMap.get(kel.id);
+            if (!grpRes) {
+              const studentUserIds = realStudents.map((s: any) => s.userId).filter(Boolean);
+              grpRes = await calculateGroupPoints(kel.id, undefined, studentUserIds);
+              groupPointsMap.set(kel.id, grpRes);
+            }
+            totalGroupPointsSum += grpRes.totalGroupPoints;
+          }
 
-        const dplPointsData = await calculateDplPoints(d.id, undefined, avgGroupPoints);
+          const avgGroupPoints =
+            cleanKelompokList.length > 0 ? totalGroupPointsSum / cleanKelompokList.length : 0;
 
-        return {
-          id: d.id,
-          name: d.name,
-          points: dplPointsData.poinDpl,
-          poinLogbook: dplPointsData.poinLogbookDpl,
-          poinKelompok: dplPointsData.poinKelompok,
-          hasLogbook: dplPointsData.hasLogbookDpl,
-          logbookCount: dplPointsData.logbookCount || 0,
-          totalGroups: cleanKelompokList.length,
-          totalStudents: totalStudentCount,
-        };
-      })
-    );
+          const dplPointsData = await calculateDplPoints(d.id, undefined, avgGroupPoints);
+
+          return {
+            id: d.id,
+            name: d.name,
+            points: dplPointsData.poinDpl,
+            poinLogbook: dplPointsData.poinLogbookDpl,
+            poinKelompok: dplPointsData.poinKelompok,
+            hasLogbook: dplPointsData.hasLogbookDpl,
+            logbookCount: dplPointsData.logbookCount || 0,
+            totalGroups: cleanKelompokList.length,
+            totalStudents: totalStudentCount,
+          };
+        })
+      );
+      dplLeaderboard.push(...batchResults);
+    }
 
     dplLeaderboard.sort((a: any, b: any) => b.points - a.points);
 
-    return {
+    const result = {
       students: studentLeaderboard,
       groups: kelompokLeaderboard,
       dpl: dplLeaderboard,
     };
+
+    cachedLeaderboardKkn = {
+      data: result,
+      expiry: Date.now() + LEADERBOARD_CACHE_TTL_MS,
+    };
+
+    return result;
   },
 };

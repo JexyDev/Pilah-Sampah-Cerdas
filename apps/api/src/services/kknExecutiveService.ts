@@ -10,12 +10,28 @@ export interface KknExecutiveFilters {
   includeTestAccounts?: boolean;
 }
 
+// Fast in-memory cache for Executive Dashboard (30s TTL)
+const executiveDashboardCache = new Map<string, { data: any; expiry: number }>();
+const DASHBOARD_CACHE_TTL_MS = 30 * 1000;
+
+export function invalidateExecutiveDashboardCache(): void {
+  executiveDashboardCache.clear();
+}
+
 export const kknExecutiveService = {
   /**
    * Mengambil data lengkap untuk Dashboard Eksekutif KKN Pimpinan
    * 100% Real-time Aggregation dari Database PostgreSQL
    */
   async getExecutiveDashboard(filters: KknExecutiveFilters = {}) {
+    const isTestEnv = process.env.NODE_ENV === "test";
+    const cacheKey = JSON.stringify(filters);
+    if (!isTestEnv) {
+      const cached = executiveDashboardCache.get(cacheKey);
+      if (cached && cached.expiry > Date.now()) {
+        return cached.data;
+      }
+    }
     const rawKel = filters.kelurahan ? filters.kelurahan.replace(/^Kel\.\s*/i, "").trim() : "";
     const isFilteredKel = rawKel && rawKel !== "ALL" && rawKel !== "Semua Kelurahan" && rawKel !== "Semua Wilayah";
     const kelFilterNormalized = isFilteredKel ? rawKel : undefined;
@@ -377,6 +393,7 @@ export const kknExecutiveService = {
       where: prokerWhere,
       select: {
         id: true,
+        kelompokId: true,
         status: true,
         statusUsulan: true,
         statusPelaksanaan: true,
@@ -835,6 +852,16 @@ export const kknExecutiveService = {
       },
     });
 
+    // Map proker per kelompok from already-fetched prokerList to avoid redundant queries
+    const prokerPerKelompokMap = new Map<string, Array<any>>();
+    prokerList.forEach((p: any) => {
+      if (p.kelompokId) {
+        const list = prokerPerKelompokMap.get(p.kelompokId) || [];
+        list.push(p);
+        prokerPerKelompokMap.set(p.kelompokId, list);
+      }
+    });
+
     // Hitung real kelompok di bawah ambang batas 60% (Presensi & Proker sesuai instruksi user: keduanya)
     const kelompokWithAtt = await prisma.kelompokKkn.findMany({
       where: {
@@ -847,14 +874,11 @@ export const kknExecutiveService = {
         schedules: {
           select: {
             attendances: {
+              where: {
+                studentId: { in: Array.from(realStudentUserIdsSet) },
+              },
               select: { status: true, studentId: true },
             },
-          },
-        },
-        programKerja: {
-          select: {
-            status: true,
-            statusPelaksanaan: true,
           },
         },
       },
@@ -863,12 +887,12 @@ export const kknExecutiveService = {
     let under60AttendanceCount = 0;
     let under60ProkerCount = 0;
 
-    kelompokWithAtt.forEach((k) => {
+    kelompokWithAtt.forEach((k: any) => {
       // Presensi
       let totalAtt = 0;
       let hadirAtt = 0;
-      k.schedules.forEach((s) => {
-        s.attendances.forEach((a) => {
+      (k.schedules || []).forEach((s: any) => {
+        (s.attendances || []).forEach((a: any) => {
           if (!realStudentUserIdsSet.has(a.studentId)) return;
           totalAtt++;
           const st = (a.status || "").toUpperCase();
@@ -882,10 +906,11 @@ export const kknExecutiveService = {
         under60AttendanceCount++;
       }
 
-      // Proker Selesai
-      const totalP = k.programKerja.length;
-      const selesaiP = k.programKerja.filter(
-        (p) => (p.statusPelaksanaan || "").toUpperCase() === "SELESAI" || (p.status || "").toUpperCase() === "SELESAI"
+      // Proker Selesai (Diambil dari prokerPerKelompokMap atau k.programKerja jika di-mock pada testing)
+      const groupProkers = prokerPerKelompokMap.get(k.id) || k.programKerja || [];
+      const totalP = groupProkers.length;
+      const selesaiP = groupProkers.filter(
+        (p: any) => (p.statusPelaksanaan || "").toUpperCase() === "SELESAI" || (p.status || "").toUpperCase() === "SELESAI"
       ).length;
       const ratioP = totalP > 0 ? (selesaiP / totalP) * 100 : 0;
       if (ratioP < 60) {
@@ -998,7 +1023,7 @@ export const kknExecutiveService = {
     ];
 
     // Response Data Lengkap
-    return {
+    const result = {
       lastUpdated: new Date().toISOString(),
       summary: {
         totalWilayah: {
@@ -1059,6 +1084,16 @@ export const kknExecutiveService = {
         selectedPeriode: filters.periode || "2026",
       },
     };
+
+    if (process.env.NODE_ENV !== "test") {
+      const cacheKey = JSON.stringify(filters);
+      executiveDashboardCache.set(cacheKey, {
+        data: result,
+        expiry: Date.now() + DASHBOARD_CACHE_TTL_MS,
+      });
+    }
+
+    return result;
   },
 
   /**
