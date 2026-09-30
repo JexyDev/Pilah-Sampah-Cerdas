@@ -327,7 +327,53 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                 ),
               ),
             )
-          else if (listPetugas.isNotEmpty) ...[
+          else if (listPetugas.length == 1) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.badge_outlined,
+                    size: 20,
+                    color: AppColors.primaryGreen,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Petugas Pemilah Wilayah Anda',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          listPetugas.first.name.isNotEmpty
+                              ? listPetugas.first.name
+                              : 'Petugas ${listPetugas.first.id}',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ] else if (listPetugas.length > 1) ...[
             DropdownButtonFormField<String>(
               isExpanded: true,
               initialValue: listPetugas.any((p) => p.id == _selectedPetugasId)

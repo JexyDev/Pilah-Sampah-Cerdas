@@ -132,6 +132,7 @@ class ApiEndpoints {
   static const String notificationsUnregisterToken =
       '/notifications/unregister-token';
   static String notificationsRead(String id) => '/notifications/$id/read';
+  static String notificationsDeleteSingle(String id) => '/notifications/$id';
 
   // Pemanfaatan & Evaluasi Warga
   static const String pemanfaatan = '/pemanfaatan';

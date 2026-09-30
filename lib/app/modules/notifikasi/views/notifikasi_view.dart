@@ -77,18 +77,44 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
                     final confirm = await showDialog<bool>(
                       context: context,
                       builder: (c) => AlertDialog(
-                        title: const Text('Hapus Semua?'),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        title: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppColors.dangerRed.withValues(alpha: 0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.delete_outline_rounded,
+                                color: AppColors.dangerRed,
+                                size: 22,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            const Expanded(
+                              child: Text(
+                                'Hapus Semua?',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              ),
+                            ),
+                          ],
+                        ),
                         content: const Text(
-                          'Apakah Anda yakin ingin menghapus semua notifikasi?',
+                          'Apakah Anda yakin ingin menghapus semua notifikasi? Tindakan ini tidak dapat dibatalkan.',
+                          style: TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
                         ),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(c, false),
-                            child: const Text('Batal'),
+                            child: const Text('Batal', style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
                           ),
                           TextButton(
                             onPressed: () => Navigator.pop(c, true),
-                            child: const Text('Hapus'),
+                            child: const Text('Hapus', style: TextStyle(color: AppColors.dangerRed, fontWeight: FontWeight.w700)),
                           ),
                         ],
                       ),
@@ -108,8 +134,56 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
             onPressed: markState.isLoading
                 ? null
                 : () async {
-                    await ref.read(markReadProvider.notifier).markAllRead();
-                    ref.invalidate(wargaNotificationsProvider);
+                    final bool? confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        title: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.done_all_rounded,
+                                color: AppColors.primaryGreen,
+                                size: 22,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            const Expanded(
+                              child: Text(
+                                'Tandai Semua Dibaca',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              ),
+                            ),
+                          ],
+                        ),
+                        content: const Text(
+                          'Apakah Anda yakin ingin menandai semua notifikasi sebagai telah dibaca?',
+                          style: TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: const Text('Batal', style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            child: const Text('Ya', style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.w700)),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (confirm == true) {
+                      await ref.read(markReadProvider.notifier).markAllRead();
+                      ref.invalidate(wargaNotificationsProvider);
+                    }
                   },
           ),
           IconButton(
@@ -347,14 +421,14 @@ class _NotifikasiViewState extends ConsumerState<NotifikasiView> {
 
 // ─── Notification Tile ────────────────────────────────────────────────────────
 
-class _NotificationTile extends StatelessWidget {
+class _NotificationTile extends ConsumerWidget {
   const _NotificationTile({required this.item, required this.onTap});
 
   final NotificationEntity item;
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final typeUpper = item.type.toUpperCase();
     final titleUpper = item.title.toUpperCase();
     final isPunishment =
@@ -371,19 +445,69 @@ class _NotificationTile extends StatelessWidget {
         ? const Color(0xFFFEE2E2)
         : _resolveIconBg(item.type);
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        color: item.isRead
-            ? Colors.transparent
-            : AppColors.primaryGreen.withValues(alpha: 0.05),
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppDimensions.md,
-          vertical: 14,
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Dismissible(
+      key: Key(item.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        color: AppColors.dangerRed,
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        child: const Icon(Icons.delete_outline_rounded, color: Colors.white, size: 28),
+      ),
+      confirmDismiss: (direction) async {
+        return await showDialog<bool>(
+          context: context,
+          builder: (c) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.dangerRed.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.delete_outline_rounded, color: AppColors.dangerRed, size: 22),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(child: Text('Hapus Notifikasi?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16))),
+              ],
+            ),
+            content: const Text(
+              'Apakah Anda yakin ingin menghapus notifikasi ini?',
+              style: TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
+            ),
+            actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(c, false),
+                child: const Text('Batal', style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(c, true),
+                child: const Text('Hapus', style: TextStyle(color: AppColors.dangerRed, fontWeight: FontWeight.w700)),
+              ),
+            ],
+          ),
+        );
+      },
+      onDismissed: (direction) {
+        ref.read(deleteSingleProvider.notifier).deleteSingle(item.id);
+        ref.invalidate(wargaNotificationsProvider);
+      },
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Container(
+          color: item.isRead
+              ? Colors.transparent
+              : AppColors.primaryGreen.withValues(alpha: 0.05),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppDimensions.md,
+            vertical: 14,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ─── Icon Bulat ─────────────────────────────────────────────
             Container(
@@ -454,8 +578,9 @@ class _NotificationTile extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   String _formatDateTime(String? rawStr) {
     if (rawStr == null || rawStr.isEmpty || rawStr == '-') return '';
@@ -463,7 +588,7 @@ class _NotificationTile extends StatelessWidget {
       final dt = DateTime.parse(rawStr).toLocal();
       return '${DateFormat('d MMMM yyyy, HH:mm', 'id_ID').format(dt)} WIB';
     } catch (_) {
-      return rawStr; // fallback jika bukan ISO string (misal 'Baru saja')
+      return rawStr;
     }
   }
 

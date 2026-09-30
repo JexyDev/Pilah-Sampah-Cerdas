@@ -180,11 +180,13 @@ final notificationsProvider = FutureProvider<List<NotificationEntity>>((
   final markAllTs = prefs.getInt('mark_all_notifs_${userId}_$roleName') ?? 0;
   final deleteAllTs =
       prefs.getInt('delete_all_notifs_${userId}_$roleName') ?? 0;
+  final deletedSingleList =
+      prefs.getStringList('deleted_single_notifs_${userId}_$roleName') ?? [];
 
   final List<NotificationEntity> finalFilteredList = [];
   for (int i = 0; i < filteredList.length; i++) {
     final dt = filteredList[i].createdAt.toLocal();
-    if (dt.millisecondsSinceEpoch <= deleteAllTs) continue;
+    if (dt.millisecondsSinceEpoch <= deleteAllTs || deletedSingleList.contains(filteredList[i].id)) continue;
 
     final isReadLocally =
         readSet.contains(filteredList[i].id) ||
@@ -360,6 +362,39 @@ class DeleteAllNotifier extends StateNotifier<MarkReadState> {
     }
   }
 }
+
+class DeleteSingleNotifier extends StateNotifier<MarkReadState> {
+  DeleteSingleNotifier(this._repo, this._ref)
+      : super(const MarkReadState(isLoading: false));
+
+  final NotificationRepository _repo;
+  final Ref _ref;
+
+  Future<void> deleteSingle(String id) async {
+    state = const MarkReadState(isLoading: true);
+    final user = _ref.read(authProvider).user;
+    if (user != null) {
+      final prefs = await SharedPreferences.getInstance();
+      final key = 'deleted_single_notifs_${user.id}_${user.role.name}';
+      final deletedList = prefs.getStringList(key) ?? [];
+      if (!deletedList.contains(id)) {
+        deletedList.add(id);
+        await prefs.setStringList(key, deletedList);
+      }
+    }
+    try {
+      await _repo.deleteNotification(id);
+    } catch (_) {
+      // Abaikan error jika backend bermasalah, sudah dihapus secara lokal
+    }
+    state = const MarkReadState(isLoading: false);
+  }
+}
+
+final deleteSingleProvider =
+    StateNotifierProvider<DeleteSingleNotifier, MarkReadState>((ref) {
+      return DeleteSingleNotifier(ref.watch(notificationRepositoryProvider), ref);
+    });
 
 final deleteAllProvider =
     StateNotifierProvider<DeleteAllNotifier, MarkReadState>((ref) {
