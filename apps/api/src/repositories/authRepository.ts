@@ -63,8 +63,8 @@ export class AuthRepository {
 
       const phoneArray = Array.from(candidatePhones);
 
-      // Cari user berdasarkan seluruh kemungkinan format nomor HP, NIM mahasiswa, NIP dosen, atau Email
-      const user = (await prisma.user.findFirst({
+      // Cari ID user terlebih dahulu secara ringkas (lean query) untuk menghemat slot connection pool
+      const matchedUser = await prisma.user.findFirst({
         where: {
           OR: [
             { phone: { in: phoneArray } },
@@ -73,6 +73,16 @@ export class AuthRepository {
             ...(raw.includes("@") ? [{ email: { equals: raw, mode: "insensitive" as const } }] : []),
           ],
         },
+        select: { id: true },
+      });
+
+      if (!matchedUser) {
+        return null;
+      }
+
+      // Ambil relasi lengkap hanya jika user terbukti ada, menggunakan findUnique berbasis Primary Key (cepat & terindeks)
+      const user = (await prisma.user.findUnique({
+        where: { id: matchedUser.id },
         include: {
           role: true,
           rw: {

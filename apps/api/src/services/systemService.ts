@@ -7,6 +7,12 @@ import { prisma } from "../lib/prisma.js";
  */
 
 import { redisService } from "./redisService.js";
+
+// Fast in-memory cache for public landing endpoints (reduces 30+ DB queries per visitor to 0)
+let cachedLandingContent: { data: any; expiry: number } | null = null;
+let cachedLandingStats: { data: any; expiry: number } | null = null;
+const LANDING_CACHE_TTL_MS = 60 * 1000; // 60 seconds
+
 export const systemService = {
   /**
    * Get all audit trail logs (SUPER USER only view)
@@ -515,6 +521,9 @@ export const systemService = {
    * Get dynamic landing page CMS content (Public)
    */
   getLandingContent: async () => {
+    if (cachedLandingContent && cachedLandingContent.expiry > Date.now()) {
+      return cachedLandingContent.data;
+    }
     const defaults = systemService.getDefaultLandingContent();
     try {
       const config = await prisma.systemConfig.findUnique({
@@ -564,7 +573,7 @@ export const systemService = {
           a: f.a?.replace(/Bank Sampah/gi, "Posko Daur Ulang") || f.a,
         }));
 
-        return {
+        const result = {
           heroSlides: slides,
           marketProducts: products,
           actionCampaigns: campaigns,
@@ -573,20 +582,26 @@ export const systemService = {
           faqItems: faqs,
           lastModified,
         };
+        cachedLandingContent = { data: result, expiry: Date.now() + LANDING_CACHE_TTL_MS };
+        return result;
       }
     } catch (err) {
       console.warn("[systemService] Failed parsing landing_cms_content:", err);
     }
-    return {
+    const fallbackResult = {
       ...defaults,
       lastModified: 0,
     };
+    cachedLandingContent = { data: fallbackResult, expiry: Date.now() + LANDING_CACHE_TTL_MS };
+    return fallbackResult;
   },
 
   /**
    * Save dynamic landing page CMS content (Super User & Developer)
    */
   saveLandingContent: async (content: any, updatedBy: string = "Super User") => {
+    cachedLandingContent = null;
+    cachedLandingStats = null;
     const payload = {
       ...content,
       lastModified: content.lastModified || Date.now(),
@@ -796,6 +811,9 @@ export const systemService = {
    * Get aggregated landing page statistics directly from PostgreSQL DB with real relations
    */
   getLandingStats: async () => {
+    if (cachedLandingStats && cachedLandingStats.expiry > Date.now()) {
+      return cachedLandingStats.data;
+    }
     let totalBinsCount = 0;
     let assignedBinsCount = 0;
     let manualPenjemputanCount = 0;
@@ -1039,7 +1057,7 @@ export const systemService = {
       .filter((a: any) => a.isPublished !== false)
       .slice(0, 6);
 
-    return {
+    const result = {
       kegiatanCount: finalKegiatanCount > 0 ? finalKegiatanCount : scheduleCount || 28,
       wargaCount: realUserCount > 0 ? realUserCount : 725, // Total pengguna terlibat riil dari tabel User
       totalSampahKg,
@@ -1062,6 +1080,9 @@ export const systemService = {
           ? publishedActivities
           : systemService.getDefaultCuratedActivities(),
     };
+
+    cachedLandingStats = { data: result, expiry: Date.now() + LANDING_CACHE_TTL_MS };
+    return result;
   },
 
   /**
