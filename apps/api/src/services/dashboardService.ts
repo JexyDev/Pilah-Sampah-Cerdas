@@ -290,9 +290,8 @@ export const dashboardService = {
       where: usersWhere,
     });
 
-    // 1b. Pengguna Tata Kelola Sampah (WARGA, PETUGAS_RESIDU)
-    // Sesuai mandat operasional: Terdaftar 293 Warga dan 85 Petugas
-    const sampahRoles = ["WARGA", "PETUGAS_RESIDU"];
+    // 1b. Pengguna Tata Kelola Sampah (WARGA, PETUGAS_RESIDU, RW — tanpa RT)
+    const sampahRoles = ["WARGA", "PETUGAS_RESIDU", "RW"];
     const sampahUserWhere: any = {
       role: { name: { in: sampahRoles } },
     };
@@ -312,15 +311,16 @@ export const dashboardService = {
 
     const totalWargaSampah = sampahUsersList.filter((u) => u.role?.name === "WARGA").length;
     const totalPetugasResidu = sampahUsersList.filter((u) => u.role?.name === "PETUGAS_RESIDU").length;
-    const totalPenggunaSampah = totalWargaSampah + totalPetugasResidu;
+    const totalRwAparatur = sampahUsersList.filter((u) => u.role?.name === "RW").length;
+    const totalPenggunaSampah = totalWargaSampah + totalPetugasResidu + totalRwAparatur;
 
     const penggunaSampah = {
       total: totalPenggunaSampah,
       warga: totalWargaSampah,
       petugas: totalPetugasResidu,
-      rw: 0,
+      rw: totalRwAparatur,
       rt: 0,
-      aparatur: 0,
+      aparatur: totalRwAparatur,
     };
 
     // 1c. Partisipan Program KKN (MAHASISWA_KKN, DPL, MPL, PANITIA_TASKFORCE)
