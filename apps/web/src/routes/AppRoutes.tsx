@@ -712,11 +712,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/wilayah/rukun-warga" element={<Navigate to="/wilayah/rw" replace />} />
         <Route
           path="/berseka-ai"
-          element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PIMPINAN", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING"]}>
-              <BersekaAiPage />
-            </ProtectedRoute>
-          }
+          element={<Navigate to="/dasbor" replace />}
         />
         <Route
           path="/analisis-sistem/kkn"
