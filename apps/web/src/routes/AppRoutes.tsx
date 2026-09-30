@@ -720,23 +720,15 @@ const AppRoutes: React.FC = () => {
         />
         <Route
           path="/analisis-sistem/kkn"
-          element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "PIMPINAN", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING"]}>
-              <AnalisisKknPage />
-            </ProtectedRoute>
-          }
+          element={<Navigate to="/dashboard-kkn" replace />}
         />
         <Route
           path="/analisis-sistem/tata-kelola-sampah"
-          element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PIMPINAN", "PANITIA_TASKFORCE"]}>
-              <AnalisisTataKelolaPage />
-            </ProtectedRoute>
-          }
+          element={<Navigate to="/dasbor?tab=tata-kelola-sampah" replace />}
         />
-        <Route path="/analisis-sistem/tata-kelola" element={<Navigate to="/analisis-sistem/tata-kelola-sampah" replace />} />
-        <Route path="/analisis-sistem" element={<Navigate to="/analisis-sistem/kkn" replace />} />
-        <Route path="/tata-kelola-sampah" element={<Navigate to="/analisis-sistem/tata-kelola-sampah" replace />} />
+        <Route path="/analisis-sistem/tata-kelola" element={<Navigate to="/dasbor?tab=tata-kelola-sampah" replace />} />
+        <Route path="/analisis-sistem" element={<Navigate to="/dashboard-kkn" replace />} />
+        <Route path="/tata-kelola-sampah" element={<Navigate to="/dasbor?tab=tata-kelola-sampah" replace />} />
         <Route
           path="/laporan/tata-kelola-sampah"
           element={

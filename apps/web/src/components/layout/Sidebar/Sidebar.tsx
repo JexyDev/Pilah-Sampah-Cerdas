@@ -1036,21 +1036,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     {
       header: "PROGRAM KKN",
       items: [
-        {
-          to: "/analisis-sistem/kkn",
-          icon: Activity,
-          label: "Analisis Sistem",
-          allowed: [
-            "DEVELOPER",
-            "SUPER_USER",
-            "ADMIN_DLH",
-            "PANITIA_TASKFORCE",
-            "PIMPINAN",
-            "PEMIMPIN",
-            "DPL",
-            "DOSEN_PEMBIMBING",
-          ] as UserRole[],
-        },
+        // NOTE: Menu Analisis Sistem KKN di-hide sementara di production agar antarmuka lebih terfokus
+        // {
+        //   to: "/analisis-sistem/kkn",
+        //   icon: Activity,
+        //   label: "Analisis Sistem",
+        //   allowed: [
+        //     "DEVELOPER",
+        //     "SUPER_USER",
+        //     "ADMIN_DLH",
+        //     "PANITIA_TASKFORCE",
+        //     "PIMPINAN",
+        //     "PEMIMPIN",
+        //     "DPL",
+        //     "DOSEN_PEMBIMBING",
+        //   ] as UserRole[],
+        // },
         {
           to: "/berseka-ai?tab=kkn",
           icon: Sparkles,
@@ -1436,22 +1437,23 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     {
       header: "TATA KELOLA SAMPAH",
       items: [
-        {
-          to: "/analisis-sistem/tata-kelola-sampah",
-          icon: BarChart3,
-          label: "Analisis Sistem",
-          resource: "monitoring_sampah",
-          allowed: [
-            "DEVELOPER",
-            "SUPER_USER",
-            "ADMIN_DLH",
-            "CAMAT",
-            "LURAH",
-            "RW",
-            "PANITIA_TASKFORCE",
-            "PIMPINAN",
-          ] as UserRole[],
-        },
+        // NOTE: Menu Analisis Sistem di-hide sementara di production agar antarmuka lebih terfokus
+        // {
+        //   to: "/analisis-sistem/tata-kelola-sampah",
+        //   icon: BarChart3,
+        //   label: "Analisis Sistem",
+        //   resource: "monitoring_sampah",
+        //   allowed: [
+        //     "DEVELOPER",
+        //     "SUPER_USER",
+        //     "ADMIN_DLH",
+        //     "CAMAT",
+        //     "LURAH",
+        //     "RW",
+        //     "PANITIA_TASKFORCE",
+        //     "PIMPINAN",
+        //   ] as UserRole[],
+        // },
         {
           to: "/berseka-ai?tab=tata-kelola",
           icon: Sparkles,
