@@ -5,6 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_config.dart';
 import '../../../data/providers/repository_providers.dart';
+import '../controllers/mahasiswa_controller.dart'
+    show mahasiswaControllerProvider;
+import '../controllers/riwayat_kkn_controller.dart'
+    show riwayatKknControllerProvider;
+import '../controllers/mahasiswa_notifikasi_controller.dart'
+    show mahasiswaNotificationsProvider;
+import 'data_logbook_harian_view.dart' show logbookListProvider;
 
 class EditLogbookKknView extends ConsumerStatefulWidget {
   final String logbookId;
@@ -158,6 +165,11 @@ class _EditLogbookKknViewState extends ConsumerState<EditLogbookKknView> {
       );
       if (!mounted) return;
       if (success) {
+        ref.invalidate(logbookListProvider);
+        ref.invalidate(riwayatKknControllerProvider);
+        ref.read(mahasiswaControllerProvider.notifier).fetchDashboardData();
+        ref.invalidate(mahasiswaNotificationsProvider);
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Logbook berhasil diperbarui!'),

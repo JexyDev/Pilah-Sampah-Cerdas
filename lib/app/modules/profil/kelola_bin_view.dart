@@ -39,40 +39,52 @@ class KelolaBinView extends ConsumerWidget {
         ),
       ),
       backgroundColor: AppColors.backgroundCanvas,
-      body: binsAsync.when(
-        skipLoadingOnReload: true,
-        data: (bins) {
-          if (bins.isEmpty) {
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.delete_rounded,
-                    size: 64,
-                    color: AppColors.textHint,
+      body: PopScope(
+        canPop: true,
+        onPopInvokedWithResult: (didPop, result) {
+          ref.invalidate(binsProvider);
+        },
+        child: RefreshIndicator(
+          onRefresh: () async => ref.invalidate(binsProvider),
+          color: AppColors.primaryGreen,
+          child: binsAsync.when(
+            skipLoadingOnReload: true,
+            data: (bins) {
+              if (bins.isEmpty) {
+                return const Center(
+                  child: SingleChildScrollView(
+                    physics: AlwaysScrollableScrollPhysics(),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.delete_rounded,
+                          size: 64,
+                          color: AppColors.textHint,
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'Belum ada tempat sampah terdaftar.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: AppColors.textSecondary),
+                        ),
+                      ],
+                    ),
                   ),
-                  SizedBox(height: 16),
-                  Text(
-                    'Belum ada tempat sampah terdaftar.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: AppColors.textSecondary),
-                  ),
-                ],
-              ),
-            );
-          }
-          final hasOrganic = bins.any(
-            (b) => b.binType == WasteType.organic && b.isActive,
-          );
-          final hasNonOrganic = bins.any(
-            (b) => b.binType == WasteType.nonOrganic && b.isActive,
-          );
-          final isMissingOne =
-              (hasOrganic && !hasNonOrganic) || (!hasOrganic && hasNonOrganic);
+                );
+              }
+              final hasOrganic = bins.any(
+                (b) => b.binType == WasteType.organic && b.isActive,
+              );
+              final hasNonOrganic = bins.any(
+                (b) => b.binType == WasteType.nonOrganic && b.isActive,
+              );
+              final isMissingOne =
+                  (hasOrganic && !hasNonOrganic) || (!hasOrganic && hasNonOrganic);
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
+              return ListView.builder(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16),
             itemCount: bins.length + (isMissingOne ? 1 : 0),
             itemBuilder: (context, index) {
               if (isMissingOne && index == 0) {
@@ -141,7 +153,9 @@ class KelolaBinView extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text('Error: $err')),
       ),
-      bottomNavigationBar: SafeArea(
+    ),
+  ),
+  bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Builder(

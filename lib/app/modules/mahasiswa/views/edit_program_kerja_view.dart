@@ -4,6 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../data/providers/repository_providers.dart';
+import '../controllers/mahasiswa_controller.dart'
+    show mahasiswaControllerProvider;
+import '../controllers/riwayat_kkn_controller.dart'
+    show riwayatKknControllerProvider;
+import '../controllers/kelompok_kkn_controller.dart' show kelompokKknProvider;
+import '../controllers/mahasiswa_notifikasi_controller.dart'
+    show mahasiswaNotificationsProvider;
+import 'data_proker_view.dart' show prokerDataListProvider;
 
 class EditProgramKerjaView extends ConsumerStatefulWidget {
   final String prokerId;
@@ -193,6 +201,12 @@ class _EditProgramKerjaViewState extends ConsumerState<EditProgramKerjaView> {
       final success = await repo.editProgramKerja(widget.prokerId, payload);
       if (!mounted) return;
       if (success) {
+        ref.invalidate(prokerDataListProvider);
+        ref.invalidate(riwayatKknControllerProvider);
+        ref.invalidate(kelompokKknProvider);
+        ref.invalidate(mahasiswaNotificationsProvider);
+        ref.read(mahasiswaControllerProvider.notifier).fetchDashboardData();
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(

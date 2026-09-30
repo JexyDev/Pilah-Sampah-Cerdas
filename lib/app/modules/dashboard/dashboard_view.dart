@@ -25,6 +25,24 @@ import '../../routes/app_routes.dart';
 import '../../core/utils/update_checker.dart';
 import '../../core/widgets/curved_text.dart';
 import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.dart';
+import '../scan/controllers/scan_controller.dart' show binsProvider;
+import '../riwayat/controllers/riwayat_controller.dart'
+    show
+        wasteLogsProvider,
+        pointHistoryProvider,
+        totalPointsProvider,
+        dailyPointsProvider,
+        userLeaderboardRankProvider;
+import '../notifikasi/controllers/warga_notifikasi_controller.dart'
+    show wargaNotificationsProvider;
+import '../mahasiswa/controllers/mahasiswa_controller.dart'
+    show mahasiswaControllerProvider;
+import '../mahasiswa/controllers/riwayat_kkn_controller.dart'
+    show riwayatKknControllerProvider;
+import '../mahasiswa/views/data_logbook_harian_view.dart'
+    show logbookListProvider;
+import '../petugas_pemilahan/controllers/petugas_pemilahan_controller.dart'
+    show petugasPemilahanControllerProvider, petugasPointHistoryProvider;
 
 /// Shell utama â€” Bottom Nav: Home, History, FAB QR hijau, Profile, Poin.
 /// Sesuai desain: FAB bulat hijau di tengah.
@@ -35,15 +53,83 @@ class DashboardView extends ConsumerStatefulWidget {
   ConsumerState<DashboardView> createState() => _DashboardViewState();
 }
 
-class _DashboardViewState extends ConsumerState<DashboardView> {
+class _DashboardViewState extends ConsumerState<DashboardView>
+    with WidgetsBindingObserver {
   int _selectedIndex = 0;
+  DateTime? _lastSyncTime;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       UpdateChecker.checkForUpdate(context);
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      final user = ref.read(authProvider).user;
+      final role = user?.role ?? UserRole.warga;
+      _syncActiveData(role);
+    }
+  }
+
+  /// Sinkronisasi data latar belakang secara halus (tanpa blocking UI)
+  void _syncActiveData(UserRole role, [int? tabIndex]) {
+    final activeTab = tabIndex ?? _selectedIndex;
+    final now = DateTime.now();
+    if (_lastSyncTime != null &&
+        now.difference(_lastSyncTime!).inMilliseconds < 1500) {
+      return;
+    }
+    _lastSyncTime = now;
+
+    if (role == UserRole.warga) {
+      if (activeTab == 0) {
+        ref.invalidate(binsProvider);
+        ref.invalidate(totalPointsProvider);
+        ref.invalidate(dailyPointsProvider);
+        ref.invalidate(wargaNotificationsProvider);
+      } else if (activeTab == 1) {
+        ref.invalidate(wasteLogsProvider);
+        ref.invalidate(pointHistoryProvider);
+      } else if (activeTab == 3) {
+        ref.invalidate(totalPointsProvider);
+        ref.invalidate(dailyPointsProvider);
+        ref.invalidate(pointHistoryProvider);
+        ref.invalidate(userLeaderboardRankProvider);
+      } else if (activeTab == 4) {
+        ref.read(authProvider.notifier).fetchProfile();
+      }
+    } else if (role == UserRole.mahasiswaKkn) {
+      if (activeTab == 0) {
+        ref.read(mahasiswaControllerProvider.notifier).refresh();
+      } else if (activeTab == 1) {
+        ref.invalidate(riwayatKknControllerProvider);
+        ref.invalidate(logbookListProvider);
+      } else if (activeTab == 3) {
+        ref.invalidate(totalPointsProvider);
+        ref.invalidate(pointHistoryProvider);
+        ref.invalidate(dailyPointsProvider);
+      } else if (activeTab == 4) {
+        ref.read(authProvider.notifier).fetchProfile();
+      }
+    } else if (role == UserRole.petugasPemilahan) {
+      ref.read(petugasPemilahanControllerProvider.notifier).refreshAll();
+      if (activeTab == 3) {
+        ref.invalidate(petugasPointHistoryProvider);
+      } else if (activeTab == 4) {
+        ref.read(authProvider.notifier).fetchProfile();
+      }
+    }
   }
 
   List<Widget> _getScreens(UserRole role) => [
@@ -74,13 +160,19 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
       return;
     }
     setState(() => _selectedIndex = index);
+    final user = ref.read(authProvider).user;
+    final role = user?.role ?? UserRole.warga;
+    _syncActiveData(role, index);
   }
 
   @override
   Widget build(BuildContext context) {
-    // Dengarkan perubahan status koneksi untuk notifikasi "Internet kembali pulih"
+    // Dengarkan perubahan status koneksi untuk notifikasi & auto-sync saat internet pulih
     ref.listen<bool>(isOnlineProvider, (prev, next) {
       if (prev == false && next == true) {
+        final user = ref.read(authProvider).user;
+        final role = user?.role ?? UserRole.warga;
+        _syncActiveData(role);
         ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

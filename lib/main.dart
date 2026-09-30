@@ -22,6 +22,7 @@ import 'app/data/services/notification_engine.dart';
 import 'app/modules/mahasiswa/services/kkn_background_task_handler.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
+import 'app/core/utils/app_cache_manager.dart';
 import 'app/data/models/user_entity.dart';
 import 'app/modules/mahasiswa/controllers/location_ping_controller.dart';
 import 'app/modules/mahasiswa/controllers/kkn_location_controller.dart';
@@ -110,6 +111,9 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 /// Platform support: Android, iOS, Web, Windows, macOS, Linux.
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Bersihkan cache lama otomatis jika mendeteksi update versi APK baru
+  await AppCacheManager.checkVersionAndCleanCache();
 
   // Inisialisasi Foreground Task untuk background GPS tracking KKN
   FlutterForegroundTask.initCommunicationPort();

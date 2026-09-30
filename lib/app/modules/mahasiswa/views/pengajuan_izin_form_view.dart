@@ -11,6 +11,7 @@ import '../../../data/services/local_notification_cache_service.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../controllers/mahasiswa_notifikasi_controller.dart';
 import '../controllers/riwayat_kkn_controller.dart';
+import '../controllers/mahasiswa_controller.dart';
 
 class PengajuanIzinFormView extends ConsumerStatefulWidget {
   const PengajuanIzinFormView({super.key, this.scheduleId, this.scheduleTitle});
@@ -177,6 +178,8 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
         );
         ref.invalidate(mahasiswaNotificationsProvider);
         ref.invalidate(riwayatKknControllerProvider);
+        ref.invalidate(pengajuanSummaryProvider);
+        ref.read(mahasiswaControllerProvider.notifier).fetchDashboardData();
       }
     } catch (e) {
       if (!mounted) return;
