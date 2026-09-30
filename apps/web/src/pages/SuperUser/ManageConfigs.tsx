@@ -364,3 +364,5 @@ export const ManageConfigs: React.FC = () => {
     </div>
   );
 };
+
+export default ManageConfigs;

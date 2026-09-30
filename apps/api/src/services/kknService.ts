@@ -4947,7 +4947,23 @@ export class KknService {
           deskripsi: deskripsiDetail,
           kategori: normalizeProkerKategori(item.kategori),
           sumber: item.sumber || "MAHASISWA",
-          waktuPelaksanaan: item.waktuPelaksanaan || null,
+          // 🛡️ Proteksi Dropdown Input Laporan Mobile:
+          // Jika proker disetujui (DISETUJUI) dan status pelaksanaan SEDANG_BERJALAN,
+          // namun tanggal pada waktuPelaksanaan sudah lewat, sesuaikan batas akhir tampilan ke 2026-10-31
+          // agar client mobile tidak menyembunyikan proker dari pilihan dropdown.
+          waktuPelaksanaan: (() => {
+            const raw = item.waktuPelaksanaan;
+            if (!raw || pl !== "SEDANG_BERJALAN" || u !== "DISETUJUI") return raw || null;
+            const dateMatches = raw.match(/\d{4}-\d{2}-\d{2}/g);
+            if (dateMatches && dateMatches.length > 0) {
+              const lastDate = new Date(dateMatches[dateMatches.length - 1]);
+              const now = new Date();
+              if (!isNaN(lastDate.getTime()) && now.getTime() > lastDate.getTime() + 86400000) {
+                return `${dateMatches[0]} s/d 2026-10-31`;
+              }
+            }
+            return raw;
+          })(),
           urlGoogleDrive: item.linkGoogleDrive || null,
           linkGoogleDrive: item.linkGoogleDrive || null,
           attachmentFile: item.attachmentFile || null,
@@ -5182,8 +5198,19 @@ export class KknService {
       judul: parsed.judul,
       deskripsi: parsed.deskripsi,
       kategori: normalizeProkerKategori(proker.kategori),
-      sumber: proker.sumber || "MAHASISWA",
-      waktuPelaksanaan: proker.waktuPelaksanaan || null,
+      waktuPelaksanaan: (() => {
+        const raw = proker.waktuPelaksanaan;
+        if (!raw || pl !== "SEDANG_BERJALAN" || u !== "DISETUJUI") return raw || null;
+        const dateMatches = raw.match(/\d{4}-\d{2}-\d{2}/g);
+        if (dateMatches && dateMatches.length > 0) {
+          const lastDate = new Date(dateMatches[dateMatches.length - 1]);
+          const now = new Date();
+          if (!isNaN(lastDate.getTime()) && now.getTime() > lastDate.getTime() + 86400000) {
+            return `${dateMatches[0]} s/d 2026-10-31`;
+          }
+        }
+        return raw;
+      })(),
       urlGoogleDrive: proker.linkGoogleDrive || null,
       linkGoogleDrive: proker.linkGoogleDrive || null,
       attachmentFile: proker.attachmentFile || null,

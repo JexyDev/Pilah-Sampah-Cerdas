@@ -84,7 +84,7 @@ const LogbookKknPage = React.lazy(() => import("../pages/dpl/LogbookKknPage"));
 const LogAktivitasDpl = React.lazy(() => import("../pages/dpl/LogAktivitasDpl"));
 const KurasiLandingPage = React.lazy(() => import("../pages/SuperUser/KurasiLandingPage"));
 const RolePermissionPage = React.lazy(() => import("../pages/SuperUser/RolePermissionPage"));
-const ManageConfigs = React.lazy(() => import("../pages/SuperUser/ManageConfigs").then(m => ({ default: m.ManageConfigs })));
+const ManageConfigs = React.lazy(() => import("../pages/SuperUser/ManageConfigs"));
 const KelolaPoinPengguna = React.lazy(() => import("../pages/KelolaPoinPengguna/KelolaPoinPengguna"));
 const ZonaInspectorPage = React.lazy(() => import("../pages/Developer/ZonaInspectorPage"));
 const KelolaLogbookPage = React.lazy(() => import("../pages/Developer/KelolaLogbookPage"));
