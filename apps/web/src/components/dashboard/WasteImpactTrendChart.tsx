@@ -305,17 +305,23 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
                                 </span>
                               </div>
                               <div className="flex justify-between border-t border-slate-800 pt-1 text-[11px]">
-                                <span className="text-slate-400">Reduksi Timbulan (Δ):</span>
+                                <span className="text-slate-400">
+                                  {selectedSource === "WARGA_APP" ? "Rasio Terpilah (Adopsi):" : "Reduksi Timbulan (Δ):"}
+                                </span>
                                 <span
                                   className={`font-black ${
-                                    (item.deltaKg || 0) > 0
+                                    selectedSource === "WARGA_APP"
+                                      ? "text-emerald-400"
+                                      : (item.deltaKg || 0) > 0
                                       ? "text-emerald-400"
                                       : (item.deltaKg || 0) < 0
                                       ? "text-rose-400"
                                       : "text-slate-400"
                                   }`}
                                 >
-                                  {(item.deltaKg || 0) > 0 ? `+${item.deltaKg}` : item.deltaKg} kg ({item.deltaPct ?? 0}%)
+                                  {selectedSource === "WARGA_APP"
+                                    ? `${item.baselineKg > 0 ? ((item.actualKg / item.baselineKg) * 100).toFixed(1) : 0}% (${item.actualKg.toLocaleString("id-ID")} kg)`
+                                    : `${(item.deltaKg || 0) > 0 ? `+${item.deltaKg}` : item.deltaKg} kg (${item.deltaPct ?? 0}%)`}
                                 </span>
                               </div>
                             </div>
@@ -362,9 +368,13 @@ export const WasteImpactTrendChart: React.FC<WasteImpactTrendChartProps> = ({
                 </span>
               </div>
               <div className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800">
-                <span className="block text-[10px] text-emerald-500 font-bold uppercase">Reduksi Timbulan</span>
+                <span className="block text-[10px] text-emerald-500 font-bold uppercase">
+                  {selectedSource === "WARGA_APP" ? "Rasio Terpilah Mandiri" : "Reduksi Timbulan"}
+                </span>
                 <span className="font-black text-emerald-600 dark:text-emerald-400">
-                  {formatDeltaKg(volumeSummary.totalDeltaKg, { showPlusSign: false })} ({volumeSummary.totalDeltaPct}%)
+                  {selectedSource === "WARGA_APP"
+                    ? `${volumeSummary.totalBaselineKg > 0 ? ((volumeSummary.totalActualKg / volumeSummary.totalBaselineKg) * 100).toFixed(1) : 0}%`
+                    : `${formatDeltaKg(volumeSummary.totalDeltaKg, { showPlusSign: false })} (${volumeSummary.totalDeltaPct}%)`}
                 </span>
               </div>
             </div>

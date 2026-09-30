@@ -587,56 +587,74 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
                 {aggregation.totalActualKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg
               </td>
 
-              {/* Total Penurunan Berat (kg) */}
+              {/* Total Penurunan Berat (kg) / Total Sampah Terpilah Mandiri */}
               <td className="py-4 px-3 text-center border-r border-slate-200 dark:border-slate-700 font-extrabold text-blue-700 dark:text-blue-300">
-                <span
-                  className={`inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black ${
-                    aggregation.totalDeltaKg > 0
-                      ? "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-200 border border-emerald-300"
-                      : aggregation.totalDeltaKg < 0
-                      ? "bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-200 border border-rose-300"
-                      : "bg-slate-200 text-slate-700"
-                  }`}
-                >
-                  {aggregation.totalDeltaKg > 0 ? (
-                    <TrendingDown size={13} className="text-emerald-600" />
-                  ) : aggregation.totalDeltaKg < 0 ? (
-                    <TrendingUp size={13} className="text-rose-600" />
-                  ) : (
-                    <Minus size={13} />
-                  )}
-                  <span>
-                    {aggregation.totalDeltaKg < 0
-                      ? `+${Math.abs(aggregation.totalDeltaKg).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg`
-                      : formatDeltaKg(aggregation.totalDeltaKg, { showPlusSign: false })}
+                {selectedSource === "WARGA_APP" ? (
+                  <span className="inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-200 border border-emerald-300">
+                    <CheckCircle2 size={13} className="text-emerald-600" />
+                    <span>{aggregation.totalActualKg.toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg</span>
                   </span>
-                </span>
+                ) : (
+                  <span
+                    className={`inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black ${
+                      aggregation.totalDeltaKg > 0
+                        ? "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-200 border border-emerald-300"
+                        : aggregation.totalDeltaKg < 0
+                        ? "bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-200 border border-rose-300"
+                        : "bg-slate-200 text-slate-700"
+                    }`}
+                  >
+                    {aggregation.totalDeltaKg > 0 ? (
+                      <TrendingDown size={13} className="text-emerald-600" />
+                    ) : aggregation.totalDeltaKg < 0 ? (
+                      <TrendingUp size={13} className="text-rose-600" />
+                    ) : (
+                      <Minus size={13} />
+                    )}
+                    <span>
+                      {aggregation.totalDeltaKg < 0
+                        ? `+${Math.abs(aggregation.totalDeltaKg).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} kg`
+                        : formatDeltaKg(aggregation.totalDeltaKg, { showPlusSign: false })}
+                    </span>
+                  </span>
+                )}
               </td>
 
-              {/* Total Penurunan Berat (%) [Weighted / Terbobot] */}
+              {/* Total Penurunan Berat (%) / Tingkat Partisipasi Volume Terpilah */}
               <td className="py-4 px-3 text-center border-r border-slate-200 dark:border-slate-700 font-extrabold text-blue-700 dark:text-blue-300">
-                <span
-                  className={`inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black ${
-                    (aggregation.weightedDeltaPct || 0) > 0
-                      ? "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-200 border border-emerald-300"
-                      : (aggregation.weightedDeltaPct || 0) < 0
-                      ? "bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-200 border border-rose-300"
-                      : "bg-slate-200 text-slate-700"
-                  }`}
-                >
-                  {(aggregation.weightedDeltaPct || 0) > 0 ? (
-                    <TrendingDown size={13} className="text-emerald-600" />
-                  ) : (aggregation.weightedDeltaPct || 0) < 0 ? (
-                    <TrendingUp size={13} className="text-rose-600" />
-                  ) : (
-                    <Minus size={13} />
-                  )}
-                  <span>
-                    {(aggregation.weightedDeltaPct || 0) < 0
-                      ? `+${Math.abs(aggregation.weightedDeltaPct || 0).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`
-                      : formatDeltaPct(aggregation.weightedDeltaPct, { showPlusSign: false })}
+                {selectedSource === "WARGA_APP" ? (
+                  <span className="inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black bg-blue-100 dark:bg-blue-950/80 text-blue-800 dark:text-blue-200 border border-blue-300">
+                    <span>
+                      {(aggregation.totalBaselineKg > 0
+                        ? Number(((aggregation.totalActualKg / aggregation.totalBaselineKg) * 100).toFixed(2))
+                        : 0
+                      ).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 2 })}%
+                    </span>
                   </span>
-                </span>
+                ) : (
+                  <span
+                    className={`inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black ${
+                      (aggregation.weightedDeltaPct || 0) > 0
+                        ? "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-200 border border-emerald-300"
+                        : (aggregation.weightedDeltaPct || 0) < 0
+                        ? "bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-200 border border-rose-300"
+                        : "bg-slate-200 text-slate-700"
+                    }`}
+                  >
+                    {(aggregation.weightedDeltaPct || 0) > 0 ? (
+                      <TrendingDown size={13} className="text-emerald-600" />
+                    ) : (aggregation.weightedDeltaPct || 0) < 0 ? (
+                      <TrendingUp size={13} className="text-rose-600" />
+                    ) : (
+                      <Minus size={13} />
+                    )}
+                    <span>
+                      {(aggregation.weightedDeltaPct || 0) < 0
+                        ? `+${Math.abs(aggregation.weightedDeltaPct || 0).toLocaleString("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`
+                        : formatDeltaPct(aggregation.weightedDeltaPct, { showPlusSign: false })}
+                    </span>
+                  </span>
+                )}
               </td>
 
               {/* Rerata Kepatuhan Baseline (%) */}
@@ -678,27 +696,40 @@ export const WasteImpactSummaryTable: React.FC<WasteImpactSummaryTableProps> = (
 
       {/* Rangkuman Metodologi & Studi Kasus Lebakgede */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
-        {/* Box Left: Rumus Penurunan Berat Sampah */}
+        {/* Box Left: Rumus Penurunan Berat Sampah / Adopsi Sampah Terpilah */}
         <div className="bg-blue-50/40 dark:bg-blue-950/20 rounded-2xl p-4 border border-blue-200/70 dark:border-blue-800/40 space-y-2">
           <div className="flex items-center justify-between">
             <h5 className="font-black text-xs sm:text-sm text-blue-900 dark:text-blue-200 flex items-center gap-1.5">
               <span className="p-1 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-xs">Δ</span>
-              Rumus Penurunan Berat Sampah (KPI 1)
+              {selectedSource === "WARGA_APP" ? "Rumus Adopsi Sampah Terpilah Mandiri (KPI 1 - Warga)" : "Rumus Penurunan Sampah ke TPA / Residu (KPI 1)"}
             </h5>
             <span className="text-[10px] font-bold text-blue-600 bg-blue-100/60 dark:bg-blue-900/40 px-2 py-0.5 rounded-full">
-              Matematika SI
+              {selectedSource === "WARGA_APP" ? "Rasio Adopsi" : "Matematika SI"}
             </span>
           </div>
           <div className="bg-white/80 dark:bg-slate-900/80 p-2.5 rounded-xl border border-blue-200/60 dark:border-blue-800/40 font-mono text-[11px] text-blue-950 dark:text-blue-200 space-y-1">
-            <p><strong>Δ Berat (kg)</strong> = Berat_Baseline − Berat_Aktual</p>
-            <p><strong>Δ Persen (%)</strong> = [(Berat_Baseline − Berat_Aktual) ÷ Berat_Baseline] × 100%</p>
+            {selectedSource === "WARGA_APP" ? (
+              <>
+                <p><strong>Sampah Terpilah Mandiri (kg)</strong> = Berat Aktual Setoran Warga via App</p>
+                <p><strong>Tingkat Partisipasi Volume Terpilah (%)</strong> = [Aktual Warga (kg) ÷ Baseline Timbulan (kg)] × 100%</p>
+              </>
+            ) : (
+              <>
+                <p><strong>Δ Berat (kg)</strong> = Berat_Baseline − Berat_Aktual_Petugas</p>
+                <p><strong>Δ Persen (%)</strong> = [(Berat_Baseline − Berat_Aktual_Petugas) ÷ Berat_Baseline] × 100%</p>
+              </>
+            )}
           </div>
           <div className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed bg-blue-100/50 dark:bg-blue-900/30 p-2.5 rounded-xl">
-            <strong>Studi Kasus Lebakgede:</strong> Baseline = 250 kg, Aktual Terpilah = 37 kg.
-            <br />
-            Penurunan Berat = 250 − 37 = <strong>213 kg</strong>.
-            <br />
-            Penurunan Persen = (213 ÷ 250) × 100% = <strong className="text-emerald-700 dark:text-emerald-300 font-extrabold">85,2%</strong>.
+            {selectedSource === "WARGA_APP" ? (
+              <>
+                <strong>Prinsip Anti-Misleading Data:</strong> Pada tab Aktivitas Warga, angka aktual mencerminkan sampah terpilah mandiri rumah tangga melalui BERSEKA Vision AI (cakupan adopsi sistem), bukan penurunan timbulan fisik kecamatan (±38 ton/hari). Sisanya tetap diangkut melalui jalur penanganan konvensional TPS/TPA.
+              </>
+            ) : (
+              <>
+                <strong>Penurunan Sampah ke TPA / Residu:</strong> Dihitung berdasarkan penimbangan timbulan residu TPS/TPS3R oleh petugas terhadap estimasi timbulan baseline awal.
+              </>
+            )}
           </div>
         </div>
 
