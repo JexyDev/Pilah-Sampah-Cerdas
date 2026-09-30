@@ -85,7 +85,12 @@ class _GantiPasswordWargaViewState
       }
     } catch (e) {
       if (mounted) {
-        String errMsg = e.toString().replaceAll('Exception: ', '');
+        String errMsg = 'Terjadi kesalahan saat mengganti password.';
+        if (e.toString().contains('Exception: ')) {
+          errMsg = e.toString().replaceAll('Exception: ', '');
+        } else if (e.toString().contains('SocketException') || e.toString().contains('DioException')) {
+          errMsg = 'Koneksi jaringan bermasalah. Periksa internet Anda.';
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(errMsg), backgroundColor: AppColors.maroonRed),
         );

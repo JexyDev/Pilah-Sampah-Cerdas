@@ -27,6 +27,9 @@ import '../../core/utils/platform_utils.dart';
 import '../../data/services/location_service.dart';
 import '../shared/controllers/user_location_controller.dart';
 import '../shared/widgets/user_location_card.dart';
+import 'controllers/berita_controller.dart';
+import 'widgets/berita_card_widget.dart';
+import 'widgets/berita_detail_sheet.dart';
 
 /// Halaman beranda — sesuai desain:
 /// Header biru, avatar+nama+RW, stats card, Aksi Cepat, Riwayat.
@@ -109,10 +112,6 @@ class _BerandaViewState extends ConsumerState<BerandaView>
     final int unreadCount = ref.watch(wargaUnreadNotificationCountProvider);
     final hasActiveBin =
         ref.watch(binsProvider).value?.any((bin) => bin.isActive) ?? false;
-    final isCommunityMember =
-        user != null &&
-        user.lifecycleState != WargaLifecycle.registered &&
-        (user.householdId ?? '').isNotEmpty;
     try {
       return Scaffold(
         backgroundColor: AppColors.backgroundCanvas,
@@ -546,7 +545,7 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                       ),
                     ],
                     const SizedBox(height: AppDimensions.lg),
-                    _buildBeritaSection(context, isCommunityMember),
+                    _buildBeritaSection(context, ref),
                     const SizedBox(height: 80),
                   ]),
                 ),
@@ -727,54 +726,112 @@ class _BerandaViewState extends ConsumerState<BerandaView>
     );
   }
 
-  Widget _buildBeritaSection(BuildContext context, bool isCommunityMember) {
-    final listBerita = [
-      _BeritaData(
-        title: 'Rilis Fitur Baru: Kenali Tempat Sampah Pintar Berseka',
-        description:
-            'Berseka kini hadir dengan fitur AI untuk mengenali jenis sampah secara otomatis.',
-      ),
-      _BeritaData(
-        title: 'Pasar Berseka: Tukar Poinmu!',
-        description:
-            'Segera bergabung menjadi member komunitas untuk bisa mengakses Pasar Berseka dan menukarkan poinmu dengan kebutuhan harian!',
-        isPasarBerseka: true,
-      ),
-      _BeritaData(
-        title: 'Dampak Lingkungan Nyata',
-        description:
-            'Lihat bagaimana kontribusimu membantu mengurangi emisi karbon setiap harinya.',
-      ),
-      _BeritaData(
-        title: 'Tips Memilah Sampah',
-        description:
-            'Kenali perbedaan sampah organik dan anorganik untuk proses daur ulang yang optimal.',
-      ),
-    ];
-
-    final displayedBerita = listBerita;
+  Widget _buildBeritaSection(BuildContext context, WidgetRef ref) {
+    final beritaAsync = ref.watch(beritaListProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Informasi & Berita',
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Informasi & Berita',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pushNamed(context, AppRoutes.beritaList);
+              },
+              child: const Text(
+                'Lihat Semua',
+                style: TextStyle(color: AppColors.primaryGreen, fontSize: 13),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         SizedBox(
-          height: 160,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: displayedBerita.length,
-            separatorBuilder: (context, index) => const SizedBox(width: 12),
-            itemBuilder: (context, index) {
-              return _BeritaCard(data: displayedBerita[index]);
+          height: 260,
+          child: beritaAsync.when(
+            skipLoadingOnReload: true,
+            data: (beritaList) {
+              if (beritaList.isEmpty) {
+                return const Center(
+                  child: Text(
+                    'Belum ada berita terbaru.',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
+                );
+              }
+              return ListView.builder(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                itemCount: beritaList.length,
+                itemBuilder: (context, index) {
+                  final article = beritaList[index];
+                  return BeritaCardWidget(
+                    article: article,
+                    onTap: () {
+                      showBeritaDetailSheet(context, article);
+                    },
+                  );
+                },
+              );
             },
+            loading: () => ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: 3,
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: 14),
+                  child: SkeletonLoading(
+                    width: 260,
+                    height: 260,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                );
+              },
+            ),
+            error: (error, stack) => Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFFBEB),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: AppColors.warningYellow.withValues(alpha: 0.5),
+                ),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.error_outline_rounded,
+                    color: AppColors.warningYellow,
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Gagal memuat berita',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => ref.invalidate(beritaListProvider),
+                    child: const Text(
+                      'Coba Lagi',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  )
+                ],
+              ),
+            ),
           ),
         ),
       ],
@@ -1198,7 +1255,7 @@ class _BerandaViewState extends ConsumerState<BerandaView>
                 icon: Icons.sync_alt_rounded,
                 iconColor: AppColors.primaryGreen,
                 numericValue: setoranValue,
-                label: 'Total Setoran Sampah',
+                label: 'Total Semua Setoran Sampah',
               ),
             ],
           );
@@ -1644,12 +1701,14 @@ class _StatItem extends StatelessWidget {
                       ),
                     ),
                   ),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
                   child: Text(
                     label,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 11,
+                      fontSize: 9,
                       color: AppColors.textSecondary,
                     ),
                     textAlign: TextAlign.center,
@@ -2266,212 +2325,6 @@ class _TempatSampahBelumTerpasangCard extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _BeritaData {
-  final String title;
-  final String description;
-  final bool isPasarBerseka;
-
-  _BeritaData({
-    required this.title,
-    required this.description,
-    this.isPasarBerseka = false,
-  });
-}
-
-class _BeritaCard extends StatelessWidget {
-  final _BeritaData data;
-
-  const _BeritaCard({required this.data});
-
-  void _showDetail(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      data.isPasarBerseka
-                          ? Icons.storefront_rounded
-                          : Icons.article_rounded,
-                      color: data.isPasarBerseka
-                          ? AppColors.warningYellow
-                          : AppColors.primaryGreen,
-                      size: 24,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        data.isPasarBerseka
-                            ? 'Eksklusif Member'
-                            : 'Info Berseka',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: data.isPasarBerseka
-                              ? AppColors.warningYellow
-                              : AppColors.primaryGreen,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  data.title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                    height: 1.3,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  data.description,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textSecondary,
-                    height: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryGreen,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                    child: const Text(
-                      'Tutup',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 240,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => _showDetail(context),
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      data.isPasarBerseka
-                          ? Icons.storefront_rounded
-                          : Icons.article_rounded,
-                      color: data.isPasarBerseka
-                          ? AppColors.warningYellow
-                          : AppColors.primaryGreen,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        data.isPasarBerseka
-                            ? 'Eksklusif Member'
-                            : 'Info Berseka',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: data.isPasarBerseka
-                              ? AppColors.warningYellow
-                              : AppColors.primaryGreen,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  data.title,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        data.description,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: AppColors.textSecondary,
-                          height: 1.3,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const Spacer(),
-                      const Text(
-                        'Lihat selengkapnya...',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.primaryGreen,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
         ),
       ),
     );

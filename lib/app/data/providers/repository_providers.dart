@@ -18,6 +18,7 @@ import '../repositories/petugas_pemilahan_repository.dart';
 import '../repositories/api_petugas_pemilahan_repository.dart';
 import '../repositories/pemanfaatan_repository.dart';
 import '../repositories/api_pemanfaatan_repository.dart';
+import '../repositories/api_berita_repository.dart';
 
 final secureStorageProvider = Provider<SafeStorage>((ref) {
   return const SafeStorage();
@@ -67,4 +68,8 @@ final petugasPemilahanRepositoryProvider = Provider<PetugasPemilahanRepository>(
 
 final pemanfaatanRepositoryProvider = Provider<PemanfaatanRepository>((ref) {
   return ApiPemanfaatanRepository(apiClient: ref.read(apiClientProvider));
+});
+
+final beritaRepositoryProvider = Provider<ApiBeritaRepository>((ref) {
+  return ApiBeritaRepository(ref.read(apiClientProvider));
 });
