@@ -18,6 +18,14 @@ declare global {
   }
 }
 
+// Fast in-memory cache for user active status: userId -> { status: string, expiry: number }
+const userStatusCache = new Map<string, { status: string; expiry: number }>();
+const USER_STATUS_CACHE_TTL_MS = 60 * 1000; // 60 seconds
+
+export function invalidateUserStatusCache(userId: string): void {
+  userStatusCache.delete(userId);
+}
+
 export const authMiddleware = async (
   req: Request,
   res: Response,
@@ -58,36 +66,47 @@ export const authMiddleware = async (
     // Verify token
     const decoded = verifyAccessToken(token);
 
-    // Validate User Status in DB
-    const dbUser = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      select: { status: true },
-    });
+    // Validate User Status in DB (cached 60s to prevent connection pool exhaustion from high-frequency requests)
+    let userStatus: string | null = null;
+    const nowTimestamp = Date.now();
+    const cachedUser = userStatusCache.get(decoded.userId);
+    if (cachedUser && cachedUser.expiry > nowTimestamp) {
+      userStatus = cachedUser.status;
+    } else {
+      const dbUser = await prisma.user.findUnique({
+        where: { id: decoded.userId },
+        select: { status: true },
+      });
+      if (dbUser) {
+        userStatus = dbUser.status;
+        userStatusCache.set(decoded.userId, {
+          status: userStatus,
+          expiry: nowTimestamp + USER_STATUS_CACHE_TTL_MS,
+        });
+      }
+    }
 
-    if (!dbUser || (dbUser.status !== "Aktif" && dbUser.status !== "ACTIVE")) {
+    if (!userStatus || (userStatus !== "Aktif" && userStatus !== "ACTIVE")) {
       res
         .status(401)
         .json({ error: "UNAUTHORIZED", message: "Akun Anda tidak aktif atau belum disetujui" });
       return;
     }
 
-    // Enforce Time-Bound Mahasiswa KKN read-only status
-    if (decoded.role === "MAHASISWA_KKN") {
+    // Enforce Time-Bound Mahasiswa KKN read-only status (only needed on write methods)
+    if (decoded.role === "MAHASISWA_KKN" && req.method !== "GET") {
       const student = await prisma.studentKkn.findUnique({
         where: { userId: decoded.userId },
         select: { endDate: true },
       });
-      if (student) {
+      if (student && student.endDate) {
         const now = new Date();
         if (now > student.endDate) {
-          // If expired and not a safe read operation, block
-          if (req.method !== "GET") {
-            res.status(403).json({
-              error: "FORBIDDEN",
-              message: "Masa tugas KKN Anda telah berakhir. Akses diubah menjadi Read-Only.",
-            });
-            return;
-          }
+          res.status(403).json({
+            error: "FORBIDDEN",
+            message: "Masa tugas KKN Anda telah berakhir. Akses diubah menjadi Read-Only.",
+          });
+          return;
         }
       }
     }
@@ -115,6 +134,15 @@ export const authMiddleware = async (
     req.user = decoded; // Attach user payload to request
     next();
   } catch (error: any) {
+    if (error?.message?.includes("connection pool") || error?.name === "PrismaClientKnownRequestError") {
+      console.error(
+        `[authMiddleware DB Error] URL: ${req.originalUrl} | Error: ${error?.message || error}`
+      );
+      res
+        .status(503)
+        .json({ error: "SERVICE_UNAVAILABLE", message: "Layanan database sedang sibuk, silakan coba sesaat lagi" });
+      return;
+    }
     console.warn(
       `[authMiddleware 401] URL: ${req.originalUrl} | Error: ${error?.message || error}`
     );

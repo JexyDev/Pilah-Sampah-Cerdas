@@ -36,6 +36,7 @@ import {
   Activity,
   BarChart3,
   Terminal,
+  Sparkles,
 } from "lucide-react";
 
 import { Link, NavLink, useLocation } from "react-router-dom";
@@ -55,7 +56,7 @@ interface NavItemProps {
   to: string;
   icon: LucideIcon;
   label: string;
-  badge?: number;
+  badge?: number | string;
   onClick?: () => void;
 }
 
@@ -73,6 +74,16 @@ const checkRouteActive = (
 
   // Path alias mapping
   const isPathMatch = (tPath: string, cPath: string, tQuery?: string) => {
+    if (tPath === cPath && tPath === "/berseka-ai") {
+      const tTab = new URLSearchParams(tQuery || "").get("tab") || "kkn";
+      const cTab = new URLSearchParams(search || "").get("tab") || "kkn";
+      return tTab === cTab;
+    }
+    if (tPath === "/berseka-ai" && cPath.startsWith("/analisis-sistem")) {
+      const tTab = new URLSearchParams(tQuery || "").get("tab") || "kkn";
+      const cTab = new URLSearchParams(search || "").get("tab") || (cPath.includes("tata-kelola") ? "tata-kelola" : "kkn");
+      return tTab === cTab;
+    }
     if (tPath === cPath) return true;
     const logbookAliases = ["/log-aktivitas/mahasiswa", "/logbook-kkn", "/dpl/logbook", "/logbook"];
     if (logbookAliases.includes(tPath) && logbookAliases.includes(cPath)) return true;
@@ -1036,6 +1047,24 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             "PANITIA_TASKFORCE",
             "PIMPINAN",
             "PEMIMPIN",
+            "DPL",
+            "DOSEN_PEMBIMBING",
+          ] as UserRole[],
+        },
+        {
+          to: "/berseka-ai?tab=kkn",
+          icon: Sparkles,
+          label: "BERSEKA AI",
+          badge: "Cerdas",
+          allowed: [
+            "DEVELOPER",
+            "SUPER_USER",
+            "ADMIN_DLH",
+            "PANITIA_TASKFORCE",
+            "PIMPINAN",
+            "PEMIMPIN",
+            "DPL",
+            "DOSEN_PEMBIMBING",
           ] as UserRole[],
         },
         {
@@ -1411,6 +1440,23 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           to: "/analisis-sistem/tata-kelola-sampah",
           icon: BarChart3,
           label: "Analisis Sistem",
+          resource: "monitoring_sampah",
+          allowed: [
+            "DEVELOPER",
+            "SUPER_USER",
+            "ADMIN_DLH",
+            "CAMAT",
+            "LURAH",
+            "RW",
+            "PANITIA_TASKFORCE",
+            "PIMPINAN",
+          ] as UserRole[],
+        },
+        {
+          to: "/berseka-ai?tab=tata-kelola",
+          icon: Sparkles,
+          label: "BERSEKA AI",
+          badge: "Cerdas",
           resource: "monitoring_sampah",
           allowed: [
             "DEVELOPER",
@@ -2088,6 +2134,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                           to={item.to}
                           icon={item.icon}
                           label={item.label}
+                          badge={item.badge}
                         />
                       )
                     )}
@@ -2183,6 +2230,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                           to={item.to}
                           icon={item.icon}
                           label={item.label}
+                          badge={item.badge}
                           onClick={handleMobileItemClick}
                         />
                       );

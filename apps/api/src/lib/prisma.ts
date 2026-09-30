@@ -13,9 +13,20 @@ declare global {
 function getOptimizedDbUrl(): string | undefined {
   const url = process.env.DATABASE_URL;
   if (!url) return undefined;
-  if (url.includes("connection_limit=")) return url;
-  const sep = url.includes("?") ? "&" : "?";
-  return `${url}${sep}connection_limit=10&pool_timeout=15`;
+
+  const defaultLimit = process.env.PRISMA_CONNECTION_LIMIT || "30";
+  const defaultTimeout = process.env.PRISMA_POOL_TIMEOUT || "30";
+
+  let finalUrl = url;
+  if (!finalUrl.includes("connection_limit=")) {
+    const sep = finalUrl.includes("?") ? "&" : "?";
+    finalUrl = `${finalUrl}${sep}connection_limit=${defaultLimit}`;
+  }
+  if (!finalUrl.includes("pool_timeout=")) {
+    const sep = finalUrl.includes("?") ? "&" : "?";
+    finalUrl = `${finalUrl}${sep}pool_timeout=${defaultTimeout}`;
+  }
+  return finalUrl;
 }
 
 const dbUrl = getOptimizedDbUrl();
@@ -27,8 +38,6 @@ export const prisma =
     log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error", "warn"],
   });
 
-if (process.env.NODE_ENV !== "production") {
-  globalThis.prismaGlobal = prisma;
-}
+globalThis.prismaGlobal = prisma;
 
 export default prisma;
